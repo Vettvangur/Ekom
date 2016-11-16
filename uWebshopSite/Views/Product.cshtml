@@ -1,0 +1,95 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using uWebshop.Cache
+@using uWebshop.Services
+@using uWebshop.API
+
+@{
+    Layout = "Masterpage.cshtml";
+    var currentStore = StoreService.GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
+    var products = ProductCache._productCache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
+    var categories = CategoryCache._categoryCache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
+    var storeDomains = StoreCache._storeDomainCache.Select(x => x.Value);
+    var stores = StoreCache._storeCache.Select(x => x.Value);
+
+    var currentProduct = Catalog.GetProduct();
+    var getProductWithId = Catalog.GetProduct(1083);
+    var getProductWithIdAndStoreAlias = Catalog.GetProduct("EN",1083);
+
+    var currentCategory = Catalog.GetCategory();
+}
+
+@section Main {
+    <p>ID: @Model.Content.Id</p>
+	<p>NodeName: @Model.Content.Name</p>
+    <p>Path: @Model.Content.Path</p>
+    <p>CurrentStore: @currentStore.Alias</p>
+    <p>Current Product: @currentProduct.Title</p>
+    <p>Get Product ID: @getProductWithId.Title</p>
+    <p>Get Product ID And Alias: @getProductWithIdAndStoreAlias.Title</p>
+    <p>Current Category: @currentCategory.Title</p>
+    <h4>Products</h4>
+
+    @foreach (var product in products.Where(x => !string.IsNullOrEmpty(x.Title)).OrderBy(x => x.SortOrder))
+    {
+        <p>
+            @product.Id - @product.Title - @product.Slug - @product.OriginalPrice - @product.Store.Alias - <strong>@product.Url</strong>
+
+                @foreach (var url in product.Urls)
+                {
+                    <p><strong>@url</strong></p>
+                }
+
+            <ul>
+                @foreach (var group in product.VariantGroups.OrderBy(x => x.SortOrder))
+                {
+                    <li>
+                        @group.Id - @group.Title - @group.ProductId - @group.Variants.Count() - @group.Store.Alias
+
+                        <ol>
+                            @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
+                            {
+                                <li>
+                                    @variant.Title - @variant.OriginalPrice - @variant.Price.WithVat.ToCurrencyString() - @variant.Stock - @variant.VariantGroupId - @variant.ProductId - @variant.Store.Alias
+                                </li>
+                            }
+                        </ol>
+
+                    </li>
+                }
+            </ul>
+        </p>
+    }
+
+    <h4>Categories</h4>
+
+    <ul>
+        @foreach (var category in categories.OrderBy(x => x.SortOrder))
+        {
+            <li>
+                @category.Id - @category.Title - @category.Products.Count() - @category.SubCategories.Count() - @category.ParentCategoryId - @category.Store.Alias - @category.SortOrder - @category.Url
+            
+                @foreach (var url in category.Urls)
+                {
+                    <p><strong>@url</strong></p>
+                }
+            </li>
+        }
+    </ul>
+
+    <h4>Stores</h4>
+
+    <ul>
+        @foreach (var store in stores)
+        {
+            <li>@store.Id - @store.Alias - @store.Domains.Count() - @store.StoreRootNode</li>
+        }
+    </ul>
+
+
+    <h4>Store Domains</h4>
+
+    @foreach (var domain in storeDomains) {
+        <p>@domain.Id - @domain.RootContentId - @domain.LanguageIsoCode - @domain.Key - @domain.DomainName</p>
+    }
+
+}
