@@ -21,10 +21,19 @@ namespace uWebshop
         {
 
             var path = contentRequest.Uri.GetAbsolutePathDecoded().ToLower().AddTrailing();
-            
-            LogHelper.Info(GetType(), "CatalogContentFinder... TryFindContent... Path: " + path + " Domain: " + contentRequest.UmbracoDomain.DomainName );
 
-            var store = StoreService.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
+            Store store = null;
+
+            if (contentRequest.UmbracoDomain != null)
+            {
+                LogHelper.Info(GetType(), "CatalogContentFinder... TryFindContent... Path: " + path + " Domain: " + contentRequest.UmbracoDomain.DomainName);
+
+                store = StoreService.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
+            }
+            else // Grab default store / First store from cache if no umbracoDomain present
+            {
+                store = StoreService.GetStoreByDomain();
+            }
 
             LogHelper.Info(GetType(), "CatalogContentFinder... Store: " + store.Alias);
 

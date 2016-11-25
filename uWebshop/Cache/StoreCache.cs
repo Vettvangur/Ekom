@@ -1,4 +1,5 @@
 ﻿using Examine;
+using Examine.Providers;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -9,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using umbraco;
 using Umbraco.Core.Models;
 using uWebshop.Adapters;
 using uWebshop.Models;
@@ -169,7 +171,15 @@ namespace uWebshop.Cache
 
             }
 
-            var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+            BaseSearchProvider searcher = null;
+
+            try
+            {
+                searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+            }
+            {
+                Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
+            }
 
             if (searcher != null)
             {

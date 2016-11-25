@@ -21,6 +21,7 @@ namespace uWebshop.Services
                 LogManager.GetLogger(
                     MethodBase.GetCurrentMethod().DeclaringType
                 );
+
         public static IEnumerable<IDomain> GetAllStoreDomains()
         {
             var ds = ApplicationContext.Current.Services.DomainService;
@@ -31,7 +32,7 @@ namespace uWebshop.Services
 
         }
 
-        public static Store GetStoreByDomain(string domain)
+        public static Store GetStoreByDomain(string domain = "")
         {
             try
             {
@@ -47,7 +48,6 @@ namespace uWebshop.Services
                     //{
                         store = StoreCache._storeCache.FirstOrDefault(x => x.Value.StoreRootNode == storeDomain.RootContentId).Value;
                     //}
-
                 }
 
                 if (store == null)

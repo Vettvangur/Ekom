@@ -1,18 +1,31 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.Cache
+@using uWebshop.Models
 @using uWebshop.Services
 
 @{
     Layout = "Masterpage.cshtml";
 
-    var currentStore = StoreService.GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
+    Store currentStore;
+    if (UmbracoContext.PublishedContentRequest.UmbracoDomain != null)
+    {
+        currentStore = StoreService.GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
+    }
+    else // Get default store if no domain present
+    {
+        currentStore = StoreService.GetStoreByDomain();
+    }
+
     var products = ProductCache._productCache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
 }
 
 @section Main {
 
     <div class="row column text-center">
-      <h2>Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain: @UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName</h2>
+        <h2>
+            Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
+            @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
+        </h2>
       <hr>
     </div>
 
