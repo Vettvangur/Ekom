@@ -4,8 +4,6 @@
 @{
     Layout = null;
     var categories = Catalog.GetRootCategories();
-    var basket = Basket.GetBasket();
-    Basket.AddToBasket(1078, 1092, 1);
 }
 
 <!doctype html>
@@ -32,35 +30,7 @@
         </ul>
       </div>
     </div>
-    <!-- End Top Bar -->
-      @if (basket != null)
-      {
-          <p>Basket Found - items: @basket.Items.Count()</p>
 
-          <ul>
-              @foreach (var item in basket.Items)
-              {
-                  <li>
-                      @item.Product.Title - @item.Quantity
-                      @if (item.Variants.Any())
-                      {
-                          <ol>
-                              @foreach (var variant in item.Variants)
-                              {
-                                  <li>
-                                      @*variant.Id*@
-                                  </li>
-                              }
-                          </ol>
-                      }
-                </li>
-              }
-          </ul>
-
-      } else
-      {
-          <p>Basket Empty</p>
-      }
 
 	@RenderSection("Main", required: false)
 
