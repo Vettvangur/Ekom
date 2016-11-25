@@ -1,13 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop", "uWebshop\uWebshop.csproj", "{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}"
 EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "uWebshopSite", "uWebshopSite\", "{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
+		ProjectReferences = "{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}|uWebshop.dll;"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_53639"
 		Debug.AspNetCompiler.PhysicalPath = "uWebshopSite\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_53639\"
