@@ -177,6 +177,7 @@ namespace uWebshop.Cache
             {
                 searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
             }
+            catch
             {
                 Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
             }
