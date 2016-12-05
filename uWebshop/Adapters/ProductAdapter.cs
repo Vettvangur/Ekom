@@ -39,7 +39,7 @@ namespace uWebshop.Adapters
 
                     var categories = new List<Category>();
 
-                    var primaryCategory = CategoryCache._categoryCache.FirstOrDefault(x => x.Value.Id == categoryId && x.Value.Store.Alias == store.Alias).Value;
+                    var primaryCategory = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Id == categoryId && x.Value.Store.Alias == store.Alias).Value;
 
                     if (primaryCategory != null)
                     {
@@ -54,7 +54,7 @@ namespace uWebshop.Adapters
                         {
                             var intCatId = Convert.ToInt32(catId);
 
-                            var categoryItem = CategoryCache._categoryCache.FirstOrDefault(x => x.Value.Id == intCatId && x.Value.Store.Alias == store.Alias).Value;
+                            var categoryItem = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Id == intCatId && x.Value.Store.Alias == store.Alias).Value;
 
                             if (categoryItem != null && !categories.Contains(categoryItem))
                             {

@@ -20,7 +20,6 @@ namespace uWebshop.Adapters
 
         public static Store CreateStoreItemFromExamine(SearchResult item)
         {
-            
             try
             {
                 var store = new Store();
@@ -30,7 +29,7 @@ namespace uWebshop.Adapters
                 store.StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
                 store.Level = Convert.ToInt32(item.Fields["level"]);
                 //store.RootNode = StoreCache._storeNodeCache.FirstOrDefault(x => x.Value.StoreId == item.Id).Value;
-                store.Domains = StoreCache._storeDomainCache.Where(x => x.Value.RootContentId == store.StoreRootNode).Select(x => x.Value);
+                store.Domains = StoreDomainCache.Instance._cache.Where(x => x.Value.RootContentId == store.StoreRootNode).Select(x => x.Value);
 
                 return store;
             }

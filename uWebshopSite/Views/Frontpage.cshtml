@@ -16,7 +16,7 @@
         currentStore = StoreService.GetStoreByDomain();
     }
 
-    var products = ProductCache._productCache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
+    var products = ProductCache.Instance._cache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
 }
 
 @section Main {

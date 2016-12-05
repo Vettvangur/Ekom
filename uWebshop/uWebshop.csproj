@@ -262,6 +262,10 @@
     <Compile Include="API\Catalog.cs" />
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
+    <Compile Include="Cache\StoreDomainCache.cs" />
+    <Compile Include="Cache\VariantGroupCache.cs" />
+    <Compile Include="Cache\_BaseCache.cs" />
+    <Compile Include="Cache\PaymentProviderCache.cs" />
     <Compile Include="Cache\ProductCache.cs" />
     <Compile Include="Cache\CategoryCache.cs" />
     <Compile Include="Cache\StockCache.cs" />
@@ -281,8 +285,6 @@
     <Compile Include="Models\Variant.cs" />
     <Compile Include="Models\VariantGroup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Repository\CatalogRepository.cs" />
-    <Compile Include="Repository\StoreRepository.cs" />
     <Compile Include="Services\BasketService.cs" />
     <Compile Include="Services\CatalogService.cs" />
     <Compile Include="Services\ExamineService.cs" />

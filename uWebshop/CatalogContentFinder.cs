@@ -43,7 +43,7 @@ namespace uWebshop
 
             Category category = null;
 
-            var product = ProductCache._productCache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(path)).Value;
+            var product = ProductCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(path)).Value;
 
             if (product != null)
             {
@@ -53,13 +53,13 @@ namespace uWebshop
                 var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
                 var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
-                category = CategoryCache._categoryCache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(categoryUrl)).Value;
+                category = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(categoryUrl)).Value;
 
             }
 
             if (product == null)
             {
-                category = CategoryCache._categoryCache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(path)).Value;
+                category = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == store.Alias && x.Value.Urls.Contains(path)).Value;
 
                 if (category != null)
                 {

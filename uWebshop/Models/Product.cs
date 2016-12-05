@@ -47,13 +47,13 @@ namespace uWebshop.Models
         public IEnumerable<VariantGroup> VariantGroups {
             get
             {
-                return VariantCache._variantGroupCache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
+                return VariantGroupCache.Instance._cache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
             }
         }
         public IEnumerable<Variant> AllVariants {
             get
             {
-                return VariantCache._variantCache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
+                return VariantCache.Instance._cache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
             }
         }
     }

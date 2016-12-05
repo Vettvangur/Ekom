@@ -38,7 +38,7 @@ namespace uWebshop.Services
             {
                 Store store = null;
 
-                var storeDomain = StoreCache._storeDomainCache.FirstOrDefault(x => x.Value.DomainName.ToLower() == domain.ToLower()).Value;
+                var storeDomain = StoreDomainCache.Instance._cache.FirstOrDefault(x => x.Value.DomainName.ToLower() == domain.ToLower()).Value;
 
                 if (storeDomain != null)
                 {
@@ -46,7 +46,7 @@ namespace uWebshop.Services
 
                     //if (storeNode != null)
                     //{
-                        store = StoreCache._storeCache.FirstOrDefault(x => x.Value.StoreRootNode == storeDomain.RootContentId).Value;
+                        store = StoreCache.Instance._cache.FirstOrDefault(x => x.Value.StoreRootNode == storeDomain.RootContentId).Value;
                     //}
                 }
 
@@ -54,7 +54,7 @@ namespace uWebshop.Services
                 {
                     Log.Info("GetStoreByDomain, Could not find store. Returning first store in the list.");
 
-                    store = StoreCache._storeCache.FirstOrDefault().Value;
+                    store = StoreCache.Instance._cache.FirstOrDefault().Value;
                 }
 
                 return store;
@@ -63,7 +63,7 @@ namespace uWebshop.Services
             {
                 Log.Error("GetStoreByDomain, Could not find store. Returning first store in the list.", ex);
 
-                var store = StoreCache._storeCache.FirstOrDefault().Value;
+                var store = StoreCache.Instance._cache.FirstOrDefault().Value;
 
                 return store;
             }

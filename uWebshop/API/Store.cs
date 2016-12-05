@@ -25,14 +25,14 @@ namespace uWebshop.API
 
         public static uWebshop.Models.Store GetStore(string storeAlias)
         {
-            var store = StoreCache._storeCache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
+            var store = StoreCache.Instance._cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
 
             return store;
         }
 
         public static IEnumerable<uWebshop.Models.Store> GetAllStores()
         {
-            var stores = StoreCache._storeCache.OrderBy(x => x.Value.Level).Select(x => x.Value);
+            var stores = StoreCache.Instance._cache.OrderBy(x => x.Value.Level).Select(x => x.Value);
 
             return stores;
         }

@@ -17,14 +17,13 @@ namespace uWebshop
         {
             LogHelper.Info(GetType(), "OnApplicationInitialized...");
 
-            // Fill Cache
-            StoreCache.FillStoreDomainCache();
-            //StoreCache.FillStoreNodesCache();
-            StoreCache.FillStoreCache();
-            VariantCache.FillVariantCache();
-            VariantCache.FillVariantGroupCache();
-            CategoryCache.FillCache();
-            ProductCache.FillCache();
+            // Fill Caches
+            StoreDomainCache.Instance.FillCache();
+            StoreCache.Instance.FillCache();
+            VariantCache.Instance.FillCache();
+            VariantGroupCache.Instance.FillCache();
+            CategoryCache.Instance.FillCache();
+            ProductCache.Instance.FillCache();
         }
 
         public void OnApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)

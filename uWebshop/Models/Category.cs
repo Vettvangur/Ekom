@@ -23,7 +23,6 @@ namespace uWebshop.Models
         {
             get
             {
-
                 var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
 
                 var defaulUrl = Urls.FirstOrDefault();
@@ -41,14 +40,14 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache._categoryCache.Where(x => x.Value.ParentCategoryId == Id && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return CategoryCache.Instance._cache.Where(x => x.Value.ParentCategoryId == Id && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
             }
         }
         public IEnumerable<Product> Products
         {
             get
             {
-                return ProductCache._productCache.Where(x => x.Value.Categories.Any(z => z.Id == Id) && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return ProductCache.Instance._cache.Where(x => x.Value.Categories.Any(z => z.Id == Id) && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
             }
         }
 
@@ -56,7 +55,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache._categoryCache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level > Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return CategoryCache.Instance._cache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level > Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
             }
         }
 
@@ -64,7 +63,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var categories = CategoryCache._categoryCache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level >= Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                var categories = CategoryCache.Instance._cache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level >= Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
 
                 var products = categories.SelectMany(x => x.Products);
 

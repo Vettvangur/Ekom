@@ -40,6 +40,7 @@ namespace uWebshop.Services
                 return _guid;
             }
         }
+
         public static BasketService GetBasket()
         {
 
@@ -55,6 +56,7 @@ namespace uWebshop.Services
             if (r != null && r.Store != null)
             {
                 var key = "uwbsBasket-" + r.Store.Alias;
+
                 // If the cart is not in the session, create one and put it there
                 if (HttpContext.Current.Session[key] == null)
                 {
