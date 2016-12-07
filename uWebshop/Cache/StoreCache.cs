@@ -2,8 +2,8 @@
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System.Diagnostics;
-using uWebshop.Adapters;
 using uWebshop.Models;
+using System;
 
 namespace uWebshop.Cache
 {
@@ -11,12 +11,12 @@ namespace uWebshop.Cache
     {
         public static StoreCache Instance { get; } = new StoreCache();
 
-        public override string nodeAlias { get; set; } = "uwbsStore";
+        protected override string nodeAlias { get; } = "uwbsStore";
 
         /// <summary>
-        /// Fill category cache with all products in examine
+        /// Fill Store cache with all products in examine
         /// </summary>
-        public void FillCache()
+        public override void FillCache()
         {
             BaseSearchProvider searcher = null;
 
@@ -40,16 +40,18 @@ namespace uWebshop.Cache
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
                 var query = searchCriteria.NodeTypeAlias(nodeAlias);
                 var results = searcher.Search(query.Compile());
+
                 int count = 0;
                 foreach (var r in results)
                 {
-                    var item = StoreAdapter.CreateStoreItemFromExamine(r);
-
-                    if (item != null)
+                    try
                     {
+                        var item = new Store(r);
+
                         count++;
                         AddOrUpdateCache(r.Id, item);
                     }
+                    catch { } // Skip on fail
                 }
 
                 stopwatch.Stop();
@@ -73,6 +75,15 @@ namespace uWebshop.Cache
                 cacheKey,
                 newCacheItem,
                 (key, oldCacheItem) => newCacheItem);
+        }
+
+        /// <summary>
+        /// Not needed as the stores custom FillCache method directly instantiates 
+        /// <see cref="Store"/> objects
+        /// </summary>
+        protected override Store New(SearchResult r, Store store)
+        {
+            throw new NotImplementedException();
         }
     }
 }

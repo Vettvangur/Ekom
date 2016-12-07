@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Examine;
+using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Web;
-using Umbraco.Core.Logging;
 using uWebshop.Cache;
+using uWebshop.Services;
 
 namespace uWebshop.Models
 {
@@ -56,5 +57,96 @@ namespace uWebshop.Models
                 return VariantCache.Instance._cache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
             }
         }
+
+        public Product(): base() { }
+        public Product(SearchResult item, Store store)
+        {
+            try
+            {
+                var pathField = item.Fields["path"];
+
+                var examineItemsFromPath = ExamineService.GetAllCatalogItemsFromPath(pathField);
+
+                if (!CatalogService.IsItemDisabled(examineItemsFromPath, store))
+                {
+                    int categoryId = Convert.ToInt32(item.Fields["parentID"]);
+
+                    var categoryField = item.Fields.Any(x => x.Key == "categories") ? 
+                                        item.Fields["categories"] : "";
+
+                    var categories = new List<Category>();
+
+                    var primaryCategory = CategoryCache.Instance._cache.FirstOrDefault
+                        (x => x.Value.Id == categoryId && 
+                              x.Value.Store.Alias == store.Alias).Value;
+
+                    if (primaryCategory != null)
+                    {
+                        categories.Add(primaryCategory);
+                    }
+
+                    if (!string.IsNullOrEmpty(categoryField))
+                    {
+                        var categoryIds = categoryField.Split(',');
+
+                        foreach (var catId in categoryIds)
+                        {
+                            var intCatId = Convert.ToInt32(catId);
+
+                            var categoryItem = CategoryCache.Instance._cache.FirstOrDefault
+                                (x => x.Value.Id == intCatId && 
+                                      x.Value.Store.Alias == store.Alias).Value;
+
+                            if (categoryItem != null && !categories.Contains(categoryItem))
+                            {
+                                categories.Add(categoryItem);
+                            }
+                        }
+                    }
+
+                    var priceField = ExamineService.GetProperty(item, "price", store.Alias);
+
+                    decimal originalPrice = 0;
+                    decimal.TryParse(priceField, out originalPrice);
+
+                    Id            = item.Id;
+                    Path          = pathField;
+                    OriginalPrice = originalPrice;
+                    Categories    = categories;
+                    Store         = store;
+
+                    Title         = ExamineService.GetProperty(item, "title", store.Alias);
+                    Slug          = ExamineService.GetProperty(item, "slug", store.Alias);
+
+                    SortOrder     = Convert.ToInt32(item.Fields["sortOrder"]);
+                    Level         = Convert.ToInt32(item.Fields["level"]);
+
+                    Urls          = UrlService.BuildProductUrls(Slug, Categories, store);
+
+                    if (Urls.Any() && !string.IsNullOrEmpty(Title))
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception("No url's or no title present");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Error product disabled. Node id: " + item.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error creating product item from Examine. Node id: " + item.Id, ex);
+                throw;
+            }
+        }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }

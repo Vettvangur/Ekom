@@ -31,17 +31,14 @@ namespace uWebshop.Services
             {
                 return item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
             }
-
         }
 
         public static SearchResult GetNodeFromExamine(int id)
         {
-
             var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
 
             if (searcher != null)
             {
-
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
                 var query = searchCriteria.Id(id);
                 var result = searcher.Search(query.Compile());
@@ -54,7 +51,6 @@ namespace uWebshop.Services
                 {
                     Log.Error("GetNodeFromExamine Failed. Node with Id " + id + " not found.");
                 }
-
             }
 
             return null;
@@ -70,7 +66,7 @@ namespace uWebshop.Services
 
             foreach (var id in Ids)
             {
-                var examineItem = ExamineService.GetNodeFromExamine(Convert.ToInt32(id));
+                var examineItem = GetNodeFromExamine(Convert.ToInt32(id));
 
                 list.Add(examineItem);
             }

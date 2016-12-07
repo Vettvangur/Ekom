@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Examine;
+using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using Umbraco.Core.Models;
+using uWebshop.Cache;
 
 namespace uWebshop.Models
 {
@@ -15,5 +17,31 @@ namespace uWebshop.Models
         public int StoreRootNode {get; set;}
         public int Level { get; set; }
         public IEnumerable<IDomain> Domains { get; set; }
+
+        public Store(): base() { }
+        public Store (SearchResult item)
+        {
+            try
+            {
+                Id               = item.Id;
+                Alias            = item.Fields["nodeName"];
+
+                StoreRootNode    = Convert.ToInt32(item.Fields["storeRootNode"]);
+                Level            = Convert.ToInt32(item.Fields["level"]);
+
+                //store.RootNode = StoreCache._storeNodeCache.FirstOrDefault(x => x.Value.StoreId == item.Id).Value;
+                Domains          = StoreDomainCache.Instance._cache.Where(x => x.Value.RootContentId == StoreRootNode).Select(x => x.Value);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error on creating store item from Examine. Node id: " + item.Id, ex);
+                throw;
+            }
+        }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }

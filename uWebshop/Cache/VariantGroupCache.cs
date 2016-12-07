@@ -1,4 +1,5 @@
-﻿using uWebshop.Adapters;
+﻿using System;
+using Examine;
 using uWebshop.Models;
 
 namespace uWebshop.Cache
@@ -7,11 +8,11 @@ namespace uWebshop.Cache
     {
         public static VariantGroupCache Instance { get; } = new VariantGroupCache();
 
-        public override string nodeAlias { get; set; } = "uwbsProductVariantGroup";
+        protected override string nodeAlias { get; } = "uwbsProductVariantGroup";
 
-        public void FillCache()
+        protected override VariantGroup New(SearchResult r, Store store)
         {
-            FillCache(VariantAdapter.CreateVariantGroupItemFromExamine);
+            return new VariantGroup(r, store);
         }
     }
 }

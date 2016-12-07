@@ -5,19 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Examine;
 using uWebshop.Models;
-using uWebshop.Adapters;
 
 namespace uWebshop.Cache
 {
-    //public class ProductCache : BaseCache<Product>
-    //{
-    //    public static ProductCache Instance { get; } = new ProductCache();
+    public class PaymentProviderCache : BaseCache<PaymentProvider>
+    {
+        public static PaymentProviderCache Instance { get; } = new PaymentProviderCache();
 
-    //    public override string nodeAlias { get; set; } = "uwbsProduct";
+        protected override string nodeAlias { get; } = "uwbsPaymentProvidedr";
 
-    //    public void FillCache()
-    //    {
-    //        FillCache(ProductAdapter.CreateProductItemFromExamine);
-    //    }
-    //}
+        protected override PaymentProvider New(SearchResult r, Store store)
+        {
+            return new PaymentProvider(r, store);
+        }
+    }
 }

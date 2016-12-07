@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using Examine;
 using Umbraco.Core.Models;
+using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
@@ -9,12 +12,12 @@ namespace uWebshop.Cache
     {
         public static StoreDomainCache Instance { get; } = new StoreDomainCache();
 
-        public override string nodeAlias { get; set; } = "notApplicable";
+        protected override string nodeAlias { get; } = "notApplicable";
 
         /// <summary>
         /// Fill store domain cache with domains from domain service
         /// </summary>
-        public void FillCache()
+        public override void FillCache()
         {
             var domains = StoreService.GetAllStoreDomains();
 
@@ -43,6 +46,15 @@ namespace uWebshop.Cache
                 cacheKey,
                 newCacheItem,
                 (key, oldCacheItem) => newCacheItem);
+        }
+
+        /// <summary>
+        /// Not needed as the stores custom FillCache method directly instantiates 
+        /// <see cref="IDomain"/> objects
+        /// </summary>
+        protected override IDomain New(SearchResult r, Store store)
+        {
+            throw new NotImplementedException();
         }
     }
 }

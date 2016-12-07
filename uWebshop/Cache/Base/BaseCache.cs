@@ -12,13 +12,24 @@ namespace uWebshop.Cache
 {
     public abstract class BaseCache<Type>
     {
-        public abstract string nodeAlias { get; set; }
+        /// <summary>
+        /// Umbraco Node Alias name used in Examine search
+        /// </summary>
+        protected abstract string nodeAlias { get; }
 
         public ConcurrentDictionary<string, Type> _cache 
          = new ConcurrentDictionary<string, Type>();
 
-        // Fill cache
-        public void FillCache(Func<SearchResult, Store, Type> CreateItemFromExamine)
+        /// <summary>
+        /// Derived classes define simple instantiation methods, 
+        /// saving performance vs Activator.CreateInstance
+        /// </summary>
+        protected abstract Type New(SearchResult r, Store store);
+
+        /// <summary>
+        /// Base Fill cache method appropriate for most derived caches
+        /// </summary>
+        public virtual void FillCache()
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
 
@@ -40,13 +51,17 @@ namespace uWebshop.Cache
                 {
                     foreach (var r in results.Where(x => x.Fields["template"] != "0"))
                     {
-                        var item = CreateItemFromExamine(r, store);
-
-                        if (item != null)
+                        try
                         {
-                            count++;
-                            AddOrUpdateCache(r.Id, store, item);
+                            var item = New(r, store);
+
+                            if (item != null)
+                            {
+                                count++;
+                                AddOrUpdateCache(r.Id, store, item);
+                            }
                         }
+                        catch { } // Skip on fail
                     }
                 }
 
@@ -63,7 +78,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Add or Update item in cache
         /// </summary>
-        public void AddOrUpdateCache(int id, Store store, Type newCacheItem)
+        public virtual void AddOrUpdateCache(int id, Store store, Type newCacheItem)
         {
             string cacheKey = id.ToString() + "-" + store.Alias;
 
@@ -76,7 +91,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Remove item from cache
         /// </summary>
-        public void RemoveItemFromCache(string id)
+        public virtual void RemoveItemFromCache(string id)
         {
             Type i = default(Type);
             var remove = _cache.TryRemove(id, out i);

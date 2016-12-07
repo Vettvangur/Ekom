@@ -1,4 +1,5 @@
-﻿using uWebshop.Adapters;
+﻿using System;
+using Examine;
 using uWebshop.Models;
 
 namespace uWebshop.Cache
@@ -7,11 +8,11 @@ namespace uWebshop.Cache
     {
         public static ProductCache Instance { get; } = new ProductCache();
 
-        public override string nodeAlias { get; set; } = "uwbsProduct";
+        protected override string nodeAlias { get; } = "uwbsProduct";
 
-        public void FillCache()
+        protected override Product New(SearchResult r, Store store)
         {
-            FillCache(ProductAdapter.CreateProductItemFromExamine);
+            return new Product(r, store);
         }
     }
 }

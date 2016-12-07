@@ -24,6 +24,8 @@ namespace uWebshop
             VariantGroupCache.Instance.FillCache();
             CategoryCache.Instance.FillCache();
             ProductCache.Instance.FillCache();
+            ZoneCache.Instance.FillCache();
+            PaymentProviderCache.Instance.FillCache();
         }
 
         public void OnApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)

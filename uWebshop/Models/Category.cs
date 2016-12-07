@@ -1,10 +1,14 @@
-﻿using System;
+﻿using Examine;
+using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using uWebshop.Cache;
+using uWebshop.Services;
 
 namespace uWebshop.Models
 {
@@ -70,5 +74,50 @@ namespace uWebshop.Models
                 return products;
             }
         }
+
+        public Category() : base() { }
+        public Category(SearchResult item, Store store)
+        {
+            try
+            {
+                var pathField = item.Fields["path"];
+
+                int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
+
+                var examineItemsFromPath = ExamineService.GetAllCatalogItemsFromPath(pathField);
+
+                if (!CatalogService.IsItemDisabled(examineItemsFromPath, store))
+                {
+                    Id               = item.Id;
+                    Path             = pathField;
+                    ParentCategoryId = parentCategoryId;
+                    Store            = store;
+
+                    Title            = ExamineService.GetProperty(item, "title", store.Alias);
+                    Slug             = ExamineService.GetProperty(item, "slug", store.Alias);
+
+                    SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
+                    Level            = Convert.ToInt32(item.Fields["level"]);
+
+                    Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+
+                    return;
+                }
+                else
+                {
+                    throw new Exception("Error, Catalog is disabled");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error on creating category item from Examine. Node id: " + item.Id, ex);
+                throw;
+            }
+        }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }

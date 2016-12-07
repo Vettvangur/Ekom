@@ -1,4 +1,5 @@
-﻿using uWebshop.Adapters;
+﻿using System;
+using Examine;
 using uWebshop.Models;
 
 namespace uWebshop.Cache
@@ -7,11 +8,11 @@ namespace uWebshop.Cache
     {
         public static CategoryCache Instance { get; } = new CategoryCache();
 
-        public override string nodeAlias { get; set; } = "uwbsCategory";
+        protected override string nodeAlias { get; } = "uwbsCategory";
 
-        public void FillCache()
+        protected override Category New(SearchResult r, Store store)
         {
-            FillCache(CategoryAdapter.CreateCategoryItemFromExamine);
+            return new Category(r, store);
         }
     }
 }
