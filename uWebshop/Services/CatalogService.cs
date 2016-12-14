@@ -15,12 +15,19 @@ namespace uWebshop.Services
 
             foreach (var item in items)
             {
-                var disableField = ExamineService.GetProperty(item, "disable", store.Alias);
+                if (item != null)
+                {
+                    var disableField = ExamineService.GetProperty(item, "disable", store.Alias);
 
-                if (disableField == "1")
+                    if (disableField == "1")
+                    {
+                        return true;
+                    }
+                } else
                 {
                     return true;
                 }
+
             }
 
             return false;
