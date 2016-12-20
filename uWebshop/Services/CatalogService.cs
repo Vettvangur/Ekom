@@ -12,7 +12,6 @@ namespace uWebshop.Services
     {
         public static bool IsItemDisabled(IEnumerable<SearchResult> items, Store store)
         {
-
             foreach (var item in items)
             {
                 if (item != null)

@@ -44,7 +44,7 @@ namespace uWebshop.API
         }
         public static Product GetProduct(string storeAlias, int Id)
         {
-            var product = ProductCache._productCache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
+            var product = ProductCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
 
             return product;
         }
@@ -65,7 +65,7 @@ namespace uWebshop.API
         public static IEnumerable<Product> GetAllProducts(string storeAlias)
         {
 
-            var products = ProductCache._productCache.Where(x => x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+            var products = ProductCache.Instance._cache.Where(x => x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
 
             return products;
 
@@ -96,7 +96,7 @@ namespace uWebshop.API
         }
         public static Category GetCategory(string storeAlias, int Id)
         {
-            var category = CategoryCache._categoryCache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
+            var category = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
 
             return category;
         }
@@ -115,7 +115,7 @@ namespace uWebshop.API
         }
         public static IEnumerable<Category> GetRootCategories(string storeAlias)
         {
-            return CategoryCache._categoryCache.Where(x => x.Value.Level == 3 && x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+            return CategoryCache.Instance._cache.Where(x => x.Value.Level == 3 && x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
         }
         public static Variant GetVariant(int Id)
         {
@@ -134,7 +134,7 @@ namespace uWebshop.API
         {
             Log.Info("Trying to get Variant: " + Id + " Store: " + storeAlias);
 
-            var variant = VariantCache._variantCache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
+            var variant = VariantCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
 
             if (variant == null)
             {
