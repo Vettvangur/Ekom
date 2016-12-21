@@ -7,13 +7,11 @@ using System;
 
 namespace uWebshop.Cache
 {
-    public class ZoneCache : BaseCache<Zone>
+    public class ZoneCache : BaseCache<Zone, ZoneCache>
     {
-        public static ZoneCache Instance { get; } = new ZoneCache();
-
         protected override string nodeAlias { get; } = "uwbsZone";
 
-        protected override Zone New(SearchResult r, Store store)
+        private Zone New(SearchResult r, Store store)
         {
             return new Zone(r);
         }

@@ -8,11 +8,9 @@ using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StoreDomainCache : BaseCache<IDomain>
+    public class StoreDomainCache : BaseCache<IDomain, StoreDomainCache>
     {
-        public static StoreDomainCache Instance { get; } = new StoreDomainCache();
-
-        protected override string nodeAlias { get; } = "notApplicable";
+        protected override string nodeAlias { get; } = "Does not apply";
 
         /// <summary>
         /// Fill store domain cache with domains from domain service
@@ -31,30 +29,11 @@ namespace uWebshop.Cache
 
                 foreach (var d in domains)
                 {
-                    AddOrUpdateCache(d.Id, d);
+                    AddOrReplaceFromCache(d.Id, d);
                 }
 
                 Log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
             }
-        }
-
-        public void AddOrUpdateCache(int id, IDomain newCacheItem)
-        {
-            string cacheKey = id.ToString();
-
-            _cache.AddOrUpdate(
-                cacheKey,
-                newCacheItem,
-                (key, oldCacheItem) => newCacheItem);
-        }
-
-        /// <summary>
-        /// Not needed as the stores custom FillCache method directly instantiates 
-        /// <see cref="IDomain"/> objects
-        /// </summary>
-        protected override IDomain New(SearchResult r, Store store)
-        {
-            throw new NotImplementedException();
         }
     }
 }

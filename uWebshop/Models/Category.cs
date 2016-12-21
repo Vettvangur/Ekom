@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Umbraco.Core;
 using uWebshop.Cache;
 using uWebshop.Services;
 
@@ -27,7 +28,8 @@ namespace uWebshop.Models
         {
             get
             {
-                var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+                var appCache = ApplicationContext.Current.ApplicationCache;
+                var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
                 var defaulUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
@@ -44,14 +46,20 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache.Instance._cache.Where(x => x.Value.ParentCategoryId == Id && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return CategoryCache.Cache[Store.Alias]
+                                    .Where(x => x.Value.ParentCategoryId == Id)
+                                    .Select(x => x.Value)
+                                    .OrderBy(x => x.SortOrder);
             }
         }
         public IEnumerable<Product> Products
         {
             get
             {
-                return ProductCache.Instance._cache.Where(x => x.Value.Categories.Any(z => z.Id == Id) && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return ProductCache.Cache[Store.Alias]
+                                   .Where(x => x.Value.Categories.Any(z => z.Id == Id))
+                                   .Select(x => x.Value)
+                                   .OrderBy(x => x.SortOrder);
             }
         }
 
@@ -59,7 +67,11 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache.Instance._cache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level > Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+                return CategoryCache.Cache[Store.Alias]
+                                    .Where(x => x.Value.Level > Level &&
+                                                x.Value.Path.Split(',').Contains(Id.ToString()))
+                                    .Select(x => x.Value)
+                                    .OrderBy(x => x.SortOrder);
             }
         }
 
@@ -67,11 +79,12 @@ namespace uWebshop.Models
         {
             get
             {
-                var categories = CategoryCache.Instance._cache.Where(x => x.Value.Path.Split(',').Contains(Id.ToString()) && x.Value.Level >= Level && x.Value.Store.Alias == Store.Alias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
-
-                var products = categories.SelectMany(x => x.Products);
-
-                return products;
+                return CategoryCache.Cache[Store.Alias]
+                                    .Where(x => x.Value.Level >= Level &&
+                                                x.Value.Path.Split(',').Contains(Id.ToString()))
+                                    .Select(x => x.Value)
+                                    .OrderBy(x => x.SortOrder)
+                                    .SelectMany(x => x.Products);
             }
         }
 

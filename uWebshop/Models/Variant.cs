@@ -41,7 +41,7 @@ namespace uWebshop.Models
                 var pathField = item.Fields["path"];
                 var paths = pathField.Split(',');
 
-                int productId = Convert.ToInt32(paths.Reverse().Skip(2).Take(1).FirstOrDefault());
+                int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
                 var priceField = ExamineService.GetProperty(item, "price", store.Alias);
                 decimal originalPrice = 0;

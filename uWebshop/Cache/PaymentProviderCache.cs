@@ -8,10 +8,8 @@ using uWebshop.Models;
 
 namespace uWebshop.Cache
 {
-    public class PaymentProviderCache : BaseCache<PaymentProvider>
+    public class PaymentProviderCache : PerStoreCache<PaymentProvider, PaymentProviderCache>
     {
-        public static PaymentProviderCache Instance { get; } = new PaymentProviderCache();
-
         protected override string nodeAlias { get; } = "uwbsPaymentProvidedr";
 
         protected override PaymentProvider New(SearchResult r, Store store)

@@ -4,13 +4,12 @@ using Examine.SearchCriteria;
 using System.Diagnostics;
 using uWebshop.Models;
 using System;
+using System.Collections.Concurrent;
 
 namespace uWebshop.Cache
 {
-    public class StoreCache : BaseCache<Store>
+    public class StoreCache : BaseCache<Store, StoreCache>
     {
-        public static StoreCache Instance { get; } = new StoreCache();
-
         protected override string nodeAlias { get; } = "uwbsStore";
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace uWebshop.Cache
                         var item = new Store(r);
 
                         count++;
-                        AddOrUpdateCache(r.Id, item);
+                        AddOrReplaceFromCache(r.Id, item);
                     }
                     catch { } // Skip on fail
                 }
@@ -62,28 +61,6 @@ namespace uWebshop.Cache
             {
                 Log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
             }
-        }
-        
-        /// <summary>
-        /// Add or Update item in store cache
-        /// </summary>
-        public void AddOrUpdateCache(int id, Store newCacheItem)
-        {
-            string cacheKey = id.ToString();
-
-            _cache.AddOrUpdate(
-                cacheKey,
-                newCacheItem,
-                (key, oldCacheItem) => newCacheItem);
-        }
-
-        /// <summary>
-        /// Not needed as the stores custom FillCache method directly instantiates 
-        /// <see cref="Store"/> objects
-        /// </summary>
-        protected override Store New(SearchResult r, Store store)
-        {
-            throw new NotImplementedException();
         }
     }
 }

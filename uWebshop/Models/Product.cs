@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using Umbraco.Core;
 using uWebshop.Cache;
 using uWebshop.Services;
 
@@ -25,19 +26,20 @@ namespace uWebshop.Models
         public string Url {
             get {
 
-                var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+                var appCache = ApplicationContext.Current.ApplicationCache;
+                var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var defaulUrl = Urls.FirstOrDefault();
+                var defaultUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
                 if (findUrlByPrefix != null) {
                     return findUrlByPrefix;
                 }
 
-                return defaulUrl;
+                return defaultUrl;
             }
         }
-        public IEnumerable<String> Urls { get; set; }
+        public IEnumerable<string> Urls { get; set; }
         public Price Price
         {
             get
@@ -48,13 +50,17 @@ namespace uWebshop.Models
         public IEnumerable<VariantGroup> VariantGroups {
             get
             {
-                return VariantGroupCache.Instance._cache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
+                return VariantGroupCache.Cache[Store.Alias]
+                                        .Where(x => x.Value.ProductId == Id)
+                                        .Select(x => x.Value);
             }
         }
         public IEnumerable<Variant> AllVariants {
             get
             {
-                return VariantCache.Instance._cache.Where(x => x.Value.ProductId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
+                return VariantCache.Cache[Store.Alias]
+                                   .Where(x => x.Value.ProductId == Id)
+                                   .Select(x => x.Value);
             }
         }
 
@@ -76,9 +82,9 @@ namespace uWebshop.Models
 
                     var categories = new List<Category>();
 
-                    var primaryCategory = CategoryCache.Instance._cache.FirstOrDefault
-                        (x => x.Value.Id == categoryId && 
-                              x.Value.Store.Alias == store.Alias).Value;
+                    var primaryCategory = CategoryCache.Cache[store.Alias]
+                                                       .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                       .Value;
 
                     if (primaryCategory != null)
                     {
@@ -93,9 +99,10 @@ namespace uWebshop.Models
                         {
                             var intCatId = Convert.ToInt32(catId);
 
-                            var categoryItem = CategoryCache.Instance._cache.FirstOrDefault
-                                (x => x.Value.Id == intCatId && 
-                                      x.Value.Store.Alias == store.Alias).Value;
+                            var categoryItem 
+                                = CategoryCache.Cache[store.Alias]
+                                               .FirstOrDefault(x => x.Value.Id == intCatId)
+                                               .Value;
 
                             if (categoryItem != null && !categories.Contains(categoryItem))
                             {

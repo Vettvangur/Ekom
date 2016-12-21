@@ -29,8 +29,9 @@ namespace uWebshop.Models
                 StoreRootNode    = Convert.ToInt32(item.Fields["storeRootNode"]);
                 Level            = Convert.ToInt32(item.Fields["level"]);
 
-                //store.RootNode = StoreCache._storeNodeCache.FirstOrDefault(x => x.Value.StoreId == item.Id).Value;
-                Domains          = StoreDomainCache.Instance._cache.Where(x => x.Value.RootContentId == StoreRootNode).Select(x => x.Value);
+                Domains          = StoreDomainCache.Cache
+                                                   .Where(x => x.Value.RootContentId == StoreRootNode)
+                                                   .Select(x => x.Value);
             }
             catch (Exception ex)
             {

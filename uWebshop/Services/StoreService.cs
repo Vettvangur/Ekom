@@ -34,45 +34,45 @@ namespace uWebshop.Services
 
         public static Store GetStoreByDomain(string domain = "")
         {
-            try
-            {
-                Store store = null;
+            Store store = null;
 
-                var storeDomain = StoreDomainCache.Instance._cache.FirstOrDefault(x => x.Value.DomainName.ToLower() == domain.ToLower()).Value;
+            if (!string.IsNullOrEmpty(domain))
+            {
+                var storeDomain
+                    = StoreDomainCache.Cache
+                                      .FirstOrDefault
+                                          (x => x.Value.DomainName.Equals(domain, StringComparison.InvariantCultureIgnoreCase))
+                                      .Value;
 
                 if (storeDomain != null)
                 {
-                    //var storeNode = StoreCache._storeNodeCache.FirstOrDefault(x => x.Value.Id == storeDomain.RootContentId).Value;
-
-                    //if (storeNode != null)
-                    //{
-                        store = StoreCache.Instance._cache.FirstOrDefault(x => x.Value.StoreRootNode == storeDomain.RootContentId).Value;
-                    //}
+                    store = StoreCache.Cache
+                                      .FirstOrDefault
+                                        (x => x.Value.StoreRootNode == storeDomain.RootContentId)
+                                      .Value;
                 }
-
-                if (store == null)
-                {
-                    Log.Info("GetStoreByDomain, Could not find store. Returning first store in the list.");
-
-                    store = StoreCache.Instance._cache.FirstOrDefault().Value;
-                }
-
-                return store;
-
-            } catch(Exception ex)
-            {
-                Log.Error("GetStoreByDomain, Could not find store. Returning first store in the list.", ex);
-
-                var store = StoreCache.Instance._cache.FirstOrDefault().Value;
-
-                return store;
             }
- 
+
+            if (store == null)
+            {
+                store = StoreCache.Cache.FirstOrDefault().Value;
+            }
+
+            return store;
+        }
+
+        public static Store GetStoreByAlias(string alias)
+        {
+            return StoreCache.Cache
+                             .FirstOrDefault(x => x.Value.Alias == alias)
+                             .Value;
         }
 
         public static Store GetStore()
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null)
             {
@@ -86,6 +86,5 @@ namespace uWebshop.Services
 
             return null;
         }
-
     }
 }

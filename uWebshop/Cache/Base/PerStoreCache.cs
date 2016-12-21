@@ -3,7 +3,6 @@ using Examine.SearchCriteria;
 using log4net;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -12,18 +11,13 @@ using uWebshop.Models;
 
 namespace uWebshop.Cache
 {
-    /// <summary>
-    /// For custom caches or global non store dependant caches
-    /// </summary>
-    /// <typeparam name="T1">Type of data to cache</typeparam>
-    /// <typeparam name="T2">The inheriting classes type</typeparam>
-    public abstract class BaseCache<T1, T2>
-                    where T2 : BaseCache<T1, T2>, new()
+    public abstract class PerStoreCache<T1, T2> where T2 : PerStoreCache<T1, T2>, new()
     {
         /// <summary>
         /// Retrieve the singletons Cache
         /// </summary>
-        public static ConcurrentDictionary<int, T1> Cache { get { return Instance._cache; } }
+        public static ConcurrentDictionary<string, ConcurrentDictionary<int, T1>> 
+                        Cache { get { return Instance._cache; } }
 
         /// <summary>
         /// Singleton
@@ -36,34 +30,22 @@ namespace uWebshop.Cache
         /// </summary>
         protected abstract string nodeAlias { get; }
 
-        private ConcurrentDictionary<int, T1> _cache
-          = new ConcurrentDictionary<int, T1>();
-
-
-        public void AddOrReplaceFromCache(int id, T1 newCacheItem)
-        {
-            _cache[id] = newCacheItem;
-        }
-
-        public void RemoveItemFromCache(int id)
-        {
-            T1 i = default(T1);
-            _cache.TryRemove(id, out i);
-        }
+        /// <summary>
+        /// Concurrent dictionaries per store
+        /// </summary>
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, T1>> _cache
+          = new ConcurrentDictionary<string, ConcurrentDictionary<int, T1>>();
 
         /// <summary>
-        /// Derived classes define simple instantiation methods, <para/> 
+        /// Derived classes define simple instantiation methods, 
         /// saving performance vs Activator.CreateInstance
         /// </summary>
-        protected virtual T1 New(SearchResult r)
-        {
-            return (T1)Activator.CreateInstance(typeof(T1), r);
-        }
+        protected abstract T1 New(SearchResult r, Store store);
 
         /// <summary>
         /// Base Fill cache method appropriate for most derived caches
         /// </summary>
-        public virtual void FillCache()
+        public void FillCache()
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
 
@@ -73,7 +55,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                Log.Info("Starting to fill " +
+                Log.Info("Starting to fill " + 
                     MethodBase.GetCurrentMethod().DeclaringType.FullName + "...");
 
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
@@ -81,26 +63,33 @@ namespace uWebshop.Cache
                 var results = searcher.Search(query.Compile());
                 var count   = 0;
 
-                foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+                foreach (var store in StoreCache.Cache.Select(x => x.Value))
                 {
-                    try
-                    {
-                        // Traverse up parent nodes, checking disabled status
-                        if (!r.IsItemUnpublished())
-                        {
-                            var item = New(r);
+                    _cache[store.Alias] = new ConcurrentDictionary<int, T1>();
 
-                            if (item != null)
+                    var curStoreCache = _cache[store.Alias];
+
+                    foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+                    {
+                        try
+                        {
+                            // Traverse up parent nodes, checking disabled status
+                            if (!r.IsItemDisabled(store))
                             {
-                                count++;
-                                AddOrReplaceFromCache(r.Id, item);
+                                var item = New(r, store);
+
+                                if (item != null)
+                                {
+                                    count++;
+                                    curStoreCache[r.Id] = item;
+                                }
                             }
                         }
-                    }
-                    catch
-                    {
-                        // Skip on fail
-                        Log.Info("Failed adding item with id: " + r.Id);
+                        catch
+                        {
+                            // Skip on fail
+                            Log.Info("Failed adding item with id: " + r.Id);
+                        }
                     }
                 }
 
@@ -112,6 +101,17 @@ namespace uWebshop.Cache
             {
                 Log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
             }
+        }
+
+        public void AddOrReplaceFromCache(int id, Store store, T1 newCacheItem)
+        {
+            _cache[store.Alias][id] = newCacheItem;
+        }
+
+        public bool RemoveItemFromCache(Store store, int id)
+        {
+            T1 i = default(T1);
+            return _cache[store.Alias].TryRemove(id, out i);
         }
 
         protected static readonly ILog Log =

@@ -10,10 +10,10 @@
     var currentProduct  = Catalog.GetProduct();
     var currentCategory = Catalog.GetCategory();
 
-    var products     = ProductCache.Instance._cache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
-    var categories   = CategoryCache.Instance._cache.Where(x => x.Value.Store.Alias == currentStore.Alias).Select(x => x.Value);
-    var storeDomains = StoreDomainCache.Instance._cache.Select(x => x.Value);
-    var stores       = StoreCache.Instance._cache.Select(x => x.Value);
+    var products     = ProductCache.Cache[currentStore.Alias].Select(x => x.Value);
+    var categories   = CategoryCache.Cache[currentStore.Alias].Select(x => x.Value);
+    var storeDomains = StoreDomainCache.Cache.Select(x => x.Value);
+    var stores       = StoreCache.Cache.Select(x => x.Value);
 
     var getProductWithId              = Catalog.GetProduct(1083);
     var getProductWithIdAndStoreAlias = Catalog.GetProduct("EN",1083);

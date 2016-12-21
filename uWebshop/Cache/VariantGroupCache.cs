@@ -4,10 +4,8 @@ using uWebshop.Models;
 
 namespace uWebshop.Cache
 {
-    public class VariantGroupCache : BaseCache<VariantGroup>
+    public class VariantGroupCache : PerStoreCache<VariantGroup, VariantGroupCache>
     {
-        public static VariantGroupCache Instance { get; } = new VariantGroupCache();
-
         protected override string nodeAlias { get; } = "uwbsProductVariantGroup";
 
         protected override VariantGroup New(SearchResult r, Store store)

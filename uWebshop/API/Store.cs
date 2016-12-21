@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
+using Umbraco.Core;
 using uWebshop.Cache;
 using uWebshop.Models;
 
@@ -13,7 +11,8 @@ namespace uWebshop.API
     {
         public static uWebshop.Models.Store GetStore()
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r.Store != null)
             {
@@ -25,16 +24,12 @@ namespace uWebshop.API
 
         public static uWebshop.Models.Store GetStore(string storeAlias)
         {
-            var store = StoreCache.Instance._cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
-
-            return store;
+            return StoreCache.Cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
         }
 
         public static IEnumerable<uWebshop.Models.Store> GetAllStores()
         {
-            var stores = StoreCache.Instance._cache.OrderBy(x => x.Value.Level).Select(x => x.Value);
-
-            return stores;
+            return StoreCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
         }
     }
 }

@@ -43,8 +43,8 @@ namespace uWebshop.Models
                     // Zones
                     foreach (var zone in item.Fields["zone"].Split(','))
                     {
-                        var zoneObj = ZoneCache.Instance._cache.FirstOrDefault
-                            (x => x.Value.Id.ToString() == zone).Value;
+                        var zoneObj 
+                            = ZoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
 
                         if (zone != null) Zones.Add(zoneObj);
                     }
@@ -81,7 +81,7 @@ namespace uWebshop.Models
             }
             catch (Exception ex)
             {
-                Log.Error("Error creating product item from Examine. Node id: " + item.Id, ex);
+                Log.Error("Error creating PaymentProvider from Examine. Node id: " + item.Id, ex);
                 throw;
             }
         }

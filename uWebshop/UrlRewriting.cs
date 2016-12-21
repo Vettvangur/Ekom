@@ -38,6 +38,5 @@ namespace uWebshop
                 LogHelper.Info(this.GetType(), "Exception while urlRewriting: " + ex + ", url: " + contextAbsPath);
             }
         }
-
     }
 }

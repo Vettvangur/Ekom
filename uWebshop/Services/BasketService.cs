@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Umbraco.Core;
 using uWebshop.Models;
 
 namespace uWebshop.Services
@@ -17,7 +18,8 @@ namespace uWebshop.Services
 
             string storeAlias = string.Empty;
 
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Store != null)
             {
@@ -43,6 +45,8 @@ namespace uWebshop.Services
 
         public static BasketService GetBasket()
         {
+            var httpContext = HttpContext.Current;
+            var appCache    = ApplicationContext.Current.ApplicationCache;
 
             var basketId = GetBasketIdFromCookie();
 
@@ -51,26 +55,24 @@ namespace uWebshop.Services
 
             }
 
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Store != null)
             {
                 var key = "uwbsBasket-" + r.Store.Alias;
 
                 // If the cart is not in the session, create one and put it there
-                if (HttpContext.Current.Session[key] == null)
+                if (httpContext.Session[key] == null)
                 {
                     BasketService basket = new BasketService();
                     basket.Items = new List<BasketLine>();
-                    HttpContext.Current.Session[key] = basket;
+                    httpContext.Session[key] = basket;
                 }
 
-                return (BasketService)HttpContext.Current.Session[key];
+                return (BasketService) httpContext.Session[key];
             }
 
-            return (BasketService)HttpContext.Current.Session["uwbsBasket"];
-
-
+            return (BasketService) httpContext.Session["uwbsBasket"];
         }
 
         protected BasketService() { }
@@ -97,7 +99,6 @@ namespace uWebshop.Services
                 basketItem.Quantity = quantity;
                 Items.Add(basketItem);
             }
-
         }
 
         public void AddItem(int productId, int quantity, int variantId) {
@@ -130,7 +131,6 @@ namespace uWebshop.Services
                 basketItem.Quantity = quantity;
                 Items.Add(basketItem);
             }
-
         }
     }
 }

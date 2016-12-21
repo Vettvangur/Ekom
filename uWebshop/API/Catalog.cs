@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Umbraco.Core;
 using uWebshop.Cache;
 using uWebshop.Models;
 using uWebshop.Services;
@@ -20,7 +21,8 @@ namespace uWebshop.API
                 );
         public static Product GetProduct()
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r.Product != null)
             {
@@ -31,7 +33,8 @@ namespace uWebshop.API
         }
         public static Product GetProduct(int Id)
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Store != null)
             {
@@ -44,13 +47,14 @@ namespace uWebshop.API
         }
         public static Product GetProduct(string storeAlias, int Id)
         {
-            var product = ProductCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
+            var product = ProductCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
 
             return product;
         }
         public static IEnumerable<Product> GetAllProducts()
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Store != null)
             {
@@ -64,15 +68,12 @@ namespace uWebshop.API
         }
         public static IEnumerable<Product> GetAllProducts(string storeAlias)
         {
-
-            var products = ProductCache.Instance._cache.Where(x => x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
-
-            return products;
-
+            return ProductCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
         public static Category GetCategory()
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Category != null)
             {
@@ -83,7 +84,8 @@ namespace uWebshop.API
         }
         public static Category GetCategory(int Id)
         {
-            var r = (ContentRequest)HttpContext.Current.Cache["uwbsRequest"];
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null && r.Store != null)
             {
@@ -94,12 +96,12 @@ namespace uWebshop.API
 
             return null;
         }
+
         public static Category GetCategory(string storeAlias, int Id)
         {
-            var category = CategoryCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
-
-            return category;
+            return CategoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
+
         public static IEnumerable<Category> GetRootCategories()
         {
             var store = StoreService.GetStore();
@@ -113,10 +115,15 @@ namespace uWebshop.API
 
             return null;
         }
+
         public static IEnumerable<Category> GetRootCategories(string storeAlias)
         {
-            return CategoryCache.Instance._cache.Where(x => x.Value.Level == 3 && x.Value.Store.Alias == storeAlias).OrderBy(x => x.Value.SortOrder).Select(x => x.Value);
+            return CategoryCache.Cache[storeAlias]
+                                .Where(x => x.Value.Level == 3)
+                                .Select(x => x.Value)
+                                .OrderBy(x => x.SortOrder);
         }
+
         public static Variant GetVariant(int Id)
         {
             var store = StoreService.GetStore();
@@ -134,7 +141,9 @@ namespace uWebshop.API
         {
             Log.Info("Trying to get Variant: " + Id + " Store: " + storeAlias);
 
-            var variant = VariantCache.Instance._cache.FirstOrDefault(x => x.Value.Store.Alias == storeAlias && x.Value.Id == Id).Value;
+            var variant = VariantCache.Cache[storeAlias]
+                                      .FirstOrDefault(x => x.Value.Id == Id)
+                                      .Value;
 
             if (variant == null)
             {

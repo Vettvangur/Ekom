@@ -4,10 +4,8 @@ using uWebshop.Models;
 
 namespace uWebshop.Cache
 {
-    public class CategoryCache : BaseCache<Category>
+    public class CategoryCache : PerStoreCache<Category, CategoryCache>
     {
-        public static CategoryCache Instance { get; } = new CategoryCache();
-
         protected override string nodeAlias { get; } = "uwbsCategory";
 
         protected override Category New(SearchResult r, Store store)

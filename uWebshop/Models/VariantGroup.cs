@@ -26,7 +26,9 @@ namespace uWebshop.Models
         public IEnumerable<Variant> Variants {
             get
             {
-                return VariantCache.Instance._cache.Where(x => x.Value.VariantGroupId == Id && x.Value.Store.Alias == Store.Alias).Select(x => x.Value);
+                return VariantCache.Cache[Store.Alias]
+                                   .Where(x => x.Value.VariantGroupId == Id)
+                                   .Select(x => x.Value);
             }
         }
 
