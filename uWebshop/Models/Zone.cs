@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using Umbraco.Core.Models;
 using uWebshop.Cache;
 using uWebshop.Services;
 
@@ -23,27 +24,30 @@ namespace uWebshop.Models
         public Zone() : base() { }
         public Zone(SearchResult item)
         {
-            try
+            Id    = item.Id;
+            Title = item.Fields["nodeName"];
+
+            var examineSortOrder = item.Fields["sortOrder"];
+            if (!string.IsNullOrEmpty(examineSortOrder))
             {
-                Id = item.Id;
-                Title = item.Fields["nodeName"];
-
-                var examineSortOrder = item.Fields["sortOrder"];
-                if (!string.IsNullOrEmpty(examineSortOrder))
-                {
-                    SortOrder = int.Parse(examineSortOrder);
-                }
-
-                foreach (var country in item.Fields["zone"].Split(','))
-                {
-                    Countries.Add(country);
-                }
-
+                SortOrder = int.Parse(examineSortOrder);
             }
-            catch (Exception ex)
+
+            foreach (var country in item.Fields["zone"].Split(','))
             {
-                Log.Error("Error on creating store item from Examine. Node id: " + item.Id, ex);
-                throw;
+                Countries.Add(country);
+            }
+        }
+        public Zone(IContent item)
+        {
+            Id    = item.Id;
+            Title = item.Name;
+
+            SortOrder = item.SortOrder;
+
+            foreach (var country in item.GetValue<string>("zone").Split(','))
+            {
+                Countries.Add(country);
             }
         }
 

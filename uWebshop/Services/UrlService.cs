@@ -9,19 +9,20 @@ using uWebshop.Models;
 using Umbraco.Web;
 using uWebshop.Utilities;
 using Examine;
+using uWebshop.Helpers;
+using Umbraco.Core;
 
 namespace uWebshop.Services
 {
     public static class UrlService
     {
         private static readonly ILog Log =
-        LogManager.GetLogger(
-            MethodBase.GetCurrentMethod().DeclaringType
-        );
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
 
         public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
         {
-
             var urls = new List<string>();
 
             foreach (var domain in store.Domains)
@@ -32,22 +33,20 @@ namespace uWebshop.Services
 
                 foreach (var examineItem in examineItems)
                 {
-                    string categorySlug = ExamineService.GetProperty(examineItem, "slug", store.Alias);
+                    string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
 
-                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSlug());
-
+                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
                 }
 
-                var url = builder.ToString().AddTrailing();
+                var url = builder.ToString().AddTrailing().ToLower();
 
                 urls.Add(url);
-
             }
 
             return urls;
         }
 
-        public static List<string> BuildProductUrls(string slug, List<Category> categories, Store store)
+        public static List<string> BuildProductUrls(string slug, IEnumerable<Category> categories, Store store)
         {
             var urls = new List<string>();
 
@@ -55,11 +54,10 @@ namespace uWebshop.Services
             {
                 foreach (var categoryUrl in category.Urls)
                 {
-                    var url = categoryUrl + slug.ToSlug().AddTrailing();
+                    var url = categoryUrl + slug.ToSafeAlias().AddTrailing().ToLower();
 
                     urls.Add(url);
                 }
-
             }
 
             return urls;
@@ -78,6 +76,5 @@ namespace uWebshop.Services
 
             return domainPath;
         }
-
     }
 }

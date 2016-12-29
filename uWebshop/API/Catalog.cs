@@ -104,7 +104,7 @@ namespace uWebshop.API
 
         public static IEnumerable<Category> GetRootCategories()
         {
-            var store = StoreService.GetStore();
+            var store = StoreService.GetStoreFromCache();
 
             if (store != null)
             {
@@ -126,7 +126,7 @@ namespace uWebshop.API
 
         public static Variant GetVariant(int Id)
         {
-            var store = StoreService.GetStore();
+            var store = StoreService.GetStoreFromCache();
 
             if (store != null)
             {

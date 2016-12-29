@@ -258,6 +258,7 @@
     <Compile Include="API\Catalog.cs" />
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
+    <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\PerStoreCache.cs" />
     <Compile Include="Cache\ZoneCache.cs" />
     <Compile Include="Cache\StoreDomainCache.cs" />
@@ -271,7 +272,8 @@
     <Compile Include="Cache\VariantCache.cs" />
     <Compile Include="CatalogContentFinder.cs" />
     <Compile Include="CatalogUrlProvider.cs" />
-    <Compile Include="Helpers\ExamineHelper.cs" />
+    <Compile Include="Data\Mappings.cs" />
+    <Compile Include="Helpers\NodeHelper.cs" />
     <Compile Include="Interfaces\IPrice.cs" />
     <Compile Include="Models\BasketLine.cs" />
     <Compile Include="Models\ContentRequest.cs" />
@@ -287,18 +289,13 @@
     <Compile Include="Models\VariantGroup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BasketService.cs" />
-    <Compile Include="Services\CatalogService.cs" />
-    <Compile Include="Services\ExamineService.cs" />
     <Compile Include="Services\OrderService.cs" />
     <Compile Include="Services\PriceService.cs" />
     <Compile Include="Services\StoreService.cs" />
     <Compile Include="Services\UrlService.cs" />
-    <Compile Include="UrlRewriting.cs" />
     <Compile Include="Utilities\StringExtensions.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />

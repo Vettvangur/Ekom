@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using umbraco.cms.businesslogic.web;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using uWebshop.Cache;
@@ -68,7 +69,7 @@ namespace uWebshop.Services
                              .Value;
         }
 
-        public static Store GetStore()
+        public static Store GetStoreFromCache()
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
 
@@ -79,12 +80,42 @@ namespace uWebshop.Services
                 return r.Store;
             }
 
-            if (UmbracoContext.Current != null && UmbracoContext.Current.PublishedContentRequest != null)
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the current store from available request data <para/>
+        /// Saves store in cache and cookies
+        /// </summary>
+        /// <param name="umbracoDomain"></param>
+        /// <param name="httpContext"></param>
+        /// <returns></returns>
+        public static Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
+        {
+            HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
+            string storeAlias    = storeInfo != null ? storeInfo.Values["StoreAlias"] : null;
+
+            Store store = null;
+
+            // Attempt to retrieve Store from cookie data
+            if (!string.IsNullOrEmpty(storeAlias))
             {
-                return GetStoreByDomain(UmbracoContext.Current.PublishedContentRequest.UmbracoDomain.DomainName);
+                store = GetStoreByAlias(storeAlias);
             }
 
-            return null;
+            // Get by Domain
+            if (store == null && umbracoDomain != null)
+            {
+                store = GetStoreByDomain(umbracoDomain.DomainName);
+            }
+
+            // Grab default store / First store from cache if no umbracoDomain present
+            if (store == null)
+            {
+                store = GetStoreByDomain();
+            }
+
+            return store;
         }
     }
 }

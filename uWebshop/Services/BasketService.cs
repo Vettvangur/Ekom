@@ -15,7 +15,6 @@ namespace uWebshop.Services
 
         public static Guid GetBasketIdFromCookie()
         {
-
             string storeAlias = string.Empty;
 
             var appCache = ApplicationContext.Current.ApplicationCache;
@@ -79,7 +78,7 @@ namespace uWebshop.Services
         public void AddItem(int productId, int quantity, int[] variantIds = null)
         {
             // Create a new item to add to the cart
-            BasketLine basketItem = new BasketLine(productId, variantIds);
+            var basketItem = new BasketLine(productId, variantIds);
 
             // If this item already exists in our list of items, increase the quantity
             // Otherwise, add the new item to the list
@@ -101,36 +100,9 @@ namespace uWebshop.Services
             }
         }
 
-        public void AddItem(int productId, int quantity, int variantId) {
-
-            int[] variantIds = new int[0];
-
-            if (variantId != 0)
-            {
-                variantIds = new int[variantId];
-            }
-
-            // Create a new item to add to the cart
-            BasketLine basketItem = new BasketLine(productId, variantIds);
-
-            // If this item already exists in our list of items, increase the quantity
-            // Otherwise, add the new item to the list
-            if (Items.Contains(basketItem))
-            {
-                foreach (var item in Items)
-                {
-                    if (item.Equals(basketItem))
-                    {
-                        item.Quantity += quantity;
-                        return;
-                    }
-                }
-            }
-            else
-            {
-                basketItem.Quantity = quantity;
-                Items.Add(basketItem);
-            }
+        public void AddItem(int productId, int quantity, int variantId)
+        {
+            AddItem(productId, quantity, new int[] { variantId });
         }
     }
 }

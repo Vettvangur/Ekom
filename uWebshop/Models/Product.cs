@@ -6,7 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Web;
 using Umbraco.Core;
+using Umbraco.Core.Models;
 using uWebshop.Cache;
+using uWebshop.Helpers;
 using uWebshop.Services;
 
 namespace uWebshop.Models
@@ -67,87 +69,129 @@ namespace uWebshop.Models
         public Product(): base() { }
         public Product(SearchResult item, Store store)
         {
-            try
-            {
-                var pathField = item.Fields["path"];
+            var pathField = item.Fields["path"];
 
-                var examineItemsFromPath = ExamineService.GetAllCatalogItemsFromPath(pathField);
+            int categoryId = Convert.ToInt32(item.Fields["parentID"]);
 
-                if (!CatalogService.IsItemDisabled(examineItemsFromPath, store))
-                {
-                    int categoryId = Convert.ToInt32(item.Fields["parentID"]);
+            var categoryField = item.Fields.Any(x => x.Key == "categories") ? 
+                                item.Fields["categories"] : "";
 
-                    var categoryField = item.Fields.Any(x => x.Key == "categories") ? 
-                                        item.Fields["categories"] : "";
+            var categories = new List<Category>();
 
-                    var categories = new List<Category>();
-
-                    var primaryCategory = CategoryCache.Cache[store.Alias]
-                                                       .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                       .Value;
-
-                    if (primaryCategory != null)
-                    {
-                        categories.Add(primaryCategory);
-                    }
-
-                    if (!string.IsNullOrEmpty(categoryField))
-                    {
-                        var categoryIds = categoryField.Split(',');
-
-                        foreach (var catId in categoryIds)
-                        {
-                            var intCatId = Convert.ToInt32(catId);
-
-                            var categoryItem 
-                                = CategoryCache.Cache[store.Alias]
-                                               .FirstOrDefault(x => x.Value.Id == intCatId)
+            var primaryCategory = CategoryCache.Cache[store.Alias]
+                                               .FirstOrDefault(x => x.Value.Id == categoryId)
                                                .Value;
 
-                            if (categoryItem != null && !categories.Contains(categoryItem))
-                            {
-                                categories.Add(categoryItem);
-                            }
-                        }
-                    }
+            if (primaryCategory != null)
+            {
+                categories.Add(primaryCategory);
+            }
 
-                    var priceField = ExamineService.GetProperty(item, "price", store.Alias);
+            if (!string.IsNullOrEmpty(categoryField))
+            {
+                var categoryIds = categoryField.Split(',');
 
-                    decimal originalPrice = 0;
-                    decimal.TryParse(priceField, out originalPrice);
-
-                    Id            = item.Id;
-                    Path          = pathField;
-                    OriginalPrice = originalPrice;
-                    Categories    = categories;
-                    Store         = store;
-
-                    Title         = ExamineService.GetProperty(item, "title", store.Alias);
-                    Slug          = ExamineService.GetProperty(item, "slug", store.Alias);
-
-                    SortOrder     = Convert.ToInt32(item.Fields["sortOrder"]);
-                    Level         = Convert.ToInt32(item.Fields["level"]);
-
-                    Urls          = UrlService.BuildProductUrls(Slug, Categories, store);
-
-                    if (Urls.Any() && !string.IsNullOrEmpty(Title))
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        throw new Exception("No url's or no title present");
-                    }
-                }
-                else
+                foreach (var catId in categoryIds)
                 {
-                    throw new Exception("Error product disabled. Node id: " + item.Id);
+                    var intCatId = Convert.ToInt32(catId);
+
+                    var categoryItem 
+                        = CategoryCache.Cache[store.Alias]
+                                       .FirstOrDefault(x => x.Value.Id == intCatId)
+                                       .Value;
+
+                    if (categoryItem != null && !categories.Contains(categoryItem))
+                    {
+                        categories.Add(categoryItem);
+                    }
                 }
             }
-            catch (Exception ex)
+
+            var priceField = item.GetStoreProperty("price", store.Alias);
+
+            decimal originalPrice = 0;
+            decimal.TryParse(priceField, out originalPrice);
+
+            Id            = item.Id;
+            Path          = pathField;
+            OriginalPrice = originalPrice;
+            Categories    = categories;
+            Store         = store;
+
+            Title         = item.GetStoreProperty("title", store.Alias);
+            Slug          = item.GetStoreProperty("slug", store.Alias);
+
+            SortOrder     = Convert.ToInt32(item.Fields["sortOrder"]);
+            Level         = Convert.ToInt32(item.Fields["level"]);
+
+            Urls          = UrlService.BuildProductUrls(Slug, Categories, store);
+
+            if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
-                Log.Error("Error creating product item from Examine. Node id: " + item.Id, ex);
-                throw;
+                throw new Exception("No url's or no title present");
+            }
+        }
+        public Product(IContent node, Store store)
+        {
+            var pathField = node.Path;
+
+            int categoryId = Convert.ToInt32(node.ParentId);
+
+            var categoryProperty = node.GetValue<string>("categories");
+
+            var categories = new List<Category>();
+
+            var primaryCategory = CategoryCache.Cache[store.Alias]
+                                                .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                .Value;
+
+            if (primaryCategory != null)
+            {
+                categories.Add(primaryCategory);
+            }
+
+            if (!string.IsNullOrEmpty(categoryProperty))
+            {
+                var categoryIds = categoryProperty.Split(',');
+
+                foreach (var catId in categoryIds)
+                {
+                    var intCatId = Convert.ToInt32(catId);
+
+                    var categoryItem
+                        = CategoryCache.Cache[store.Alias]
+                                        .FirstOrDefault(x => x.Value.Id == intCatId)
+                                        .Value;
+
+                    if (categoryItem != null && !categories.Contains(categoryItem))
+                    {
+                        categories.Add(categoryItem);
+                    }
+                }
+            }
+
+            var priceField = node.GetStoreProperty("price", store.Alias);
+
+            decimal originalPrice = 0;
+            decimal.TryParse(priceField, out originalPrice);
+
+            Id = node.Id;
+            Path = pathField;
+            OriginalPrice = originalPrice;
+            Categories = categories;
+            Store = store;
+
+            Title = node.GetStoreProperty("title", store.Alias);
+            Slug = node.GetStoreProperty("slug", store.Alias);
+
+            SortOrder = node.SortOrder;
+            Level = node.Level;
+
+            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+
+            if (!Urls.Any() || string.IsNullOrEmpty(Title))
+            {
+                throw new Exception("No url's or no title present");
             }
         }
 

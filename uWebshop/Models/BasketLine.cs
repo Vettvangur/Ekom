@@ -83,7 +83,7 @@ namespace uWebshop.Models
 
         public BasketLine(int productId, int[] variantIds)
         {
-            var store = StoreService.GetStore();
+            var store = StoreService.GetStoreFromCache();
 
             this.Store = store;
 

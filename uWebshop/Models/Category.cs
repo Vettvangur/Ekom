@@ -8,7 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core;
+using Umbraco.Core.Models;
 using uWebshop.Cache;
+using uWebshop.Helpers;
 using uWebshop.Services;
 
 namespace uWebshop.Models
@@ -22,7 +24,7 @@ namespace uWebshop.Models
         public int ParentCategoryId { get; set; }
         public Store Store { get; set; }
         public int SortOrder { get; set; }
-        public IEnumerable<String> Urls { get; set; }
+        public IEnumerable<string> Urls { get; set; }
         public int Level { get; set; }
         public string Url
         {
@@ -91,41 +93,45 @@ namespace uWebshop.Models
         public Category() : base() { }
         public Category(SearchResult item, Store store)
         {
-            try
-            {
-                var pathField = item.Fields["path"];
+            var pathField = item.Fields["path"];
 
-                int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
+            int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
 
-                var examineItemsFromPath = ExamineService.GetAllCatalogItemsFromPath(pathField);
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-                if (!CatalogService.IsItemDisabled(examineItemsFromPath, store))
-                {
-                    Id               = item.Id;
-                    Path             = pathField;
-                    ParentCategoryId = parentCategoryId;
-                    Store            = store;
+            Id               = item.Id;
+            Path             = pathField;
+            ParentCategoryId = parentCategoryId;
+            Store            = store;
 
-                    Title            = ExamineService.GetProperty(item, "title", store.Alias);
-                    Slug             = ExamineService.GetProperty(item, "slug", store.Alias);
+            Title            = item.GetStoreProperty("title", store.Alias);
+            Slug             = item.GetStoreProperty("slug", store.Alias);
 
-                    SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
-                    Level            = Convert.ToInt32(item.Fields["level"]);
+            SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
+            Level            = Convert.ToInt32(item.Fields["level"]);
 
-                    Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+            Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+        }
+        public Category(IContent node, Store store)
+        {
+            var pathField = node.Path;
 
-                    return;
-                }
-                else
-                {
-                    throw new Exception("Error, Catalog is disabled");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error on creating category item from Examine. Node id: " + item.Id, ex);
-                throw;
-            }
+            int parentCategoryId = node.ParentId;
+
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
+
+            Id               = node.Id;
+            Path             = pathField;
+            ParentCategoryId = parentCategoryId;
+            Store            = store;
+
+            Title = node.GetStoreProperty("title", store.Alias);
+            Slug  = node.GetStoreProperty("slug", store.Alias);
+
+            SortOrder = node.SortOrder;
+            Level     = node.Level;
+
+            Urls = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
         }
 
         private static readonly ILog Log =

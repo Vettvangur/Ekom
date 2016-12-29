@@ -21,23 +21,28 @@ namespace uWebshop.Models
         public Store(): base() { }
         public Store (SearchResult item)
         {
-            try
-            {
-                Id               = item.Id;
-                Alias            = item.Fields["nodeName"];
+            Id               = item.Id;
+            Alias            = item.Fields["nodeName"];
 
-                StoreRootNode    = Convert.ToInt32(item.Fields["storeRootNode"]);
-                Level            = Convert.ToInt32(item.Fields["level"]);
+            StoreRootNode    = Convert.ToInt32(item.Fields["storeRootNode"]);
+            Level            = Convert.ToInt32(item.Fields["level"]);
 
-                Domains          = StoreDomainCache.Cache
-                                                   .Where(x => x.Value.RootContentId == StoreRootNode)
-                                                   .Select(x => x.Value);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error on creating store item from Examine. Node id: " + item.Id, ex);
-                throw;
-            }
+            Domains          = StoreDomainCache.Cache
+                                               .Where(x => x.Value.RootContentId == StoreRootNode)
+                                               .Select(x => x.Value);
+        }
+        public Store(IContent item)
+        {
+            Id = item.Id;
+            Alias = item.Name;
+
+            StoreRootNode = item.GetValue<int>("storeRootNode");
+            Level = item.Level;
+
+            Domains = StoreDomainCache.Cache
+                                      .Where(x => x.Value.RootContentId == StoreRootNode)
+                                      .Select(x => x.Value);
+
         }
 
         private static readonly ILog Log =
