@@ -20,7 +20,7 @@ namespace uWebshop.Cache
     /// The inheriting class itself, <para/>
     /// we use this param to deduce the singleton type to create
     /// </typeparam>
-    public abstract class PerStoreCache<TItem, Tself> : ICache
+    public abstract class PerStoreCache<TItem, Tself> : ICache, IPerStoreCache
                     where Tself : PerStoreCache<TItem, Tself>, new()
     {
         /// <summary>
@@ -43,7 +43,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Concurrent dictionaries per store
         /// </summary>
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>> _cache
+        protected ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>> _cache
           = new ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>>();
 
         /// <summary>
@@ -53,9 +53,20 @@ namespace uWebshop.Cache
         protected abstract TItem New(SearchResult r, Store store);
 
         /// <summary>
-        /// Base Fill cache method appropriate for most derived caches
+        /// <see cref="ICache"/> implementation.
+        /// Allows us to have a common interface for all caches
         /// </summary>
         public void FillCache()
+        {
+            FillCache(null);
+        }
+
+        /// <summary>
+        /// Base Fill cache method appropriate for most derived caches
+        /// </summary>
+        /// <param name="storeParam">This parameter is supplied when adding a store at runtime, 
+        /// triggering the given stores filling</param>
+        public void FillCache(Store storeParam = null)
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
 
@@ -68,37 +79,21 @@ namespace uWebshop.Cache
                 Log.Info("Starting to fill " + typeof(Tself).FullName + "...");
 
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query   = searchCriteria.NodeTypeAlias(nodeAlias);
-                var results = searcher.Search(query.Compile());
-                var count   = 0;
+                IBooleanOperation query        = searchCriteria.NodeTypeAlias(nodeAlias);
+                ISearchResults results         = searcher.Search(query.Compile());
 
-                foreach (var store in StoreCache.Cache.Select(x => x.Value))
+                int count = 0;
+
+                if (storeParam == null) // Startup initalization
                 {
-                    _cache[store.Alias] = new ConcurrentDictionary<int, TItem>();
-
-                    var curStoreCache = _cache[store.Alias];
-
-                    foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+                    foreach (var store in StoreCache.Cache.Select(x => x.Value))
                     {
-                        try
-                        {
-                            // Traverse up parent nodes, checking disabled status and published status
-                            if (!r.IsItemDisabled(store))
-                            {
-                                var item = New(r, store);
-
-                                if (item != null)
-                                {
-                                    count++;
-                                    curStoreCache[r.Id] = item;
-                                }
-                            }
-                        }
-                        catch (Exception ex) // Skip on fail
-                        {
-                            Log.Error("Error on adding item with id: " + r.Id + " from Examine", ex);
-                        }
+                        count += FillStoreCache(store, results);
                     }
+                }
+                else // Triggered with dynamic addition/removal of store
+                {
+                    count += FillStoreCache(storeParam, results);
                 }
 
                 stopwatch.Stop();
@@ -109,6 +104,45 @@ namespace uWebshop.Cache
             {
                 Log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
             }
+        }
+
+        /// <summary>
+        /// Fill the given stores cache of <see cref="TItem"/>
+        /// </summary>
+        /// <param name="store">The current store being filled of <see cref="TItem"/></param>
+        /// <param name="results">Examine search results</param>
+        /// <returns>Count of items added</returns>
+        private int FillStoreCache(Store store, ISearchResults results)
+        {
+            int count = 0;
+
+            _cache[store.Alias] = new ConcurrentDictionary<int, TItem>();
+
+            var curStoreCache = _cache[store.Alias];
+
+            foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+            {
+                try
+                {
+                    // Traverse up parent nodes, checking disabled status and published status
+                    if (!r.IsItemDisabled(store))
+                    {
+                        var item = New(r, store);
+
+                        if (item != null)
+                        {
+                            count++;
+                            curStoreCache[r.Id] = item;
+                        }
+                    }
+                }
+                catch (Exception ex) // Skip on fail
+                {
+                    Log.Error("Error on adding item with id: " + r.Id + " from Examine", ex);
+                }
+            }
+
+            return count;
         }
 
         public void AddOrReplaceFromCache(int id, Store store, TItem newCacheItem)
@@ -162,7 +196,7 @@ namespace uWebshop.Cache
         /// <see cref="ICache"/> implementation,
         /// handles addition of nodes when umbraco events fire
         /// </summary>
-        public void AddReplace(IContent node)
+        public virtual void AddReplace(IContent node)
         {
             AddOrReplaceFromAllCaches(node);
         }
@@ -171,7 +205,7 @@ namespace uWebshop.Cache
         /// <see cref="ICache"/> implementation,
         /// handles removal of nodes when umbraco events fire
         /// </summary>
-        public void Remove(int id)
+        public virtual void Remove(int id)
         {
             RemoveItemFromAllCaches(id);
         }

@@ -6,7 +6,6 @@ using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
 using uWebshop.Cache;
-using uWebshop.Data;
 
 namespace uWebshop
 {
@@ -30,14 +29,7 @@ namespace uWebshop
             LogHelper.Info(GetType(), "OnApplicationStarted...");
 
             // Fill Caches
-            StoreDomainCache.Instance.FillCache();
-            StoreCache.Instance.FillCache();
-            VariantCache.Instance.FillCache();
-            VariantGroupCache.Instance.FillCache();
-            CategoryCache.Instance.FillCache();
-            ProductCache.Instance.FillCache();
-            ZoneCache.Instance.FillCache();
-            PaymentProviderCache.Instance.FillCache();
+            Data.InitializationSequence.initSeq.ForEach(cache => cache.FillCache());
 
             // Hook into Umbraco Events
             ContentService.Published += ContentService_Published;
@@ -50,9 +42,9 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                if (Mappings.registeredTypes.ContainsKey(node.ContentType.Alias))
+                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
                 {
-                    Mappings.registeredTypes[node.ContentType.Alias].AddReplace(node);
+                    Data.registeredTypes[node.ContentType.Alias].AddReplace(node);
                 }
             }
         }
@@ -62,9 +54,9 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                if (Mappings.registeredTypes.ContainsKey(node.ContentType.Alias))
+                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
                 {
-                    Mappings.registeredTypes[node.ContentType.Alias].Remove(node.Id);
+                    Data.registeredTypes[node.ContentType.Alias].Remove(node.Id);
                 }
             }
         }
@@ -73,9 +65,9 @@ namespace uWebshop
         {
             foreach (var node in args.DeletedEntities)
             {
-                if (Mappings.registeredTypes.ContainsKey(node.ContentType.Alias))
+                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
                 {
-                    Mappings.registeredTypes[node.ContentType.Alias].Remove(node.Id);
+                    Data.registeredTypes[node.ContentType.Alias].Remove(node.Id);
                 }
             }
         }

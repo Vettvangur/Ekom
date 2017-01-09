@@ -259,6 +259,7 @@
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
+    <Compile Include="Cache\Base\IPerStoreCache.cs" />
     <Compile Include="Cache\Base\PerStoreCache.cs" />
     <Compile Include="Cache\ZoneCache.cs" />
     <Compile Include="Cache\StoreDomainCache.cs" />
@@ -272,7 +273,7 @@
     <Compile Include="Cache\VariantCache.cs" />
     <Compile Include="CatalogContentFinder.cs" />
     <Compile Include="CatalogUrlProvider.cs" />
-    <Compile Include="Data\Mappings.cs" />
+    <Compile Include="Data.cs" />
     <Compile Include="Helpers\NodeHelper.cs" />
     <Compile Include="Interfaces\IPrice.cs" />
     <Compile Include="Models\BasketLine.cs" />

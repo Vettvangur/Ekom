@@ -110,11 +110,11 @@ namespace uWebshop.Cache
         /// <see cref="ICache"/> implementation, <para/>
         /// handles addition of nodes when umbraco events fire
         /// </summary>
-        public void AddReplace(IContent node)
+        public virtual void AddReplace(IContent node)
         {
             if (!node.IsItemUnpublished())
             {
-                var item = (TItem) Activator.CreateInstance(typeof(TItem), node.Id);
+                var item = (TItem) Activator.CreateInstance(typeof(TItem), node);
 
                 if (item != null) AddOrReplaceFromCache(node.Id, item);
             }
@@ -124,7 +124,7 @@ namespace uWebshop.Cache
         /// <see cref="ICache"/> implementation, <para/>
         /// handles removal of nodes when umbraco events fire
         /// </summary>
-        public void Remove(int id)
+        public virtual void Remove(int id)
         {
             RemoveItemFromCache(id);
         }

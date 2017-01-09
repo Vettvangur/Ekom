@@ -16,5 +16,7 @@ namespace uWebshop.Cache
         void AddReplace(IContent node);
 
         void Remove(int id);
+
+        void FillCache();
     }
 }

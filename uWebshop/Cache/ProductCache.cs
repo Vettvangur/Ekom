@@ -1,6 +1,7 @@
 ﻿using System;
 using Examine;
 using uWebshop.Models;
+using Umbraco.Core.Models;
 
 namespace uWebshop.Cache
 {

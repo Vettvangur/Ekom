@@ -5,6 +5,9 @@ using System.Diagnostics;
 using uWebshop.Models;
 using System;
 using System.Collections.Concurrent;
+using Umbraco.Core.Models;
+using uWebshop.Helpers;
+using System.Collections.Generic;
 
 namespace uWebshop.Cache
 {
@@ -60,6 +63,32 @@ namespace uWebshop.Cache
             else
             {
                 Log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
+            }
+        }
+
+        /// <summary>
+        /// <see cref="ICache"/> implementation.
+        /// <see cref="StoreCache"/> specific implementation triggers refill of all <see cref="PerStoreCache{TItem, Tself}"/>
+        /// </summary>
+        public override void AddReplace(IContent node)
+        {
+            if (!node.IsItemUnpublished())
+            {
+                var item = new Store(node);
+
+                if (item != null)
+                {
+                    AddOrReplaceFromCache(node.Id, item);
+
+                    IEnumerable<ICache> succeedingCaches = Data.InitializationSequence.Succeeding(this);
+
+                    // Refill all per store caches
+                    foreach (var cache in succeedingCaches)
+                    {
+                        if (cache is IPerStoreCache)
+                           (cache as IPerStoreCache).FillCache(item);
+                    }
+                }
             }
         }
     }
