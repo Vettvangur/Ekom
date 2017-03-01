@@ -126,8 +126,9 @@ namespace uWebshop.Helpers
 
         /// <summary>
         /// Determine if an examine item is disabled/unpublished <para />
-        /// Traverses up content tree, checking all parents
+        /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
+        /// <param name="store">Used to look for umbraco properties matching stores country code </param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(this SearchResult searchResult, 
                                           Store store, 
@@ -164,8 +165,9 @@ namespace uWebshop.Helpers
 
         /// <summary>
         /// Determine if an <see cref="IContent"/> item is disabled/unpublished <para />
-        /// Traverses up content tree, checking all parents
+        /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
+        /// <param name="store">Used to look for umbraco properties matching stores country code </param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(this IContent node,
                                           Store store,
