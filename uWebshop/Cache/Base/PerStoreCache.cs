@@ -59,11 +59,12 @@ namespace uWebshop.Cache
         /// </summary>
         public void FillCache()
         {
-            var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
-
-            if (cacheExtensions != null) cacheExtensions.FillCache();
-
-            else FillCacheInternal(null);
+            if (Extending.CacheExtensionMap.ContainsKey(typeof(Tself)))
+            {
+                var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
+                cacheExtensions.FillCache();
+            }
+            else FillCacheInternal();
         }
 
         /// <summary>

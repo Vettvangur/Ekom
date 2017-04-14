@@ -44,7 +44,6 @@ namespace uWebshop
 
                 Store store = StoreService.GetStore(contentRequest.UmbracoDomain, httpContext);
 
-
                 #region Product and/or Category
 
                 // Requesting Product?
