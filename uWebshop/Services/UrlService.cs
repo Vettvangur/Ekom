@@ -46,6 +46,56 @@ namespace uWebshop.Services
             return urls;
         }
 
+        public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
+        {
+            var urls = new List<string>();
+
+            foreach (var domain in store.Domains)
+            {
+                StringBuilder builder = new StringBuilder();
+
+                string domainPath = GetDomainPrefix(domain.DomainName);
+
+                foreach (var examineItem in examineItems)
+                {
+                    string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
+
+                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
+                }
+
+                var url = builder.ToString().AddTrailing().ToLower();
+
+                urls.Add(url);
+            }
+
+            return urls;
+        }
+
+        public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
+        {
+            var urls = new List<string>();
+
+            foreach (var domain in store.Domains)
+            {
+                StringBuilder builder = new StringBuilder();
+
+                string domainPath = GetDomainPrefix(domain.DomainName);
+
+                foreach (var examineItem in examineItems)
+                {
+                    string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
+
+                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
+                }
+
+                var url = builder.ToString().AddTrailing().ToLower();
+
+                urls.Add(url);
+            }
+
+            return urls;
+        }
+
         public static List<string> BuildProductUrls(string slug, IEnumerable<Category> categories, Store store)
         {
             var urls = new List<string>();
