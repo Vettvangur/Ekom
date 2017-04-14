@@ -45,6 +45,7 @@ namespace uWebshop
                 PaymentProviderCache.Instance,
             };
 
+
             /// <summary>
             /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache
             /// </summary>

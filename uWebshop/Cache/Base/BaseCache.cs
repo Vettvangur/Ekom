@@ -19,7 +19,7 @@ namespace uWebshop.Cache
     /// <typeparam name="TItem">Type of data to cache</typeparam>
     /// <typeparam name="Tself">The inheriting classes type</typeparam>
     public abstract class BaseCache<TItem, Tself> : ICache
-            where Tself : BaseCache<TItem, Tself>, new()
+            where Tself : BaseCache<TItem, Tself>
     {
         /// <summary>
         /// Retrieve the singletons Cache
@@ -29,8 +29,9 @@ namespace uWebshop.Cache
         /// <summary>
         /// Singleton
         /// </summary>
-        public static Tself Instance { get; } = new Tself();
+        public static Tself Instance { get; internal set; }
 
+        protected ICacheExtensions extensions;
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -40,6 +41,11 @@ namespace uWebshop.Cache
         private ConcurrentDictionary<int, TItem> _cache
           = new ConcurrentDictionary<int, TItem>();
 
+
+        public BaseCache(ICacheExtensions ext)
+        {
+            extensions = ext;
+        }
 
         public void AddOrReplaceFromCache(int id, TItem newCacheItem)
         {

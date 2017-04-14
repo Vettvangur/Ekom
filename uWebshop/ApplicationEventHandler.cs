@@ -1,10 +1,12 @@
-﻿using Umbraco.Core;
+﻿using System;
+using Umbraco.Core;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
+using uWebshop.Extend;
 using uWebshop.Cache;
 
 namespace uWebshop
@@ -27,6 +29,17 @@ namespace uWebshop
         public void OnApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             LogHelper.Info(GetType(), "OnApplicationStarted...");
+
+            // Initialize Singletons
+            for (var x = 0; x < Data.InitializationSequence.initSeq.Length; x--)
+            {
+                var cache = Data.InitializationSequence.initSeq[x];
+                var cacheType = cache.GetType();
+
+                var args = Extensions.CacheExtensionMap[cacheType];
+
+                cache = (ICache) Activator.CreateInstance(cacheType, args);
+            }
 
             // Fill Caches
             Data.InitializationSequence.initSeq.ForEach(cache => cache.FillCache());

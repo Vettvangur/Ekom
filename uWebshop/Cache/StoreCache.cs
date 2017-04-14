@@ -15,6 +15,8 @@ namespace uWebshop.Cache
     {
         protected override string nodeAlias { get; } = "uwbsStore";
 
+        public StoreCache(ICacheExtensions ext) : base(ext) { }
+
         /// <summary>
         /// Fill Store cache with all products in examine
         /// </summary>
