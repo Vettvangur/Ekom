@@ -35,7 +35,7 @@ namespace uWebshop
 
                 // Allows for configuration of content nodes to use for matching all requests
                 // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
-                var virtualContent = ConfigurationManager.AppSettings["virtualContent"];
+                var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
 
                 var path = contentRequest.Uri
                                          .GetAbsolutePathDecoded()
