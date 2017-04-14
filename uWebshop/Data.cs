@@ -37,12 +37,12 @@ namespace uWebshop
             {
                 StoreDomainCache.Instance,
                 StoreCache.Instance,
-                VariantCache.Instance,
-                VariantGroupCache.Instance,
+                //VariantCache.Instance,
+                //VariantGroupCache.Instance,
                 CategoryCache.Instance,
-                ProductCache.Instance,
-                ZoneCache.Instance,
-                PaymentProviderCache.Instance,
+                //ProductCache.Instance,
+                //ZoneCache.Instance,
+                //PaymentProviderCache.Instance,
             };
 
 
