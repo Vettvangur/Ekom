@@ -10,6 +10,6 @@ namespace uWebshop.Cache
 {
     public interface IPerStoreCache
     {
-        void FillCache(Store store);
+        void FillCacheInternal(Store store);
     }
 }

@@ -12,12 +12,10 @@ namespace uWebshop.Cache
     {
         protected override string nodeAlias { get; } = "Does not apply";
 
-        public StoreDomainCache(ICacheExtensions ext) : base(ext) { }
-
         /// <summary>
         /// Fill store domain cache with domains from domain service
         /// </summary>
-        public override void FillCache()
+        public override void FillCacheInternal()
         {
             var domains = StoreService.GetAllStoreDomains();
 

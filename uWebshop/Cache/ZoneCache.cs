@@ -11,8 +11,6 @@ namespace uWebshop.Cache
     {
         protected override string nodeAlias { get; } = "uwbsZone";
 
-        public ZoneCache(ICacheExtensions ext) : base(ext) { }
-
         private Zone New(SearchResult r, Store store)
         {
             return new Zone(r);

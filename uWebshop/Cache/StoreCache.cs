@@ -15,12 +15,10 @@ namespace uWebshop.Cache
     {
         protected override string nodeAlias { get; } = "uwbsStore";
 
-        public StoreCache(ICacheExtensions ext) : base(ext) { }
-
         /// <summary>
         /// Fill Store cache with all products in examine
         /// </summary>
-        public override void FillCache()
+        public override void FillCacheInternal()
         {
             BaseSearchProvider searcher = null;
 
@@ -88,7 +86,7 @@ namespace uWebshop.Cache
                     foreach (var cache in succeedingCaches)
                     {
                         if (cache is IPerStoreCache)
-                           (cache as IPerStoreCache).FillCache(item);
+                           (cache as IPerStoreCache).FillCacheInternal(item);
                     }
                 }
             }

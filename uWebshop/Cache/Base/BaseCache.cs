@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
+using uWebshop.Extend;
 using uWebshop.Helpers;
 using uWebshop.Models;
 
@@ -19,7 +20,7 @@ namespace uWebshop.Cache
     /// <typeparam name="TItem">Type of data to cache</typeparam>
     /// <typeparam name="Tself">The inheriting classes type</typeparam>
     public abstract class BaseCache<TItem, Tself> : ICache
-            where Tself : BaseCache<TItem, Tself>
+            where Tself : BaseCache<TItem, Tself>, new()
     {
         /// <summary>
         /// Retrieve the singletons Cache
@@ -29,9 +30,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Singleton
         /// </summary>
-        public static Tself Instance { get; internal set; }
-
-        protected ICacheExtensions extensions;
+        public static Tself Instance { get; } = new Tself();
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -41,11 +40,6 @@ namespace uWebshop.Cache
         private ConcurrentDictionary<int, TItem> _cache
           = new ConcurrentDictionary<int, TItem>();
 
-
-        public BaseCache(ICacheExtensions ext)
-        {
-            extensions = ext;
-        }
 
         public void AddOrReplaceFromCache(int id, TItem newCacheItem)
         {
@@ -68,9 +62,21 @@ namespace uWebshop.Cache
         }
 
         /// <summary>
+        /// Determine if we should run extension methods
+        /// </summary>
+        public void FillCache()
+        {
+            var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
+
+            if (cacheExtensions != null) cacheExtensions.FillCache();
+
+            else FillCacheInternal();
+        }
+
+        /// <summary>
         /// Base FillCache method appropriate for most derived caches
         /// </summary>
-        public virtual void FillCache()
+        public virtual void FillCacheInternal()
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
 

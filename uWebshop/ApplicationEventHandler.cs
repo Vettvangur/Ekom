@@ -30,16 +30,7 @@ namespace uWebshop
         {
             LogHelper.Info(GetType(), "OnApplicationStarted...");
 
-            // Initialize Singletons
-            for (var x = 0; x < Data.InitializationSequence.initSeq.Length; x--)
-            {
-                var cache = Data.InitializationSequence.initSeq[x];
-                var cacheType = cache.GetType();
-
-                var args = Extensions.CacheExtensionMap[cacheType];
-
-                cache = (ICache) Activator.CreateInstance(cacheType, args);
-            }
+            // Settings
 
             // Fill Caches
             Data.InitializationSequence.initSeq.ForEach(cache => cache.FillCache());

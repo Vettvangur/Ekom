@@ -10,7 +10,7 @@ namespace uWebshop.Extend
     /// <summary>
     /// Extend the uwebshop solution
     /// </summary>
-    public static class Extensions
+    public static class Extending
     {
         /// <summary>
         /// Offers ways to extend caches by offering up <see cref="ICacheExtensions"/> to replace
