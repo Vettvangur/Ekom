@@ -21,21 +21,26 @@ namespace uWebshop.Services
                 MethodBase.GetCurrentMethod().DeclaringType
             );
 
-        public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
+        /// <summary>
+        /// Build URLs for category
+        /// </summary>
+        /// <param name="examineItems">All categories in hierarchy inclusive</param>
+        /// <returns>Collection of urls for all domains</returns>
+        public static IEnumerable<string> BuildCategoryUrls(IEnumerable<SearchResult> examineItems, Store store)
         {
-            var urls = new List<string>();
+            var urls = new HashSet<string>();
 
             foreach (var domain in store.Domains)
             {
-                StringBuilder builder = new StringBuilder();
-
                 string domainPath = GetDomainPrefix(domain.DomainName);
+
+                StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
 
                 foreach (var examineItem in examineItems)
                 {
                     string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
 
-                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
+                    builder.Append(categorySlug.ToSafeAlias());
                 }
 
                 var url = builder.ToString().AddTrailing().ToLower();
@@ -46,22 +51,26 @@ namespace uWebshop.Services
             return urls;
         }
 
-        public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
+        /// <summary>
+        /// Build category urls from a collection of parent slugs and the slug of observed category.
+        /// Used f.x. by Wurth
+        /// </summary>
+        /// <param name="slug">Short name of category</param>
+        /// <param name="hierarchy">Slugs of all parents</param>
+        /// <returns>Collection of urls for all domains</returns>
+        public static IEnumerable<string> BuildCategoryUrls(string slug, IEnumerable<string> hierarchy, Store store)
         {
-            var urls = new List<string>();
+            var urls = new HashSet<string>();
 
             foreach (var domain in store.Domains)
             {
-                StringBuilder builder = new StringBuilder();
-
                 string domainPath = GetDomainPrefix(domain.DomainName);
 
-                foreach (var examineItem in examineItems)
-                {
-                    string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
+                StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
 
-                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
-                }
+                hierarchy.ForEach(item => builder.Append(item + "/"));
+
+                builder.Append(slug.ToSafeAlias());
 
                 var url = builder.ToString().AddTrailing().ToLower();
 
@@ -71,34 +80,9 @@ namespace uWebshop.Services
             return urls;
         }
 
-        public static List<string> BuildCategoryUrl(string slug, IEnumerable<SearchResult> examineItems, Store store)
+        public static IEnumerable<string> BuildProductUrls(string slug, IEnumerable<Category> categories, Store store)
         {
-            var urls = new List<string>();
-
-            foreach (var domain in store.Domains)
-            {
-                StringBuilder builder = new StringBuilder();
-
-                string domainPath = GetDomainPrefix(domain.DomainName);
-
-                foreach (var examineItem in examineItems)
-                {
-                    string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
-
-                    builder.AppendFormat("{0}/{1}", domainPath, categorySlug.ToSafeAlias());
-                }
-
-                var url = builder.ToString().AddTrailing().ToLower();
-
-                urls.Add(url);
-            }
-
-            return urls;
-        }
-
-        public static List<string> BuildProductUrls(string slug, IEnumerable<Category> categories, Store store)
-        {
-            var urls = new List<string>();
+            var urls = new HashSet<string>();
 
             foreach (var category in categories)
             {
@@ -115,16 +99,19 @@ namespace uWebshop.Services
 
         public static string GetDomainPrefix(string url)
         {
-            var domainPath = string.Empty;
+            // Handle domains w/ scheme
+            bool _uriResult = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
 
-            if (url.IndexOf("/") > 0)
+            if (_uriResult)
+            {
+                return uriResult.AbsolutePath;
+            }
+            else
             {
                 var firstIndexOf = url.IndexOf("/");
 
-                domainPath = url.Substring(firstIndexOf, url.Length - firstIndexOf);
+                return firstIndexOf > 0 ? url.Substring(firstIndexOf) : string.Empty;
             }
-
-            return domainPath;
         }
     }
 }
