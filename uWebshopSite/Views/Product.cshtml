@@ -32,6 +32,13 @@
     <p>Get Product ID: @getProductWithId.Title</p>
     <p>Get Product ID And Alias: @getProductWithIdAndStoreAlias.Title</p>
 
+    <ul>
+        @foreach(var url in currentProduct.Urls)
+        {
+            <li>@url</li>
+        }
+    </ul>
+
     <h4>Products</h4>
 
     @foreach (var product in products.Where(x => !string.IsNullOrEmpty(x.Title)).OrderBy(x => x.SortOrder))
