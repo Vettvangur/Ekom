@@ -38,7 +38,7 @@ namespace uWebshop
                 var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
 
                 var path = contentRequest.Uri
-                                         .GetAbsolutePathDecoded()
+                                         .AbsolutePath
                                          .ToLower()
                                          .AddTrailing();
 
@@ -48,9 +48,9 @@ namespace uWebshop
 
                 // Requesting Product?
                 var product = ProductCache.Cache[store.Alias]
-                                      .FirstOrDefault(x => x.Value.Urls != null &&
-                                                           x.Value.Urls.Contains(path))
-                                      .Value;
+                                          .FirstOrDefault(x => x.Value.Urls != null &&
+                                                               x.Value.Urls.Contains(path))
+                                          .Value;
 
                 int contentId = 0;
                 Category category;
