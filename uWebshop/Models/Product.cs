@@ -31,14 +31,9 @@ namespace uWebshop.Models
                 var appCache = ApplicationContext.Current.ApplicationCache;
                 var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var defaultUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                if (findUrlByPrefix != null) {
-                    return findUrlByPrefix;
-                }
-
-                return defaultUrl;
+                return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
         public IEnumerable<string> Urls { get; set; }

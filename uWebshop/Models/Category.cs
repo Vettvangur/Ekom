@@ -33,15 +33,9 @@ namespace uWebshop.Models
                 var appCache = ApplicationContext.Current.ApplicationCache;
                 var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var defaulUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                if (findUrlByPrefix != null)
-                {
-                    return findUrlByPrefix;
-                }
-
-                return defaulUrl;
+                return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
         public IEnumerable<Category> SubCategories
@@ -110,7 +104,7 @@ namespace uWebshop.Models
             SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
             Level            = Convert.ToInt32(item.Fields["level"]);
 
-            Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+            Urls             = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
         public Category(IContent node, Store store)
         {
@@ -131,7 +125,7 @@ namespace uWebshop.Models
             SortOrder = node.SortOrder;
             Level     = node.Level;
 
-            Urls = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+            Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
 
         private static readonly ILog Log =
