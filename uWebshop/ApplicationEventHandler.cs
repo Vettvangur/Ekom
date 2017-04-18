@@ -8,6 +8,7 @@ using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
 using uWebshop.Extend;
 using uWebshop.Cache;
+using System.Configuration;
 
 namespace uWebshop
 {
@@ -35,10 +36,17 @@ namespace uWebshop
             // Fill Caches
             Data.InitializationSequence.initSeq.ForEach(cache => cache.FillCache());
 
-            // Hook into Umbraco Events
-            ContentService.Published += ContentService_Published;
-            ContentService.UnPublished += ContentService_UnPublished;
-            ContentService.Deleted += ContentService_Deleted;
+            // Allows for configuration of content nodes to use for matching all requests
+            // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+            var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
+
+            if (!virtualContent.InvariantEquals("true"))
+            {
+                // Hook into Umbraco Events
+                ContentService.Published += ContentService_Published;
+                ContentService.UnPublished += ContentService_UnPublished;
+                ContentService.Deleted += ContentService_Deleted;
+            }
         }
 
         private void ContentService_Published(IPublishingStrategy sender, 
