@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
@@ -15,6 +17,7 @@ using uWebshop.Services;
 
 namespace uWebshop.Models
 {
+    [JsonObject(IsReference = true)]
     public class Category
     {
         public int Id { get; set; }
@@ -48,6 +51,9 @@ namespace uWebshop.Models
                                     .OrderBy(x => x.SortOrder);
             }
         }
+
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Product> Products
         {
             get
@@ -59,6 +65,8 @@ namespace uWebshop.Models
             }
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Category> SubCategoriesRecursive
         {
             get
@@ -71,6 +79,8 @@ namespace uWebshop.Models
             }
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Product> ProductsRecursive
         {
             get

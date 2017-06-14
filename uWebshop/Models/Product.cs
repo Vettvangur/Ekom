@@ -1,10 +1,12 @@
 ﻿using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
@@ -36,7 +38,10 @@ namespace uWebshop.Models
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
+
         public IEnumerable<string> Urls { get; set; }
+        [ScriptIgnore]
+        [JsonIgnore]
         public Price Price
         {
             get
