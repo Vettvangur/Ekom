@@ -17,7 +17,6 @@ using uWebshop.Services;
 
 namespace uWebshop.Models
 {
-    [JsonObject(IsReference = true)]
     public class Category
     {
         public int Id { get; set; }
