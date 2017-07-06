@@ -6,6 +6,7 @@ using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
 using uWebshop.Cache;
+using uWebshop.Helpers;
 
 namespace uWebshop
 {
@@ -47,11 +48,13 @@ namespace uWebshop
                     Data.registeredTypes[node.ContentType.Alias].AddReplace(node);
                 }
             }
+
         }
 
         private void ContentService_UnPublished(IPublishingStrategy sender, 
                                                 PublishEventArgs<IContent> args)
         {
+
             foreach (var node in args.PublishedEntities)
             {
                 if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))

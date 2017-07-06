@@ -11,6 +11,7 @@ using uWebshop.Utilities;
 using Examine;
 using uWebshop.Helpers;
 using Umbraco.Core;
+using uWebshop.Interfaces;
 
 namespace uWebshop.Services
 {
@@ -46,7 +47,7 @@ namespace uWebshop.Services
             return urls;
         }
 
-        public static List<string> BuildProductUrls(string slug, IEnumerable<Category> categories, Store store)
+        public static List<string> BuildProductUrls(string slug, IEnumerable<ICategory> categories, Store store)
         {
             var urls = new List<string>();
 

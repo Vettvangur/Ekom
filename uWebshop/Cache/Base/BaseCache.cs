@@ -66,7 +66,7 @@ namespace uWebshop.Cache
         /// </summary>
         public virtual void FillCache()
         {
-            var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+            var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
 
             if (searcher != null && !string.IsNullOrEmpty(nodeAlias))
             {
@@ -76,24 +76,31 @@ namespace uWebshop.Cache
 
                 Log.Info("Starting to fill " + typeof(Tself).FullName + "...");
 
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query   = searchCriteria.NodeTypeAlias(nodeAlias);
-                var results = searcher.Search(query.Compile());
-                var count   = 0;
+                var count = 0;
 
-                foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+                try
                 {
-                    // Traverse up parent nodes, checking only published status
-                    if (!r.IsItemUnpublished())
+                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                    var query = searchCriteria.NodeTypeAlias(nodeAlias);
+                    var results = searcher.Search(query.Compile());
+                   
+                    foreach (var r in results.Where(x => x.Fields["template"] != "0"))
                     {
-                        var item = New(r);
-
-                        if (item != null)
+                        // Traverse up parent nodes, checking only published status
+                        if (!r.IsItemUnpublished())
                         {
-                            count++;
-                            AddOrReplaceFromCache(r.Id, item);
+                            var item = New(r);
+
+                            if (item != null)
+                            {
+                                count++;
+                                AddOrReplaceFromCache(r.Id, item);
+                            }
                         }
                     }
+                } catch (Exception ex)
+                {
+                    Log.Error("Filling Base Cache Failed!", ex);
                 }
 
                 stopwatch.Stop();

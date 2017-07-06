@@ -7,9 +7,9 @@ using uWebshop.Models;
 
 namespace uWebshop.API
 {
-    public static class Store
+    public class Store
     {
-        public static uWebshop.Models.Store GetStore()
+        public static Models.Store GetStore()
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
             var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
@@ -22,12 +22,12 @@ namespace uWebshop.API
             return null;
         }
 
-        public static uWebshop.Models.Store GetStore(string storeAlias)
+        public static Models.Store GetStore(string storeAlias)
         {
             return StoreCache.Cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
         }
 
-        public static IEnumerable<uWebshop.Models.Store> GetAllStores()
+        public static IEnumerable<Models.Store> GetAllStores()
         {
             return StoreCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
         }

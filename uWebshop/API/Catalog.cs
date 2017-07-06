@@ -8,12 +8,13 @@ using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core;
 using uWebshop.Cache;
+using uWebshop.Interfaces;
 using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.API
 {
-    public static class Catalog
+    public class Catalog
     {
         private static readonly ILog Log =
                 LogManager.GetLogger(
@@ -31,6 +32,27 @@ namespace uWebshop.API
 
             return null;
         }
+        public static Product GetProduct(Guid Id)
+        {
+            var appCache = ApplicationContext.Current.ApplicationCache;
+            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+
+            if (r != null && r.Store != null)
+            {
+                var product = GetProduct(r.Store.Alias, Id);
+
+                return product;
+            }
+
+            return null;
+        }
+
+        public static Product GetProduct(string storeAlias, Guid Id)
+        {
+            var product = ProductCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == Id).Value;
+
+            return product;
+        }
         public static Product GetProduct(int Id)
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
@@ -45,6 +67,7 @@ namespace uWebshop.API
 
             return null;
         }
+
         public static Product GetProduct(string storeAlias, int Id)
         {
             var product = ProductCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
@@ -84,12 +107,11 @@ namespace uWebshop.API
         }
         public static Category GetCategory(int Id)
         {
-            var appCache = ApplicationContext.Current.ApplicationCache;
-            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            var store = StoreService.GetStoreFromCache();
 
-            if (r != null && r.Store != null)
+            if (store != null)
             {
-                var category = GetCategory(r.Store.Alias, Id);
+                var category = GetCategory(store.Alias, Id);
 
                 return category;
             }
@@ -124,7 +146,7 @@ namespace uWebshop.API
                                 .OrderBy(x => x.SortOrder);
         }
 
-        public static Variant GetVariant(int Id)
+        public static Variant GetVariant(Guid Id)
         {
             var store = StoreService.GetStoreFromCache();
 
@@ -137,21 +159,11 @@ namespace uWebshop.API
 
             return null;
         }
-        public static Variant GetVariant(string storeAlias, int Id)
+        public static Variant GetVariant(string storeAlias, Guid Id)
         {
-            Log.Info("Trying to get Variant: " + Id + " Store: " + storeAlias);
-
             var variant = VariantCache.Cache[storeAlias]
-                                      .FirstOrDefault(x => x.Value.Id == Id)
+                                      .FirstOrDefault(x => x.Value.Key == Id)
                                       .Value;
-
-            if (variant == null)
-            {
-                Log.Info("Trying to get Variant: Variant Not Found*!");
-            } else
-            {
-                Log.Info("Trying to get Variant: Variant Found*! - " + variant.Id);
-            }
 
             return variant;
         }

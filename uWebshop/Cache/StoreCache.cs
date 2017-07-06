@@ -24,7 +24,7 @@ namespace uWebshop.Cache
 
             try
             {
-                searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+                searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
             }
             catch // Restart Application if Examine just initialized
             {
@@ -38,23 +38,33 @@ namespace uWebshop.Cache
                 stopwatch.Start();
 
                 Log.Info("Starting to fill store cache...");
-
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query = searchCriteria.NodeTypeAlias(nodeAlias);
-                var results = searcher.Search(query.Compile());
-
                 int count = 0;
-                foreach (var r in results)
-                {
-                    try
-                    {
-                        var item = new Store(r);
 
-                        count++;
-                        AddOrReplaceFromCache(r.Id, item);
+                try
+                {
+                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                    var query = searchCriteria.NodeTypeAlias(nodeAlias);
+                    var results = searcher.Search(query.Compile());
+
+                    foreach (var r in results)
+                    {
+                        try
+                        {
+                            var item = new Store(r);
+
+                            count++;
+                            AddOrReplaceFromCache(r.Id, item);
+                        }
+                        catch {
+                            Log.Info("Failed to map to store. Id: " + r.Id);
+                        }
                     }
-                    catch { } // Skip on fail
+
+                } catch(Exception ex)
+                {
+                    Log.Error("Filling store cache failed!", ex);
                 }
+
 
                 stopwatch.Stop();
 

@@ -11,7 +11,7 @@ namespace uWebshop.Interfaces
         decimal Value { get; }
         string ToCurrencyString();
     }
-    public interface IVatPrice// : IPrice
+    public interface IVatPrice
     {
         /// <summary>
         /// Gets the price with vat.
@@ -37,4 +37,25 @@ namespace uWebshop.Interfaces
         /// </value>
         IPrice Vat { get; }
     }
+
+    public interface IDiscountedPrice : IVatPrice
+    {
+        /// <summary>
+        /// Gets the original price before the discount.
+        /// </summary>
+        /// <value>
+        /// The original price before the discount.
+        /// </value>
+        IVatPrice BeforeDiscount { get; }
+
+        /// <summary>
+        /// Gets the discount.
+        /// </summary>
+        /// <value>
+        /// The discount.
+        /// </value>
+        IVatPrice Discount { get; }
+    }
+
+
 }

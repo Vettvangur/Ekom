@@ -1,6 +1,6 @@
 /*! umbraco
  * https://github.com/umbraco/umbraco-cms/
- * Copyright (c) 2016 Umbraco HQ;
+ * Copyright (c) 2017 Umbraco HQ;
  * Licensed 
  */
 
@@ -68,7 +68,7 @@ angular.module('umbraco.mocks').
 						"view": "textstring",
 						"icon": "icon-quote",
 						"config": {
-							"style": "border-left: 3px solid #ccc; padding: 10px; color: #ccc; font-family: serif; font-variant: italic; font-size: 18px",
+							"style": "border-left: 3px solid #ccc; padding: 10px; color: #ccc; font-family: serif; font-style: italic; font-size: 18px",
 							"markup": "<blockquote>#value#</blockquote>"
 						}
 					}
@@ -434,8 +434,13 @@ angular.module('umbraco.mocks').
                 {
                     results.push(decodeURIComponent(match[1].replace(/\+/g, " ")));
                 }
-
+                
                 return results;
+            },
+
+            getObjectPropertyFromJsonString: function(data, name) {
+                var obj = JSON.parse(data);
+                return obj[name];
             }
         };
     }]);
@@ -804,8 +809,9 @@ angular.module('umbraco.mocks').
           if (!mocksUtils.checkAuth()) {
               return [401, null, null];
           }
-
+          
           var ids = mocksUtils.getParametersByName(data, "ids") || [1234, 23324, 2323, 23424];
+          
           var nodes = [];
 
           $(ids).each(function (i, id) {
@@ -816,6 +822,33 @@ angular.module('umbraco.mocks').
           return [200, nodes, null];
       }
 
+      function returnEntitybyIdsPost(method, url, data, headers) {
+
+          if (!mocksUtils.checkAuth()) {
+              return [401, null, null];
+          }
+
+          var ids = mocksUtils.getObjectPropertyFromJsonString(data, "ids") || [1234, 23324, 2323, 23424];
+          
+          var nodes = [];
+
+          $(ids).each(function (i, id) {
+              var _id = parseInt(id, 10);
+              nodes.push(mocksUtils.getMockEntity(_id));
+          });
+
+          return [200, nodes, null];
+      }
+
+      function returnEntityUrl() {
+
+          if (!mocksUtils.checkAuth()) {
+              return [401, null, null];
+          }
+
+          return [200, "url", null];
+
+      }
 
       return {
           register: function () {
@@ -825,12 +858,20 @@ angular.module('umbraco.mocks').
                   .respond(returnEntitybyIds);
 
               $httpBackend
+                  .whenPOST(mocksUtils.urlRegex('/umbraco/UmbracoApi/Entity/GetByIds'))
+                  .respond(returnEntitybyIdsPost);
+
+              $httpBackend
                   .whenGET(mocksUtils.urlRegex('/umbraco/UmbracoApi/Entity/GetAncestors'))
                   .respond(returnEntitybyIds);
 
               $httpBackend
                   .whenGET(mocksUtils.urlRegex('/umbraco/UmbracoApi/Entity/GetById?'))
                   .respond(returnEntitybyId);
+            
+            $httpBackend
+                  .whenGET(mocksUtils.urlRegex('/umbraco/UmbracoApi/Entity/GetUrl?'))
+                    .respond(returnEntityUrl);
           }
       };
   }]);
@@ -1486,7 +1527,7 @@ angular.module('umbraco.mocks').
                   "content_nodeName": "Page Title",
                   "content_otherElements": "Properties",
                   "content_parentNotPublished": "This document is published but is not visible because the parent '%0%' is unpublished",
-                  "content_parentNotPublishedAnomaly": "Oops: this document is published but is not in the cache (internal error)",
+                  "content_parentNotPublishedAnomaly": "This document is published but is not in the cache",
                   "content_publish": "Publish",
                   "content_publishStatus": "Publication Status",
                   "content_releaseDate": "Publish at",

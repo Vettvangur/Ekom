@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace uWebshop.Services
+namespace uWebshop.Interfaces
 {
-    public static class PriceService
+    public interface IVariant : INodeEntitiy
     {
+
     }
 }

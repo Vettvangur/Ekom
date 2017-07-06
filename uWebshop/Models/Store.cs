@@ -2,39 +2,98 @@
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
+using uWebshop.Helpers;
+using uWebshop.Interfaces;
+using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
-    public class Store
+    public class Store : IStore
     {
         public int Id { get; set; }
+        public Guid Key { get; set; }
+        public string ContentTypeAlias { get; set; }
         public string Alias { get; set; }
-        public StoreNode RootNode { get; set; }
         public int StoreRootNode {get; set;}
         public int Level { get; set; }
         public IEnumerable<IDomain> Domains { get; set; }
-
+        public DateTime CreateDate { get; set; }
+        public DateTime UpdateDate { get; set; }
+        public int SortOrder { get; set; }
+        public string Path { get; set; }
+        public decimal Vat { get; set; }
+        public CultureInfo Culture { get; set; }
+        public bool VatIncludedInPrice { get; set; }
+        public string OrderNumberTemplate { get; set; }
+        public string OrderNumberPrefix { get; set; }
         public Store(): base() { }
         public Store (SearchResult item)
         {
-            Id               = item.Id;
-            Alias            = item.Fields["nodeName"];
+            try
+            {
+                var key = item.Fields["key"];
 
-            StoreRootNode    = Convert.ToInt32(item.Fields["storeRootNode"]);
-            Level            = Convert.ToInt32(item.Fields["level"]);
+                var _key = new Guid();
 
-            Domains          = StoreDomainCache.Cache
-                                               .Where(x => x.Value.RootContentId == StoreRootNode)
-                                               .Select(x => x.Value);
+                if (!Guid.TryParse(key, out _key))
+                {
+                    throw new Exception("No key present for store.");
+                }
+
+                var contentTypeAlias = item.Fields["nodeTypeAlias"];
+
+                Id = item.Id;
+                Key = _key;
+                ContentTypeAlias = contentTypeAlias;
+                Alias = item.Fields["nodeName"];
+
+                StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
+                Level = Convert.ToInt32(item.Fields["level"]);
+
+                Domains = StoreDomainCache.Cache
+                                                   .Where(x => x.Value.RootContentId == StoreRootNode)
+                                                   .Select(x => x.Value);
+
+                SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
+                CreateDate = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
+                UpdateDate = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
+
+                var _culture = item.Fields["culture"];
+
+                Culture = new CultureInfo(_culture);
+
+                Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]);
+                VatIncludedInPrice = item.Fields["vatIncludedInPrice"].ConvertToBool();
+          
+                try
+                {
+                    OrderNumberTemplate = item.Fields["orderNumberTemplate"];
+                }
+                catch { }
+                try
+                {
+                    OrderNumberPrefix = item.Fields["orderNumberPrefix"];
+                }
+                catch { }
+                
+
+            } catch(Exception ex)
+            {
+                Log.Error("Failed to create store from examine. Id: " + item.Id, ex);
+            }
+
         }
         public Store(IContent item)
         {
             Id = item.Id;
+            Key = item.Key;
             Alias = item.Name;
+            ContentTypeAlias = item.ContentType.Alias;
 
             StoreRootNode = item.GetValue<int>("storeRootNode");
             Level = item.Level;
@@ -43,6 +102,22 @@ namespace uWebshop.Models
                                       .Where(x => x.Value.RootContentId == StoreRootNode)
                                       .Select(x => x.Value);
 
+            SortOrder = item.SortOrder;
+            CreateDate = item.CreateDate;
+            UpdateDate = item.UpdateDate;
+
+            var vat = item.GetValue<string>("vat");
+
+            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat);
+
+            var _culture = item.GetValue<string>("culture");
+
+            Culture = new CultureInfo(_culture);
+
+            VatIncludedInPrice = item.GetValue<bool>("vatIncludedInPrice");
+
+            OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
+            OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
         }
 
         private static readonly ILog Log =

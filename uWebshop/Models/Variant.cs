@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,78 +8,225 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using uWebshop.Cache;
 using uWebshop.Helpers;
+using uWebshop.Interfaces;
 using uWebshop.Services;
 
 namespace uWebshop.Models
 {
-    public class Variant
+    public class Variant : IVariant
     {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Path { get; set; }
-        public decimal OriginalPrice { get; set; }
-        public int Stock { get; set; }
-        public int ProductId { get; set; }
-        public int VariantGroupId { get; set; }
-        public Store Store { get; set; }
-        public int SortOrder { get; set; }
-        public Price Price
+        private Store _store;
+        [JsonIgnore]
+        public int Id
         {
             get
             {
-                return new Price(OriginalPrice);
+                return Convert.ToInt32(GetPropertyValue<string>("id"));
             }
-            set
-            { }
+        }
+        [JsonIgnore]
+        public Guid Key
+        {
+            get
+            {
+                var key = GetPropertyValue<string>("key");
+
+                var _key = new Guid();
+
+                if (!Guid.TryParse(key, out _key))
+                {
+                    throw new Exception("No key present for product.");
+                }
+
+                return _key;
+            }
+        }
+        [JsonIgnore]
+        public string Title
+        {
+            get
+            {
+                return Properties.GetStoreProperty("title", _store.Alias);
+            }
+        }
+        [JsonIgnore]
+        public string Path
+        {
+            get
+            {
+                return GetPropertyValue<string>("path");
+            }
+        }
+        [JsonIgnore]
+        public decimal OriginalPrice
+        {
+            get
+            {
+                var priceField = Properties.GetStoreProperty("price", _store.Alias);
+
+                decimal originalPrice = 0;
+                decimal.TryParse(priceField, out originalPrice);
+
+                return originalPrice;
+            }
+        }
+        [JsonIgnore]
+        public int Stock
+        {
+            get
+            {
+                return 0;
+            }
+        }
+        public Guid ProductKey {
+            get
+            {
+                var paths = Path.Split(',');
+
+                int productId = Convert.ToInt32(paths[paths.Length - 3]);
+
+                var product = API.Catalog.GetProduct(productId);
+
+                return product.Key;
+            }
+        }
+        public Guid VariantGroupKey {
+            get
+            {
+                var parentId = GetPropertyValue<string>("parentID");
+
+                var group = VariantGroupCache.Cache[Store.Alias]
+                                        .Where(x => x.Value.ProductKey == ProductKey)
+                                        .Select(x => x.Value);
+
+                if (group.Any()) {
+                    return group.First().Key;
+                }
+
+                return Guid.Empty;
+            }
+        }
+        [JsonIgnore]
+        public Store Store
+        {
+            get
+            {
+                return _store;
+            }
+        }
+        [JsonIgnore]
+        public int Level
+        {
+            get
+            {
+                return Convert.ToInt32(GetPropertyValue<string>("level"));
+            }
+        }
+        [JsonIgnore]
+        public string ContentTypeAlias
+        {
+            get
+            {
+                return GetPropertyValue<string>("nodeTypeAlias");
+            }
+        }
+        [JsonIgnore]
+        public int SortOrder
+        {
+            get
+            {
+                return Convert.ToInt32(GetPropertyValue<string>("sortOrder"));
+            }
+        }
+        [JsonIgnore]
+        public DateTime CreateDate
+        {
+            get
+            {
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("createDate"));
+            }
+        }
+        [JsonIgnore]
+        public DateTime UpdateDate
+        {
+            get
+            {
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("updateDate"));
+            }
+        }
+        public IDiscountedPrice Price
+        {
+            get
+            {
+                return new Price(OriginalPrice, Store);
+            }
+        }
+        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+        public T GetPropertyValue<T>(string propertyAlias)
+        {
+            propertyAlias = propertyAlias.ToLowerInvariant();
+
+            if (!string.IsNullOrEmpty(propertyAlias))
+            {
+                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                {
+                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
+
+                    return property == null ? default(T) : (T)property.Value;
+                }
+
+            }
+
+            return default(T);
         }
 
         public Variant(): base() { }
         public Variant(SearchResult item, Store store)
         {
-            int variantGroupId = Convert.ToInt32(item.Fields["parentID"]);
+            try
+            {
+                _store = store;
 
-            var pathField = item.Fields["path"];
-            var paths = pathField.Split(',');
+                foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
+                {
+                    Properties.Add(new UmbracoProperty
+                    {
+                        Key = field.Key,
+                        Value = field.Value
+                    });
+                }
 
-            int productId = Convert.ToInt32(paths[paths.Length - 3]);
+            } catch(Exception ex)
+            {
+                Log.Error("Failed to create variant from examine. Id: " + item.Id, ex);
+            }
 
-            var priceField = item.GetStoreProperty("price", store.Alias);
-            decimal originalPrice = 0;
-
-            decimal.TryParse(priceField, out originalPrice);
-
-            Id             = item.Id;
-            Title          = item.GetStoreProperty("title", store.Alias);
-            Path           = pathField;
-            OriginalPrice  = originalPrice;
-            VariantGroupId = variantGroupId;
-            ProductId      = productId;
-            Store          = store;
-            SortOrder      = Convert.ToInt32(item.Fields["sortOrder"]);
         }
-        public Variant(IContent item, Store store)
+        public Variant(IContent node, Store store)
         {
-            int variantGroupId = item.GetValue<int>("parentID");
+            try
+            {
+                _store = store;
 
-            var pathField = item.Path;
-            var paths = pathField.Split(',');
+                Properties.AddRange(Product.CreateDefaultUmbracoProperties(node));
 
-            int productId = Convert.ToInt32(paths[paths.Length - 3]);
+                foreach (var prop in node.Properties)
+                {
+                    Properties.Add(new UmbracoProperty
+                    {
+                        Key = prop.Alias,
+                        Value = prop.Value
+                    });
+                }
 
-            var priceField = item.GetStoreProperty("price", store.Alias);
-            decimal originalPrice = 0;
 
-            decimal.TryParse(priceField, out originalPrice);
+            } catch(Exception ex)
+            {
+                Log.Error("Failed to create variant from content. Id: " + node.Id, ex);
+            }
 
-            Id = item.Id;
-            Title = item.GetStoreProperty("title", store.Alias);
-            Path = pathField;
-            OriginalPrice = originalPrice;
-            VariantGroupId = variantGroupId;
-            ProductId = productId;
-            Store = store;
-            SortOrder = item.SortOrder;
         }
 
         private static readonly ILog Log =

@@ -1,22 +1,13 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using uWebshop.Cache
-@using uWebshop.Models
-@using uWebshop.Services
+@using uWebshop.API;
 
 @{
     Layout = "Masterpage.cshtml";
 
-    Store currentStore;
-    if (UmbracoContext.PublishedContentRequest.UmbracoDomain != null)
-    {
-        currentStore = StoreService.GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
-    }
-    else // Get default store if no domain present
-    {
-        currentStore = StoreService.GetStoreByDomain();
-    }
+    var products = Catalog.GetAllProducts();
+    var currentStore = Store.GetStore();
 
-    var products = ProductCache.Cache[currentStore.Alias].Select(x => x.Value);
+    var cart = Cart.GetCart();
 }
 
 @section Main {
@@ -25,6 +16,40 @@
         <h2>
             Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
             @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
+            
+            <h4>Store</h4>
+            <br />
+            Culture :@currentStore.Culture.Name
+            <br />
+            Vat: @currentStore.Vat
+            <br />
+            Include Vat In Price: @currentStore.VatIncludedInPrice
+            <br />
+
+            <h4>Cart</h4>
+
+            Cart: @(cart != null ? "Cart Found" : "Cart Empty")
+
+
+            @if (cart != null)
+            {
+                <div>ReferenceId: @cart.ReferenceId</div>
+                <div>OrderNumber: @cart.OrderNumber</div>
+                <div>Store: @cart.StoreInfo.Alias</div>
+                <div>Quantity: @cart.Quantity</div>
+
+                if (cart.OrderLines.Any())
+                {
+                    <ul>
+                        @foreach (var line in cart.OrderLines)
+                        {
+                            <li>@line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "")</li>
+                        }
+                    </ul>
+                }
+
+            }
+
         </h2>
       <hr>
     </div>
@@ -36,7 +61,11 @@
             <div class="column">
                 <img class="thumbnail" src="http://placehold.it/300x400">
                 <h5>@product.Title</h5>
-                <p>@product.Price.ToCurrencyString()</p>
+
+                <p>Price With Vat : @product.Price.WithVat.Value</p>
+                <p>Price WithOut Vat : @product.Price.WithoutVat.Value</p>
+                <p>Price Original : @product.OriginalPrice</p>
+
                 <a href="@product.Url" class="button expanded">View</a>
             </div>
         }

@@ -37,6 +37,10 @@ namespace uWebshop
 
                 Store store = StoreService.GetStore(contentRequest.UmbracoDomain, httpContext);
 
+                if (store == null)
+                {
+                    throw new Exception("No store found.");
+                }
 
                 #region Product and/or Category
 

@@ -29,5 +29,21 @@ namespace uWebshop.Utilities
                 return value;
             }
         }
+
+        public static bool ConvertToBool(this string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                value = value.ToLowerInvariant();
+
+                if (value == "1" || value == "true" || value == "y")
+                {
+                    return true;
+                }
+            }
+
+            return false;
+
+        }
     }
 }

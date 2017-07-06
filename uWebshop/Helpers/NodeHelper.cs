@@ -237,6 +237,35 @@ namespace uWebshop.Helpers
         /// </summary>
         /// <param name="field">Umbraco Alias</param>
         /// <returns>Property Value</returns>
+        public static string GetStoreProperty(this List<UmbracoProperty> items, string property, string storeAlias)
+        {
+            var fieldExist = items.Any(x => x.Key == property + "_" + storeAlias);
+
+            if (fieldExist)
+            {
+                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
+                string value = (string)items.FirstOrDefault(x => x.Key == property + "_" + storeAlias).Value;
+
+                if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
+                {
+                    value = items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
+                }
+
+                return value;
+            }
+            else
+            {
+                return items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
+            }
+        }
+
+        /// <summary>
+        /// Retrieve a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
+        /// </summary>
+        /// <param name="field">Umbraco Alias</param>
+        /// <returns>Property Value</returns>
         public static string GetStoreProperty(this IContent item, string field, string storeAlias)
         {
             if (item.HasProperty(field + "_" + storeAlias))

@@ -68,7 +68,7 @@ namespace uWebshop.Cache
         /// triggering the given stores filling</param>
         public void FillCache(Store storeParam = null)
         {
-            var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+            var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
 
             if (searcher != null && !string.IsNullOrEmpty(nodeAlias))
             {
@@ -76,25 +76,33 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                Log.Info("Starting to fill " + typeof(Tself).FullName + "...");
+                var name = typeof(Tself).FullName;
 
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                IBooleanOperation query        = searchCriteria.NodeTypeAlias(nodeAlias);
-                ISearchResults results         = searcher.Search(query.Compile());
-
+                Log.Info("Starting to fill " + name + "...");
                 int count = 0;
 
-                if (storeParam == null) // Startup initalization
+                try
                 {
-                    foreach (var store in StoreCache.Cache.Select(x => x.Value))
+                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                    IBooleanOperation query = searchCriteria.NodeTypeAlias(nodeAlias);
+                    ISearchResults results = searcher.Search(query.Compile());
+                    
+                    if (storeParam == null) // Startup initalization
                     {
-                        count += FillStoreCache(store, results);
+                        foreach (var store in StoreCache.Cache.Select(x => x.Value))
+                        {
+                            count += FillStoreCache(store, results);
+                        }
                     }
-                }
-                else // Triggered with dynamic addition/removal of store
+                    else // Triggered with dynamic addition/removal of store
+                    {
+                        count += FillStoreCache(storeParam, results);
+                    }
+
+                } catch(Exception ex)
                 {
-                    count += FillStoreCache(storeParam, results);
-                }
+                    Log.Error("Filling per store cache Failed! Type: " + name, ex);
+                } 
 
                 stopwatch.Stop();
 
@@ -120,8 +128,9 @@ namespace uWebshop.Cache
 
             var curStoreCache = _cache[store.Alias];
 
-            foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+            foreach (var r in results)
             {
+
                 try
                 {
                     // Traverse up parent nodes, checking disabled status and published status

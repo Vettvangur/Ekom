@@ -15,13 +15,9 @@ namespace uWebshop.Models
 {
     public class VariantGroup
     {
-        public int ProductId;
-
-        public VariantGroup(int id)
-        {
-            this.ProductId = id;
-        }
         public int Id { get; set; }
+        public Guid Key { get; set; }
+        public Guid ProductKey { get; set; }
         public string Title { get; set; }
         public Store Store { get; set; }
         public int SortOrder { get; set; }
@@ -29,7 +25,7 @@ namespace uWebshop.Models
             get
             {
                 return VariantCache.Cache[Store.Alias]
-                                   .Where(x => x.Value.VariantGroupId == Id)
+                                   .Where(x => x.Value.VariantGroupKey == Key)
                                    .Select(x => x.Value);
             }
         }
@@ -37,18 +33,50 @@ namespace uWebshop.Models
         public VariantGroup(): base() { }
         public VariantGroup(SearchResult item, Store store)
         {
+
+            var key = item.Fields["key"];
+
+            var _key = new Guid();
+
+            if (!Guid.TryParse(key, out _key))
+            {
+                throw new Exception("No key present for variant group.");
+            }
+
             int productId = Convert.ToInt32(item.Fields["parentID"]);
 
+            var productExamine = ExamineHelper.GetExamindeNode(productId);
+
+            if (productExamine == null)
+            {
+                throw new Exception("Product not found in examine for Variant group. Id:" + productId);
+            }
+
+            var productKey = productExamine.Fields["key"];
+
+            var _productKey = new Guid();
+
+            if (!Guid.TryParse(productKey, out _productKey))
+            {
+                throw new Exception("No key present for product in variant group.");
+            }
+
             Id        = item.Id;
+            ProductKey = _productKey;
+            Key         = _key;
             Title     = item.GetStoreProperty("title", store.Alias);
             Store     = store;
             SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
         }
         public VariantGroup(IContent item, Store store)
         {
-            int productId = item.ParentId;
+            var productId = item.ParentId;
+
+            var product = API.Catalog.GetProduct(store.Alias,productId);
 
             Id        = item.Id;
+            Key = item.Key;
+            ProductKey = product.Key;
             Title     = item.GetStoreProperty("title", store.Alias);
             Store     = store;
             SortOrder = item.SortOrder;

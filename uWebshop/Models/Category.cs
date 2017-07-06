@@ -11,16 +11,21 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
 using uWebshop.Helpers;
+using uWebshop.Interfaces;
 using uWebshop.Services;
 
 namespace uWebshop.Models
 {
-    public class Category
+    public class Category : ICategory
     {
         public int Id { get; set; }
+        public Guid Key { get; set; }
+        public string ContentTypeAlias { get; set; }
         public string Title { get; set; }
         public string Slug { get; set; }
         public string Path { get; set; }
+        public DateTime CreateDate { get; set; }
+        public DateTime UpdateDate { get; set; }
         public int ParentCategoryId { get; set; }
         public Store Store { get; set; }
         public int SortOrder { get; set; }
@@ -95,20 +100,34 @@ namespace uWebshop.Models
         {
             var pathField = item.Fields["path"];
 
+            var key = item.Fields["key"];
+
+            var _key = new Guid();
+
+            if (!Guid.TryParse(key, out _key))
+            {
+                throw new Exception("No key present for product.");
+            }
+
+            var contentTypeAlias = item.Fields["__NodeTypeAlias"];
+
             int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
             Id               = item.Id;
+            Key              = _key;
             Path             = pathField;
             ParentCategoryId = parentCategoryId;
             Store            = store;
-
+            ContentTypeAlias = contentTypeAlias;
             Title            = item.GetStoreProperty("title", store.Alias);
             Slug             = item.GetStoreProperty("slug", store.Alias);
 
             SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
             Level            = Convert.ToInt32(item.Fields["level"]);
+            CreateDate       = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
+            UpdateDate       = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
 
             Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
         }
@@ -121,6 +140,7 @@ namespace uWebshop.Models
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
             Id               = node.Id;
+            Key              = node.Key;
             Path             = pathField;
             ParentCategoryId = parentCategoryId;
             Store            = store;
@@ -128,8 +148,10 @@ namespace uWebshop.Models
             Title = node.GetStoreProperty("title", store.Alias);
             Slug  = node.GetStoreProperty("slug", store.Alias);
 
-            SortOrder = node.SortOrder;
-            Level     = node.Level;
+            SortOrder  = node.SortOrder;
+            Level      = node.Level;
+            CreateDate = node.CreateDate;
+            UpdateDate = node.UpdateDate;
 
             Urls = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
         }
