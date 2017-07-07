@@ -44,6 +44,14 @@ namespace uWebshop.Models
             }
         }
         [JsonIgnore]
+        public string SKU
+        {
+            get
+            {
+                return GetPropertyValue<string>("sku");
+            }
+        }
+        [JsonIgnore]
         public string Title
         {
             get
@@ -87,7 +95,12 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = API.Catalog.GetProduct(productId);
+                var product = API.Catalog.GetProduct(Store.Alias, productId);
+
+                if (product == null)
+                {
+                    throw new Exception("Variant ProductKey could not be created. Product not found. Key: " + productId);
+                }
 
                 return product.Key;
             }
@@ -95,18 +108,29 @@ namespace uWebshop.Models
         public Guid VariantGroupKey {
             get
             {
-                var parentId = GetPropertyValue<string>("parentID");
+                var group = VariantGroup();
 
-                var group = VariantGroupCache.Cache[Store.Alias]
-                                        .Where(x => x.Value.ProductKey == ProductKey)
-                                        .Select(x => x.Value);
-
-                if (group.Any()) {
-                    return group.First().Key;
+                if (group != null) {
+                    return group.Key;
                 }
 
                 return Guid.Empty;
             }
+        }
+        public VariantGroup VariantGroup()
+        {
+            var parentId = GetPropertyValue<string>("parentID");
+
+            var group = VariantGroupCache.Cache[Store.Alias]
+                                    .Where(x => x.Value.ProductKey == ProductKey)
+                                    .Select(x => x.Value);
+
+            if (group != null && group.Any())
+            {
+                return group.First();
+            }
+
+            return null;
         }
         [JsonIgnore]
         public Store Store

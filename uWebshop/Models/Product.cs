@@ -42,6 +42,14 @@ namespace uWebshop.Models
             }
         }
         [JsonIgnore]
+        public string SKU
+        {
+            get
+            {
+                return GetPropertyValue<string>("sku");
+            }
+        }
+        [JsonIgnore]
         public string Title {
             get
             {

@@ -15,7 +15,7 @@ namespace uWebshop.Interfaces
         /// <value>
         /// The line Id.
         /// </value>
-        int Id { get; }
+        Guid Id { get; }
 
         /// <summary>
         /// Gets the product.

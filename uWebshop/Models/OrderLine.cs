@@ -14,16 +14,19 @@ namespace uWebshop.Models
         private Store _store;
         private StoreInfo _storeInfo;
 
+        public Guid Id { get; set; }
+        public OrderedProduct Product { get; set; }
+        public int Quantity { get; set; }
 
-        public OrderLine(int lineId, int quantity, string productJson, string variantsJson, StoreInfo storeInfo)
+        public OrderLine(Guid lineId, int quantity, string productJson, StoreInfo storeInfo)
         {
             Id = lineId;
             Quantity = quantity;
             _storeInfo = storeInfo;
-            Product = new OrderedProduct(productJson, variantsJson, storeInfo);
+            Product = new OrderedProduct(productJson, storeInfo);
         }
 
-        public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, int lineId, Store store)
+        public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, Guid lineId, Store store)
         {
             _productId = productId;
             _variantIds = variantIds;
@@ -32,8 +35,6 @@ namespace uWebshop.Models
             Product = new OrderedProduct(productId, variantIds, store);
         }
 
-        public int Id { get; set; }
-        public OrderedProduct Product { get; set; }
-        public int Quantity { get; set; }
+
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using uWebshop.Helpers;
 using uWebshop.Models;
 using uWebshop.Services;
 
@@ -13,22 +14,25 @@ namespace uWebshop.API
     public class Cart
     {
 
-        public static OrderInfo GetCart()
+        public static OrderInfo GetCart(string storeAlias)
         {
             var orderService = new OrderService();
 
-            return orderService.GetOrder();
+            return orderService.GetOrder(storeAlias);
         }
 
-        public static OrderInfo AddOrderLine()
+        public static OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, string storeAlias, int quantity, CartAction? action)
         {
             var orderService = new OrderService();
 
-            var variants = new List<Guid>();
+            return orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
+        }
 
-            variants.Add(new Guid("7e81bcf4-8bd8-47cd-83a0-9c05e3ed6bad"));
+        public static OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        {
+            var orderService = new OrderService();
 
-            return orderService.AddOrderLine(new Guid("584f7b36-b87d-4605-8169-254da1f66dca"),variants,2,"IS");
+            return orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
         private static readonly ILog Log =

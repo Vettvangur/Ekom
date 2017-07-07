@@ -25,4 +25,10 @@ namespace uWebshop.Helpers
         Wishlist,
         Scheduled,
     }
+
+    public enum CartAction
+    {
+        Add,
+        Update
+    }
 }
