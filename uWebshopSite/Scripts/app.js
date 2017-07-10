@@ -19,7 +19,7 @@ $(document).ready(function () {
         .done(function (resp) {
 
             if (resp.success) {
-                alert('added to cart!');
+                alert('added to cart! Total: ' + resp.orderInfo.ChargedAmount.Value);
             } else {
                 alert('Error: ' + resp.error)
             }

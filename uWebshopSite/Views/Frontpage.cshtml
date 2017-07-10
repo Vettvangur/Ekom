@@ -37,6 +37,7 @@
                 <div>OrderNumber: @cart.OrderNumber</div>
                 <div>Store: @cart.StoreInfo.Alias</div>
                 <div>Quantity: @cart.Quantity</div>
+                <div>Status: @cart.OrderStatus</div>
                 <div>Total: @cart.ChargedAmount.ToCurrencyString()</div>
 
                 if (cart.OrderLines.Any())
@@ -44,7 +45,7 @@
                     <ul>
                         @foreach (var line in cart.OrderLines)
                         {
-                            <li><a href="#" data-store="@cart.StoreInfo.Alias" data-lineId="@line.Id" class="cart-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "")
+                            <li><a href="#" data-store="@cart.StoreInfo.Alias" data-lineId="@line.Id" class="cart-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString()
     
 
                                 @if (line.Product.VariantGroups.Any())

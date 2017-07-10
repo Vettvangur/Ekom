@@ -120,14 +120,18 @@ namespace uWebshop.Models
         public VariantGroup VariantGroup()
         {
             var parentId = GetPropertyValue<string>("parentID");
+            int _parentId = 0;
 
-            var group = VariantGroupCache.Cache[Store.Alias]
-                                    .Where(x => x.Value.ProductKey == ProductKey)
-                                    .Select(x => x.Value);
-
-            if (group != null && group.Any())
+            if (Int32.TryParse(parentId, out _parentId))
             {
-                return group.First();
+                var group = VariantGroupCache.Cache[Store.Alias]
+                                        .Where(x => x.Value.Id == _parentId)
+                                        .Select(x => x.Value);
+
+                if (group != null && group.Any())
+                {
+                    return group.First();
+                }
             }
 
             return null;
