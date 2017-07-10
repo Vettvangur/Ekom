@@ -280,6 +280,7 @@
     <Compile Include="Interfaces\INodeEntitiy.cs" />
     <Compile Include="Interfaces\IStore.cs" />
     <Compile Include="Models\ContentRequest.cs" />
+    <Compile Include="Models\Data\StockData.cs" />
     <Compile Include="Models\Data\OrderData.cs" />
     <Compile Include="Models\OrderedProduct.cs" />
     <Compile Include="Models\OrderedVariant.cs" />
@@ -299,6 +300,7 @@
     <Compile Include="Models\VariantGroup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repository\OrderRepository.cs" />
+    <Compile Include="Repository\StockRepository.cs" />
     <Compile Include="Services\OrderService.cs" />
     <Compile Include="Services\PriceCalculationService.cs" />
     <Compile Include="Services\StoreService.cs" />
