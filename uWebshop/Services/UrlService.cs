@@ -57,25 +57,37 @@ namespace uWebshop.Services
         /// Used f.x. by Wurth
         /// </summary>
         /// <param name="slug">Short name of category</param>
-        /// <param name="hierarchy">Slugs of all parents</param>
+        /// <param name="hierarchy">Ordered list of slugs for all parents</param>
         /// <returns>Collection of urls for all domains</returns>
         public static IEnumerable<string> BuildCategoryUrls(string slug, IEnumerable<string> hierarchy, Store store)
         {
             var urls = new HashSet<string>();
 
-            foreach (var domain in store.Domains)
+            if (!string.IsNullOrEmpty(slug))
             {
-                string domainPath = GetDomainPrefix(domain.DomainName);
+                foreach (var domain in store.Domains)
+                {
+                    string domainPath = GetDomainPrefix(domain.DomainName);
 
-                StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
+                    StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
 
-                hierarchy.ForEach(item => builder.Append(item + "/"));
+                    hierarchy.ForEach(item => builder.Append(item + "/"));
 
-                builder.Append(slug.ToSafeAlias());
+                    // ToSafeAlias obliterates strings containing only numbers f.x.
+                    var slugSafeAlias = slug.ToSafeAlias();
+                    if (!string.IsNullOrEmpty(slugSafeAlias))
+                    {
+                        builder.Append(slugSafeAlias);
+                    }
+                    else
+                    {
+                        builder.Append(slug);
+                    }
 
-                var url = builder.ToString().AddTrailing().ToLower();
+                    var url = builder.ToString().AddTrailing().ToLower();
 
-                urls.Add(url);
+                    urls.Add(url);
+                }
             }
 
             return urls;

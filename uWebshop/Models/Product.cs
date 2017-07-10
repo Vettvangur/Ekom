@@ -57,6 +57,10 @@ namespace uWebshop.Models
                 return Properties.GetStoreProperty("title", _store.Alias);
             }
         }
+
+        /// <summary>
+        /// Short spaceless descriptive title used to create URLs
+        /// </summary>
         [JsonIgnore]
         public string Slug
         {
@@ -84,6 +88,11 @@ namespace uWebshop.Models
                 return 0;
             }
         }
+
+        /// <summary>
+        /// All categories product belongs to, includes parent category.
+        /// Does not include categories product is an indirect child of.
+        /// </summary>
         [JsonIgnore]
         public List<ICategory> Categories {
             get
@@ -156,6 +165,10 @@ namespace uWebshop.Models
                 return Convert.ToInt32(GetPropertyValue<string>("level"));
             }
         }
+
+        /// <summary>
+        /// CSV of node id's describing hierarchy from left to right leading up to node.
+        /// </summary>
         [JsonIgnore]
         public string Path
         {
