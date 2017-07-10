@@ -40,5 +40,13 @@ namespace uWebshop.Repository
                 return db.Query<StockData>("SELECT * FROM uWebshopStock WHERE StoreAlias = @0 AND NodeId = @1", storeAlias, uniqueId);
             }
         }
+
+        public IEnumerable<StockData> GetAllStock()
+        {
+            using (var db = ApplicationContext.Current.DatabaseContext.Database)
+            {
+                return db.Query<StockData>("SELECT * FROM uWebshopStock");
+            }
+        }
     }
 }

@@ -3,7 +3,9 @@
 
 @{
     Layout = null;
+    var currentStore = Store.GetStore();
     var categories = Catalog.GetRootCategories();
+    var order = Order.GetOrder(currentStore.Alias);
 }
 
 <!doctype html>
@@ -29,6 +31,20 @@
             }
         </ul>
       </div>
+        <div class="top-bar-right">
+            <ul class="menu">
+                <li>
+                    @if (order != null)
+                    {
+                        <a href="/greida">Karfa (@order.Quantity)</a>
+                    } else
+                    {
+                        <span>Engin karfa</span>
+                    }
+
+                </li>
+            </ul>
+        </div>
     </div>
 
 

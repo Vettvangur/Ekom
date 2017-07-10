@@ -18,7 +18,6 @@ namespace uWebshopSite.Extensions.Controllers
 
             try
             {
-
                 var variantIds = new List<Guid>();
 
                 if (variantId != null && variantId != Guid.Empty)
@@ -38,6 +37,33 @@ namespace uWebshopSite.Extensions.Controllers
             {
 
                 Log.Error("Add to order Failed!",ex);
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+
+        }
+
+        public JsonResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
+        {
+
+            try
+            {
+                var orderInfo = uWebshop.API.Order.AddOrderLine(lineId, null, storeAlias, quantity, null);
+
+                return Json(new
+                {
+                    success = true,
+                    orderInfo = orderInfo
+                });
+
+            }
+            catch (Exception ex)
+            {
+
+                Log.Error("Add to order Failed!", ex);
                 return Json(new
                 {
                     success = false,

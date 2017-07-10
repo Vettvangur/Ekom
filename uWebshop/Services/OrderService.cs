@@ -136,27 +136,41 @@ namespace uWebshop.Services
         public void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
         {
 
+            if (quantity <= -1)
+            {
+                throw new Exception("Quantity can not be less then 0");
+            }
+
             var lineId = Guid.NewGuid();
 
-            OrderLine existingOrderLine = null;
+            OrderLine existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Id == productId);
 
-            if (action == OrderAction.Update)
+            if (existingOrderLine != null)
             {
-                // Need to check for variant also.
-                existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+                // Update orderline quantity with value
+                existingOrderLine.Quantity = quantity;
+            } else
+            {
+                // Update orderline when adding product to orderline
+
+                if (action == OrderAction.Update)
+                {
+                    // Need to check for variant also.
+                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+                }
+
+                if (existingOrderLine == null)
+                {
+                    var orderLine = new OrderLine(productId, variantIds, quantity, lineId, _store);
+
+                    orderInfo.OrderLines.Add(orderLine);
+                }
+                else
+                {
+                    existingOrderLine.Quantity = existingOrderLine.Quantity + quantity;
+                }
             }
 
-            if (existingOrderLine == null)
-            {
-                var orderLine = new OrderLine(productId, variantIds, quantity, lineId, _store);
-
-                orderInfo.OrderLines.Add(orderLine);
-            }
-            else
-            {
-                existingOrderLine.Quantity = existingOrderLine.Quantity + quantity;
-            }
-            
             UpdateOrderAndOrderInfo(orderInfo);
         }
 
