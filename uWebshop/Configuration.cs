@@ -28,5 +28,15 @@ namespace uWebshop
                 return !string.IsNullOrEmpty(value) && value.ToLowerInvariant() == "true" ? true : false;
             }
         }
+
+        public static bool VirtualContent
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["uwbsVirtualContent"];
+
+                return !string.IsNullOrEmpty(value) && value.ToLowerInvariant() == "true" ? true : false;
+            }
+        }
     }
 }
