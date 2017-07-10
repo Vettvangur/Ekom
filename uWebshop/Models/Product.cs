@@ -19,10 +19,23 @@ namespace uWebshop.Models
     {
         public int Id { get; set; }
         public string Title { get; set; }
+
+        /// <summary>
+        /// Short spaceless descriptive title used to create URLs
+        /// </summary>
         public string Slug { get; set; }
+
+        /// <summary>
+        /// CSV of node id's describing hierarchy from left to right leading up to node.
+        /// </summary>
         public string Path { get; set; }
         public decimal OriginalPrice { get; set; }
         public int Stock { get; set; }
+
+        /// <summary>
+        /// All categories product belongs to, includes parent category.
+        /// Does not include categories product is an indirect child of.
+        /// </summary>
         public List<Category> Categories { get; set; }
         public Store Store { get; set; }
         public int SortOrder { get; set; }
@@ -142,8 +155,8 @@ namespace uWebshop.Models
             var categories = new List<Category>();
 
             var primaryCategory = CategoryCache.Cache[store.Alias]
-                                                .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                .Value;
+                                               .FirstOrDefault(x => x.Value.Id == categoryId)
+                                               .Value;
 
             if (primaryCategory != null)
             {
