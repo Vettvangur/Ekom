@@ -14,6 +14,7 @@ using uWebshop.Models;
 using uWebshop.Utilities;
 using log4net;
 using System.Reflection;
+using System.Configuration;
 
 namespace uWebshop
 {
@@ -28,10 +29,16 @@ namespace uWebshop
         {
             try
             {
-                var httpContext = contentRequest.RoutingContext.UmbracoContext.HttpContext;
+                var umbracoContext = contentRequest.RoutingContext.UmbracoContext;
+                var httpContext = umbracoContext.HttpContext;
+                var umbracoHelper = new UmbracoHelper(umbracoContext);
+
+                // Allows for configuration of content nodes to use for matching all requests
+                // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+                var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
 
                 var path = contentRequest.Uri
-                                         .GetAbsolutePathDecoded()
+                                         .AbsolutePath
                                          .ToLower()
                                          .AddTrailing();
 
@@ -46,16 +53,23 @@ namespace uWebshop
 
                 // Requesting Product?
                 var product = ProductCache.Cache[store.Alias]
-                                      .FirstOrDefault(x => x.Value.Urls != null &&
-                                                           x.Value.Urls.Contains(path))
-                                      .Value;
+                                          .FirstOrDefault(x => x.Value.Urls != null &&
+                                                               x.Value.Urls.Contains(path))
+                                          .Value;
 
                 int contentId = 0;
                 Category category;
 
                 if (product != null)
                 {
-                    contentId = product.Id;
+                    if (virtualContent.InvariantEquals("true"))
+                    {
+                        contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode"));
+                    }
+                    else
+                    {
+                        contentId = product.Id;
+                    }
 
                     var urlArray         = path.Split('/');
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
@@ -74,7 +88,14 @@ namespace uWebshop
 
                     if (category != null)
                     {
-                        contentId = category.Id;
+                        if (virtualContent.InvariantEquals("true"))
+                        {
+                            contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode"));
+                        }
+                        else
+                        {
+                            contentId = category.Id;
+                        }
                     }
                     // else Requesting Neither
                 }
@@ -101,7 +122,7 @@ namespace uWebshop
                     Category = category
                 };
 
-                var appCache = contentRequest.RoutingContext.UmbracoContext.Application.ApplicationCache;
+                var appCache = umbracoContext.Application.ApplicationCache;
 
                 appCache.RequestCache.GetCacheItem("uwbsRequest", () => uwbsRequest);
 
@@ -119,8 +140,8 @@ namespace uWebshop
                 // Request for Product or Category
                 if (contentId != 0)
                 {
-                    var contentCache = UmbracoContext.Current.ContentCache;
-
+                    var contentCache = umbracoContext.ContentCache;
+                    
                     var content = contentCache.GetById(contentId);
 
                     if (content != null)

@@ -15,7 +15,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Fill store domain cache with domains from domain service
         /// </summary>
-        public override void FillCache()
+        public override void FillCacheInternal()
         {
             var domains = StoreService.GetAllStoreDomains();
 

@@ -27,10 +27,9 @@ namespace uWebshop.Services
         {
             var ds = ApplicationContext.Current.Services.DomainService;
 
-            var domains = ds.GetAll(true).Where(x => !x.DomainName.Contains("*"));
+            var domains = ds.GetAll(false);
 
             return domains;
-
         }
 
         public static Store GetStoreByDomain(string domain = "")

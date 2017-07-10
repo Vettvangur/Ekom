@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
@@ -183,14 +184,9 @@ namespace uWebshop.Models
                 var appCache = ApplicationContext.Current.ApplicationCache;
                 var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var defaultUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                if (findUrlByPrefix != null) {
-                    return findUrlByPrefix;
-                }
-
-                return defaultUrl;
+                return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
         [JsonIgnore]

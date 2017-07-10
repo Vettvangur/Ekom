@@ -10,24 +10,23 @@ namespace uWebshop.Utilities
             return Encoding.ASCII.GetString(bytes);
         }
 
+        /// <summary>
+        /// Ensure string ends in one and only one '/'
+        /// </summary>
+        /// <param name="value">String to examine</param>
+        /// <returns>String ending in one and only one '/'</returns>
         public static string AddTrailing(this string value)
         {
-            try
+            if (value.Length == 0)
             {
-                if (value.Substring(value.Length - 1, 1) != "/")
-                {
-                    value = value + "/";
+                return "/";
+            }
+            else if (value[value.Length - 1] != '/')
+            {
+                value += "/";
+            }
 
-                    return value;
-                }
-                else
-                {
-                    return value;
-                }
-            }
-            catch {
-                return value;
-            }
+            return value;
         }
 
         public static bool ConvertToBool(this string value)

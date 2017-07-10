@@ -168,6 +168,7 @@
       <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
       <Private>True</Private>
@@ -245,6 +246,7 @@
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
+    <Compile Include="Cache\Base\ICacheExtensions.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />
     <Compile Include="Cache\Base\PerStoreCache.cs" />
     <Compile Include="Cache\ZoneCache.cs" />
@@ -263,6 +265,7 @@
     <Compile Include="Data.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\ExamineHelper.cs" />
+    <Compile Include="Extend\ExtensionMap.cs" />
     <Compile Include="Helpers\NodeHelper.cs" />
     <Compile Include="Helpers\VatCalculator.cs" />
     <Compile Include="Interfaces\ICart.cs" />

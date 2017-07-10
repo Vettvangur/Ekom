@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
@@ -38,15 +40,9 @@ namespace uWebshop.Models
                 var appCache = ApplicationContext.Current.ApplicationCache;
                 var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var defaulUrl = Urls.FirstOrDefault();
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                if (findUrlByPrefix != null)
-                {
-                    return findUrlByPrefix;
-                }
-
-                return defaulUrl;
+                return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
         public IEnumerable<Category> SubCategories
@@ -59,6 +55,9 @@ namespace uWebshop.Models
                                     .OrderBy(x => x.SortOrder);
             }
         }
+
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Product> Products
         {
             get
@@ -70,6 +69,8 @@ namespace uWebshop.Models
             }
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Category> SubCategoriesRecursive
         {
             get
@@ -82,6 +83,8 @@ namespace uWebshop.Models
             }
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public IEnumerable<Product> ProductsRecursive
         {
             get
@@ -129,7 +132,7 @@ namespace uWebshop.Models
             CreateDate       = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
             UpdateDate       = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
 
-            Urls             = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+            Urls             = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
         public Category(IContent node, Store store)
         {
@@ -153,7 +156,7 @@ namespace uWebshop.Models
             CreateDate = node.CreateDate;
             UpdateDate = node.UpdateDate;
 
-            Urls = UrlService.BuildCategoryUrl(Slug, examineItemsFromPath, store);
+            Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
 
         private static readonly ILog Log =

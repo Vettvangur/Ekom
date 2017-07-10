@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
+using uWebshop.Extend;
 using uWebshop.Helpers;
 using uWebshop.Models;
 
@@ -58,7 +59,12 @@ namespace uWebshop.Cache
         /// </summary>
         public void FillCache()
         {
-            FillCache(null);
+            if (Extending.CacheExtensionMap.ContainsKey(typeof(Tself)))
+            {
+                var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
+                cacheExtensions.FillCache();
+            }
+            else FillCacheInternal();
         }
 
         /// <summary>
@@ -66,7 +72,7 @@ namespace uWebshop.Cache
         /// </summary>
         /// <param name="storeParam">This parameter is supplied when adding a store at runtime, 
         /// triggering the given stores filling</param>
-        public void FillCache(Store storeParam = null)
+        public void FillCacheInternal(Store storeParam = null)
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
 

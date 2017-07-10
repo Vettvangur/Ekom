@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
+using uWebshop.Extend;
 using uWebshop.Helpers;
 using uWebshop.Models;
 
@@ -30,7 +31,6 @@ namespace uWebshop.Cache
         /// Singleton
         /// </summary>
         public static Tself Instance { get; } = new Tself();
-
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -62,9 +62,22 @@ namespace uWebshop.Cache
         }
 
         /// <summary>
+        /// Determine if we should run extension methods
+        /// </summary>
+        public void FillCache()
+        {
+            if (Extending.CacheExtensionMap.ContainsKey(typeof(Tself)))
+            {
+                var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
+                cacheExtensions.FillCache();
+            }
+            else FillCacheInternal();
+        }
+
+        /// <summary>
         /// Base FillCache method appropriate for most derived caches
         /// </summary>
-        public virtual void FillCache()
+        public virtual void FillCacheInternal()
         {
             var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
 
