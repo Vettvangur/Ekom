@@ -6,7 +6,7 @@ $(document).ready(function () {
 
     console.log('init');
 
-    $('.add-to-cart').on('submit', function (e) {
+    $('.add-to-order').on('submit', function (e) {
         e.preventDefault();
 
         var $form = $(this);
@@ -19,7 +19,7 @@ $(document).ready(function () {
         .done(function (resp) {
 
             if (resp.success) {
-                alert('added to cart! Total: ' + resp.orderInfo.ChargedAmount.Value);
+                alert('added to order! Total: ' + resp.orderInfo.ChargedAmount.Value);
             } else {
                 alert('Error: ' + resp.error)
             }
@@ -34,18 +34,18 @@ $(document).ready(function () {
 
     });
 
-    $('.cart-remove-line').on('click', function (e) {
+    $('.order-remove-line').on('click', function (e) {
         e.preventDefault();
 
         var $btn = $(this);
 
-        var jqxhr = $.post('/umbraco/surface/cart/RemoveCartLine?lineId=' + $btn.attr('data-lineId') + '&storeAlias=' + $btn.attr('data-store'), function (resp) {
+        var jqxhr = $.post('/umbraco/surface/order/RemoveOrderLine?lineId=' + $btn.attr('data-lineId') + '&storeAlias=' + $btn.attr('data-store'), function (resp) {
 
         })
             .done(function (resp) {
 
                 if (resp.success) {
-                    alert('Removed from cart!');
+                    alert('Removed from order!');
                 } else {
                     alert('Error: ' + resp.error)
                 }

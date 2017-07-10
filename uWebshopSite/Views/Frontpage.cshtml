@@ -7,7 +7,7 @@
     var products = Catalog.GetAllProducts();
     var currentStore = Store.GetStore();
 
-    var cart = Cart.GetCart(currentStore.Alias);
+    var order = Order.GetOrder(currentStore.Alias);
 
 }
 
@@ -27,25 +27,25 @@
             Include Vat In Price: @currentStore.VatIncludedInPrice
             <br />
 
-            <h4>Cart</h4>
+            <h4>Order</h4>
 
-            Cart: @(cart != null ? "Cart Found" : "Cart Empty")
+            Order: @(order != null ? "Found" : "Empty")
 
-            @if (cart != null)
+            @if (order != null)
             {
-                <div>ReferenceId: @cart.ReferenceId</div>
-                <div>OrderNumber: @cart.OrderNumber</div>
-                <div>Store: @cart.StoreInfo.Alias</div>
-                <div>Quantity: @cart.Quantity</div>
-                <div>Status: @cart.OrderStatus</div>
-                <div>Total: @cart.ChargedAmount.ToCurrencyString()</div>
+                <div>ReferenceId: @order.ReferenceId</div>
+                <div>OrderNumber: @order.OrderNumber</div>
+                <div>Store: @order.StoreInfo.Alias</div>
+                <div>Quantity: @order.Quantity</div>
+                <div>Status: @order.OrderStatus</div>
+                <div>Total: @order.ChargedAmount.ToCurrencyString()</div>
 
-                if (cart.OrderLines.Any())
+                if (order.OrderLines.Any())
                 {
                     <ul>
-                        @foreach (var line in cart.OrderLines)
+                        @foreach (var line in order.OrderLines)
                         {
-                            <li><a href="#" data-store="@cart.StoreInfo.Alias" data-lineId="@line.Id" class="cart-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString()
+                            <li><a href="#" data-store="@order.StoreInfo.Alias" data-lineId="@line.Id" class="order-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString()
     
 
                                 @if (line.Product.VariantGroups.Any())
@@ -83,10 +83,10 @@
 
                 <a href="@product.Url" class="button expanded">View</a>
 
-                <form method="post" action="~/Umbraco/surface/cart/addtoCart" class="add-to-cart">
+                <form method="post" action="~/Umbraco/surface/order/addtoOrder" class="add-to-order">
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
-                    <input type="hidden" name="action" value="@uWebshop.Helpers.CartAction.Update" />
+                    <input type="hidden" name="action" value="@uWebshop.Helpers.OrderAction.Update" />
 
                     @if (product.VariantGroups.Any())
                     {

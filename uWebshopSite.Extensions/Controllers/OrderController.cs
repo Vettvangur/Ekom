@@ -11,9 +11,9 @@ using uWebshop.Helpers;
 
 namespace uWebshopSite.Extensions.Controllers
 {
-    public class CartController : SurfaceController
+    public class OrderController : SurfaceController
     {
-        public JsonResult AddToCart(Guid productId, string storeAlias, int quantity, Guid? variantId = null, CartAction? action = null)
+        public JsonResult AddToOrder(Guid productId, string storeAlias, int quantity, Guid? variantId = null, OrderAction? action = null)
         {
 
             try
@@ -26,7 +26,7 @@ namespace uWebshopSite.Extensions.Controllers
                     variantIds.Add(variantId.Value);
                 }
 
-                var orderInfo = uWebshop.API.Cart.AddOrderLine(productId, variantIds, storeAlias, quantity, action);
+                var orderInfo = uWebshop.API.Order.AddOrderLine(productId, variantIds, storeAlias, quantity, action);
 
                 return Json(new
                 {
@@ -37,7 +37,7 @@ namespace uWebshopSite.Extensions.Controllers
             } catch(Exception ex)
             {
 
-                Log.Error("Add to cart Failed!",ex);
+                Log.Error("Add to order Failed!",ex);
                 return Json(new
                 {
                     success = false,
@@ -47,13 +47,13 @@ namespace uWebshopSite.Extensions.Controllers
 
         }
 
-        public JsonResult RemoveCartLine(Guid lineId, string storeAlias)
+        public JsonResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
 
             try
             {
 
-                var orderInfo = uWebshop.API.Cart.RemoveOrderLine(lineId,storeAlias);
+                var orderInfo = uWebshop.API.Order.RemoveOrderLine(lineId,storeAlias);
 
                 return Json(new
                 {
@@ -65,7 +65,7 @@ namespace uWebshopSite.Extensions.Controllers
             catch (Exception ex)
             {
 
-                Log.Error("Remove orderline from cart Failed!", ex);
+                Log.Error("Remove orderline from order Failed!", ex);
                 return Json(new
                 {
                     success = false,

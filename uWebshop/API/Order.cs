@@ -11,17 +11,17 @@ using uWebshop.Services;
 
 namespace uWebshop.API
 {
-    public class Cart
+    public class Order
     {
 
-        public static OrderInfo GetCart(string storeAlias)
+        public static OrderInfo GetOrder(string storeAlias)
         {
             var orderService = new OrderService();
 
             return orderService.GetOrder(storeAlias);
         }
 
-        public static OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, string storeAlias, int quantity, CartAction? action)
+        public static OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, string storeAlias, int quantity, OrderAction? action)
         {
             var orderService = new OrderService();
 

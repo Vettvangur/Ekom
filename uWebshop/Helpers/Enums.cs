@@ -26,7 +26,7 @@ namespace uWebshop.Helpers
         Scheduled,
     }
 
-    public enum CartAction
+    public enum OrderAction
     {
         Add,
         Update

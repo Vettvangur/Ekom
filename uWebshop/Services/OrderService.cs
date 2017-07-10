@@ -74,7 +74,7 @@ namespace uWebshop.Services
 
         }
 
-        public OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, string storeAlias, CartAction? action)
+        public OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, string storeAlias, OrderAction? action)
         {
             Log.Info("Add OrderLine...");
             _store = _store == null ? API.Store.GetStore(storeAlias) : _store;
@@ -88,7 +88,7 @@ namespace uWebshop.Services
             }
 
             // If cart action is null then update is the default state
-            var cartAction = action != null ? action.Value : CartAction.Update;
+            var cartAction = action != null ? action.Value : OrderAction.Update;
 
             Log.Info("Add OrderLine ...  Get Order..");
             var orderInfo = GetOrder(storeAlias);
@@ -133,14 +133,14 @@ namespace uWebshop.Services
             return orderInfo;
         }
 
-        public void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, CartAction action)
+        public void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
         {
 
             var lineId = Guid.NewGuid();
 
             OrderLine existingOrderLine = null;
 
-            if (action == CartAction.Update)
+            if (action == OrderAction.Update)
             {
                 // Need to check for variant also.
                 existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
@@ -307,8 +307,6 @@ namespace uWebshop.Services
             {
                 _orderRepository = new OrderRepository();
             }
-
-            Log.Info("Store: " + _store.Alias);
 
             var lastOrderNumber = _orderRepository.GetHighestOrderNumber(_store.Alias);
             referenceId = lastOrderNumber + 1;
