@@ -136,6 +136,8 @@ namespace uWebshop.Models
                 return categories;
             }
         }
+
+        [JsonIgnore]
         public IEnumerable<Guid> CategoriesIds
         {
             get
