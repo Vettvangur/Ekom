@@ -191,20 +191,18 @@ namespace uWebshop.Models
                 return new Price(OriginalPrice, Store);
             }
         }
-        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
         public T GetPropertyValue<T>(string propertyAlias)
         {
             propertyAlias = propertyAlias.ToLowerInvariant();
 
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
                 {
-                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
-
-                    return property == null ? default(T) : (T)property.Value;
+                    return (T)Properties[propertyAlias.ToLowerInvariant()];
                 }
-
             }
 
             return default(T);
@@ -219,34 +217,26 @@ namespace uWebshop.Models
 
                 foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
                 {
-                    Properties.Add(new UmbracoProperty
-                    {
-                        Key = field.Key,
-                        Value = field.Value
-                    });
+                    Properties.Add(field.Key, field.Value);
                 }
 
             } catch(Exception ex)
             {
                 Log.Error("Failed to create variant from examine. Id: " + item.Id, ex);
             }
-
         }
+
         public Variant(IContent node, Store store)
         {
             try
             {
                 _store = store;
 
-                Properties.AddRange(Product.CreateDefaultUmbracoProperties(node));
+                Properties = Product.CreateDefaultUmbracoProperties(node);
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(new UmbracoProperty
-                    {
-                        Key = prop.Alias,
-                        Value = prop.Value
-                    });
+                    Properties.Add(prop.Alias, prop.Value);
                 }
 
 

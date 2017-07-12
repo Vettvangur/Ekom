@@ -111,7 +111,7 @@ namespace uWebshop.Models
             }
         }
 
-        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+        public Dictionary<string, object> Properties = new Dictionary<string, object>();
 
         public T GetPropertyValue<T>(string propertyAlias)
         {
@@ -119,11 +119,9 @@ namespace uWebshop.Models
 
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
                 {
-                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
-
-                    return property == null ? default(T) : (T)property.Value;
+                    return (T)Properties[propertyAlias.ToLowerInvariant()];
                 }
 
             }
@@ -181,20 +179,7 @@ namespace uWebshop.Models
 
             var productPropertiesObject = JObject.Parse(productJson);
 
-            var productProperties = (JArray)productPropertiesObject["Properties"];
-
-            var properties = new List<UmbracoProperty>();
-
-            foreach (var property in productProperties)
-            {
-                properties.Add(new UmbracoProperty
-                {
-                    Key = (string)property["Key"],
-                    Value = (string)property["Value"]
-                });
-            }
-
-            Properties = properties;
+            Properties = productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>();
 
             // Add Variant Group
 

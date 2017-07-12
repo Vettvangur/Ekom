@@ -235,27 +235,20 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
-        /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias">Umbraco Alias</param>
         /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this List<UmbracoProperty> items, string property, string storeAlias)
+        public static string GetStoreProperty(this Dictionary<string, object> items, string property, string storeAlias)
         {
-            var fieldExist = items.Any(x => x.Key == property + "_" + storeAlias);
+            var fieldExist = items.ContainsKey(property + "_" + storeAlias);
 
             if (fieldExist)
             {
-                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                string value = (string)items.FirstOrDefault(x => x.Key == property + "_" + storeAlias).Value;
-
-                if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
-                {
-                    value = items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
-                }
-
-                return value;
+                return items[property + "_" + storeAlias].ToString();
             }
+            // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
             else
             {
-                return items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
+                return items.ContainsKey(property) ? items[property].ToString() : "";
             }
         }
 

@@ -15,7 +15,6 @@ namespace uWebshopSite.Extensions.Controllers
     {
         public JsonResult AddToOrder(Guid productId, string storeAlias, int quantity, Guid? variantId = null, OrderAction? action = null)
         {
-
             try
             {
                 var variantIds = new List<Guid>();
@@ -43,7 +42,6 @@ namespace uWebshopSite.Extensions.Controllers
                     error = ex.Message
                 });
             }
-
         }
 
         public JsonResult UpdateOrder(Guid lineId, string storeAlias, int quantity)

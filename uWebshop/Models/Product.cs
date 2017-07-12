@@ -50,6 +50,7 @@ namespace uWebshop.Models
                 return GetPropertyValue<string>("sku");
             }
         }
+
         [JsonIgnore]
         public string Title {
             get
@@ -238,7 +239,7 @@ namespace uWebshop.Models
                     .Select(x => x.Value);
             }
         }
-        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+        public Dictionary<string, object> Properties = new Dictionary<string, object>();
 
         public T GetPropertyValue<T>(string propertyAlias)
         {
@@ -246,11 +247,9 @@ namespace uWebshop.Models
 
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
                 {
-                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
-
-                    return property == null ? default(T) : (T)property.Value;
+                    return (T) Properties[propertyAlias.ToLowerInvariant()];
                 }
 
             }
@@ -265,11 +264,7 @@ namespace uWebshop.Models
 
             foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
             {
-                Properties.Add(new UmbracoProperty
-                {
-                    Key = field.Key,
-                    Value = field.Value
-                });
+                Properties.Add(field.Key, field.Value);
             }
 
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
@@ -278,23 +273,19 @@ namespace uWebshop.Models
             {
                 throw new Exception("No url's or no title present in product");
             }
-
         }
+
         public Product(IContent node, Store store)
         {
             try
             {
                 _store = store;
 
-                Properties.AddRange(CreateDefaultUmbracoProperties(node));
+                Properties = CreateDefaultUmbracoProperties(node);
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(new UmbracoProperty
-                    {
-                        Key = prop.Alias,
-                        Value = prop.Value
-                    });
+                    Properties.Add(prop.Alias, prop.Value);
                 }
 
 
@@ -312,64 +303,55 @@ namespace uWebshop.Models
 
         }
 
-        public static List<UmbracoProperty> CreateDefaultUmbracoProperties(IContent node)
+        private Dictionary<string, object> CreateDefaultUmbracoProperties(IContent node)
         {
-            var properties = new List<UmbracoProperty>();
-
-            properties.Add(new UmbracoProperty {
-                Key = "id",
-                Value = node.Id.ToString()
-            });
-            properties.Add(new UmbracoProperty
+            var properties = new Dictionary<string, object>
             {
-                Key = "key",
-                Value = node.Key.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "path",
-                Value = node.Path
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "level",
-                Value = node.Level.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "sortOrder",
-                Value = node.SortOrder.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "parentID",
-                Value = node.ParentId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "writerID",
-                Value = node.WriterId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "creatorID",
-                Value = node.CreatorId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "nodeTypeAlias",
-                Value = node.ContentType.Alias
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "updateDate",
-                Value = node.UpdateDate.ToString("yyyyMMddHHmmssfff")
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "createDate",
-                Value = node.CreateDate.ToString("yyyyMMddHHmmssfff")
-            });
+                {
+                    "id",
+                    node.Id.ToString()
+                },
+                {
+                    "key",
+                    node.Key.ToString()
+                },
+                {
+                    "path",
+                    node.Path
+                },
+                {
+                    "level",
+                    node.Level.ToString()
+                },
+                {
+                    "sortOrder",
+                    node.SortOrder.ToString()
+                },
+                {
+                    "parentID",
+                    node.ParentId.ToString()
+                },
+                {
+                    "writerID",
+                    node.WriterId.ToString()
+                },
+                {
+                    "creatorID",
+                    node.CreatorId.ToString()
+                },
+                {
+                    "nodeTypeAlias",
+                    node.ContentType.Alias
+                },
+                {
+                    "updateDate",
+                    node.UpdateDate.ToString("yyyyMMddHHmmssfff")
+                },
+                {
+                    "createDate",
+                    node.CreateDate.ToString("yyyyMMddHHmmssfff")
+                }
+            };
 
             return properties;
         }
