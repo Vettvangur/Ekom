@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
 using uWebshop.Helpers;
@@ -51,8 +52,20 @@ namespace uWebshop.Models
                 Key = _key;
                 ContentTypeAlias = contentTypeAlias;
                 Alias = item.Fields["nodeName"];
-
-                StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
+                
+                int tempStoreRootNode;
+                if(Int32.TryParse(item.Fields["storeRootNode"], out tempStoreRootNode))
+                {
+                    StoreRootNode = tempStoreRootNode;
+                } else
+                {
+                    var srn = Udi.Parse(item.Fields["storeRootNode"]);
+                    var umbracoHelper = new Umbraco.Web.UmbracoHelper(Umbraco.Web.UmbracoContext.Current);
+                    var rootNode = umbracoHelper.TypedContent(srn);
+                    StoreRootNode = rootNode.Id;
+                }
+                
+                //StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
                 Level = Convert.ToInt32(item.Fields["level"]);
 
                 Domains = StoreDomainCache.Cache
@@ -116,8 +129,12 @@ namespace uWebshop.Models
 
             VatIncludedInPrice = item.GetValue<bool>("vatIncludedInPrice");
 
-            OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
-            OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
+            try
+            {
+                OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
+                OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
+            }
+            catch { }
         }
 
         private static readonly ILog Log =
