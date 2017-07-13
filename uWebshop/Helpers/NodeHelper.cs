@@ -237,18 +237,18 @@ namespace uWebshop.Helpers
         /// </summary>
         /// <param name="storeAlias">Umbraco Alias</param>
         /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this Dictionary<string, object> items, string property, string storeAlias)
+        public static string GetStoreProperty(this Dictionary<string, string> items, string property, string storeAlias)
         {
             var fieldExist = items.ContainsKey(property + "_" + storeAlias);
 
             if (fieldExist)
             {
-                return items[property + "_" + storeAlias].ToString();
+                return items[property + "_" + storeAlias];
             }
             // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
             else
             {
-                return items.ContainsKey(property) ? items[property].ToString() : "";
+                return items.ContainsKey(property) ? items[property] : "";
             }
         }
 
@@ -294,7 +294,7 @@ namespace uWebshop.Helpers
                 var fieldValue = item.GetPropertyValue<string>(field + "_" + storeAlias);
 
                 // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                if (storeAlias.ToLower() == "is" && ( string.IsNullOrEmpty(fieldValue) ||
+                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
                                                      fieldValue == "0" ))
                 {
                     fieldValue = item.GetPropertyValue<string>(field);

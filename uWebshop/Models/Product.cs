@@ -23,14 +23,14 @@ namespace uWebshop.Models
         public int Id {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("id"));
+                return Convert.ToInt32(GetPropertyValue("id"));
             }
         }
         [JsonIgnore]
         public Guid Key {
             get
             {
-                var key = GetPropertyValue<string>("key");
+                var key = GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -47,7 +47,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("sku");
+                return GetPropertyValue("sku");
             }
         }
 
@@ -98,10 +98,10 @@ namespace uWebshop.Models
         public List<ICategory> Categories {
             get
             {
-                int categoryId = Convert.ToInt32(GetPropertyValue<string>("parentID"));
+                int categoryId = Convert.ToInt32(GetPropertyValue("parentID"));
 
                 var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    GetPropertyValue<string>("categories") : "";
+                                    GetPropertyValue("categories") : "";
 
                 var categories = new List<ICategory>();
 
@@ -158,14 +158,14 @@ namespace uWebshop.Models
         public int SortOrder {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("sortOrder"));
+                return Convert.ToInt32(GetPropertyValue("sortOrder"));
             }
         }
         [JsonIgnore]
         public int Level {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("level"));
+                return Convert.ToInt32(GetPropertyValue("level"));
             }
         }
 
@@ -177,21 +177,21 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("path");
+                return GetPropertyValue("path");
             }
         }
         [JsonIgnore]
         public DateTime CreateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("createDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
         public DateTime UpdateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("updateDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
             }
         }
         public string Url {
@@ -209,7 +209,7 @@ namespace uWebshop.Models
         public string ContentTypeAlias {
             get
             {
-                return GetPropertyValue<string>("nodeTypeAlias");
+                return GetPropertyValue("nodeTypeAlias");
             }
         }
         [JsonIgnore]
@@ -239,9 +239,9 @@ namespace uWebshop.Models
                     .Select(x => x.Value);
             }
         }
-        public Dictionary<string, object> Properties = new Dictionary<string, object>();
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public T GetPropertyValue<T>(string propertyAlias)
+        public string GetPropertyValue(string propertyAlias)
         {
             propertyAlias = propertyAlias.ToLowerInvariant();
 
@@ -249,12 +249,12 @@ namespace uWebshop.Models
             {
                 if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
                 {
-                    return (T) Properties[propertyAlias.ToLowerInvariant()];
+                    return Properties[propertyAlias.ToLowerInvariant()];
                 }
 
             }
 
-            return default(T);
+            return null;
         }
 
         public Product(): base() { }
@@ -285,7 +285,7 @@ namespace uWebshop.Models
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(prop.Alias, prop.Value);
+                    Properties.Add(prop.Alias, prop.Value.ToString());
                 }
 
 
@@ -303,9 +303,9 @@ namespace uWebshop.Models
 
         }
 
-        private Dictionary<string, object> CreateDefaultUmbracoProperties(IContent node)
+        public static Dictionary<string, string> CreateDefaultUmbracoProperties(IContent node)
         {
-            var properties = new Dictionary<string, object>
+            var properties = new Dictionary<string, string>
             {
                 {
                     "id",

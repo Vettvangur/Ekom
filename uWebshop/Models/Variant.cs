@@ -23,15 +23,16 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("id"));
+                return Convert.ToInt32(GetPropertyValue("id"));
             }
         }
+
         [JsonIgnore]
         public Guid Key
         {
             get
             {
-                var key = GetPropertyValue<string>("key");
+                var key = GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -43,14 +44,16 @@ namespace uWebshop.Models
                 return _key;
             }
         }
+
         [JsonIgnore]
         public string SKU
         {
             get
             {
-                return GetPropertyValue<string>("sku");
+                return GetPropertyValue("sku");
             }
         }
+
         [JsonIgnore]
         public string Title
         {
@@ -59,14 +62,16 @@ namespace uWebshop.Models
                 return Properties.GetStoreProperty("title", _store.Alias);
             }
         }
+
         [JsonIgnore]
         public string Path
         {
             get
             {
-                return GetPropertyValue<string>("path");
+                return GetPropertyValue("path");
             }
         }
+
         [JsonIgnore]
         public decimal OriginalPrice
         {
@@ -80,6 +85,7 @@ namespace uWebshop.Models
                 return originalPrice;
             }
         }
+
         [JsonIgnore]
         public int Stock
         {
@@ -88,6 +94,7 @@ namespace uWebshop.Models
                 return 0;
             }
         }
+
         public Guid ProductKey {
             get
             {
@@ -105,6 +112,7 @@ namespace uWebshop.Models
                 return product.Key;
             }
         }
+
         public Guid VariantGroupKey {
             get
             {
@@ -117,9 +125,10 @@ namespace uWebshop.Models
                 return Guid.Empty;
             }
         }
+
         public VariantGroup VariantGroup()
         {
-            var parentId = GetPropertyValue<string>("parentID");
+            var parentId = GetPropertyValue("parentID");
             int _parentId = 0;
 
             if (Int32.TryParse(parentId, out _parentId))
@@ -136,6 +145,7 @@ namespace uWebshop.Models
 
             return null;
         }
+
         [JsonIgnore]
         public Store Store
         {
@@ -144,12 +154,13 @@ namespace uWebshop.Models
                 return _store;
             }
         }
+
         [JsonIgnore]
         public int Level
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("level"));
+                return Convert.ToInt32(GetPropertyValue("level"));
             }
         }
         [JsonIgnore]
@@ -157,7 +168,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("nodeTypeAlias");
+                return GetPropertyValue("nodeTypeAlias");
             }
         }
         [JsonIgnore]
@@ -165,7 +176,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("sortOrder"));
+                return Convert.ToInt32(GetPropertyValue("sortOrder"));
             }
         }
         [JsonIgnore]
@@ -173,7 +184,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("createDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
@@ -181,7 +192,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("updateDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
             }
         }
         public IDiscountedPrice Price
@@ -193,7 +204,7 @@ namespace uWebshop.Models
         }
 
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
-        public T GetPropertyValue<T>(string propertyAlias)
+        public string GetPropertyValue(string propertyAlias)
         {
             propertyAlias = propertyAlias.ToLowerInvariant();
 
@@ -201,11 +212,11 @@ namespace uWebshop.Models
             {
                 if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
                 {
-                    return (T)Properties[propertyAlias.ToLowerInvariant()];
+                    return Properties[propertyAlias.ToLowerInvariant()];
                 }
             }
 
-            return default(T);
+            return string.Empty;
         }
 
         public Variant(): base() { }
@@ -236,7 +247,7 @@ namespace uWebshop.Models
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(prop.Alias, prop.Value);
+                    Properties.Add(prop.Alias, prop.Value.ToString());
                 }
 
 
