@@ -10,6 +10,7 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using uWebshop.Models;
+using uWebshop.Utilities;
 
 namespace uWebshop.Helpers
 {
@@ -148,10 +149,7 @@ namespace uWebshop.Helpers
 
                     if (!string.IsNullOrEmpty(disableField))
                     {
-                        if (disableField == "1" || disableField.ToLower() == "true")
-                        {
-                            return true;
-                        }
+                        return disableField.ConvertToBool();
                     }
                 }
                 else

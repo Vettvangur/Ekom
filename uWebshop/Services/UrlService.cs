@@ -71,7 +71,10 @@ namespace uWebshop.Services
 
                     StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
 
-                    hierarchy.ForEach(item => builder.Append(item + "/"));
+                    foreach (var item in hierarchy)
+                    {
+                        builder.Append(item + "/");
+                    }
 
                     // ToSafeAlias obliterates strings containing only numbers f.x.
                     var slugSafeAlias = slug.ToSafeAlias();

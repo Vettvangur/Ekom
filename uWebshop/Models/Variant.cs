@@ -204,15 +204,14 @@ namespace uWebshop.Models
         }
 
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
+
         public string GetPropertyValue(string propertyAlias)
         {
-            propertyAlias = propertyAlias.ToLowerInvariant();
-
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
+                if (Properties.ContainsKey(propertyAlias))
                 {
-                    return Properties[propertyAlias.ToLowerInvariant()];
+                    return Properties[propertyAlias];
                 }
             }
 

@@ -14,7 +14,7 @@ namespace uWebshop.API
             var appCache = ApplicationContext.Current.ApplicationCache;
             var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-            if (r.Store != null)
+            if (r?.Store != null)
             {
                 return r.Store;
             }

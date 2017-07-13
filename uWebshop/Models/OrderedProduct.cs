@@ -126,7 +126,7 @@ namespace uWebshop.Models
             return null;
         }
 
-        public IEnumerable<OrderedVariantGroup> VariantGroups {get; set;}
+        public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
         {
