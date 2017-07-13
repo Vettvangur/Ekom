@@ -5,28 +5,6 @@ VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop", "uWebshop\uWebshop.csproj", "{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "uWebshopSite", "uWebshopSite\", "{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}"
-	ProjectSection(WebsiteProperties) = preProject
-		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
-		ProjectReferences = "{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}|uWebshop.dll;{fca082bb-1e07-4c3e-8d77-f095cee34d77}|uWebshopSite.Extensions.dll;"
-		Debug.AspNetCompiler.VirtualPath = "/localhost_53639"
-		Debug.AspNetCompiler.PhysicalPath = "uWebshopSite\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_53639\"
-		Debug.AspNetCompiler.Updateable = "true"
-		Debug.AspNetCompiler.ForceOverwrite = "true"
-		Debug.AspNetCompiler.FixedNames = "false"
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/localhost_53639"
-		Release.AspNetCompiler.PhysicalPath = "uWebshopSite\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_53639\"
-		Release.AspNetCompiler.Updateable = "true"
-		Release.AspNetCompiler.ForceOverwrite = "true"
-		Release.AspNetCompiler.FixedNames = "false"
-		Release.AspNetCompiler.Debug = "False"
-		VWDPort = "53639"
-		SlnRelativePath = "uWebshopSite\"
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshopSite.Extensions", "uWebshopSite.Extensions\uWebshopSite.Extensions.csproj", "{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop.Tests", "uWebshop.Tests\uWebshop.Tests.csproj", "{18843487-DA0C-466B-9805-629DEB243421}"
@@ -43,10 +21,6 @@ Global
 		{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}.Release|Any CPU.ActiveCfg = Debug|Any CPU
-		{CAF2E978-23DF-4D3A-82FD-6BBE6873D953}.Release|Any CPU.Build.0 = Debug|Any CPU
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Release|Any CPU.ActiveCfg = Release|Any CPU
