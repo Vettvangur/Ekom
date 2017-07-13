@@ -243,15 +243,12 @@ namespace uWebshop.Models
 
         public string GetPropertyValue(string propertyAlias)
         {
-            propertyAlias = propertyAlias.ToLowerInvariant();
-
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.ContainsKey(propertyAlias.ToLowerInvariant()))
+                if (Properties.ContainsKey(propertyAlias))
                 {
-                    return Properties[propertyAlias.ToLowerInvariant()];
+                    return Properties[propertyAlias];
                 }
-
             }
 
             return null;
