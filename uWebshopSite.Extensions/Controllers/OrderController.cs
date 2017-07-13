@@ -11,11 +11,11 @@ using uWebshop.Helpers;
 
 namespace uWebshopSite.Extensions.Controllers
 {
+    [PluginController("uWebshop")]
     public class OrderController : SurfaceController
     {
         public JsonResult AddToOrder(Guid productId, string storeAlias, int quantity, Guid? variantId = null, OrderAction? action = null)
         {
-
             try
             {
                 var variantIds = new List<Guid>();
@@ -32,8 +32,8 @@ namespace uWebshopSite.Extensions.Controllers
                     success = true,
                     orderInfo = orderInfo
                 });
-
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
 
                 Log.Error("Add to order Failed!",ex);
@@ -43,12 +43,10 @@ namespace uWebshopSite.Extensions.Controllers
                     error = ex.Message
                 });
             }
-
         }
 
         public JsonResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
         {
-
             try
             {
                 var orderInfo = uWebshop.API.Order.AddOrderLine(lineId, null, storeAlias, quantity, null);
@@ -70,12 +68,10 @@ namespace uWebshopSite.Extensions.Controllers
                     error = ex.Message
                 });
             }
-
         }
 
         public JsonResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
-
             try
             {
 
@@ -98,7 +94,6 @@ namespace uWebshopSite.Extensions.Controllers
                     error = ex.Message
                 });
             }
-
         }
 
         protected static readonly ILog Log =

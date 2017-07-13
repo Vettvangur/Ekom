@@ -22,7 +22,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("id"));
+                return Convert.ToInt32(GetPropertyValue("id"));
             }
         }
         [JsonIgnore]
@@ -30,7 +30,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var key = GetPropertyValue<string>("key");
+                var key = GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -47,7 +47,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("sku");
+                return GetPropertyValue("sku");
             }
         }
         [JsonIgnore]
@@ -76,7 +76,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("path");
+                return GetPropertyValue("path");
             }
         }
         [JsonIgnore]
@@ -84,7 +84,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("createDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
@@ -92,7 +92,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("updateDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
             }
         }
         public IDiscountedPrice Price
@@ -111,27 +111,22 @@ namespace uWebshop.Models
             }
         }
 
-        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public T GetPropertyValue<T>(string propertyAlias)
+        public string GetPropertyValue(string propertyAlias)
         {
-            propertyAlias = propertyAlias.ToLowerInvariant();
-
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                if (Properties.ContainsKey(propertyAlias))
                 {
-                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
-
-                    return property == null ? default(T) : (T)property.Value;
+                    return Properties[propertyAlias];
                 }
-
             }
 
-            return default(T);
+            return null;
         }
 
-        public IEnumerable<OrderedVariantGroup> VariantGroups {get; set;}
+        public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
         {
@@ -169,7 +164,6 @@ namespace uWebshop.Models
             {
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
-
         }
 
         public OrderedProduct(string productJson, StoreInfo storeInfo)
@@ -181,20 +175,7 @@ namespace uWebshop.Models
 
             var productPropertiesObject = JObject.Parse(productJson);
 
-            var productProperties = (JArray)productPropertiesObject["Properties"];
-
-            var properties = new List<UmbracoProperty>();
-
-            foreach (var property in productProperties)
-            {
-                properties.Add(new UmbracoProperty
-                {
-                    Key = (string)property["Key"],
-                    Value = (string)property["Value"]
-                });
-            }
-
-            Properties = properties;
+            Properties = productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>();
 
             // Add Variant Group
 
@@ -229,7 +210,6 @@ namespace uWebshop.Models
             {
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
-
         }
 
         protected static readonly ILog Log =

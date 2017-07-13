@@ -40,31 +40,23 @@ namespace uWebshop.Cache
                 Log.Info("Starting to fill store cache...");
                 int count = 0;
 
-                try
-                {
-                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                    var query = searchCriteria.NodeTypeAlias(nodeAlias);
-                    var results = searcher.Search(query.Compile());
+                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                var query = searchCriteria.NodeTypeAlias(nodeAlias);
+                var results = searcher.Search(query.Compile());
 
-                    foreach (var r in results)
+                foreach (var r in results)
+                {
+                    try
                     {
-                        try
-                        {
-                            var item = new Store(r);
+                        var item = new Store(r);
 
-                            count++;
-                            AddOrReplaceFromCache(r.Id, item);
-                        }
-                        catch {
-                            Log.Info("Failed to map to store. Id: " + r.Id);
-                        }
+                        count++;
+                        AddOrReplaceFromCache(r.Id, item);
                     }
-
-                } catch(Exception ex)
-                {
-                    Log.Error("Filling store cache failed!", ex);
+                    catch {
+                        Log.Info("Failed to map to store. Id: " + r.Id);
+                    }
                 }
-
 
                 stopwatch.Stop();
 

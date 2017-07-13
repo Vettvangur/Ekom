@@ -32,10 +32,21 @@ namespace uWebshop
         {
             LogHelper.Info(GetType(), "OnApplicationStarted...");
 
+            var umbracoonfigurationStatus = ConfigurationManager.AppSettings["umbracoConfigurationStatus"];
+            if (string.IsNullOrEmpty(umbracoonfigurationStatus))
+            {
+                // umbraco is not installed or f.x. Fresh install
+                // don't do anything uWebshop related
+                return;
+            }
+
             // Settings
 
             // Fill Caches
-            Data.InitializationSequence.initSeq.ForEach(cache => cache.FillCache());
+            foreach (var cache in Data.InitializationSequence.initSeq)
+            {
+                cache.FillCache();
+            }
 
             // Allows for configuration of content nodes to use for matching all requests
             // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes

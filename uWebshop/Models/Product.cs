@@ -23,14 +23,14 @@ namespace uWebshop.Models
         public int Id {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("id"));
+                return Convert.ToInt32(GetPropertyValue("id"));
             }
         }
         [JsonIgnore]
         public Guid Key {
             get
             {
-                var key = GetPropertyValue<string>("key");
+                var key = GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -47,9 +47,10 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("sku");
+                return GetPropertyValue("sku");
             }
         }
+
         [JsonIgnore]
         public string Title {
             get
@@ -97,10 +98,10 @@ namespace uWebshop.Models
         public List<ICategory> Categories {
             get
             {
-                int categoryId = Convert.ToInt32(GetPropertyValue<string>("parentID"));
+                int categoryId = Convert.ToInt32(GetPropertyValue("parentID"));
 
                 var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    GetPropertyValue<string>("categories") : "";
+                                    GetPropertyValue("categories") : "";
 
                 var categories = new List<ICategory>();
 
@@ -157,14 +158,14 @@ namespace uWebshop.Models
         public int SortOrder {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("sortOrder"));
+                return Convert.ToInt32(GetPropertyValue("sortOrder"));
             }
         }
         [JsonIgnore]
         public int Level {
             get
             {
-                return Convert.ToInt32(GetPropertyValue<string>("level"));
+                return Convert.ToInt32(GetPropertyValue("level"));
             }
         }
 
@@ -176,21 +177,21 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue<string>("path");
+                return GetPropertyValue("path");
             }
         }
         [JsonIgnore]
         public DateTime CreateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("createDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
         public DateTime UpdateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue<string>("updateDate"));
+                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
             }
         }
         public string Url {
@@ -208,7 +209,7 @@ namespace uWebshop.Models
         public string ContentTypeAlias {
             get
             {
-                return GetPropertyValue<string>("nodeTypeAlias");
+                return GetPropertyValue("nodeTypeAlias");
             }
         }
         [JsonIgnore]
@@ -238,24 +239,19 @@ namespace uWebshop.Models
                     .Select(x => x.Value);
             }
         }
-        public List<UmbracoProperty> Properties = new List<UmbracoProperty>();
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public T GetPropertyValue<T>(string propertyAlias)
+        public string GetPropertyValue(string propertyAlias)
         {
-            propertyAlias = propertyAlias.ToLowerInvariant();
-
             if (!string.IsNullOrEmpty(propertyAlias))
             {
-                if (Properties.Any(x => x.Key.ToLowerInvariant() == propertyAlias))
+                if (Properties.ContainsKey(propertyAlias))
                 {
-                    var property = Properties.FirstOrDefault(x => x.Key.ToLowerInvariant() == propertyAlias);
-
-                    return property == null ? default(T) : (T)property.Value;
+                    return Properties[propertyAlias];
                 }
-
             }
 
-            return default(T);
+            return null;
         }
 
         public Product(): base() { }
@@ -265,11 +261,7 @@ namespace uWebshop.Models
 
             foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
             {
-                Properties.Add(new UmbracoProperty
-                {
-                    Key = field.Key,
-                    Value = field.Value
-                });
+                Properties.Add(field.Key, field.Value);
             }
 
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
@@ -278,23 +270,19 @@ namespace uWebshop.Models
             {
                 throw new Exception("No url's or no title present in product");
             }
-
         }
+
         public Product(IContent node, Store store)
         {
             try
             {
                 _store = store;
 
-                Properties.AddRange(CreateDefaultUmbracoProperties(node));
+                Properties = CreateDefaultUmbracoProperties(node);
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(new UmbracoProperty
-                    {
-                        Key = prop.Alias,
-                        Value = prop.Value
-                    });
+                    Properties.Add(prop.Alias, prop.Value.ToString());
                 }
 
 
@@ -312,64 +300,55 @@ namespace uWebshop.Models
 
         }
 
-        public static List<UmbracoProperty> CreateDefaultUmbracoProperties(IContent node)
+        public static Dictionary<string, string> CreateDefaultUmbracoProperties(IContent node)
         {
-            var properties = new List<UmbracoProperty>();
-
-            properties.Add(new UmbracoProperty {
-                Key = "id",
-                Value = node.Id.ToString()
-            });
-            properties.Add(new UmbracoProperty
+            var properties = new Dictionary<string, string>
             {
-                Key = "key",
-                Value = node.Key.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "path",
-                Value = node.Path
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "level",
-                Value = node.Level.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "sortOrder",
-                Value = node.SortOrder.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "parentID",
-                Value = node.ParentId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "writerID",
-                Value = node.WriterId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "creatorID",
-                Value = node.CreatorId.ToString()
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "nodeTypeAlias",
-                Value = node.ContentType.Alias
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "updateDate",
-                Value = node.UpdateDate.ToString("yyyyMMddHHmmssfff")
-            });
-            properties.Add(new UmbracoProperty
-            {
-                Key = "createDate",
-                Value = node.CreateDate.ToString("yyyyMMddHHmmssfff")
-            });
+                {
+                    "id",
+                    node.Id.ToString()
+                },
+                {
+                    "key",
+                    node.Key.ToString()
+                },
+                {
+                    "path",
+                    node.Path
+                },
+                {
+                    "level",
+                    node.Level.ToString()
+                },
+                {
+                    "sortOrder",
+                    node.SortOrder.ToString()
+                },
+                {
+                    "parentID",
+                    node.ParentId.ToString()
+                },
+                {
+                    "writerID",
+                    node.WriterId.ToString()
+                },
+                {
+                    "creatorID",
+                    node.CreatorId.ToString()
+                },
+                {
+                    "nodeTypeAlias",
+                    node.ContentType.Alias
+                },
+                {
+                    "updateDate",
+                    node.UpdateDate.ToString("yyyyMMddHHmmssfff")
+                },
+                {
+                    "createDate",
+                    node.CreateDate.ToString("yyyyMMddHHmmssfff")
+                }
+            };
 
             return properties;
         }

@@ -10,6 +10,7 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using uWebshop.Models;
+using uWebshop.Utilities;
 
 namespace uWebshop.Helpers
 {
@@ -148,10 +149,7 @@ namespace uWebshop.Helpers
 
                     if (!string.IsNullOrEmpty(disableField))
                     {
-                        if (disableField == "1" || disableField.ToLower() == "true")
-                        {
-                            return true;
-                        }
+                        return disableField.ConvertToBool();
                     }
                 }
                 else
@@ -235,27 +233,20 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
-        /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias">Umbraco Alias</param>
         /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this List<UmbracoProperty> items, string property, string storeAlias)
+        public static string GetStoreProperty(this Dictionary<string, string> items, string property, string storeAlias)
         {
-            var fieldExist = items.Any(x => x.Key == property + "_" + storeAlias);
+            var fieldExist = items.ContainsKey(property + "_" + storeAlias);
 
             if (fieldExist)
             {
-                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                string value = (string)items.FirstOrDefault(x => x.Key == property + "_" + storeAlias).Value;
-
-                if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
-                {
-                    value = items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
-                }
-
-                return value;
+                return items[property + "_" + storeAlias];
             }
+            // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
             else
             {
-                return items.Any(x => x.Key == property) ? (string)items.FirstOrDefault(x => x.Key == property).Value : "";
+                return items.ContainsKey(property) ? items[property] : "";
             }
         }
 
@@ -301,7 +292,7 @@ namespace uWebshop.Helpers
                 var fieldValue = item.GetPropertyValue<string>(field + "_" + storeAlias);
 
                 // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                if (storeAlias.ToLower() == "is" && ( string.IsNullOrEmpty(fieldValue) ||
+                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
                                                      fieldValue == "0" ))
                 {
                     fieldValue = item.GetPropertyValue<string>(field);

@@ -88,7 +88,6 @@ namespace uWebshop.Services
         /// </summary>
         /// <param name="umbracoDomain"></param>
         /// <param name="httpContext"></param>
-        /// <returns></returns>
         public static Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         {
             HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];

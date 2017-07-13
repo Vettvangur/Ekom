@@ -81,7 +81,7 @@
 
                 <a href="@product.Url" class="button expanded">View</a>
 
-                <form method="post" action="~/Umbraco/surface/order/addtoOrder" class="add-to-order">
+                <form method="post" action="~/Umbraco/uWebshop/order/addtoOrder" class="add-to-order">
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
                     <input type="hidden" name="action" value="@uWebshop.Helpers.OrderAction.Update" />

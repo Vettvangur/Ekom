@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using uWebshop.Utilities;
 
 namespace uWebshop
 {
@@ -25,7 +26,7 @@ namespace uWebshop
             {
                 var value = ConfigurationManager.AppSettings["uwbsShareBasket"];
 
-                return !string.IsNullOrEmpty(value) && value.ToLowerInvariant() == "true" ? true : false;
+                return !string.IsNullOrEmpty(value) && value.ConvertToBool();
             }
         }
 
@@ -35,7 +36,7 @@ namespace uWebshop
             {
                 var value = ConfigurationManager.AppSettings["uwbsVirtualContent"];
 
-                return !string.IsNullOrEmpty(value) && value.ToLowerInvariant() == "true" ? true : false;
+                return !string.IsNullOrEmpty(value) && value.ConvertToBool();
             }
         }
     }
