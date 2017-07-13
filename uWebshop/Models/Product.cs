@@ -282,7 +282,7 @@ namespace uWebshop.Models
 
                 foreach (var prop in node.Properties)
                 {
-                    Properties.Add(prop.Alias, prop.Value.ToString());
+                    Properties.Add(prop.Alias, prop.Value?.ToString());
                 }
 
 
