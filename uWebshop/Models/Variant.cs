@@ -218,7 +218,15 @@ namespace uWebshop.Models
             return string.Empty;
         }
 
-        public Variant(): base() { }
+        /// <summary>
+        /// Used by uWebshop extensions
+        /// </summary>
+        /// <param name="store"></param>
+        public Variant(Store store)
+        {
+            _store = store;
+        }
+
         public Variant(SearchResult item, Store store)
         {
             try

@@ -254,7 +254,15 @@ namespace uWebshop.Models
             return null;
         }
 
-        public Product(): base() { }
+        /// <summary>
+        /// Used by uWebshop extensions
+        /// </summary>
+        /// <param name="store"></param>
+        public Product(Store store)
+        {
+            _store = store;
+        }
+
         public Product(SearchResult item, Store store)
         {
             _store = store;
