@@ -1,0 +1,30 @@
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using uWebshop.Models;
+using uWebshop.Models.Data;
+using uWebshop.Services;
+
+namespace uWebshop.Tests
+{
+    [TestClass]
+    public class OrderRepository
+    {
+        [TestMethod]
+        public void CanParseOrderJson()
+        {
+            string json = @"{""UniqueId"":""f763a342-a73a-43f9-aab5-75eeee9f6b22"",""ReferenceId"":2,""OrderNumber"":""IS0002"",""OrderLines"":[{""Id"":""85174044-97ae-4959-8a53-ad70bb2a0f1a"",""Product"":{""Properties"":[{""Key"":""id"",""Value"":""1116""},{""Key"":""key"",""Value"":""2f7ea002-4952-4f63-bee4-7a9f8cc122ca""},{""Key"":""parentID"",""Value"":""1101""},{""Key"":""level"",""Value"":""5""},{""Key"":""writerID"",""Value"":""1""},{""Key"":""creatorID"",""Value"":""1""},{""Key"":""nodeType"",""Value"":""1058""},{""Key"":""template"",""Value"":""1084""},{""Key"":""sortOrder"",""Value"":""0""},{""Key"":""createDate"",""Value"":""20160924103517000""},{""Key"":""updateDate"",""Value"":""20170707123134000""},{""Key"":""nodeName"",""Value"":""Special Shirt""},{""Key"":""urlName"",""Value"":""special-shirt""},{""Key"":""writerName"",""Value"":""gardar@vettvangur.is""},{""Key"":""creatorName"",""Value"":""gardar@vettvangur.is""},{""Key"":""nodeTypeAlias"",""Value"":""uwbsProduct""},{""Key"":""path"",""Value"":""-1,1066,1067,1068,1101,1116""},{""Key"":""disable"",""Value"":""0""},{""Key"":""disable_EN"",""Value"":""0""},{""Key"":""price"",""Value"":""1000""},{""Key"":""price_EN"",""Value"":""234""},{""Key"":""sku"",""Value"":""sku-345""},{""Key"":""slug"",""Value"":""Sérstök skyrta""},{""Key"":""slug_EN"",""Value"":""Special shirt""},{""Key"":""title"",""Value"":""Sérstök skyrta""},{""Key"":""title_EN"",""Value"":""Special Shirt""}],""Price"":{""Value"":1000.0,""WithVat"":{""Value"":1100.0},""WithoutVat"":{""Value"":1000.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null},""VariantGroups"":[]},""Quantity"":3,""Amount"":{""Value"":3000.0,""WithVat"":{""Value"":3300.0},""WithoutVat"":{""Value"":3000.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null}},{""Id"":""5b581ea8-3d2e-4233-93ae-6465a3ece5b2"",""Product"":{""Properties"":[{""Key"":""id"",""Value"":""1082""},{""Key"":""key"",""Value"":""e3402d14-1bfc-4992-b7d6-13a8923b0de3""},{""Key"":""parentID"",""Value"":""1070""},{""Key"":""level"",""Value"":""4""},{""Key"":""writerID"",""Value"":""1""},{""Key"":""creatorID"",""Value"":""0""},{""Key"":""nodeType"",""Value"":""1058""},{""Key"":""template"",""Value"":""1084""},{""Key"":""sortOrder"",""Value"":""0""},{""Key"":""createDate"",""Value"":""20160907134955000""},{""Key"":""updateDate"",""Value"":""20170707123204000""},{""Key"":""nodeName"",""Value"":""Jackets Product 1""},{""Key"":""urlName"",""Value"":""jackets-product-1""},{""Key"":""writerName"",""Value"":""gardar@vettvangur.is""},{""Key"":""creatorName"",""Value"":""Vettvangur@vettvangur.is""},{""Key"":""nodeTypeAlias"",""Value"":""uwbsProduct""},{""Key"":""path"",""Value"":""-1,1066,1067,1070,1082""},{""Key"":""disable"",""Value"":""0""},{""Key"":""disable_EN"",""Value"":""0""},{""Key"":""price"",""Value"":""123""},{""Key"":""price_EN"",""Value"":""234""},{""Key"":""sku"",""Value"":""sku-asd5""},{""Key"":""slug"",""Value"":""Jakkar vara 1""},{""Key"":""slug_EN"",""Value"":""Jackets Product 1""},{""Key"":""title"",""Value"":""Jakkar vara 1""},{""Key"":""title_EN"",""Value"":""Jackets Product 1""}],""Price"":{""Value"":123.0,""WithVat"":{""Value"":135.3},""WithoutVat"":{""Value"":123.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null},""VariantGroups"":[]},""Quantity"":2,""Amount"":{""Value"":246.0,""WithVat"":{""Value"":270.6},""WithoutVat"":{""Value"":246.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null}},{""Id"":""cb6d9e6d-79a3-464b-9763-e611951741a0"",""Product"":{""Properties"":[{""Key"":""id"",""Value"":""1080""},{""Key"":""key"",""Value"":""b886e9e9-717c-4ed8-b27f-010ad2a4e0be""},{""Key"":""parentID"",""Value"":""1069""},{""Key"":""level"",""Value"":""4""},{""Key"":""writerID"",""Value"":""1""},{""Key"":""creatorID"",""Value"":""0""},{""Key"":""nodeType"",""Value"":""1058""},{""Key"":""template"",""Value"":""0""},{""Key"":""sortOrder"",""Value"":""0""},{""Key"":""createDate"",""Value"":""20160907134942000""},{""Key"":""updateDate"",""Value"":""20170707123147000""},{""Key"":""nodeName"",""Value"":""Pants Product 1""},{""Key"":""urlName"",""Value"":""pants-product-1""},{""Key"":""writerName"",""Value"":""gardar@vettvangur.is""},{""Key"":""creatorName"",""Value"":""Vettvangur@vettvangur.is""},{""Key"":""nodeTypeAlias"",""Value"":""uwbsProduct""},{""Key"":""path"",""Value"":""-1,1066,1067,1069,1080""},{""Key"":""disable"",""Value"":""0""},{""Key"":""disable_EN"",""Value"":""0""},{""Key"":""price"",""Value"":""12345""},{""Key"":""price_EN"",""Value"":""23456""},{""Key"":""sku"",""Value"":""sku-asd""},{""Key"":""slug"",""Value"":""pants-is-slug-1""},{""Key"":""slug_EN"",""Value"":""pants-en-slug-1""},{""Key"":""title"",""Value"":""Buxur product 1""},{""Key"":""title_EN"",""Value"":""Pants Product 1""}],""Price"":{""Value"":12345.0,""WithVat"":{""Value"":13579.5},""WithoutVat"":{""Value"":12345.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null},""VariantGroups"":[]},""Quantity"":1,""Amount"":{""Value"":12345.0,""WithVat"":{""Value"":13579.5},""WithoutVat"":{""Value"":12345.0},""BeforeDiscount"":null,""Discount"":null,""Vat"":null}}],""Quantity"":6,""ChargedAmount"":{""Value"":17150.1},""StoreInfo"":{""Key"":""4fb25750-35d8-4b48-a288-fa2ae876993f"",""Currency"":"""",""Culture"":""is-IS"",""Alias"":""IS"",""VatIncludedInPrice"":false,""Vat"":10.0},""CreateDate"":""2017-07-10T12:37:00.973Z"",""UpdateDate"":""2017-07-10T14:46:09.933Z"",""PaidDate"":""0001-01-01T00:00:00"",""OrderStatus"":3}";
+            var store = new Store();
+
+            var orderData = new OrderData
+            {
+                OrderInfo = json,
+            };
+
+            var orderInfo = new OrderInfo(orderData, store);
+
+            var orderLines = new OrderService().CreateOrderLinesFromJson(orderData.OrderInfo);
+
+            Assert.IsTrue(orderLines.Count > 0);
+        }
+    }
+}
