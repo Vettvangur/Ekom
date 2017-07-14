@@ -8,35 +8,38 @@ using uWebshop.Utilities;
 
 namespace uWebshop
 {
+    /// <summary>
+    /// Controls configuration of uWebshop
+    /// </summary>
     public class Configuration
     {
-        public static string ExamineSearcher
+        public virtual string ExamineSearcher
         {
             get
             {
                 var value = ConfigurationManager.AppSettings["uwbsExamineSearcher"];
 
-                return !string.IsNullOrEmpty(value) ? value : "ExternalSearcher";
+                return value ?? "ExternalSearcher";
             }
         }
 
-        public static bool ShareBasketBetweenStores
+        public virtual bool ShareBasketBetweenStores
         {
             get
             {
                 var value = ConfigurationManager.AppSettings["uwbsShareBasket"];
 
-                return !string.IsNullOrEmpty(value) && value.ConvertToBool();
+                return value.ConvertToBool();
             }
         }
 
-        public static bool VirtualContent
+        public virtual bool VirtualContent
         {
             get
             {
                 var value = ConfigurationManager.AppSettings["uwbsVirtualContent"];
 
-                return !string.IsNullOrEmpty(value) && value.ConvertToBool();
+                return value.ConvertToBool();
             }
         }
     }

@@ -25,19 +25,15 @@ namespace uWebshop.API
             var appCache = ApplicationContext.Current.ApplicationCache;
             var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-            if (r.Product != null)
-            {
-                return r.Product;
-            }
-
-            return null;
+            return r?.Product;
         }
+
         public static Product GetProduct(Guid Id)
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
             var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-            if (r != null && r.Store != null)
+            if (r?.Store != null)
             {
                 var product = GetProduct(r.Store.Alias, Id);
 
@@ -53,6 +49,7 @@ namespace uWebshop.API
 
             return product;
         }
+
         public static Product GetProduct(int Id)
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
@@ -87,12 +84,13 @@ namespace uWebshop.API
             }
 
             return null;
-
         }
+
         public static IEnumerable<Product> GetAllProducts(string storeAlias)
         {
             return ProductCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
+
         public static Category GetCategory()
         {
             var appCache = ApplicationContext.Current.ApplicationCache;
@@ -105,6 +103,7 @@ namespace uWebshop.API
 
             return null;
         }
+
         public static Category GetCategory(int Id)
         {
             var store = StoreService.GetStoreFromCache();
@@ -167,6 +166,5 @@ namespace uWebshop.API
 
             return variant;
         }
-
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace uWebshop.Cache
 {
-    public interface ICacheExtensions
+    public interface IFillCache
     {
         void FillCache();
     }

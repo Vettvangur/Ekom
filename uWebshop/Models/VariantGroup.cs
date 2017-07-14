@@ -33,7 +33,6 @@ namespace uWebshop.Models
         public VariantGroup(): base() { }
         public VariantGroup(SearchResult item, Store store)
         {
-
             var key = item.Fields["key"];
 
             var _key = new Guid();

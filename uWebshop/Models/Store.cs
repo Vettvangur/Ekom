@@ -114,12 +114,14 @@ namespace uWebshop.Models
 
             VatIncludedInPrice = item.GetValue<bool>("vatIncludedInPrice");
 
-            try
+            if (item.HasProperty("orderNumberTemplate"))
             {
                 OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
+            }
+            if (item.HasProperty("orderNumberPrefix"))
+            {
                 OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
             }
-            catch { }
         }
 
         private static readonly ILog Log =

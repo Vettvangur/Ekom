@@ -13,24 +13,27 @@ using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Services;
+using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
     public class Product : IProduct
     {
+
         private Store _store;
         [JsonIgnore]
         public int Id {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
+
         [JsonIgnore]
         public Guid Key {
             get
             {
-                var key = GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -47,7 +50,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("sku");
+                return Properties.GetPropertyValue("sku");
             }
         }
 
@@ -98,10 +101,10 @@ namespace uWebshop.Models
         public List<ICategory> Categories {
             get
             {
-                int categoryId = Convert.ToInt32(GetPropertyValue("parentID"));
+                int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
 
                 var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    GetPropertyValue("categories") : "";
+                                    Properties.GetPropertyValue("categories") : "";
 
                 var categories = new List<ICategory>();
 
@@ -158,14 +161,14 @@ namespace uWebshop.Models
         public int SortOrder {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("sortOrder"));
+                return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
             }
         }
         [JsonIgnore]
         public int Level {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("level"));
+                return Convert.ToInt32(Properties.GetPropertyValue("level"));
             }
         }
 
@@ -177,21 +180,21 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("path");
+                return Properties.GetPropertyValue("path");
             }
         }
         [JsonIgnore]
         public DateTime CreateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
         public DateTime UpdateDate {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
         public string Url {
@@ -209,7 +212,7 @@ namespace uWebshop.Models
         public string ContentTypeAlias {
             get
             {
-                return GetPropertyValue("nodeTypeAlias");
+                return Properties.GetPropertyValue("nodeTypeAlias");
             }
         }
         [JsonIgnore]
@@ -241,19 +244,6 @@ namespace uWebshop.Models
         }
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public string GetPropertyValue(string propertyAlias)
-        {
-            if (!string.IsNullOrEmpty(propertyAlias))
-            {
-                if (Properties.ContainsKey(propertyAlias))
-                {
-                    return Properties[propertyAlias];
-                }
-            }
-
-            return null;
-        }
-
         /// <summary>
         /// Used by uWebshop extensions
         /// </summary>
@@ -282,30 +272,21 @@ namespace uWebshop.Models
 
         public Product(IContent node, Store store)
         {
-            try
+            _store = store;
+
+            Properties = CreateDefaultUmbracoProperties(node);
+
+            foreach (var prop in node.Properties)
             {
-                _store = store;
-
-                Properties = CreateDefaultUmbracoProperties(node);
-
-                foreach (var prop in node.Properties)
-                {
-                    Properties.Add(prop.Alias, prop.Value?.ToString());
-                }
-
-
-                Urls = UrlService.BuildProductUrls(Slug, Categories, store);
-
-                if (!Urls.Any() || string.IsNullOrEmpty(Title))
-                {
-                    throw new Exception("No url's or no title present in product");
-                }
-
-            } catch(Exception ex)
-            {
-                Log.Error("Failed to create product. ", ex );
+                Properties.Add(prop.Alias, prop.Value?.ToString());
             }
 
+            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+
+            if (!Urls.Any() || string.IsNullOrEmpty(Title))
+            {
+                throw new Exception("No url's or no title present in product");
+            }
         }
 
         public static Dictionary<string, string> CreateDefaultUmbracoProperties(IContent node)
