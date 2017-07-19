@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using umbraco.cms.businesslogic.web;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
@@ -16,37 +17,57 @@ using uWebshop.Models;
 
 namespace uWebshop.Services
 {
-    public static class StoreService
+    public class StoreService
     {
-        private static readonly ILog Log =
-                LogManager.GetLogger(
-                    MethodBase.GetCurrentMethod().DeclaringType
-                );
+        ILog _log;
+        ApplicationContext _appCtx;
+        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+        IBaseCache<IDomain> _domainCache;
+        IBaseCache<Store> _storeCache;
 
-        public static IEnumerable<IDomain> GetAllStoreDomains()
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="logFac"></param>
+        /// <param name="domainCache"></param>
+        /// <param name="storeCache"></param>
+        public StoreService(
+            ILogFactory logFac, 
+            IBaseCache<IDomain> domainCache, 
+            IBaseCache<Store> storeCache,
+            ApplicationContext appCtx
+        )
         {
-            var ds = ApplicationContext.Current.Services.DomainService;
+            _log = logFac.GetLogger(typeof(StoreService));
+            _appCtx = appCtx;
+            _domainCache = domainCache;
+            _storeCache = storeCache;
+        }
+
+        public IEnumerable<IDomain> GetAllStoreDomains()
+        {
+            var ds = _appCtx.Services.DomainService;
 
             var domains = ds.GetAll(false);
 
             return domains;
         }
 
-        public static Store GetStoreByDomain(string domain = "")
+        public Store GetStoreByDomain(string domain = "")
         {
             Store store = null;
 
             if (!string.IsNullOrEmpty(domain))
             {
                 var storeDomain
-                    = StoreDomainCache.Cache
+                    = _domainCache.Cache
                                       .FirstOrDefault
                                           (x => x.Value.DomainName.Equals(domain, StringComparison.InvariantCultureIgnoreCase))
                                       .Value;
 
                 if (storeDomain != null)
                 {
-                    store = StoreCache.Cache
+                    store = _storeCache.Cache
                                       .FirstOrDefault
                                         (x => x.Value.StoreRootNode == storeDomain.RootContentId)
                                       .Value;
@@ -55,24 +76,22 @@ namespace uWebshop.Services
 
             if (store == null)
             {
-                store = StoreCache.Cache.FirstOrDefault().Value;
+                store = _storeCache.Cache.FirstOrDefault().Value;
             }
 
             return store;
         }
 
-        public static Store GetStoreByAlias(string alias)
+        public Store GetStoreByAlias(string alias)
         {
-            return StoreCache.Cache
+            return _storeCache.Cache
                              .FirstOrDefault(x => x.Value.Alias == alias)
                              .Value;
         }
 
-        public static Store GetStoreFromCache()
+        public Store GetStoreFromCache()
         {
-            var appCache = ApplicationContext.Current.ApplicationCache;
-
-            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
             if (r != null)
             {
@@ -88,7 +107,7 @@ namespace uWebshop.Services
         /// </summary>
         /// <param name="umbracoDomain"></param>
         /// <param name="httpContext"></param>
-        public static Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
+        public Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         {
             HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
             string storeAlias    = storeInfo != null ? storeInfo.Values["StoreAlias"] : null;

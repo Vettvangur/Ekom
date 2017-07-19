@@ -5,7 +5,7 @@ using Umbraco.Core.Models;
 
 namespace uWebshop.Cache
 {
-    public class ProductCache : PerStoreCache<Product, ProductCache>
+    public class ProductCache : PerStoreCache<Product, ProductCache>, IPerStoreCache<Product>
     {
         protected override string nodeAlias { get; } = "uwbsProduct";
 

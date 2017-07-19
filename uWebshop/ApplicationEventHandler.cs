@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Practices.Unity;
+using System;
 using Umbraco.Core;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
@@ -6,21 +7,41 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
-using uWebshop.Extend;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using System.Configuration;
+using uWebshop.App_Start;
+using System.Linq;
 
 namespace uWebshop
 {
-    public class Application : IApplicationEventHandler
+    /// <summary>
+    /// Here we hook into the umbraco lifecycle methods to configure uWebshop
+    /// </summary>
+    public class uWebshopStartup : ApplicationEventHandler
     {
-        public void OnApplicationInitialized(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
-        {
-            LogHelper.Info(GetType(), "OnApplicationInitialized...");
-        }
+        Configuration _config;
 
-        public void OnApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        /// <summary>
+        /// Event fired at start of ApplicationStarted
+        /// </summary>
+        public static event ExtensionRegistrations ApplicationStartedCalled;
+
+        /// <summary>
+        /// Methods that override unity type registrations
+        /// </summary>
+        /// <param name="c"></param>
+        public delegate void ExtensionRegistrations(IUnityContainer c);
+
+        /// <summary>
+        /// Umbraco startup lifecycle method
+        /// </summary>
+        /// <param name="umbracoApplication"></param>
+        /// <param name="applicationContext"></param>
+        protected override void ApplicationStarting(
+            UmbracoApplicationBase umbracoApplication, 
+            ApplicationContext applicationContext
+        )
         {
             LogHelper.Info(GetType(), "OnApplicationStarting...");
             
@@ -28,30 +49,31 @@ namespace uWebshop
             UrlProviderResolver.Current.InsertTypeBefore<DefaultUrlProvider, CatalogUrlProvider>();
         }
 
-        public void OnApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        /// <summary>
+        /// Umbraco startup lifecycle method
+        /// </summary>
+        /// <param name="umbracoApplication"></param>
+        /// <param name="applicationContext"></param>
+        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
-            LogHelper.Info(GetType(), "OnApplicationStarted...");
+            LogHelper.Info(GetType(), "ApplicationStarted...");
 
-            var umbracoonfigurationStatus = ConfigurationManager.AppSettings["umbracoConfigurationStatus"];
-            if (string.IsNullOrEmpty(umbracoonfigurationStatus))
-            {
-                // umbraco is not installed or f.x. Fresh install
-                // don't do anything uWebshop related
-                return;
-            }
+            // Register extension types
+            var container = UnityConfig.GetConfiguredContainer();
+            ApplicationStartedCalled?.Invoke(container);
 
             // Settings
+            _config = container.Resolve<Configuration>();
 
             // Fill Caches
-            foreach (var cache in Data.InitializationSequence.initSeq)
+            foreach (var cacheEntry in _config.CacheList)
             {
-                cache.FillCache();
+                cacheEntry.Cache.FillCache();
             }
 
             // Allows for configuration of content nodes to use for matching all requests
             // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
-
-            if (!Configuration.VirtualContent)
+            if (!_config.VirtualContent)
             {
                 // Hook into Umbraco Events
                 ContentService.Published += ContentService_Published;
@@ -60,28 +82,33 @@ namespace uWebshop
             }
         }
 
-        private void ContentService_Published(IPublishingStrategy sender, 
-                                              PublishEventArgs<IContent> args)
+        private void ContentService_Published(
+            IPublishingStrategy sender, 
+            PublishEventArgs<IContent> args
+        )
         {
             foreach (var node in args.PublishedEntities)
             {
-                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
+                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                if (cacheEntry != null)
                 {
-                    Data.registeredTypes[node.ContentType.Alias].AddReplace(node);
+                    cacheEntry.Cache.AddReplace(node);
                 }
             }
-
         }
 
-        private void ContentService_UnPublished(IPublishingStrategy sender, 
-                                                PublishEventArgs<IContent> args)
+        private void ContentService_UnPublished(
+            IPublishingStrategy sender, 
+            PublishEventArgs<IContent> args
+        )
         {
-
             foreach (var node in args.PublishedEntities)
             {
-                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
+                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+
+                if (cacheEntry != null)
                 {
-                    Data.registeredTypes[node.ContentType.Alias].Remove(node.Id);
+                    cacheEntry.Cache.Remove(node.Id);
                 }
             }
         }
@@ -90,9 +117,11 @@ namespace uWebshop
         {
             foreach (var node in args.DeletedEntities)
             {
-                if (Data.registeredTypes.ContainsKey(node.ContentType.Alias))
+                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+
+                if (cacheEntry != null)
                 {
-                    Data.registeredTypes[node.ContentType.Alias].Remove(node.Id);
+                    cacheEntry.Cache.Remove(node.Id);
                 }
             }
         }

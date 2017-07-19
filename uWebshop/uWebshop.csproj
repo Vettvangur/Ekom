@@ -266,8 +266,10 @@
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
-    <Compile Include="App_Start\UnityMvcActivator.cs" />
     <Compile Include="Cache\Base\BaseFillCache.cs" />
+    <Compile Include="Cache\Base\IBaseCache.cs" />
+    <Compile Include="Services\LogFactory.cs" />
+    <Compile Include="Services\ObjectFactory.cs" />
     <Compile Include="Utilities\PropertyHelper.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\ICacheExtensions.cs" />
@@ -286,10 +288,8 @@
     <Compile Include="CatalogContentFinder.cs" />
     <Compile Include="CatalogUrlProvider.cs" />
     <Compile Include="Configuration.cs" />
-    <Compile Include="Data.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\ExamineHelper.cs" />
-    <Compile Include="Extend\ExtensionMap.cs" />
     <Compile Include="Helpers\NodeHelper.cs" />
     <Compile Include="Helpers\VatCalculator.cs" />
     <Compile Include="Interfaces\ICategory.cs" />

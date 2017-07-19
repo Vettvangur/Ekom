@@ -1,6 +1,10 @@
 using System;
 using Microsoft.Practices.Unity;
 using Microsoft.Practices.Unity.Configuration;
+using uWebshop.Cache;
+using uWebshop.Models;
+using Umbraco.Core.Models;
+using Umbraco.Core;
 
 namespace uWebshop.App_Start
 {
@@ -36,7 +40,12 @@ namespace uWebshop.App_Start
             // container.LoadConfiguration();
 
             // TODO: Register your types here
-            // container.RegisterType<IProductRepository, ProductRepository>();
+
+            container.RegisterType<ApplicationContext>(new InjectionFactory(c => ApplicationContext.Current));
+
+            container.RegisterInstance(new Configuration());
+            container.RegisterInstance<IBaseCache<Store>>(new StoreCache());
+            container.RegisterInstance<IPerStoreCache<Product>>(new ProductCache());
         }
     }
 }
