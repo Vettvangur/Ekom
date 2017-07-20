@@ -32,7 +32,7 @@ namespace uWebshop.Cache
             _examineManager = examineManager;
             _storeCache = storeCache;
 
-            _log = logFac.GetLogger(typeof(ZoneCache));
+            _log = logFac.GetLogger(typeof(ProductCache));
         }
     }
 }

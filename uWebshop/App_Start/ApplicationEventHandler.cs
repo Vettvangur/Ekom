@@ -132,7 +132,10 @@ namespace uWebshop
 
         private ICache FindMatchingCache(string contentTypeAlias)
         {
-            return _config.CacheList.Value.FirstOrDefault(x => x.nodeAlias == contentTypeAlias);
+            return _config.CacheList.Value.FirstOrDefault(x 
+                => !string.IsNullOrEmpty(x.nodeAlias) 
+                && x.nodeAlias == contentTypeAlias
+            );
         }
     }
 }

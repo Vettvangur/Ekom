@@ -29,7 +29,7 @@ namespace uWebshop.Cache
         {
             _config = config;
             _examineManager = examineManager;
-            _log = logFac.GetLogger(typeof(StoreDomainCache));
+            _log = logFac.GetLogger(typeof(StoreCache));
         }
 
         /// <summary>
