@@ -8,6 +8,7 @@ using uWebshop.Interfaces;
 using Newtonsoft.Json;
 using uWebshop.Helpers;
 using uWebshop.Utilities;
+using uWebshop.API;
 
 namespace uWebshop.Models
 {
@@ -114,7 +115,7 @@ namespace uWebshop.Models
 
         public OrderedVariant(Guid variantId, Store store)
         {
-            var variant = API.Catalog.GetVariant(store.Alias,variantId);
+            var variant = Catalog.Instance.GetVariant(store.Alias,variantId);
             storeInfo = new StoreInfo(store);
 
             Properties = variant.Properties;

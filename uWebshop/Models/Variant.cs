@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using uWebshop.API;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -18,6 +21,14 @@ namespace uWebshop.Models
 {
     public class Variant : IVariant
     {
+        private IPerStoreCache<VariantGroup> _variantGroupCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
+            }
+        }
+
         private Store _store;
         [JsonIgnore]
         public int Id
@@ -103,7 +114,7 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = API.Catalog.GetProduct(Store.Alias, productId);
+                var product = Catalog.Instance.GetProduct(Store.Alias, productId);
 
                 if (product == null)
                 {
@@ -134,7 +145,7 @@ namespace uWebshop.Models
 
             if (Int32.TryParse(parentId, out _parentId))
             {
-                var group = VariantGroupCache.Cache[Store.Alias]
+                var group = _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.Id == _parentId)
                                         .Select(x => x.Value);
 

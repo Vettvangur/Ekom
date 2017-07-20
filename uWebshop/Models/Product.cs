@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Web;
 using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -19,6 +21,29 @@ namespace uWebshop.Models
 {
     public class Product : IProduct
     {
+        private IPerStoreCache<Category> _categoryCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
+            }
+        }
+
+        private IPerStoreCache<Variant> _variantCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Variant>>();
+            }
+        }
+
+        private IPerStoreCache<VariantGroup> _variantGroupCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
+            }
+        }
 
         private Store _store;
         [JsonIgnore]
@@ -108,7 +133,7 @@ namespace uWebshop.Models
 
                 var categories = new List<ICategory>();
 
-                var primaryCategory = CategoryCache.Cache[_store.Alias]
+                var primaryCategory = _categoryCache.Cache[_store.Alias]
                                                    .FirstOrDefault(x => x.Value.Id == categoryId)
                                                    .Value;
 
@@ -126,7 +151,7 @@ namespace uWebshop.Models
                         var intCatId = Convert.ToInt32(catId);
 
                         var categoryItem
-                            = CategoryCache.Cache[_store.Alias]
+                            = _categoryCache.Cache[_store.Alias]
                                            .FirstOrDefault(x => x.Value.Id == intCatId)
                                            .Value;
 
@@ -228,7 +253,7 @@ namespace uWebshop.Models
         public IEnumerable<VariantGroup> VariantGroups {
             get
             {
-                return VariantGroupCache.Cache[Store.Alias]
+                return _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.ProductKey == Key)
                                         .Select(x => x.Value);
             }
@@ -237,7 +262,7 @@ namespace uWebshop.Models
         public IEnumerable<Variant> AllVariants {
             get
             {
-                return VariantCache.Cache[Store.Alias]
+                return _variantCache.Cache[Store.Alias]
                     .Where(x => x.Value.ProductKey == Key)
                     .Select(x => x.Value);
             }

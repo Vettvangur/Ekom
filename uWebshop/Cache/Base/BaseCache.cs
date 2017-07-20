@@ -20,24 +20,11 @@ namespace uWebshop.Cache
     /// For custom caches or global non store dependant caches
     /// </summary>
     /// <typeparam name="TItem">Type of data to cache</typeparam>
-    /// <typeparam name="Tself">The inheriting classes type</typeparam>
-    public abstract class BaseCache<TItem, Tself> : ICache
-            where Tself : BaseCache<TItem, Tself>, new()
+    public abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     {
         protected Configuration _config;
         protected ExamineManager _examineManager;
         protected ILog _log;
-
-        public BaseCache()
-        {
-            var container = UnityConfig.GetConfiguredContainer();
-
-            _config = container.Resolve<Configuration>();
-            _examineManager = container.Resolve<ExamineManager>();
-
-            var logFac = container.Resolve<ILogFactory>();
-            _log = logFac.GetLogger(typeof(BaseCache<TItem, Tself>));
-        }
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -81,7 +68,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                _log.Info("Starting to fill " + typeof(Tself).FullName + "...");
+                _log.Info("Starting to fill...");
 
                 var count = 0;
 
@@ -113,7 +100,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling " + typeof(Tself).FullName + " with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {

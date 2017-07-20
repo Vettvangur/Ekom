@@ -18,56 +18,6 @@ namespace uWebshop
     /// </summary>
     public class Configuration
     {
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public Configuration()
-        {
-            var container = UnityConfig.GetConfiguredContainer();
-            CacheList = new List<CacheEntry>
-            {
-                new CacheEntry
-                {
-                    Cache = container.Resolve<IBaseCache<IDomain>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsStore",
-                    Cache = container.Resolve<IBaseCache<Store>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProductVariant",
-                    Cache = container.Resolve<IPerStoreCache<Variant>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProductVariantGroup",
-                    Cache = container.Resolve<IPerStoreCache<VariantGroup>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsCategory",
-                    Cache = container.Resolve<IPerStoreCache<Category>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProduct",
-                    Cache = container.Resolve<IPerStoreCache<Product>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsZone",
-                    Cache = container.Resolve<IBaseCache<Zone>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsPaymentProvider",
-                    Cache = container.Resolve<IBaseCache<PaymentProvider>>(),
-                },
-            };
-        }
-
         public virtual string ExamineSearcher
         {
             get
@@ -106,7 +56,64 @@ namespace uWebshop
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// </summary>
-        internal virtual List<CacheEntry> CacheList { get; private set; }
+        internal virtual Lazy<List<CacheEntry>> CacheList { get; private set; } = new Lazy<List<CacheEntry>>(() =>
+        {
+            var container = UnityConfig.GetConfiguredContainer();
+
+            return new List<CacheEntry>
+            {
+                new CacheEntry
+                {
+                    Cache = container.Resolve<IBaseCache<IDomain>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsStore",
+                    Cache = container.Resolve<IBaseCache<Store>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsProductVariant",
+                    Cache = container.Resolve<IPerStoreCache<Variant>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsProductVariantGroup",
+                    Cache = container.Resolve<IPerStoreCache<VariantGroup>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsCategory",
+                    Cache = container.Resolve<IPerStoreCache<Category>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsProduct",
+                    Cache = container.Resolve<IPerStoreCache<Product>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsZone",
+                    Cache = container.Resolve<IBaseCache<Zone>>(),
+                },
+                new CacheEntry
+                {
+                    DocumentTypeAlias = "uwbsPaymentProvider",
+                    Cache = container.Resolve<IPerStoreCache<PaymentProvider>>(),
+                },
+            };
+        });
+
+        /// <summary> 
+        /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 
+        /// </summary> 
+        public IEnumerable<CacheEntry> Succeeding(ICache cache)
+        {
+
+            var indexOf = CacheList.Value.FindIndex(x => x.Cache == cache);
+
+            return CacheList.Value.Skip(indexOf + 1);
+        }
     }
 
     /// <summary>

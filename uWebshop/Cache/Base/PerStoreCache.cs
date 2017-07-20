@@ -19,29 +19,12 @@ namespace uWebshop.Cache
     /// Per store caching for entities of type <see cref="TItem"/>
     /// </summary>
     /// <typeparam name="TItem">Type of entity to cache</typeparam>
-    /// <typeparam name="Tself">
-    /// The inheriting class itself, <para/>
-    /// we use this param to deduce the singleton type to create
-    /// </typeparam>
-    public abstract class PerStoreCache<TItem, Tself> : ICache, IPerStoreCache
-                    where Tself : PerStoreCache<TItem, Tself>, new()
+    public abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>
     {
         protected Configuration _config;
         protected ExamineManager _examineManager;
         protected ILog _log;
         protected IBaseCache<Store> _storeCache;
-
-        public PerStoreCache()
-        {
-            var container = UnityConfig.GetConfiguredContainer();
-
-            _config = container.Resolve<Configuration>();
-            _examineManager = container.Resolve<ExamineManager>();
-            _storeCache = container.Resolve<IBaseCache<Store>>();
-
-            var logFac = UnityConfig.GetConfiguredContainer().Resolve<ILogFactory>();
-            _log = logFac.GetLogger(typeof(PerStoreCache<TItem, Tself>));
-        }
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -81,9 +64,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                var name = typeof(Tself).FullName;
-
-                _log.Info("Starting to fill " + name + "...");
+                _log.Info("Starting to fill...");
                 int count = 0;
 
                 try
@@ -107,12 +88,12 @@ namespace uWebshop.Cache
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Filling per store cache Failed! Type: " + name, ex);
+                    _log.Error("Filling per store cache Failed!", ex);
                 } 
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling " + typeof(Tself).FullName + " with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {

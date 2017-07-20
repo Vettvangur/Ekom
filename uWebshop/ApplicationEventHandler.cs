@@ -66,7 +66,7 @@ namespace uWebshop
             _config = container.Resolve<Configuration>();
 
             // Fill Caches
-            foreach (var cacheEntry in _config.CacheList)
+            foreach (var cacheEntry in _config.CacheList.Value)
             {
                 cacheEntry.Cache.FillCache();
             }
@@ -89,7 +89,7 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
                 if (cacheEntry != null)
                 {
                     cacheEntry.Cache.AddReplace(node);
@@ -104,7 +104,7 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
 
                 if (cacheEntry != null)
                 {
@@ -117,7 +117,7 @@ namespace uWebshop
         {
             foreach (var node in args.DeletedEntities)
             {
-                var cacheEntry = _config.CacheList.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
 
                 if (cacheEntry != null)
                 {

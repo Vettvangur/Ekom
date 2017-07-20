@@ -4,7 +4,7 @@
 @{
     Layout = null;
     var currentStore = Store.GetStore();
-    var categories = Catalog.GetRootCategories();
+    var categories = Catalog.Instance.GetRootCategories();
     var order = Order.GetOrder(currentStore.Alias);
 }
 

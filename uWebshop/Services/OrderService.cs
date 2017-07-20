@@ -22,14 +22,13 @@ namespace uWebshop.Services
         private Store _store;
         private DateTime _date;
         private OrderRepository _orderRepository;
+        public OrderService(OrderRepository orderRepo)
+        {
+            _orderRepository = orderRepo;
+        }
 
         public OrderInfo GetOrderInfo(Guid uniqueId)
         {
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
-
             var orderData = _orderRepository.GetOrder(uniqueId);
 
             return orderData != null ? CreateOrderInfoFromOrderData(orderData, false) : null;
@@ -82,11 +81,6 @@ namespace uWebshop.Services
 
             Log.Info("Add OrderLine ...  Get Order.. Store: " + _store.Alias);
 
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
-
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
 
@@ -109,11 +103,6 @@ namespace uWebshop.Services
             Log.Info("Remove OrderLine... LineId: " + lineId);
 
             _store = _store == null ? API.Store.GetStore(storeAlias) : _store;
-
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
 
             var orderInfo = GetOrder(storeAlias);
 
@@ -316,12 +305,6 @@ namespace uWebshop.Services
 
         public void GenerateOrderNumber(out int referenceId, out string orderNumber)
         {
-            // Need to fix this
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
-
             var lastOrderNumber = _orderRepository.GetHighestOrderNumber(_store.Alias);
             referenceId = lastOrderNumber + 1;
             orderNumber = GenerateOrderNumberTemplate(referenceId);

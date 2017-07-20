@@ -266,7 +266,6 @@
     <Compile Include="API\Store.cs" />
     <Compile Include="ApplicationEventHandler.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
-    <Compile Include="Cache\Base\BaseFillCache.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="Services\ObjectFactory.cs" />

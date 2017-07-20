@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Practices.Unity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,11 +16,31 @@ using uWebshop.Utilities;
 using log4net;
 using System.Reflection;
 using System.Configuration;
+using uWebshop.App_Start;
 
 namespace uWebshop
 {
     public class CatalogContentFinder : IContentFinder
     {
+        ILog _log;
+        Configuration _config;
+        StoreService _storeSvc;
+        IPerStoreCache<Category> _categoryCache;
+        IPerStoreCache<Product> _productCache;
+
+        public CatalogContentFinder()
+        {
+            var container = UnityConfig.GetConfiguredContainer();
+
+            _config = container.Resolve<Configuration>();
+            _storeSvc = container.Resolve<StoreService>();
+            _categoryCache = container.Resolve<IPerStoreCache<Category>>();
+            _productCache = container.Resolve<IPerStoreCache<Product>>();
+
+            var logFac = UnityConfig.GetConfiguredContainer().Resolve<ILogFactory>();
+            _log = logFac.GetLogger(typeof(CatalogContentFinder));
+        }
+
         /// <summary>
         /// Maps virtual URLs to IPublishedContent items
         /// Performs various request related processing
@@ -42,7 +63,7 @@ namespace uWebshop
                                          .ToLower()
                                          .AddTrailing();
 
-                Store store = StoreService.GetStore(contentRequest.UmbracoDomain, httpContext);
+                Store store = _storeSvc.GetStore(contentRequest.UmbracoDomain, httpContext);
 
                 if (store == null)
                 {
@@ -52,7 +73,7 @@ namespace uWebshop
                 #region Product and/or Category
 
                 // Requesting Product?
-                var product = ProductCache.Cache[store.Alias]
+                var product = _productCache.Cache[store.Alias]
                                           .FirstOrDefault(x => x.Value.Urls != null &&
                                                                x.Value.Urls.Contains(path))
                                           .Value;
@@ -75,13 +96,13 @@ namespace uWebshop
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
                     var categoryUrl      = string.Join("/", categoryUrlArray).AddTrailing();
 
-                    category = CategoryCache.Cache[store.Alias]
+                    category = _categoryCache.Cache[store.Alias]
                                             .FirstOrDefault(x => x.Value.Urls.Contains(categoryUrl))
                                             .Value;
                 }
                 else // Request Category?
                 {
-                    category = CategoryCache.Cache[store.Alias]
+                    category = _categoryCache.Cache[store.Alias]
                                             .FirstOrDefault(x => x.Value.Urls != null &&
                                                                  x.Value.Urls.Contains(path))
                                             .Value;
@@ -154,15 +175,10 @@ namespace uWebshop
             }
             catch (Exception ex)
             {
-                Log.Error("Error trying to find matching content for request", ex);
+                _log.Error("Error trying to find matching content for request", ex);
             }
 
             return false;
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

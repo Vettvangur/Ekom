@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using uWebshop.API;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Utilities;
@@ -118,7 +119,7 @@ namespace uWebshop.Models
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
         {
-            var product = API.Catalog.GetProduct(store.Alias, productId);
+            var product = Catalog.Instance.GetProduct(store.Alias, productId);
 
             if (product == null)
             {
@@ -135,7 +136,7 @@ namespace uWebshop.Models
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = API.Catalog.GetVariant(store.Alias, variantId);
+                    var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
 
                     if (variant == null)
                     {

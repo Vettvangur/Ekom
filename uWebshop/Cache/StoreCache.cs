@@ -2,18 +2,35 @@
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System.Diagnostics;
+using System.Collections.Generic;
 using uWebshop.Models;
-using System;
-using System.Collections.Concurrent;
 using Umbraco.Core.Models;
 using uWebshop.Helpers;
-using System.Collections.Generic;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StoreCache : BaseCache<Store, StoreCache>, IBaseCache<Store>
+    public class StoreCache : BaseCache<Store>
     {
         protected override string nodeAlias { get; } = "uwbsStore";
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="storeSvc"></param>
+        /// <param name="logFac"></param>
+        /// <param name="config"></param>
+        /// <param name="examineManager"></param>
+        public StoreCache(
+            ILogFactory logFac,
+            Configuration config,
+            ExamineManager examineManager
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _log = logFac.GetLogger(typeof(StoreDomainCache));
+        }
 
         /// <summary>
         /// Fill Store cache with all products in examine
@@ -21,7 +38,6 @@ namespace uWebshop.Cache
         public override void FillCache()
         {
             BaseSearchProvider searcher = null;
-
             try
             {
                 searcher = ExamineManager.Instance.SearchProviderCollection[_config.ExamineSearcher];
@@ -82,12 +98,12 @@ namespace uWebshop.Cache
                 {
                     AddOrReplaceFromCache(node.Id, item);
 
-                    IEnumerable<ICache> succeedingCaches = Data.InitializationSequence.Succeeding(this);
+                    IEnumerable<CacheEntry> succeedingCaches = _config.Succeeding(this);
 
                     // Refill all per store caches
-                    foreach (var cache in succeedingCaches)
+                    foreach (var cacheEntry in succeedingCaches)
                     {
-                        if (cache is IPerStoreCache perStoreCache)
+                        if (cacheEntry.Cache is IPerStoreCache perStoreCache)
                         {
                             perStoreCache.FillCache(item);
                         }

@@ -1,5 +1,6 @@
-﻿ using Examine;
+﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using uWebshop.API;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Services;
@@ -15,6 +18,14 @@ namespace uWebshop.Models
 {
     public class VariantGroup
     {
+        private IPerStoreCache<Variant> _variantCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Variant>>();
+            }
+        }
+
         public int Id { get; set; }
         public Guid Key { get; set; }
         public Guid ProductKey { get; set; }
@@ -24,7 +35,7 @@ namespace uWebshop.Models
         public IEnumerable<Variant> Variants {
             get
             {
-                return VariantCache.Cache[Store.Alias]
+                return _variantCache.Cache[Store.Alias]
                                    .Where(x => x.Value.VariantGroupKey == Key)
                                    .Select(x => x.Value);
             }
@@ -71,7 +82,7 @@ namespace uWebshop.Models
         {
             var productId = item.ParentId;
 
-            var product = API.Catalog.GetProduct(store.Alias,productId);
+            var product = Catalog.Instance.GetProduct(store.Alias,productId);
 
             Id        = item.Id;
             Key = item.Key;

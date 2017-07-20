@@ -31,6 +31,7 @@ namespace uWebshop.Services
         /// <param name="logFac"></param>
         /// <param name="domainCache"></param>
         /// <param name="storeCache"></param>
+        /// <param name="appCtx"></param>
         public StoreService(
             ILogFactory logFac, 
             IBaseCache<IDomain> domainCache, 
@@ -42,15 +43,6 @@ namespace uWebshop.Services
             _appCtx = appCtx;
             _domainCache = domainCache;
             _storeCache = storeCache;
-        }
-
-        public IEnumerable<IDomain> GetAllStoreDomains()
-        {
-            var ds = _appCtx.Services.DomainService;
-
-            var domains = ds.GetAll(false);
-
-            return domains;
         }
 
         public Store GetStoreByDomain(string domain = "")

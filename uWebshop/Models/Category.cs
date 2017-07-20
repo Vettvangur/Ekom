@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Web;
 using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -20,6 +22,22 @@ namespace uWebshop.Models
 {
     public class Category : ICategory
     {
+        private IPerStoreCache<Category> _categoryCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
+            }
+        }
+
+        private IPerStoreCache<Product> _productCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Product>>();
+            }
+        }
+
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string ContentTypeAlias { get; set; }
@@ -49,7 +67,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache.Cache[Store.Alias]
+                return _categoryCache.Cache[Store.Alias]
                                     .Where(x => x.Value.ParentCategoryId == Id)
                                     .Select(x => x.Value)
                                     .OrderBy(x => x.SortOrder);
@@ -62,7 +80,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ProductCache.Cache[Store.Alias]
+                return _productCache.Cache[Store.Alias]
                                    .Where(x => x.Value.Categories.Any(z => z.Id == Id))
                                    .Select(x => x.Value)
                                    .OrderBy(x => x.SortOrder);
@@ -75,7 +93,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache.Cache[Store.Alias]
+                return _categoryCache.Cache[Store.Alias]
                                     .Where(x => x.Value.Level > Level &&
                                                 x.Value.Path.Split(',').Contains(Id.ToString()))
                                     .Select(x => x.Value)
@@ -89,7 +107,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return CategoryCache.Cache[Store.Alias]
+                return _categoryCache.Cache[Store.Alias]
                                     .Where(x => x.Value.Level >= Level &&
                                                 x.Value.Path.Split(',').Contains(Id.ToString()))
                                     .Select(x => x.Value)

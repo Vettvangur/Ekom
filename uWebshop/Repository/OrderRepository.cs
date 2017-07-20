@@ -14,6 +14,12 @@ namespace uWebshop.Repository
 {
     public class OrderRepository
     {
+        Configuration _config;
+        public OrderRepository(Configuration config)
+        {
+            _config = config;
+        }
+
         public OrderData GetOrder(Guid uniqueId)
         {
             using (var db = ApplicationContext.Current.DatabaseContext.Database)
@@ -46,7 +52,7 @@ namespace uWebshop.Repository
             {
                 var _orderNumber = "1";
 
-                if (Configuration.ShareBasketBetweenStores || string.IsNullOrEmpty(storeAlias))
+                if (_config.ShareBasketBetweenStores || string.IsNullOrEmpty(storeAlias))
                 {
                     _orderNumber = db.FirstOrDefault<string>("SELECT ReferenceId FROM uWebshopOrders ORDER BY CreateDate DESC");
                 } else

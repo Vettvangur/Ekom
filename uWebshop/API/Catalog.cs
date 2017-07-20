@@ -23,7 +23,7 @@ namespace uWebshop.API
     /// </summary>
     public class Catalog
     {
-        static Catalog Instance { get; } = new Catalog();
+        public static Catalog Instance { get; } = new Catalog();
 
         ILog _log;
         ApplicationContext _appCtx;

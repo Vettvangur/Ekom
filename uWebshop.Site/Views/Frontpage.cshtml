@@ -4,7 +4,7 @@
 @{
     Layout = "Masterpage.cshtml";
 
-    var products = Catalog.GetAllProducts();
+    var products = Catalog.Instance.GetAllProducts();
     var currentStore = Store.GetStore();
     var order = Order.GetOrder(currentStore.Alias);
 }
