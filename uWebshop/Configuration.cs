@@ -53,6 +53,17 @@ namespace uWebshop
         }
 
         /// <summary>
+        /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
+        /// </summary>
+        public virtual int CategoryRootLevel
+        {
+            get
+            {
+                return int.Parse(ConfigurationManager.AppSettings["uwbsCategoryRootLevel"] ?? "3") ;
+            }
+        }
+
+        /// <summary>
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// </summary>

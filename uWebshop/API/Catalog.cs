@@ -33,6 +33,7 @@ namespace uWebshop.API
         IPerStoreCache<Category> _categoryCache;
         IPerStoreCache<Variant> _variantCache;
         StoreService _storeSvc;
+        Configuration _config;
 
         /// <summary>
         /// ctor
@@ -46,6 +47,7 @@ namespace uWebshop.API
             _categoryCache = container.Resolve<IPerStoreCache<Category>>();
             _variantCache = container.Resolve<IPerStoreCache<Variant>>();
             _storeSvc = container.Resolve<StoreService>();
+            _config = container.Resolve<Configuration>();
 
             var logFac = container.Resolve<ILogFactory>();
             _log = logFac.GetLogger(typeof(Catalog));
@@ -166,7 +168,7 @@ namespace uWebshop.API
         public IEnumerable<Category> GetRootCategories(string storeAlias)
         {
             return _categoryCache.Cache[storeAlias]
-                                .Where(x => x.Value.Level == 3)
+                                .Where(x => x.Value.Level == _config.CategoryRootLevel)
                                 .Select(x => x.Value)
                                 .OrderBy(x => x.SortOrder);
         }
