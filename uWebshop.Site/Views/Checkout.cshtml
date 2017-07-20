@@ -3,8 +3,8 @@
 
 @{
     Layout = "Masterpage.cshtml";
-    var currentStore = Store.GetStore();
-    var order = Order.GetOrder(currentStore.Alias);
+    var currentStore = Store.Instance.GetStore();
+    var order = Order.Instance.GetOrder(currentStore.Alias);
 }
 
 @section Main {
@@ -52,7 +52,7 @@
                     <tr>
                         <td>@orderline.Product.Title</td>
                         <td style="max-width:50px;">
-                            <form method="post" action="/Umbraco/surface/order/UpdateOrder">
+                            <form method="post" action="/umbraco/uWebshop/order/UpdateOrder">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
                                 <input type="hidden" name="action" value="@uWebshop.Helpers.OrderAction.Update" />
@@ -64,7 +64,7 @@
                         <td>@orderline.Product.Price.WithVat.ToCurrencyString()</td>
                         <td>@orderline.Amount.WithVat.ToCurrencyString()</td>
                         <td>
-                            <form method="post" action="/umbraco/surface/order/RemoveOrderLine">
+                            <form method="post" action="/umbraco/uWebshop/order/RemoveOrderLine">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
                                 <button type="submit" class="button small">Eyða</button>

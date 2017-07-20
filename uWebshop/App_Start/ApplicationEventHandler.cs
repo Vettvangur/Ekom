@@ -12,6 +12,8 @@ using uWebshop.Helpers;
 using System.Configuration;
 using uWebshop.App_Start;
 using System.Linq;
+using Umbraco.Core.Persistence;
+using uWebshop.Models.Data;
 
 namespace uWebshop
 {
@@ -68,7 +70,7 @@ namespace uWebshop
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
             {
-                cacheEntry.Cache.FillCache();
+                cacheEntry.FillCache();
             }
 
             // Allows for configuration of content nodes to use for matching all requests
@@ -80,6 +82,16 @@ namespace uWebshop
                 ContentService.UnPublished += ContentService_UnPublished;
                 ContentService.Deleted += ContentService_Deleted;
             }
+
+            var dbCtx = applicationContext.DatabaseContext;
+            var db = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
+
+            //Check if the DB table does NOT exist
+            if (!db.TableExist("uWebshopStock"))
+            {
+                //Create DB table - and set overwrite to false
+                db.CreateTable<StockData>(false);
+            }
         }
 
         private void ContentService_Published(
@@ -89,11 +101,9 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
-                if (cacheEntry != null)
-                {
-                    cacheEntry.Cache.AddReplace(node);
-                }
+                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+
+                cacheEntry?.AddReplace(node);
             }
         }
 
@@ -104,12 +114,9 @@ namespace uWebshop
         {
             foreach (var node in args.PublishedEntities)
             {
-                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
-                if (cacheEntry != null)
-                {
-                    cacheEntry.Cache.Remove(node.Id);
-                }
+                cacheEntry?.Remove(node.Id);
             }
         }
 
@@ -117,13 +124,15 @@ namespace uWebshop
         {
             foreach (var node in args.DeletedEntities)
             {
-                var cacheEntry = _config.CacheList.Value.FirstOrDefault(x => x.DocumentTypeAlias == node.ContentType.Alias);
+                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
-                if (cacheEntry != null)
-                {
-                    cacheEntry.Cache.Remove(node.Id);
-                }
+                cacheEntry?.Remove(node.Id);
             }
+        }
+
+        private ICache FindMatchingCache(string contentTypeAlias)
+        {
+            return _config.CacheList.Value.FirstOrDefault(x => x.nodeAlias == contentTypeAlias);
         }
     }
 }

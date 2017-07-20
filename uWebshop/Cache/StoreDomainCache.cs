@@ -11,7 +11,7 @@ namespace uWebshop.Cache
 {
     public class StoreDomainCache : BaseCache<IDomain>
     {
-        protected override string nodeAlias { get; } = "Does not apply";
+        public override string nodeAlias { get; } = "";
 
         ApplicationContext _appCtx;
         /// <summary>

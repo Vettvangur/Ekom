@@ -1,4 +1,5 @@
 ﻿using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +8,27 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
+using uWebshop.App_Start;
 using uWebshop.Helpers;
+using uWebshop.Services;
 
 namespace uWebshopSite.Extensions.Controllers
 {
     [PluginController("uWebshop")]
     public class OrderController : SurfaceController
     {
+        private ILog _log;
+        private OrderService _orderSvc;
+        public OrderController()
+        {
+            var container = UnityConfig.GetConfiguredContainer();
+
+            _orderSvc = container.Resolve<OrderService>();
+
+            var logFac = container.Resolve<ILogFactory>();
+            _log = logFac.GetLogger(typeof(OrderController));
+        }
+
         public JsonResult AddToOrder(Guid productId, string storeAlias, int quantity, Guid? variantId = null, OrderAction? action = null)
         {
             try
@@ -25,7 +40,7 @@ namespace uWebshopSite.Extensions.Controllers
                     variantIds.Add(variantId.Value);
                 }
 
-                var orderInfo = uWebshop.API.Order.AddOrderLine(productId, variantIds, storeAlias, quantity, action);
+                var orderInfo = _orderSvc.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
 
                 return Json(new
                 {
@@ -35,8 +50,7 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-
-                Log.Error("Add to order Failed!",ex);
+                _log.Error("Add to order Failed!",ex);
                 return Json(new
                 {
                     success = false,
@@ -49,7 +63,7 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-                var orderInfo = uWebshop.API.Order.AddOrderLine(lineId, null, storeAlias, quantity, null);
+                var orderInfo = _orderSvc.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -60,8 +74,7 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-
-                Log.Error("Add to order Failed!", ex);
+                _log.Error("Add to order Failed!", ex);
                 return Json(new
                 {
                     success = false,
@@ -74,8 +87,7 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-
-                var orderInfo = uWebshop.API.Order.RemoveOrderLine(lineId,storeAlias);
+                var orderInfo = _orderSvc.RemoveOrderLine(lineId,storeAlias);
 
                 return Json(new
                 {
@@ -86,8 +98,7 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-
-                Log.Error("Remove orderline from order Failed!", ex);
+                _log.Error("Remove orderline from order Failed!", ex);
                 return Json(new
                 {
                     success = false,
@@ -95,10 +106,5 @@ namespace uWebshopSite.Extensions.Controllers
                 });
             }
         }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

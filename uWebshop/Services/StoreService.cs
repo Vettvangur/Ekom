@@ -85,12 +85,12 @@ namespace uWebshop.Services
         {
             var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-            if (r != null)
-            {
-                return r.Store;
-            }
+            return r?.Store;
+        }
 
-            return null;
+        public IEnumerable<Store> GetAllStores()
+        {
+            return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
         }
 
         /// <summary>

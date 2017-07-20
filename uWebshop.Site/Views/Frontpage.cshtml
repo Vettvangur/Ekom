@@ -5,8 +5,8 @@
     Layout = "Masterpage.cshtml";
 
     var products = Catalog.Instance.GetAllProducts();
-    var currentStore = Store.GetStore();
-    var order = Order.GetOrder(currentStore.Alias);
+    var currentStore = Store.Instance.GetStore();
+    var order = Order.Instance.GetOrder(currentStore.Alias);
 }
 
 @section Main {

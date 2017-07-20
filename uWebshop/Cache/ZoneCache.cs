@@ -6,7 +6,7 @@ namespace uWebshop.Cache
 {
     public class ZoneCache : BaseCache<Zone>
     {
-        protected override string nodeAlias { get; } = "uwbsZone";
+        public override string nodeAlias { get; } = "uwbsZone";
 
         /// <summary>
         /// ctor

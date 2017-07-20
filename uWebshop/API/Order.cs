@@ -15,35 +15,41 @@ namespace uWebshop.API
 {
     public class Order
     {
-        static IUnityContainer container
+        private static Order _instance;
+        public static Order Instance
         {
-            get { return UnityConfig.GetConfiguredContainer(); }
+            get
+            {
+                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Order>());
+            }
         }
 
-        public static OrderInfo GetOrder(string storeAlias)
-        {
-            var orderService = container.Resolve<OrderService>();
+        OrderService _orderService;
 
-            return orderService.GetOrder(storeAlias);
+        public Order(OrderService orderService)
+        {
+            _orderService = orderService;
         }
 
-        public static OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, string storeAlias, int quantity, OrderAction? action)
+        public OrderInfo GetOrder(string storeAlias)
         {
-            var orderService = container.Resolve<OrderService>();
-
-            return orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
+            return _orderService.GetOrder(storeAlias);
         }
 
-        public static OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        public OrderInfo AddOrderLine(
+            Guid productId, 
+            IEnumerable<Guid> variantIds, 
+            int quantity, 
+            string storeAlias, 
+            OrderAction? action
+        )
         {
-            var orderService = container.Resolve<OrderService>();
-
-            return orderService.RemoveOrderLine(lineId, storeAlias);
+            return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
         }
 
-        private static readonly ILog Log =
-                LogManager.GetLogger(
-                    MethodBase.GetCurrentMethod().DeclaringType
-                );
+        public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        {
+            return _orderService.RemoveOrderLine(lineId, storeAlias);
+        }
     }
 }

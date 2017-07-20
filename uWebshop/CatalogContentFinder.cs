@@ -134,7 +134,7 @@ namespace uWebshop
                 #endregion
 
 
-                var uwbsRequest = new ContentRequest
+                var uwbsRequest = new ContentRequest(httpContext, new LogFactory())
                 {
                     Store = store,
                     Currency = Currency,

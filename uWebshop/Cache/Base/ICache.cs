@@ -15,6 +15,8 @@ namespace uWebshop.Cache
     /// </summary>
     public interface ICache
     {
+        string nodeAlias { get; }
+
         void AddReplace(IContent node);
 
         void Remove(int id);

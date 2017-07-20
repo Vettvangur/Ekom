@@ -6,6 +6,7 @@ using uWebshop.Models;
 using Umbraco.Core.Models;
 using Umbraco.Core;
 using Examine;
+using System.Web;
 
 namespace uWebshop.App_Start
 {
@@ -48,7 +49,10 @@ namespace uWebshop.App_Start
 
             // TODO: Register your types here
 
+            container.RegisterType<HttpContextBase>(new InjectionFactory(c => new HttpContextWrapper(HttpContext.Current)));
+
             container.RegisterType<ApplicationContext>(new InjectionFactory(c => ApplicationContext.Current));
+            container.RegisterType<DatabaseContext>(new InjectionFactory(c => c.Resolve<ApplicationContext>().DatabaseContext));
             container.RegisterType<ExamineManager>(new InjectionFactory(c => ExamineManager.Instance));
 
             container.RegisterType<Configuration>(new ContainerControlledLifetimeManager());

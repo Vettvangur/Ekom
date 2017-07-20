@@ -7,7 +7,7 @@ namespace uWebshop.Cache
 {
     public class VariantCache : PerStoreCache<Variant>
     {
-        protected override string nodeAlias { get; } = "uwbsProductVariant";
+        public override string nodeAlias { get; } = "uwbsProductVariant";
 
         protected override Variant New(SearchResult r, Store store)
         {

@@ -23,7 +23,14 @@ namespace uWebshop.API
     /// </summary>
     public class Catalog
     {
-        public static Catalog Instance { get; } = new Catalog();
+        private static Catalog _instance;
+        public static Catalog Instance
+        {
+            get
+            {
+                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Catalog>());
+            }
+        }
 
         ILog _log;
         ApplicationContext _appCtx;
@@ -38,18 +45,23 @@ namespace uWebshop.API
         /// <summary>
         /// ctor
         /// </summary>
-        public Catalog()
+        public Catalog(
+            ApplicationContext appCtx,
+            IPerStoreCache<Product> productCache,
+            IPerStoreCache<Category> categoryCache,
+            IPerStoreCache<Variant> variantCache,
+            StoreService storeSvc,
+            Configuration config,
+            ILogFactory logFac
+        )
         {
-            var container = UnityConfig.GetConfiguredContainer();
+            _appCtx = appCtx;
+            _productCache = productCache;
+            _categoryCache = categoryCache;
+            _variantCache = variantCache;
+            _storeSvc = storeSvc;
+            _config = config;
 
-            _appCtx = container.Resolve<ApplicationContext>();
-            _productCache = container.Resolve<IPerStoreCache<Product>>();
-            _categoryCache = container.Resolve<IPerStoreCache<Category>>();
-            _variantCache = container.Resolve<IPerStoreCache<Variant>>();
-            _storeSvc = container.Resolve<StoreService>();
-            _config = container.Resolve<Configuration>();
-
-            var logFac = container.Resolve<ILogFactory>();
             _log = logFac.GetLogger(typeof(Catalog));
         }
 

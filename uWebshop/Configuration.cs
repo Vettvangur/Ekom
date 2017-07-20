@@ -59,7 +59,7 @@ namespace uWebshop
         {
             get
             {
-                return int.Parse(ConfigurationManager.AppSettings["uwbsCategoryRootLevel"] ?? "3") ;
+                return int.Parse(ConfigurationManager.AppSettings["uwbsCategoryRootLevel"] ?? "3");
             }
         }
 
@@ -67,74 +67,32 @@ namespace uWebshop
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// </summary>
-        internal virtual Lazy<List<CacheEntry>> CacheList { get; private set; } = new Lazy<List<CacheEntry>>(() =>
+        internal virtual Lazy<List<ICache>> CacheList { get; private set; } = new Lazy<List<ICache>>(() =>
         {
             var container = UnityConfig.GetConfiguredContainer();
 
-            return new List<CacheEntry>
+            return new List<ICache>
             {
-                new CacheEntry
-                {
-                    Cache = container.Resolve<IBaseCache<IDomain>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsStore",
-                    Cache = container.Resolve<IBaseCache<Store>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProductVariant",
-                    Cache = container.Resolve<IPerStoreCache<Variant>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProductVariantGroup",
-                    Cache = container.Resolve<IPerStoreCache<VariantGroup>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsCategory",
-                    Cache = container.Resolve<IPerStoreCache<Category>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsProduct",
-                    Cache = container.Resolve<IPerStoreCache<Product>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsZone",
-                    Cache = container.Resolve<IBaseCache<Zone>>(),
-                },
-                new CacheEntry
-                {
-                    DocumentTypeAlias = "uwbsPaymentProvider",
-                    Cache = container.Resolve<IPerStoreCache<PaymentProvider>>(),
-                },
+                { container.Resolve<IBaseCache<IDomain>>() },
+                { container.Resolve<IBaseCache<Store>>() },
+                { container.Resolve<IPerStoreCache<Variant>>() },
+                { container.Resolve<IPerStoreCache<VariantGroup>>() },
+                { container.Resolve<IPerStoreCache<Category>>() },
+                { container.Resolve<IPerStoreCache<Product>>() },
+                { container.Resolve<IBaseCache<Zone>>() },
+                { container.Resolve<IPerStoreCache<PaymentProvider>>() },
             };
         });
 
         /// <summary> 
         /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 
         /// </summary> 
-        public IEnumerable<CacheEntry> Succeeding(ICache cache)
+        public IEnumerable<ICache> Succeeding(ICache cache)
         {
 
-            var indexOf = CacheList.Value.FindIndex(x => x.Cache == cache);
+            var indexOf = CacheList.Value.FindIndex(x => x == cache);
 
             return CacheList.Value.Skip(indexOf + 1);
         }
-    }
-
-    /// <summary>
-    /// A single cache entry, with the umbraco document type alias of the object they cache,
-    /// and the current instance of said cache.
-    /// </summary>
-    public class CacheEntry
-    {
-        public string DocumentTypeAlias { get; set; }
-
-        public ICache Cache { get; set; }
     }
 }

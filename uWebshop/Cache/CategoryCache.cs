@@ -7,7 +7,7 @@ namespace uWebshop.Cache
 {
     public class CategoryCache : PerStoreCache<Category>
     {
-        protected override string nodeAlias { get; } = "uwbsCategory";
+        public override string nodeAlias { get; } = "uwbsCategory";
 
         protected override Category New(SearchResult r, Store store)
         {

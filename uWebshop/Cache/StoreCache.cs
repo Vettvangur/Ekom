@@ -12,7 +12,7 @@ namespace uWebshop.Cache
 {
     public class StoreCache : BaseCache<Store>
     {
-        protected override string nodeAlias { get; } = "uwbsStore";
+        public override string nodeAlias { get; } = "uwbsStore";
 
         /// <summary>
         /// ctor
@@ -98,12 +98,12 @@ namespace uWebshop.Cache
                 {
                     AddOrReplaceFromCache(node.Id, item);
 
-                    IEnumerable<CacheEntry> succeedingCaches = _config.Succeeding(this);
+                    IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
 
                     // Refill all per store caches
                     foreach (var cacheEntry in succeedingCaches)
                     {
-                        if (cacheEntry.Cache is IPerStoreCache perStoreCache)
+                        if (cacheEntry is IPerStoreCache perStoreCache)
                         {
                             perStoreCache.FillCache(item);
                         }

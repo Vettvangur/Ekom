@@ -264,7 +264,7 @@
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />
     <Compile Include="API\Store.cs" />
-    <Compile Include="ApplicationEventHandler.cs" />
+    <Compile Include="App_Start\ApplicationEventHandler.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Services\LogFactory.cs" />

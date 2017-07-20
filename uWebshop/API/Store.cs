@@ -1,45 +1,58 @@
-﻿using Microsoft.Practices.Unity;
+﻿using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
 using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Models;
+using uWebshop.Services;
 
 namespace uWebshop.API
 {
     public class Store
     {
-        private static IBaseCache<Models.Store> _storeCache
+        private static Store _instance;
+        public static Store Instance
         {
             get
             {
-                return UnityConfig.GetConfiguredContainer().Resolve<IBaseCache<Models.Store>>();
+                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Store>());
             }
         }
 
-        public static Models.Store GetStore()
+        ILog _log;
+        ApplicationContext _appCtx;
+        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+
+        StoreService _storeSvc;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public Store(ApplicationContext appCtx, StoreService storeSvc, ILogFactory logFac)
         {
-            var appCache = ApplicationContext.Current.ApplicationCache;
-            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            _appCtx = appCtx;
+            _storeSvc = storeSvc;
 
-            if (r?.Store != null)
-            {
-                return r.Store;
-            }
-
-            return null;
+            _log = logFac.GetLogger(typeof(Store));
         }
 
-        public static Models.Store GetStore(string storeAlias)
+        public Models.Store GetStore()
         {
-            return _storeCache.Cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
+            return _storeSvc.GetStoreFromCache();
         }
 
-        public static IEnumerable<Models.Store> GetAllStores()
+        public Models.Store GetStore(string storeAlias)
         {
-            return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
+            return _storeSvc.GetStoreByAlias(storeAlias);
+        }
+
+        public IEnumerable<Models.Store> GetAllStores()
+        {
+            return _storeSvc.GetAllStores();
         }
     }
 }

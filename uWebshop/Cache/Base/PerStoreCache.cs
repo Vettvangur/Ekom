@@ -29,7 +29,7 @@ namespace uWebshop.Cache
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
         /// </summary>
-        protected abstract string nodeAlias { get; }
+        public abstract string nodeAlias { get; }
 
         /// <summary>
         /// Concurrent dictionaries per store
