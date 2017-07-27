@@ -1,15 +1,30 @@
 ﻿using Examine;
-using Examine.Providers;
-using Examine.SearchCriteria;
-using System.Diagnostics;
 using uWebshop.Models;
-using System;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class ZoneCache : BaseCache<Zone, ZoneCache>
+    public class ZoneCache : BaseCache<Zone>
     {
-        protected override string nodeAlias { get; } = "uwbsZone";
+        public override string nodeAlias { get; } = "uwbsZone";
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="storeSvc"></param>
+        /// <param name="logFac"></param>
+        /// <param name="config"></param>
+        /// <param name="examineManager"></param>
+        public ZoneCache(
+            ILogFactory logFac,
+            Configuration config,
+            ExamineManager examineManager
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _log = logFac.GetLogger(typeof(ZoneCache));
+        }
 
         private Zone New(SearchResult r, Store store)
         {

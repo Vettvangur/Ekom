@@ -1,15 +1,17 @@
 ﻿using Examine;
 using Examine.SearchCriteria;
 using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
-using uWebshop.Extend;
+using uWebshop.App_Start;
 using uWebshop.Helpers;
 using uWebshop.Models;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
@@ -17,35 +19,23 @@ namespace uWebshop.Cache
     /// Per store caching for entities of type <see cref="TItem"/>
     /// </summary>
     /// <typeparam name="TItem">Type of entity to cache</typeparam>
-    /// <typeparam name="Tself">
-    /// The inheriting class itself, <para/>
-    /// we use this param to deduce the singleton type to create
-    /// </typeparam>
-    public abstract class PerStoreCache<TItem, Tself> : ICache, IPerStoreCache
-                    where Tself : PerStoreCache<TItem, Tself>, new()
+    public abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>
     {
-        /// <summary>
-        /// Retrieve the singletons Cache
-        /// </summary>
-        public static ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>> 
-                        Cache { get { return Instance._cache; } }
-
-        /// <summary>
-        /// Singleton
-        /// </summary>
-        public static Tself Instance { get; } = new Tself();
-
+        protected Configuration _config;
+        protected ExamineManager _examineManager;
+        protected ILog _log;
+        protected IBaseCache<Store> _storeCache;
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
         /// </summary>
-        protected abstract string nodeAlias { get; }
+        public abstract string nodeAlias { get; }
 
         /// <summary>
         /// Concurrent dictionaries per store
         /// </summary>
-        protected ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>> _cache
-          = new ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>>();
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>> Cache { get; }
+         = new ConcurrentDictionary<string, ConcurrentDictionary<int, TItem>>();
 
         /// <summary>
         /// Derived classes define simple instantiation methods, 
@@ -53,18 +43,10 @@ namespace uWebshop.Cache
         /// </summary>
         protected abstract TItem New(SearchResult r, Store store);
 
-        /// <summary>
-        /// <see cref="ICache"/> implementation.
-        /// Allows us to have a common interface for all caches
-        /// </summary>
-        public void FillCache()
+
+        public virtual void FillCache()
         {
-            if (Extending.CacheExtensionMap.ContainsKey(typeof(Tself)))
-            {
-                var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
-                cacheExtensions.FillCache();
-            }
-            else FillCacheInternal();
+            FillCache(null);
         }
 
         /// <summary>
@@ -72,9 +54,9 @@ namespace uWebshop.Cache
         /// </summary>
         /// <param name="storeParam">This parameter is supplied when adding a store at runtime, 
         /// triggering the given stores filling</param>
-        public void FillCacheInternal(Store storeParam = null)
+        public virtual void FillCache(Store storeParam = null)
         {
-            var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
+            var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
 
             if (searcher != null && !string.IsNullOrEmpty(nodeAlias))
             {
@@ -82,9 +64,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                var name = typeof(Tself).FullName;
-
-                Log.Info("Starting to fill " + name + "...");
+                _log.Info("Starting to fill...");
                 int count = 0;
 
                 try
@@ -95,7 +75,7 @@ namespace uWebshop.Cache
                     
                     if (storeParam == null) // Startup initalization
                     {
-                        foreach (var store in StoreCache.Cache.Select(x => x.Value))
+                        foreach (var store in _storeCache.Cache.Select(x => x.Value))
                         {
                             count += FillStoreCache(store, results);
                         }
@@ -105,18 +85,19 @@ namespace uWebshop.Cache
                         count += FillStoreCache(storeParam, results);
                     }
 
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
-                    Log.Error("Filling per store cache Failed! Type: " + name, ex);
+                    _log.Error("Filling per store cache Failed!", ex);
                 } 
 
                 stopwatch.Stop();
 
-                Log.Info("Finished filling " + typeof(Tself).FullName + " with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
-                Log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
+                _log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
             }
         }
 
@@ -130,9 +111,9 @@ namespace uWebshop.Cache
         {
             int count = 0;
 
-            _cache[store.Alias] = new ConcurrentDictionary<int, TItem>();
+            Cache[store.Alias] = new ConcurrentDictionary<int, TItem>();
 
-            var curStoreCache = _cache[store.Alias];
+            var curStoreCache = Cache[store.Alias];
 
             foreach (var r in results)
             {
@@ -153,7 +134,7 @@ namespace uWebshop.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    Log.Error("Error on adding item with id: " + r.Id + " from Examine", ex);
+                    _log.Error("Error on adding item with id: " + r.Id + " from Examine", ex);
                 }
             }
 
@@ -162,13 +143,13 @@ namespace uWebshop.Cache
 
         public void AddOrReplaceFromCache(int id, Store store, TItem newCacheItem)
         {
-            _cache[store.Alias][id] = newCacheItem;
+            Cache[store.Alias][id] = newCacheItem;
         }
 
         public bool RemoveItemFromCache(Store store, int id)
         {
             TItem i = default(TItem);
-            return _cache[store.Alias].TryRemove(id, out i);
+            return Cache[store.Alias].TryRemove(id, out i);
         }
         
         /// <summary>
@@ -176,7 +157,7 @@ namespace uWebshop.Cache
         /// </summary>
         public void AddOrReplaceFromAllCaches(IContent node)
         {
-            foreach (var store in StoreCache.Cache)
+            foreach (var store in _storeCache.Cache)
             {
                 try
                 {
@@ -184,12 +165,12 @@ namespace uWebshop.Cache
                     {
                         var item = (TItem) Activator.CreateInstance(typeof(TItem), node, store.Value);
 
-                        if (item != null) _cache[store.Value.Alias][node.Id] = item;
+                        if (item != null) Cache[store.Value.Alias][node.Id] = item;
                     }
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    Log.Error("Error on Add/Replacing item with id: " + node.Id, ex);
+                    _log.Error("Error on Add/Replacing item with id: " + node.Id, ex);
                 }
             }
         }
@@ -201,9 +182,9 @@ namespace uWebshop.Cache
         {
             TItem i = default(TItem);
 
-            foreach (var store in StoreCache.Cache)
+            foreach (var store in _storeCache.Cache)
             {
-                _cache[store.Value.Alias].TryRemove(id, out i);
+                Cache[store.Value.Alias].TryRemove(id, out i);
             }
         }
 
@@ -224,10 +205,5 @@ namespace uWebshop.Cache
         {
             RemoveItemFromAllCaches(id);
         }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

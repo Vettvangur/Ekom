@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -16,6 +18,14 @@ namespace uWebshop.Models
 {
     public class Store : IStore
     {
+        private IBaseCache<IDomain> _storeDomainCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IBaseCache<IDomain>>();
+            }
+        }
+
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string ContentTypeAlias { get; set; }
@@ -65,7 +75,7 @@ namespace uWebshop.Models
             //StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
             Level = Convert.ToInt32(item.Fields["level"]);
 
-            Domains = StoreDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
+            Domains = _storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
                                             .Select(x => x.Value);
 
             SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
@@ -96,7 +106,7 @@ namespace uWebshop.Models
             StoreRootNode = item.GetValue<int>("storeRootNode");
             Level = item.Level;
 
-            Domains = StoreDomainCache.Cache
+            Domains = _storeDomainCache.Cache
                                       .Where(x => x.Value.RootContentId == StoreRootNode)
                                       .Select(x => x.Value);
 
@@ -114,12 +124,14 @@ namespace uWebshop.Models
 
             VatIncludedInPrice = item.GetValue<bool>("vatIncludedInPrice");
 
-            try
+            if (item.HasProperty("orderNumberTemplate"))
             {
                 OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
+            }
+            if (item.HasProperty("orderNumberPrefix"))
+            {
                 OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
             }
-            catch { }
         }
 
         private static readonly ILog Log =

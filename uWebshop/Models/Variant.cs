@@ -1,5 +1,6 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,22 +9,33 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using uWebshop.API;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Services;
+using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
     public class Variant : IVariant
     {
+        private IPerStoreCache<VariantGroup> _variantGroupCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
+            }
+        }
+
         private Store _store;
         [JsonIgnore]
         public int Id
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
 
@@ -32,7 +44,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var key = GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -50,7 +62,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("sku");
+                return Properties.GetPropertyValue("sku");
             }
         }
 
@@ -68,7 +80,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("path");
+                return Properties.GetPropertyValue("path");
             }
         }
 
@@ -102,7 +114,7 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = API.Catalog.GetProduct(Store.Alias, productId);
+                var product = Catalog.Instance.GetProduct(Store.Alias, productId);
 
                 if (product == null)
                 {
@@ -128,12 +140,12 @@ namespace uWebshop.Models
 
         public VariantGroup VariantGroup()
         {
-            var parentId = GetPropertyValue("parentID");
+            var parentId = Properties.GetPropertyValue("parentID");
             int _parentId = 0;
 
             if (Int32.TryParse(parentId, out _parentId))
             {
-                var group = VariantGroupCache.Cache[Store.Alias]
+                var group = _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.Id == _parentId)
                                         .Select(x => x.Value);
 
@@ -160,7 +172,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("level"));
+                return Convert.ToInt32(Properties.GetPropertyValue("level"));
             }
         }
         [JsonIgnore]
@@ -168,7 +180,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("nodeTypeAlias");
+                return Properties.GetPropertyValue("nodeTypeAlias");
             }
         }
         [JsonIgnore]
@@ -176,7 +188,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("sortOrder"));
+                return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
             }
         }
         [JsonIgnore]
@@ -184,7 +196,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
@@ -192,7 +204,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
         public IDiscountedPrice Price
@@ -205,19 +217,6 @@ namespace uWebshop.Models
 
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public string GetPropertyValue(string propertyAlias)
-        {
-            if (!string.IsNullOrEmpty(propertyAlias))
-            {
-                if (Properties.ContainsKey(propertyAlias))
-                {
-                    return Properties[propertyAlias];
-                }
-            }
-
-            return string.Empty;
-        }
-
         /// <summary>
         /// Used by uWebshop extensions
         /// </summary>
@@ -229,40 +228,24 @@ namespace uWebshop.Models
 
         public Variant(SearchResult item, Store store)
         {
-            try
-            {
-                _store = store;
+            _store = store;
 
-                foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
-                {
-                    Properties.Add(field.Key, field.Value);
-                }
-
-            } catch(Exception ex)
+            foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
             {
-                Log.Error("Failed to create variant from examine. Id: " + item.Id, ex);
+                Properties.Add(field.Key, field.Value);
             }
         }
 
         public Variant(IContent node, Store store)
         {
-            try
+            _store = store;
+
+            Properties = Product.CreateDefaultUmbracoProperties(node);
+
+            foreach (var prop in node.Properties)
             {
-                _store = store;
-
-                Properties = Product.CreateDefaultUmbracoProperties(node);
-
-                foreach (var prop in node.Properties)
-                {
-                    Properties.Add(prop.Alias, prop.Value.ToString());
-                }
-
-
-            } catch(Exception ex)
-            {
-                Log.Error("Failed to create variant from content. Id: " + node.Id, ex);
+                Properties.Add(prop.Alias, prop.Value.ToString());
             }
-
         }
 
         private static readonly ILog Log =

@@ -5,19 +5,43 @@ using Examine;
 using Umbraco.Core.Models;
 using uWebshop.Models;
 using uWebshop.Services;
+using Umbraco.Core;
 
 namespace uWebshop.Cache
 {
-    public class StoreDomainCache : BaseCache<IDomain, StoreDomainCache>
+    public class StoreDomainCache : BaseCache<IDomain>
     {
-        protected override string nodeAlias { get; } = "Does not apply";
+        public override string nodeAlias { get; } = "";
+
+        ApplicationContext _appCtx;
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="appCtx"></param>
+        /// <param name="logFac"></param>
+        /// <param name="config"></param>
+        /// <param name="examineManager"></param>
+        public StoreDomainCache(
+            ApplicationContext appCtx,
+            ILogFactory logFac, 
+            Configuration config, 
+            ExamineManager examineManager
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _appCtx = appCtx;
+            _log = logFac.GetLogger(typeof(StoreDomainCache));
+        }
 
         /// <summary>
         /// Fill store domain cache with domains from domain service
         /// </summary>
-        public override void FillCacheInternal()
+        public override void FillCache()
         {
-            var domains = StoreService.GetAllStoreDomains();
+            var ds = _appCtx.Services.DomainService;
+
+            var domains = ds.GetAll(false);
 
             if (domains.Any())
             {
@@ -25,14 +49,14 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                Log.Info("Starting to fill store domain cache...");
+                _log.Info("Starting to fill store domain cache...");
 
                 foreach (var d in domains)
                 {
                     AddOrReplaceFromCache(d.Id, d);
                 }
 
-                Log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
             }
         }
     }

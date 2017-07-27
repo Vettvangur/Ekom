@@ -3,7 +3,7 @@
 @using uWebshop.Cache;
 @{
     Layout = "Masterpage.cshtml";
-    var category = Catalog.GetCategory();
+    var category = Catalog.Instance.GetCategory();
 }
 @section Main {
 	

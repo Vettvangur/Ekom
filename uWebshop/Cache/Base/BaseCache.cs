@@ -1,6 +1,7 @@
 ﻿using Examine;
 using Examine.SearchCriteria;
 using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,9 +9,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
-using uWebshop.Extend;
+using uWebshop.App_Start;
 using uWebshop.Helpers;
 using uWebshop.Models;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
@@ -18,38 +20,30 @@ namespace uWebshop.Cache
     /// For custom caches or global non store dependant caches
     /// </summary>
     /// <typeparam name="TItem">Type of data to cache</typeparam>
-    /// <typeparam name="Tself">The inheriting classes type</typeparam>
-    public abstract class BaseCache<TItem, Tself> : ICache
-            where Tself : BaseCache<TItem, Tself>, new()
+    public abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     {
-        /// <summary>
-        /// Retrieve the singletons Cache
-        /// </summary>
-        public static ConcurrentDictionary<int, TItem> Cache { get { return Instance._cache; } }
-
-        /// <summary>
-        /// Singleton
-        /// </summary>
-        public static Tself Instance { get; } = new Tself();
+        protected Configuration _config;
+        protected ExamineManager _examineManager;
+        protected ILog _log;
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
         /// </summary>
-        protected abstract string nodeAlias { get; }
+        public abstract string nodeAlias { get; }
 
-        private ConcurrentDictionary<int, TItem> _cache
-          = new ConcurrentDictionary<int, TItem>();
+        public ConcurrentDictionary<int, TItem> Cache { get; }
+         = new ConcurrentDictionary<int, TItem>();
 
 
-        public void AddOrReplaceFromCache(int id, TItem newCacheItem)
+        protected void AddOrReplaceFromCache(int id, TItem newCacheItem)
         {
-            _cache[id] = newCacheItem;
+            Cache[id] = newCacheItem;
         }
 
-        public void RemoveItemFromCache(int id)
+        protected void RemoveItemFromCache(int id)
         {
             TItem i = default(TItem);
-            _cache.TryRemove(id, out i);
+            Cache.TryRemove(id, out i);
         }
 
         /// <summary>
@@ -62,24 +56,11 @@ namespace uWebshop.Cache
         }
 
         /// <summary>
-        /// Determine if we should run extension methods
-        /// </summary>
-        public void FillCache()
-        {
-            if (Extending.CacheExtensionMap.ContainsKey(typeof(Tself)))
-            {
-                var cacheExtensions = Extending.CacheExtensionMap[typeof(Tself)];
-                cacheExtensions.FillCache();
-            }
-            else FillCacheInternal();
-        }
-
-        /// <summary>
         /// Base FillCache method appropriate for most derived caches
         /// </summary>
-        public virtual void FillCacheInternal()
+        public virtual void FillCache()
         {
-            var searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
+            var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
 
             if (searcher != null && !string.IsNullOrEmpty(nodeAlias))
             {
@@ -87,7 +68,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                Log.Info("Starting to fill " + typeof(Tself).FullName + "...");
+                _log.Info("Starting to fill...");
 
                 var count = 0;
 
@@ -96,7 +77,7 @@ namespace uWebshop.Cache
                     ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
                     var query = searchCriteria.NodeTypeAlias(nodeAlias);
                     var results = searcher.Search(query.Compile());
-                   
+
                     foreach (var r in results.Where(x => x.Fields["template"] != "0"))
                     {
                         // Traverse up parent nodes, checking only published status
@@ -111,18 +92,19 @@ namespace uWebshop.Cache
                             }
                         }
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
-                    Log.Error("Filling Base Cache Failed!", ex);
+                    _log.Error("Filling Base Cache Failed!", ex);
                 }
 
                 stopwatch.Stop();
 
-                Log.Info("Finished filling " + typeof(Tself).FullName + " with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
-                Log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
+                _log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
             }
         }
 
@@ -148,10 +130,5 @@ namespace uWebshop.Cache
         {
             RemoveItemFromCache(id);
         }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

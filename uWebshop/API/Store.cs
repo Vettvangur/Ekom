@@ -1,35 +1,58 @@
-﻿using System;
+﻿using log4net;
+using Microsoft.Practices.Unity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Models;
+using uWebshop.Services;
 
 namespace uWebshop.API
 {
     public class Store
     {
-        public static Models.Store GetStore()
+        private static Store _instance;
+        public static Store Instance
         {
-            var appCache = ApplicationContext.Current.ApplicationCache;
-            var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
-            if (r?.Store != null)
+            get
             {
-                return r.Store;
+                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Store>());
             }
-
-            return null;
         }
 
-        public static Models.Store GetStore(string storeAlias)
+        ILog _log;
+        ApplicationContext _appCtx;
+        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+
+        StoreService _storeSvc;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public Store(ApplicationContext appCtx, StoreService storeSvc, ILogFactory logFac)
         {
-            return StoreCache.Cache.FirstOrDefault(x => x.Value.Alias == storeAlias).Value;
+            _appCtx = appCtx;
+            _storeSvc = storeSvc;
+
+            _log = logFac.GetLogger(typeof(Store));
         }
 
-        public static IEnumerable<Models.Store> GetAllStores()
+        public Models.Store GetStore()
         {
-            return StoreCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
+            return _storeSvc.GetStoreFromCache();
+        }
+
+        public Models.Store GetStore(string storeAlias)
+        {
+            return _storeSvc.GetStoreByAlias(storeAlias);
+        }
+
+        public IEnumerable<Models.Store> GetAllStores()
+        {
+            return _storeSvc.GetAllStores();
         }
     }
 }

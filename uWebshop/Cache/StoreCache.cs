@@ -2,29 +2,45 @@
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System.Diagnostics;
+using System.Collections.Generic;
 using uWebshop.Models;
-using System;
-using System.Collections.Concurrent;
 using Umbraco.Core.Models;
 using uWebshop.Helpers;
-using System.Collections.Generic;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StoreCache : BaseCache<Store, StoreCache>
+    public class StoreCache : BaseCache<Store>
     {
-        protected override string nodeAlias { get; } = "uwbsStore";
+        public override string nodeAlias { get; } = "uwbsStore";
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="storeSvc"></param>
+        /// <param name="logFac"></param>
+        /// <param name="config"></param>
+        /// <param name="examineManager"></param>
+        public StoreCache(
+            ILogFactory logFac,
+            Configuration config,
+            ExamineManager examineManager
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _log = logFac.GetLogger(typeof(StoreCache));
+        }
 
         /// <summary>
         /// Fill Store cache with all products in examine
         /// </summary>
-        public override void FillCacheInternal()
+        public override void FillCache()
         {
             BaseSearchProvider searcher = null;
-
             try
             {
-                searcher = ExamineManager.Instance.SearchProviderCollection[Configuration.ExamineSearcher];
+                searcher = ExamineManager.Instance.SearchProviderCollection[_config.ExamineSearcher];
             }
             catch // Restart Application if Examine just initialized
             {
@@ -37,7 +53,7 @@ namespace uWebshop.Cache
 
                 stopwatch.Start();
 
-                Log.Info("Starting to fill store cache...");
+                _log.Info("Starting to fill store cache...");
                 int count = 0;
 
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
@@ -54,17 +70,17 @@ namespace uWebshop.Cache
                         AddOrReplaceFromCache(r.Id, item);
                     }
                     catch {
-                        Log.Info("Failed to map to store. Id: " + r.Id);
+                        _log.Info("Failed to map to store. Id: " + r.Id);
                     }
                 }
 
                 stopwatch.Stop();
 
-                Log.Info("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
-                Log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
+                _log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
             }
         }
 
@@ -82,13 +98,15 @@ namespace uWebshop.Cache
                 {
                     AddOrReplaceFromCache(node.Id, item);
 
-                    IEnumerable<ICache> succeedingCaches = Data.InitializationSequence.Succeeding(this);
+                    IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
 
                     // Refill all per store caches
-                    foreach (var cache in succeedingCaches)
+                    foreach (var cacheEntry in succeedingCaches)
                     {
-                        if (cache is IPerStoreCache)
-                           (cache as IPerStoreCache).FillCacheInternal(item);
+                        if (cacheEntry is IPerStoreCache perStoreCache)
+                        {
+                            perStoreCache.FillCache(item);
+                        }
                     }
                 }
             }

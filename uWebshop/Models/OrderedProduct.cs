@@ -7,8 +7,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using uWebshop.API;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
+using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
@@ -22,7 +24,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Convert.ToInt32(GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
         [JsonIgnore]
@@ -30,7 +32,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var key = GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("key");
 
                 var _key = new Guid();
 
@@ -47,7 +49,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("sku");
+                return Properties.GetPropertyValue("sku");
             }
         }
         [JsonIgnore]
@@ -76,7 +78,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return GetPropertyValue("path");
+                return Properties.GetPropertyValue("path");
             }
         }
         [JsonIgnore]
@@ -84,7 +86,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("createDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
@@ -92,7 +94,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(GetPropertyValue("updateDate"));
+                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
         public IDiscountedPrice Price
@@ -113,24 +115,11 @@ namespace uWebshop.Models
 
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public string GetPropertyValue(string propertyAlias)
-        {
-            if (!string.IsNullOrEmpty(propertyAlias))
-            {
-                if (Properties.ContainsKey(propertyAlias))
-                {
-                    return Properties[propertyAlias];
-                }
-            }
-
-            return null;
-        }
-
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
         {
-            var product = API.Catalog.GetProduct(store.Alias, productId);
+            var product = Catalog.Instance.GetProduct(store.Alias, productId);
 
             if (product == null)
             {
@@ -147,7 +136,7 @@ namespace uWebshop.Models
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = API.Catalog.GetVariant(store.Alias, variantId);
+                    var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
 
                     if (variant == null)
                     {

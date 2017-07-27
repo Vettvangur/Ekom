@@ -1,19 +1,23 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using uWebshop.App_Start
+@using Microsoft.Practices.Unity
 @using uWebshop.Cache
+@using uWebshop.Models
 @using uWebshop.Services
 @using uWebshop.API
 
 @{
     Layout = "Masterpage.cshtml";
 
-    var currentStore    = StoreService.GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
-    var currentProduct  = Catalog.GetProduct();
-    var currentCategory = Catalog.GetCategory();
+    var container = UnityConfig.GetConfiguredContainer();
+    var currentStore    = container.Resolve<StoreService>().GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
+    var currentProduct  = Catalog.Instance.GetProduct();
+    var currentCategory = Catalog.Instance.GetCategory();
 
-    var products     = ProductCache.Cache[currentStore.Alias].Select(x => x.Value);
-    var categories   = CategoryCache.Cache[currentStore.Alias].Select(x => x.Value);
-    var storeDomains = StoreDomainCache.Cache.Select(x => x.Value);
-    var stores       = StoreCache.Cache.Select(x => x.Value);
+    var products     = container.Resolve<IPerStoreCache<Product>>().Cache[currentStore.Alias].Select(x => x.Value);
+    var categories   = container.Resolve<IPerStoreCache<Category>>().Cache[currentStore.Alias].Select(x => x.Value);
+    var storeDomains = container.Resolve<IBaseCache<IDomain>>().Cache.Select(x => x.Value);
+    var stores       = container.Resolve<IBaseCache<uWebshop.Models.Store>>().Cache.Select(x => x.Value);
 }
 
 @section Main {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace uWebshop.Cache
 {
-    public interface IFillCache
+    public interface IBaseCache<T> : ICache
     {
-        void FillCache();
+        ConcurrentDictionary<int, T> Cache { get; }
     }
 }

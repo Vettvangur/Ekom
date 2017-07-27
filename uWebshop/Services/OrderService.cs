@@ -1,4 +1,5 @@
 ﻿using log4net;
+using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core;
+using uWebshop.App_Start;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -19,17 +21,34 @@ namespace uWebshop.Services
 {
     public class OrderService
     {
+        ILog _log;
+        private HttpContextBase _httpCtx
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
+            }
+        }
         private Store _store;
         private DateTime _date;
         private OrderRepository _orderRepository;
+        private StoreService _storeSvc;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="orderRepo"></param>
+        /// <param name="logFac"></param>
+        /// <param name="storeService"></param>
+        public OrderService(OrderRepository orderRepo, ILogFactory logFac, StoreService storeService)
+        {
+            _orderRepository = orderRepo;
+            _storeSvc = storeService;
+            _log = logFac.GetLogger(typeof(OrderService));
+        }
 
         public OrderInfo GetOrderInfo(Guid uniqueId)
         {
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
-
             var orderData = _orderRepository.GetOrder(uniqueId);
 
             return orderData != null ? CreateOrderInfoFromOrderData(orderData, false) : null;
@@ -37,34 +56,32 @@ namespace uWebshop.Services
 
         public OrderInfo GetOrder(string storeAlias)
         {
-            var httpContext = HttpContext.Current;
-
-            _store = _store == null ? API.Store.GetStore(storeAlias) : _store;
+            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
 
             var key = CreateKey();
-
+            
             // Get Cart UniqueId from Cookie.
             var orderUniqueId = GetOrderIdFromCookie(key);
 
             // If Cookie Exist then return Cart
             if (orderUniqueId != Guid.Empty)
             {
-                Log.Info("Get Order: " + orderUniqueId);
+                _log.Info("Get Order: " + orderUniqueId);
 
                 // If the cart is not in the session, fetch order from sql and insert to session
-                if (httpContext.Session[key] == null)
+                if (_httpCtx.Session[key] == null)
                 {
-                    Log.Info("Order is not in the session. Creating from sql");
+                    _log.Info("Order is not in the session. Creating from sql");
 
                     var order = GetOrderInfo(orderUniqueId);
 
-                    httpContext.Session[key] = order;
+                    _httpCtx.Session[key] = order;
                 } else
                 {
-                    Log.Info("Order Found in Session!");
+                    _log.Info("Order Found in Session!");
                 }
 
-                return (OrderInfo)httpContext.Session[key];
+                return (OrderInfo)_httpCtx.Session[key];
 
             }
             else
@@ -74,28 +91,29 @@ namespace uWebshop.Services
 
         }
 
-        public OrderInfo AddOrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, string storeAlias, OrderAction? action)
+        public OrderInfo AddOrderLine(
+            Guid productId, 
+            IEnumerable<Guid> variantIds, 
+            int quantity, 
+            string storeAlias, 
+            OrderAction? action
+        )
         {
-            Log.Info("Add OrderLine...");
-            _store = _store == null ? API.Store.GetStore(storeAlias) : _store;
+            _log.Info("Add OrderLine...");
+            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
             _date = DateTime.Now;
 
-            Log.Info("Add OrderLine ...  Get Order.. Store: " + _store.Alias);
-
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
+            _log.Info("Add OrderLine ...  Get Order.. Store: " + _store.Alias);
 
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
 
-            Log.Info("Add OrderLine ...  Get Order..");
+            _log.Info("Add OrderLine ...  Get Order..");
             var orderInfo = GetOrder(storeAlias);
 
             if (orderInfo == null)
             {
-                Log.Info("Add OrderLine ...  Order not found..");
+                _log.Info("Add OrderLine ...  Order not found..");
                 orderInfo = CreateEmptyOrder();
             }
 
@@ -106,14 +124,9 @@ namespace uWebshop.Services
 
         public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
-            Log.Info("Remove OrderLine... LineId: " + lineId);
+            _log.Info("Remove OrderLine... LineId: " + lineId);
 
-            _store = _store == null ? API.Store.GetStore(storeAlias) : _store;
-
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
+            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
 
             var orderInfo = GetOrder(storeAlias);
 
@@ -133,7 +146,7 @@ namespace uWebshop.Services
             return orderInfo;
         }
 
-        public void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
+        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
         {
 
             if (quantity <= -1)
@@ -174,9 +187,9 @@ namespace uWebshop.Services
             UpdateOrderAndOrderInfo(orderInfo);
         }
 
-        public void UpdateOrderAndOrderInfo(OrderInfo orderInfo)
+        private void UpdateOrderAndOrderInfo(OrderInfo orderInfo)
         {
-            Log.Info("Update Order with new OrderInfo");
+            _log.Info("Update Order with new OrderInfo");
 
             var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo);
 
@@ -189,30 +202,28 @@ namespace uWebshop.Services
             UpdateOrderInfoInSession(orderInfo);
         }
 
-        public void UpdateOrderInfoInSession(OrderInfo orderInfo)
+        private void UpdateOrderInfoInSession(OrderInfo orderInfo)
         {
-            var httpContext = HttpContext.Current;
-
             var key = CreateKey();
 
-            httpContext.Session[key] = orderInfo;
+            _httpCtx.Session[key] = orderInfo;
         }
 
-        public OrderInfo CreateEmptyOrder()
+        private OrderInfo CreateEmptyOrder()
         {
-            Log.Info("Add OrderLine ...  Create Empty Order..");
+            _log.Info("Add OrderLine ...  Create Empty Order..");
             var key = CreateKey();
 
             var orderUniqueId = CreateOrderIdCookie(key);
 
-            var orderdata = CreateOrderData(orderUniqueId);
+            var orderdata = SaveOrderData(orderUniqueId);
              
             return CreateOrderInfoFromOrderData(orderdata, true);
         }
 
-        public OrderInfo CreateOrderInfoFromOrderData(OrderData orderData, bool empty)
+        private OrderInfo CreateOrderInfoFromOrderData(OrderData orderData, bool empty)
         {
-            Log.Info("Add OrderLine ...  Create OrderInfo from OrderData..");
+            _log.Info("Add OrderLine ...  Create OrderInfo from OrderData..");
 
             //if (!empty && (orderData == null || string.IsNullOrEmpty(orderData.OrderInfo)))
             //{
@@ -226,9 +237,9 @@ namespace uWebshop.Services
             return orderInfo;
         }
 
-        public OrderData CreateOrderData(Guid uniqueId)
+        private OrderData SaveOrderData(Guid uniqueId)
         {
-            Log.Info("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
+            _log.Info("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
             int referenceId = 0;
             string orderNumber = string.Empty;
 
@@ -249,15 +260,15 @@ namespace uWebshop.Services
             return orderData;
         }
 
-        public List<OrderLine> CreateOrderLinesFromJson(string json)
+        private List<OrderLine> CreateOrderLinesFromJson(string json)
         {
             var orderLines = new List<OrderLine>();
 
-            Log.Info("Add OrderLine ...  Create OrderLines from Json.. Json: " + json);
+            _log.Info("Add OrderLine ...  Create OrderLines from Json.. Json: " + json);
 
             if (!string.IsNullOrEmpty(json))
             {
-                Log.Info("Add OrderLine ...  Create OrderLines from Json.. Creating...");
+                _log.Info("Add OrderLine ...  Create OrderLines from Json.. Creating...");
 
                 var orderInfoJObject = JObject.Parse(json);
 
@@ -282,7 +293,7 @@ namespace uWebshop.Services
             return orderLines;
         }
 
-        public string CreateKey()
+        private string CreateKey()
         {
             var key = "uwbsOrder";
 
@@ -294,40 +305,38 @@ namespace uWebshop.Services
             return key;
         }
 
-        public Guid GetOrderIdFromCookie(string key)
+        private Guid GetOrderIdFromCookie(string key)
         {
-            if (HttpContext.Current.Request.Cookies[key] != null)
+            var cookie = _httpCtx.Request.Cookies[key];
+            if (cookie != null)
             {
-                return new Guid(HttpContext.Current.Request.Cookies[key].Value);
+                return new Guid(cookie.Value);
             }
 
             return Guid.Empty;
         }
 
-        public Guid CreateOrderIdCookie(string key)
+        private Guid CreateOrderIdCookie(string key)
         {
             var _guid = Guid.NewGuid();
-            HttpCookie guidCookie = new HttpCookie(key);
-            guidCookie.Value = _guid.ToString();
-            guidCookie.Expires = DateTime.Now.AddDays(1d);
-            HttpContext.Current.Response.Cookies.Add(guidCookie);
+            var guidCookie = new HttpCookie(key)
+            {
+                Value = _guid.ToString(),
+                Expires = DateTime.Now.AddDays(1d)
+            };
+
+            _httpCtx.Response.Cookies.Add(guidCookie);
             return _guid;
         }
 
-        public void GenerateOrderNumber(out int referenceId, out string orderNumber)
+        private void GenerateOrderNumber(out int referenceId, out string orderNumber)
         {
-            // Need to fix this
-            if (_orderRepository == null)
-            {
-                _orderRepository = new OrderRepository();
-            }
-
             var lastOrderNumber = _orderRepository.GetHighestOrderNumber(_store.Alias);
             referenceId = lastOrderNumber + 1;
             orderNumber = GenerateOrderNumberTemplate(referenceId);
         }
 
-        public string GenerateOrderNumberTemplate(int referenceId)
+        private string GenerateOrderNumberTemplate(int referenceId)
         {
             var _referenceId = referenceId.ToString();
 
@@ -340,10 +349,5 @@ namespace uWebshop.Services
             
             return template.Replace("#orderId#", _referenceId).Replace("#orderIdPadded#", referenceId.ToString("0000")).Replace("#storeAlias#", _store.Alias).Replace("#day#", _date.Day.ToString()).Replace("#month#", _date.Month.ToString()).Replace("#year#", _date.Year.ToString());
         }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

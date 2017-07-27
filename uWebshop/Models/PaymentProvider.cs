@@ -1,11 +1,13 @@
 ﻿using Examine;
 using log4net;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
 using Umbraco.Core.Models;
+using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Services;
@@ -14,6 +16,14 @@ namespace uWebshop.Models
 {
     public class PaymentProvider
     {
+        private IBaseCache<Zone> _zoneCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IBaseCache<Zone>>();
+            }
+        }
+
         public int Id { get; set; }
         public string Title { get; set; }
         public string Alias { get; set; }
@@ -39,7 +49,7 @@ namespace uWebshop.Models
             foreach (var zone in item.Fields["zone"].Split(','))
             {
                 var zoneObj 
-                    = ZoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
+                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
 
                 if (zone != null) Zones.Add(zoneObj);
             }
@@ -80,7 +90,7 @@ namespace uWebshop.Models
             foreach (var zone in item.GetValue<string>("zone").Split(','))
             {
                 var zoneObj
-                    = ZoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
+                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
 
                 if (zone != null) Zones.Add(zoneObj);
             }
