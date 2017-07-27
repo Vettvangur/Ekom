@@ -14,14 +14,15 @@ using uWebshop.App_Start;
 using System.Linq;
 using Umbraco.Core.Persistence;
 using uWebshop.Models.Data;
-using System.Web;
 
 namespace uWebshop
 {
     /// <summary>
-    /// Here we hook into the umbraco lifecycle methods to configure uWebshop
+    /// Here we hook into the umbraco lifecycle methods to configure uWebshop.
+    /// We use ApplicationEventHandler so that these lifecycle methods are only run
+    /// when umbraco is in a stable condition.
     /// </summary>
-    public class uWebshopStartup : IApplicationEventHandler
+    public class uWebshopStartup : ApplicationEventHandler
     {
         Configuration _config;
 
@@ -41,14 +42,7 @@ namespace uWebshop
         /// </summary>
         /// <param name="umbracoApplication"></param>
         /// <param name="applicationContext"></param>
-        public void OnApplicationInitialized(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext) { }
-
-        /// <summary>
-        /// Umbraco startup lifecycle method
-        /// </summary>
-        /// <param name="umbracoApplication"></param>
-        /// <param name="applicationContext"></param>
-        public void OnApplicationStarting(
+        protected override void ApplicationStarting(
             UmbracoApplicationBase umbracoApplication, 
             ApplicationContext applicationContext
         )
@@ -64,7 +58,7 @@ namespace uWebshop
         /// </summary>
         /// <param name="umbracoApplication"></param>
         /// <param name="applicationContext"></param>
-        public void OnApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             LogHelper.Info(GetType(), "ApplicationStarted...");
 
@@ -94,7 +88,7 @@ namespace uWebshop
             var dbCtx = applicationContext.DatabaseContext;
             var db = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
 
-            // Check if the DB table does NOT exist
+            //Check if the DB table does NOT exist
             if (!db.TableExist("uWebshopStock"))
             {
                 //Create DB table - and set overwrite to false
