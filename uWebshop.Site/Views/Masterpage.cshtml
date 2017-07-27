@@ -3,9 +3,9 @@
 
 @{
     Layout = null;
-    var currentStore = Store.Instance.GetStore();
-    var categories = Catalog.Instance.GetRootCategories();
-    var order = Order.Instance.GetOrder(currentStore.Alias);
+    var currentStore = Store.Current.GetStore();
+    var categories = Catalog.Current.GetRootCategories();
+    var order = Order.Current.GetOrder(currentStore.Alias);
 }
 
 <!doctype html>

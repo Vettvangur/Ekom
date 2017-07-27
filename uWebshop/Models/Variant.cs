@@ -114,7 +114,7 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = Catalog.Instance.GetProduct(Store.Alias, productId);
+                var product = Catalog.Current.GetProduct(Store.Alias, productId);
 
                 if (product == null)
                 {

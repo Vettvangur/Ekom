@@ -82,7 +82,7 @@ namespace uWebshop.Models
         {
             var productId = item.ParentId;
 
-            var product = Catalog.Instance.GetProduct(store.Alias,productId);
+            var product = Catalog.Current.GetProduct(store.Alias,productId);
 
             Id        = item.Id;
             Key = item.Key;

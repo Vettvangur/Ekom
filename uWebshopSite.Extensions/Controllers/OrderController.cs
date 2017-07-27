@@ -2,14 +2,11 @@
 using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 using uWebshop.App_Start;
 using uWebshop.Helpers;
+using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshopSite.Extensions.Controllers
@@ -19,6 +16,9 @@ namespace uWebshopSite.Extensions.Controllers
     {
         private ILog _log;
         private OrderService _orderSvc;
+        /// <summary>
+        /// ctor
+        /// </summary>
         public OrderController()
         {
             var container = UnityConfig.GetConfiguredContainer();
@@ -70,7 +70,6 @@ namespace uWebshopSite.Extensions.Controllers
                     success = true,
                     orderInfo = orderInfo
                 });
-
             }
             catch (Exception ex)
             {
@@ -94,7 +93,6 @@ namespace uWebshopSite.Extensions.Controllers
                     success = true,
                     orderInfo = orderInfo
                 });
-
             }
             catch (Exception ex)
             {

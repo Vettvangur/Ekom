@@ -3,8 +3,8 @@
 
 @{
     Layout = "Masterpage.cshtml";
-    var currentStore = Store.Instance.GetStore();
-    var order = Order.Instance.GetOrder(currentStore.Alias);
+    var currentStore = Store.Current.GetStore();
+    var order = Order.Current.GetOrder(currentStore.Alias);
 }
 
 @section Main {

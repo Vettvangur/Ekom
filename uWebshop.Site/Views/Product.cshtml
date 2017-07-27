@@ -11,8 +11,8 @@
 
     var container = UnityConfig.GetConfiguredContainer();
     var currentStore    = container.Resolve<StoreService>().GetStoreByDomain(UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName);
-    var currentProduct  = Catalog.Instance.GetProduct();
-    var currentCategory = Catalog.Instance.GetCategory();
+    var currentProduct  = Catalog.Current.GetProduct();
+    var currentCategory = Catalog.Current.GetCategory();
 
     var products     = container.Resolve<IPerStoreCache<Product>>().Cache[currentStore.Alias].Select(x => x.Value);
     var categories   = container.Resolve<IPerStoreCache<Category>>().Cache[currentStore.Alias].Select(x => x.Value);
