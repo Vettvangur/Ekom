@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 using uWebshop.App_Start;
 using uWebshop.Helpers;
+using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshopSite.Extensions.Controllers

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop", "uWebshop\uWebshop.csproj", "{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}"
 EndProject
@@ -10,6 +10,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop.Tests", "uWebshop.Tests\uWebshop.Tests.csproj", "{18843487-DA0C-466B-9805-629DEB243421}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "uWebshop.Site", "uWebshop.Site\uWebshop.Site.csproj", "{ABE32170-D950-408F-A6FE-A6A843183D57}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{486CD777-F50E-4422-9058-A981A489D843}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

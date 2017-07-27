@@ -77,7 +77,7 @@ namespace uWebshop.Services
         public Store GetStoreByAlias(string alias)
         {
             return _storeCache.Cache
-                             .FirstOrDefault(x => x.Value.Alias == alias)
+                             .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias))
                              .Value;
         }
 
