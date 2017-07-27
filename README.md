@@ -31,3 +31,14 @@
 
 ### Hvað þarf að athuga ?
 -  1. Það þarf að vera hægt að stilla körfuna þannig að hægt sé að deila henni með fleiri búðum/lénum.
+
+
+## uWebshop request in surface controllers / api controllers
+
+We register an IHttpModule to ensure creation of an uwbsRequest entry in the runtimeCache.
+
+The module listens for incoming requests containing a store querystring parameter.
+
+This means controller actions do not need to ask for a store param as the module will read it from the request uri
+
+and create the uwbsRequest object with store domainprefix and currency if applicable.
