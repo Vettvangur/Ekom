@@ -119,7 +119,7 @@ namespace uWebshop.Models
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
         {
-            var product = Catalog.Instance.GetProduct(store.Alias, productId);
+            var product = Catalog.Current.GetProduct(store.Alias, productId);
 
             if (product == null)
             {
@@ -136,7 +136,7 @@ namespace uWebshop.Models
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
+                    var variant = Catalog.Current.GetVariant(store.Alias, variantId);
 
                     if (variant == null)
                     {

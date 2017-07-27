@@ -23,12 +23,12 @@ namespace uWebshop.API
     /// </summary>
     public class Catalog
     {
-        private static Catalog _instance;
-        public static Catalog Instance
+        private static Catalog _current;
+        public static Catalog Current
         {
             get
             {
-                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Catalog>());
+                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Catalog>());
             }
         }
 
@@ -113,6 +113,7 @@ namespace uWebshop.API
 
             return product;
         }
+
         public IEnumerable<Product> GetAllProducts()
         {
             var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;

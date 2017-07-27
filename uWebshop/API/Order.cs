@@ -15,17 +15,21 @@ namespace uWebshop.API
 {
     public class Order
     {
-        private static Order _instance;
-        public static Order Instance
+        private static Order _current;
+        public static Order Current
         {
             get
             {
-                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Order>());
+                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Order>());
             }
         }
 
         OrderService _orderService;
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="orderService"></param>
         public Order(OrderService orderService)
         {
             _orderService = orderService;

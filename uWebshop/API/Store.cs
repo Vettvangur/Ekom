@@ -14,12 +14,12 @@ namespace uWebshop.API
 {
     public class Store
     {
-        private static Store _instance;
-        public static Store Instance
+        private static Store _current;
+        public static Store Current
         {
             get
             {
-                return _instance ?? (_instance = UnityConfig.GetConfiguredContainer().Resolve<Store>());
+                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Store>());
             }
         }
 

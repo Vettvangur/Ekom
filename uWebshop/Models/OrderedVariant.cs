@@ -115,7 +115,7 @@ namespace uWebshop.Models
 
         public OrderedVariant(Guid variantId, Store store)
         {
-            var variant = Catalog.Instance.GetVariant(store.Alias,variantId);
+            var variant = Catalog.Current.GetVariant(store.Alias,variantId);
             storeInfo = new StoreInfo(store);
 
             Properties = variant.Properties;
