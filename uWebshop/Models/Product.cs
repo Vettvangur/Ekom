@@ -223,11 +223,10 @@ namespace uWebshop.Models
             }
         }
         public string Url {
-            get {
-
-                var appCache = ApplicationContext.Current.ApplicationCache;
-                var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
+            get
+            {
+                var httpContext = HttpContext.Current;
+                httpContext.Request.Url.AbsolutePath
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();

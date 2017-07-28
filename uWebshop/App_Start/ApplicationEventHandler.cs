@@ -94,6 +94,11 @@ namespace uWebshop
                 //Create DB table - and set overwrite to false
                 db.CreateTable<StockData>(false);
             }
+            if (!db.TableExist("uWebshopOrders"))
+            {
+                //Create DB table - and set overwrite to false
+                db.CreateTable<OrderData>(false);
+            }
         }
 
         private void ContentService_Published(
