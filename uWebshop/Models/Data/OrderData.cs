@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace uWebshop.Models.Data
         public Guid UniqueId { get; set; }
         public int ReferenceId { get; set; }
 
-        [Length(int.MaxValue)]
+        [StringLength(int.MaxValue, MinimumLength = 3)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string OrderInfo { get; set; }
 

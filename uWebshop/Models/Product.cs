@@ -225,11 +225,12 @@ namespace uWebshop.Models
         public string Url {
             get
             {
-                var httpContext = HttpContext.Current;
-                httpContext.Request.Url.AbsolutePath
-                var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
+                //var httpContext = HttpContext.Current;
 
-                return findUrlByPrefix ?? Urls.FirstOrDefault();
+                //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
+
+                //return findUrlByPrefix ?? Urls.FirstOrDefault();
+                return "";
             }
         }
         [JsonIgnore]
