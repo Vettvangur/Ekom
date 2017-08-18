@@ -41,7 +41,7 @@ namespace uWebshop.Services
                 {
                     string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
 
-                    builder.Append(categorySlug.ToSafeAlias());
+                    builder.Append(categorySlug.ToSafeAlias().AddTrailing());
                 }
 
                 var url = builder.ToString().AddTrailing().ToLower();
