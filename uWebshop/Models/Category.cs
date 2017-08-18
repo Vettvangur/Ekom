@@ -116,6 +116,31 @@ namespace uWebshop.Models
             }
         }
 
+        public IEnumerable<Category> Ancestors()
+        {
+            var list = new List<Category>();
+
+            foreach (var id in Path.Split(','))
+            {
+                int categoryId;
+
+                if (int.TryParse(id,out categoryId)) {
+
+                    var category = _categoryCache.Cache[Store.Alias]
+                        .FirstOrDefault(x => x.Value.Id == categoryId);
+
+                    if (category.Value != null)
+                    {
+                        list.Add(category.Value);
+                    }
+                    
+                }
+            }
+
+            return list;
+
+        }
+
         public Category() : base() { }
         public Category(SearchResult item, Store store)
         {
