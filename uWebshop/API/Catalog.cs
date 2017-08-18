@@ -186,6 +186,27 @@ namespace uWebshop.API
                                 .OrderBy(x => x.SortOrder);
         }
 
+        public IEnumerable<Category> GetAllCategories()
+        {
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                var categories = GetAllCategories(store.Alias);
+
+                return categories;
+            }
+
+            return null;
+        }
+
+        public IEnumerable<Category> GetAllCategories(string storeAlias)
+        {
+            return _categoryCache.Cache[storeAlias]
+                                .Select(x => x.Value)
+                                .OrderBy(x => x.SortOrder);
+        }
+
         public Variant GetVariant(Guid Id)
         {
             var store = _storeSvc.GetStoreFromCache();

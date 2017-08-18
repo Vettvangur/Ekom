@@ -45,12 +45,21 @@ namespace uWebshop.Cache
             // Loop over each store specific cache of categories
             foreach (var kvp in Cache)
             {
-                var categoryBeingRemoved = Cache[kvp.Key][id];
-
-                // Loop over all the products in the category being removed
-                foreach (var product in categoryBeingRemoved.Products)
+                // This is failing sometimes when using content service to delete items, need more time to look into it, this is a try/catch hack
+                try
                 {
-                    product.Categories.RemoveAll(x => x == categoryBeingRemoved);
+                    var categoryBeingRemoved = Cache[kvp.Key][id];
+
+                    // Loop over all the products in the category being removed
+                    foreach (var product in categoryBeingRemoved.Products)
+                    {
+                        product.Categories.RemoveAll(x => x == categoryBeingRemoved);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    // Logging 
                 }
             }
 
