@@ -9,7 +9,7 @@ namespace uWebshop.Cache
 {
     public class PaymentProviderCache : PerStoreCache<PaymentProvider>
     {
-        public override string nodeAlias { get; } = "uwbsPaymentProvidedr";
+        public override string nodeAlias { get; } = "uwbsPaymentProvider";
 
         protected override PaymentProvider New(SearchResult r, Store store)
         {

@@ -46,7 +46,6 @@ namespace uWebshop.Models
         }
 
         private Store _store;
-        [JsonIgnore]
         public int Id {
             get
             {
@@ -70,7 +69,6 @@ namespace uWebshop.Models
                 return _key;
             }
         }
-        [JsonIgnore]
         public string SKU
         {
             get
@@ -79,7 +77,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public string Title {
             get
             {
@@ -87,10 +84,25 @@ namespace uWebshop.Models
             }
         }
 
+        public string Description
+        {
+            get
+            {
+                return Properties.GetStoreProperty("description", _store.Alias);
+            }
+        }
+
+        public string Summary
+        {
+            get
+            {
+                return Properties.GetStoreProperty("summary", _store.Alias);
+            }
+        }
+
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
         /// </summary>
-        [JsonIgnore]
         public string Slug
         {
             get
@@ -98,7 +110,7 @@ namespace uWebshop.Models
                 return Properties.GetStoreProperty("slug", _store.Alias);
             }
         }
-        [JsonIgnore]
+
         public decimal OriginalPrice {
             get
             {
@@ -110,7 +122,7 @@ namespace uWebshop.Models
                 return originalPrice;
             }
         }
-        [JsonIgnore]
+
         public int Stock {
             get
             {
@@ -122,7 +134,6 @@ namespace uWebshop.Models
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        [JsonIgnore]
         public List<ICategory> Categories {
             get
             {
@@ -166,7 +177,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public IEnumerable<Guid> CategoriesIds
         {
             get
@@ -175,21 +185,18 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public Store Store {
             get
             {
                 return _store;
             }
         }
-        [JsonIgnore]
         public int SortOrder {
             get
             {
                 return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
             }
         }
-        [JsonIgnore]
         public int Level {
             get
             {
@@ -200,7 +207,6 @@ namespace uWebshop.Models
         /// <summary>
         /// CSV of node id's describing hierarchy from left to right leading up to node.
         /// </summary>
-        [JsonIgnore]
         public string Path
         {
             get
@@ -208,32 +214,32 @@ namespace uWebshop.Models
                 return Properties.GetPropertyValue("path");
             }
         }
-        [JsonIgnore]
         public DateTime CreateDate {
             get
             {
                 return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
-        [JsonIgnore]
         public DateTime UpdateDate {
             get
             {
                 return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
-        public string Url {
+
+        public string Url
+        {
             get
             {
-                //var httpContext = HttpContext.Current;
+                var appCache = ApplicationContext.Current.ApplicationCache;
+                var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
+                var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                //return findUrlByPrefix ?? Urls.FirstOrDefault();
-                return "";
+                return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
-        [JsonIgnore]
+
         public string ContentTypeAlias {
             get
             {
@@ -249,7 +255,7 @@ namespace uWebshop.Models
                 return new Price(OriginalPrice, Store);
             }
         }
-        [JsonIgnore]
+
         public IEnumerable<VariantGroup> VariantGroups {
             get
             {
@@ -258,7 +264,7 @@ namespace uWebshop.Models
                                         .Select(x => x.Value);
             }
         }
-        [JsonIgnore]
+
         public IEnumerable<Variant> AllVariants {
             get
             {
