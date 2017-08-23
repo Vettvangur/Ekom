@@ -133,6 +133,25 @@ namespace uWebshop.API
             return _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
+        public IEnumerable<Product> GetProductsByIds(int[] productIds)
+        {
+            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
+
+            if (r != null && r.Store != null)
+            {
+                var products = GetProductsByIds(productIds, r.Store.Alias);
+
+                return products;
+            }
+
+            return null;
+        }
+
+        public IEnumerable<Product> GetProductsByIds(int[] productIds, string storeAlias)
+        {
+            return _productCache.Cache[storeAlias].Where(x => productIds.Contains(x.Value.Id)).Select(x => x.Value).OrderBy(x => x.SortOrder);
+        }
+
         public Category GetCategory()
         {
             var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;

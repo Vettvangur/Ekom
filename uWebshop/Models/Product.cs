@@ -53,7 +53,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public Guid Key {
             get
             {
