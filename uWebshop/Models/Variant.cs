@@ -21,6 +21,15 @@ namespace uWebshop.Models
 {
     public class Variant : IVariant
     {
+
+        private IPerStoreCache<Category> _categoryCache
+        {
+            get
+            {
+                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
+            }
+        }
+
         private IPerStoreCache<VariantGroup> _variantGroupCache
         {
             get
@@ -30,7 +39,6 @@ namespace uWebshop.Models
         }
 
         private Store _store;
-        [JsonIgnore]
         public int Id
         {
             get
@@ -39,7 +47,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public Guid Key
         {
             get
@@ -57,7 +64,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public string SKU
         {
             get
@@ -66,7 +72,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public string Title
         {
             get
@@ -84,7 +89,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public decimal OriginalPrice
         {
             get
@@ -98,7 +102,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public int Stock
         {
             get
@@ -158,7 +161,6 @@ namespace uWebshop.Models
             return null;
         }
 
-        [JsonIgnore]
         public Store Store
         {
             get
@@ -167,7 +169,6 @@ namespace uWebshop.Models
             }
         }
 
-        [JsonIgnore]
         public int Level
         {
             get
@@ -175,7 +176,7 @@ namespace uWebshop.Models
                 return Convert.ToInt32(Properties.GetPropertyValue("level"));
             }
         }
-        [JsonIgnore]
+
         public string ContentTypeAlias
         {
             get
@@ -183,7 +184,7 @@ namespace uWebshop.Models
                 return Properties.GetPropertyValue("nodeTypeAlias");
             }
         }
-        [JsonIgnore]
+
         public int SortOrder
         {
             get
@@ -191,7 +192,7 @@ namespace uWebshop.Models
                 return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
             }
         }
-        [JsonIgnore]
+
         public DateTime CreateDate
         {
             get
@@ -199,7 +200,7 @@ namespace uWebshop.Models
                 return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
-        [JsonIgnore]
+
         public DateTime UpdateDate
         {
             get
@@ -212,6 +213,57 @@ namespace uWebshop.Models
             get
             {
                 return new Price(OriginalPrice, Store);
+            }
+        }
+
+        /// <summary>
+        /// All categories variant belongs to, includes parent category.
+        /// Does not include categories product is an indirect child of.
+        /// </summary>
+        public List<ICategory> Categories
+        {
+            get
+            {
+
+                var paths = Path.Split(',');
+
+                int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
+
+                var categoryField = Properties.Any(x => x.Key == "categories") ?
+                                    Properties.GetPropertyValue("categories") : "";
+
+                var categories = new List<ICategory>();
+
+                var primaryCategory = _categoryCache.Cache[_store.Alias]
+                                                   .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                   .Value;
+
+                if (primaryCategory != null)
+                {
+                    categories.Add(primaryCategory);
+                }
+
+                if (!string.IsNullOrEmpty(categoryField))
+                {
+                    var categoryIds = categoryField.Split(',');
+
+                    foreach (var catId in categoryIds)
+                    {
+                        var intCatId = Convert.ToInt32(catId);
+
+                        var categoryItem
+                            = _categoryCache.Cache[_store.Alias]
+                                           .FirstOrDefault(x => x.Value.Id == intCatId)
+                                           .Value;
+
+                        if (categoryItem != null && !categories.Contains(categoryItem))
+                        {
+                            categories.Add(categoryItem);
+                        }
+                    }
+                }
+
+                return categories;
             }
         }
 

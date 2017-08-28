@@ -14,6 +14,7 @@ namespace uWebshop.Models
         private string culture;
         private decimal vat;
         private bool vatIncludeInPrice;
+        private Configuration _config;
 
         private readonly IPriceCalculationService _priceCalculationService;
 
@@ -23,6 +24,7 @@ namespace uWebshop.Models
             this.vat = store.Vat;
             this.vatIncludeInPrice = store.VatIncludedInPrice;
             this.culture = store.Culture.Name;
+            this._config = new Configuration();
 
             _priceCalculationService = new Services.PriceCalculationService();
         }
@@ -70,9 +72,14 @@ namespace uWebshop.Models
         public IVatPrice Discount { get; }
         public IPrice Vat { get; }
 
-        public string ToCurrencyString()
+        public string ToCurrencyString
         {
-            return Value.ToString("C");
+         
+            get
+            {
+                return Value.ToString(_config.CurrencyFormat);
+            }
+
             //return (ValueInCents / 100m).ToString("C", StoreHelper.GetCurrencyCulture(_localization));
         }
     }
@@ -84,6 +91,7 @@ namespace uWebshop.Models
         private decimal vat;
         private bool includeVat;
         private bool vatIncludeInPrice;
+        private Configuration _config;
 
         public SimplePrice(bool includeVat, decimal originalPrice, string culture, decimal vat, bool vatIncludeInPrice)
         {
@@ -91,6 +99,7 @@ namespace uWebshop.Models
             this.culture = culture;
             this.vat = vat;
             this.includeVat = includeVat;
+            this._config = new Configuration();
         }
 
         public decimal Value {
@@ -98,14 +107,18 @@ namespace uWebshop.Models
                 return GetAmount();
             }
         }
-        public string ToCurrencyString()
+        public string ToCurrencyString
         {
-            var amount = GetAmount();
+            get
+            {
+                var amount = GetAmount();
 
-            return (amount).ToString("C", new CultureInfo(culture));
+                return (amount).ToString(_config.CurrencyFormat, new CultureInfo(culture));
+            }
+
         }
 
-        public decimal GetAmount()
+        private decimal GetAmount()
         {
             var price = originalPrice;
 

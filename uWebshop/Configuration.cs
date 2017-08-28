@@ -38,6 +38,16 @@ namespace uWebshop
             }
         }
 
+        public virtual string CurrencyFormat
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["uwbsCurrencyFormat"];
+
+                return value ?? "C";
+            }
+        }
+
         /// <summary>
         /// Allows for configuration of content nodes to use for matching all requests
         /// Use case: Data populated from Navision, uWebshop used as in memory cache with no backing umbraco nodes.
