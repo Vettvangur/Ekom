@@ -65,10 +65,10 @@ namespace uWebshop.Repository
 
                 if (_config.ShareBasketBetweenStores || string.IsNullOrEmpty(storeAlias))
                 {
-                    _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId ORDER BY CreateDate DESC");
+                    _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId from uWebshopOrders ORDER BY CreateDate DESC");
                 } else
                 {
-                    _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId WHERE StoreAlias = @0 ORDER BY CreateDate DESC", storeAlias);
+                    _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId from uWebshopOrders WHERE StoreAlias = @0 ORDER BY CreateDate DESC", storeAlias);
                 }
 
                 int.TryParse(_orderNumber, out orderNumber);
