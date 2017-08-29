@@ -55,10 +55,13 @@ namespace uWebshop.Models
         {
             get
             {
-                var appCache = ApplicationContext.Current.ApplicationCache;
-                var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+                //var appCache = ApplicationContext.Current.ApplicationCache;
+                //var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-                var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
+                //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
+
+                var path = HttpContext.Current.Request.Url.AbsolutePath;
+                var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
             }

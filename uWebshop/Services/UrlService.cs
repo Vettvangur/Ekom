@@ -40,8 +40,8 @@ namespace uWebshop.Services
                 foreach (var examineItem in examineItems)
                 {
                     string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
-
-                    builder.Append(categorySlug.ToSafeAlias().AddTrailing());
+                    if(!String.IsNullOrWhiteSpace(categorySlug))
+                        builder.Append(categorySlug.ToSafeAlias().AddTrailing());
                 }
 
                 var url = builder.ToString().AddTrailing().ToLower();

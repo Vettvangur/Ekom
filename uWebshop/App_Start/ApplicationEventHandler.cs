@@ -86,18 +86,22 @@ namespace uWebshop
             }
 
             var dbCtx = applicationContext.DatabaseContext;
-            var db = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
+            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
 
             //Check if the DB table does NOT exist
-            if (!db.TableExist("uWebshopStock"))
+            if (!dbHelper.TableExist("uWebshopStock"))
             {
                 //Create DB table - and set overwrite to false
-                db.CreateTable<StockData>(false);
+                dbHelper.CreateTable<StockData>(false);
             }
-            if (!db.TableExist("uWebshopOrders"))
+            if (!dbHelper.TableExist("uWebshopOrders"))
             {
                 //Create DB table - and set overwrite to false
-                db.CreateTable<OrderData>(false);
+                dbHelper.CreateTable<OrderData>(false);
+                using (var db = dbCtx.Database)
+                {
+                    db.Execute("ALTER TABLE uWebshopOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
             }
         }
 
