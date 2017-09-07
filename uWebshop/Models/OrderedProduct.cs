@@ -19,6 +19,22 @@ namespace uWebshop.Models
         private string productJson;
         private StoreInfo storeInfo;
 
+
+        public delegate void CustomOrderProductPriceEventHandler(CustomOrderProductPriceEventArgs e);
+
+        /// <summary>
+        /// Occurs before product is binded to OrderedProduct
+        /// </summary>
+        public static event CustomOrderProductPriceEventHandler CustomOrderProductPriceEvent;
+
+
+        public delegate void CustomOrderVariantPriceEventHandler(CustomOrderVariantPriceEventArgs e);
+
+        /// <summary>
+        /// Occurs before product is binded to OrderedProduct
+        /// </summary>
+        public static event CustomOrderVariantPriceEventHandler CustomOrderVariantPriceEvent;
+
         [JsonIgnore]
         public int Id
         {
@@ -126,6 +142,17 @@ namespace uWebshop.Models
                 throw new Exception("OrderedProduct could not be created. Product not found. Key: " + productId);
             }
 
+            var config = new Configuration();
+
+            if (config.CustomOrderPrice)
+            {
+                // This gives null error if not fired
+                CustomOrderProductPriceEvent(new CustomOrderProductPriceEventArgs
+                {
+                    Product = product
+                });
+            }
+
             storeInfo = new StoreInfo(store);
 
             Properties = product.Properties;
@@ -143,13 +170,24 @@ namespace uWebshop.Models
                         throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
                     }
 
+                    if (config.CustomOrderPrice)
+                    {
+                        // This gives null error if not fired
+                        CustomOrderVariantPriceEvent(new CustomOrderVariantPriceEventArgs
+                        {
+                            Variant = variant
+                        });
+
+                    }
+
                     var variantGroup = variant.VariantGroup();
 
                     variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, store));
                 }
 
                 VariantGroups = variantGroups;
-            } else
+            }
+            else
             {
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
@@ -205,5 +243,16 @@ namespace uWebshop.Models
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
+
+    }
+
+    public class CustomOrderProductPriceEventArgs : EventArgs
+    {
+        public Product Product { get; set; }
+    }
+
+    public class CustomOrderVariantPriceEventArgs : EventArgs
+    {
+        public Variant Variant { get; set; }
     }
 }

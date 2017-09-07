@@ -110,15 +110,28 @@ namespace uWebshop.Models
             }
         }
 
+        private decimal? _originalPrice;
         public decimal OriginalPrice {
             get
             {
-                var priceField = Properties.GetStoreProperty("price", _store.Alias);
-
                 decimal originalPrice = 0;
-                decimal.TryParse(priceField, out originalPrice);
+
+                if (_originalPrice.HasValue)
+                {
+                    originalPrice = _originalPrice.Value;
+                } else
+                {
+                    var priceField = Properties.GetStoreProperty("price", _store.Alias);
+
+
+                    decimal.TryParse(priceField, out originalPrice);
+                }
 
                 return originalPrice;
+            }
+            set
+            {
+                _originalPrice = value;
             }
         }
 

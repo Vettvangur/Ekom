@@ -1,10 +1,15 @@
-﻿using System;
+﻿using log4net;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using uWebshop.Interfaces;
+using Microsoft.Practices.Unity;
+using uWebshop.Services;
+using uWebshop.App_Start;
 
 namespace uWebshop.Models
 {
@@ -72,16 +77,16 @@ namespace uWebshop.Models
         public IVatPrice Discount { get; }
         public IPrice Vat { get; }
 
-        public string ToCurrencyString
-        {
+        //public string ToCurrencyString
+        //{
          
-            get
-            {
-                return Value.ToString(_config.CurrencyFormat);
-            }
+        //    get
+        //    {
+        //        return Value.ToString(_config.CurrencyFormat);
+        //    }
 
-            //return (ValueInCents / 100m).ToString("C", StoreHelper.GetCurrencyCulture(_localization));
-        }
+        //    //return (ValueInCents / 100m).ToString("C", StoreHelper.GetCurrencyCulture(_localization));
+        //}
     }
 
     public class SimplePrice : IPrice

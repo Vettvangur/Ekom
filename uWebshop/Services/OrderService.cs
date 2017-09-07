@@ -26,7 +26,15 @@ namespace uWebshop.Services
         {
             get
             {
-                return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
+                try
+                {
+                    return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
+                } catch(Exception ex)
+                {
+                    _log.Error("HttpContext not available.",ex);
+                    return null;
+                }
+                
             }
         }
         private Store _store;
@@ -58,8 +66,12 @@ namespace uWebshop.Services
         {
             _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
 
+            _log.Info("Get Order: Store: " + _store.Alias);
+
             var key = CreateKey();
-            
+
+            _log.Info("Get Order: Key: " + key);
+
             // Get Cart UniqueId from Cookie.
             var orderUniqueId = GetOrderIdFromCookie(key);
 
@@ -99,7 +111,8 @@ namespace uWebshop.Services
             OrderAction? action
         )
         {
-            _log.Info("Add OrderLine...");
+            _log.Info("Add OrderLine... ProductId: " + productId + " variantIds: " + variantIds.Any() + " qty: " + quantity + " Action: " + action);
+
             _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
             _date = DateTime.Now;
 

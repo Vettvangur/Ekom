@@ -21,7 +21,19 @@ namespace uWebshop.Models
         {
             get
             {
-                return new Price(Product.OriginalPrice * Quantity, _storeInfo);
+
+                decimal _price = Product.OriginalPrice;
+
+                if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
+                {
+                    foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
+                    {
+                        _price = _price + (v.OriginalPrice - _price);
+                    }
+                }
+
+
+                return new Price(_price * Quantity, _storeInfo);
             }
         }
         public OrderLine(Guid lineId, int quantity, string productJson, StoreInfo storeInfo)
