@@ -41,7 +41,7 @@ namespace uWebshop.Services
                 {
                     string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
                     if(!String.IsNullOrWhiteSpace(categorySlug))
-                        builder.Append(categorySlug.ToSafeAlias().AddTrailing());
+                        builder.Append(categorySlug.ToUrlSegment().AddTrailing());
                 }
 
                 var url = builder.ToString().AddTrailing().ToLower();
@@ -76,8 +76,7 @@ namespace uWebshop.Services
                         builder.Append(item + "/");
                     }
 
-                    // ToSafeAlias obliterates strings containing only numbers f.x.
-                    var slugSafeAlias = slug.ToSafeAlias();
+                    var slugSafeAlias = slug.ToUrlSegment();
                     if (!string.IsNullOrEmpty(slugSafeAlias))
                     {
                         builder.Append(slugSafeAlias);
@@ -104,7 +103,7 @@ namespace uWebshop.Services
             {
                 foreach (var categoryUrl in category.Urls)
                 {
-                    var url = categoryUrl + slug.ToSafeAlias().AddTrailing().ToLower();
+                    var url = categoryUrl + slug.ToUrlSegment().AddTrailing().ToLower();
 
                     urls.Add(url);
                 }
