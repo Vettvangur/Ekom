@@ -240,7 +240,7 @@
     <Compile Include="App_Start\RegisterHttpModule.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
-    <Compile Include="Events\OrderEvents.cs" />
+    <Compile Include="Events\ApplicationEventHandler.cs" />
     <Compile Include="HttpModule.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Services\LogFactory.cs" />
