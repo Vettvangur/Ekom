@@ -1,18 +1,15 @@
 ﻿using Microsoft.Practices.Unity;
-using System;
+using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Core.Persistence;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using System.Configuration;
 using uWebshop.App_Start;
-using System.Linq;
-using Umbraco.Core.Persistence;
+using uWebshop.Cache;
 using uWebshop.Models.Data;
 
 namespace uWebshop
@@ -43,12 +40,12 @@ namespace uWebshop
         /// <param name="umbracoApplication"></param>
         /// <param name="applicationContext"></param>
         protected override void ApplicationStarting(
-            UmbracoApplicationBase umbracoApplication, 
+            UmbracoApplicationBase umbracoApplication,
             ApplicationContext applicationContext
         )
         {
             LogHelper.Info(GetType(), "OnApplicationStarting...");
-            
+
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             UrlProviderResolver.Current.InsertTypeBefore<DefaultUrlProvider, CatalogUrlProvider>();
         }
@@ -75,7 +72,7 @@ namespace uWebshop
                 cacheEntry.FillCache();
             }
 
-            // Allows for configuration of content nodes to use for matching all requests
+            // VirtualContent=true allows for configuration of content nodes to use for matching all requests
             // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
             if (!_config.VirtualContent)
             {
@@ -106,7 +103,7 @@ namespace uWebshop
         }
 
         private void ContentService_Published(
-            IPublishingStrategy sender, 
+            IPublishingStrategy sender,
             PublishEventArgs<IContent> args
         )
         {
@@ -119,7 +116,7 @@ namespace uWebshop
         }
 
         private void ContentService_UnPublished(
-            IPublishingStrategy sender, 
+            IPublishingStrategy sender,
             PublishEventArgs<IContent> args
         )
         {
@@ -143,8 +140,8 @@ namespace uWebshop
 
         private ICache FindMatchingCache(string contentTypeAlias)
         {
-            return _config.CacheList.Value.FirstOrDefault(x 
-                => !string.IsNullOrEmpty(x.nodeAlias) 
+            return _config.CacheList.Value.FirstOrDefault(x
+                => !string.IsNullOrEmpty(x.nodeAlias)
                 && x.nodeAlias == contentTypeAlias
             );
         }

@@ -1,0 +1,30 @@
+﻿# editorconfig.org
+root = true
+
+[*.{js,jsx,ts,tsx}]
+charset = utf-8
+end_of_line = crlf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+
+[*.cs]
+charset = utf-8
+end_of_line = crlf
+indent_size = 4
+indent_style = tab
+insert_final_newline = true
+
+[*.cshtml]
+charset = utf-8
+end_of_line = crlf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+
+[*.{html,config}]
+charset = utf-8
+end_of_line = crlf
+indent_size = 2
+indent_style = space
+insert_final_newline = true

@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.API;
 
 @{
@@ -36,14 +36,14 @@
                 <div>Store: @order.StoreInfo.Alias</div>
                 <div>Quantity: @order.Quantity</div>
                 <div>Status: @order.OrderStatus</div>
-                <div>Total: @order.ChargedAmount.ToCurrencyString()</div>
+                <div>Total: @order.ChargedAmount.ToCurrencyString</div>
 
                 if (order.OrderLines.Any())
                 {
                     <ul>
                         @foreach (var line in order.OrderLines)
                         {
-                            <li><a href="#" data-store="@order.StoreInfo.Alias" data-lineId="@line.Id" class="order-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString()
+                            <li><a href="#" data-store="@order.StoreInfo.Alias" data-lineId="@line.Id" class="order-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString
     
 
                                 @if (line.Product.VariantGroups.Any())
