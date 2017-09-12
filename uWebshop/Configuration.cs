@@ -16,6 +16,24 @@ namespace uWebshop
 	/// </summary>
 	public class Configuration
 	{
+		/// <summary>
+		/// uwbsPerStoreStock
+		/// Controls which stock cache to will be used. Per store or per Product/Variant.
+		/// </summary>
+		public bool PerStoreStock
+		{
+			get
+			{
+				var value = ConfigurationManager.AppSettings["uwbsPerStoreStock"];
+
+				return value.ConvertToBool();
+			}
+		}
+
+		/// <summary>
+		/// uwbsExamineSearcher
+		/// Overrides the default of ExternalSearcher
+		/// </summary>
 		public virtual string ExamineSearcher
 		{
 			get
@@ -26,6 +44,9 @@ namespace uWebshop
 			}
 		}
 
+		/// <summary>
+		/// uwbsShareBasket
+		/// </summary>
 		public virtual bool ShareBasketBetweenStores
 		{
 			get
@@ -57,6 +78,7 @@ namespace uWebshop
 		}
 
 		/// <summary>
+		/// uwbsVirtualContent
 		/// Allows for configuration of content nodes to use for matching all requests
 		/// Use case: Data populated from Navision, uWebshop used as in memory cache with no backing umbraco nodes.
 		/// </summary>
@@ -71,6 +93,7 @@ namespace uWebshop
 		}
 
 		/// <summary>
+		/// uwbsCategoryRootLevel
 		/// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
 		/// </summary>
 		public virtual int CategoryRootLevel

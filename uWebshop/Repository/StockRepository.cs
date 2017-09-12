@@ -1,52 +1,68 @@
-﻿using System;
+using log4net;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core;
 using uWebshop.Models.Data;
+using uWebshop.Services;
 
 namespace uWebshop.Repository
 {
-    public class StockRepository
-    {
-        public StockData GetStockById(Guid uniqueId)
-        {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
-            {
-                return db.FirstOrDefault<StockData>("SELECT * FROM uWebshopStock WHERE UniqueId = @0", uniqueId);
-            }
-        }
-        public IEnumerable<StockData> GetStockByNodeId(Guid uniqueId)
-        {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
-            {
-                return db.Query<StockData>("SELECT * FROM uWebshopStock WHERE NodeId = @0", uniqueId);
-            }
-        }
+	/// <summary>
+	/// Handles database transactions for <see cref="StockData"/>
+	/// </summary>
+	class StockRepository
+	{
+		ILog _log;
+		DatabaseContext _dbCtx;
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="config"></param>
+		/// <param name="dbCtx"></param>
+		/// <param name="logFac"></param>
+		public StockRepository(Configuration config, DatabaseContext dbCtx, ILogFactory logFac)
+		{
+			_dbCtx = dbCtx;
+			_log = logFac.GetLogger(typeof(StockRepository));
+		}
 
-        public IEnumerable<StockData> GetStockByStore(string storeAlias)
-        {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
-            {
-                return db.Query<StockData>("SELECT * FROM uWebshopStock WHERE StoreAlias = @0", storeAlias);
-            }
-        }
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="uniqueId"></param>
+		/// <returns></returns>
+		public StockData GetStockByKey(Guid uniqueId)
+		{
+			using (var db = _dbCtx.Database)
+			{
+				return db.FirstOrDefault<StockData>("WHERE UniqueId = @0", uniqueId);
+			}
+		}
 
-        public IEnumerable<StockData> GetStockByNodeIdAndStore(Guid uniqueId, string storeAlias)
-        {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
-            {
-                return db.Query<StockData>("SELECT * FROM uWebshopStock WHERE StoreAlias = @0 AND NodeId = @1", storeAlias, uniqueId);
-            }
-        }
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="uniqueId"></param>
+		/// <param name="storeAlias"></param>
+		/// <returns></returns>
+		public StockData GetStockByKeyAndStore(Guid uniqueId, string storeAlias)
+		{
+			using (var db = _dbCtx.Database)
+			{
+				return db.FirstOrDefault<StockData>("WHERE UniqueId = @0", $"{storeAlias}_{uniqueId}");
+			}
+		}
 
-        public IEnumerable<StockData> GetAllStock()
-        {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
-            {
-                return db.Query<StockData>("SELECT * FROM uWebshopStock");
-            }
-        }
-    }
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<StockData> GetAllStock()
+		{
+			using (var db = _dbCtx.Database)
+			{
+				return db.Query<StockData>("");
+			}
+		}
+	}
 }

@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -91,7 +91,9 @@ namespace uWebshop.Tests
             staticCache = new Mock<ICacheProvider>();
             requestCache = new Mock<ICacheProvider>();
 
-            cacheHelper = new CacheHelper(runtimeCache.Object, staticCache.Object, requestCache.Object);
-        }
+#pragma warning disable CS0618 // Type or member is obsolete
+			cacheHelper = new CacheHelper(runtimeCache.Object, staticCache.Object, requestCache.Object);
+#pragma warning restore CS0618 // Type or member is obsolete
+		}
     }
 }

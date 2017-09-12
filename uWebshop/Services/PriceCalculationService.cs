@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ using uWebshop.Interfaces;
 
 namespace uWebshop.Services
 {
-    public class PriceCalculationService : IPriceCalculationService
+    class PriceCalculationService : IPriceCalculationService
     {
         public int WithVat(int originalTotal, decimal vat)
         {

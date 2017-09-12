@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,7 @@ using uWebshop.Services;
 
 namespace uWebshop.Repository
 {
-    public class OrderRepository
+    class OrderRepository
     {
         ILog _log;
         Configuration _config;

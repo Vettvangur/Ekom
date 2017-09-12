@@ -1,4 +1,4 @@
-﻿using Microsoft.Practices.Unity;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,10 @@ using System.Threading.Tasks;
 
 namespace uWebshop.Services
 {
-    public class ObjectFactory
+	/// <summary>
+	/// Unfinished
+	/// </summary>
+    class ObjectFactory
     {
         IUnityContainer _container;
 

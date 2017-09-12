@@ -1,44 +1,40 @@
-﻿using System;
-using Examine;
-using uWebshop.Models;
-using uWebshop.Services;
+using System;
+using System.Linq;
 using uWebshop.Models.Data;
+using uWebshop.Repository;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StockCache : PerStoreCache<StockData>
-    {
-        public override string nodeAlias { get; } = "";
+	class StockCache : BaseCache<StockData>
+	{
+		StockRepository _stockRepo;
+		/// <summary>
+		/// ctor
+		/// </summary>
+		/// <param name="logFac"></param>
+		/// <param name="config"></param>
+		/// <param name="stockRepo"></param>
+		public StockCache(
+			ILogFactory logFac,
+			StockRepository stockRepo
+		)
+		{
+			_stockRepo = stockRepo;
+			_log = logFac.GetLogger(typeof(StockCache));
+		}
 
-        protected override StockData New(SearchResult r, Store store)
-        {
-            return null;
-        }
+		public override string NodeAlias { get; } = "";
 
-        public override void FillCache()
-        {
-            
-        }
+		public override void FillCache()
+		{
+			var allStock = _stockRepo.GetAllStock();
+			foreach (var stock in allStock.Where(stock => stock.UniqueId.Length == 36))
+			{
+				var key = Guid.Parse(stock.UniqueId);
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
-        /// <param name="storeCache"></param>
-        public StockCache(
-            ILogFactory logFac,
-            Configuration config,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
-        )
-        {
-            _config = config;
-            _examineManager = examineManager;
-            _storeCache = storeCache;
-
-            _log = logFac.GetLogger(typeof(StockCache));
-        }
-    }
+				Cache[key] = stock;
+			}
+		}
+	}
 }

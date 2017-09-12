@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ namespace uWebshop.Models
             this.culture = store.Culture.Name;
             this._config = new Configuration();
 
-            _priceCalculationService = new Services.PriceCalculationService();
+            _priceCalculationService = new PriceCalculationService();
         }
 
         public Price(decimal originalPrice, StoreInfo storeInfo)
@@ -41,7 +41,7 @@ namespace uWebshop.Models
             this.vatIncludeInPrice = storeInfo.VatIncludedInPrice;
             this.culture = storeInfo.Culture;
 
-            _priceCalculationService = new Services.PriceCalculationService();
+            _priceCalculationService = new PriceCalculationService();
         }
 
 

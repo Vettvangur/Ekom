@@ -15,7 +15,7 @@ namespace uWebshop
 	/// The module checks for existence of a store querystring parameter and if found,
 	/// creates an uwbsRequest object with DomainPrefix and currency if applicable.
 	/// </summary>
-	public class HttpModule : IHttpModule
+	class HttpModule : IHttpModule
 	{
 		/// <summary>
 		/// ModuleName

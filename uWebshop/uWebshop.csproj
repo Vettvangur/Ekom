@@ -235,19 +235,21 @@
   <ItemGroup>
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />
+    <Compile Include="API\Stock.cs" />
     <Compile Include="API\Store.cs" />
-    <Compile Include="App_Start\ApplicationEventHandler.cs" />
+    <Compile Include="App_Start\uWebshopStartup.cs" />
     <Compile Include="App_Start\RegisterHttpModule.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
-    <Compile Include="Events\ApplicationEventHandler.cs" />
+    <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="HttpModule.cs" />
     <Compile Include="Models\OrderRequest.cs" />
+    <Compile Include="Interfaces\IOrderService.cs" />
+    <Compile Include="Interfaces\IStoreService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="Services\ObjectFactory.cs" />
     <Compile Include="Utilities\PropertyHelper.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
-    <Compile Include="Cache\Base\ICacheExtensions.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />
     <Compile Include="Cache\Base\PerStoreCache.cs" />
     <Compile Include="Cache\ZoneCache.cs" />
