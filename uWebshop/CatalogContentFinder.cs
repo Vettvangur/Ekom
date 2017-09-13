@@ -15,164 +15,164 @@ using uWebshop.Utilities;
 
 namespace uWebshop
 {
-	class CatalogContentFinder : IContentFinder
-	{
-		ILog _log;
-		Configuration _config;
-		StoreService _storeSvc;
-		IPerStoreCache<Category> _categoryCache;
-		IPerStoreCache<Product> _productCache;
+    class CatalogContentFinder : IContentFinder
+    {
+        ILog _log;
+        Configuration _config;
+        StoreService _storeSvc;
+        IPerStoreCache<Category> _categoryCache;
+        IPerStoreCache<Product> _productCache;
 
-		public CatalogContentFinder()
-		{
-			var container = UnityConfig.GetConfiguredContainer();
+        public CatalogContentFinder()
+        {
+            var container = UnityConfig.GetConfiguredContainer();
 
-			_config = container.Resolve<Configuration>();
-			_storeSvc = container.Resolve<StoreService>();
-			_categoryCache = container.Resolve<IPerStoreCache<Category>>();
-			_productCache = container.Resolve<IPerStoreCache<Product>>();
+            _config = container.Resolve<Configuration>();
+            _storeSvc = container.Resolve<StoreService>();
+            _categoryCache = container.Resolve<IPerStoreCache<Category>>();
+            _productCache = container.Resolve<IPerStoreCache<Product>>();
 
-			var logFac = UnityConfig.GetConfiguredContainer().Resolve<ILogFactory>();
-			_log = logFac.GetLogger(typeof(CatalogContentFinder));
-		}
+            var logFac = UnityConfig.GetConfiguredContainer().Resolve<ILogFactory>();
+            _log = logFac.GetLogger(typeof(CatalogContentFinder));
+        }
 
-		/// <summary>
-		/// Maps virtual URLs to IPublishedContent items
-		/// Performs various request related processing
-		/// F.x. determining the Store/Currency first from Cookie, then domain and then default
-		/// </summary>
-		public bool TryFindContent(PublishedContentRequest contentRequest)
-		{
-			try
-			{
-				var umbracoContext = contentRequest.RoutingContext.UmbracoContext;
-				var httpContext = umbracoContext.HttpContext;
-				var umbracoHelper = new UmbracoHelper(umbracoContext);
+        /// <summary>
+        /// Maps virtual URLs to IPublishedContent items
+        /// Performs various request related processing
+        /// F.x. determining the Store/Currency first from Cookie, then domain and then default
+        /// </summary>
+        public bool TryFindContent(PublishedContentRequest contentRequest)
+        {
+            try
+            {
+                var umbracoContext = contentRequest.RoutingContext.UmbracoContext;
+                var httpContext = umbracoContext.HttpContext;
+                var umbracoHelper = new UmbracoHelper(umbracoContext);
 
-				// Allows for configuration of content nodes to use for matching all requests
-				// Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
-				var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
+                // Allows for configuration of content nodes to use for matching all requests
+                // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+                var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
 
-				var path = contentRequest.Uri
-										 .AbsolutePath
-										 .ToLower()
-										 .AddTrailing();
+                var path = contentRequest.Uri
+                                         .AbsolutePath
+                                         .ToLower()
+                                         .AddTrailing();
 
-				Store store = _storeSvc.GetStore(contentRequest.UmbracoDomain, httpContext);
+                Store store = _storeSvc.GetStore(contentRequest.UmbracoDomain, httpContext);
 
-				if (store == null)
-				{
-					throw new Exception("No store found.");
-				}
+                if (store == null)
+                {
+                    throw new Exception("No store found.");
+                }
 
-				#region Product and/or Category
+                #region Product and/or Category
 
-				// Requesting Product?
-				var product = _productCache.Cache[store.Alias]
-										  .FirstOrDefault(x => x.Value.Urls != null &&
-															   x.Value.Urls.Contains(path))
-										  .Value;
+                // Requesting Product?
+                var product = _productCache.Cache[store.Alias]
+                                          .FirstOrDefault(x => x.Value.Urls != null &&
+                                                               x.Value.Urls.Contains(path))
+                                          .Value;
 
-				int contentId = 0;
-				Category category;
+                int contentId = 0;
+                Category category;
 
-				if (product != null)
-				{
-					if (virtualContent.InvariantEquals("true"))
-					{
-						contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode"));
-					}
-					else
-					{
-						contentId = product.Id;
-					}
+                if (product != null)
+                {
+                    if (virtualContent.InvariantEquals("true"))
+                    {
+                        contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode"));
+                    }
+                    else
+                    {
+                        contentId = product.Id;
+                    }
 
-					var urlArray = path.Split('/');
-					var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
-					var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
+                    var urlArray = path.Split('/');
+                    var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
+                    var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
-					category = _categoryCache.Cache[store.Alias]
-											.FirstOrDefault(x => x.Value.Urls.Contains(categoryUrl))
-											.Value;
-				}
-				else // Request Category?
-				{
-					category = _categoryCache.Cache[store.Alias]
-											.FirstOrDefault(x => x.Value.Urls != null &&
-																 x.Value.Urls.Contains(path))
-											.Value;
+                    category = _categoryCache.Cache[store.Alias]
+                                            .FirstOrDefault(x => x.Value.Urls.Contains(categoryUrl))
+                                            .Value;
+                }
+                else // Request Category?
+                {
+                    category = _categoryCache.Cache[store.Alias]
+                                            .FirstOrDefault(x => x.Value.Urls != null &&
+                                                                 x.Value.Urls.Contains(path))
+                                            .Value;
 
-					if (category != null)
-					{
-						if (virtualContent.InvariantEquals("true"))
-						{
-							contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode"));
-						}
-						else
-						{
-							contentId = category.Id;
-						}
-					}
-					// else Requesting Neither
-				}
-				#endregion
+                    if (category != null)
+                    {
+                        if (virtualContent.InvariantEquals("true"))
+                        {
+                            contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode"));
+                        }
+                        else
+                        {
+                            contentId = category.Id;
+                        }
+                    }
+                    // else Requesting Neither
+                }
+                #endregion
 
 
-				#region Currency 
+                #region Currency 
 
-				// Unfinished - move to currency service
+                // Unfinished - move to currency service
 
-				HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
+                HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
 
-				object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
+                object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
 
-				#endregion
+                #endregion
 
-				var appCache = umbracoContext.Application.ApplicationCache;
+                var appCache = umbracoContext.Application.ApplicationCache;
 
-				var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest"/*, () => 
+                var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest"/*, () => 
 					new ContentRequest(httpContext, new LogFactory())
 					{
 						Store = store,
 						Currency = Currency,
 						DomainPrefix = path,
 					}*/
-				) as ContentRequest;
+                ) as ContentRequest;
 
-				uwbsRequest.Product = product;
-				uwbsRequest.Category = category;
+                uwbsRequest.Product = product;
+                uwbsRequest.Category = category;
 
-				// Unfinished
-				//var order = (BasketService) httpContext.Session["uwbsBasket"];
+                // Unfinished
+                //var order = (BasketService) httpContext.Session["uwbsBasket"];
 
-				//HttpCookie OrderInfo = httpContext.Request.Cookies["OrderInfo"];
+                //HttpCookie OrderInfo = httpContext.Request.Cookies["OrderInfo"];
 
-				//new Order(OrderInfo);
+                //new Order(OrderInfo);
 
-				//appCache.RequestCache.GetCacheItem("Order", () => order);
+                //appCache.RequestCache.GetCacheItem("Order", () => order);
 
 
-				// Request for Product or Category
-				if (contentId != 0)
-				{
-					var contentCache = umbracoContext.ContentCache;
+                // Request for Product or Category
+                if (contentId != 0)
+                {
+                    var contentCache = umbracoContext.ContentCache;
 
-					var content = contentCache.GetById(contentId);
+                    var content = contentCache.GetById(contentId);
 
-					if (content != null)
-					{
-						contentRequest.PublishedContent = content;
+                    if (content != null)
+                    {
+                        contentRequest.PublishedContent = content;
 
-						return true;
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				_log.Error("Error trying to find matching content for request", ex);
-			}
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Error trying to find matching content for request", ex);
+            }
 
-			return false;
-		}
-	}
+            return false;
+        }
+    }
 }

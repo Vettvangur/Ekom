@@ -1,19 +1,16 @@
-﻿using System;
-using System.Reflection;
 using Microsoft.Practices.Unity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using System.Collections.Generic;
+using System.Reflection;
+using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Persistence;
+using Umbraco.Core.Persistence.SqlSyntax;
+using uWebshop.App_Start;
 using uWebshop.Models;
 using uWebshop.Models.Data;
 using uWebshop.Services;
-using uWebshop.App_Start;
-using uWebshop.Cache;
-using Umbraco.Core.Models;
-using System.Collections.Generic;
-using Umbraco.Core;
-using Umbraco.Core.Logging;
-using Moq;
-using Umbraco.Core.Persistence.SqlSyntax;
-using Umbraco.Core.Persistence;
 
 namespace uWebshop.Tests
 {
@@ -25,7 +22,7 @@ namespace uWebshop.Tests
         {
             var container = UnityConfig.GetConfiguredContainer();
             var dbCtx = new DatabaseContext(new Mock<IDatabaseFactory2>().Object, Mock.Of<ILogger>(), Mock.Of<ISqlSyntaxProvider>(), "test");
-            
+
             container.RegisterInstance(dbCtx);
             var orderSvc = container.Resolve<OrderService>();
 

@@ -11,16 +11,16 @@ namespace uWebshop.Services
         }
     }
 
-	/// <summary>
-	/// Creates an <see cref="ILog"/> instance for the provided <see cref="Type"/>
-	/// </summary>
-	public interface ILogFactory
+    /// <summary>
+    /// Creates an <see cref="ILog"/> instance for the provided <see cref="Type"/>
+    /// </summary>
+    public interface ILogFactory
     {
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="T">Type of class this logger logs for</param>
-		/// <returns></returns>
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="T">Type of class this logger logs for</param>
+        /// <returns></returns>
         ILog GetLogger(Type T);
     }
 }

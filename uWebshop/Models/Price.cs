@@ -4,142 +4,142 @@ using uWebshop.Services;
 
 namespace uWebshop.Models
 {
-	public class Price : IDiscountedPrice
-	{
-		private decimal originalPrice;
-		private string culture;
-		private decimal vat;
-		private bool vatIncludeInPrice;
-		private Configuration _config;
+    public class Price : IDiscountedPrice
+    {
+        private decimal originalPrice;
+        private string culture;
+        private decimal vat;
+        private bool vatIncludeInPrice;
+        private Configuration _config;
 
-		private readonly IPriceCalculationService _priceCalculationService;
+        private readonly IPriceCalculationService _priceCalculationService;
 
-		public Price(decimal originalPrice, Store store)
-		{
-			this.originalPrice = originalPrice;
-			this.vat = store.Vat;
-			this.vatIncludeInPrice = store.VatIncludedInPrice;
-			this.culture = store.Culture.Name;
-			this._config = new Configuration();
+        public Price(decimal originalPrice, Store store)
+        {
+            this.originalPrice = originalPrice;
+            this.vat = store.Vat;
+            this.vatIncludeInPrice = store.VatIncludedInPrice;
+            this.culture = store.Culture.Name;
+            this._config = new Configuration();
 
-			_priceCalculationService = new PriceCalculationService();
-		}
+            _priceCalculationService = new PriceCalculationService();
+        }
 
-		public Price(decimal originalPrice, StoreInfo storeInfo)
-		{
-			this.originalPrice = originalPrice;
-			this.vat = storeInfo.Vat;
-			this.vatIncludeInPrice = storeInfo.VatIncludedInPrice;
-			this.culture = storeInfo.Culture;
+        public Price(decimal originalPrice, StoreInfo storeInfo)
+        {
+            this.originalPrice = originalPrice;
+            this.vat = storeInfo.Vat;
+            this.vatIncludeInPrice = storeInfo.VatIncludedInPrice;
+            this.culture = storeInfo.Culture;
 
-			_priceCalculationService = new PriceCalculationService();
-		}
-
-
-		public decimal Value
-		{
-			get
-			{
-				return originalPrice;
-			}
-			set { }
-		}
+            _priceCalculationService = new PriceCalculationService();
+        }
 
 
-		public IPrice WithVat
-		{
-			get
-			{
-				return new SimplePrice(true, originalPrice, culture, vat, vatIncludeInPrice);
-			}
-		}
-		public IPrice WithoutVat
-		{
-			get
-			{
-				return new SimplePrice(false, originalPrice, culture, vat, vatIncludeInPrice);
-			}
-		}
+        public decimal Value
+        {
+            get
+            {
+                return originalPrice;
+            }
+            set { }
+        }
 
-		public IVatPrice BeforeDiscount
-		{
-			get;
-		}
 
-		public IVatPrice Discount { get; }
-		public IPrice Vat { get; }
+        public IPrice WithVat
+        {
+            get
+            {
+                return new SimplePrice(true, originalPrice, culture, vat, vatIncludeInPrice);
+            }
+        }
+        public IPrice WithoutVat
+        {
+            get
+            {
+                return new SimplePrice(false, originalPrice, culture, vat, vatIncludeInPrice);
+            }
+        }
 
-		//public string ToCurrencyString
-		//{
+        public IVatPrice BeforeDiscount
+        {
+            get;
+        }
 
-		//    get
-		//    {
-		//        return Value.ToString(_config.CurrencyFormat);
-		//    }
+        public IVatPrice Discount { get; }
+        public IPrice Vat { get; }
 
-		//    //return (ValueInCents / 100m).ToString("C", StoreHelper.GetCurrencyCulture(_localization));
-		//}
-	}
+        //public string ToCurrencyString
+        //{
 
-	public class SimplePrice : IPrice
-	{
-		private decimal originalPrice;
-		private string culture;
-		private decimal vat;
-		private bool includeVat;
-		private bool vatIncludeInPrice;
-		private Configuration _config;
+        //    get
+        //    {
+        //        return Value.ToString(_config.CurrencyFormat);
+        //    }
 
-		public SimplePrice(bool includeVat, decimal originalPrice, string culture, decimal vat, bool vatIncludeInPrice)
-		{
-			this.originalPrice = originalPrice;
-			this.culture = culture;
-			this.vat = vat;
-			this.includeVat = includeVat;
-			this._config = new Configuration();
-		}
+        //    //return (ValueInCents / 100m).ToString("C", StoreHelper.GetCurrencyCulture(_localization));
+        //}
+    }
 
-		public decimal Value
-		{
-			get
-			{
-				return GetAmount();
-			}
-		}
-		public string ToCurrencyString
-		{
-			get
-			{
-				var amount = GetAmount();
+    public class SimplePrice : IPrice
+    {
+        private decimal originalPrice;
+        private string culture;
+        private decimal vat;
+        private bool includeVat;
+        private bool vatIncludeInPrice;
+        private Configuration _config;
 
-				return (amount).ToString(_config.CurrencyFormat, new CultureInfo(culture));
-			}
+        public SimplePrice(bool includeVat, decimal originalPrice, string culture, decimal vat, bool vatIncludeInPrice)
+        {
+            this.originalPrice = originalPrice;
+            this.culture = culture;
+            this.vat = vat;
+            this.includeVat = includeVat;
+            this._config = new Configuration();
+        }
 
-		}
+        public decimal Value
+        {
+            get
+            {
+                return GetAmount();
+            }
+        }
+        public string ToCurrencyString
+        {
+            get
+            {
+                var amount = GetAmount();
 
-		private decimal GetAmount()
-		{
-			var price = originalPrice;
+                return (amount).ToString(_config.CurrencyFormat, new CultureInfo(culture));
+            }
 
-			var vatAmount = price * (vat / 100m);
+        }
 
-			if (vatIncludeInPrice)
-			{
-				if (!includeVat)
-				{
-					price = price - vatAmount;
-				}
+        private decimal GetAmount()
+        {
+            var price = originalPrice;
 
-			}
-			else
-			{
-				if (includeVat)
-				{
-					price = price + vatAmount;
-				}
-			}
+            var vatAmount = price * (vat / 100m);
 
-			return price;
-		}
-	}
+            if (vatIncludeInPrice)
+            {
+                if (!includeVat)
+                {
+                    price = price - vatAmount;
+                }
+
+            }
+            else
+            {
+                if (includeVat)
+                {
+                    price = price + vatAmount;
+                }
+            }
+
+            return price;
+        }
+    }
 }

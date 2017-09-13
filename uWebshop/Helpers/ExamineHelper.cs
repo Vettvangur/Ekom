@@ -1,11 +1,8 @@
-﻿using Examine;
+using Examine;
 using Examine.SearchCriteria;
 using Microsoft.Practices.Unity;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using uWebshop.App_Start;
 
 namespace uWebshop.Helpers
