@@ -3,6 +3,7 @@ using Microsoft.Practices.Unity;
 using System;
 using uWebshop.App_Start;
 using uWebshop.Cache;
+using uWebshop.Exceptions;
 using uWebshop.Interfaces;
 using uWebshop.Models.Data;
 using uWebshop.Services;
@@ -31,6 +32,7 @@ namespace uWebshop.API
 		IStoreService _storeSvc;
 		IBaseCache<StockData> _stockCache;
 		IPerStoreCache<StockData> _stockPerStoreCache;
+		IStockRepository _stockRepo;
 		Configuration _config;
 
 		/// <summary>
@@ -41,6 +43,7 @@ namespace uWebshop.API
 			IBaseCache<StockData> stockCache,
 			IPerStoreCache<StockData> stockPerStoreCache,
 			Configuration config,
+			IStockRepository stockRepo,
 			IStoreService storeSvc
 		)
 		{
@@ -48,6 +51,7 @@ namespace uWebshop.API
 			_stockPerStoreCache = stockPerStoreCache;
 			_config = config;
 			_storeSvc = storeSvc;
+			_stockRepo = stockRepo;
 
 			_log = logFac.GetLogger(typeof(Stock));
 		}
@@ -81,21 +85,42 @@ namespace uWebshop.API
 			return _stockPerStoreCache.Cache[store.Alias][key];
 		}
 
-		public void UpdateStock(Guid key)
+		public void UpdateStock(Guid key, int value)
 		{
 			if (_config.PerStoreStock)
 			{
 				var store = _storeSvc.GetStoreFromCache();
-				UpdateStock(key, store);
+				UpdateStock(key, store, value);
 			}
 			else
 			{
+
 			}
 		}
 
-		public void UpdateStock(Guid key, Models.Store store)
+		public void UpdateStock(Guid key, Models.Store store, int value)
 		{
+			var stockData = _stockPerStoreCache.Cache[store.Alias][key];
 
+			if (stockData.Stock + value >= 0)
+			{
+				lock (stockData)
+				{
+					stockData.Stock += value;
+
+					var uniqueId = $"{store.Alias}_{key}";
+
+					var repoVal = _stockRepo.Update(uniqueId, value);
+
+					if (repoVal != stockData.Stock)
+					{
+						// Memory always follows database data
+						stockData.Stock = repoVal;
+
+						throw new StockException($"Stock for item {uniqueId} is out of sync!.");
+					}
+				}
+			}
 		}
 	}
 }

@@ -242,10 +242,12 @@
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
+    <Compile Include="Exceptions\StockException.cs" />
     <Compile Include="HttpModule.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />
+    <Compile Include="Interfaces\IStockRepository.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="Services\ObjectFactory.cs" />
     <Compile Include="Utilities\PropertyHelper.cs" />
