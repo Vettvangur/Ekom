@@ -128,20 +128,19 @@ namespace uWebshop
 
 				#endregion
 
-
-				var uwbsRequest = new ContentRequest(httpContext, new LogFactory())
-				{
-					Store = store,
-					Currency = Currency,
-					DomainPrefix = path,
-					Product = product,
-					Category = category
-				};
-
 				var appCache = umbracoContext.Application.ApplicationCache;
 
-				appCache.RequestCache.GetCacheItem("uwbsRequest", () => uwbsRequest);
+				var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest"/*, () => 
+					new ContentRequest(httpContext, new LogFactory())
+					{
+						Store = store,
+						Currency = Currency,
+						DomainPrefix = path,
+					}*/
+				) as ContentRequest;
 
+				uwbsRequest.Product = product;
+				uwbsRequest.Category = category;
 
 				// Unfinished
 				//var order = (BasketService) httpContext.Session["uwbsBasket"];
