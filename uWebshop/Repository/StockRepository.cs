@@ -1,7 +1,11 @@
 using log4net;
+using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Web.Hosting;
 using Umbraco.Core;
 using uWebshop.Exceptions;
+using uWebshop.Interfaces;
 using uWebshop.Models.Data;
 using uWebshop.Services;
 
@@ -39,8 +43,29 @@ namespace uWebshop.Repository
 		{
 			using (var db = _dbCtx.Database)
 			{
-				return db.FirstOrDefault<StockData>("WHERE UniqueId = @0", uniqueId);
+				var stockData = db.FirstOrDefault<StockData>("WHERE UniqueId = @0", uniqueId);
+
+				return stockData ?? CreateNewStockRecord(uniqueId);
 			}
+		}
+
+		public StockData CreateNewStockRecord(string uniqueId)
+		{
+			var dateNow = DateTime.Now;
+			var stockData = new StockData
+			{
+				UniqueId = uniqueId,
+				CreateDate = dateNow,
+				UpdateDate = dateNow,
+			};
+
+			// Run synchronously to ensure that callers can expect a db record present after method runs
+			using (var db = _dbCtx.Database)
+			{
+				db.Insert(stockData);
+			}
+
+			return stockData;
 		}
 
 		/// <summary>
@@ -68,7 +93,9 @@ namespace uWebshop.Repository
 			if (stockData.Stock + value >= 0)
 			{
 				stockData.Stock += value;
+				stockData.UpdateDate = DateTime.Now;
 
+				// Called synchronously and hopefully contained by a locking construct
 				using (var db = _dbCtx.Database)
 				{
 					db.Update(stockData);

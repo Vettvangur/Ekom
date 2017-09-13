@@ -1,3 +1,4 @@
+using Hangfire;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -123,6 +124,16 @@ namespace uWebshop
 					db.Execute("ALTER TABLE uWebshopOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
 				}
 			}
+
+			GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
+			var server = new BackgroundJobServer();
+
+			// Stock reservation test
+			//var newGuid = Guid.NewGuid();
+
+			//Stock.Current.UpdateStock(newGuid, 5);
+
+			//Stock.Current.ReserveStock(newGuid, -5, TimeSpan.FromSeconds(30));
 		}
 
 		private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)

@@ -1,3 +1,4 @@
+using Hangfire.States;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -56,70 +57,229 @@ namespace uWebshop.API
 			_log = logFac.GetLogger(typeof(Stock));
 		}
 
+		/// <summary>
+		/// Gets stock amount from cache. 
+		/// If PerStoreStock is configured, gets store from cache.
+		/// If no stock entry exists, creates a new one.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <returns></returns>
 		public int GetStock(Guid key)
 		{
 			return GetStockData(key).Stock;
 		}
 
-		public int GetStock(Guid key, Models.Store store)
+		/// <summary>
+		/// Gets stock amount from store cache. 
+		/// If no stock entry exists, creates a new one.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="storeAlias"></param>
+		/// <returns></returns>
+		public int GetStock(Guid key, string storeAlias)
 		{
-			return GetStockData(key, store).Stock;
+			return GetStockData(key, storeAlias).Stock;
 		}
 
+		/// <summary>
+		/// Gets <see cref="StockData"/> from cache. 
+		/// If PerStoreStock is configured, gets store from cache.
+		/// If no stock entry exists, creates a new one.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <returns></returns>
 		public StockData GetStockData(Guid key)
 		{
 			if (_config.PerStoreStock)
 			{
 				var store = _storeSvc.GetStoreFromCache();
 
-				return GetStockData(key, store);
+				return GetStockData(key, store.Alias);
 			}
 			else
 			{
+				EnsureStockEntryExists(key);
+
 				return _stockCache.Cache[key];
 			}
 		}
 
-		public StockData GetStockData(Guid key, Models.Store store)
+		/// <summary>
+		/// Gets <see cref="StockData"/> from store cache. 
+		/// If no stock entry exists, creates a new one.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="storeAlias"></param>
+		/// <returns></returns>
+		public StockData GetStockData(Guid key, string storeAlias)
 		{
-			return _stockPerStoreCache.Cache[store.Alias][key];
+			EnsurePerStoreEntryExists(key, storeAlias);
+
+			return _stockPerStoreCache.Cache[storeAlias][key];
 		}
 
+		/// <summary>
+		/// Updates stock count of item. 
+		/// If PerStoreStock is configured, gets store from cache and updates relevant item.
+		/// If no stock entry exists, creates a new one, the attempts to update.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
 		public void UpdateStock(Guid key, int value)
 		{
+			_log.Info("Updating Stock for " + key);
+
 			if (_config.PerStoreStock)
 			{
 				var store = _storeSvc.GetStoreFromCache();
-				UpdateStock(key, store, value);
+				UpdateStock(key, store.Alias, value);
 			}
 			else
 			{
+				EnsureStockEntryExists(key);
 
+				var stockData = _stockCache.Cache[key];
+
+				UpdateStockWithLock(stockData, value);
 			}
 		}
 
-		public void UpdateStock(Guid key, Models.Store store, int value)
+		/// <summary>
+		/// Updates stock count of store item. 
+		/// If no stock entry exists, creates a new one, the attempts to update.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="storeAlias"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public void UpdateStock(Guid key, string storeAlias, int value)
 		{
-			var stockData = _stockPerStoreCache.Cache[store.Alias][key];
+			EnsurePerStoreEntryExists(key, storeAlias);
 
+			var stockData = _stockPerStoreCache.Cache[storeAlias][key];
+
+			UpdateStockWithLock(stockData, value);
+		}
+
+		/// <summary>
+		/// Reserve stock for the given timespan.
+		/// Rollback is scheduled using Hangfire
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
+		/// <param name="timeSpan">How long to reserve</param>
+		/// <returns></returns>
+		public string ReserveStock(Guid key, int value, TimeSpan timeSpan)
+		{
+			_log.Info("Reserving Stock for " + key);
+
+			if (value >= 0) throw new ArgumentOutOfRangeException();
+
+			UpdateStock(key, value);
+
+			var jobId = Hangfire.BackgroundJob.Schedule(() =>
+				Stock.Current.UpdateStock(key, -value),
+				timeSpan
+			);
+
+			return jobId;
+		}
+
+		/// <summary>
+		/// Reserve stock for the given timespan.
+		/// Rollback is scheduled using Hangfire
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="storeAlias"></param>
+		/// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
+		/// <param name="timeSpan">How long to reserve</param>
+		/// <returns></returns>
+		public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan)
+		{
+			if (value >= 0) throw new ArgumentOutOfRangeException();
+
+			UpdateStock(key, storeAlias, value);
+
+			var jobId = Hangfire.BackgroundJob.Schedule(() =>
+				Stock.Current.UpdateStock(key, storeAlias, -value),
+				timeSpan
+			);
+
+			return jobId;
+		}
+
+		/// <summary>
+		/// Cancel a previously scheduled stock reservation rollback.
+		/// </summary>
+		/// <param name="jobId"></param>
+		public void CancelRollback(string jobId)
+		{
+			if (!Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName)
+			&& !Hangfire.BackgroundJob.Delete(jobId, EnqueuedState.StateName))
+			{
+				throw new StockException("Unable to cancel rollback job, most likely the job has already finished");
+			}
+		}
+
+		/// <summary>
+		/// Only requeues from scheduled state.
+		/// Never requeues succeeded jobs.
+		/// </summary>
+		/// <param name="jobId">Hangfire Job Id</param>
+		public void CompleteRollback(string jobId)
+		{
+			Hangfire.BackgroundJob.Requeue(
+				jobId,
+				ScheduledState.StateName
+			);
+		}
+
+		private void EnsureStockEntryExists(Guid key)
+		{
+			if (!_stockCache.Cache.ContainsKey(key))
+			{
+				_stockCache.Cache[key]
+					= _stockRepo.CreateNewStockRecord(key.ToString());
+			}
+		}
+
+		private void EnsurePerStoreEntryExists(Guid key, string storeAlias)
+		{
+			if (!_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
+			{
+				_stockPerStoreCache.Cache[storeAlias][key]
+					= _stockRepo.CreateNewStockRecord($"{storeAlias}_{key}");
+			}
+		}
+
+		private void UpdateStockWithLock(StockData stockData, int value)
+		{
 			if (stockData.Stock + value >= 0)
 			{
 				lock (stockData)
 				{
 					stockData.Stock += value;
 
-					var uniqueId = $"{store.Alias}_{key}";
-
-					var repoVal = _stockRepo.Update(uniqueId, value);
+					var repoVal = _stockRepo.Update(stockData.UniqueId, value);
 
 					if (repoVal != stockData.Stock)
 					{
+						var prevCachedVal = stockData.Stock;
+
 						// Memory always follows database data
 						stockData.Stock = repoVal;
 
-						throw new StockException($"Stock for item {uniqueId} is out of sync!.");
+						throw new StockException(
+							$"Stock for item {stockData.UniqueId} is out of sync!. Repo value {repoVal} != cache value {prevCachedVal}"
+						+ "This indicates that the requested value + Db stock > 0 but Cache and Db are out of sync"
+						);
 					}
 				}
+			}
+			else
+			{
+				throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
 			}
 		}
 	}

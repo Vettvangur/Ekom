@@ -8,6 +8,7 @@ using uWebshop.Cache;
 using uWebshop.Interfaces;
 using uWebshop.Models;
 using uWebshop.Models.Data;
+using uWebshop.Repository;
 using uWebshop.Services;
 
 namespace uWebshop.App_Start
@@ -72,6 +73,7 @@ namespace uWebshop.App_Start
 
 			container.RegisterType<IStoreService, StoreService>();
 			container.RegisterType<IOrderService, OrderService>();
+			container.RegisterType<IStockRepository, StockRepository>();
 			container.RegisterType<ILogFactory, LogFactory>();
 		}
 	}

@@ -26,9 +26,24 @@ namespace uWebshop.Interfaces
 		StockData GetStockByUniqueId(string uniqueId);
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="uniqueId">
+		/// Expects a value in the format
+		/// $"{storeAlias}_{uniqueId}" for PerStore Stock
+		/// Guid otherwise
+		/// </param>
+		/// <returns></returns>
+		StockData CreateNewStockRecord(string uniqueId);
+
+		/// <summary>
 		/// Increment or decrement stock by the supplied value
 		/// </summary>
-		/// <param name="uniqueId"></param>
+		/// <param name="uniqueId">
+		/// Expects a value in the format
+		/// $"{storeAlias}_{uniqueId}" for PerStore Stock
+		/// Guid otherwise
+		/// </param>
 		/// <param name="modifyAmount">This value can be negative or positive depending on whether the indended action is to increment or decrement stock</param>
 		/// <returns></returns>
 		int Update(string uniqueId, int modifyAmount);

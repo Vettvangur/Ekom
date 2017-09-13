@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using uWebshop.Interfaces;
 using uWebshop.Models.Data;
 using uWebshop.Repository;
 using uWebshop.Services;
@@ -8,16 +9,15 @@ namespace uWebshop.Cache
 {
 	class StockCache : BaseCache<StockData>
 	{
-		StockRepository _stockRepo;
+		IStockRepository _stockRepo;
 		/// <summary>
 		/// ctor
 		/// </summary>
 		/// <param name="logFac"></param>
-		/// <param name="config"></param>
 		/// <param name="stockRepo"></param>
 		public StockCache(
 			ILogFactory logFac,
-			StockRepository stockRepo
+			IStockRepository stockRepo
 		)
 		{
 			_stockRepo = stockRepo;
