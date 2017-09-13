@@ -75,6 +75,14 @@ namespace uWebshop
 			_log = logFac.GetLogger(typeof(uWebshopStartup));
 			_config = container.Resolve<Configuration>();
 
+			// Controls which stock cache will be populated
+			var stockCache = _config.PerStoreStock
+				? container.Resolve<IPerStoreCache<StockData>>()
+				: container.Resolve<IBaseCache<StockData>>()
+				as ICache;
+
+			_config.CacheList.Value.Add(stockCache);
+
 			// Fill Caches
 			foreach (var cacheEntry in _config.CacheList.Value)
 			{
@@ -90,20 +98,6 @@ namespace uWebshop
 				ContentService.UnPublished += ContentService_UnPublished;
 				ContentService.Deleted += ContentService_Deleted;
 				ContentService.Publishing += ContentService_Publishing;
-			}
-
-			// Controls which stock cache will be populated
-			if (_config.PerStoreStock)
-			{
-				var stockCache = container.Resolve<IPerStoreCache<StockData>>();
-
-				_config.CacheList.Value.Add(stockCache);
-			}
-			else
-			{
-				var stockCache = container.Resolve<IBaseCache<StockData>>();
-
-				_config.CacheList.Value.Add(stockCache);
 			}
 
 			var dbCtx = applicationContext.DatabaseContext;
@@ -125,15 +119,9 @@ namespace uWebshop
 				}
 			}
 
+			// Hangfire
 			GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
-			var server = new BackgroundJobServer();
-
-			// Stock reservation test
-			//var newGuid = Guid.NewGuid();
-
-			//Stock.Current.UpdateStock(newGuid, 5);
-
-			//Stock.Current.ReserveStock(newGuid, -5, TimeSpan.FromSeconds(30));
+			new BackgroundJobServer();
 		}
 
 		private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)

@@ -169,17 +169,15 @@ namespace uWebshop.API
 		/// <param name="key"></param>
 		/// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
 		/// <param name="timeSpan">How long to reserve</param>
-		/// <returns></returns>
+		/// <returns>Hangfire Job Id</returns>
 		public string ReserveStock(Guid key, int value, TimeSpan timeSpan)
 		{
-			_log.Info("Reserving Stock for " + key);
-
 			if (value >= 0) throw new ArgumentOutOfRangeException();
 
 			UpdateStock(key, value);
 
 			var jobId = Hangfire.BackgroundJob.Schedule(() =>
-				Stock.Current.UpdateStock(key, -value),
+				UpdateStockHangfire(key, -value),
 				timeSpan
 			);
 
@@ -194,7 +192,7 @@ namespace uWebshop.API
 		/// <param name="storeAlias"></param>
 		/// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
 		/// <param name="timeSpan">How long to reserve</param>
-		/// <returns></returns>
+		/// <returns>Hangfire Job Id</returns>
 		public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan)
 		{
 			if (value >= 0) throw new ArgumentOutOfRangeException();
@@ -202,7 +200,7 @@ namespace uWebshop.API
 			UpdateStock(key, storeAlias, value);
 
 			var jobId = Hangfire.BackgroundJob.Schedule(() =>
-				Stock.Current.UpdateStock(key, storeAlias, -value),
+				UpdateStockHangfire(key, storeAlias, -value),
 				timeSpan
 			);
 
@@ -218,7 +216,9 @@ namespace uWebshop.API
 			if (!Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName)
 			&& !Hangfire.BackgroundJob.Delete(jobId, EnqueuedState.StateName))
 			{
-				throw new StockException("Unable to cancel rollback job, most likely the job has already finished");
+				throw new StockException(
+					"Unable to cancel rollback job, most likely the job has already finished"
+				);
 			}
 		}
 
@@ -281,6 +281,26 @@ namespace uWebshop.API
 			{
 				throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
 			}
+		}
+
+		/// <summary>
+		/// Allows hangfire to serialise the method call to database
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="value"></param>
+		public static void UpdateStockHangfire(Guid key, int value)
+		{
+			Current.UpdateStock(key, value);
+		}
+		/// <summary>
+		/// Allows hangfire to serialise the method call to database
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="storeAlias"></param>
+		/// <param name="value"></param>
+		public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
+		{
+			Current.UpdateStock(key, storeAlias, value);
 		}
 	}
 }

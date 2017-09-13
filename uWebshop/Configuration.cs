@@ -57,6 +57,10 @@ namespace uWebshop
 			}
 		}
 
+		/// <summary>
+		/// Numeric format string to use for currency
+		/// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
+		/// </summary>
 		public virtual string CurrencyFormat
 		{
 			get

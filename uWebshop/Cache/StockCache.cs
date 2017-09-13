@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using uWebshop.Interfaces;
 using uWebshop.Models.Data;
@@ -28,6 +29,10 @@ namespace uWebshop.Cache
 
 		public override void FillCache()
 		{
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			_log.Info("Starting to fill...");
+
 			var allStock = _stockRepo.GetAllStock();
 			foreach (var stock in allStock.Where(stock => stock.UniqueId.Length == 36))
 			{
@@ -35,6 +40,9 @@ namespace uWebshop.Cache
 
 				Cache[key] = stock;
 			}
+
+			stopwatch.Stop();
+			_log.Info("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
 		}
 	}
 }
