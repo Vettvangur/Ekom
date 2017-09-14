@@ -3,7 +3,6 @@ using Microsoft.Practices.Unity;
 using System;
 using System.Configuration;
 using System.Linq;
-using System.Web;
 using Umbraco.Core;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
@@ -117,40 +116,12 @@ namespace uWebshop
                 }
                 #endregion
 
-
-                #region Currency 
-
-                // Unfinished - move to currency service
-
-                HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
-
-                object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
-
-                #endregion
-
                 var appCache = umbracoContext.Application.ApplicationCache;
 
-                var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest"/*, () => 
-					new ContentRequest(httpContext, new LogFactory())
-					{
-						Store = store,
-						Currency = Currency,
-						DomainPrefix = path,
-					}*/
-                ) as ContentRequest;
+                var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
                 uwbsRequest.Product = product;
                 uwbsRequest.Category = category;
-
-                // Unfinished
-                //var order = (BasketService) httpContext.Session["uwbsBasket"];
-
-                //HttpCookie OrderInfo = httpContext.Request.Cookies["OrderInfo"];
-
-                //new Order(OrderInfo);
-
-                //appCache.RequestCache.GetCacheItem("Order", () => order);
-
 
                 // Request for Product or Category
                 if (contentId != 0)

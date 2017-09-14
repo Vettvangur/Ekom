@@ -128,8 +128,6 @@ namespace uWebshop.API
         /// <returns></returns>
         public void UpdateStock(Guid key, int value)
         {
-            _log.Info("Updating Stock for " + key);
-
             if (_config.PerStoreStock)
             {
                 var store = _storeSvc.GetStoreFromCache();

@@ -6,14 +6,13 @@
 
     var products = Catalog.Current.GetAllProducts();
     var currentStore = Store.Current.GetStore();
-    //var order = Order.Current.GetOrder(currentStore.Alias);
+    var order = Order.Current.GetOrder(currentStore.Alias);
 }
 
 @section Main {
 
     <div class="row column text-center">
-        <p>@UmbracoContext.PublishedContentRequest.UmbracoDomain</p>
-        @*<h2>
+        <h2>
 
             Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
             @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
@@ -260,5 +259,5 @@
           </div>
         </div>
       </div>
-    </div>*@
+    </div>
 	}

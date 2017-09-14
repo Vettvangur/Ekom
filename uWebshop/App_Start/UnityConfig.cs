@@ -4,6 +4,7 @@ using System;
 using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Web;
 using uWebshop.Cache;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -55,10 +56,13 @@ namespace uWebshop.App_Start
             container.RegisterType<HttpContextBase>(new InjectionFactory(c => new HttpContextWrapper(HttpContext.Current)));
 
             container.RegisterType<ApplicationContext>(new InjectionFactory(c => ApplicationContext.Current));
+            container.RegisterType<UmbracoContext>(new InjectionFactory(c => UmbracoContext.Current));
             container.RegisterType<DatabaseContext>(new InjectionFactory(c => c.Resolve<ApplicationContext>().DatabaseContext));
             container.RegisterType<ExamineManager>(new InjectionFactory(c => ExamineManager.Instance));
 
             container.RegisterType<Configuration>(new ContainerControlledLifetimeManager());
+
+            container.RegisterType<UmbracoHelper>(new InjectionConstructor(typeof(UmbracoContext)));
 
             container.RegisterType<IBaseCache<IDomain>, StoreDomainCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Store>, StoreCache>(new ContainerControlledLifetimeManager());
