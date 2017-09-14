@@ -1,4 +1,4 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
@@ -6,11 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.Script.Serialization;
-using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.App_Start;
 using uWebshop.Cache;
@@ -127,7 +124,8 @@ namespace uWebshop.Models
             {
                 int categoryId;
 
-                if (int.TryParse(id,out categoryId)) {
+                if (int.TryParse(id, out categoryId))
+                {
 
                     var category = _categoryCache.Cache[Store.Alias]
                         .FirstOrDefault(x => x.Value.Id == categoryId);
@@ -136,7 +134,7 @@ namespace uWebshop.Models
                     {
                         list.Add(category.Value);
                     }
-                    
+
                 }
             }
 
@@ -164,21 +162,21 @@ namespace uWebshop.Models
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            Id               = item.Id;
-            Key              = _key;
-            Path             = pathField;
+            Id = item.Id;
+            Key = _key;
+            Path = pathField;
             ParentCategoryId = parentCategoryId;
-            Store            = store;
+            Store = store;
             ContentTypeAlias = contentTypeAlias;
-            Title            = item.GetStoreProperty("title", store.Alias);
-            Slug             = item.GetStoreProperty("slug", store.Alias);
+            Title = item.GetStoreProperty("title", store.Alias);
+            Slug = item.GetStoreProperty("slug", store.Alias);
 
-            SortOrder        = Convert.ToInt32(item.Fields["sortOrder"]);
-            Level            = Convert.ToInt32(item.Fields["level"]);
-            CreateDate       = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
-            UpdateDate       = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
+            SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
+            Level = Convert.ToInt32(item.Fields["level"]);
+            CreateDate = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
+            UpdateDate = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
 
-            Urls             = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
+            Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
         public Category(IContent node, Store store)
         {
@@ -188,17 +186,17 @@ namespace uWebshop.Models
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            Id               = node.Id;
-            Key              = node.Key;
-            Path             = pathField;
+            Id = node.Id;
+            Key = node.Key;
+            Path = pathField;
             ParentCategoryId = parentCategoryId;
-            Store            = store;
+            Store = store;
 
             Title = node.GetStoreProperty("title", store.Alias);
-            Slug  = node.GetStoreProperty("slug", store.Alias);
+            Slug = node.GetStoreProperty("slug", store.Alias);
 
-            SortOrder  = node.SortOrder;
-            Level      = node.Level;
+            SortOrder = node.SortOrder;
+            Level = node.Level;
             CreateDate = node.CreateDate;
             UpdateDate = node.UpdateDate;
 

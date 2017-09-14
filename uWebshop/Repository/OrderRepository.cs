@@ -1,13 +1,6 @@
 using log4net;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
 using uWebshop.Models.Data;
 using uWebshop.Services;
 
@@ -66,7 +59,8 @@ namespace uWebshop.Repository
                 if (_config.ShareBasketBetweenStores || string.IsNullOrEmpty(storeAlias))
                 {
                     _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId from uWebshopOrders ORDER BY CreateDate DESC");
-                } else
+                }
+                else
                 {
                     _orderNumber = db.FirstOrDefault<string>("SELECT TOP 1 ReferenceId from uWebshopOrders WHERE StoreAlias = @0 ORDER BY CreateDate DESC", storeAlias);
                 }

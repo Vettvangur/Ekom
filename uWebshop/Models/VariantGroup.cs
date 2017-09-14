@@ -1,18 +1,15 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Models;
 using uWebshop.API;
 using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
-using uWebshop.Services;
 
 namespace uWebshop.Models
 {
@@ -32,7 +29,8 @@ namespace uWebshop.Models
         public string Title { get; set; }
         public Store Store { get; set; }
         public int SortOrder { get; set; }
-        public IEnumerable<Variant> Variants {
+        public IEnumerable<Variant> Variants
+        {
             get
             {
                 return _variantCache.Cache[Store.Alias]
@@ -41,7 +39,7 @@ namespace uWebshop.Models
             }
         }
 
-        public VariantGroup(): base() { }
+        public VariantGroup() : base() { }
         public VariantGroup(SearchResult item, Store store)
         {
             var key = item.Fields["key"];
@@ -71,24 +69,24 @@ namespace uWebshop.Models
                 throw new Exception("No key present for product in variant group.");
             }
 
-            Id        = item.Id;
+            Id = item.Id;
             ProductKey = _productKey;
-            Key         = _key;
-            Title     = item.GetStoreProperty("title", store.Alias);
-            Store     = store;
+            Key = _key;
+            Title = item.GetStoreProperty("title", store.Alias);
+            Store = store;
             SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
         }
         public VariantGroup(IContent item, Store store)
         {
             var productId = item.ParentId;
 
-            var product = Catalog.Current.GetProduct(store.Alias,productId);
+            var product = Catalog.Current.GetProduct(store.Alias, productId);
 
-            Id        = item.Id;
+            Id = item.Id;
             Key = item.Key;
             ProductKey = product.Key;
-            Title     = item.GetStoreProperty("title", store.Alias);
-            Store     = store;
+            Title = item.GetStoreProperty("title", store.Alias);
+            Store = store;
             SortOrder = item.SortOrder;
         }
 

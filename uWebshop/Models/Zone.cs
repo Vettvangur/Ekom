@@ -1,13 +1,8 @@
-﻿using Examine;
+using Examine;
 using log4net;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Web;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Services;
 
 namespace uWebshop.Models
 {
@@ -24,7 +19,7 @@ namespace uWebshop.Models
         public Zone() : base() { }
         public Zone(SearchResult item)
         {
-            Id    = item.Id;
+            Id = item.Id;
             Title = item.Fields["nodeName"];
 
             var examineSortOrder = item.Fields["sortOrder"];
@@ -40,7 +35,7 @@ namespace uWebshop.Models
         }
         public Zone(IContent item)
         {
-            Id    = item.Id;
+            Id = item.Id;
             Title = item.Name;
 
             SortOrder = item.SortOrder;

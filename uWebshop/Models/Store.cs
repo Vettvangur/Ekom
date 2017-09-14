@@ -1,4 +1,4 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -30,7 +30,7 @@ namespace uWebshop.Models
         public Guid Key { get; set; }
         public string ContentTypeAlias { get; set; }
         public string Alias { get; set; }
-        public int StoreRootNode {get; set;}
+        public int StoreRootNode { get; set; }
         public int Level { get; set; }
         public IEnumerable<IDomain> Domains { get; set; }
         public DateTime CreateDate { get; set; }
@@ -42,8 +42,8 @@ namespace uWebshop.Models
         public bool VatIncludedInPrice { get; set; }
         public string OrderNumberTemplate { get; set; }
         public string OrderNumberPrefix { get; set; }
-        public Store(): base() { }
-        public Store (SearchResult item)
+        public Store() : base() { }
+        public Store(SearchResult item)
         {
             var key = item.Fields["key"];
 
@@ -60,18 +60,19 @@ namespace uWebshop.Models
             Key = _key;
             ContentTypeAlias = contentTypeAlias;
             Alias = item.Fields["nodeName"];
-                
-            if(int.TryParse(item.Fields["storeRootNode"], out int tempStoreRootNode))
+
+            if (int.TryParse(item.Fields["storeRootNode"], out int tempStoreRootNode))
             {
                 StoreRootNode = tempStoreRootNode;
-            } else
+            }
+            else
             {
                 var srn = Udi.Parse(item.Fields["storeRootNode"]);
                 var umbracoHelper = new Umbraco.Web.UmbracoHelper(Umbraco.Web.UmbracoContext.Current);
                 var rootNode = umbracoHelper.TypedContent(srn);
                 StoreRootNode = rootNode.Id;
             }
-                
+
             //StoreRootNode = Convert.ToInt32(item.Fields["storeRootNode"]);
             Level = Convert.ToInt32(item.Fields["level"]);
 
