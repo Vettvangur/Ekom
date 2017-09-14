@@ -1,10 +1,8 @@
-﻿using Microsoft.Practices.Unity;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Models;
 using uWebshop.App_Start;
 using uWebshop.Cache;
@@ -18,6 +16,24 @@ namespace uWebshop
     /// </summary>
     public class Configuration
     {
+        /// <summary>
+        /// uwbsPerStoreStock
+        /// Controls which stock cache to will be used. Per store or per Product/Variant.
+        /// </summary>
+        public bool PerStoreStock
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["uwbsPerStoreStock"];
+
+                return value.ConvertToBool();
+            }
+        }
+
+        /// <summary>
+        /// uwbsExamineSearcher
+        /// Overrides the default of ExternalSearcher
+        /// </summary>
         public virtual string ExamineSearcher
         {
             get
@@ -28,6 +44,9 @@ namespace uWebshop
             }
         }
 
+        /// <summary>
+        /// uwbsShareBasket
+        /// </summary>
         public virtual bool ShareBasketBetweenStores
         {
             get
@@ -38,6 +57,10 @@ namespace uWebshop
             }
         }
 
+        /// <summary>
+        /// Numeric format string to use for currency
+        /// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
+        /// </summary>
         public virtual string CurrencyFormat
         {
             get
@@ -59,6 +82,7 @@ namespace uWebshop
         }
 
         /// <summary>
+        /// uwbsVirtualContent
         /// Allows for configuration of content nodes to use for matching all requests
         /// Use case: Data populated from Navision, uWebshop used as in memory cache with no backing umbraco nodes.
         /// </summary>
@@ -73,6 +97,7 @@ namespace uWebshop
         }
 
         /// <summary>
+        /// uwbsCategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>
         public virtual int CategoryRootLevel
@@ -89,7 +114,7 @@ namespace uWebshop
         /// This object is lazy initialized to make sure that all types have been registered with IoC container
         /// before we attempt to resolve.
         /// </summary>
-        internal virtual Lazy<List<ICache>> CacheList { get; private set; } = new Lazy<List<ICache>>(() =>
+        internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() =>
         {
             var container = UnityConfig.GetConfiguredContainer();
 
@@ -109,9 +134,8 @@ namespace uWebshop
         /// <summary> 
         /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 
         /// </summary> 
-        public IEnumerable<ICache> Succeeding(ICache cache)
+        internal IEnumerable<ICache> Succeeding(ICache cache)
         {
-
             var indexOf = CacheList.Value.FindIndex(x => x == cache);
 
             return CacheList.Value.Skip(indexOf + 1);

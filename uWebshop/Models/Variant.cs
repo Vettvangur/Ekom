@@ -1,4 +1,4 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
@@ -6,15 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Models;
 using uWebshop.API;
 using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
-using uWebshop.Services;
 using uWebshop.Utilities;
 
 namespace uWebshop.Models
@@ -124,7 +121,8 @@ namespace uWebshop.Models
             }
         }
 
-        public Guid ProductKey {
+        public Guid ProductKey
+        {
             get
             {
                 var paths = Path.Split(',');
@@ -142,12 +140,14 @@ namespace uWebshop.Models
             }
         }
 
-        public Guid VariantGroupKey {
+        public Guid VariantGroupKey
+        {
             get
             {
                 var group = VariantGroup();
 
-                if (group != null) {
+                if (group != null)
+                {
                     return group.Key;
                 }
 

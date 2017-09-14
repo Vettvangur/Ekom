@@ -1,13 +1,13 @@
-﻿using System;
 using Examine;
+using System;
 using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class CategoryCache : PerStoreCache<Category>
+    class CategoryCache : PerStoreCache<Category>
     {
-        public override string nodeAlias { get; } = "uwbsCategory";
+        public override string NodeAlias { get; } = "uwbsCategory";
 
         protected override Category New(SearchResult r, Store store)
         {
@@ -40,7 +40,7 @@ namespace uWebshop.Cache
         /// accesses the product objects and removes given category from their list of categories. <para />
         /// Then removes category from all caches.
         /// </summary>
-        public override void Remove(int id)
+        public override void Remove(Guid id)
         {
             // Loop over each store specific cache of categories
             foreach (var kvp in Cache)
@@ -57,7 +57,7 @@ namespace uWebshop.Cache
                     }
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Logging 
                 }

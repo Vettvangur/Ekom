@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace uWebshop.Helpers
 {
-    public class VatCalculator
+    static class VatCalculator
     {
         /// <summary>
         /// Without vat.
@@ -56,7 +52,6 @@ namespace uWebshop.Helpers
         /// <summary>
         /// Gets the vat amount from the original amount.
         /// </summary>
-        /// <param name="originalIncludingVat">if set to <c>true</c> [original including vat].</param>
         /// <param name="original">The original.</param>
         /// <param name="vat">The vat.</param>
         /// <returns></returns>

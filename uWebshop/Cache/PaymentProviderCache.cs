@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Examine;
 using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class PaymentProviderCache : PerStoreCache<PaymentProvider>
+    class PaymentProviderCache : PerStoreCache<PaymentProvider>
     {
-        public override string nodeAlias { get; } = "uwbsPaymentProvider";
+        public override string NodeAlias { get; } = "uwbsPaymentProvider";
 
         protected override PaymentProvider New(SearchResult r, Store store)
         {
@@ -19,7 +16,6 @@ namespace uWebshop.Cache
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="storeSvc"></param>
         /// <param name="logFac"></param>
         /// <param name="config"></param>
         /// <param name="examineManager"></param>

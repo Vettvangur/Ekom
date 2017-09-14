@@ -1,23 +1,23 @@
-﻿using Examine;
+using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
-using System.Diagnostics;
+using System;
 using System.Collections.Generic;
-using uWebshop.Models;
+using System.Diagnostics;
 using Umbraco.Core.Models;
 using uWebshop.Helpers;
+using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StoreCache : BaseCache<Store>
+    class StoreCache : BaseCache<Store>
     {
-        public override string nodeAlias { get; } = "uwbsStore";
+        public override string NodeAlias { get; } = "uwbsStore";
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="storeSvc"></param>
         /// <param name="logFac"></param>
         /// <param name="config"></param>
         /// <param name="examineManager"></param>
@@ -57,7 +57,7 @@ namespace uWebshop.Cache
                 int count = 0;
 
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query = searchCriteria.NodeTypeAlias(nodeAlias);
+                var query = searchCriteria.NodeTypeAlias(NodeAlias);
                 var results = searcher.Search(query.Compile());
 
                 foreach (var r in results)
@@ -67,9 +67,12 @@ namespace uWebshop.Cache
                         var item = new Store(r);
 
                         count++;
-                        AddOrReplaceFromCache(r.Id, item);
+
+                        var itemKey = Guid.Parse(r.Fields["key"]);
+                        AddOrReplaceFromCache(itemKey, item);
                     }
-                    catch {
+                    catch
+                    {
                         _log.Info("Failed to map to store. Id: " + r.Id);
                     }
                 }
@@ -86,7 +89,7 @@ namespace uWebshop.Cache
 
         /// <summary>
         /// <see cref="ICache"/> implementation.
-        /// <see cref="StoreCache"/> specific implementation triggers refill of all <see cref="PerStoreCache{TItem, Tself}"/>
+        /// <see cref="StoreCache"/> specific implementation triggers refill of all <see cref="BaseCache{TItem}"/>
         /// </summary>
         public override void AddReplace(IContent node)
         {
@@ -96,7 +99,7 @@ namespace uWebshop.Cache
 
                 if (item != null)
                 {
-                    AddOrReplaceFromCache(node.Id, item);
+                    AddOrReplaceFromCache(node.Key, item);
 
                     IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
 

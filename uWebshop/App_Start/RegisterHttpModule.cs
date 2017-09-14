@@ -1,19 +1,13 @@
-﻿using Microsoft.Web.Infrastructure.DynamicModuleHelper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
+using Microsoft.Web.Infrastructure.DynamicModuleHelper;
 
-[assembly: PreApplicationStartMethod(typeof(uWebshop.App_Start.RegisterHttpModule), "RegisterModules")]
+[assembly: WebActivatorEx.PreApplicationStartMethod(typeof(uWebshop.App_Start.RegisterHttpModule), "RegisterModules")]
 namespace uWebshop.App_Start
 {
     /// <summary>
     /// Registers the uWebshop HttpModule into the request pipeline.
     /// This eliminates the explicit web.config/system.webserver/modules configuration 
     /// </summary>
-    public class RegisterHttpModule
+    static class RegisterHttpModule
     {
         /// <summary>
         /// Registers the uWebshop HttpModule into the request pipeline.

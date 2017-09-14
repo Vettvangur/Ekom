@@ -1,12 +1,8 @@
-﻿using log4net;
+using log4net;
 using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using uWebshop.App_Start;
@@ -24,6 +20,9 @@ namespace uWebshop.API
     public class Catalog
     {
         private static Catalog _current;
+        /// <summary>
+        /// Catalog Singleton
+        /// </summary>
         public static Catalog Current
         {
             get
@@ -39,7 +38,7 @@ namespace uWebshop.API
         IPerStoreCache<Product> _productCache;
         IPerStoreCache<Category> _categoryCache;
         IPerStoreCache<Variant> _variantCache;
-        StoreService _storeSvc;
+        IStoreService _storeSvc;
         Configuration _config;
 
         /// <summary>
@@ -50,7 +49,7 @@ namespace uWebshop.API
             IPerStoreCache<Product> productCache,
             IPerStoreCache<Category> categoryCache,
             IPerStoreCache<Variant> variantCache,
-            StoreService storeSvc,
+            IStoreService storeSvc,
             Configuration config,
             ILogFactory logFac
         )
@@ -88,9 +87,7 @@ namespace uWebshop.API
 
         public Product GetProduct(string storeAlias, Guid Id)
         {
-            var product = _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == Id).Value;
-
-            return product;
+            return _productCache.Cache[storeAlias][Id];
         }
 
         public Product GetProduct(int Id)
@@ -109,9 +106,7 @@ namespace uWebshop.API
 
         public Product GetProduct(string storeAlias, int Id)
         {
-            var product = _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
-
-            return product;
+            return _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
         public IEnumerable<Product> GetAllProducts()
@@ -239,13 +234,10 @@ namespace uWebshop.API
 
             return null;
         }
+
         public Variant GetVariant(string storeAlias, Guid Id)
         {
-            var variant = _variantCache.Cache[storeAlias]
-                                      .FirstOrDefault(x => x.Value.Key == Id)
-                                      .Value;
-
-            return variant;
+            return _variantCache.Cache[storeAlias][Id];
         }
     }
 }

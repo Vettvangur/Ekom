@@ -1,17 +1,15 @@
-﻿using System;
+using Examine;
 using System.Diagnostics;
 using System.Linq;
-using Examine;
-using Umbraco.Core.Models;
-using uWebshop.Models;
-using uWebshop.Services;
 using Umbraco.Core;
+using Umbraco.Core.Models;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StoreDomainCache : BaseCache<IDomain>
+    class StoreDomainCache : BaseCache<IDomain>
     {
-        public override string nodeAlias { get; } = "";
+        public override string NodeAlias { get; } = "";
 
         ApplicationContext _appCtx;
         /// <summary>
@@ -23,8 +21,8 @@ namespace uWebshop.Cache
         /// <param name="examineManager"></param>
         public StoreDomainCache(
             ApplicationContext appCtx,
-            ILogFactory logFac, 
-            Configuration config, 
+            ILogFactory logFac,
+            Configuration config,
             ExamineManager examineManager
         )
         {
@@ -53,7 +51,7 @@ namespace uWebshop.Cache
 
                 foreach (var d in domains)
                 {
-                    AddOrReplaceFromCache(d.Id, d);
+                    AddOrReplaceFromCache(d.Key, d);
                 }
 
                 _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);

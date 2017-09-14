@@ -1,44 +1,47 @@
-﻿using System;
-using Examine;
-using uWebshop.Models;
-using uWebshop.Services;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using uWebshop.Interfaces;
 using uWebshop.Models.Data;
+using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class StockCache : PerStoreCache<StockData>
+    class StockCache : BaseCache<StockData>
     {
-        public override string nodeAlias { get; } = "";
-
-        protected override StockData New(SearchResult r, Store store)
-        {
-            return null;
-        }
-
-        public override void FillCache()
-        {
-            
-        }
-
+        IStockRepository _stockRepo;
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
-        /// <param name="storeCache"></param>
+        /// <param name="stockRepo"></param>
         public StockCache(
             ILogFactory logFac,
-            Configuration config,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
+            IStockRepository stockRepo
         )
         {
-            _config = config;
-            _examineManager = examineManager;
-            _storeCache = storeCache;
-
+            _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));
+        }
+
+        public override string NodeAlias { get; } = "";
+
+        public override void FillCache()
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            _log.Info("Starting to fill...");
+
+            var allStock = _stockRepo.GetAllStock();
+            foreach (var stock in allStock.Where(stock => stock.UniqueId.Length == 36))
+            {
+                var key = Guid.Parse(stock.UniqueId);
+
+                Cache[key] = stock;
+            }
+
+            stopwatch.Stop();
+            _log.Info("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
         }
     }
 }

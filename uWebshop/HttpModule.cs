@@ -1,9 +1,5 @@
-﻿using Microsoft.Practices.Unity;
+using Microsoft.Practices.Unity;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core;
 using uWebshop.App_Start;
@@ -19,7 +15,7 @@ namespace uWebshop
     /// The module checks for existence of a store querystring parameter and if found,
     /// creates an uwbsRequest object with DomainPrefix and currency if applicable.
     /// </summary>
-    public class HttpModule : IHttpModule
+    class HttpModule : IHttpModule
     {
         /// <summary>
         /// ModuleName
@@ -41,42 +37,41 @@ namespace uWebshop
         private void Application_BeginRequest(Object source, EventArgs e)
         {
             HttpApplication application = (HttpApplication)source;
-            HttpContext context = application.Context;
+            HttpContext httpCtx = application.Context;
 
-            var url = context.Request.Url;
+            var container = UnityConfig.GetConfiguredContainer();
 
-            var queryObj = HttpUtility.ParseQueryString(url.Query);
+            var url = httpCtx.Request.Url;
 
-            var storeAlias = queryObj["store"];
+            var storeSvc = container.Resolve<StoreService>();
 
-            // Requests with a store query parameter are assumed to surface or api controller requests
-            // in which case we must construct the uwbsRequest object as the CatalogContentFinder will not run
-            if (!string.IsNullOrEmpty(storeAlias))
+            Store store = storeSvc.GetStoreByDomain(url.Host);
+
+            if (store != null)
             {
-                var container = UnityConfig.GetConfiguredContainer();
+                #region Currency 
 
-                var storeSvc = container.Resolve<StoreService>();
+                // Unfinished - move to currency service
 
-                var store = storeSvc.GetStoreByAlias(storeAlias);
+                HttpCookie storeInfo = httpCtx.Request.Cookies["StoreInfo"];
 
-                if (store != null)
-                {
-                    var appCtx = container.Resolve<ApplicationContext>();
+                object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
 
-                    var appCache = appCtx.ApplicationCache;
-                    appCache.RequestCache.GetCacheItem("uwbsRequest", () =>
+                #endregion
+
+                var path = url.AbsolutePath.ToLower().AddTrailing();
+
+                var appCtx = container.Resolve<ApplicationContext>();
+
+                var appCache = appCtx.ApplicationCache;
+                appCache.RequestCache.GetCacheItem("uwbsRequest", () =>
+                    new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
                     {
-                        var path = url.AbsolutePath.ToLower().AddTrailing();
-                        var currency = queryObj["currency"];
-
-                        return new ContentRequest(new HttpContextWrapper(context), new LogFactory())
-                        {
-                            Store = store,
-                            Currency = currency,
-                            DomainPrefix = path,
-                        };
-                    });
-                }
+                        Store = store,
+                        Currency = Currency,
+                        DomainPrefix = path,
+                    }
+                );
             }
         }
 

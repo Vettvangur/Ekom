@@ -1,18 +1,12 @@
-﻿using Examine;
+using Examine;
 using Examine.SearchCriteria;
 using log4net;
-using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Helpers;
-using uWebshop.Models;
-using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
@@ -20,7 +14,7 @@ namespace uWebshop.Cache
     /// For custom caches or global non store dependant caches
     /// </summary>
     /// <typeparam name="TItem">Type of data to cache</typeparam>
-    public abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
+    abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     {
         protected Configuration _config;
         protected ExamineManager _examineManager;
@@ -29,21 +23,20 @@ namespace uWebshop.Cache
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
         /// </summary>
-        public abstract string nodeAlias { get; }
+        public abstract string NodeAlias { get; }
 
-        public ConcurrentDictionary<int, TItem> Cache { get; }
-         = new ConcurrentDictionary<int, TItem>();
+        public ConcurrentDictionary<Guid, TItem> Cache { get; }
+         = new ConcurrentDictionary<Guid, TItem>();
 
 
-        protected void AddOrReplaceFromCache(int id, TItem newCacheItem)
+        protected void AddOrReplaceFromCache(Guid id, TItem newCacheItem)
         {
             Cache[id] = newCacheItem;
         }
 
-        protected void RemoveItemFromCache(int id)
+        protected void RemoveItemFromCache(Guid id)
         {
-            TItem i = default(TItem);
-            Cache.TryRemove(id, out i);
+            Cache.TryRemove(id, out TItem i);
         }
 
         /// <summary>
@@ -62,7 +55,7 @@ namespace uWebshop.Cache
         {
             var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
 
-            if (searcher != null && !string.IsNullOrEmpty(nodeAlias))
+            if (searcher != null && !string.IsNullOrEmpty(NodeAlias))
             {
                 Stopwatch stopwatch = new Stopwatch();
 
@@ -75,7 +68,7 @@ namespace uWebshop.Cache
                 try
                 {
                     ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                    var query = searchCriteria.NodeTypeAlias(nodeAlias);
+                    var query = searchCriteria.NodeTypeAlias(NodeAlias);
                     var results = searcher.Search(query.Compile());
 
                     foreach (var r in results.Where(x => x.Fields["template"] != "0"))
@@ -88,7 +81,9 @@ namespace uWebshop.Cache
                             if (item != null)
                             {
                                 count++;
-                                AddOrReplaceFromCache(r.Id, item);
+
+                                var itemKey = Guid.Parse(r.Fields["key"]);
+                                AddOrReplaceFromCache(itemKey, item);
                             }
                         }
                     }
@@ -116,9 +111,9 @@ namespace uWebshop.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = (TItem) Activator.CreateInstance(typeof(TItem), node);
+                var item = (TItem)Activator.CreateInstance(typeof(TItem), node);
 
-                if (item != null) AddOrReplaceFromCache(node.Id, item);
+                if (item != null) AddOrReplaceFromCache(node.Key, item);
             }
         }
 
@@ -126,7 +121,7 @@ namespace uWebshop.Cache
         /// <see cref="ICache"/> implementation, <para/>
         /// handles removal of nodes when umbraco events fire
         /// </summary>
-        public virtual void Remove(int id)
+        public virtual void Remove(Guid id)
         {
             RemoveItemFromCache(id);
         }

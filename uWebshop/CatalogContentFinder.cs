@@ -1,26 +1,20 @@
-﻿using Microsoft.Practices.Unity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core;
-using Umbraco.Web.Routing;
-using Umbraco.Core.Logging;
-using Umbraco.Web;
-using uWebshop.Services;
-using uWebshop.Cache;
-using System.Web;
-using uWebshop.Models;
-using uWebshop.Utilities;
 using log4net;
-using System.Reflection;
+using Microsoft.Practices.Unity;
+using System;
 using System.Configuration;
+using System.Linq;
+using Umbraco.Core;
+using Umbraco.Web;
+using Umbraco.Web.Routing;
 using uWebshop.App_Start;
+using uWebshop.Cache;
+using uWebshop.Models;
+using uWebshop.Services;
+using uWebshop.Utilities;
 
 namespace uWebshop
 {
-    public class CatalogContentFinder : IContentFinder
+    class CatalogContentFinder : IContentFinder
     {
         ILog _log;
         Configuration _config;
@@ -92,9 +86,9 @@ namespace uWebshop
                         contentId = product.Id;
                     }
 
-                    var urlArray         = path.Split('/');
+                    var urlArray = path.Split('/');
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
-                    var categoryUrl      = string.Join("/", categoryUrlArray).AddTrailing();
+                    var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
                     category = _categoryCache.Cache[store.Alias]
                                             .FirstOrDefault(x => x.Value.Urls.Contains(categoryUrl))
@@ -122,47 +116,18 @@ namespace uWebshop
                 }
                 #endregion
 
-
-                #region Currency 
-
-                // Unfinished - move to currency service
-
-                HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
-
-                object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
-
-                #endregion
-
-
-                var uwbsRequest = new ContentRequest(httpContext, new LogFactory())
-                {
-                    Store = store,
-                    Currency = Currency,
-                    DomainPrefix = path,
-                    Product = product,
-                    Category = category
-                };
-
                 var appCache = umbracoContext.Application.ApplicationCache;
 
-                appCache.RequestCache.GetCacheItem("uwbsRequest", () => uwbsRequest);
+                var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
 
-
-                // Unfinished
-                //var order = (BasketService) httpContext.Session["uwbsBasket"];
-
-                //HttpCookie OrderInfo = httpContext.Request.Cookies["OrderInfo"];
-
-                //new Order(OrderInfo);
-
-                //appCache.RequestCache.GetCacheItem("Order", () => order);
-
+                uwbsRequest.Product = product;
+                uwbsRequest.Category = category;
 
                 // Request for Product or Category
                 if (contentId != 0)
                 {
                     var contentCache = umbracoContext.ContentCache;
-                    
+
                     var content = contentCache.GetById(contentId);
 
                     if (content != null)

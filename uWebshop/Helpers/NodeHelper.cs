@@ -1,11 +1,9 @@
-﻿using Examine;
+using Examine;
 using Examine.SearchCriteria;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
@@ -14,7 +12,7 @@ using uWebshop.Utilities;
 
 namespace uWebshop.Helpers
 {
-    public static class NodeHelper
+    static class NodeHelper
     {
         public static IEnumerable<SearchResult> GetAllCatalogItemsFromPath(string path)
         {
@@ -38,7 +36,6 @@ namespace uWebshop.Helpers
         /// Gets a few close parents, skipping two levels of uWebshop hierarchy
         /// </summary>
         /// <param name="path"></param>
-        /// <param name="umbHelper"></param>
         /// <returns></returns>
         public static IEnumerable<SearchResult> GetParents(string path)
         {
@@ -66,7 +63,7 @@ namespace uWebshop.Helpers
             {
                 ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
 
-                var query  = searchCriteria.Id(id);
+                var query = searchCriteria.Id(id);
                 var result = searcher.Search(query.Compile());
 
                 if (result.Any())
@@ -75,7 +72,7 @@ namespace uWebshop.Helpers
                 }
                 else
                 {
-                    LogHelper.Info(MethodBase.GetCurrentMethod().DeclaringType, 
+                    LogHelper.Info(MethodBase.GetCurrentMethod().DeclaringType,
                         "GetNodeFromExamine Failed. Node with Id " + id + " not found.");
                 }
             }
@@ -96,7 +93,7 @@ namespace uWebshop.Helpers
             {
                 // Unpublished items can't be found in the examine index
                 if (item == null)
-                { 
+                {
                     return true;
                 }
             }
@@ -129,16 +126,19 @@ namespace uWebshop.Helpers
         /// Determine if an examine item is disabled/unpublished <para />
         /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
+        /// <param name="searchResult"></param>
         /// <param name="store">Used to look for umbraco properties matching stores country code </param>
+        /// <param name="path"></param>
+        /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
-        public static bool IsItemDisabled(this SearchResult searchResult, 
-                                          Store store, 
-                                          string path = "", 
+        public static bool IsItemDisabled(this SearchResult searchResult,
+                                          Store store,
+                                          string path = "",
                                           IEnumerable<SearchResult> allCatalogItems = null)
         {
             path = string.IsNullOrEmpty(path) ? searchResult.Fields["path"] : path;
 
-            allCatalogItems = allCatalogItems == null ? GetAllCatalogItemsFromPath(path) : 
+            allCatalogItems = allCatalogItems == null ? GetAllCatalogItemsFromPath(path) :
                                                         allCatalogItems;
 
             foreach (var item in allCatalogItems)
@@ -165,7 +165,10 @@ namespace uWebshop.Helpers
         /// Determine if an <see cref="IContent"/> item is disabled/unpublished <para />
         /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
+        /// <param name="node"></param>
         /// <param name="store">Used to look for umbraco properties matching stores country code </param>
+        /// <param name="path"></param>
+        /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(this IContent node,
                                           Store store,
@@ -204,7 +207,9 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
+        /// <param name="item"></param>
         /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias"></param>
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this SearchResult item, string field, string storeAlias)
         {
@@ -215,7 +220,7 @@ namespace uWebshop.Helpers
                 // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
                 var value = item.Fields[field + "_" + storeAlias];
 
-                if (( string.IsNullOrEmpty(value) || value == "0" ) && storeAlias.ToLower() == "is")
+                if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
                 {
                     value = item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
                 }
@@ -233,6 +238,8 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
+        /// <param name="items"></param>
+        /// <param name="property"></param>
         /// <param name="storeAlias">Umbraco Alias</param>
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this Dictionary<string, string> items, string property, string storeAlias)
@@ -255,7 +262,9 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
+        /// <param name="item"></param>
         /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias"></param>
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this IContent item, string field, string storeAlias)
         {
@@ -264,8 +273,8 @@ namespace uWebshop.Helpers
                 var fieldValue = item.GetValue<string>(field + "_" + storeAlias);
 
                 // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) || 
-                                                     fieldValue == "0" ))
+                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
+                                                     fieldValue == "0"))
                 {
                     fieldValue = item.GetValue<string>(field);
                 }
@@ -283,7 +292,9 @@ namespace uWebshop.Helpers
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
+        /// <param name="item"></param>
         /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias"></param>
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this IPublishedContent item, string field, string storeAlias)
         {
@@ -293,7 +304,7 @@ namespace uWebshop.Helpers
 
                 // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
                 if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
-                                                     fieldValue == "0" ))
+                                                     fieldValue == "0"))
                 {
                     fieldValue = item.GetPropertyValue<string>(field);
                 }

@@ -1,19 +1,23 @@
-using System;
-using Microsoft.Practices.Unity;
-using Microsoft.Practices.Unity.Configuration;
-using uWebshop.Cache;
-using uWebshop.Models;
-using Umbraco.Core.Models;
-using Umbraco.Core;
 using Examine;
+using Microsoft.Practices.Unity;
+using System;
 using System.Web;
+using Umbraco.Core;
+using Umbraco.Core.Models;
+using Umbraco.Web;
+using uWebshop.Cache;
+using uWebshop.Interfaces;
+using uWebshop.Models;
+using uWebshop.Models.Data;
+using uWebshop.Repository;
+using uWebshop.Services;
 
 namespace uWebshop.App_Start
 {
     /// <summary>
     /// Specifies the Unity configuration for the main container.
     /// </summary>
-    public class UnityConfig
+    class UnityConfig
     {
         #region Unity Container
         private static Lazy<IUnityContainer> container = new Lazy<IUnityContainer>(() =>
@@ -52,19 +56,29 @@ namespace uWebshop.App_Start
             container.RegisterType<HttpContextBase>(new InjectionFactory(c => new HttpContextWrapper(HttpContext.Current)));
 
             container.RegisterType<ApplicationContext>(new InjectionFactory(c => ApplicationContext.Current));
+            container.RegisterType<UmbracoContext>(new InjectionFactory(c => UmbracoContext.Current));
             container.RegisterType<DatabaseContext>(new InjectionFactory(c => c.Resolve<ApplicationContext>().DatabaseContext));
             container.RegisterType<ExamineManager>(new InjectionFactory(c => ExamineManager.Instance));
 
             container.RegisterType<Configuration>(new ContainerControlledLifetimeManager());
 
+            container.RegisterType<UmbracoHelper>(new InjectionConstructor(typeof(UmbracoContext)));
+
             container.RegisterType<IBaseCache<IDomain>, StoreDomainCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Store>, StoreCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Variant>, VariantCache>(new ContainerControlledLifetimeManager());
-            container.RegisterType<IPerStoreCache<VariantGroup> , VariantGroupCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IPerStoreCache<VariantGroup>, VariantGroupCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Category>, CategoryCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Product>, ProductCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Zone>, ZoneCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<PaymentProvider>, PaymentProviderCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IBaseCache<StockData>, StockCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IPerStoreCache<StockData>, StockPerStoreCache>(new ContainerControlledLifetimeManager());
+
+            container.RegisterType<IStoreService, StoreService>();
+            container.RegisterType<IOrderService, OrderService>();
+            container.RegisterType<IStockRepository, StockRepository>();
+            container.RegisterType<ILogFactory, LogFactory>();
         }
     }
 }

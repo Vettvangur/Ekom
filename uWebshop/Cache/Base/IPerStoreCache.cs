@@ -1,10 +1,5 @@
-﻿using Examine;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using uWebshop.Models;
 
 namespace uWebshop.Cache
@@ -16,6 +11,9 @@ namespace uWebshop.Cache
     /// </summary>
     public interface IPerStoreCache : ICache
     {
+        /// <summary>
+        /// Handles initial population of cache data
+        /// </summary>
         void FillCache(Store store);
     }
 
@@ -25,6 +23,9 @@ namespace uWebshop.Cache
     /// <typeparam name="T"></typeparam>
     public interface IPerStoreCache<T> : ICache, IPerStoreCache
     {
-        ConcurrentDictionary<string, ConcurrentDictionary<int, T>> Cache { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        ConcurrentDictionary<string, ConcurrentDictionary<Guid, T>> Cache { get; }
     }
 }

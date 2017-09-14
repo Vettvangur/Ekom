@@ -1,10 +1,8 @@
-﻿using System;
+using log4net;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using log4net;
 using System.Reflection;
 
 namespace uWebshop.Models

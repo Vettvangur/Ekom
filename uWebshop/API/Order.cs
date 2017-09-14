@@ -1,21 +1,22 @@
-﻿using log4net;
 using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using uWebshop.App_Start;
 using uWebshop.Helpers;
+using uWebshop.Interfaces;
 using uWebshop.Models;
-using uWebshop.Services;
 
 namespace uWebshop.API
 {
+    /// <summary>
+    /// The uWebshop API, get/update/remove operations on orders 
+    /// </summary>
     public class Order
     {
         private static Order _current;
+        /// <summary>
+        /// Order Singleton
+        /// </summary>
         public static Order Current
         {
             get
@@ -24,13 +25,13 @@ namespace uWebshop.API
             }
         }
 
-        OrderService _orderService;
+        IOrderService _orderService;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="orderService"></param>
-        public Order(OrderService orderService)
+        public Order(IOrderService orderService)
         {
             _orderService = orderService;
         }
@@ -41,10 +42,10 @@ namespace uWebshop.API
         }
 
         public OrderInfo AddOrderLine(
-            Guid productId, 
-            IEnumerable<Guid> variantIds, 
-            int quantity, 
-            string storeAlias, 
+            Guid productId,
+            IEnumerable<Guid> variantIds,
+            int quantity,
+            string storeAlias,
             OrderAction? action
         )
         {

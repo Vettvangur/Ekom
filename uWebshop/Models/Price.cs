@@ -1,15 +1,6 @@
-﻿using log4net;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using uWebshop.Interfaces;
-using Microsoft.Practices.Unity;
 using uWebshop.Services;
-using uWebshop.App_Start;
 
 namespace uWebshop.Models
 {
@@ -31,7 +22,7 @@ namespace uWebshop.Models
             this.culture = store.Culture.Name;
             this._config = new Configuration();
 
-            _priceCalculationService = new Services.PriceCalculationService();
+            _priceCalculationService = new PriceCalculationService();
         }
 
         public Price(decimal originalPrice, StoreInfo storeInfo)
@@ -41,11 +32,12 @@ namespace uWebshop.Models
             this.vatIncludeInPrice = storeInfo.VatIncludedInPrice;
             this.culture = storeInfo.Culture;
 
-            _priceCalculationService = new Services.PriceCalculationService();
+            _priceCalculationService = new PriceCalculationService();
         }
 
 
-        public decimal Value {
+        public decimal Value
+        {
             get
             {
                 return originalPrice;
@@ -58,14 +50,14 @@ namespace uWebshop.Models
         {
             get
             {
-                return new SimplePrice(true,originalPrice,culture,vat,vatIncludeInPrice);
+                return new SimplePrice(true, originalPrice, culture, vat, vatIncludeInPrice);
             }
         }
         public IPrice WithoutVat
         {
             get
             {
-                return new SimplePrice(false,originalPrice, culture, vat, vatIncludeInPrice);
+                return new SimplePrice(false, originalPrice, culture, vat, vatIncludeInPrice);
             }
         }
 
@@ -79,7 +71,7 @@ namespace uWebshop.Models
 
         //public string ToCurrencyString
         //{
-         
+
         //    get
         //    {
         //        return Value.ToString(_config.CurrencyFormat);
@@ -107,8 +99,10 @@ namespace uWebshop.Models
             this._config = new Configuration();
         }
 
-        public decimal Value {
-            get {
+        public decimal Value
+        {
+            get
+            {
                 return GetAmount();
             }
         }
@@ -136,7 +130,8 @@ namespace uWebshop.Models
                     price = price - vatAmount;
                 }
 
-            } else
+            }
+            else
             {
                 if (includeVat)
                 {

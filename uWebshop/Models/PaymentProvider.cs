@@ -1,16 +1,14 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Web;
 using Umbraco.Core.Models;
 using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
-using uWebshop.Services;
 
 namespace uWebshop.Models
 {
@@ -37,7 +35,7 @@ namespace uWebshop.Models
         public PaymentProvider() : base() { }
         public PaymentProvider(SearchResult item, Store store)
         {
-            Id    = item.Id;
+            Id = item.Id;
             Store = store;
 
             Title = item.GetStoreProperty("title", store.Alias);
@@ -48,7 +46,7 @@ namespace uWebshop.Models
             // Zones
             foreach (var zone in item.Fields["zone"].Split(','))
             {
-                var zoneObj 
+                var zoneObj
                     = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
 
                 if (zone != null) Zones.Add(zoneObj);
@@ -78,7 +76,7 @@ namespace uWebshop.Models
         }
         public PaymentProvider(IContent item, Store store)
         {
-            Id    = item.Id;
+            Id = item.Id;
             Store = store;
 
             Title = item.GetStoreProperty("title", store.Alias);

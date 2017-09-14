@@ -1,15 +1,11 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace uWebshop.Utilities
 {
     /// <summary>
     /// Get property values from a dictionary while failing silently
     /// </summary>
-    public static class PropertyHelper
+    static class PropertyHelper
     {
         /// <summary>
         /// Get property values from a dictionary while failing silently

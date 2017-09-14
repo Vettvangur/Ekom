@@ -1,8 +1,8 @@
-﻿using System.Text;
+using System.Text;
 
 namespace uWebshop.Utilities
 {
-    public static class StringExtension
+    static class StringExtension
     {
         private static string RemoveAccent(this string txt)
         {

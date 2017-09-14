@@ -1,4 +1,4 @@
-﻿using Examine;
+using Examine;
 using log4net;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.Script.Serialization;
-using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.App_Start;
 using uWebshop.Cache;
@@ -46,14 +44,16 @@ namespace uWebshop.Models
         }
 
         private Store _store;
-        public int Id {
+        public int Id
+        {
             get
             {
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
 
-        public Guid Key {
+        public Guid Key
+        {
             get
             {
                 var key = Properties.GetPropertyValue("key");
@@ -76,7 +76,8 @@ namespace uWebshop.Models
             }
         }
 
-        public string Title {
+        public string Title
+        {
             get
             {
                 return Properties.GetStoreProperty("title", _store.Alias);
@@ -111,7 +112,8 @@ namespace uWebshop.Models
         }
 
         private decimal? _originalPrice;
-        public decimal OriginalPrice {
+        public decimal OriginalPrice
+        {
             get
             {
                 decimal originalPrice = 0;
@@ -119,7 +121,8 @@ namespace uWebshop.Models
                 if (_originalPrice.HasValue)
                 {
                     originalPrice = _originalPrice.Value;
-                } else
+                }
+                else
                 {
                     var priceField = Properties.GetStoreProperty("price", _store.Alias);
 
@@ -135,7 +138,8 @@ namespace uWebshop.Models
             }
         }
 
-        public int Stock {
+        public int Stock
+        {
             get
             {
                 return 0;
@@ -146,7 +150,8 @@ namespace uWebshop.Models
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories {
+        public List<ICategory> Categories
+        {
             get
             {
                 int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
@@ -197,19 +202,22 @@ namespace uWebshop.Models
             }
         }
 
-        public Store Store {
+        public Store Store
+        {
             get
             {
                 return _store;
             }
         }
-        public int SortOrder {
+        public int SortOrder
+        {
             get
             {
                 return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
             }
         }
-        public int Level {
+        public int Level
+        {
             get
             {
                 return Convert.ToInt32(Properties.GetPropertyValue("level"));
@@ -226,13 +234,15 @@ namespace uWebshop.Models
                 return Properties.GetPropertyValue("path");
             }
         }
-        public DateTime CreateDate {
+        public DateTime CreateDate
+        {
             get
             {
                 return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
-        public DateTime UpdateDate {
+        public DateTime UpdateDate
+        {
             get
             {
                 return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
@@ -255,7 +265,8 @@ namespace uWebshop.Models
             }
         }
 
-        public string ContentTypeAlias {
+        public string ContentTypeAlias
+        {
             get
             {
                 return Properties.GetPropertyValue("nodeTypeAlias");
@@ -271,7 +282,8 @@ namespace uWebshop.Models
             }
         }
 
-        public IEnumerable<VariantGroup> VariantGroups {
+        public IEnumerable<VariantGroup> VariantGroups
+        {
             get
             {
                 return _variantGroupCache.Cache[Store.Alias]
@@ -280,7 +292,8 @@ namespace uWebshop.Models
             }
         }
 
-        public IEnumerable<Variant> AllVariants {
+        public IEnumerable<Variant> AllVariants
+        {
             get
             {
                 return _variantCache.Cache[Store.Alias]

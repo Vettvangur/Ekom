@@ -1,13 +1,12 @@
-﻿using System;
 using Examine;
 using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class VariantGroupCache : PerStoreCache<VariantGroup>
+    class VariantGroupCache : PerStoreCache<VariantGroup>
     {
-        public override string nodeAlias { get; } = "uwbsProductVariantGroup";
+        public override string NodeAlias { get; } = "uwbsProductVariantGroup";
 
         protected override VariantGroup New(SearchResult r, Store store)
         {

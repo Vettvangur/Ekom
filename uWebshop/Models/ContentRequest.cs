@@ -1,16 +1,10 @@
-﻿using log4net;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using log4net;
 using System.Web;
-using Umbraco.Core.Logging;
 using uWebshop.Services;
 
 namespace uWebshop.Models
 {
-    public class ContentRequest
+    class ContentRequest
     {
         private ILog _log;
         private HttpContextBase _httpCtx;
@@ -21,11 +15,13 @@ namespace uWebshop.Models
         }
 
         private Store _store;
-        public Store Store {
+        public Store Store
+        {
 
             get { return _store; }
 
-            set {
+            set
+            {
                 // Make sure to update users cookies on store change
                 if (_httpCtx != null)
                 {
@@ -33,7 +29,7 @@ namespace uWebshop.Models
                 }
                 else
                 {
-                    _log.Info("Unable to change cookies for user when switching stores." + 
+                    _log.Info("Unable to change cookies for user when switching stores." +
                                               "HttpContext == null");
                 }
 

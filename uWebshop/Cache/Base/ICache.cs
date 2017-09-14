@@ -1,10 +1,4 @@
-﻿using Examine;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Models;
 
 namespace uWebshop.Cache
@@ -15,12 +9,24 @@ namespace uWebshop.Cache
     /// </summary>
     public interface ICache
     {
-        string nodeAlias { get; }
+        /// <summary>
+        /// Umbraco Node Alias name used in Examine search
+        /// </summary>
+        string NodeAlias { get; }
 
+        /// <summary>
+        /// Handles addition of nodes when umbraco events fire
+        /// </summary>
         void AddReplace(IContent node);
 
-        void Remove(int id);
+        /// <summary>
+        /// Handles removal of nodes when umbraco events fire
+        /// </summary>
+        void Remove(Guid id);
 
+        /// <summary>
+        /// Handles initial population of cache data
+        /// </summary>
         void FillCache();
     }
 }

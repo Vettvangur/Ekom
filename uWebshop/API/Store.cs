@@ -1,20 +1,23 @@
-﻿using log4net;
+using log4net;
 using Microsoft.Practices.Unity;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using uWebshop.App_Start;
-using uWebshop.Cache;
-using uWebshop.Models;
+using uWebshop.Interfaces;
 using uWebshop.Services;
 
 namespace uWebshop.API
 {
+    /// <summary>
+    /// The uWebshop API, get current or all stores.
+    /// </summary>
     public class Store
     {
         private static Store _current;
+        /// <summary>
+        /// Store Singleton
+        /// </summary>
         public static Store Current
         {
             get
@@ -27,12 +30,12 @@ namespace uWebshop.API
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
 
-        StoreService _storeSvc;
+        IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Store(ApplicationContext appCtx, StoreService storeSvc, ILogFactory logFac)
+        public Store(ApplicationContext appCtx, IStoreService storeSvc, ILogFactory logFac)
         {
             _appCtx = appCtx;
             _storeSvc = storeSvc;

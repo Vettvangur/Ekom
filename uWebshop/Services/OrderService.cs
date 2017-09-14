@@ -1,15 +1,11 @@
-﻿using log4net;
+using log4net;
 using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
-using Umbraco.Core;
 using uWebshop.App_Start;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -19,7 +15,7 @@ using uWebshop.Repository;
 
 namespace uWebshop.Services
 {
-    public class OrderService
+    class OrderService : IOrderService
     {
         ILog _log;
         private HttpContextBase _httpCtx
@@ -29,12 +25,13 @@ namespace uWebshop.Services
                 try
                 {
                     return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
-                    _log.Error("HttpContext not available.",ex);
+                    _log.Error("HttpContext not available.", ex);
                     return null;
                 }
-                
+
             }
         }
         private Store _store;
@@ -64,7 +61,7 @@ namespace uWebshop.Services
 
         public OrderInfo GetOrder(string storeAlias)
         {
-            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
 
             _log.Info("Get Order: Store: " + _store.Alias);
 
@@ -88,7 +85,8 @@ namespace uWebshop.Services
                     var order = GetOrderInfo(orderUniqueId);
 
                     _httpCtx.Session[key] = order;
-                } else
+                }
+                else
                 {
                     _log.Info("Order Found in Session!");
                 }
@@ -104,16 +102,16 @@ namespace uWebshop.Services
         }
 
         public OrderInfo AddOrderLine(
-            Guid productId, 
-            IEnumerable<Guid> variantIds, 
-            int quantity, 
-            string storeAlias, 
+            Guid productId,
+            IEnumerable<Guid> variantIds,
+            int quantity,
+            string storeAlias,
             OrderAction? action
         )
         {
             _log.Info("Add OrderLine... ProductId: " + productId + " variantIds: " + variantIds.Any() + " qty: " + quantity + " Action: " + action);
 
-            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
             _date = DateTime.Now;
 
             _log.Info("Add OrderLine ...  Get Order.. Store: " + _store.Alias);
@@ -139,7 +137,7 @@ namespace uWebshop.Services
         {
             _log.Info("Remove OrderLine... LineId: " + lineId);
 
-            _store = _store == null ? _storeSvc.GetStoreByAlias(storeAlias) : _store;
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderInfo = GetOrder(storeAlias);
 
@@ -175,7 +173,8 @@ namespace uWebshop.Services
             {
                 // Update orderline quantity with value
                 existingOrderLine.Quantity = quantity;
-            } else
+            }
+            else
             {
                 // Update orderline when adding product to orderline
 
@@ -230,7 +229,7 @@ namespace uWebshop.Services
             var orderUniqueId = CreateOrderIdCookie(key);
 
             var orderdata = SaveOrderData(orderUniqueId);
-             
+
             return CreateOrderInfoFromOrderData(orderdata, true);
         }
 
@@ -243,9 +242,10 @@ namespace uWebshop.Services
             //    throw new Exception("Trying to load order without data (xml), id: " + (orderData == null ? "no data!" : orderData.UniqueId.ToString()) + ", ordernumber: " + (orderData == null ? "no data!" : orderData.OrderNumber));
             //}
 
-            var orderInfo = new OrderInfo(orderData,_store);
-
-            orderInfo.OrderLines = CreateOrderLinesFromJson(orderData.OrderInfo);
+            var orderInfo = new OrderInfo(orderData, _store)
+            {
+                OrderLines = CreateOrderLinesFromJson(orderData.OrderInfo)
+            };
 
             return orderInfo;
         }
@@ -253,10 +253,9 @@ namespace uWebshop.Services
         private OrderData SaveOrderData(Guid uniqueId)
         {
             _log.Info("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
-            int referenceId = 0;
             string orderNumber = string.Empty;
 
-            GenerateOrderNumber(out referenceId, out orderNumber);
+            GenerateOrderNumber(out int referenceId, out orderNumber);
 
             var orderData = new OrderData()
             {
@@ -359,7 +358,7 @@ namespace uWebshop.Services
             }
 
             var template = _store.OrderNumberTemplate;
-            
+
             return template.Replace("#orderId#", _referenceId).Replace("#orderIdPadded#", referenceId.ToString("0000")).Replace("#storeAlias#", _store.Alias).Replace("#day#", _date.Day.ToString()).Replace("#month#", _date.Month.ToString()).Replace("#year#", _date.Year.ToString());
         }
     }

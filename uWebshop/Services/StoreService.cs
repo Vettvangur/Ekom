@@ -1,23 +1,19 @@
-﻿using log4net;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
-using umbraco.cms.businesslogic.web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using uWebshop.Cache;
+using uWebshop.Interfaces;
 using uWebshop.Models;
 
 namespace uWebshop.Services
 {
-    public class StoreService
+    class StoreService : IStoreService
     {
         ILog _log;
         ApplicationContext _appCtx;
@@ -33,8 +29,8 @@ namespace uWebshop.Services
         /// <param name="storeCache"></param>
         /// <param name="appCtx"></param>
         public StoreService(
-            ILogFactory logFac, 
-            IBaseCache<IDomain> domainCache, 
+            ILogFactory logFac,
+            IBaseCache<IDomain> domainCache,
             IBaseCache<Store> storeCache,
             ApplicationContext appCtx
         )
@@ -102,7 +98,7 @@ namespace uWebshop.Services
         public Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         {
             HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
-            string storeAlias    = storeInfo != null ? storeInfo.Values["StoreAlias"] : null;
+            string storeAlias = storeInfo?.Values["StoreAlias"];
 
             Store store = null;
 

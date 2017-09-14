@@ -1,9 +1,9 @@
-﻿using log4net;
+using log4net;
 using System;
 
 namespace uWebshop.Services
 {
-    public class LogFactory : ILogFactory
+    class LogFactory : ILogFactory
     {
         public ILog GetLogger(Type T)
         {
@@ -11,8 +11,16 @@ namespace uWebshop.Services
         }
     }
 
+    /// <summary>
+    /// Creates an <see cref="ILog"/> instance for the provided <see cref="Type"/>
+    /// </summary>
     public interface ILogFactory
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="T">Type of class this logger logs for</param>
+        /// <returns></returns>
         ILog GetLogger(Type T);
     }
 }

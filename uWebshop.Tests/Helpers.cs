@@ -1,10 +1,7 @@
-﻿using Moq;
+using Moq;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 using System.Web.Security;
 using Umbraco.Core;
@@ -91,7 +88,9 @@ namespace uWebshop.Tests
             staticCache = new Mock<ICacheProvider>();
             requestCache = new Mock<ICacheProvider>();
 
+#pragma warning disable CS0618 // Type or member is obsolete
             cacheHelper = new CacheHelper(runtimeCache.Object, staticCache.Object, requestCache.Object);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
     }
 }

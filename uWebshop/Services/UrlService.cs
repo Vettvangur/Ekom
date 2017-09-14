@@ -1,21 +1,18 @@
-﻿using log4net;
+using Examine;
+using log4net;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using uWebshop.Models;
-using Umbraco.Web;
-using uWebshop.Utilities;
-using Examine;
-using uWebshop.Helpers;
 using Umbraco.Core;
+using uWebshop.Helpers;
 using uWebshop.Interfaces;
+using uWebshop.Models;
+using uWebshop.Utilities;
 
 namespace uWebshop.Services
 {
-    public static class UrlService
+    static class UrlService
     {
         private static readonly ILog Log =
             LogManager.GetLogger(
@@ -26,6 +23,7 @@ namespace uWebshop.Services
         /// Build URLs for category
         /// </summary>
         /// <param name="examineItems">All categories in hierarchy inclusive</param>
+        /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
         public static IEnumerable<string> BuildCategoryUrls(IEnumerable<SearchResult> examineItems, Store store)
         {
@@ -40,7 +38,7 @@ namespace uWebshop.Services
                 foreach (var examineItem in examineItems)
                 {
                     string categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
-                    if(!String.IsNullOrWhiteSpace(categorySlug))
+                    if (!String.IsNullOrWhiteSpace(categorySlug))
                         builder.Append(categorySlug.ToUrlSegment().AddTrailing());
                 }
 
@@ -58,6 +56,7 @@ namespace uWebshop.Services
         /// </summary>
         /// <param name="slug">Short name of category</param>
         /// <param name="hierarchy">Ordered list of slugs for all parents</param>
+        /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
         public static IEnumerable<string> BuildCategoryUrls(string slug, IEnumerable<string> hierarchy, Store store)
         {

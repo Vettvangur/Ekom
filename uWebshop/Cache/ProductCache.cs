@@ -1,13 +1,12 @@
-﻿using System;
 using Examine;
 using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshop.Cache
 {
-    public class ProductCache : PerStoreCache<Product>
+    class ProductCache : PerStoreCache<Product>
     {
-        public override string nodeAlias { get; } = "uwbsProduct";
+        public override string NodeAlias { get; } = "uwbsProduct";
 
         protected override Product New(SearchResult r, Store store)
         {
