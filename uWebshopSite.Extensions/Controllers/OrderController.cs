@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 using uWebshop.App_Start;
 using uWebshop.Helpers;
+using uWebshop.Models;
 using uWebshop.Services;
 
 namespace uWebshopSite.Extensions.Controllers
@@ -16,22 +17,6 @@ namespace uWebshopSite.Extensions.Controllers
     [PluginController("uWebshop")]
     public class OrderController : SurfaceController
     {
-        private ILog _log;
-        private OrderService _orderSvc;
-        /// <summary>
-        /// ctor
-        /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
-        /// </summary>
-        public OrderController()
-        {
-            var container = UnityConfig.GetConfiguredContainer();
-
-            _orderSvc = container.Resolve<OrderService>();
-
-            var logFac = container.Resolve<ILogFactory>();
-            _log = logFac.GetLogger(typeof(OrderController));
-        }
-
         /// <summary>
         /// Add product to order
         /// </summary>
@@ -41,18 +26,20 @@ namespace uWebshopSite.Extensions.Controllers
         /// <param name="variantId"></param>
         /// <param name="action">Add/Update</param>
         /// <returns></returns>
-        public JsonResult AddToOrder(Guid productId, string storeAlias, int quantity, Guid? variantId = null, OrderAction? action = null)
+        public JsonResult AddToOrder(OrderRequest request)
         {
             try
             {
+                var os = uWebshop.API.Order.Current;
+
                 var variantIds = new List<Guid>();
 
-                if (variantId != null && variantId != Guid.Empty)
+                if (request.variantId != null && request.variantId != Guid.Empty)
                 {
-                    variantIds.Add(variantId.Value);
+                    variantIds.Add(request.variantId.Value);
                 }
 
-                var orderInfo = _orderSvc.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
+                var orderInfo = os.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -62,7 +49,7 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error("Add to order Failed!", ex);
+
                 return Json(new
                 {
                     success = false,
@@ -82,7 +69,9 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var os = uWebshop.API.Order.Current;
+
+                var orderInfo = os.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -92,7 +81,6 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error("Add to order Failed!", ex);
                 return Json(new
                 {
                     success = false,
@@ -111,7 +99,9 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.RemoveOrderLine(lineId, storeAlias);
+                var os = uWebshop.API.Order.Current;
+
+                var orderInfo = os.RemoveOrderLine(lineId, storeAlias);
 
                 return Json(new
                 {
@@ -121,7 +111,7 @@ namespace uWebshopSite.Extensions.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error("Remove orderline from order Failed!", ex);
+
                 return Json(new
                 {
                     success = false,
