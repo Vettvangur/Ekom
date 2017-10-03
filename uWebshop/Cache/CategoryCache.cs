@@ -53,7 +53,7 @@ namespace uWebshop.Cache
                     // Loop over all the products in the category being removed
                     foreach (var product in categoryBeingRemoved.Products)
                     {
-                        product.Categories.RemoveAll(x => x == categoryBeingRemoved);
+                        product.Categories().RemoveAll(x => x == categoryBeingRemoved);
                     }
 
                 }

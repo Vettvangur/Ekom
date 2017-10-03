@@ -50,6 +50,6 @@ namespace uWebshop.Interfaces
         /// <value>
         /// The categories.
         /// </value>
-        List<ICategory> Categories { get; }
+        List<ICategory> Categories();
     }
 }

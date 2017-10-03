@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
 using uWebshop.App_Start;
 using uWebshop.Cache;
@@ -150,64 +151,64 @@ namespace uWebshop.Models
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories
+        public List<ICategory> Categories()
         {
-            get
+            int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
+
+            var categoryField = Properties.Any(x => x.Key == "categories") ?
+                                Properties.GetPropertyValue("categories") : "";
+
+            var categories = new List<ICategory>();
+
+            var primaryCategory = _categoryCache.Cache[_store.Alias]
+                                                .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                .Value;
+
+            if (primaryCategory != null)
             {
-                int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
+                categories.Add(primaryCategory);
+            }
 
-                var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    Properties.GetPropertyValue("categories") : "";
+            if (!string.IsNullOrEmpty(categoryField))
+            {
+                var categoryIds = categoryField.Split(',');
 
-                var categories = new List<ICategory>();
-
-                var primaryCategory = _categoryCache.Cache[_store.Alias]
-                                                   .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                   .Value;
-
-                if (primaryCategory != null)
+                foreach (var catId in categoryIds)
                 {
-                    categories.Add(primaryCategory);
-                }
+                    var intCatId = Convert.ToInt32(catId);
 
-                if (!string.IsNullOrEmpty(categoryField))
-                {
-                    var categoryIds = categoryField.Split(',');
+                    var categoryItem
+                        = _categoryCache.Cache[_store.Alias]
+                                        .FirstOrDefault(x => x.Value.Id == intCatId)
+                                        .Value;
 
-                    foreach (var catId in categoryIds)
+                    if (categoryItem != null && !categories.Contains(categoryItem))
                     {
-                        var intCatId = Convert.ToInt32(catId);
-
-                        var categoryItem
-                            = _categoryCache.Cache[_store.Alias]
-                                           .FirstOrDefault(x => x.Value.Id == intCatId)
-                                           .Value;
-
-                        if (categoryItem != null && !categories.Contains(categoryItem))
-                        {
-                            categories.Add(categoryItem);
-                        }
+                        categories.Add(categoryItem);
                     }
                 }
-
-                return categories;
             }
+
+            return categories;
+            
         }
 
-        public IEnumerable<Guid> CategoriesIds
+        public IEnumerable<Guid> CategoriesIds()
         {
-            get
-            {
-                return Categories.Select(x => x.Key);
-            }
+
+            return Categories().Select(x => x.Key);
+            
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public Store Store
         {
             get
             {
                 return _store;
             }
+
         }
         public int SortOrder
         {
@@ -282,25 +283,24 @@ namespace uWebshop.Models
             }
         }
 
-        public IEnumerable<VariantGroup> VariantGroups
+        public IEnumerable<VariantGroup> VariantGroups()
         {
-            get
-            {
-                return _variantGroupCache.Cache[Store.Alias]
-                                        .Where(x => x.Value.ProductKey == Key)
-                                        .Select(x => x.Value);
-            }
+
+            return _variantGroupCache.Cache[Store.Alias]
+                                    .Where(x => x.Value.ProductKey == Key)
+                                    .Select(x => x.Value);
+            
+        }
+        /// <summary>
+        /// All variants belonging to product.
+        /// </summary>
+        public IEnumerable<Variant> AllVariants()
+        {
+            return _variantCache.Cache[Store.Alias]
+                .Where(x => x.Value.ProductKey == Key)
+                .Select(x => x.Value);
         }
 
-        public IEnumerable<Variant> AllVariants
-        {
-            get
-            {
-                return _variantCache.Cache[Store.Alias]
-                    .Where(x => x.Value.ProductKey == Key)
-                    .Select(x => x.Value);
-            }
-        }
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
         /// <summary>
@@ -321,7 +321,7 @@ namespace uWebshop.Models
                 Properties.Add(field.Key, field.Value);
             }
 
-            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+            Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
@@ -340,7 +340,7 @@ namespace uWebshop.Models
                 Properties.Add(prop.Alias, prop.Value?.ToString());
             }
 
-            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+            Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {

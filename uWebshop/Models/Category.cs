@@ -81,7 +81,7 @@ namespace uWebshop.Models
             get
             {
                 return _productCache.Cache[Store.Alias]
-                                   .Where(x => x.Value.Categories.Any(z => z.Id == Id))
+                                   .Where(x => x.Value.Categories().Any(z => z.Id == Id))
                                    .Select(x => x.Value)
                                    .OrderBy(x => x.SortOrder);
             }

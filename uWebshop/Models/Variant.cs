@@ -176,6 +176,8 @@ namespace uWebshop.Models
             return null;
         }
 
+        [ScriptIgnore]
+        [JsonIgnore]
         public Store Store
         {
             get
@@ -235,51 +237,49 @@ namespace uWebshop.Models
         /// All categories variant belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories
+        public List<ICategory> Categories()
         {
-            get
+
+            var paths = Path.Split(',');
+
+            int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
+
+            var categoryField = Properties.Any(x => x.Key == "categories") ?
+                                Properties.GetPropertyValue("categories") : "";
+
+            var categories = new List<ICategory>();
+
+            var primaryCategory = _categoryCache.Cache[_store.Alias]
+                                                .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                .Value;
+
+            if (primaryCategory != null)
             {
+                categories.Add(primaryCategory);
+            }
 
-                var paths = Path.Split(',');
+            if (!string.IsNullOrEmpty(categoryField))
+            {
+                var categoryIds = categoryField.Split(',');
 
-                int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
-
-                var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    Properties.GetPropertyValue("categories") : "";
-
-                var categories = new List<ICategory>();
-
-                var primaryCategory = _categoryCache.Cache[_store.Alias]
-                                                   .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                   .Value;
-
-                if (primaryCategory != null)
+                foreach (var catId in categoryIds)
                 {
-                    categories.Add(primaryCategory);
-                }
+                    var intCatId = Convert.ToInt32(catId);
 
-                if (!string.IsNullOrEmpty(categoryField))
-                {
-                    var categoryIds = categoryField.Split(',');
+                    var categoryItem
+                        = _categoryCache.Cache[_store.Alias]
+                                        .FirstOrDefault(x => x.Value.Id == intCatId)
+                                        .Value;
 
-                    foreach (var catId in categoryIds)
+                    if (categoryItem != null && !categories.Contains(categoryItem))
                     {
-                        var intCatId = Convert.ToInt32(catId);
-
-                        var categoryItem
-                            = _categoryCache.Cache[_store.Alias]
-                                           .FirstOrDefault(x => x.Value.Id == intCatId)
-                                           .Value;
-
-                        if (categoryItem != null && !categories.Contains(categoryItem))
-                        {
-                            categories.Add(categoryItem);
-                        }
+                        categories.Add(categoryItem);
                     }
                 }
-
-                return categories;
             }
+
+            return categories;
+            
         }
 
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
