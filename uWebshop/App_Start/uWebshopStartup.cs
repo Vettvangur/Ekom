@@ -91,6 +91,7 @@ namespace uWebshop
 
             // VirtualContent=true allows for configuration of content nodes to use for matching all requests
             // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+
             if (!_config.VirtualContent)
             {
                 // Hook into Umbraco Events
@@ -140,7 +141,8 @@ namespace uWebshop
                 {
 
                 }
-                else if (alias == "uwbsProduct" || alias == "uwbsCategory")
+
+                if (alias == "uwbsProduct" || alias == "uwbsCategory")
                 {
                     // Need to get this into function
                     var slug = content.GetValue<string>("slug");
@@ -149,6 +151,7 @@ namespace uWebshop
                     // Update Slug if Slug Exist on same Level and is Published
                     if (siblings.Any(x => x.GetValue<string>("slug").ToLowerInvariant() == slug.ToLowerInvariant()))
                     {
+   
                         // Random not a nice solution
                         Random rnd = new Random();
 

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
 using uWebshop.API;
 using uWebshop.App_Start;
@@ -304,14 +305,16 @@ namespace uWebshop.Models
 
         public Variant(IContent node, Store store)
         {
+
             _store = store;
 
             Properties = Product.CreateDefaultUmbracoProperties(node);
 
             foreach (var prop in node.Properties)
             {
-                Properties.Add(prop.Alias, prop.Value.ToString());
+                Properties.Add(prop.Alias, prop.Value?.ToString());
             }
+
         }
 
         private static readonly ILog Log =

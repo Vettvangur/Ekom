@@ -278,6 +278,9 @@
     <Content Include="Config\trees.config" />
     <Content Include="Config\umbracoSettings.config" />
     <Content Include="Config\UrlRewriting.config" />
+    <Content Include="Content\css\app.css" />
+    <Content Include="Content\css\app.min.css" />
+    <Content Include="Content\js\app.js" />
     <Content Include="Views\Category.cshtml" />
     <Content Include="Views\Checkout.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />

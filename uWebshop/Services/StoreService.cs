@@ -72,9 +72,11 @@ namespace uWebshop.Services
 
         public Store GetStoreByAlias(string alias)
         {
-            return _storeCache.Cache
+            var store = _storeCache.Cache
                              .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias))
                              .Value;
+            // If store is not found by alias then return first store
+            return store ?? _storeCache.Cache.FirstOrDefault().Value;
         }
 
         public Store GetStoreFromCache()
