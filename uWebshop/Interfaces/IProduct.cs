@@ -1,8 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace uWebshop.Interfaces
 {
-    public interface IProduct : INodeEntitiyWithUrl
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IProduct : INodeEntityWithUrl
     {
         /// <summary>
         /// Gets the price.
@@ -27,14 +30,6 @@ namespace uWebshop.Interfaces
         /// The slug.
         /// </value>
         string Slug { get; }
-
-        /// <summary>
-        /// Gets the original price.
-        /// </summary>
-        /// <value>
-        /// The original price.
-        /// </value>
-        decimal OriginalPrice { get; }
 
         /// <summary>
         /// Gets the stock.

@@ -1,12 +1,11 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using uWebshop.App_Start;
+using System.Web.Mvc;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -24,7 +23,7 @@ namespace uWebshop.Services
             {
                 try
                 {
-                    return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
+                    return Configuration.container.GetService<HttpContextBase>();
                 }
                 catch (Exception ex)
                 {
@@ -99,6 +98,13 @@ namespace uWebshop.Services
                 return null;
             }
 
+        }
+
+        public void ChangeOrderStatus(OrderInfo order, OrderStatus status)
+        {
+            order.OrderStatus = status;
+
+            _orderRepository.UpdateOrder(order.)
         }
 
         public OrderInfo AddOrderLine(
@@ -257,14 +263,14 @@ namespace uWebshop.Services
 
             GenerateOrderNumber(out int referenceId, out orderNumber);
 
-            var orderData = new OrderData()
+            var orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
                 StoreAlias = _store.Alias,
                 ReferenceId = referenceId,
                 OrderNumber = orderNumber,
-                OrderStatus = OrderStatus.Incomplete.ToString()
+                OrderStatus = OrderStatus.Incomplete,
             };
 
             _orderRepository.InsertOrder(orderData);

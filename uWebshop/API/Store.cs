@@ -1,9 +1,8 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using System.Collections.Generic;
+using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using uWebshop.App_Start;
 using uWebshop.Interfaces;
 using uWebshop.Services;
 
@@ -22,7 +21,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Store>());
+                return _current ?? (_current = Configuration.container.GetService<Store>());
             }
         }
 

@@ -1,12 +1,11 @@
-using Examine;
+﻿using Examine;
 using log4net;
-using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Mvc;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 
@@ -18,7 +17,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return UnityConfig.GetConfiguredContainer().Resolve<IBaseCache<Zone>>();
+                return Configuration.container.GetService<IBaseCache<Zone>>();
             }
         }
 
@@ -47,7 +46,7 @@ namespace uWebshop.Models
             foreach (var zone in item.Fields["zone"].Split(','))
             {
                 var zoneObj
-                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
+                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Key.ToString() == zone).Value;
 
                 if (zone != null) Zones.Add(zoneObj);
             }
@@ -88,7 +87,7 @@ namespace uWebshop.Models
             foreach (var zone in item.GetValue<string>("zone").Split(','))
             {
                 var zoneObj
-                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id.ToString() == zone).Value;
+                    = _zoneCache.Cache.FirstOrDefault(x => x.Value.Key.ToString() == zone).Value;
 
                 if (zone != null) Zones.Add(zoneObj);
             }

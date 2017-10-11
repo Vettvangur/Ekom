@@ -5,7 +5,7 @@ root = true
 
 # Default settings:
 [*]
-charset = utf-8
+charset = utf-8-bom
 end_of_line = crlf
 indent_size = 4
 indent_style = space

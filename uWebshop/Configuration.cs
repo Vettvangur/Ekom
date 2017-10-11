@@ -1,10 +1,9 @@
-using Microsoft.Practices.Unity;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Web.Mvc;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Models;
 using uWebshop.Utilities;
@@ -16,6 +15,11 @@ namespace uWebshop
     /// </summary>
     public class Configuration
     {
+        /// <summary>
+        /// Current dependency resolver instance
+        /// </summary>
+        public static IDependencyResolver container;
+
         /// <summary>
         /// uwbsPerStoreStock
         /// Controls which stock cache to will be used. Per store or per Product/Variant.
@@ -116,18 +120,17 @@ namespace uWebshop
         /// </summary>
         internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() =>
         {
-            var container = UnityConfig.GetConfiguredContainer();
-
             return new List<ICache>
             {
-                { container.Resolve<IBaseCache<IDomain>>() },
-                { container.Resolve<IBaseCache<Store>>() },
-                { container.Resolve<IPerStoreCache<Variant>>() },
-                { container.Resolve<IPerStoreCache<VariantGroup>>() },
-                { container.Resolve<IPerStoreCache<Category>>() },
-                { container.Resolve<IPerStoreCache<Product>>() },
-                { container.Resolve<IBaseCache<Zone>>() },
-                { container.Resolve<IPerStoreCache<PaymentProvider>>() },
+                { container.GetService<IBaseCache<IDomain>>() },
+                { container.GetService<IBaseCache<Store>>() },
+                { container.GetService<IPerStoreCache<Variant>>() },
+                { container.GetService<IPerStoreCache<VariantGroup>>() },
+                { container.GetService<IPerStoreCache<Category>>() },
+                { container.GetService<IPerStoreCache<Product>>() },
+                { container.GetService<IBaseCache<Zone>>() },
+                { container.GetService<IPerStoreCache<PaymentProvider>>() },
+                { container.GetService<IPerStoreCache<ShippingProvider>>() },
             };
         });
 

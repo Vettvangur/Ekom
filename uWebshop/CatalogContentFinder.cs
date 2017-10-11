@@ -1,12 +1,11 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using System;
 using System.Configuration;
 using System.Linq;
+using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Models;
 using uWebshop.Services;
@@ -24,14 +23,14 @@ namespace uWebshop
 
         public CatalogContentFinder()
         {
-            var container = UnityConfig.GetConfiguredContainer();
+            var container = Configuration.container;
 
-            _config = container.Resolve<Configuration>();
-            _storeSvc = container.Resolve<StoreService>();
-            _categoryCache = container.Resolve<IPerStoreCache<Category>>();
-            _productCache = container.Resolve<IPerStoreCache<Product>>();
+            _config = container.GetService<Configuration>();
+            _storeSvc = container.GetService<StoreService>();
+            _categoryCache = container.GetService<IPerStoreCache<Category>>();
+            _productCache = container.GetService<IPerStoreCache<Product>>();
 
-            var logFac = UnityConfig.GetConfiguredContainer().Resolve<ILogFactory>();
+            var logFac = container.GetService<ILogFactory>();
             _log = logFac.GetLogger(typeof(CatalogContentFinder));
         }
 

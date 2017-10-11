@@ -1,11 +1,10 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -27,7 +26,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Catalog>());
+                return _current ?? (_current = Configuration.container.GetService<Catalog>());
             }
         }
 
@@ -64,6 +63,10 @@ namespace uWebshop.API
             _log = logFac.GetLogger(typeof(Catalog));
         }
 
+        /// <summary>
+        /// Get current product using data from the uwbsRequest <see cref="ContentRequest"/> object
+        /// </summary>
+        /// <returns></returns>
         public Product GetProduct()
         {
             var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
@@ -71,6 +74,10 @@ namespace uWebshop.API
             return r?.Product;
         }
 
+        /// <summary>
+        /// Get product by Guid
+        /// </summary>
+        /// <returns></returns>
         public Product GetProduct(Guid Id)
         {
             var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
@@ -92,9 +99,7 @@ namespace uWebshop.API
 
         public Product GetProduct(int Id)
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
-            if (r != null && r.Store != null)
+            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
             {
                 var product = GetProduct(r.Store.Alias, Id);
 
@@ -111,9 +116,7 @@ namespace uWebshop.API
 
         public IEnumerable<Product> GetAllProducts()
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
-            if (r != null && r.Store != null)
+            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
             {
                 var products = GetAllProducts(r.Store.Alias);
 
@@ -130,9 +133,7 @@ namespace uWebshop.API
 
         public IEnumerable<Product> GetProductsByIds(int[] productIds)
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
-            if (r != null && r.Store != null)
+            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
             {
                 var products = GetProductsByIds(productIds, r.Store.Alias);
 
@@ -149,9 +150,7 @@ namespace uWebshop.API
 
         public Category GetCategory()
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
-
-            if (r != null && r.Category != null)
+            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Category != null)
             {
                 return r.Category;
             }

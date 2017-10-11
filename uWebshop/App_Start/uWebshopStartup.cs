@@ -1,4 +1,4 @@
-using Hangfire;
+﻿using Hangfire;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -127,20 +127,9 @@ namespace uWebshop
 
         private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)
         {
-            //var umbHelper = new UmbracoHelper(UmbracoContext.Current);
-            //var contentService = ApplicationContext.Current.Services.ContentService;
-
             foreach (var content in e.PublishedEntities)
             {
                 var alias = content.ContentType.Alias;
-
-                if (alias == "uwbsProduct")
-                {
-                }
-                else if (alias == "uwbsCategory")
-                {
-
-                }
 
                 if (alias == "uwbsProduct" || alias == "uwbsCategory")
                 {

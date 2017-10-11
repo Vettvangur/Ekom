@@ -1,11 +1,9 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
-using uWebshop.App_Start;
-using uWebshop.Helpers;
+using uWebshop;
 using uWebshop.Models;
 using uWebshop.Services;
 
@@ -17,21 +15,29 @@ namespace uWebshopSite.Extensions.Controllers
     [PluginController("uWebshop")]
     public class OrderController : SurfaceController
     {
+        ILog _log;
+        OrderService _orderSvc;
+        /// <summary>
+        /// ctor
+        /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
+        /// </summary>
+        public OrderController()
+        {
+            _orderSvc = Configuration.container.GetService<OrderService>();
+
+            var logFac = Configuration.container.GetService<ILogFactory>();
+            _log = logFac.GetLogger(typeof(OrderController));
+        }
+
         /// <summary>
         /// Add product to order
         /// </summary>
-        /// <param name="productId">Guid Key of product</param>
-        /// <param name="storeAlias"></param>
-        /// <param name="quantity"></param>
-        /// <param name="variantId"></param>
-        /// <param name="action">Add/Update</param>
+        /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
         public JsonResult AddToOrder(OrderRequest request)
         {
             try
             {
-                var os = uWebshop.API.Order.Current;
-
                 var variantIds = new List<Guid>();
 
                 if (request.variantId != null && request.variantId != Guid.Empty)
@@ -39,7 +45,7 @@ namespace uWebshopSite.Extensions.Controllers
                     variantIds.Add(request.variantId.Value);
                 }
 
-                var orderInfo = os.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
+                var orderInfo = _orderSvc.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -69,9 +75,7 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-                var os = uWebshop.API.Order.Current;
-
-                var orderInfo = os.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var orderInfo = _orderSvc.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -99,9 +103,7 @@ namespace uWebshopSite.Extensions.Controllers
         {
             try
             {
-                var os = uWebshop.API.Order.Current;
-
-                var orderInfo = os.RemoveOrderLine(lineId, storeAlias);
+                var orderInfo = _orderSvc.RemoveOrderLine(lineId, storeAlias);
 
                 return Json(new
                 {

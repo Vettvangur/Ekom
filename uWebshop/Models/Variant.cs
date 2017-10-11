@@ -1,15 +1,14 @@
-using Examine;
+﻿using Examine;
 using log4net;
-using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
 using uWebshop.API;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -17,50 +16,17 @@ using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
-    public class Variant : IVariant
+    public class Variant : NodeEntity, IVariant, INodeEntity
     {
+        private IPerStoreCache<Category> __categoryCache;
+        private IPerStoreCache<Category> _categoryCache => 
+            __categoryCache ?? (__categoryCache = Configuration.container.GetService<IPerStoreCache<Category>>());
 
-        private IPerStoreCache<Category> _categoryCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
-            }
-        }
-
-        private IPerStoreCache<VariantGroup> _variantGroupCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
-            }
-        }
+        private IPerStoreCache<VariantGroup> __variantGroupCache;
+        private IPerStoreCache<VariantGroup> _variantGroupCache => 
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetService<IPerStoreCache<VariantGroup>>());
 
         private Store _store;
-        public int Id
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
-            }
-        }
-
-        public Guid Key
-        {
-            get
-            {
-                var key = Properties.GetPropertyValue("key");
-
-                var _key = new Guid();
-
-                if (!Guid.TryParse(key, out _key))
-                {
-                    throw new Exception("No key present for product.");
-                }
-
-                return _key;
-            }
-        }
 
         public string SKU
         {
@@ -75,15 +41,6 @@ namespace uWebshop.Models
             get
             {
                 return Properties.GetStoreProperty("title", _store.Alias);
-            }
-        }
-
-        [JsonIgnore]
-        public string Path
-        {
-            get
-            {
-                return Properties.GetPropertyValue("path");
             }
         }
 
@@ -130,7 +87,7 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = Catalog.Current.GetProduct(Store.Alias, productId);
+                var product = Catalog.Current.GetProduct(_store.Alias, productId);
 
                 if (product == null)
                 {
@@ -145,7 +102,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var group = VariantGroup();
+                var group = VariantGroup;
 
                 if (group != null)
                 {
@@ -156,80 +113,34 @@ namespace uWebshop.Models
             }
         }
 
-        public VariantGroup VariantGroup()
-        {
-            var parentId = Properties.GetPropertyValue("parentID");
-            int _parentId = 0;
-
-            if (Int32.TryParse(parentId, out _parentId))
-            {
-                var group = _variantGroupCache.Cache[Store.Alias]
-                                        .Where(x => x.Value.Id == _parentId)
-                                        .Select(x => x.Value);
-
-                if (group != null && group.Any())
-                {
-                    return group.First();
-                }
-            }
-
-            return null;
-        }
-
-        [ScriptIgnore]
         [JsonIgnore]
-        public Store Store
+        public VariantGroup VariantGroup
         {
             get
             {
-                return _store;
+                var parentId = Properties.GetPropertyValue("parentID");
+
+                if (int.TryParse(parentId, out int _parentId))
+                {
+                    var group = _variantGroupCache.Cache[_store.Alias]
+                        .Where(x => x.Value.Id == _parentId)
+                        .Select(x => x.Value);
+
+                    if (group != null && group.Any())
+                    {
+                        return group.First();
+                    }
+                }
+
+                return null;
             }
         }
 
-        public int Level
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("level"));
-            }
-        }
-
-        public string ContentTypeAlias
-        {
-            get
-            {
-                return Properties.GetPropertyValue("nodeTypeAlias");
-            }
-        }
-
-        public int SortOrder
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
-            }
-        }
-
-        public DateTime CreateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
-            }
-        }
-
-        public DateTime UpdateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
-            }
-        }
         public IDiscountedPrice Price
         {
             get
             {
-                return new Price(OriginalPrice, Store);
+                return new Price(OriginalPrice, _store);
             }
         }
 
@@ -239,7 +150,6 @@ namespace uWebshop.Models
         /// </summary>
         public List<ICategory> Categories()
         {
-
             var paths = Path.Split(',');
 
             int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
@@ -279,10 +189,7 @@ namespace uWebshop.Models
             }
 
             return categories;
-            
         }
-
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
         /// <summary>
         /// Used by uWebshop extensions
@@ -293,28 +200,25 @@ namespace uWebshop.Models
             _store = store;
         }
 
-        public Variant(SearchResult item, Store store)
+        /// <summary>
+        /// Construct Variant from Examine item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store"></param>
+        public Variant(SearchResult item, Store store) : base(item)
         {
             _store = store;
-
-            foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
-            {
-                Properties.Add(field.Key, field.Value);
-            }
         }
 
-        public Variant(IContent node, Store store)
+        /// <summary>
+        /// Construct Variant from umbraco publish event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="store"></param>
+        public Variant(IContent node, Store store) : base(node)
         {
 
             _store = store;
-
-            Properties = Product.CreateDefaultUmbracoProperties(node);
-
-            foreach (var prop in node.Properties)
-            {
-                Properties.Add(prop.Alias, prop.Value?.ToString());
-            }
-
         }
 
         private static readonly ILog Log =

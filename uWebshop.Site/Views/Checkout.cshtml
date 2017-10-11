@@ -23,7 +23,6 @@
             <h4>Karfan er tóm</h4>
         }
 
-
     </div>
 
 }
@@ -76,6 +75,16 @@
 
         </table>
 
+        <ul>
+            @foreach (var shippingProvider in Providers.Current.GetShippingProviders())
+            {
+                <li>
+                    <label for="@shippingProvider.Key">
+                        @shippingProvider.Title - @shippingProvider.Price.Value
+                        <input id="@shippingProvider.Key" type="radio" name="shipping-provider" value="@shippingProvider.Key" />
+                    </label>
+                </li>
+            }
+        </ul>
     </div>
-
 }

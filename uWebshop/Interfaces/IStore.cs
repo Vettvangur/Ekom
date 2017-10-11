@@ -1,8 +1,11 @@
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace uWebshop.Interfaces
 {
-    public interface IStore : INodeEntitiy
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IStore : INodeEntity
     {
         /// <summary>
         /// Gets the vat.

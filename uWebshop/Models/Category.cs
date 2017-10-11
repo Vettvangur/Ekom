@@ -1,15 +1,14 @@
-using Examine;
+﻿using Examine;
 using log4net;
-using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -23,7 +22,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
+                return Configuration.container.GetService<IPerStoreCache<Category>>();
             }
         }
 
@@ -31,7 +30,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Product>>();
+                return Configuration.container.GetService<IPerStoreCache<Product>>();
             }
         }
 
@@ -173,8 +172,8 @@ namespace uWebshop.Models
 
             SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
             Level = Convert.ToInt32(item.Fields["level"]);
-            CreateDate = ExamineHelper.ConvertToDatetime(item.Fields["createDate"]);
-            UpdateDate = ExamineHelper.ConvertToDatetime(item.Fields["updateDate"]);
+            CreateDate = ExamineService.ConvertToDatetime(item.Fields["createDate"]);
+            UpdateDate = ExamineService.ConvertToDatetime(item.Fields["updateDate"]);
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }

@@ -1,8 +1,7 @@
-using Microsoft.Practices.Unity;
-using System;
+﻿using System;
 using System.Web;
+using System.Web.Mvc;
 using Umbraco.Core;
-using uWebshop.App_Start;
 using uWebshop.Models;
 using uWebshop.Services;
 using uWebshop.Utilities;
@@ -39,11 +38,9 @@ namespace uWebshop
             HttpApplication application = (HttpApplication)source;
             HttpContext httpCtx = application.Context;
 
-            var container = UnityConfig.GetConfiguredContainer();
-
             var url = httpCtx.Request.Url;
 
-            var storeSvc = container.Resolve<StoreService>();
+            var storeSvc = Configuration.container.GetService<StoreService>();
 
             Store store = storeSvc.GetStoreByDomain(url.Host);
 
@@ -61,7 +58,7 @@ namespace uWebshop
 
                 var path = url.AbsolutePath.ToLower().AddTrailing();
 
-                var appCtx = container.Resolve<ApplicationContext>();
+                var appCtx = Configuration.container.GetService<ApplicationContext>();
 
                 var appCache = appCtx.ApplicationCache;
                 appCache.RequestCache.GetCacheItem("uwbsRequest", () =>

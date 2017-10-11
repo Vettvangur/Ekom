@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using System;
 using uWebshop.Models;
 using uWebshop.Services;
@@ -14,24 +14,13 @@ namespace uWebshop.Cache
             return new Category(r, store);
         }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
-        /// <param name="storeCache"></param>
         public CategoryCache(
             ILogFactory logFac,
             Configuration config,
             ExamineManager examineManager,
             IBaseCache<Store> storeCache
-        )
+        ) : base(config, examineManager, storeCache)
         {
-            _config = config;
-            _examineManager = examineManager;
-            _storeCache = storeCache;
-
             _log = logFac.GetLogger(typeof(CategoryCache));
         }
 

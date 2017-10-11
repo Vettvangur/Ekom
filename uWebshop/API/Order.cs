@@ -1,7 +1,6 @@
-using Microsoft.Practices.Unity;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using uWebshop.App_Start;
+using System.Web.Mvc;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -21,7 +20,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Order>());
+                return _current ?? (_current = Configuration.container.GetService<Order>());
             }
         }
 
