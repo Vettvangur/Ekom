@@ -80,7 +80,7 @@
 
                 <p>Price With Vat : @product.Price.WithVat.Value</p>
                 <p>Price WithOut Vat : @product.Price.WithoutVat.Value</p>
-                <p>Price Original : @product.OriginalPrice</p>
+                <p>Price Original : @product.Price.Value</p>
 
                 <a href="@product.Url" class="button expanded">View</a>
 
@@ -103,7 +103,6 @@
                             </select>
 
                         }
-
                     }
                     <input type="number" name="quantity" value="1" />
 

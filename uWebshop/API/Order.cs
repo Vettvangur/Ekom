@@ -25,16 +25,35 @@ namespace uWebshop.API
         }
 
         IOrderService _orderService;
+        IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="orderService"></param>
-        public Order(IOrderService orderService)
+        /// <param name="storeSvc"></param>
+        public Order(IOrderService orderService, IStoreService storeSvc)
         {
             _orderService = orderService;
+            _storeSvc = storeSvc;
         }
 
+        /// <summary>
+        /// Get order using cookie data and uwbsRequest store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
+        public OrderInfo GetOrder()
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            return GetOrder(store.Alias);
+        }
+
+        /// <summary>
+        /// Get order using cookie data and provided store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
         public OrderInfo GetOrder(string storeAlias)
         {
             return _orderService.GetOrder(storeAlias);

@@ -287,7 +287,6 @@
     <Content Include="Content\css\app.min.css" />
     <Content Include="Content\js\app.js" />
     <Content Include="Views\Category.cshtml" />
-    <Content Include="Views\Checkout.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />
     <Content Include="Views\Masterpage.cshtml" />
     <Content Include="Views\Partials\Grid\Bootstrap2.cshtml" />
@@ -308,6 +307,9 @@
     <Content Include="App_Plugins\uWebshop\iconfont\uwebshop.ttf" />
     <Content Include="App_Plugins\uWebshop\iconfont\uwebshop.woff" />
     <Content Include="App_Plugins\uWebshop\package.manifest" />
+    <Content Include="Views\Cart.cshtml" />
+    <Content Include="Views\CheckoutShippingPayment.cshtml" />
+    <Content Include="Views\CheckoutYourInfo.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

@@ -3,8 +3,7 @@
 
 @{
     Layout = "Masterpage.cshtml";
-    var currentStore = Store.Current.GetStore();
-    var order = Order.Current.GetOrder(currentStore.Alias);
+    var order = Order.Current.GetOrder();
 }
 
 @section Main {
@@ -15,16 +14,14 @@
 
         @if (order != null)
         {
-
             @RenderCart(order)
-
-        } else
+        }
+        else
         {
             <h4>Karfan er tóm</h4>
         }
 
     </div>
-
 }
 
 @helper RenderCart(uWebshop.Models.OrderInfo order) { 
@@ -75,16 +72,7 @@
 
         </table>
 
-        <ul>
-            @foreach (var shippingProvider in Providers.Current.GetShippingProviders())
-            {
-                <li>
-                    <label for="@shippingProvider.Key">
-                        @shippingProvider.Title - @shippingProvider.Price.Value
-                        <input id="@shippingProvider.Key" type="radio" name="shipping-provider" value="@shippingProvider.Key" />
-                    </label>
-                </li>
-            }
-        </ul>
+        <a class="button" href="/greida-notandaupplysingar">Greiða</a>
+
     </div>
 }

@@ -30,13 +30,12 @@ namespace uWebshop.Services
                     _log.Error("HttpContext not available.", ex);
                     return null;
                 }
-
             }
         }
         private Store _store;
         private DateTime _date;
         private OrderRepository _orderRepository;
-        private StoreService _storeSvc;
+        private IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
@@ -44,7 +43,7 @@ namespace uWebshop.Services
         /// <param name="orderRepo"></param>
         /// <param name="logFac"></param>
         /// <param name="storeService"></param>
-        public OrderService(OrderRepository orderRepo, ILogFactory logFac, StoreService storeService)
+        public OrderService(OrderRepository orderRepo, ILogFactory logFac, IStoreService storeService)
         {
             _orderRepository = orderRepo;
             _storeSvc = storeService;
@@ -91,20 +90,18 @@ namespace uWebshop.Services
                 }
 
                 return (OrderInfo)_httpCtx.Session[key];
-
             }
             else
             {
                 return null;
             }
-
         }
 
-        public void ChangeOrderStatus(OrderInfo order, OrderStatus status)
+        public void ChangeOrderStatus(OrderData order, OrderStatus status)
         {
             order.OrderStatus = status;
 
-            _orderRepository.UpdateOrder(order.)
+            _orderRepository.UpdateOrder(order);
         }
 
         public OrderInfo AddOrderLine(
@@ -155,7 +152,6 @@ namespace uWebshop.Services
                 {
                     orderInfo.OrderLines.Remove(orderLine);
                 }
-
             }
 
             UpdateOrderAndOrderInfo(orderInfo);

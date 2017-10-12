@@ -1,10 +1,9 @@
-using Examine;
+﻿using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using Umbraco.Core.Models;
 using uWebshop.Helpers;
 
@@ -65,13 +64,13 @@ namespace uWebshop.Cache
 
                 var count = 0;
 
-                try
-                {
-                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                    var query = searchCriteria.NodeTypeAlias(NodeAlias);
-                    var results = searcher.Search(query.Compile());
+                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                var query = searchCriteria.NodeTypeAlias(NodeAlias);
+                var results = searcher.Search(query.Compile());
 
-                    foreach (var r in results.Where(x => x.Fields["template"] != "0"))
+                foreach (var r in results)
+                {
+                    try
                     {
                         // Traverse up parent nodes, checking only published status
                         if (!r.IsItemUnpublished())
@@ -87,15 +86,15 @@ namespace uWebshop.Cache
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _log.Error("Filling Base Cache Failed!", ex);
+                    catch (Exception ex) // Skip on fail
+                    {
+                        _log.Info("Failed to map to store. Id: " + r.Id, ex);
+                    }
                 }
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Info("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {

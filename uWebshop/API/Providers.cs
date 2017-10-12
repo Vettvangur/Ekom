@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Web.Mvc;
 using uWebshop.Cache;
+using uWebshop.Domain.Repositories;
 using uWebshop.Interfaces;
 using uWebshop.Models;
 
@@ -26,11 +27,19 @@ namespace uWebshop.API
 
         IPerStoreCache<ShippingProvider> _cache;
         IStoreService _storeSvc;
+        ICountriesRepository _countryRepo;
 
-        public Providers(IPerStoreCache<ShippingProvider> cache, IStoreService storeSvc)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="cache"></param>
+        /// <param name="storeSvc"></param>
+        /// <param name="countryRepo"></param>
+        public Providers(IPerStoreCache<ShippingProvider> cache, IStoreService storeSvc, ICountriesRepository countryRepo)
         {
             _cache = cache;
             _storeSvc = storeSvc;
+            _countryRepo = countryRepo;
         }
 
         /// <summary>
@@ -56,11 +65,16 @@ namespace uWebshop.API
         /// </param>
         /// <returns></returns>
         public IEnumerable<ShippingProvider> GetShippingProviders(
-            Models.Store store,
+            Models.Store store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
         {
+            if (store == null)
+            {
+                store = _storeSvc.GetStoreFromCache();
+            }
+
             var shippingProviders = _cache.Cache[store.Alias].Select(x => x.Value);
 
             if (countryCode != null)
@@ -98,6 +112,14 @@ namespace uWebshop.API
                 shippingProvider.StartRange <= orderAmount &&
                 shippingProvider.EndRange >= orderAmount
             ;
+        }
+
+        /// <summary>
+        /// List of all <see cref="Country"/> objects from xml document or .NET as fallback.
+        /// </summary>
+        public List<Country> GetAllCountries()
+        {
+            return _countryRepo.GetAllCountries();
         }
     }
 }

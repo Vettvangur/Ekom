@@ -1,0 +1,33 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using uWebshop.API;
+@{
+    Layout = "Masterpage.cshtml";
+
+    var country = Request["customerCountry"];
+}
+
+@* the fun starts here *@
+
+@section Main {
+
+    <div class="row column">
+
+        <h3>Payment Providers</h3>
+        <p>Unfinished</p>
+
+        <h3>Shipping Providers</h3>
+        <ul>
+            @foreach (var shippingProvider in Providers.Current.GetShippingProviders(countryCode: country))
+            {
+                <li>
+                    <label for="@shippingProvider.Key">
+                        @shippingProvider.Title - @shippingProvider.Price.Value
+                        <input id="@shippingProvider.Key" type="radio" name="shipping-provider" value="@shippingProvider.Key" />
+                    </label>
+                </li>
+            }
+        </ul>
+
+        <button class="button" disabled>Klára</button>
+    </div>
+}

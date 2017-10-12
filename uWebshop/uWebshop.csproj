@@ -273,7 +273,7 @@
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Services\LogFactory.cs" />
-    <Compile Include="Services\ShippingProviderService.cs" />
+    <Compile Include="API\Providers.cs" />
     <Compile Include="Utilities\PropertyHelper.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />
