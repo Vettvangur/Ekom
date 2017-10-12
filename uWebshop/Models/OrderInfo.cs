@@ -99,7 +99,7 @@ namespace uWebshop.Models
             }
         }
         /// <summary>
-        /// <see cref="DateTime"/> payment was verified.
+        /// Date payment was verified.
         /// </summary>
         public DateTime PaidDate
         {
@@ -109,6 +109,9 @@ namespace uWebshop.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public OrderStatus OrderStatus => _orderData.OrderStatus;
     }
 }
