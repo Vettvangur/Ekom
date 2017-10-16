@@ -263,6 +263,7 @@
     <Compile Include="HttpModule.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Models\Base\PerStoreNodeEntity.cs" />
+    <Compile Include="Models\Base\ProviderBase.cs" />
     <Compile Include="Models\Country.cs" />
     <Compile Include="Models\Base\NodeEntity.cs" />
     <Compile Include="Models\OrderRequest.cs" />

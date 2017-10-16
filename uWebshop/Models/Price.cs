@@ -105,6 +105,9 @@ namespace uWebshop.Models
             _config = Configuration.container.GetService<Configuration>();
         }
 
+        /// <summary>
+        /// Value with vat if applicable
+        /// </summary>
         public decimal Value
         {
             get

@@ -16,14 +16,6 @@ namespace uWebshop.Interfaces
         IDiscountedPrice Price { get; }
 
         /// <summary>
-        /// Gets the title.
-        /// </summary>
-        /// <value>
-        /// The title.
-        /// </value>
-        string Title { get; }
-
-        /// <summary>
         /// Gets the slug.
         /// </summary>
         /// <value>

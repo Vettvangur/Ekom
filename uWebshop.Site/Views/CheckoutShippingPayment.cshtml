@@ -1,23 +1,42 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.API;
+@using uWebshop.Cache;
 @{
     Layout = "Masterpage.cshtml";
 
     var country = Request["customerCountry"];
+    var order = Order.Current.GetOrder();
 }
 
 @* the fun starts here *@
 
 @section Main {
 
+    @*@foreach (var zone in Zone)*@
     <div class="row column">
 
         <h3>Payment Providers</h3>
-        <p>Unfinished</p>
+        <ul>
+            @foreach (var paymentProvider in Providers.Current.GetPaymentProviders(
+                countryCode: country, 
+                orderAmount: order.ChargedAmount.Value)
+            )
+            {
+                <li>
+                    <label for="@paymentProvider.Key">
+                        @paymentProvider.Title - @paymentProvider.Price.Value
+                        <input id="@paymentProvider.Key" type="radio" name="payment-provider" value="@paymentProvider.Key" />
+                    </label>
+                </li>
+            }
+        </ul>
 
         <h3>Shipping Providers</h3>
         <ul>
-            @foreach (var shippingProvider in Providers.Current.GetShippingProviders(countryCode: country))
+            @foreach (var shippingProvider in Providers.Current.GetShippingProviders(
+                countryCode: country,
+                orderAmount: order.ChargedAmount.Value)
+            )
             {
                 <li>
                     <label for="@shippingProvider.Key">

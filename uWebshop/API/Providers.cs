@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using uWebshop.Cache;
 using uWebshop.Domain.Repositories;
 using uWebshop.Interfaces;
 using uWebshop.Models;
+using uWebshop.Models.Base;
 
 namespace uWebshop.API
 {
@@ -25,19 +27,22 @@ namespace uWebshop.API
             }
         }
 
-        IPerStoreCache<ShippingProvider> _cache;
+        IPerStoreCache<ShippingProvider> _shippingProviderCache;
+        IPerStoreCache<PaymentProvider> _paymentProviderCache;
         IStoreService _storeSvc;
         ICountriesRepository _countryRepo;
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="cache"></param>
+        /// <param name="paymentProviderCache"></param>
+        /// <param name="shippingProviderCache"></param>
         /// <param name="storeSvc"></param>
         /// <param name="countryRepo"></param>
-        public Providers(IPerStoreCache<ShippingProvider> cache, IStoreService storeSvc, ICountriesRepository countryRepo)
+        public Providers(IPerStoreCache<ShippingProvider> shippingProviderCache, IPerStoreCache<PaymentProvider> paymentProviderCache, IStoreService storeSvc, ICountriesRepository countryRepo)
         {
-            _cache = cache;
+            _shippingProviderCache = shippingProviderCache;
+            _paymentProviderCache = paymentProviderCache;
             _storeSvc = storeSvc;
             _countryRepo = countryRepo;
         }
@@ -70,47 +75,87 @@ namespace uWebshop.API
             decimal orderAmount = 0
         )
         {
+            return GetProviders(
+                storeAlias => _shippingProviderCache.Cache[storeAlias].Select(x => x.Value).ToList(),
+                store,
+                countryCode,
+                orderAmount
+            ).Cast<ShippingProvider>();
+        }
+
+        /// <summary>
+        /// Get payment providers, optionally filter on country code and amount.
+        /// </summary>
+        /// <param name="store"></param>
+        /// <param name="countryCode">
+        /// Only show <see cref="PaymentProvider"/> in a zone that contains the given country code.
+        /// </param>
+        /// <param name="orderAmount">
+        /// Only show <see cref="PaymentProvider"/> where the given amount falls within their range.
+        /// </param>
+        /// <returns></returns>
+        public IEnumerable<PaymentProvider> GetPaymentProviders(
+            Models.Store store = null,
+            string countryCode = null,
+            decimal orderAmount = 0
+        )
+        {
+            return GetProviders(
+                storeAlias => _paymentProviderCache.Cache[storeAlias].Select(x => x.Value).ToList(),
+                store,
+                countryCode,
+                orderAmount
+            ).Cast<PaymentProvider>();
+        }
+
+        private IEnumerable<ProviderBase> GetProviders(
+            Func<string, IEnumerable<ProviderBase>> cacheFunc,
+            Models.Store store = null,
+            string countryCode = null,
+            decimal orderAmount = 0
+        )
+        {
             if (store == null)
             {
                 store = _storeSvc.GetStoreFromCache();
             }
 
-            var shippingProviders = _cache.Cache[store.Alias].Select(x => x.Value);
+            var providers = cacheFunc(store.Alias);
 
             if (countryCode != null)
             {
-                shippingProviders = shippingProviders
+                providers = providers
                     .Where(x => x.CountriesInZone.Contains(countryCode.ToUpper()));
             }
             if (orderAmount != 0)
             {
-                shippingProviders = shippingProviders
+                providers = providers
                     .Where(x =>
                         x.StartRange <= orderAmount &&
                         (x.EndRange == 0 || x.EndRange >= orderAmount)
                     );
             }
 
-            return shippingProviders;
+            return providers;
         }
 
         /// <summary>
         /// Determine if the given shipping provider is valid given the provided properties.
         /// </summary>
-        /// <param name="shippingProvider"></param>
+        /// <param name="provider"></param>
         /// <param name="countryCode"></param>
         /// <param name="orderAmount"></param>
         /// <returns></returns>
         public bool IsValid(
-            ShippingProvider shippingProvider,
+            ProviderBase provider,
             string countryCode,
             decimal orderAmount
         )
         {
             return
-                shippingProvider.CountriesInZone.Contains(countryCode.ToUpper()) &&
-                shippingProvider.StartRange <= orderAmount &&
-                shippingProvider.EndRange >= orderAmount
+                provider.CountriesInZone.Contains(countryCode.ToUpper()) &&
+                provider.StartRange <= orderAmount &&
+                provider.EndRange >= orderAmount
             ;
         }
 

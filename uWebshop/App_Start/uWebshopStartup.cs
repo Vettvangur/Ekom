@@ -24,7 +24,7 @@ namespace uWebshop
     /// We use ApplicationEventHandler so that these lifecycle methods are only run
     /// when umbraco is in a stable condition.
     /// </summary>
-    public class uWebshopStartup : ApplicationEventHandler
+    class uWebshopStartup : ApplicationEventHandler
     {
 #pragma warning restore IDE1006 // Naming Styles
         Configuration _config;
@@ -51,7 +51,7 @@ namespace uWebshop
             ApplicationContext applicationContext
         )
         {
-            LogHelper.Info(GetType(), "OnApplicationStarting...");
+            LogHelper.Info(GetType(), "ApplicationStarting...");
 
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             UrlProviderResolver.Current.InsertTypeBefore<DefaultUrlProvider, CatalogUrlProvider>();
@@ -140,7 +140,7 @@ namespace uWebshop
                     // Update Slug if Slug Exist on same Level and is Published
                     if (siblings.Any(x => x.GetValue<string>("slug").ToLowerInvariant() == slug.ToLowerInvariant()))
                     {
-   
+
                         // Random not a nice solution
                         Random rnd = new Random();
 

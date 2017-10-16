@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web.Mvc;
-using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
 using uWebshop.API;
 using uWebshop.Cache;
@@ -19,11 +18,11 @@ namespace uWebshop.Models
     public class Variant : NodeEntity, IVariant, INodeEntity
     {
         private IPerStoreCache<Category> __categoryCache;
-        private IPerStoreCache<Category> _categoryCache => 
+        private IPerStoreCache<Category> _categoryCache =>
             __categoryCache ?? (__categoryCache = Configuration.container.GetService<IPerStoreCache<Category>>());
 
         private IPerStoreCache<VariantGroup> __variantGroupCache;
-        private IPerStoreCache<VariantGroup> _variantGroupCache => 
+        private IPerStoreCache<VariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetService<IPerStoreCache<VariantGroup>>());
 
         private Store _store;
@@ -33,41 +32,6 @@ namespace uWebshop.Models
             get
             {
                 return Properties.GetPropertyValue("sku");
-            }
-        }
-
-        public string Title
-        {
-            get
-            {
-                return Properties.GetStoreProperty("title", _store.Alias);
-            }
-        }
-
-        private decimal? _originalPrice;
-        public decimal OriginalPrice
-        {
-            get
-            {
-                decimal originalPrice = 0;
-
-                if (_originalPrice.HasValue)
-                {
-                    originalPrice = _originalPrice.Value;
-                }
-                else
-                {
-                    var priceField = Properties.GetStoreProperty("price", _store.Alias);
-
-
-                    decimal.TryParse(priceField, out originalPrice);
-                }
-
-                return originalPrice;
-            }
-            set
-            {
-                _originalPrice = value;
             }
         }
 
@@ -136,13 +100,12 @@ namespace uWebshop.Models
             }
         }
 
-        public IDiscountedPrice Price
-        {
-            get
-            {
-                return new Price(OriginalPrice, _store);
-            }
-        }
+        IDiscountedPrice _price;
+        /// <summary>
+        /// 
+        /// </summary>
+        public IDiscountedPrice Price => _price
+            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
 
         /// <summary>
         /// All categories variant belongs to, includes parent category.

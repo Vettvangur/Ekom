@@ -237,6 +237,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ApiController.cs" />
+    <Compile Include="Controllers\CheckoutController.cs" />
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

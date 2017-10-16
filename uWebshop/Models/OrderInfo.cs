@@ -62,6 +62,10 @@ namespace uWebshop.Models
                 return OrderLines != null && OrderLines.Any() ? OrderLines.Sum(x => x.Quantity) : 0;
             }
         }
+
+        /// <summary>
+        /// SimplePrice object for total value of all orderlines.
+        /// </summary>
         public SimplePrice ChargedAmount
         {
             get
