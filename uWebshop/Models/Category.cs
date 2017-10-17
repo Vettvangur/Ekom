@@ -22,7 +22,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Configuration.container.GetService<IPerStoreCache<Category>>();
+                return Configuration.container.GetInstance<IPerStoreCache<Category>>();
             }
         }
 
@@ -30,7 +30,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Configuration.container.GetService<IPerStoreCache<Product>>();
+                return Configuration.container.GetInstance<IPerStoreCache<Product>>();
             }
         }
 

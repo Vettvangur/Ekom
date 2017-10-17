@@ -3,11 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
-using uWebshop;
 using uWebshop.Models;
 using uWebshop.Services;
 
-namespace uWebshopSite.Extensions.Controllers
+namespace uWebshop.Extensions.Controllers
 {
     /// <summary>
     /// Handles order/cart creation, updates and removals
@@ -23,9 +22,9 @@ namespace uWebshopSite.Extensions.Controllers
         /// </summary>
         public OrderController()
         {
-            _orderSvc = Configuration.container.GetService<OrderService>();
+            _orderSvc = Configuration.container.GetInstance<OrderService>();
 
-            var logFac = Configuration.container.GetService<ILogFactory>();
+            var logFac = Configuration.container.GetInstance<ILogFactory>();
             _log = logFac.GetLogger(typeof(OrderController));
         }
 

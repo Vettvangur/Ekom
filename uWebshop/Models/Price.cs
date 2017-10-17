@@ -102,7 +102,7 @@ namespace uWebshop.Models
             _culture = culture;
             _vat = vat;
             _includeVat = includeVat;
-            _config = Configuration.container.GetService<Configuration>();
+            _config = Configuration.container.GetInstance<Configuration>();
         }
 
         /// <summary>

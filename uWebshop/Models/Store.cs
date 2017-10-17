@@ -23,7 +23,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return Configuration.container.GetService<IBaseCache<IDomain>>();
+                return Configuration.container.GetInstance<IBaseCache<IDomain>>();
             }
         }
 

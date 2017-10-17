@@ -23,7 +23,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = Configuration.container.GetService<Providers>());
+                return _current ?? (_current = Configuration.container.GetInstance<Providers>());
             }
         }
 
@@ -108,6 +108,14 @@ namespace uWebshop.API
             ).Cast<PaymentProvider>();
         }
 
+        /// <summary>
+        /// Common logic for get provider methods.
+        /// </summary>
+        /// <param name="cacheFunc"></param>
+        /// <param name="store"></param>
+        /// <param name="countryCode"></param>
+        /// <param name="orderAmount"></param>
+        /// <returns></returns>
         private IEnumerable<ProviderBase> GetProviders(
             Func<string, IEnumerable<ProviderBase>> cacheFunc,
             Models.Store store = null,
@@ -119,7 +127,7 @@ namespace uWebshop.API
             {
                 store = _storeSvc.GetStoreFromCache();
             }
-
+            
             var providers = cacheFunc(store.Alias);
 
             if (countryCode != null)
@@ -140,7 +148,7 @@ namespace uWebshop.API
         }
 
         /// <summary>
-        /// Determine if the given shipping provider is valid given the provided properties.
+        /// Determine if the given provider is valid given the provided properties.
         /// </summary>
         /// <param name="provider"></param>
         /// <param name="countryCode"></param>

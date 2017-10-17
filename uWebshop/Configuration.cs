@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Practices.ServiceLocation;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace uWebshop
         /// <summary>
         /// Current dependency resolver instance
         /// </summary>
-        public static IDependencyResolver container;
+        public static IServiceLocator container;
 
         /// <summary>
         /// uwbsPerStoreStock
@@ -122,15 +123,15 @@ namespace uWebshop
         {
             return new List<ICache>
             {
-                { container.GetService<IBaseCache<IDomain>>() },
-                { container.GetService<IBaseCache<Store>>() },
-                { container.GetService<IPerStoreCache<Variant>>() },
-                { container.GetService<IPerStoreCache<VariantGroup>>() },
-                { container.GetService<IPerStoreCache<Category>>() },
-                { container.GetService<IPerStoreCache<Product>>() },
-                { container.GetService<IBaseCache<Zone>>() },
-                { container.GetService<IPerStoreCache<PaymentProvider>>() },
-                { container.GetService<IPerStoreCache<ShippingProvider>>() },
+                { container.GetInstance<IBaseCache<IDomain>>() },
+                { container.GetInstance<IBaseCache<Store>>() },
+                { container.GetInstance<IPerStoreCache<Variant>>() },
+                { container.GetInstance<IPerStoreCache<VariantGroup>>() },
+                { container.GetInstance<IPerStoreCache<Category>>() },
+                { container.GetInstance<IPerStoreCache<Product>>() },
+                { container.GetInstance<IBaseCache<Zone>>() },
+                { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
+                { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
             };
         });
 

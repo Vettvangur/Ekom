@@ -1,7 +1,9 @@
 ﻿using Examine;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
 using uWebshop.Helpers;
@@ -16,7 +18,7 @@ namespace uWebshop.Models.Base
     {
         private IBaseCache<Zone> __zoneCache;
         private IBaseCache<Zone> _zoneCache =>
-            __zoneCache ?? (__zoneCache = Configuration.container.GetService<IBaseCache<Zone>>());
+            __zoneCache ?? (__zoneCache = Configuration.container.GetInstance<IBaseCache<Zone>>());
 
         /// <summary>
         /// Start of range that provider supports.
@@ -57,19 +59,19 @@ namespace uWebshop.Models.Base
 
         /// <summary>
         /// Umbraco node id of zone this provider is a member of.
-        /// -1 if none.
+        /// Guid.Empty if none.
         /// </summary>
-        public int Zone
+        public Guid Zone
         {
             get
             {
-                if (int.TryParse(Properties.GetStoreProperty("zone", _store.Alias), out int zoneId))
+                if (GuidUdi.TryParse(Properties["zone"], out var zoneKey))
                 {
-                    return zoneId;
+                    return zoneKey.Guid;
                 }
                 else
                 {
-                    return -1;
+                    return Guid.Empty;
                 }
             }
         }
@@ -81,11 +83,12 @@ namespace uWebshop.Models.Base
         {
             get
             {
-                if (Zone != -1)
+                if (Zone != Guid.Empty
+                && _zoneCache.Cache.ContainsKey(Zone))
                 {
-                    var zone = _zoneCache.Cache.FirstOrDefault(x => x.Value.Id == Zone);
+                    var zone = _zoneCache.Cache[Zone];
 
-                    return zone.Value.Countries;
+                    return zone.Countries;
                 }
 
                 return Enumerable.Empty<string>();

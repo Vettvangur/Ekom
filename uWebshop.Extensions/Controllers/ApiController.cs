@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 using uWebshop.Domain.Repositories;
 using uWebshop.Models;
 
-namespace uWebshopSite.Extensions.Controllers
+namespace uWebshop.Extensions.Controllers
 {
     /// <summary>
     /// Public api, used by property editors
@@ -19,7 +18,7 @@ namespace uWebshopSite.Extensions.Controllers
         /// </summary>
         public ApiController()
         {
-            _countriesRepo = uWebshop.Configuration.container.GetService<ICountriesRepository>();
+            _countriesRepo = uWebshop.Configuration.container.GetInstance<ICountriesRepository>();
         }
 
         /// <summary>

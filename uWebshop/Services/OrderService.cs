@@ -23,7 +23,7 @@ namespace uWebshop.Services
             {
                 try
                 {
-                    return Configuration.container.GetService<HttpContextBase>();
+                    return Configuration.container.GetInstance<HttpContextBase>();
                 }
                 catch (Exception ex)
                 {

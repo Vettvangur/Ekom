@@ -20,7 +20,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = Configuration.container.GetService<Order>());
+                return _current ?? (_current = Configuration.container.GetInstance<Order>());
             }
         }
 

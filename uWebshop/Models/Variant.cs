@@ -19,11 +19,11 @@ namespace uWebshop.Models
     {
         private IPerStoreCache<Category> __categoryCache;
         private IPerStoreCache<Category> _categoryCache =>
-            __categoryCache ?? (__categoryCache = Configuration.container.GetService<IPerStoreCache<Category>>());
+            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
 
         private IPerStoreCache<VariantGroup> __variantGroupCache;
         private IPerStoreCache<VariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetService<IPerStoreCache<VariantGroup>>());
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
 
         private Store _store;
 

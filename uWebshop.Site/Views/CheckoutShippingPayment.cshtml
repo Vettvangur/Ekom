@@ -1,6 +1,6 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.API;
-@using uWebshop.Cache;
+@using uWebshopSite.Extensions.Controllers;
 @{
     Layout = "Masterpage.cshtml";
 
@@ -12,41 +12,47 @@
 
 @section Main {
 
-    @*@foreach (var zone in Zone)*@
-    <div class="row column">
+    @using (Html.BeginUmbracoForm<CheckoutController>("Pay", null, new { })) {
+        <div class="row column">
 
-        <h3>Payment Providers</h3>
-        <ul>
-            @foreach (var paymentProvider in Providers.Current.GetPaymentProviders(
-                countryCode: country, 
-                orderAmount: order.ChargedAmount.Value)
-            )
+            <h3>Payment Providers</h3>
+            <ul>
+                @foreach (var paymentProvider in Providers.Current.GetPaymentProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@paymentProvider.Key">
+                            @paymentProvider.Title
+                            <input id="@paymentProvider.Key" type="radio" name="paymentProvider" value="@paymentProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            <h3>Shipping Providers</h3>
+            <ul>
+                @foreach (var shippingProvider in Providers.Current.GetShippingProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@shippingProvider.Key">
+                            @shippingProvider.Title - @shippingProvider.Price.Value
+                            <input id="@shippingProvider.Key" type="radio" name="shippingProvider" value="@shippingProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            @foreach (string param in Request.Form)
             {
-                <li>
-                    <label for="@paymentProvider.Key">
-                        @paymentProvider.Title - @paymentProvider.Price.Value
-                        <input id="@paymentProvider.Key" type="radio" name="payment-provider" value="@paymentProvider.Key" />
-                    </label>
-                </li>
+                <input name="@param" value="@Request.Form[param]" hidden />
             }
-        </ul>
 
-        <h3>Shipping Providers</h3>
-        <ul>
-            @foreach (var shippingProvider in Providers.Current.GetShippingProviders(
-                countryCode: country,
-                orderAmount: order.ChargedAmount.Value)
-            )
-            {
-                <li>
-                    <label for="@shippingProvider.Key">
-                        @shippingProvider.Title - @shippingProvider.Price.Value
-                        <input id="@shippingProvider.Key" type="radio" name="shipping-provider" value="@shippingProvider.Key" />
-                    </label>
-                </li>
-            }
-        </ul>
-
-        <button class="button" disabled>Klára</button>
-    </div>
+            <button class="button">Klára</button>
+        </div>
+    }
 }

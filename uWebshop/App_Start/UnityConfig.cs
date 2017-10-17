@@ -26,7 +26,7 @@ namespace uWebshop.App_Start
         {
             var container = new UnityContainer();
             RegisterTypes(container);
-            Configuration.container = new Microsoft.Practices.Unity.Mvc.UnityDependencyResolver(container);
+            Configuration.container = new UnityServiceLocator(container);
             return container;
         });
 

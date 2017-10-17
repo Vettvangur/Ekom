@@ -23,15 +23,15 @@ namespace uWebshop.Models
     {
         private IPerStoreCache<Category> __categoryCache;
         private IPerStoreCache<Category> _categoryCache =>
-            __categoryCache ?? (__categoryCache = Configuration.container.GetService<IPerStoreCache<Category>>());
+            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
 
         private IPerStoreCache<Variant> __variantCache;
         private IPerStoreCache<Variant> _variantCache =>
-            __variantCache ?? (__variantCache = Configuration.container.GetService<IPerStoreCache<Variant>>());
+            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>());
 
         private IPerStoreCache<VariantGroup> __variantGroupCache;
         private IPerStoreCache<VariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetService<IPerStoreCache<VariantGroup>>());
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
 
         /// <summary>
         /// Product Stock Keeping Unit.

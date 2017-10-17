@@ -40,7 +40,7 @@ namespace uWebshop
 
             var url = httpCtx.Request.Url;
 
-            var storeSvc = Configuration.container.GetService<StoreService>();
+            var storeSvc = Configuration.container.GetInstance<StoreService>();
 
             Store store = storeSvc.GetStoreByDomain(url.Host);
 
@@ -58,7 +58,7 @@ namespace uWebshop
 
                 var path = url.AbsolutePath.ToLower().AddTrailing();
 
-                var appCtx = Configuration.container.GetService<ApplicationContext>();
+                var appCtx = Configuration.container.GetInstance<ApplicationContext>();
 
                 var appCache = appCtx.ApplicationCache;
                 appCache.RequestCache.GetCacheItem("uwbsRequest", () =>

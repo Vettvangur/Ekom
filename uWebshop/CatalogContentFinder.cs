@@ -25,12 +25,12 @@ namespace uWebshop
         {
             var container = Configuration.container;
 
-            _config = container.GetService<Configuration>();
-            _storeSvc = container.GetService<StoreService>();
-            _categoryCache = container.GetService<IPerStoreCache<Category>>();
-            _productCache = container.GetService<IPerStoreCache<Product>>();
+            _config = container.GetInstance<Configuration>();
+            _storeSvc = container.GetInstance<StoreService>();
+            _categoryCache = container.GetInstance<IPerStoreCache<Category>>();
+            _productCache = container.GetInstance<IPerStoreCache<Product>>();
 
-            var logFac = container.GetService<ILogFactory>();
+            var logFac = container.GetInstance<ILogFactory>();
             _log = logFac.GetLogger(typeof(CatalogContentFinder));
         }
 
