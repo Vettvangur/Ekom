@@ -120,6 +120,12 @@ namespace uWebshop
                 }
             }
 
+            if (_config.StoreCustomerData
+            && !dbHelper.TableExist("uwbsCustomerData"))
+            {
+                dbHelper.CreateTable<CustomerData>(false);
+            }
+
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
             new BackgroundJobServer();

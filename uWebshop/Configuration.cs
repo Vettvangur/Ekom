@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using System.Web.Mvc;
 using Umbraco.Core.Models;
 using uWebshop.Cache;
 using uWebshop.Models;
@@ -112,6 +111,13 @@ namespace uWebshop
                 return int.Parse(ConfigurationManager.AppSettings["uwbsCategoryRootLevel"] ?? "3");
             }
         }
+
+        /// <summary>
+        /// Should uWebshop create a uwbsCustomerData table and use it to store customer + order data 
+        /// submitted to the checkout controller?
+        /// </summary>
+        public virtual bool StoreCustomerData
+            => ConfigurationManager.AppSettings["uwbsCustomerData"].ConvertToBool();
 
         /// <summary>
         /// Lists in initialization order all caches and the document type alias of

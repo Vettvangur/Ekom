@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using uWebshop.Interfaces;
@@ -51,7 +51,5 @@ namespace uWebshop.Models
             Id = lineId;
             Product = new OrderedProduct(productId, variantIds, store);
         }
-
-
     }
 }

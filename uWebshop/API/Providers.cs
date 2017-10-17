@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 using uWebshop.Cache;
 using uWebshop.Domain.Repositories;
 using uWebshop.Interfaces;
@@ -127,7 +126,7 @@ namespace uWebshop.API
             {
                 store = _storeSvc.GetStoreFromCache();
             }
-            
+
             var providers = cacheFunc(store.Alias);
 
             if (countryCode != null)
@@ -173,6 +172,38 @@ namespace uWebshop.API
         public List<Country> GetAllCountries()
         {
             return _countryRepo.GetAllCountries();
+        }
+
+        /// <summary>
+        /// Get shipping provider from cache
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="store"></param>
+        /// <returns></returns>
+        public ShippingProvider GetShippingProvider(Guid key, Models.Store store = null)
+        {
+            if (store == null)
+            {
+                store = _storeSvc.GetStoreFromCache();
+            }
+
+            return _shippingProviderCache.Cache[store.Alias][key];
+        }
+
+        /// <summary>
+        /// Get payment provider from cache
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="store"></param>
+        /// <returns></returns>
+        public PaymentProvider GetPaymentProvider(Guid key, Models.Store store = null)
+        {
+            if (store == null)
+            {
+                store = _storeSvc.GetStoreFromCache();
+            }
+
+            return _paymentProviderCache.Cache[store.Alias][key];
         }
     }
 }
