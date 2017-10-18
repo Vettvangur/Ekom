@@ -1,8 +1,8 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>uWebshop.v3</id>
-    <version>3.0.0.1</version>
+    <id>uWebshop.v3.Extensions</id>
+    <version>3.0.1</version>
     <title>uWebshop v3</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
