@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
@@ -44,6 +44,7 @@ namespace uWebshop.Cache
             }
             catch // Restart Application if Examine just initialized
             {
+                // I have no idea if this does any good
                 Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
             }
 
@@ -71,9 +72,9 @@ namespace uWebshop.Cache
                         var itemKey = Guid.Parse(r.Fields["key"]);
                         AddOrReplaceFromCache(itemKey, item);
                     }
-                    catch
+                    catch (Exception ex) // Skip on fail
                     {
-                        _log.Info("Failed to map to store. Id: " + r.Id);
+                        _log.Info("Failed to map to store. Id: " + r.Id, ex);
                     }
                 }
 

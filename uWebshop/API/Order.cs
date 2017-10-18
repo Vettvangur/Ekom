@@ -1,7 +1,6 @@
-using Microsoft.Practices.Unity;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using uWebshop.App_Start;
+using System.Web.Mvc;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -21,21 +20,40 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Order>());
+                return _current ?? (_current = Configuration.container.GetInstance<Order>());
             }
         }
 
         IOrderService _orderService;
+        IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="orderService"></param>
-        public Order(IOrderService orderService)
+        /// <param name="storeSvc"></param>
+        public Order(IOrderService orderService, IStoreService storeSvc)
         {
             _orderService = orderService;
+            _storeSvc = storeSvc;
         }
 
+        /// <summary>
+        /// Get order using cookie data and uwbsRequest store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
+        public OrderInfo GetOrder()
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            return GetOrder(store.Alias);
+        }
+
+        /// <summary>
+        /// Get order using cookie data and provided store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
         public OrderInfo GetOrder(string storeAlias)
         {
             return _orderService.GetOrder(storeAlias);

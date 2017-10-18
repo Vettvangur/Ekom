@@ -1,10 +1,9 @@
-using Microsoft.Practices.Unity;
+﻿using Microsoft.Practices.ServiceLocation;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Models;
 using uWebshop.Utilities;
@@ -16,6 +15,11 @@ namespace uWebshop
     /// </summary>
     public class Configuration
     {
+        /// <summary>
+        /// Current dependency resolver instance
+        /// </summary>
+        public static IServiceLocator container;
+
         /// <summary>
         /// uwbsPerStoreStock
         /// Controls which stock cache to will be used. Per store or per Product/Variant.
@@ -109,6 +113,13 @@ namespace uWebshop
         }
 
         /// <summary>
+        /// Should uWebshop create a uwbsCustomerData table and use it to store customer + order data 
+        /// submitted to the checkout controller?
+        /// </summary>
+        public virtual bool StoreCustomerData
+            => ConfigurationManager.AppSettings["uwbsCustomerData"].ConvertToBool();
+
+        /// <summary>
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// This object is lazy initialized to make sure that all types have been registered with IoC container
@@ -116,18 +127,17 @@ namespace uWebshop
         /// </summary>
         internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() =>
         {
-            var container = UnityConfig.GetConfiguredContainer();
-
             return new List<ICache>
             {
-                { container.Resolve<IBaseCache<IDomain>>() },
-                { container.Resolve<IBaseCache<Store>>() },
-                { container.Resolve<IPerStoreCache<Variant>>() },
-                { container.Resolve<IPerStoreCache<VariantGroup>>() },
-                { container.Resolve<IPerStoreCache<Category>>() },
-                { container.Resolve<IPerStoreCache<Product>>() },
-                { container.Resolve<IBaseCache<Zone>>() },
-                { container.Resolve<IPerStoreCache<PaymentProvider>>() },
+                { container.GetInstance<IBaseCache<IDomain>>() },
+                { container.GetInstance<IBaseCache<Store>>() },
+                { container.GetInstance<IPerStoreCache<Variant>>() },
+                { container.GetInstance<IPerStoreCache<VariantGroup>>() },
+                { container.GetInstance<IPerStoreCache<Category>>() },
+                { container.GetInstance<IPerStoreCache<Product>>() },
+                { container.GetInstance<IBaseCache<Zone>>() },
+                { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
+                { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
             };
         });
 

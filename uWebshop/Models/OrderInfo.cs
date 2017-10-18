@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using uWebshop.Helpers;
@@ -7,17 +7,28 @@ using uWebshop.Models.Data;
 
 namespace uWebshop.Models
 {
+    /// <summary>
+    /// Order/Cart
+    /// </summary>
     public class OrderInfo : IOrderInfo
     {
         private OrderData _orderData;
         private Store _store;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="orderData"></param>
+        /// <param name="store"></param>
         public OrderInfo(OrderData orderData, Store store)
         {
             _orderData = orderData;
             _store = store;
         }
 
+        /// <summary>
+        /// Order UniqueId
+        /// </summary>
         public Guid UniqueId
         {
             get
@@ -41,6 +52,9 @@ namespace uWebshop.Models
         }
         public List<OrderLine> OrderLines { get; set; }
 
+        /// <summary>
+        /// Total count of items and subitems on each order line.
+        /// </summary>
         public int Quantity
         {
             get
@@ -48,6 +62,10 @@ namespace uWebshop.Models
                 return OrderLines != null && OrderLines.Any() ? OrderLines.Sum(x => x.Quantity) : 0;
             }
         }
+
+        /// <summary>
+        /// SimplePrice object for total value of all orderlines.
+        /// </summary>
         public SimplePrice ChargedAmount
         {
             get
@@ -64,6 +82,9 @@ namespace uWebshop.Models
                 return new StoreInfo(_store);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public DateTime CreateDate
         {
             get
@@ -71,6 +92,9 @@ namespace uWebshop.Models
                 return _orderData.CreateDate;
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public DateTime UpdateDate
         {
             get
@@ -78,6 +102,9 @@ namespace uWebshop.Models
                 return _orderData.UpdateDate;
             }
         }
+        /// <summary>
+        /// Date payment was verified.
+        /// </summary>
         public DateTime PaidDate
         {
             get
@@ -86,19 +113,9 @@ namespace uWebshop.Models
             }
         }
 
-        public OrderStatus OrderStatus
-        {
-            get
-            {
-                OrderStatus _orderStatus;
-
-                if (!OrderStatus.TryParse(_orderData.OrderStatus, out _orderStatus))
-                {
-                    throw new Exception("OrderStatus could not be parsed for OrderInfo");
-                }
-
-                return _orderStatus;
-            }
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public OrderStatus OrderStatus => _orderData.OrderStatus;
     }
 }

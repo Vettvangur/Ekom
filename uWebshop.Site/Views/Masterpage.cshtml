@@ -1,4 +1,4 @@
-@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.API
 
 @{
@@ -36,7 +36,7 @@
                 <li>
                     @if (order != null)
                     {
-                        <a href="/greida">Karfa (@order.Quantity)</a>
+                        <a href="/karfan">Karfa (@order.Quantity)</a>
                     } else
                     {
                         <span>Engin karfa</span>
@@ -46,7 +46,6 @@
             </ul>
         </div>
     </div>
-
 
 	@RenderSection("Main", required: false)
 

@@ -1,9 +1,12 @@
-namespace uWebshop.Interfaces
+﻿namespace uWebshop.Interfaces
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public interface IPrice
     {
         decimal Value { get; }
-        string ToCurrencyString { get; }
+        string ToCurrencyString();
     }
     public interface IVatPrice
     {
@@ -34,6 +37,10 @@ namespace uWebshop.Interfaces
 
     public interface IDiscountedPrice : IVatPrice
     {
+        /// <summary>
+        /// Original Price
+        /// </summary>
+        decimal Value { get; }
         /// <summary>
         /// Gets the original price before the discount.
         /// </summary>

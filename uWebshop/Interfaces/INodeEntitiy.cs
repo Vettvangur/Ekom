@@ -1,10 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace uWebshop.Interfaces
 {
-    public interface INodeEntitiy
+    /// <summary>
+    /// Base node entity interface.
+    /// All base properties common to umbraco nodes
+    /// </summary>
+    public interface INodeEntity
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        string Title { get; }
+
         /// <summary>
         /// Gets the unique identifier.
         /// </summary>
@@ -70,7 +79,10 @@ namespace uWebshop.Interfaces
         string Path { get; }
     }
 
-    public interface INodeEntitiyWithUrl : INodeEntitiy
+    /// <summary>
+    /// Node entity with URL/URLs
+    /// </summary>
+    public interface INodeEntityWithUrl : INodeEntity
     {
         /// <summary>
         /// Urls for the node

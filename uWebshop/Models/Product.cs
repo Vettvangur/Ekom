@@ -1,15 +1,13 @@
-using Examine;
+﻿using Examine;
 using log4net;
-using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.Script.Serialization;
+using System.Web.Mvc;
 using Umbraco.Core.Models;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -18,57 +16,26 @@ using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
-    public class Product : IProduct
+    /// <summary>
+    /// An uWebshop store product
+    /// </summary>
+    public class Product : PerStoreNodeEntity, IProduct
     {
-        private IPerStoreCache<Category> _categoryCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
-            }
-        }
+        private IPerStoreCache<Category> __categoryCache;
+        private IPerStoreCache<Category> _categoryCache =>
+            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
 
-        private IPerStoreCache<Variant> _variantCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Variant>>();
-            }
-        }
+        private IPerStoreCache<Variant> __variantCache;
+        private IPerStoreCache<Variant> _variantCache =>
+            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>());
 
-        private IPerStoreCache<VariantGroup> _variantGroupCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
-            }
-        }
+        private IPerStoreCache<VariantGroup> __variantGroupCache;
+        private IPerStoreCache<VariantGroup> _variantGroupCache =>
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
 
-        private Store _store;
-        public int Id
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
-            }
-        }
-
-        public Guid Key
-        {
-            get
-            {
-                var key = Properties.GetPropertyValue("key");
-
-                var _key = new Guid();
-
-                if (!Guid.TryParse(key, out _key))
-                {
-                    throw new Exception("No key present for product.");
-                }
-
-                return _key;
-            }
-        }
+        /// <summary>
+        /// Product Stock Keeping Unit.
+        /// </summary>
         public string SKU
         {
             get
@@ -77,7 +44,10 @@ namespace uWebshop.Models
             }
         }
 
-        public string Title
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string Title
         {
             get
             {
@@ -85,6 +55,9 @@ namespace uWebshop.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string Description
         {
             get
@@ -93,6 +66,9 @@ namespace uWebshop.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string Summary
         {
             get
@@ -112,38 +88,11 @@ namespace uWebshop.Models
             }
         }
 
-        private decimal? _originalPrice;
-        public decimal OriginalPrice
-        {
-            get
-            {
-                decimal originalPrice = 0;
-
-                if (_originalPrice.HasValue)
-                {
-                    originalPrice = _originalPrice.Value;
-                }
-                else
-                {
-                    var priceField = Properties.GetStoreProperty("price", _store.Alias);
-
-
-                    decimal.TryParse(priceField, out originalPrice);
-                }
-
-                return originalPrice;
-            }
-            set
-            {
-                _originalPrice = value;
-            }
-        }
-
         public int Stock
         {
             get
             {
-                return 0;
+                throw new NotImplementedException();
             }
         }
 
@@ -190,63 +139,14 @@ namespace uWebshop.Models
             }
 
             return categories;
-            
         }
 
-        public IEnumerable<Guid> CategoriesIds()
-        {
-
-            return Categories().Select(x => x.Key);
-            
-        }
-
-        [ScriptIgnore]
         [JsonIgnore]
-        public Store Store
+        public IEnumerable<Guid> CategoriesIds
         {
             get
             {
-                return _store;
-            }
-
-        }
-        public int SortOrder
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
-            }
-        }
-        public int Level
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("level"));
-            }
-        }
-
-        /// <summary>
-        /// CSV of node id's describing hierarchy from left to right leading up to node.
-        /// </summary>
-        public string Path
-        {
-            get
-            {
-                return Properties.GetPropertyValue("path");
-            }
-        }
-        public DateTime CreateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
-            }
-        }
-        public DateTime UpdateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
+                return Categories().Select(x => x.Key);
             }
         }
 
@@ -266,61 +166,54 @@ namespace uWebshop.Models
             }
         }
 
-        public string ContentTypeAlias
-        {
-            get
-            {
-                return Properties.GetPropertyValue("nodeTypeAlias");
-            }
-        }
         [JsonIgnore]
         public IEnumerable<string> Urls { get; set; }
-        public IDiscountedPrice Price
+
+        IDiscountedPrice _price;
+        /// <summary>
+        /// 
+        /// </summary>
+        public IDiscountedPrice Price => _price
+            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
+
+        [JsonIgnore]
+        public IEnumerable<VariantGroup> VariantGroups
         {
             get
             {
-                return new Price(OriginalPrice, Store);
+                return _variantGroupCache.Cache[_store.Alias]
+                                        .Where(x => x.Value.ProductKey == Key)
+                                        .Select(x => x.Value);
             }
         }
 
-        public IEnumerable<VariantGroup> VariantGroups()
-        {
-
-            return _variantGroupCache.Cache[Store.Alias]
-                                    .Where(x => x.Value.ProductKey == Key)
-                                    .Select(x => x.Value);
-            
-        }
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        public IEnumerable<Variant> AllVariants()
+        [JsonIgnore]
+        public IEnumerable<Variant> AllVariants
         {
-            return _variantCache.Cache[Store.Alias]
-                .Where(x => x.Value.ProductKey == Key)
-                .Select(x => x.Value);
+            get
+            {
+                return _variantCache.Cache[_store.Alias]
+                    .Where(x => x.Value.ProductKey == Key)
+                    .Select(x => x.Value);
+            }
         }
-
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
         /// <summary>
         /// Used by uWebshop extensions
         /// </summary>
         /// <param name="store"></param>
-        public Product(Store store)
+        public Product(Store store) : base(store) { }
+
+        /// <summary>
+        /// Construct Product from Examine item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store"></param>
+        public Product(SearchResult item, Store store) : base(item, store)
         {
-            _store = store;
-        }
-
-        public Product(SearchResult item, Store store)
-        {
-            _store = store;
-
-            foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
-            {
-                Properties.Add(field.Key, field.Value);
-            }
-
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -329,76 +222,19 @@ namespace uWebshop.Models
             }
         }
 
-        public Product(IContent node, Store store)
+        /// <summary>
+        /// Construct Product from umbraco publish event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="store"></param>
+        public Product(IContent node, Store store) : base(node, store)
         {
-            _store = store;
-
-            Properties = CreateDefaultUmbracoProperties(node);
-
-            foreach (var prop in node.Properties)
-            {
-                Properties.Add(prop.Alias, prop.Value?.ToString());
-            }
-
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
                 throw new Exception("No url's or no title present in product");
             }
-        }
-
-        public static Dictionary<string, string> CreateDefaultUmbracoProperties(IContent node)
-        {
-            var properties = new Dictionary<string, string>
-            {
-                {
-                    "id",
-                    node.Id.ToString()
-                },
-                {
-                    "key",
-                    node.Key.ToString()
-                },
-                {
-                    "path",
-                    node.Path
-                },
-                {
-                    "level",
-                    node.Level.ToString()
-                },
-                {
-                    "sortOrder",
-                    node.SortOrder.ToString()
-                },
-                {
-                    "parentID",
-                    node.ParentId.ToString()
-                },
-                {
-                    "writerID",
-                    node.WriterId.ToString()
-                },
-                {
-                    "creatorID",
-                    node.CreatorId.ToString()
-                },
-                {
-                    "nodeTypeAlias",
-                    node.ContentType.Alias
-                },
-                {
-                    "updateDate",
-                    node.UpdateDate.ToString("yyyyMMddHHmmssfff")
-                },
-                {
-                    "createDate",
-                    node.CreateDate.ToString("yyyyMMddHHmmssfff")
-                }
-            };
-
-            return properties;
         }
 
         private static readonly ILog Log =

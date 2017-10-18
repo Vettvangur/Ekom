@@ -1,4 +1,4 @@
-using Hangfire;
+﻿using Hangfire;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -24,7 +24,7 @@ namespace uWebshop
     /// We use ApplicationEventHandler so that these lifecycle methods are only run
     /// when umbraco is in a stable condition.
     /// </summary>
-    public class uWebshopStartup : ApplicationEventHandler
+    class uWebshopStartup : ApplicationEventHandler
     {
 #pragma warning restore IDE1006 // Naming Styles
         Configuration _config;
@@ -51,7 +51,7 @@ namespace uWebshop
             ApplicationContext applicationContext
         )
         {
-            LogHelper.Info(GetType(), "OnApplicationStarting...");
+            LogHelper.Info(GetType(), "ApplicationStarting...");
 
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             UrlProviderResolver.Current.InsertTypeBefore<DefaultUrlProvider, CatalogUrlProvider>();
@@ -120,6 +120,12 @@ namespace uWebshop
                 }
             }
 
+            if (_config.StoreCustomerData
+            && !dbHelper.TableExist("uwbsCustomerData"))
+            {
+                dbHelper.CreateTable<CustomerData>(false);
+            }
+
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
             new BackgroundJobServer();
@@ -127,20 +133,9 @@ namespace uWebshop
 
         private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)
         {
-            //var umbHelper = new UmbracoHelper(UmbracoContext.Current);
-            //var contentService = ApplicationContext.Current.Services.ContentService;
-
             foreach (var content in e.PublishedEntities)
             {
                 var alias = content.ContentType.Alias;
-
-                if (alias == "uwbsProduct")
-                {
-                }
-                else if (alias == "uwbsCategory")
-                {
-
-                }
 
                 if (alias == "uwbsProduct" || alias == "uwbsCategory")
                 {
@@ -151,7 +146,7 @@ namespace uWebshop
                     // Update Slug if Slug Exist on same Level and is Published
                     if (siblings.Any(x => x.GetValue<string>("slug").ToLowerInvariant() == slug.ToLowerInvariant()))
                     {
-   
+
                         // Random not a nice solution
                         Random rnd = new Random();
 
