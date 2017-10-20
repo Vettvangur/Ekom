@@ -127,7 +127,6 @@ namespace Ekom
                 ContentService.Publishing += ContentService_Publishing;
             }
 
-
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
             new BackgroundJobServer();

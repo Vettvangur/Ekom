@@ -13,11 +13,17 @@ namespace Ekom.Models.Data
     [PrimaryKey("UniqueId", autoIncrement = false)]
     public class OrderData
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [PrimaryKeyColumn(AutoIncrement = false)]
         public Guid UniqueId { get; set; }
 
         public int ReferenceId { get; set; }
 
+        /// <summary>
+        /// <see cref="Models.OrderInfo"/> Json
+        /// </summary>
         [StringLength(int.MaxValue, MinimumLength = 3)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string OrderInfo { get; set; }
@@ -59,6 +65,9 @@ namespace Ekom.Models.Data
         [NullSetting(NullSetting = NullSettings.Null)]
         public int CustomerId { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Length(200)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string CustomerUsername { get; set; }
