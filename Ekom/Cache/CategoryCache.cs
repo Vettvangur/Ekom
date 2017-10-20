@@ -7,7 +7,7 @@ namespace Ekom.Cache
 {
     class CategoryCache : PerStoreCache<Category>
     {
-        public override string NodeAlias { get; } = "uwbsCategory";
+        public override string NodeAlias { get; } = "ekmCategory";
 
         protected override Category New(SearchResult r, Store store)
         {

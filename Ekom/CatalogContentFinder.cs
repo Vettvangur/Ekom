@@ -116,10 +116,10 @@ namespace Ekom
 
                 var appCache = umbracoContext.Application.ApplicationCache;
 
-                var uwbsRequest = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+                var ekmRequest = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
 
-                uwbsRequest.Product = product;
-                uwbsRequest.Category = category;
+                ekmRequest.Product = product;
+                ekmRequest.Category = category;
 
                 // Request for Product or Category
                 if (contentId != 0)

@@ -13,7 +13,7 @@ namespace Ekom.Cache
 {
     class StoreCache : BaseCache<Store>
     {
-        public override string NodeAlias { get; } = "uwbsStore";
+        public override string NodeAlias { get; } = "ekmStore";
 
         /// <summary>
         /// ctor

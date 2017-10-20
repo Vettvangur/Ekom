@@ -14,11 +14,11 @@ namespace Ekom
         {
             var content = umbracoContext.ContentCache.GetById(id);
 
-            if (content != null && (content.DocumentTypeAlias == "uwbsProduct" || content.DocumentTypeAlias == "uwbsCategory"))
+            if (content != null && (content.DocumentTypeAlias == "ekmProduct" || content.DocumentTypeAlias == "ekmCategory"))
             {
                 StringBuilder builder = new StringBuilder();
 
-                foreach (IPublishedContent node in content.AncestorsOrSelf().Where(x => x.DocumentTypeAlias == "uwbsProduct" || x.DocumentTypeAlias == "uwbsCategory").Reverse())
+                foreach (IPublishedContent node in content.AncestorsOrSelf().Where(x => x.DocumentTypeAlias == "ekmProduct" || x.DocumentTypeAlias == "ekmCategory").Reverse())
                 {
                     string slug = node.HasProperty("slug") && node.HasValue("slug") ? node.GetPropertyValue<string>("slug") : node.UrlName;
 

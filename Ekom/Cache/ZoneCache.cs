@@ -6,7 +6,7 @@ namespace Ekom.Cache
 {
     class ZoneCache : BaseCache<Zone>
     {
-        public override string NodeAlias { get; } = "uwbsZone";
+        public override string NodeAlias { get; } = "ekmZone";
 
         /// <summary>
         /// ctor

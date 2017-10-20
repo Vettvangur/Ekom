@@ -309,7 +309,7 @@ namespace Ekom.Services
 
         private string CreateKey()
         {
-            var key = "uwbsOrder";
+            var key = "ekmOrder";
 
             if (_store != null)
             {

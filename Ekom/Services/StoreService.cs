@@ -81,7 +81,7 @@ namespace Ekom.Services
 
         public Store GetStoreFromCache()
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
             return r?.Store;
         }

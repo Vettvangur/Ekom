@@ -21,41 +21,41 @@ namespace Ekom
         public static IServiceLocator container;
 
         /// <summary>
-        /// uwbsPerStoreStock
+        /// ekmPerStoreStock
         /// Controls which stock cache to will be used. Per store or per Product/Variant.
         /// </summary>
         public bool PerStoreStock
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsPerStoreStock"];
+                var value = ConfigurationManager.AppSettings["ekmPerStoreStock"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// uwbsExamineSearcher
+        /// ekmExamineSearcher
         /// Overrides the default of ExternalSearcher
         /// </summary>
         public virtual string ExamineSearcher
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsExamineSearcher"];
+                var value = ConfigurationManager.AppSettings["ekmExamineSearcher"];
 
                 return value ?? "ExternalSearcher";
             }
         }
 
         /// <summary>
-        /// uwbsShareBasket
+        /// ekmShareBasket
         /// </summary>
         public virtual bool ShareBasketBetweenStores
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsShareBasket"];
+                var value = ConfigurationManager.AppSettings["ekmShareBasket"];
 
                 return value.ConvertToBool();
             }
@@ -69,7 +69,7 @@ namespace Ekom
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsCurrencyFormat"];
+                var value = ConfigurationManager.AppSettings["ekmCurrencyFormat"];
 
                 return value ?? "C";
             }
@@ -79,14 +79,14 @@ namespace Ekom
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsCustomOrderPrice"];
+                var value = ConfigurationManager.AppSettings["ekmCustomOrderPrice"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// uwbsVirtualContent
+        /// ekmVirtualContent
         /// Allows for configuration of content nodes to use for matching all requests
         /// Use case: Data populated from Navision, Ekom used as in memory cache with no backing umbraco nodes.
         /// </summary>
@@ -94,30 +94,30 @@ namespace Ekom
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["uwbsVirtualContent"];
+                var value = ConfigurationManager.AppSettings["ekmVirtualContent"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// uwbsCategoryRootLevel
+        /// ekmCategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>
         public virtual int CategoryRootLevel
         {
             get
             {
-                return int.Parse(ConfigurationManager.AppSettings["uwbsCategoryRootLevel"] ?? "3");
+                return int.Parse(ConfigurationManager.AppSettings["ekmCategoryRootLevel"] ?? "3");
             }
         }
 
         /// <summary>
-        /// Should Ekom create a uwbsCustomerData table and use it to store customer + order data 
+        /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
         /// submitted to the checkout controller?
         /// </summary>
         public virtual bool StoreCustomerData
-            => ConfigurationManager.AppSettings["uwbsCustomerData"].ConvertToBool();
+            => ConfigurationManager.AppSettings["ekmCustomerData"].ConvertToBool();
 
         /// <summary>
         /// Lists in initialization order all caches and the document type alias of

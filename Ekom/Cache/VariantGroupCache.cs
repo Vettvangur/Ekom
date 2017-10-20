@@ -8,7 +8,7 @@ namespace Ekom.Cache
 {
     class VariantGroupCache : PerStoreCache<VariantGroup>
     {
-        public override string NodeAlias { get; } = "uwbsProductVariantGroup";
+        public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
         protected override VariantGroup New(SearchResult r, Store store)
         {

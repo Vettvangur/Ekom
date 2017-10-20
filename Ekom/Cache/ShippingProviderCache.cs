@@ -6,7 +6,7 @@ namespace Ekom.Cache
 {
     class ShippingProviderCache : PerStoreCache<ShippingProvider>
     {
-        public override string NodeAlias { get; } = "uwbsShippingProvider";
+        public override string NodeAlias { get; } = "ekmShippingProvider";
 
         protected override ShippingProvider New(SearchResult r, Store store)
         {
