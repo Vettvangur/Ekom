@@ -1,7 +1,7 @@
-﻿using Ekom.Cache;
+﻿using CommonServiceLocator;
+using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Utilities;
-using Microsoft.Practices.ServiceLocation;
 using System;
 using System.Collections.Generic;
 using System.Configuration;

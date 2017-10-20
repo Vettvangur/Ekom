@@ -1,5 +1,4 @@
 ﻿using Examine;
-using Microsoft.Practices.Unity;
 using System;
 using System.Web;
 using Umbraco.Core;
@@ -13,6 +12,10 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Repository;
 using Ekom.Services;
+using Unity.ServiceLocation;
+using Unity;
+using Unity.Injection;
+using Unity.Lifetime;
 
 namespace Ekom.App_Start
 {
@@ -45,12 +48,6 @@ namespace Ekom.App_Start
         /// change the defaults), as Unity allows resolving a concrete type even if it was not previously registered.</remarks>
         public static void RegisterTypes(IUnityContainer container)
         {
-            container.RegisterTypes(
-                AllClasses.FromAssemblies(typeof(UnityConfig).Assembly),
-                WithMappings.FromMatchingInterface,
-                WithName.Default
-            );
-
             // NOTE: To load from web.config uncomment the line below. Make sure to add a Microsoft.Practices.Unity.Configuration to the using statements.
             // container.LoadConfiguration();
 

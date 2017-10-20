@@ -1,5 +1,4 @@
-﻿using Microsoft.Practices.Unity;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections.Generic;
 using System.Reflection;
@@ -11,6 +10,7 @@ using Ekom.App_Start;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Services;
+using Unity;
 
 namespace Ekom.Tests
 {

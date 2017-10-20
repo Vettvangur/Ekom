@@ -4,7 +4,6 @@ using Ekom.Models.Data;
 using Ekom.Services;
 using Hangfire;
 using log4net;
-using Microsoft.Practices.Unity;
 using System;
 using System.Linq;
 using Umbraco.Core;
@@ -15,6 +14,7 @@ using Umbraco.Core.Persistence;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
+using Unity;
 
 namespace Ekom
 {
