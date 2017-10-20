@@ -15,6 +15,7 @@ namespace Ekom.Models.Data
     {
         [PrimaryKeyColumn(AutoIncrement = false)]
         public Guid UniqueId { get; set; }
+
         public int ReferenceId { get; set; }
 
         [StringLength(int.MaxValue, MinimumLength = 3)]
@@ -26,9 +27,20 @@ namespace Ekom.Models.Data
         public string OrderNumber { get; set; }
 
         /// <summary>
+        /// The database representation of the enum.
+        /// This is necessary for the creation of the column.
+        /// </summary>
+        public int OrderStatusCol { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
-        public OrderStatus OrderStatus { get; set; }
+        [ResultColumn]
+        public OrderStatus OrderStatus
+        {
+            get { return (OrderStatus)OrderStatusCol; }
+            set { OrderStatusCol = (int)value; }
+        }
 
         /// <summary>
         /// 
