@@ -88,6 +88,7 @@ namespace uWebshop.Models
             }
         }
 
+        [JsonIgnore]
         public int Stock
         {
             get
