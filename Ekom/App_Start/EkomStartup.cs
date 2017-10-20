@@ -75,6 +75,32 @@ namespace Ekom
             _log = logFac.GetLogger(typeof(EkomStartup));
             _config = container.Resolve<Configuration>();
 
+
+            var dbCtx = applicationContext.DatabaseContext;
+            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
+
+            //Check if the DB table does NOT exist
+            if (!dbHelper.TableExist("EkomStock"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<StockData>(false);
+            }
+            if (!dbHelper.TableExist("EkomOrders"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<OrderData>(false);
+                using (var db = dbCtx.Database)
+                {
+                    db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
+            }
+
+            if (_config.StoreCustomerData
+            && !dbHelper.TableExist("EkomCustomerData"))
+            {
+                dbHelper.CreateTable<CustomerData>(false);
+            }
+
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
                 ? container.Resolve<IPerStoreCache<StockData>>()
@@ -101,30 +127,6 @@ namespace Ekom
                 ContentService.Publishing += ContentService_Publishing;
             }
 
-            var dbCtx = applicationContext.DatabaseContext;
-            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
-
-            //Check if the DB table does NOT exist
-            if (!dbHelper.TableExist("EkomStock"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<StockData>(false);
-            }
-            if (!dbHelper.TableExist("EkomOrders"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<OrderData>(false);
-                using (var db = dbCtx.Database)
-                {
-                    db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
-                }
-            }
-
-            if (_config.StoreCustomerData
-            && !dbHelper.TableExist("EkomCustomerData"))
-            {
-                dbHelper.CreateTable<CustomerData>(false);
-            }
 
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);

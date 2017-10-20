@@ -5,7 +5,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3DB90C8F-DC87-4020-BC97-4A8E85AB89A0}</ProjectGuid>
+    <ProjectGuid>{AB2C71E4-09F8-41A7-A1B0-B62DBB12E011}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Ekom</RootNamespace>
