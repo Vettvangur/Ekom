@@ -289,17 +289,6 @@
       <Name>Ekom</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Web\UI\App_Plugins\Vorto\css\vorto.css" />
-    <Content Include="Web\UI\App_Plugins\Vorto\js\jquery.hoverIntent.minified.js" />
-    <Content Include="Web\UI\App_Plugins\Vorto\js\vorto.js" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languagePicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languageSourceRadioList.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.mandatoryBehaviourPicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.propertyEditorPicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.rtlBehaviourPicker.html" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

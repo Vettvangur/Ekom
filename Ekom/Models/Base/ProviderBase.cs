@@ -64,7 +64,7 @@ namespace Ekom.Models.Base
         {
             get
             {
-                if (GuidUdi.TryParse(Properties["zone"], out var zoneKey))
+                if (Properties.ContainsKey("zone") && GuidUdi.TryParse(Properties["zone"], out var zoneKey))
                 {
                     return zoneKey.Guid;
                 }

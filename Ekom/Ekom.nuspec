@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Ekom</id>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <title>Ekom</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
@@ -11,7 +11,7 @@
     <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Ekom - Vettvangur E-Commerce solution</description>
-    <releaseNotes>Alpha</releaseNotes>
+    <releaseNotes>GMO.Vorto and Unity v5</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags></tags>
   </metadata>
