@@ -1,4 +1,4 @@
-/// <binding ProjectOpened='Watch - Development' />  
+﻿/// <binding ProjectOpened='Watch - Development' />  
 var path    = require('path'); 
 var webpack = require('webpack'); 
  
@@ -7,7 +7,7 @@ var settings = {
     watch: true, 
     entry: 'js/app',  
     output: { 
-        path: path.join(__dirname, '../uWebshop.Site/Content/js'), 
+        path: path.join(__dirname, '../Ekom.Site/Content/js'), 
         filename: 'app.js' 
     }, 
     module: { 
@@ -37,7 +37,7 @@ module.exports = function(env) {
         settings = Object.assign(settings, { 
             devtool: '', 
             output: { 
-                path: path.join(__dirname, '../uWebshop.Site/Content/js'), 
+                path: path.join(__dirname, '../Ekom.Site/Content/js'), 
                 filename: 'app.min.js' 
             }, 
             plugins: [ 

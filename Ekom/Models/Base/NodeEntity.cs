@@ -4,11 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core.Models;
-using uWebshop.Interfaces;
-using uWebshop.Services;
-using uWebshop.Utilities;
+using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// Base Umbraco node entity

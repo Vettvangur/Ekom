@@ -1,11 +1,11 @@
-using Examine;
+﻿using Examine;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using uWebshop.Services;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class StoreDomainCache : BaseCache<IDomain>
     {

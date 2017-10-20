@@ -1,16 +1,16 @@
-using Examine;
+﻿using Examine;
 using log4net;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Umbraco.Core;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Utilities;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Utilities;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     static class UrlService
     {

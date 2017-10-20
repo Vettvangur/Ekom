@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace uWebshop.Exceptions
+namespace Ekom.Exceptions
 {
     /// <summary>
     /// Indicates an error while performing stock changes.

@@ -1,11 +1,11 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using uWebshop.App_Start
+@using Ekom.App_Start
 @using Microsoft.Practices.Unity
-@using uWebshop.Cache
-@using uWebshop.Models
-@using uWebshop.Services
-@using uWebshop.API
-@using Store = uWebshop.API.Store
+@using Ekom.Cache
+@using Ekom.Models
+@using Ekom.Services
+@using Ekom.API
+@using Store = Ekom.API.Store
 
 @{
     Layout = "Masterpage.cshtml";
@@ -42,7 +42,7 @@
     @foreach (var product in products.Where(x => !string.IsNullOrEmpty(x.Title)).OrderBy(x => x.SortOrder))
     {
         <div>
-            @product.Id - @product.Title - @product.Slug - @product.OriginalPrice - @product.Key - <strong>@product.Url</strong>
+            @product.Id - @product.Title - @product.Slug - @product.Price.Value - @product.Key - <strong>@product.Url</strong>
 
             @foreach (var url in product.Urls)
             {
@@ -59,7 +59,7 @@
                             @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
                             {
                                 <li>
-                                    @variant.Title - @variant.OriginalPrice - @variant.Price.WithVat.ToCurrencyString() - @variant.Stock - @variant.VariantGroupKey - @variant.VariantGroup.Title
+                                    @variant.Title - @variant.Price.Value - @variant.Price.WithVat.ToCurrencyString() - @variant.Stock - @variant.VariantGroupKey - @variant.VariantGroup.Title
                                 </li>
                             }
                         </ol>

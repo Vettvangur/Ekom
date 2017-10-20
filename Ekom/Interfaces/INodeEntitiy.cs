@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Base node entity interface.

@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
-using uWebshop.Interfaces;
-using uWebshop.Models.Data;
-using uWebshop.Services;
+using Ekom.Interfaces;
+using Ekom.Models.Data;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class StockCache : BaseCache<StockData>
     {

@@ -3,7 +3,7 @@ using Examine.SearchCriteria;
 using System;
 using System.Linq;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     class ExamineService
     {

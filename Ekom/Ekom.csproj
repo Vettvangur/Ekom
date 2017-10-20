@@ -253,7 +253,7 @@
     <Compile Include="API\Catalog.cs" />
     <Compile Include="API\Stock.cs" />
     <Compile Include="API\Store.cs" />
-    <Compile Include="App_Start\uWebshopStartup.cs" />
+    <Compile Include="App_Start\EkomStartup.cs" />
     <Compile Include="App_Start\RegisterHttpModule.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
@@ -341,7 +341,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="uWebshop.nuspec">
+    <None Include="Ekom.nuspec">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

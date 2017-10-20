@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Ekom.Domain.Repositories;
+using Ekom.Models;
+using System.Collections.Generic;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
-using uWebshop.Domain.Repositories;
-using uWebshop.Models;
 
-namespace uWebshop.Extensions.Controllers
+namespace Ekom.Extensions.Controllers
 {
     /// <summary>
     /// Public api, used by property editors
@@ -18,7 +18,7 @@ namespace uWebshop.Extensions.Controllers
         /// </summary>
         public ApiController()
         {
-            _countriesRepo = uWebshop.Configuration.container.GetInstance<ICountriesRepository>();
+            _countriesRepo = Ekom.Configuration.container.GetInstance<ICountriesRepository>();
         }
 
         /// <summary>

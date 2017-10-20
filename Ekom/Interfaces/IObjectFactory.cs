@@ -1,8 +1,8 @@
 ﻿using Examine;
 using Umbraco.Core.Models;
-using uWebshop.Models;
+using Ekom.Models;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Create object of type T

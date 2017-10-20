@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
 
-namespace uWebshop.Models.Data
+namespace Ekom.Models.Data
 {
     /// <summary>
     /// Current stock of a given item
     /// </summary>
-    [TableName("uWebshopStock")]
+    [TableName("EkomStock")]
     [PrimaryKey("UniqueId", autoIncrement = false)]
     public class StockData
     {

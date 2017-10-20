@@ -1,6 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     public interface IOrderedProduct : IProduct
     {

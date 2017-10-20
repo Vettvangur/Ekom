@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using System;
 using System.Collections.Generic;
-using System.Web.Mvc;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models;
 
-namespace uWebshop.API
+namespace Ekom.API
 {
     /// <summary>
-    /// The uWebshop API, get/update/remove operations on orders 
+    /// The Ekom API, get/update/remove operations on orders 
     /// </summary>
     public class Order
     {

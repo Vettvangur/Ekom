@@ -1,11 +1,11 @@
 ﻿using Umbraco.Core.Persistence;
 
-namespace uWebshop.Models.Data
+namespace Ekom.Models.Data
 {
     /// <summary>
     /// Unfinished
     /// </summary>
-    [TableName("uwbsCustomerData")]
+    [TableName("EkomCustomerData")]
     [PrimaryKey("UniqueId", autoIncrement = false)]
     public class CustomerData
     {

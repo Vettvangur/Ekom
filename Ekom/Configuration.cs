@@ -1,17 +1,17 @@
-﻿using Microsoft.Practices.ServiceLocation;
+﻿using Ekom.Cache;
+using Ekom.Models;
+using Ekom.Utilities;
+using Microsoft.Practices.ServiceLocation;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Models;
-using uWebshop.Utilities;
 
-namespace uWebshop
+namespace Ekom
 {
     /// <summary>
-    /// Controls configuration of uWebshop
+    /// Controls configuration of Ekom
     /// </summary>
     public class Configuration
     {
@@ -88,7 +88,7 @@ namespace uWebshop
         /// <summary>
         /// uwbsVirtualContent
         /// Allows for configuration of content nodes to use for matching all requests
-        /// Use case: Data populated from Navision, uWebshop used as in memory cache with no backing umbraco nodes.
+        /// Use case: Data populated from Navision, Ekom used as in memory cache with no backing umbraco nodes.
         /// </summary>
         public virtual bool VirtualContent
         {
@@ -113,7 +113,7 @@ namespace uWebshop
         }
 
         /// <summary>
-        /// Should uWebshop create a uwbsCustomerData table and use it to store customer + order data 
+        /// Should Ekom create a uwbsCustomerData table and use it to store customer + order data 
         /// submitted to the checkout controller?
         /// </summary>
         public virtual bool StoreCustomerData

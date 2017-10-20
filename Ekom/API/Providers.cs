@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using uWebshop.Cache;
-using uWebshop.Domain.Repositories;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Models.Base;
+using Ekom.Cache;
+using Ekom.Domain.Repositories;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Models.Base;
 
-namespace uWebshop.API
+namespace Ekom.API
 {
     /// <summary>
     /// Providers API, returns shipping providers and payment providers. 

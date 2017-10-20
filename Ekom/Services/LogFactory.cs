@@ -1,7 +1,7 @@
-using log4net;
+﻿using log4net;
 using System;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     class LogFactory : ILogFactory
     {

@@ -5,16 +5,16 @@ using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using uWebshop.Cache;
-using uWebshop.Domain.Repositories;
-using uWebshop.Factories;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Models.Data;
-using uWebshop.Repository;
-using uWebshop.Services;
+using Ekom.Cache;
+using Ekom.Domain.Repositories;
+using Ekom.Factories;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Models.Data;
+using Ekom.Repository;
+using Ekom.Services;
 
-namespace uWebshop.App_Start
+namespace Ekom.App_Start
 {
     /// <summary>
     /// Specifies the Unity configuration for the main container.

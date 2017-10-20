@@ -1,5 +1,5 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using uWebshop.API;
+@using Ekom.API;
 
 @{
     Layout = "Masterpage.cshtml";
@@ -84,10 +84,10 @@
 
                 <a href="@product.Url" class="button expanded">View</a>
 
-                <form method="post" action="~/Umbraco/uWebshop/order/addtoOrder" class="add-to-order">
+                <form method="post" action="~/Umbraco/Ekom/order/addtoOrder" class="add-to-order">
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
-                    <input type="hidden" name="action" value="@uWebshop.Helpers.OrderAction.Update" />
+                    <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
 
                     @if (product.VariantGroups.Any())
                     {

@@ -1,5 +1,5 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using uWebshop.API;
+@using Ekom.API;
 
 @{
     Layout = "Masterpage.cshtml";
@@ -24,7 +24,7 @@
     </div>
 }
 
-@helper RenderCart(uWebshop.Models.OrderInfo order) { 
+@helper RenderCart(Ekom.Models.OrderInfo order) { 
 
     var currentStore = order.StoreInfo;
 
@@ -48,10 +48,10 @@
                     <tr>
                         <td>@orderline.Product.Title</td>
                         <td style="max-width:50px;">
-                            <form method="post" action="/umbraco/uWebshop/order/UpdateOrder">
+                            <form method="post" action="/umbraco/Ekom/order/UpdateOrder">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
-                                <input type="hidden" name="action" value="@uWebshop.Helpers.OrderAction.Update" />
+                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
                                 <input type="number" name="quantity" value="@orderline.Quantity" />
                                 <button type="submit" class="button small">Uppfæra</button>
                             </form>
@@ -60,7 +60,7 @@
                         <td>@orderline.Product.Price.WithVat.ToCurrencyString()</td>
                         <td>@orderline.Amount.WithVat.ToCurrencyString()</td>
                         <td>
-                            <form method="post" action="/umbraco/uWebshop/order/RemoveOrderLine">
+                            <form method="post" action="/umbraco/Ekom/order/RemoveOrderLine">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
                                 <button type="submit" class="button small">Eyða</button>

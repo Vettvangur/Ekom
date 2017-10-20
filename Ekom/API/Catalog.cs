@@ -1,19 +1,18 @@
-﻿using log4net;
+﻿using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using uWebshop.Cache;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Services;
 
-namespace uWebshop.API
+namespace Ekom.API
 {
     /// <summary>
-    /// The uWebshop API, grants access to the current product/category/variant 
+    /// The Ekom API, grants access to the current product/category/variant 
     /// and various other depending on your current routed context.
     /// </summary>
     public class Catalog

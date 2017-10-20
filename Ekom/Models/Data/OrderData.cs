@@ -1,15 +1,15 @@
-﻿using System;
+﻿using Ekom.Helpers;
+using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
-using uWebshop.Helpers;
 
-namespace uWebshop.Models.Data
+namespace Ekom.Models.Data
 {
     /// <summary>
     /// SQL Representation of <see cref="OrderInfo"/>
     /// </summary>
-    [TableName("uWebshopOrders")]
+    [TableName("EkomOrders")]
     [PrimaryKey("UniqueId", autoIncrement = false)]
     public class OrderData
     {

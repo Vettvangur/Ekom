@@ -1,7 +1,7 @@
-using System;
-using uWebshop.Helpers;
+﻿using System;
+using Ekom.Helpers;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class OrderRequest
     {

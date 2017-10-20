@@ -1,6 +1,6 @@
-﻿angular.module("umbraco").controller("uWebshop.Countries", function ($scope, assetsService, $routeParams, $http, editorState) {
+﻿angular.module("umbraco").controller("ekom.countries", function ($scope, assetsService, $routeParams, $http, editorState) {
 
-    $http.get('/Umbraco/uWebshop/Api/GetCountries').then(function (res) {
+    $http.get('/Umbraco/Ekom/Api/GetCountries').then(function (res) {
 
         $scope.ItemArray = res.data;
 

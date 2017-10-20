@@ -1,7 +1,7 @@
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     class PriceCalculationService : IPriceCalculationService
     {

@@ -4,12 +4,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using uWebshop.Models;
-using uWebshop.Models.Data;
-using uWebshop.Repository;
-using uWebshop.Services;
+using Ekom.Models;
+using Ekom.Models.Data;
+using Ekom.Repository;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class StockPerStoreCache : PerStoreCache<StockData>
     {

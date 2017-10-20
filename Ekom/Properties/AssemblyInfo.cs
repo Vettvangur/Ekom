@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("uWebshop")]
+[assembly: AssemblyTitle("Ekom")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("uWebshop")]
+[assembly: AssemblyProduct("Ekom")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -22,9 +22,9 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("3db90c8f-dc87-4020-bc97-4a8e85ab89a0")]
 
-[assembly: InternalsVisibleTo("uWebshop.Site")]
-[assembly: InternalsVisibleTo("uWebshop.Extensions")]
-[assembly: InternalsVisibleTo("uWebshop.Tests")]
+[assembly: InternalsVisibleTo("Ekom.Site")]
+[assembly: InternalsVisibleTo("Ekom.Extensions")]
+[assembly: InternalsVisibleTo("Ekom.Tests")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -36,4 +36,4 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("3.1.*")]
+[assembly: AssemblyVersion("0.0.*")]

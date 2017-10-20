@@ -1,19 +1,18 @@
-﻿using Examine;
+﻿using Ekom.API;
+using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Utilities;
+using Examine;
 using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Web.Mvc;
 using Umbraco.Core.Models;
-using uWebshop.API;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Utilities;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class Variant : NodeEntity, IVariant, INodeEntity
     {
@@ -155,7 +154,7 @@ namespace uWebshop.Models
         }
 
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         public Variant(Store store)

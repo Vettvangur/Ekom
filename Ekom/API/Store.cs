@@ -1,15 +1,14 @@
-﻿using log4net;
+﻿using Ekom.Interfaces;
+using Ekom.Services;
+using log4net;
 using System.Collections.Generic;
-using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using uWebshop.Interfaces;
-using uWebshop.Services;
 
-namespace uWebshop.API
+namespace Ekom.API
 {
     /// <summary>
-    /// The uWebshop API, get current or all stores.
+    /// The Ekom API, get current or all stores.
     /// </summary>
     public class Store
     {

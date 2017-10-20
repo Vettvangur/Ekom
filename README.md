@@ -1,4 +1,4 @@
-## uWebshop Version 3
+## Ekom
 
 
 ### Hvað er það sem við viljum ná fram með þessari útgáfu ?
@@ -33,7 +33,7 @@
 -  1. Það þarf að vera hægt að stilla körfuna þannig að hægt sé að deila henni með fleiri búðum/lénum.
 
 
-## uWebshop request in surface controllers / api controllers
+## Ekom request in surface controllers / api controllers
 
 We register an IHttpModule to ensure creation of an uwbsRequest entry in the runtimeCache.
 

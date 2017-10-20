@@ -1,4 +1,4 @@
-using log4net;
+﻿using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +7,11 @@ using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using uWebshop.Cache;
-using uWebshop.Interfaces;
-using uWebshop.Models;
+using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Models;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     class StoreService : IStoreService
     {

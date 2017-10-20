@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using uWebshop.Models;
+using Ekom.Models;
 
-namespace uWebshop.Domain.Repositories
+namespace Ekom.Domain.Repositories
 {
     /// <summary>
     /// Attempts to parse countries from an xml document, falls back to .NET cultures.

@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Order/Cart

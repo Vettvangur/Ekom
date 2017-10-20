@@ -1,10 +1,10 @@
 ﻿using Examine;
 using System;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class VariantGroupCache : PerStoreCache<VariantGroup>
     {

@@ -1,4 +1,4 @@
-using Microsoft.Practices.Unity;
+﻿using Microsoft.Practices.Unity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections.Generic;
@@ -7,12 +7,12 @@ using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.SqlSyntax;
-using uWebshop.App_Start;
-using uWebshop.Models;
-using uWebshop.Models.Data;
-using uWebshop.Services;
+using Ekom.App_Start;
+using Ekom.Models;
+using Ekom.Models.Data;
+using Ekom.Services;
 
-namespace uWebshop.Tests
+namespace Ekom.Tests
 {
     [TestClass]
     public class OrderRepository

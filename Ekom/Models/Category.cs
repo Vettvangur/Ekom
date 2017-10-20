@@ -9,12 +9,12 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Services;
+using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Services;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class Category : ICategory
     {

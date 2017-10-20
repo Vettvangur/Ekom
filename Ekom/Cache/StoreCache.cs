@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Umbraco.Core.Models;
-using uWebshop.Helpers;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Helpers;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class StoreCache : BaseCache<Store>
     {

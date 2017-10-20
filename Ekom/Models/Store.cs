@@ -1,21 +1,20 @@
-﻿using Examine;
+﻿using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Utilities;
+using Examine;
 using log4net;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Interfaces;
-using uWebshop.Utilities;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
-    /// uWebshop Store, used to f.x. have seperate products and entities per store.
+    /// Ekom Store, used to f.x. have seperate products and entities per store.
     /// </summary>
     public class Store : NodeEntity, IStore
     {
@@ -39,7 +38,7 @@ namespace uWebshop.Models
         public string OrderNumberTemplate { get; set; }
         public string OrderNumberPrefix { get; set; }
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         public Store() : base() { }
         /// <summary>

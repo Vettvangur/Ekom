@@ -1,8 +1,8 @@
-using log4net;
+﻿using log4net;
 using System.Web;
-using uWebshop.Services;
+using Ekom.Services;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     class ContentRequest
     {

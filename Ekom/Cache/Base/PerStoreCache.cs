@@ -6,11 +6,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Models;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     /// <summary>
     /// Per store caching for entities of generic type TItem

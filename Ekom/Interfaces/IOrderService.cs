@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using uWebshop.Helpers;
-using uWebshop.Models;
+using Ekom.Helpers;
+using Ekom.Models;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     public interface IOrderService
     {

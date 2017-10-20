@@ -1,8 +1,8 @@
 ﻿using Examine;
 using Umbraco.Core.Models;
-using uWebshop.Helpers;
+using Ekom.Helpers;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// Base Per Store Umbraco node entity

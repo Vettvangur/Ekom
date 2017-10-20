@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Umbraco.Core.Models;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// A grouping of countries, used to map payment providers and shipping providers to regions

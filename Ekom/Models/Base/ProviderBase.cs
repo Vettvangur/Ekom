@@ -1,15 +1,14 @@
-﻿using Examine;
+﻿using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Examine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
 
-namespace uWebshop.Models.Base
+namespace Ekom.Models.Base
 {
     /// <summary>
     /// Base class for Shipping/Payment providers
@@ -103,7 +102,7 @@ namespace uWebshop.Models.Base
             ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
 
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         public ProviderBase(Store store) : base(store) { }

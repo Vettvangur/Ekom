@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Web;
 using Umbraco.Core.Models;
-using uWebshop.Models;
+using Ekom.Models;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     public interface IStoreService
     {

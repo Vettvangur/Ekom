@@ -1,4 +1,4 @@
-﻿namespace uWebshop.Models
+﻿namespace Ekom.Models
 {
     /// <summary>
     ///     Class representing a country

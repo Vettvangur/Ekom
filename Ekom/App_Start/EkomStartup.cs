@@ -1,4 +1,8 @@
-﻿using Hangfire;
+﻿using Ekom.App_Start;
+using Ekom.Cache;
+using Ekom.Models.Data;
+using Ekom.Services;
+using Hangfire;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -11,20 +15,16 @@ using Umbraco.Core.Persistence;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
-using uWebshop.App_Start;
-using uWebshop.Cache;
-using uWebshop.Models.Data;
-using uWebshop.Services;
 
-namespace uWebshop
+namespace Ekom
 {
 #pragma warning disable IDE1006 // Naming Styles
     /// <summary>
-    /// Here we hook into the umbraco lifecycle methods to configure uWebshop.
+    /// Here we hook into the umbraco lifecycle methods to configure Ekom.
     /// We use ApplicationEventHandler so that these lifecycle methods are only run
     /// when umbraco is in a stable condition.
     /// </summary>
-    class uWebshopStartup : ApplicationEventHandler
+    class EkomStartup : ApplicationEventHandler
     {
 #pragma warning restore IDE1006 // Naming Styles
         Configuration _config;
@@ -72,27 +72,8 @@ namespace uWebshop
 
             // Startup Dependencies
             var logFac = container.Resolve<ILogFactory>();
-            _log = logFac.GetLogger(typeof(uWebshopStartup));
+            _log = logFac.GetLogger(typeof(EkomStartup));
             _config = container.Resolve<Configuration>();
-
-            var dbCtx = applicationContext.DatabaseContext;
-            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
-
-            //Check if the DB table does NOT exist
-            if (!dbHelper.TableExist("uWebshopStock"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<StockData>(false);
-            }
-            if (!dbHelper.TableExist("uWebshopOrders"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<OrderData>(false);
-                using (var db = dbCtx.Database)
-                {
-                    db.Execute("ALTER TABLE uWebshopOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
-                }
-            }
 
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
@@ -109,7 +90,7 @@ namespace uWebshop
             }
 
             // VirtualContent=true allows for configuration of content nodes to use for matching all requests
-            // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+            // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
 
             if (!_config.VirtualContent)
             {
@@ -120,9 +101,27 @@ namespace uWebshop
                 ContentService.Publishing += ContentService_Publishing;
             }
 
+            var dbCtx = applicationContext.DatabaseContext;
+            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
+
+            //Check if the DB table does NOT exist
+            if (!dbHelper.TableExist("EkomStock"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<StockData>(false);
+            }
+            if (!dbHelper.TableExist("EkomOrders"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<OrderData>(false);
+                using (var db = dbCtx.Database)
+                {
+                    db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
+            }
 
             if (_config.StoreCustomerData
-            && !dbHelper.TableExist("uwbsCustomerData"))
+            && !dbHelper.TableExist("EkomCustomerData"))
             {
                 dbHelper.CreateTable<CustomerData>(false);
             }

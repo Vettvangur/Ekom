@@ -1,17 +1,16 @@
-﻿using Hangfire.States;
+﻿using Ekom.Cache;
+using Ekom.Exceptions;
+using Ekom.Interfaces;
+using Ekom.Models.Data;
+using Ekom.Services;
+using Hangfire.States;
 using log4net;
 using System;
-using System.Web.Mvc;
-using uWebshop.Cache;
-using uWebshop.Exceptions;
-using uWebshop.Interfaces;
-using uWebshop.Models.Data;
-using uWebshop.Services;
 
-namespace uWebshop.API
+namespace Ekom.API
 {
     /// <summary>
-    /// The uWebshop API, get/update stock for item
+    /// The Ekom API, get/update stock for item
     /// </summary>
     public class Stock
     {

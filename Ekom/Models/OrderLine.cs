@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using uWebshop.Interfaces;
+using Ekom.Interfaces;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class OrderLine : IOrderLine
     {

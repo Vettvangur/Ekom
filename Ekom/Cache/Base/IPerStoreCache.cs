@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using uWebshop.Models;
+using Ekom.Models;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     /// <summary>
     /// Used to differentiate per store caches from base caches at runtime.

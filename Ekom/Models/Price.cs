@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
 using System.Web.Mvc;
-using uWebshop.Interfaces;
-using uWebshop.Services;
+using Ekom.Interfaces;
+using Ekom.Services;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class Price : IDiscountedPrice
     {

@@ -2,13 +2,13 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using uWebshop.API;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Services;
-using uWebshop.Utilities;
+using Ekom.API;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class OrderedVariant
     {

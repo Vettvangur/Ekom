@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using Umbraco.Core.Models;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     /// <summary>
     /// Caches implementing this interface offer addition and removal methods

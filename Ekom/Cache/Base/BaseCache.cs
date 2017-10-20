@@ -5,9 +5,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Umbraco.Core.Models;
-using uWebshop.Helpers;
+using Ekom.Helpers;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     /// <summary>
     /// For custom caches or global non store dependant caches

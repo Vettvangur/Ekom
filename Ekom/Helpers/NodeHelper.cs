@@ -1,3 +1,5 @@
+﻿using Ekom.Models;
+using Ekom.Utilities;
 using Examine;
 using Examine.SearchCriteria;
 using System;
@@ -7,10 +9,8 @@ using System.Reflection;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using uWebshop.Models;
-using uWebshop.Utilities;
 
-namespace uWebshop.Helpers
+namespace Ekom.Helpers
 {
     static class NodeHelper
     {
@@ -33,7 +33,7 @@ namespace uWebshop.Helpers
         }
 
         /// <summary>
-        /// Gets a few close parents, skipping two levels of uWebshop hierarchy
+        /// Gets a few close parents, skipping two levels of Ekom hierarchy
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>

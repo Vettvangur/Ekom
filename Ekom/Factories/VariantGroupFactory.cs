@@ -1,13 +1,13 @@
 ﻿using Examine;
 using System;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Factories
+namespace Ekom.Factories
 {
     class VariantGroupFactory : IObjectFactory<VariantGroup>
     {

@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     public class StoreInfo
     {

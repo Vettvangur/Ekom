@@ -1,10 +1,10 @@
 ﻿using Common.Logging;
+using Ekom.Models.Base;
 using Examine;
 using System.Reflection;
 using Umbraco.Core.Models;
-using uWebshop.Models.Base;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// F.x. home delivery or pickup.
@@ -12,7 +12,7 @@ namespace uWebshop.Models
     public class ShippingProvider : ProviderBase
     {
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         public ShippingProvider(Store store) : base(store) { }

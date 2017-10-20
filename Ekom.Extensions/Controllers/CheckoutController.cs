@@ -1,4 +1,6 @@
-﻿using log4net;
+﻿using Ekom.API;
+using Ekom.Models.Data;
+using log4net;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,14 +8,12 @@ using System.Web.Mvc;
 using Umbraco.NetPayment;
 using Umbraco.NetPayment.API;
 using Umbraco.Web.Mvc;
-using uWebshop.API;
-using uWebshop.Models.Data;
-using ILogFactory = uWebshop.Services.ILogFactory;
+using ILogFactory = Ekom.Services.ILogFactory;
 
-namespace uWebshop.Extensions.Controllers
+namespace Ekom.Extensions.Controllers
 {
     /// <summary>
-    /// Offers a default way to complete checkout using uWebshop v3
+    /// Offers a default way to complete checkout using Ekom
     /// </summary>
     [PluginController("Ekom")]
     public class CheckoutController : SurfaceController
@@ -35,7 +35,7 @@ namespace uWebshop.Extensions.Controllers
         }
 
         /// <summary>
-        /// Complete payment using the Standard uWebshop v3 checkout controller
+        /// Complete payment using the Standard Ekom checkout controller
         /// </summary>
         /// <param name="paymentRequest"></param>
         /// <param name="form"></param>
@@ -43,9 +43,9 @@ namespace uWebshop.Extensions.Controllers
         public async Task<string> Pay(PaymentRequest paymentRequest, FormCollection form)
         {
             var order = Order.Current.GetOrder();
-            var uwbsPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
+            var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
 
-            var pp = NetPayment.Current.GetPaymentProvider(uwbsPP.Title);
+            var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Title);
 
             if (_config.StoreCustomerData)
             {
@@ -68,13 +68,13 @@ namespace uWebshop.Extensions.Controllers
 
             if (paymentRequest.ShippingProvider != Guid.Empty)
             {
-                var uwbsSP = Providers.Current.GetShippingProvider(paymentRequest.ShippingProvider);
+                var ekomSP = Providers.Current.GetShippingProvider(paymentRequest.ShippingProvider);
                 var orderItemsList = orderItems.ToList();
                 orderItemsList.Add(new OrderItem
                 {
-                    GrandTotal = uwbsSP.Price.Value,
-                    Price = uwbsSP.Price.Value,
-                    Title = uwbsSP.Title,
+                    GrandTotal = ekomSP.Price.Value,
+                    Price = ekomSP.Price.Value,
+                    Title = ekomSP.Title,
                     Quantity = 1,
                 });
 
@@ -87,7 +87,7 @@ namespace uWebshop.Extensions.Controllers
                 skipReceipt: true,
                 culture: Umbraco.CultureDictionary.Culture.TwoLetterISOLanguageName,
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                orderCustomString: "uWebshop v3 Store"
+                orderCustomString: "Ekom Store"
             );
         }
     }

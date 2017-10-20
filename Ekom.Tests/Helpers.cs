@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using System;
 using System.IO;
 using System.Linq;
@@ -16,7 +16,7 @@ using Umbraco.Web;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
 
-namespace uWebshop.Tests
+namespace Ekom.Tests
 {
     public static class Helpers
     {

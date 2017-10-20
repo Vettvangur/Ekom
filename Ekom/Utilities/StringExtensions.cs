@@ -1,6 +1,6 @@
-using System.Text;
+﻿using System.Text;
 
-namespace uWebshop.Utilities
+namespace Ekom.Utilities
 {
     static class StringExtension
     {

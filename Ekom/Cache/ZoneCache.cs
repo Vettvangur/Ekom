@@ -1,8 +1,8 @@
 ﻿using Examine;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class ZoneCache : BaseCache<Zone>
     {

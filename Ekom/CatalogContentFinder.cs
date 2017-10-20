@@ -1,17 +1,16 @@
-﻿using log4net;
+﻿using Ekom.Cache;
+using Ekom.Models;
+using Ekom.Services;
+using Ekom.Utilities;
+using log4net;
 using System;
 using System.Configuration;
 using System.Linq;
-using System.Web.Mvc;
 using Umbraco.Core;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
-using uWebshop.Cache;
-using uWebshop.Models;
-using uWebshop.Services;
-using uWebshop.Utilities;
 
-namespace uWebshop
+namespace Ekom
 {
     class CatalogContentFinder : IContentFinder
     {
@@ -48,8 +47,8 @@ namespace uWebshop
                 var umbracoHelper = new UmbracoHelper(umbracoContext);
 
                 // Allows for configuration of content nodes to use for matching all requests
-                // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
-                var virtualContent = ConfigurationManager.AppSettings["uWebshop.virtualContent"];
+                // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
+                var virtualContent = ConfigurationManager.AppSettings["Ekom.VirtualContent"];
 
                 var path = contentRequest.Uri
                                          .AbsolutePath

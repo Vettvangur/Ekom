@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +6,7 @@ using Umbraco.Core.Models;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
 
-namespace uWebshop
+namespace Ekom
 {
     class CatalogUrlProvider : IUrlProvider
     {

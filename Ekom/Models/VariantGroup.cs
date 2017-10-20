@@ -1,12 +1,12 @@
-﻿using log4net;
+﻿using Ekom.Cache;
+using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using uWebshop.Cache;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// A group of variants sharing common properties and a group key
@@ -51,7 +51,7 @@ namespace uWebshop.Models
         }
 
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         /// <param name="cache"></param>

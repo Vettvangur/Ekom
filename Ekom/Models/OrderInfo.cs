@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models.Data;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models.Data;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// Order/Cart

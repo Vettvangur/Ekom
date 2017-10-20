@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-using uWebshop.Models.Data;
+﻿using System.Collections.Generic;
+using Ekom.Models.Data;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Handles database transactions for <see cref="StockData"/>

@@ -1,4 +1,4 @@
-﻿namespace uWebshop.Helpers
+﻿namespace Ekom.Helpers
 {
     /// <summary>
     /// 

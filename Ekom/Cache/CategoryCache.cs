@@ -1,9 +1,9 @@
 ﻿using Examine;
 using System;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Cache
+namespace Ekom.Cache
 {
     class CategoryCache : PerStoreCache<Category>
     {

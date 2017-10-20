@@ -1,4 +1,4 @@
-var gulp = require('gulp'),
+﻿var gulp = require('gulp'),
 	  sass = require('gulp-sass'),
     autoprefixer = require('gulp-autoprefixer'),
     cssnano = require('gulp-cssnano'),
@@ -13,7 +13,7 @@ var sassPaths = [
         'scss/**/*.scss',
         'node_modules/foundation-sites/scss/**/*.scss'];
 
-var css_destPath = '../uWebshop.Site/Content/css';
+var css_destPath = '../Ekom.Site/Content/css';
 
 gulp.task('sass', function () {
   return gulp.src('scss/app.scss')

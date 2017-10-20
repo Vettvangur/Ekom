@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Ekom.Models;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -6,9 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml.Linq;
-using uWebshop.Models;
 
-namespace uWebshop.Domain.Repositories
+namespace Ekom.Domain.Repositories
 {
     class CountriesRepository : ICountriesRepository
     {
@@ -29,7 +29,7 @@ namespace uWebshop.Domain.Repositories
             return _cache.GetOrAdd(BaseXMLFileName, s =>
             {
                 // future todo: make file location configurable (web.config or through code)
-                var path = HttpContext.Current.Server.MapPath($"/scripts/uWebshop/{BaseXMLFileName}.xml");
+                var path = HttpContext.Current.Server.MapPath($"/scripts/Ekom/{BaseXMLFileName}.xml");
 
                 if (!File.Exists(path))
                 {

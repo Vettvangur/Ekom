@@ -1,13 +1,13 @@
-using log4net;
+﻿using log4net;
 using System;
 using System.Collections.Generic;
 using Umbraco.Core;
-using uWebshop.Exceptions;
-using uWebshop.Interfaces;
-using uWebshop.Models.Data;
-using uWebshop.Services;
+using Ekom.Exceptions;
+using Ekom.Interfaces;
+using Ekom.Models.Data;
+using Ekom.Services;
 
-namespace uWebshop.Repository
+namespace Ekom.Repository
 {
     /// <summary>
     /// Handles database transactions for <see cref="StockData"/>

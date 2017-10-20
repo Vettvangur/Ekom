@@ -1,15 +1,14 @@
-﻿using System;
+﻿using Ekom.Models;
+using Ekom.Services;
+using Ekom.Utilities;
+using System;
 using System.Web;
-using System.Web.Mvc;
 using Umbraco.Core;
-using uWebshop.Models;
-using uWebshop.Services;
-using uWebshop.Utilities;
 
-namespace uWebshop
+namespace Ekom
 {
     /// <summary>
-    /// uWebshop HttpModule, ensures an uwbsRequest object exists in the runtime cache for all
+    /// Ekom HttpModule, ensures an uwbsRequest object exists in the runtime cache for all
     /// controller requests.
     /// The module checks for existence of a store querystring parameter and if found,
     /// creates an uwbsRequest object with DomainPrefix and currency if applicable.
@@ -21,7 +20,7 @@ namespace uWebshop
         /// </summary>
         public String ModuleName
         {
-            get { return "uWebshop HttpModule"; }
+            get { return "Ekom HttpModule"; }
         }
 
         /// <summary>

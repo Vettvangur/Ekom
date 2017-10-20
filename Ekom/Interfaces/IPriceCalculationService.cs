@@ -1,4 +1,4 @@
-namespace uWebshop.Interfaces
+﻿namespace Ekom.Interfaces
 {
     public interface IPriceCalculationService
     {

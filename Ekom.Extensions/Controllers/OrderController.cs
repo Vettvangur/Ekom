@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
-using uWebshop.Models;
-using uWebshop.Services;
+using Ekom.Models;
+using Ekom.Services;
 
-namespace uWebshop.Extensions.Controllers
+namespace Ekom.Extensions.Controllers
 {
     /// <summary>
     /// Handles order/cart creation, updates and removals

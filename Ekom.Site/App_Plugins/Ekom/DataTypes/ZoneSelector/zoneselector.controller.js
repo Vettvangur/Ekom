@@ -1,8 +1,8 @@
-angular.module("umbraco").controller("uWebshop.ZoneSelector", function ($scope, assetsService, $http) {
+angular.module("umbraco").controller("ekom.zoneSelector", function ($scope, assetsService, $http) {
 
 	//var prevalueField = $scope.model.config.prevaluekeyname;
 
-	$http.get('/Umbraco/uWebshop/Api/GetCountries').then(function (res) {
+	$http.get('/Umbraco/Ekom/Api/GetCountries').then(function (res) {
 
 		// $scope.selectedCountries = $scope.model.value.split(",");
 

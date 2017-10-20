@@ -1,10 +1,10 @@
-﻿using Examine;
+﻿using Ekom.Models.Base;
+using Examine;
 using log4net;
 using System.Reflection;
 using Umbraco.Core.Models;
-using uWebshop.Models.Base;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
     /// F.x. Borgun/Valitor
@@ -12,7 +12,7 @@ namespace uWebshop.Models
     public class PaymentProvider : ProviderBase
     {
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         public PaymentProvider(Store store) : base(store) { }

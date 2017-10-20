@@ -1,4 +1,9 @@
-﻿using Examine;
+﻿using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
+using Examine;
 using log4net;
 using Newtonsoft.Json;
 using System;
@@ -6,18 +11,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.Mvc;
 using Umbraco.Core.Models;
-using uWebshop.Cache;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Services;
-using uWebshop.Utilities;
 
-namespace uWebshop.Models
+namespace Ekom.Models
 {
     /// <summary>
-    /// An uWebshop store product
+    /// An Ekom store product
     /// </summary>
     public class Product : PerStoreNodeEntity, IProduct
     {
@@ -202,7 +201,7 @@ namespace uWebshop.Models
         }
 
         /// <summary>
-        /// Used by uWebshop extensions
+        /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
         public Product(Store store) : base(store) { }

@@ -1,15 +1,15 @@
-using log4net;
+﻿using log4net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
-using uWebshop.API;
-using uWebshop.Cache;
-using uWebshop.Exceptions;
-using uWebshop.Interfaces;
-using uWebshop.Models.Data;
-using uWebshop.Services;
+using Ekom.API;
+using Ekom.Cache;
+using Ekom.Exceptions;
+using Ekom.Interfaces;
+using Ekom.Models.Data;
+using Ekom.Services;
 
-namespace uWebshop.Tests
+namespace Ekom.Tests
 {
     [TestClass]
     public class StockTests

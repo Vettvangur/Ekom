@@ -1,6 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace uWebshop.Utilities
+namespace Ekom.Utilities
 {
     /// <summary>
     /// Get property values from a dictionary while failing silently

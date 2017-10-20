@@ -1,7 +1,7 @@
-using System;
-using uWebshop.Models;
+﻿using System;
+using Ekom.Models;
 
-namespace uWebshop.Interfaces
+namespace Ekom.Interfaces
 {
     public interface IOrderLine
     {

@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using uWebshop.Helpers;
-using uWebshop.Interfaces;
-using uWebshop.Models;
-using uWebshop.Models.Data;
-using uWebshop.Repository;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Models.Data;
+using Ekom.Repository;
 
-namespace uWebshop.Services
+namespace Ekom.Services
 {
     class OrderService : IOrderService
     {

@@ -1,4 +1,4 @@
-<div ng-controller="uWebshop.ZoneSelector">
+<div ng-controller="ekom.zoneSelector">
 	<select size="10" multiple="multiple" ng-model="available">
 		<option ng-repeat="country in availableItems | orderBy:'Name' track by country.Code" value="{{country.Code}}">{{country.Name}}</option>
 	</select>
