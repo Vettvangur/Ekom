@@ -11,7 +11,7 @@ namespace uWebshop.Extensions.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    [PluginController("uWebshop")]
+    [PluginController("Ekom")]
     public class OrderController : SurfaceController
     {
         ILog _log;

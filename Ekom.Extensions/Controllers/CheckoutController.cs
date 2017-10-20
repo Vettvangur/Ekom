@@ -15,7 +15,7 @@ namespace uWebshop.Extensions.Controllers
     /// <summary>
     /// Offers a default way to complete checkout using uWebshop v3
     /// </summary>
-    [PluginController("uWebshop")]
+    [PluginController("Ekom")]
     public class CheckoutController : SurfaceController
     {
         ILog _log;

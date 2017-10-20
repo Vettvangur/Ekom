@@ -9,7 +9,7 @@ namespace uWebshop.Extensions.Controllers
     /// <summary>
     /// Public api, used by property editors
     /// </summary>
-    [PluginController("uWebshop")]
+    [PluginController("Ekom")]
     public class ApiController : UmbracoApiController
     {
         ICountriesRepository _countriesRepo;

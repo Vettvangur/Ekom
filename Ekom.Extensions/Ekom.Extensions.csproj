@@ -8,8 +8,8 @@
     <ProjectGuid>{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>uWebshop.Extensions</RootNamespace>
-    <AssemblyName>uWebshop.Extensions</AssemblyName>
+    <RootNamespace>Ekom.Extensions</RootNamespace>
+    <AssemblyName>Ekom.Extensions</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
@@ -39,7 +39,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\uWebshop.Extensions.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\Ekom.Extensions.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -283,9 +283,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\uWebshop\uWebshop.csproj">
+    <ProjectReference Include="..\Ekom\Ekom.csproj">
       <Project>{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}</Project>
-      <Name>uWebshop</Name>
+      <Name>Ekom</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
