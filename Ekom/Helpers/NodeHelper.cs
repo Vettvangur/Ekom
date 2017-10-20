@@ -2,10 +2,12 @@
 using Ekom.Utilities;
 using Examine;
 using Examine.SearchCriteria;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
@@ -14,6 +16,11 @@ namespace Ekom.Helpers
 {
     static class NodeHelper
     {
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+        );
+
         public static IEnumerable<SearchResult> GetAllCatalogItemsFromPath(string path)
         {
             var list = new List<SearchResult>();
@@ -213,24 +220,34 @@ namespace Ekom.Helpers
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this SearchResult item, string field, string storeAlias)
         {
-            var fieldExist = item.Fields.Any(x => x.Key == field + "_" + storeAlias);
-
-            if (fieldExist)
+            try
             {
-                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                var value = item.Fields[field + "_" + storeAlias];
+                var fieldExist = item.Fields.Any(x => x.Key == field + "_" + storeAlias);
 
-                if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
+                if (fieldExist)
                 {
-                    value = item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
+                    // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
+                    var value = item.Fields[field + "_" + storeAlias];
+
+                    if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
+                    {
+                        value = item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
+                    }
+
+                    return value;
+                }
+                else
+                {
+                    return item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
                 }
 
-                return value;
-            }
-            else
+            } catch(Exception ex)
             {
-                return item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
+                var json = new JavaScriptSerializer().Serialize(item);
+                Log.Error("Failed to get StoreProperty. Item : " + json + " field: " + field + " store: " + storeAlias);
+                throw ex;
             }
+
         }
 
         /// <summary>
