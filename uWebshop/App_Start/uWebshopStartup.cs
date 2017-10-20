@@ -1,4 +1,4 @@
-using Hangfire;
+﻿using Hangfire;
 using log4net;
 using Microsoft.Practices.Unity;
 using System;
@@ -75,6 +75,25 @@ namespace uWebshop
             _log = logFac.GetLogger(typeof(uWebshopStartup));
             _config = container.Resolve<Configuration>();
 
+            var dbCtx = applicationContext.DatabaseContext;
+            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
+
+            //Check if the DB table does NOT exist
+            if (!dbHelper.TableExist("uWebshopStock"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<StockData>(false);
+            }
+            if (!dbHelper.TableExist("uWebshopOrders"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<OrderData>(false);
+                using (var db = dbCtx.Database)
+                {
+                    db.Execute("ALTER TABLE uWebshopOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
+            }
+
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
                 ? container.Resolve<IPerStoreCache<StockData>>()
@@ -100,24 +119,6 @@ namespace uWebshop
                 ContentService.Publishing += ContentService_Publishing;
             }
 
-            var dbCtx = applicationContext.DatabaseContext;
-            var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
-
-            //Check if the DB table does NOT exist
-            if (!dbHelper.TableExist("uWebshopStock"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<StockData>(false);
-            }
-            if (!dbHelper.TableExist("uWebshopOrders"))
-            {
-                //Create DB table - and set overwrite to false
-                dbHelper.CreateTable<OrderData>(false);
-                using (var db = dbCtx.Database)
-                {
-                    db.Execute("ALTER TABLE uWebshopOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
-                }
-            }
 
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
