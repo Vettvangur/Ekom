@@ -44,27 +44,31 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\uWebshop.Extensions\uWebshop.Extensions.csproj">
-      <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
-      <Name>uWebshop.Extensions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\uWebshop\uWebshop.csproj">
-      <Project>{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}</Project>
-      <Name>uWebshop</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="NuGet\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
+      <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
+      <Name>Ekom.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom.Site\Ekom.Site.csproj">
+      <Project>{abe32170-d950-408f-a6fe-a6a843183d57}</Project>
+      <Name>Ekom.Site</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom\Ekom.csproj">
+      <Project>{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}</Project>
+      <Name>Ekom</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd $(SolutionDir)
 
-nuget pack $(SolutionDir)uWebshop -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
-nuget pack $(SolutionDir)uWebshop.Extensions -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
+nuget pack $(SolutionDir)Ekom -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
+nuget pack $(SolutionDir)Ekom.Extensions -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

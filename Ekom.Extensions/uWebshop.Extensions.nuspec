@@ -1,0 +1,18 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Ekom.Extensions</id>
+    <version>0.0.1</version>
+    <title>Ekom Controllers</title>
+    <authors>Vettvangur</authors>
+    <owners>Vettvangur</owners>
+    <licenseUrl>http://www.vettvangur.is</licenseUrl>
+    <projectUrl>https://github.com/Vettvangur/Ekom</projectUrl>
+    <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Ekom Controllers</description>
+    <releaseNotes>Alpha</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags></tags>
+  </metadata>
+</package>

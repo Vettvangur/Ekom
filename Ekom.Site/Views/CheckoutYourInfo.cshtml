@@ -1,0 +1,104 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.API;
+@{
+    Layout = "Masterpage.cshtml";
+    var order = Order.Current.GetOrder();
+}
+
+@* the fun starts here *@
+
+@section Main {
+
+    <div class="row column">
+
+        @if (order != null)
+        {
+            <form method="post" action="/greida-greidslu-og-sendingarmati">
+                <h3 class="">@Umbraco.Field("#CustomerInformation")</h3>
+
+                <div class="accordion-pane open">
+                    @if (Store.Current.GetStore().Alias == "IS")
+                    {
+                        <div class="form-group">
+                            <label for="customerSocialId">customerSocialId</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="customerSocialId"
+                                   name="customerSocialId"
+                                   required
+                                   pattern="[0-9]{10}" />
+                        </div>
+                    }
+                    <div class="form-group">
+                        <label for="customerFirstName">customerFirstName</label>
+                        <input type="text" class="form-control" id="customerFirstName" name="customerFirstName" required />
+                        <input type="hidden" class="form-control" id="customerLastName" name="customerLastName" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerEmail">customerEmail</label>
+                        <input type="email" class="form-control" id="customerEmail" name="customerEmail" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerPhone">customerPhone</label>
+                        <input type="text" class="form-control" id="customerPhone" name="customerPhone" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerStreet">customerStreet</label>
+                        <input type="text" class="form-control" id="customerStreet" name="customerStreet" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerZipCode">customerZipCode</label>
+                        <input type="text" class="form-control" id="customerZipCode" name="customerZipCode" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerCity">customerCity</label>
+                        <input type="text" class="form-control" id="customerCity" name="customerCity" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerCountry">customerCountry</label>
+                        <select class="form-control" name="customerCountry" id="customerCountry" required>
+                            <option value="">customerCountry</option>
+                            @foreach (var country in Providers.Current.GetAllCountries())
+                            {
+                                <option value="@country.Code">@country.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerComment">@Umbraco.Field("#Comment")</label>
+                        <textarea class="form-control" id="customerComment" rows="6" name="customerComment"></textarea>
+                    </div>
+
+                </div>
+
+                <br />
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <input type="hidden" name="validatecustomer" value="true" />
+                        <input type="hidden" name="backtoreferreronerror" value="true" />
+                        <input type="hidden" name="customerisshipping" value="true" />
+
+                        <button type="submit" class="btn btn-primary btn-lg pull-right">
+                            @Umbraco.Field("#NextStep")
+                        </button>
+                    </div>
+
+                </div>
+
+                <br />
+
+                <button class="button">Greiða</button>
+            </form>
+        }
+
+    </div>
+
+}

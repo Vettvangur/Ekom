@@ -1,0 +1,102 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.API
+@using Ekom.Cache;
+@{
+    Layout = "Masterpage.cshtml";
+    var category = Catalog.Current.GetCategory();
+}
+@section Main {
+	
+    <div class="row small-up-2 large-up-4">
+        <div class="column">
+
+            <h4>SubCategories</h4>
+
+            <ul>
+                @foreach (var c in category.SubCategories)
+                {
+                    <li>
+                        <a href="@c.Url">@c.Title</a>
+                    </li>
+                }
+            </ul>
+
+            <h4>Products</h4>
+            <ul>
+                @foreach (var p in category.Products)
+                {
+                    <li>
+                        <a href="@p.Url">@p.Title</a>
+
+                        @*<ol>
+                            @foreach (var prop in p.Properties)
+                            {
+                                <li>
+                                    @prop.Key - @prop.Value
+                                </li>
+                            }
+                        </ol>*@
+                        @if (p.VariantGroups.Any())
+                        {
+                            <h5>Variant Groups</h5>
+                            <ul>
+                                @foreach (var group in p.VariantGroups)
+                                {
+                                    <li>
+                                        @group.Title - @group.Id
+
+                                        @if (group.Variants.Any())
+                                        {
+                                            <ol>
+                                                @foreach (var var in group.Variants)
+                                                {
+                                                    <li>
+                                                        @var.Title - @var.Id
+                                                    </li>
+                                                }
+                                            </ol>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        @if (p.AllVariants.Any())
+                        {
+                            <h5>All Variants</h5>
+                            <ul>
+                                @foreach (var variant in p.AllVariants)
+                                {
+                                    <li>
+                                        @variant.Title - @variant.Id
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <h4>Recursive SubCategories</h4>
+
+            <ul>
+                @foreach (var r in category.SubCategoriesRecursive)
+                {
+                    <li>
+                        <a href="@r.Url">@r.Title</a>
+                    </li>
+                }
+            </ul>
+
+            <h4>Recursive Products</h4>
+            <ul>
+                @foreach (var r in category.ProductsRecursive)
+                {
+                    <li>
+                        <a href="@r.Url">@r.Title</a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+}

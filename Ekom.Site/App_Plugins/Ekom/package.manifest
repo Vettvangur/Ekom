@@ -1,0 +1,23 @@
+﻿{      
+	propertyEditors: [
+		{          
+			alias: "Ekom.Countries",           
+			name: "Ekom Countries",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/Countries/countries.html"
+			}         
+		},
+		{
+			alias: "Ekom.Zones",           
+			name: "Ekom Zone Selector",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.html"
+			},          
+		},
+	]
+	,        
+	javascript: [
+		'~/App_Plugins/Ekom/DataTypes/Countries/countries.controller.js',
+		'~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.controller.js',
+	]
+}

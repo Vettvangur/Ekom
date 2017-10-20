@@ -1,0 +1,78 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.API;
+
+@{
+    Layout = "Masterpage.cshtml";
+    var order = Order.Current.GetOrder();
+}
+
+@section Main {
+
+    <div class="row column">
+        
+        <h2>Greiða</h2>
+
+        @if (order != null)
+        {
+            @RenderCart(order)
+        }
+        else
+        {
+            <h4>Karfan er tóm</h4>
+        }
+
+    </div>
+}
+
+@helper RenderCart(Ekom.Models.OrderInfo order) { 
+
+    var currentStore = order.StoreInfo;
+
+    <div class="checkout-cart">
+
+        <table class="table">
+
+            <thead>
+                <tr>
+                    <th>Vara</th>
+                    <th style="max-width:50px;">Fjöldi</th>
+                    <th>Verð stk.</th>
+                    <th>Samtals</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var orderline in order.OrderLines)
+                {
+                    var product = orderline.Product;
+                    <tr>
+                        <td>@orderline.Product.Title</td>
+                        <td style="max-width:50px;">
+                            <form method="post" action="/umbraco/Ekom/order/UpdateOrder">
+                                <input type="hidden" name="lineId" value="@orderline.Id" />
+                                <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
+                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
+                                <input type="number" name="quantity" value="@orderline.Quantity" />
+                                <button type="submit" class="button small">Uppfæra</button>
+                            </form>
+                            
+                        </td>
+                        <td>@orderline.Product.Price.WithVat.ToCurrencyString()</td>
+                        <td>@orderline.Amount.WithVat.ToCurrencyString()</td>
+                        <td>
+                            <form method="post" action="/umbraco/Ekom/order/RemoveOrderLine">
+                                <input type="hidden" name="lineId" value="@orderline.Id" />
+                                <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
+                                <button type="submit" class="button small">Eyða</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+        </table>
+
+        <a class="button" href="/greida-notandaupplysingar">Greiða</a>
+
+    </div>
+}

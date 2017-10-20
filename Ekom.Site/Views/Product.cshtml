@@ -1,0 +1,105 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.App_Start
+@using Microsoft.Practices.Unity
+@using Ekom.Cache
+@using Ekom.Models
+@using Ekom.Services
+@using Ekom.API
+@using Store = Ekom.API.Store
+
+@{
+    Layout = "Masterpage.cshtml";
+
+    var currentStore = Store.Current.GetStore();
+    var currentProduct  = Catalog.Current.GetProduct();
+    var currentCategory = Catalog.Current.GetCategory();
+
+    var products = Catalog.Current.GetAllProducts(currentStore.Alias);
+    var categories = Catalog.Current.GetAllCategories(currentStore.Alias);
+    //var storeDomains = container.Resolve<IBaseCache<IDomain>>().Cache.Select(x => x.Value);
+    var stores = Store.Current.GetAllStores();
+}
+
+@section Main {
+
+    <p>ID: @Model.Content.Id</p>
+	<p>NodeName: @Model.Content.Name</p>
+    <p>Path: @Model.Content.Path</p>
+
+    <p>Current Store: @currentStore.Alias</p>
+    <p>Current Product: @currentProduct.Title</p>
+    <p>Current Category: @currentCategory.Title</p>
+
+    <ul>
+        @foreach(var url in currentProduct.Urls)
+        {
+            <li>@url</li>
+        }
+    </ul>
+
+    <h4>Products</h4>
+
+    @foreach (var product in products.Where(x => !string.IsNullOrEmpty(x.Title)).OrderBy(x => x.SortOrder))
+    {
+        <div>
+            @product.Id - @product.Title - @product.Slug - @product.Price.Value - @product.Key - <strong>@product.Url</strong>
+
+            @foreach (var url in product.Urls)
+            {
+                <p><strong>@url</strong></p>
+            }
+
+            <ul>
+                @foreach (var group in product.VariantGroups.OrderBy(x => x.SortOrder))
+                {
+                    <li>
+                        @group.Id - @group.Title - @group.Variants.Count() - Group Key: @group.Key - Product Key: @group.ProductKey
+
+                        <ol>
+                            @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
+                            {
+                                <li>
+                                    @variant.Title - @variant.Price.Value - @variant.Price.WithVat.ToCurrencyString() - @variant.Stock - @variant.VariantGroupKey - @variant.VariantGroup.Title
+                                </li>
+                            }
+                        </ol>
+
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    <h4>Categories</h4>
+
+    <ul>
+        @foreach (var category in categories.OrderBy(x => x.SortOrder))
+        {
+            <li>
+                @category.Id - @category.Title - @category.Products.Count() - @category.SubCategories.Count() - @category.ParentCategoryId - @category.Store.Alias - @category.SortOrder - @category.Url
+            
+                @foreach (var url in category.Urls)
+                {
+                    <p><strong>@url</strong></p>
+                }
+            </li>
+        }
+    </ul>
+
+    <h4>Stores</h4>
+
+    <ul>
+        @foreach (var store in stores)
+        {
+            <li>@store.Id - @store.Alias - @store.Domains.Count() - @store.StoreRootNode</li>
+        }
+    </ul>
+
+
+    @*<h4>Store Domains</h4>
+
+    @foreach (var domain in storeDomains) {
+        <p>@domain.Id - @domain.RootContentId - @domain.LanguageIsoCode - @domain.Key - @domain.DomainName</p>
+    }*@
+
+}
