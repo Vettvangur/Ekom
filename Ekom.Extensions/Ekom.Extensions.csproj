@@ -233,8 +233,8 @@
     <Reference Include="umbraco.MacroEngines, Version=1.0.6396.36635, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.MacroEngines.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6501.34956, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.6.1.4\lib\net452\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=2.1.6502.29796, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.6.1.5\lib\net452\Umbraco.NetPayment.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>

@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Ekom.Extensions</id>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <title>Ekom Controllers</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
@@ -11,7 +11,7 @@
     <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Ekom Controllers</description>
-    <releaseNotes>GMO.Vorto and Unity v5</releaseNotes>
+    <releaseNotes>NetPayment 6.1.5</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags></tags>
   </metadata>

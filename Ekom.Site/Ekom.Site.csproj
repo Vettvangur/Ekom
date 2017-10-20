@@ -279,8 +279,8 @@
     <Reference Include="Umbraco.ModelsBuilder, Version=3.0.7.99, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.ModelsBuilder.3.0.7\lib\Umbraco.ModelsBuilder.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6501.34956, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.6.1.4\lib\net452\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=2.1.6502.29796, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.6.1.5\lib\net452\Umbraco.NetPayment.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6501.34962, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.NetPayment.Borgun.6.1.4\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
