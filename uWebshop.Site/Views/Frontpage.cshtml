@@ -1,4 +1,4 @@
-@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using uWebshop.API;
 
 @{
@@ -12,11 +12,13 @@
 @section Main {
 
     <div class="row column text-center">
-        <h2>
+        <div>
 
-            Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
-            @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
-            
+            <h2>
+                Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
+                @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
+            </h2>         
+        
             <h4>Store</h4>
             <br />
             Culture :@currentStore.Culture.Name
@@ -37,14 +39,14 @@
                 <div>Store: @order.StoreInfo.Alias</div>
                 <div>Quantity: @order.Quantity</div>
                 <div>Status: @order.OrderStatus</div>
-                <div>Total: @order.ChargedAmount.ToCurrencyString</div>
+                <div>Total: @order.ChargedAmount.ToCurrencyString()</div>
 
                 if (order.OrderLines.Any())
                 {
                     <ul>
                         @foreach (var line in order.OrderLines)
                         {
-                            <li><a href="#" data-store="@order.StoreInfo.Alias" data-lineId="@line.Id" class="order-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString
+                            <li><a href="#" data-store="@order.StoreInfo.Alias" data-lineId="@line.Id" class="order-remove-line">Remove</a> @line.Id - @line.Quantity - @(line.Product != null ? line.Product.Title : "") - @(line.Product != null ? line.Product.SKU : "") - @line.Amount.WithVat.ToCurrencyString()
     
 
                                 @if (line.Product.VariantGroups.Any())
@@ -68,7 +70,7 @@
                 }
             }
 
-        </h2><hr></div><div class="row small-up-2 large-up-4">
+        </div><hr></div><div class="row small-up-2 large-up-4">
 
         @foreach (var product in products)
         {
@@ -78,7 +80,7 @@
 
                 <p>Price With Vat : @product.Price.WithVat.Value</p>
                 <p>Price WithOut Vat : @product.Price.WithoutVat.Value</p>
-                <p>Price Original : @product.OriginalPrice</p>
+                <p>Price Original : @product.Price.Value</p>
 
                 <a href="@product.Url" class="button expanded">View</a>
 
@@ -101,7 +103,6 @@
                             </select>
 
                         }
-
                     }
                     <input type="number" name="quantity" value="1" />
 

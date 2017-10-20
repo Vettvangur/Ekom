@@ -24,7 +24,7 @@ namespace uWebshop
     /// We use ApplicationEventHandler so that these lifecycle methods are only run
     /// when umbraco is in a stable condition.
     /// </summary>
-    public class uWebshopStartup : ApplicationEventHandler
+    class uWebshopStartup : ApplicationEventHandler
     {
 #pragma warning restore IDE1006 // Naming Styles
         Configuration _config;
@@ -51,7 +51,7 @@ namespace uWebshop
             ApplicationContext applicationContext
         )
         {
-            LogHelper.Info(GetType(), "OnApplicationStarting...");
+            LogHelper.Info(GetType(), "ApplicationStarting...");
 
             ContentFinderResolver.Current.InsertTypeBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             UrlProviderResolver.Current.InsertTypeBefore<DefaultUrlProvider, CatalogUrlProvider>();
@@ -110,6 +110,7 @@ namespace uWebshop
 
             // VirtualContent=true allows for configuration of content nodes to use for matching all requests
             // Use case: uWebshop populated by adapter, used as in memory cache with no backing umbraco nodes
+
             if (!_config.VirtualContent)
             {
                 // Hook into Umbraco Events
@@ -120,6 +121,12 @@ namespace uWebshop
             }
 
 
+            if (_config.StoreCustomerData
+            && !dbHelper.TableExist("uwbsCustomerData"))
+            {
+                dbHelper.CreateTable<CustomerData>(false);
+            }
+
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
             new BackgroundJobServer();
@@ -127,21 +134,11 @@ namespace uWebshop
 
         private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)
         {
-            //var umbHelper = new UmbracoHelper(UmbracoContext.Current);
-            //var contentService = ApplicationContext.Current.Services.ContentService;
-
             foreach (var content in e.PublishedEntities)
             {
                 var alias = content.ContentType.Alias;
 
-                if (alias == "uwbsProduct")
-                {
-                }
-                else if (alias == "uwbsCategory")
-                {
-
-                }
-                else if (alias == "uwbsProduct" || alias == "uwbsCategory")
+                if (alias == "uwbsProduct" || alias == "uwbsCategory")
                 {
                     // Need to get this into function
                     var slug = content.GetValue<string>("slug");
@@ -150,6 +147,7 @@ namespace uWebshop
                     // Update Slug if Slug Exist on same Level and is Published
                     if (siblings.Any(x => x.GetValue<string>("slug").ToLowerInvariant() == slug.ToLowerInvariant()))
                     {
+
                         // Random not a nice solution
                         Random rnd = new Random();
 

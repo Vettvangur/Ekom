@@ -1,6 +1,6 @@
 namespace uWebshop.Interfaces
 {
-    public interface IVariant : INodeEntitiy
+    public interface IVariant : INodeEntity
     {
 
     }

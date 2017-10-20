@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Models;
 using uWebshop.Helpers;
+using uWebshop.Interfaces;
 using uWebshop.Models;
 
 namespace uWebshop.Cache
@@ -16,11 +17,24 @@ namespace uWebshop.Cache
     /// </summary>
     /// <typeparam name="TItem">Type of entity to cache</typeparam>
     abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>
+        where TItem : class
     {
         protected Configuration _config;
         protected ExamineManager _examineManager;
         protected ILog _log;
         protected IBaseCache<Store> _storeCache;
+        protected IObjectFactory<TItem> _objFac;
+
+        public PerStoreCache(
+            Configuration config,
+            ExamineManager examineManager,
+            IBaseCache<Store> storeCache
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _storeCache = storeCache;
+        }
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -48,8 +62,10 @@ namespace uWebshop.Cache
         /// <summary>
         /// Base Fill cache method appropriate for most derived caches
         /// </summary>
-        /// <param name="storeParam">This parameter is supplied when adding a store at runtime, 
-        /// triggering the given stores filling</param>
+        /// <param name="storeParam">
+        /// This parameter is supplied when adding a store at runtime, 
+        /// triggering the given stores filling
+        /// </param>
         public virtual void FillCache(Store storeParam = null)
         {
             var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
@@ -112,13 +128,12 @@ namespace uWebshop.Cache
 
             foreach (var r in results)
             {
-
                 try
                 {
                     // Traverse up parent nodes, checking disabled status and published status
                     if (!r.IsItemDisabled(store))
                     {
-                        var item = New(r, store);
+                        var item = _objFac?.Create(r, store) ?? New(r, store);
 
                         if (item != null)
                         {
@@ -159,7 +174,8 @@ namespace uWebshop.Cache
                 {
                     if (!node.IsItemDisabled(store.Value))
                     {
-                        var item = (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
+                        var item = _objFac?.Create(node, store.Value)
+                            ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
 
                         if (item != null) Cache[store.Value.Alias][node.Key] = item;
                     }

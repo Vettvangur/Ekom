@@ -1,0 +1,23 @@
+{      
+	propertyEditors: [
+		{          
+			alias: "uWebshop.Countries",           
+			name: "uWebshop Countries",         
+			editor: {
+				view: "~/App_Plugins/uWebshop/DataTypes/Countries/countries.html"
+			}         
+		},
+		{
+			alias: "uWebshop.Zones",           
+			name: "uWebshop Zone Selector",         
+			editor: {
+				view: "~/App_Plugins/uWebshop/DataTypes/ZoneSelector/zoneselector.html"
+			},          
+		},
+	]
+	,        
+	javascript: [
+		'~/App_Plugins/uWebshop/DataTypes/Countries/countries.controller.js',
+		'~/App_Plugins/uWebshop/DataTypes/ZoneSelector/zoneselector.controller.js',
+	]
+}

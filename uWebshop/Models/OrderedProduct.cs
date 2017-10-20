@@ -1,4 +1,4 @@
-using log4net;
+﻿using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -8,6 +8,7 @@ using System.Reflection;
 using uWebshop.API;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
+using uWebshop.Services;
 using uWebshop.Utilities;
 
 namespace uWebshop.Models
@@ -100,7 +101,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
+                return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
         [JsonIgnore]
@@ -108,7 +109,7 @@ namespace uWebshop.Models
         {
             get
             {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
+                return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
         public IDiscountedPrice Price
@@ -178,7 +179,7 @@ namespace uWebshop.Models
 
                     }
 
-                    var variantGroup = variant.VariantGroup();
+                    var variantGroup = variant.VariantGroup;
 
                     variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, store));
                 }

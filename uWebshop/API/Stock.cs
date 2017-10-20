@@ -1,8 +1,7 @@
-using Hangfire.States;
+﻿using Hangfire.States;
 using log4net;
-using Microsoft.Practices.Unity;
 using System;
-using uWebshop.App_Start;
+using System.Web.Mvc;
 using uWebshop.Cache;
 using uWebshop.Exceptions;
 using uWebshop.Interfaces;
@@ -24,7 +23,7 @@ namespace uWebshop.API
         {
             get
             {
-                return _current ?? (_current = UnityConfig.GetConfiguredContainer().Resolve<Stock>());
+                return _current ?? (_current = Configuration.container.GetInstance<Stock>());
             }
         }
 

@@ -1,0 +1,58 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using uWebshop.API;
+@using uWebshop.Extensions.Controllers;
+@{
+    Layout = "Masterpage.cshtml";
+
+    var country = Request["customerCountry"];
+    var order = Order.Current.GetOrder();
+}
+
+@* the fun starts here *@
+
+@section Main {
+
+    @using (Html.BeginUmbracoForm<CheckoutController>("Pay", null, new { })) {
+        <div class="row column">
+
+            <h3>Payment Providers</h3>
+            <ul>
+                @foreach (var paymentProvider in Providers.Current.GetPaymentProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@paymentProvider.Key">
+                            @paymentProvider.Title
+                            <input id="@paymentProvider.Key" type="radio" name="paymentProvider" value="@paymentProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            <h3>Shipping Providers</h3>
+            <ul>
+                @foreach (var shippingProvider in Providers.Current.GetShippingProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@shippingProvider.Key">
+                            @shippingProvider.Title - @shippingProvider.Price.Value
+                            <input id="@shippingProvider.Key" type="radio" name="shippingProvider" value="@shippingProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            @foreach (string param in Request.Form)
+            {
+                <input name="@param" value="@Request.Form[param]" hidden />
+            }
+
+            <button class="button">Klára</button>
+        </div>
+    }
+}

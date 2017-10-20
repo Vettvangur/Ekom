@@ -1,8 +1,8 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>uWebshop.v3</id>
-    <version>3.0.0.1</version>
+    <id>uWebshop.v3.Extensions</id>
+    <version>3.0.2</version>
     <title>uWebshop v3</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
@@ -11,7 +11,7 @@
     <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>uWebshop v3 - The internal Vettvangur version</description>
-    <releaseNotes>Alpha</releaseNotes>
+    <releaseNotes>Alpha - NET452</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags></tags>
   </metadata>

@@ -1,4 +1,6 @@
-using Examine;
+﻿using Examine;
+using System;
+using uWebshop.Interfaces;
 using uWebshop.Models;
 using uWebshop.Services;
 
@@ -10,26 +12,18 @@ namespace uWebshop.Cache
 
         protected override VariantGroup New(SearchResult r, Store store)
         {
-            return new VariantGroup(r, store);
+            throw new NotImplementedException("Should use the VariantGroup Factory");
         }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
-        /// <param name="storeCache"></param>
         public VariantGroupCache(
             ILogFactory logFac,
             Configuration config,
             ExamineManager examineManager,
-            IBaseCache<Store> storeCache
-        )
+            IBaseCache<Store> storeCache,
+            IObjectFactory<VariantGroup> objFac
+        ) : base(config, examineManager, storeCache)
         {
-            _config = config;
-            _examineManager = examineManager;
-            _storeCache = storeCache;
+            _objFac = objFac;
 
             _log = logFac.GetLogger(typeof(VariantGroupCache));
         }

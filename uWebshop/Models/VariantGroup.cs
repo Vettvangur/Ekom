@@ -1,93 +1,64 @@
-using Examine;
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Umbraco.Core.Models;
-using uWebshop.API;
-using uWebshop.App_Start;
 using uWebshop.Cache;
-using uWebshop.Helpers;
 
 namespace uWebshop.Models
 {
+    /// <summary>
+    /// A group of variants sharing common properties and a group key
+    /// </summary>
     public class VariantGroup
     {
-        private IPerStoreCache<Variant> _variantCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Variant>>();
-            }
-        }
+        Store _store { get; set; }
+        IPerStoreCache<Variant> _variantCache;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public int Id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public Guid Key { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public Guid ProductKey { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public string Title { get; set; }
-        public Store Store { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public int SortOrder { get; set; }
+        /// <summary>
+        /// Get all variants in this group
+        /// </summary>
+        [JsonIgnore]
         public IEnumerable<Variant> Variants
         {
             get
             {
-                return _variantCache.Cache[Store.Alias]
+                return _variantCache.Cache[_store.Alias]
                                    .Where(x => x.Value.VariantGroupKey == Key)
                                    .Select(x => x.Value);
             }
         }
 
-        public VariantGroup() : base() { }
-        public VariantGroup(SearchResult item, Store store)
+        /// <summary>
+        /// Used by uWebshop extensions
+        /// </summary>
+        /// <param name="store"></param>
+        /// <param name="cache"></param>
+        public VariantGroup(Store store, IPerStoreCache<Variant> cache)
         {
-            var key = item.Fields["key"];
-
-            var _key = new Guid();
-
-            if (!Guid.TryParse(key, out _key))
-            {
-                throw new Exception("No key present for variant group.");
-            }
-
-            int productId = Convert.ToInt32(item.Fields["parentID"]);
-
-            var productExamine = ExamineHelper.GetExamindeNode(productId);
-
-            if (productExamine == null)
-            {
-                throw new Exception("Product not found in examine for Variant group. Id:" + productId);
-            }
-
-            var productKey = productExamine.Fields["key"];
-
-            var _productKey = new Guid();
-
-            if (!Guid.TryParse(productKey, out _productKey))
-            {
-                throw new Exception("No key present for product in variant group.");
-            }
-
-            Id = item.Id;
-            ProductKey = _productKey;
-            Key = _key;
-            Title = item.GetStoreProperty("title", store.Alias);
-            Store = store;
-            SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
-        }
-        public VariantGroup(IContent item, Store store)
-        {
-            var productId = item.ParentId;
-
-            var product = Catalog.Current.GetProduct(store.Alias, productId);
-
-            Id = item.Id;
-            Key = item.Key;
-            ProductKey = product.Key;
-            Title = item.GetStoreProperty("title", store.Alias);
-            Store = store;
-            SortOrder = item.SortOrder;
+            _variantCache = cache;
+            _store = store;
         }
 
         private static readonly ILog Log =

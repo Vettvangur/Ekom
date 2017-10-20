@@ -1,12 +1,11 @@
-using log4net;
-using Microsoft.Practices.Unity;
+﻿using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using uWebshop.App_Start;
+using System.Web.Mvc;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
 using uWebshop.Models;
@@ -24,20 +23,19 @@ namespace uWebshop.Services
             {
                 try
                 {
-                    return UnityConfig.GetConfiguredContainer().Resolve<HttpContextBase>();
+                    return Configuration.container.GetInstance<HttpContextBase>();
                 }
                 catch (Exception ex)
                 {
                     _log.Error("HttpContext not available.", ex);
                     return null;
                 }
-
             }
         }
         private Store _store;
         private DateTime _date;
         private OrderRepository _orderRepository;
-        private StoreService _storeSvc;
+        private IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
@@ -45,7 +43,7 @@ namespace uWebshop.Services
         /// <param name="orderRepo"></param>
         /// <param name="logFac"></param>
         /// <param name="storeService"></param>
-        public OrderService(OrderRepository orderRepo, ILogFactory logFac, StoreService storeService)
+        public OrderService(OrderRepository orderRepo, ILogFactory logFac, IStoreService storeService)
         {
             _orderRepository = orderRepo;
             _storeSvc = storeService;
@@ -92,13 +90,18 @@ namespace uWebshop.Services
                 }
 
                 return (OrderInfo)_httpCtx.Session[key];
-
             }
             else
             {
                 return null;
             }
+        }
 
+        public void ChangeOrderStatus(OrderData order, OrderStatus status)
+        {
+            order.OrderStatus = status;
+
+            _orderRepository.UpdateOrder(order);
         }
 
         public OrderInfo AddOrderLine(
@@ -149,7 +152,6 @@ namespace uWebshop.Services
                 {
                     orderInfo.OrderLines.Remove(orderLine);
                 }
-
             }
 
             UpdateOrderAndOrderInfo(orderInfo);
@@ -257,14 +259,14 @@ namespace uWebshop.Services
 
             GenerateOrderNumber(out int referenceId, out orderNumber);
 
-            var orderData = new OrderData()
+            var orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
                 StoreAlias = _store.Alias,
                 ReferenceId = referenceId,
                 OrderNumber = orderNumber,
-                OrderStatus = OrderStatus.Incomplete.ToString()
+                OrderStatus = OrderStatus.Incomplete,
             };
 
             _orderRepository.InsertOrder(orderData);

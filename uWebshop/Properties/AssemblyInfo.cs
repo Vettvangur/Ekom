@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("3db90c8f-dc87-4020-bc97-4a8e85ab89a0")]
 
 [assembly: InternalsVisibleTo("uWebshop.Site")]
-[assembly: InternalsVisibleTo("uWebshopSite.Extensions")]
+[assembly: InternalsVisibleTo("uWebshop.Extensions")]
 [assembly: InternalsVisibleTo("uWebshop.Tests")]
 
 // Version information for an assembly consists of the following four values:

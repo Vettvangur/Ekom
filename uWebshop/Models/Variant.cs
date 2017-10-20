@@ -1,14 +1,13 @@
-using Examine;
+﻿using Examine;
 using log4net;
-using Microsoft.Practices.Unity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Mvc;
 using Umbraco.Core.Models;
 using uWebshop.API;
-using uWebshop.App_Start;
 using uWebshop.Cache;
 using uWebshop.Helpers;
 using uWebshop.Interfaces;
@@ -16,100 +15,23 @@ using uWebshop.Utilities;
 
 namespace uWebshop.Models
 {
-    public class Variant : IVariant
+    public class Variant : NodeEntity, IVariant, INodeEntity
     {
+        private IPerStoreCache<Category> __categoryCache;
+        private IPerStoreCache<Category> _categoryCache =>
+            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
 
-        private IPerStoreCache<Category> _categoryCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<Category>>();
-            }
-        }
-
-        private IPerStoreCache<VariantGroup> _variantGroupCache
-        {
-            get
-            {
-                return UnityConfig.GetConfiguredContainer().Resolve<IPerStoreCache<VariantGroup>>();
-            }
-        }
+        private IPerStoreCache<VariantGroup> __variantGroupCache;
+        private IPerStoreCache<VariantGroup> _variantGroupCache =>
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
 
         private Store _store;
-        public int Id
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
-            }
-        }
-
-        public Guid Key
-        {
-            get
-            {
-                var key = Properties.GetPropertyValue("key");
-
-                var _key = new Guid();
-
-                if (!Guid.TryParse(key, out _key))
-                {
-                    throw new Exception("No key present for product.");
-                }
-
-                return _key;
-            }
-        }
 
         public string SKU
         {
             get
             {
                 return Properties.GetPropertyValue("sku");
-            }
-        }
-
-        public string Title
-        {
-            get
-            {
-                return Properties.GetStoreProperty("title", _store.Alias);
-            }
-        }
-
-        [JsonIgnore]
-        public string Path
-        {
-            get
-            {
-                return Properties.GetPropertyValue("path");
-            }
-        }
-
-        private decimal? _originalPrice;
-        public decimal OriginalPrice
-        {
-            get
-            {
-                decimal originalPrice = 0;
-
-                if (_originalPrice.HasValue)
-                {
-                    originalPrice = _originalPrice.Value;
-                }
-                else
-                {
-                    var priceField = Properties.GetStoreProperty("price", _store.Alias);
-
-
-                    decimal.TryParse(priceField, out originalPrice);
-                }
-
-                return originalPrice;
-            }
-            set
-            {
-                _originalPrice = value;
             }
         }
 
@@ -129,7 +51,7 @@ namespace uWebshop.Models
 
                 int productId = Convert.ToInt32(paths[paths.Length - 3]);
 
-                var product = Catalog.Current.GetProduct(Store.Alias, productId);
+                var product = Catalog.Current.GetProduct(_store.Alias, productId);
 
                 if (product == null)
                 {
@@ -144,7 +66,7 @@ namespace uWebshop.Models
         {
             get
             {
-                var group = VariantGroup();
+                var group = VariantGroup;
 
                 if (group != null)
                 {
@@ -155,133 +77,82 @@ namespace uWebshop.Models
             }
         }
 
-        public VariantGroup VariantGroup()
+        [JsonIgnore]
+        public VariantGroup VariantGroup
         {
-            var parentId = Properties.GetPropertyValue("parentID");
-            int _parentId = 0;
-
-            if (Int32.TryParse(parentId, out _parentId))
+            get
             {
-                var group = _variantGroupCache.Cache[Store.Alias]
-                                        .Where(x => x.Value.Id == _parentId)
-                                        .Select(x => x.Value);
+                var parentId = Properties.GetPropertyValue("parentID");
 
-                if (group != null && group.Any())
+                if (int.TryParse(parentId, out int _parentId))
                 {
-                    return group.First();
+                    var group = _variantGroupCache.Cache[_store.Alias]
+                        .Where(x => x.Value.Id == _parentId)
+                        .Select(x => x.Value);
+
+                    if (group != null && group.Any())
+                    {
+                        return group.First();
+                    }
                 }
-            }
 
-            return null;
-        }
-
-        public Store Store
-        {
-            get
-            {
-                return _store;
+                return null;
             }
         }
 
-        public int Level
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("level"));
-            }
-        }
-
-        public string ContentTypeAlias
-        {
-            get
-            {
-                return Properties.GetPropertyValue("nodeTypeAlias");
-            }
-        }
-
-        public int SortOrder
-        {
-            get
-            {
-                return Convert.ToInt32(Properties.GetPropertyValue("sortOrder"));
-            }
-        }
-
-        public DateTime CreateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
-            }
-        }
-
-        public DateTime UpdateDate
-        {
-            get
-            {
-                return ExamineHelper.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
-            }
-        }
-        public IDiscountedPrice Price
-        {
-            get
-            {
-                return new Price(OriginalPrice, Store);
-            }
-        }
+        IDiscountedPrice _price;
+        /// <summary>
+        /// 
+        /// </summary>
+        public IDiscountedPrice Price => _price
+            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
 
         /// <summary>
         /// All categories variant belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories
+        public List<ICategory> Categories()
         {
-            get
+            var paths = Path.Split(',');
+
+            int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
+
+            var categoryField = Properties.Any(x => x.Key == "categories") ?
+                                Properties.GetPropertyValue("categories") : "";
+
+            var categories = new List<ICategory>();
+
+            var primaryCategory = _categoryCache.Cache[_store.Alias]
+                                                .FirstOrDefault(x => x.Value.Id == categoryId)
+                                                .Value;
+
+            if (primaryCategory != null)
             {
+                categories.Add(primaryCategory);
+            }
 
-                var paths = Path.Split(',');
+            if (!string.IsNullOrEmpty(categoryField))
+            {
+                var categoryIds = categoryField.Split(',');
 
-                int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
-
-                var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                    Properties.GetPropertyValue("categories") : "";
-
-                var categories = new List<ICategory>();
-
-                var primaryCategory = _categoryCache.Cache[_store.Alias]
-                                                   .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                   .Value;
-
-                if (primaryCategory != null)
+                foreach (var catId in categoryIds)
                 {
-                    categories.Add(primaryCategory);
-                }
+                    var intCatId = Convert.ToInt32(catId);
 
-                if (!string.IsNullOrEmpty(categoryField))
-                {
-                    var categoryIds = categoryField.Split(',');
+                    var categoryItem
+                        = _categoryCache.Cache[_store.Alias]
+                                        .FirstOrDefault(x => x.Value.Id == intCatId)
+                                        .Value;
 
-                    foreach (var catId in categoryIds)
+                    if (categoryItem != null && !categories.Contains(categoryItem))
                     {
-                        var intCatId = Convert.ToInt32(catId);
-
-                        var categoryItem
-                            = _categoryCache.Cache[_store.Alias]
-                                           .FirstOrDefault(x => x.Value.Id == intCatId)
-                                           .Value;
-
-                        if (categoryItem != null && !categories.Contains(categoryItem))
-                        {
-                            categories.Add(categoryItem);
-                        }
+                        categories.Add(categoryItem);
                     }
                 }
-
-                return categories;
             }
-        }
 
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+            return categories;
+        }
 
         /// <summary>
         /// Used by uWebshop extensions
@@ -292,26 +163,25 @@ namespace uWebshop.Models
             _store = store;
         }
 
-        public Variant(SearchResult item, Store store)
+        /// <summary>
+        /// Construct Variant from Examine item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store"></param>
+        public Variant(SearchResult item, Store store) : base(item)
         {
             _store = store;
-
-            foreach (var field in item.Fields.Where(x => !x.Key.Contains("__")))
-            {
-                Properties.Add(field.Key, field.Value);
-            }
         }
 
-        public Variant(IContent node, Store store)
+        /// <summary>
+        /// Construct Variant from umbraco publish event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="store"></param>
+        public Variant(IContent node, Store store) : base(node)
         {
+
             _store = store;
-
-            Properties = Product.CreateDefaultUmbracoProperties(node);
-
-            foreach (var prop in node.Properties)
-            {
-                Properties.Add(prop.Alias, prop.Value.ToString());
-            }
         }
 
         private static readonly ILog Log =

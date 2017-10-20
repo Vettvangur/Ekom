@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,20 +14,13 @@ namespace uWebshop.Cache
     class StockPerStoreCache : PerStoreCache<StockData>
     {
         StockRepository _stockRepo;
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="stockRepo"></param>
-        /// <param name="storeCache"></param>
         public StockPerStoreCache(
             ILogFactory logFac,
             StockRepository stockRepo,
             IBaseCache<Store> storeCache
-        )
+        ) : base(null, null, storeCache)
         {
             _stockRepo = stockRepo;
-            _storeCache = storeCache;
 
             _log = logFac.GetLogger(typeof(StockPerStoreCache));
         }

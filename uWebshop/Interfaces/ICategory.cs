@@ -1,6 +1,6 @@
-namespace uWebshop.Interfaces
+﻿namespace uWebshop.Interfaces
 {
-    public interface ICategory : INodeEntitiyWithUrl
+    public interface ICategory : INodeEntityWithUrl
     {
     }
 }

@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using Microsoft.Practices.Unity;
 using System;
 using System.Web;
@@ -6,6 +6,8 @@ using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using uWebshop.Cache;
+using uWebshop.Domain.Repositories;
+using uWebshop.Factories;
 using uWebshop.Interfaces;
 using uWebshop.Models;
 using uWebshop.Models.Data;
@@ -24,6 +26,7 @@ namespace uWebshop.App_Start
         {
             var container = new UnityContainer();
             RegisterTypes(container);
+            Configuration.container = new UnityServiceLocator(container);
             return container;
         });
 
@@ -72,13 +75,18 @@ namespace uWebshop.App_Start
             container.RegisterType<IPerStoreCache<Product>, ProductCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Zone>, ZoneCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<PaymentProvider>, PaymentProviderCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IPerStoreCache<ShippingProvider>, ShippingProviderCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<StockData>, StockCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<StockData>, StockPerStoreCache>(new ContainerControlledLifetimeManager());
 
             container.RegisterType<IStoreService, StoreService>();
             container.RegisterType<IOrderService, OrderService>();
+
+            container.RegisterType<ICountriesRepository, CountriesRepository>();
             container.RegisterType<IStockRepository, StockRepository>();
+
             container.RegisterType<ILogFactory, LogFactory>();
+            container.RegisterType<IObjectFactory<VariantGroup>, VariantGroupFactory>();
         }
     }
 }

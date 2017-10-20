@@ -1,4 +1,4 @@
-using Examine;
+﻿using Examine;
 using uWebshop.Models;
 using uWebshop.Services;
 
@@ -25,7 +25,7 @@ namespace uWebshop.Cache
             _log = logFac.GetLogger(typeof(ZoneCache));
         }
 
-        private Zone New(SearchResult r, Store store)
+        protected override Zone New(SearchResult r)
         {
             return new Zone(r);
         }
