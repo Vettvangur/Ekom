@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
-namespace Ekom.Extensions.Controllers
+namespace Ekom.Controllers
 {
     /// <summary>
     /// Public api, used by property editors

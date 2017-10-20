@@ -259,15 +259,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\CheckoutController.cs" />
-    <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="uWebshop.Extensions.nuspec">
+    <None Include="Ekom.Extensions.nuspec">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

@@ -256,6 +256,8 @@
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
+    <Compile Include="Controllers\ApiController.cs" />
+    <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Exceptions\StockException.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />

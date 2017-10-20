@@ -1,12 +1,12 @@
-﻿using log4net;
+﻿using Ekom.Models;
+using Ekom.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
-using Ekom.Models;
-using Ekom.Services;
 
-namespace Ekom.Extensions.Controllers
+namespace Ekom.Controllers
 {
     /// <summary>
     /// Handles order/cart creation, updates and removals
