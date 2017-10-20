@@ -8,10 +8,10 @@ using Umbraco.Core;
 namespace Ekom
 {
     /// <summary>
-    /// Ekom HttpModule, ensures an uwbsRequest object exists in the runtime cache for all
+    /// Ekom HttpModule, ensures an ekmRequest object exists in the runtime cache for all
     /// controller requests.
     /// The module checks for existence of a store querystring parameter and if found,
-    /// creates an uwbsRequest object with DomainPrefix and currency if applicable.
+    /// creates an ekmRequest object with DomainPrefix and currency if applicable.
     /// </summary>
     class HttpModule : IHttpModule
     {
@@ -60,7 +60,7 @@ namespace Ekom
                 var appCtx = Configuration.container.GetInstance<ApplicationContext>();
 
                 var appCache = appCtx.ApplicationCache;
-                appCache.RequestCache.GetCacheItem("uwbsRequest", () =>
+                appCache.RequestCache.GetCacheItem("ekmRequest", () =>
                     new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
                     {
                         Store = store,

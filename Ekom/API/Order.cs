@@ -38,7 +38,7 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get order using cookie data and uwbsRequest store.
+        /// Get order using cookie data and ekmRequest store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>

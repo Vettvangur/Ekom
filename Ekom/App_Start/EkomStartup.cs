@@ -138,7 +138,7 @@ namespace Ekom
             {
                 var alias = content.ContentType.Alias;
 
-                if (alias == "uwbsProduct" || alias == "uwbsCategory")
+                if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
                     // Need to get this into function
                     var slug = content.GetValue<string>("slug");

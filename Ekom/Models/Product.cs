@@ -142,6 +142,15 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
+        public Store Store
+        {
+            get
+            {
+                return _store;
+            }
+        }
+
+        [JsonIgnore]
         public IEnumerable<Guid> CategoriesIds
         {
             get
@@ -155,7 +164,7 @@ namespace Ekom.Models
             get
             {
                 //var appCache = ApplicationContext.Current.ApplicationCache;
-                //var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+                //var r = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
 
                 //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 

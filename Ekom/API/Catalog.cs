@@ -63,12 +63,12 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get current product using data from the uwbsRequest <see cref="ContentRequest"/> object
+        /// Get current product using data from the ekmRequest <see cref="ContentRequest"/> object
         /// </summary>
         /// <returns></returns>
         public Product GetProduct()
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
             return r?.Product;
         }
@@ -79,7 +79,7 @@ namespace Ekom.API
         /// <returns></returns>
         public Product GetProduct(Guid Id)
         {
-            var r = _reqCache.GetCacheItem("uwbsRequest") as ContentRequest;
+            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
             if (r?.Store != null)
             {
@@ -98,7 +98,7 @@ namespace Ekom.API
 
         public Product GetProduct(int Id)
         {
-            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
+            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
             {
                 var product = GetProduct(r.Store.Alias, Id);
 
@@ -115,7 +115,7 @@ namespace Ekom.API
 
         public IEnumerable<Product> GetAllProducts()
         {
-            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
+            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
             {
                 var products = GetAllProducts(r.Store.Alias);
 
@@ -132,7 +132,7 @@ namespace Ekom.API
 
         public IEnumerable<Product> GetProductsByIds(int[] productIds)
         {
-            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Store != null)
+            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
             {
                 var products = GetProductsByIds(productIds, r.Store.Alias);
 
@@ -149,7 +149,7 @@ namespace Ekom.API
 
         public Category GetCategory()
         {
-            if (_reqCache.GetCacheItem("uwbsRequest") is ContentRequest r && r.Category != null)
+            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Category != null)
             {
                 return r.Category;
             }

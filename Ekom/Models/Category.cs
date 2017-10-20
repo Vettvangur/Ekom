@@ -52,7 +52,7 @@ namespace Ekom.Models
             get
             {
                 //var appCache = ApplicationContext.Current.ApplicationCache;
-                //var r = appCache.RequestCache.GetCacheItem("uwbsRequest") as ContentRequest;
+                //var r = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
 
                 //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 

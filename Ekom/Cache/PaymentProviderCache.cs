@@ -6,7 +6,7 @@ namespace Ekom.Cache
 {
     class PaymentProviderCache : PerStoreCache<PaymentProvider>
     {
-        public override string NodeAlias { get; } = "uwbsPaymentProvider";
+        public override string NodeAlias { get; } = "ekmPaymentProvider";
 
         protected override PaymentProvider New(SearchResult r, Store store)
         {

@@ -6,7 +6,7 @@ namespace Ekom.Cache
 {
     class ProductCache : PerStoreCache<Product>
     {
-        public override string NodeAlias { get; } = "uwbsProduct";
+        public override string NodeAlias { get; } = "ekmProduct";
 
         protected override Product New(SearchResult r, Store store)
         {

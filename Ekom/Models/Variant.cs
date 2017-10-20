@@ -99,6 +99,15 @@ namespace Ekom.Models
             }
         }
 
+        [JsonIgnore]
+        public Store Store
+        {
+            get
+            {
+                return _store;
+            }
+        }
+
         IDiscountedPrice _price;
         /// <summary>
         /// 
