@@ -99,7 +99,15 @@ namespace Ekom.Services
 
         public void ChangeOrderStatus(OrderData order, OrderStatus status)
         {
+            // Add event handler
+
             order.OrderStatus = status;
+
+            // Create function for this, For completed orders
+            if (status == OrderStatus.ReadyForDispatch  || status == OrderStatus.OfflinePayment)
+            {
+                // clean cookie state
+            }
 
             _orderRepository.UpdateOrder(order);
         }
