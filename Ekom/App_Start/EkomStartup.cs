@@ -142,6 +142,12 @@ namespace Ekom
                 {
                     // Need to get this into function
                     var slug = content.GetValue<string>("slug");
+
+                    if (string.IsNullOrEmpty(slug))
+                    {
+                        slug = content.GetValue<string>("title").ToUrlSegment().ToLowerInvariant();
+                    }
+
                     var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
 
                     // Update Slug if Slug Exist on same Level and is Published
