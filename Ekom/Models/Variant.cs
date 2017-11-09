@@ -163,6 +163,20 @@ namespace Ekom.Models
         }
 
         /// <summary>
+        /// Get value in properties
+        /// </summary>
+        /// <param name="alias"></param>
+        public string GetProperty(string alias)
+        {
+            if (Properties.Any(x => x.Key == alias))
+            {
+                return Properties.FirstOrDefault(x => x.Key == alias).Value;
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>

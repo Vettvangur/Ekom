@@ -217,6 +217,20 @@ namespace Ekom.Models
         public Product(Store store) : base(store) { }
 
         /// <summary>
+        /// Get value in properties
+        /// </summary>
+        /// <param name="alias"></param>
+        public string GetProperty(string alias)
+        {
+            if (Properties.Any(x => x.Key == alias))
+            {
+                return Properties.FirstOrDefault(x => x.Key == alias).Value;
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// Construct Product from Examine item
         /// </summary>
         /// <param name="item"></param>
