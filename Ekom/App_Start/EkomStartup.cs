@@ -136,16 +136,18 @@ namespace Ekom
         {
             foreach (var content in e.PublishedEntities)
             {
+
                 var alias = content.ContentType.Alias;
 
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
                     // Need to get this into function
                     var slug = content.GetValue<string>("slug");
+                    var title = content.GetValue<string>("title");
 
-                    if (string.IsNullOrEmpty(slug))
+                    if (string.IsNullOrEmpty(slug) && content.HasProperty("title") && !string.IsNullOrEmpty(title))
                     {
-                        slug = content.GetValue<string>("title").ToUrlSegment().ToLowerInvariant();
+                        slug = title.ToUrlSegment().ToLowerInvariant();
                     }
 
                     var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
