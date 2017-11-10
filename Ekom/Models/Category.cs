@@ -16,6 +16,7 @@ using Ekom.Services;
 
 namespace Ekom.Models
 {
+    // Here we need to make properties accessible
     public class Category : ICategory
     {
         private IPerStoreCache<Category> _categoryCache
