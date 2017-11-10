@@ -16,7 +16,6 @@ using Ekom.Services;
 
 namespace Ekom.Models
 {
-    // Here we need to make properties accessible
     public class Category : ICategory
     {
         private IPerStoreCache<Category> _categoryCache
@@ -142,6 +141,13 @@ namespace Ekom.Models
 
         }
 
+        // Use NodeEntity ?
+
+        /// <summary>
+        /// All node properties
+        /// </summary>
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+
         public Category() : base() { }
         public Category(SearchResult item, Store store)
         {
@@ -161,6 +167,11 @@ namespace Ekom.Models
             int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
+
+            foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
+            {
+                Properties.Add(field.Key, field.Value);
+            }
 
             Id = item.Id;
             Key = _key;
@@ -185,6 +196,11 @@ namespace Ekom.Models
             int parentCategoryId = node.ParentId;
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
+
+            foreach (var prop in node.Properties)
+            {
+                Properties.Add(prop.Alias, prop.Value?.ToString());
+            }
 
             Id = node.Id;
             Key = node.Key;
