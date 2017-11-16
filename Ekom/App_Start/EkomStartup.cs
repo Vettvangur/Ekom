@@ -148,8 +148,8 @@ namespace Ekom
 
                     foreach (var store in stores)
                     {
-                        var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias);
-                        var title = NodeHelper.GetStoreProperty(content, "title", store.Alias);
+                        var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+                        var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
 
                         if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                         {

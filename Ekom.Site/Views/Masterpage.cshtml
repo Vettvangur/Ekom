@@ -4,7 +4,16 @@
     Layout = null;
     var currentStore = Store.Current.GetStore();
     var categories = Catalog.Current.GetRootCategories();
-    var order = Order.Current.GetOrder(currentStore.Alias);
+
+    Ekom.Models.OrderInfo order = null;
+    var alias = "";
+
+    if (currentStore != null)
+    {
+        alias = currentStore.Alias;
+        order = Order.Current.GetOrder(alias);
+    }
+
 }
 
 <!doctype html>
@@ -22,12 +31,16 @@
       <div class="top-bar-left">
         <ul class="menu">
           <li class="menu-text"><a href="/">Ekom Site</a></li>
-            @foreach (var category in categories)
+            @if (categories != null)
             {
-                <li>
-                    <a href="@category.Url">@category.Title</a>
-                </li>
+                foreach (var category in categories)
+                {
+                    <li>
+                        <a href="@category.Url">@category.Title</a>
+                    </li>
+                }
             }
+
         </ul>
       </div>
         <div class="top-bar-right">

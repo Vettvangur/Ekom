@@ -33,7 +33,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
-        public JsonResult AddToOrder(OrderRequest request)
+        public JsonResult addtoOrder(OrderRequest request)
         {
             try
             {

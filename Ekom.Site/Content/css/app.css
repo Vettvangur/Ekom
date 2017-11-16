@@ -2356,6 +2356,10 @@ input:-ms-input-placeholder,
 textarea:-ms-input-placeholder {
   color: #cacaca; }
 
+input::-ms-input-placeholder,
+textarea::-ms-input-placeholder {
+  color: #cacaca; }
+
 input::placeholder,
 textarea::placeholder {
   color: #cacaca; }
@@ -2559,6 +2563,8 @@ select {
   .is-invalid-input:not(:focus)::-webkit-input-placeholder {
     color: #cc4b37; }
   .is-invalid-input:not(:focus):-ms-input-placeholder {
+    color: #cc4b37; }
+  .is-invalid-input:not(:focus)::-ms-input-placeholder {
     color: #cc4b37; }
   .is-invalid-input:not(:focus)::placeholder {
     color: #cc4b37; }

@@ -4,9 +4,18 @@
 @{
     Layout = "Masterpage.cshtml";
 
-    var products = Catalog.Current.GetAllProducts();
-    var currentStore = Store.Current.GetStore();
-    var order = Order.Current.GetOrder(currentStore.Alias);
+    var products = new List<Ekom.Models.Product>();
+    var currentStore = Store.Current.GetStore("IS");
+    var alias = "";
+    Ekom.Models.OrderInfo order = null;
+
+    if (currentStore != null)
+    {
+        alias = currentStore.Alias;
+        order = Order.Current.GetOrder(alias);
+        products = Catalog.Current.GetAllProducts().ToList();
+    }
+
 }
 
 @section Main {
@@ -14,19 +23,24 @@
     <div class="row column text-center">
         <div>
 
+        <h3>@currentStore.Alias</h3>
             <h2>
-                Our Newest Products - Store : @currentStore.Alias - Product: @products.Count() - Domain:
+                Our Newest Products - Store : @alias - Product: @products.Count() - Domain:
                 @(UmbracoContext.PublishedContentRequest.UmbracoDomain != null ? UmbracoContext.PublishedContentRequest.UmbracoDomain.DomainName : "null")
             </h2>         
-        
-            <h4>Store</h4>
-            <br />
-            Culture :@currentStore.Culture.Name
-            <br />
-            Vat: @currentStore.Vat
-            <br />
-            Include Vat In Price: @currentStore.VatIncludedInPrice
-            <br />
+
+            @if (currentStore != null)
+            {
+                <h4>Store</h4>
+                <br />
+                <span>Culture:</span> @currentStore.Culture.Name
+                    <br />
+                    <span>Vat:</span> @currentStore.Vat
+                    <br />
+                    <span>Include Vat In Price:</span> @currentStore.VatIncludedInPrice
+                    <br />
+            }
+
 
             <h4>Order</h4>
 
@@ -84,8 +98,9 @@
 
                 <a href="@product.Url" class="button expanded">View</a>
 
-                <form method="post" action="~/Umbraco/Ekom/order/addtoOrder" class="add-to-order">
+                <form method="post" action="/umbraco/surface/Ekom/order/addtoOrder" class="add-to-order">
                     <input type="hidden" name="productId" value="@product.Key" />
+                    <input type="hidden" name="variantId" value="@Guid.Empty" />
                     <input type="hidden" name="storeAlias" value="@currentStore.Alias" />
                     <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
 

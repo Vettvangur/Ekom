@@ -39,7 +39,7 @@ $(document).ready(function () {
 
         var $btn = $(this);
 
-        var jqxhr = $.post('/umbraco/Ekom/order/RemoveOrderLine?lineId=' + $btn.attr('data-lineId') + '&storeAlias=' + $btn.attr('data-store'), function (resp) {
+        var jqxhr = $.post('/Ekom/order/RemoveOrderLine?lineId=' + $btn.attr('data-lineId') + '&storeAlias=' + $btn.attr('data-store'), function (resp) {
 
         })
             .done(function (resp) {
