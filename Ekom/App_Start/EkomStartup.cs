@@ -1,5 +1,6 @@
 ﻿using Ekom.App_Start;
 using Ekom.Cache;
+using Ekom.Helpers;
 using Ekom.Models.Data;
 using Ekom.Services;
 using Hangfire;
@@ -142,33 +143,53 @@ namespace Ekom
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
                     // Need to get this into function
-                    var slug = content.GetValue<string>("slug");
-                    var title = content.GetValue<string>("title");
 
-                    if (string.IsNullOrEmpty(slug) && content.HasProperty("title") && !string.IsNullOrEmpty(title))
+                    var stores = API.Store.Current.GetAllStores();
+
+                    foreach (var store in stores)
                     {
-                        slug = title.ToUrlSegment().ToLowerInvariant();
+                        var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias);
+                        var title = NodeHelper.GetStoreProperty(content, "title", store.Alias);
+
+                        if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
+                        {
+                            slug = title.ToUrlSegment().ToLowerInvariant();
+                        }
+
+                        var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
+
+                        // Update Slug if Slug Exist on same Level and is Published
+                        if (siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
+                        {
+
+                            // Random not a nice solution
+                            Random rnd = new Random();
+
+                            slug = slug + "-" + rnd.Next(1, 150);
+
+                            if (content.HasProperty("slug_" + store.Alias))
+                            {
+                                content.SetValue("slug_" + store.Alias, slug);
+                            } else
+                            {
+                                content.SetValue("slug", slug);
+                            }
+
+   
+                            _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
+
+                            e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
+                        }
+
+                        if (content.HasProperty("slug_" + store.Alias))
+                        {
+                            content.SetValue("slug_" + store.Alias, slug.ToUrlSegment());
+                        }
+                        else
+                        {
+                            content.SetValue("slug", slug.ToUrlSegment());
+                        }
                     }
-
-                    var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
-
-                    // Update Slug if Slug Exist on same Level and is Published
-                    if (siblings.Any(x => x.GetValue<string>("slug").ToLowerInvariant() == slug.ToLowerInvariant()))
-                    {
-
-                        // Random not a nice solution
-                        Random rnd = new Random();
-
-                        slug = slug + "-" + rnd.Next(1, 150);
-
-                        content.SetValue("slug", slug);
-
-                        _log.Warn("Duplicate slug found for product : " + content.Id);
-
-                        e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you.", EventMessageType.Warning));
-                    }
-
-                    content.SetValue("slug", slug.ToUrlSegment());
                 }
             }
         }
