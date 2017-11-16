@@ -154,6 +154,15 @@ namespace Ekom
                         if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                         {
                             slug = title.ToUrlSegment().ToLowerInvariant();
+
+                            if (content.HasProperty("slug_" + store.Alias))
+                            {
+                                content.SetValue("slug_" + store.Alias, slug);
+                            }
+                            else
+                            {
+                                content.SetValue("slug", slug);
+                            }
                         }
 
                         var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
@@ -181,14 +190,6 @@ namespace Ekom
                             e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
                         }
 
-                        if (content.HasProperty("slug_" + store.Alias))
-                        {
-                            content.SetValue("slug_" + store.Alias, slug.ToUrlSegment());
-                        }
-                        else
-                        {
-                            content.SetValue("slug", slug.ToUrlSegment());
-                        }
                     }
                 }
             }
