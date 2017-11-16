@@ -1,7 +1,11 @@
-﻿using System;
+﻿using Ekom.Services;
+using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
@@ -16,16 +20,33 @@ namespace Ekom
 
             if (content != null && (content.DocumentTypeAlias == "ekmProduct" || content.DocumentTypeAlias == "ekmCategory"))
             {
-                StringBuilder builder = new StringBuilder();
+                var stores = API.Store.Current.GetAllStores();
 
-                foreach (IPublishedContent node in content.AncestorsOrSelf().Where(x => x.DocumentTypeAlias == "ekmProduct" || x.DocumentTypeAlias == "ekmCategory").Reverse())
+                if (stores.Any())
                 {
-                    string slug = node.HasProperty("slug") && node.HasValue("slug") ? node.GetPropertyValue<string>("slug") : node.UrlName;
+                    
+                    if (content.DocumentTypeAlias == "ekmProduct")
+                    {
+                        var product = API.Catalog.Current.GetProduct(stores.First().Alias, id);
 
-                    builder.AppendFormat("/{0}", slug);
+                        if (product != null)
+                        {
+                            return product.Url;
+                        }
+                        
+                    } else
+                    {
+                        var category = API.Catalog.Current.GetCategory(stores.First().Alias, id);
+
+                        if (category != null)
+                        {
+                            return category.Url;
+                        }
+                        
+                    }
+
                 }
-
-                return builder.ToString();
+              
             }
 
             return null;
@@ -33,7 +54,49 @@ namespace Ekom
 
         public IEnumerable<string> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
         {
+            var content = umbracoContext.ContentCache.GetById(id);
+
+            if (content != null && (content.DocumentTypeAlias == "ekmProduct" || content.DocumentTypeAlias == "ekmCategory"))
+            {
+                var list = new List<string>();
+
+                var stores = API.Store.Current.GetAllStores();
+
+                if (stores.Count() > 1)
+                {
+                    foreach (var store in stores.Skip(1))
+                    {
+
+
+                        if (content.DocumentTypeAlias == "ekmProduct")
+                        {
+                            var product = API.Catalog.Current.GetProduct(store.Alias, id);
+
+                            if (product != null)
+                            {
+                                list.Add(product.Url);
+                            }
+
+                        }
+                        else
+                        {
+                            var category = API.Catalog.Current.GetCategory(store.Alias, id);
+
+                            if (category != null)
+                            {
+                                list.Add(category.Url);
+                            }
+
+                        }
+
+                    }
+                }
+
+                return list;
+            }
+
             return Enumerable.Empty<string>();
+
         }
     }
 }
