@@ -154,15 +154,15 @@ namespace Ekom
                         if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                         {
                             slug = title.ToUrlSegment().ToLowerInvariant();
+                        }
 
-                            if (content.HasProperty("slug_" + store.Alias))
-                            {
-                                content.SetValue("slug_" + store.Alias, slug);
-                            }
-                            else
-                            {
-                                content.SetValue("slug", slug);
-                            }
+                        if (content.HasProperty("slug_" + store.Alias))
+                        {
+                            content.SetValue("slug_" + store.Alias, slug.ToUrlSegment().ToLowerInvariant());
+                        }
+                        else
+                        {
+                            content.SetValue("slug", slug.ToUrlSegment().ToLowerInvariant());
                         }
 
                         var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
