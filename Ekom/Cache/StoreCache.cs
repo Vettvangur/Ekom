@@ -1,13 +1,13 @@
-﻿using Examine;
+﻿using Ekom.Helpers;
+using Ekom.Models;
+using Ekom.Services;
+using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Umbraco.Core.Models;
-using Ekom.Helpers;
-using Ekom.Models;
-using Ekom.Services;
 
 namespace Ekom.Cache
 {
@@ -45,6 +45,7 @@ namespace Ekom.Cache
             catch // Restart Application if Examine just initialized
             {
                 // I have no idea if this does any good
+                _log.Info("Unloading Application Domain");
                 Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
             }
 
