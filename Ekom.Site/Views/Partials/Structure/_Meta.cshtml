@@ -1,0 +1,77 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.API
+@using Ekom.Site.Extensions.Services;
+
+@{
+
+    var local = Store.Current.GetStore();
+
+    var product = Catalog.Current.GetProduct();
+    var category = Catalog.Current.GetCategory();
+
+    string _host = Request.Url.Host.ToLower();
+    string host = Request.Url.Scheme + "://" + _host;
+
+    string url = host + Model.Content.Url;
+
+    var root = UmbracoService.GetRootNode(Model.Content);
+
+    string pageTitle = UtilityService.GetTitle(Model.Content);
+    string siteName = root.GetPropertyValue<string>("siteName");
+    string divider = " - ";
+    string description = Model.Content.GetPropertyValue<string>("metaDescription");
+    string keywords = Model.Content.GetPropertyValue<string>("metaKeywords");
+
+    if (category != null)
+    {
+        pageTitle = category.Title;
+        url = category.Url;
+    }
+
+    if (product != null)
+    {
+
+        pageTitle = product.Title;
+        url = product.Url;
+    }
+
+    string title = pageTitle + divider + siteName;
+
+    string ogTitle = Model.Content.HasValue("ogTitle") ? Model.Content.GetPropertyValue<string>("ogTitle") + divider + siteName : title;
+    string ogDescription = Model.Content.HasValue("ogDescription") ? Model.Content.GetPropertyValue<string>("ogDescription") + divider + siteName : description;
+
+    string ogImage = "";
+
+    if (Model.Content.HasValue("ogImage"))
+    {
+        var media = Umbraco.TypedMedia(Model.Content.GetPropertyValue<string>("ogImage"));
+
+        if (media != null)
+        {
+            ogImage = media.Url + "?width=860&height=860&mode=fit";
+        }
+    }
+
+    <title>@title</title>
+
+    <meta name="description" content="@description">
+    <meta name="keywords" content="@keywords">
+
+    <meta property="og:title" content="@ogTitle">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="@url">
+
+    if (!string.IsNullOrEmpty(ogImage))
+    {
+        <meta property="og:image" content="@(host)@ogImage">
+    }
+
+    <meta property="og:site_name" content="@siteName">
+    <meta property="og:description" content="@ogDescription">
+
+
+    if (Model.Content.GetPropertyValue<bool>("hideFromSearchCrawlers"))
+    {
+        <meta name="robots" content="noindex" />
+    }
+}

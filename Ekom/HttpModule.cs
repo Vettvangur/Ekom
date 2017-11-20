@@ -38,10 +38,13 @@ namespace Ekom
             HttpContext httpCtx = application.Context;
 
             var url = httpCtx.Request.Url;
+            var uri = url.AbsoluteUri;
+
+            if (uri.Contains(".css") || uri.Contains(".js")) { return; }
 
             var storeSvc = Configuration.container.GetInstance<StoreService>();
 
-            Store store = storeSvc.GetStoreByDomain(url.Host);
+            Store store = storeSvc.GetStoreByDomain(url.AbsoluteUri);
 
             if (store != null)
             {

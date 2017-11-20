@@ -1,0 +1,30 @@
+﻿.select {
+    border: 1px solid $border-color;
+    height: 48px;
+    display:inline-block;
+
+    &--light {
+        border: 0;
+    }
+
+    &__value {
+        display: block;
+        line-height: 48px;
+        padding: 0 20px;
+        cursor: pointer;
+        text-transform:uppercase;
+
+        &:after {
+            margin-left: 10px;
+            font-family: "ekom";
+            font-weight:normal;
+            text-transform:initial;
+            content: "\63";
+            vertical-align: middle;
+        }
+    }
+
+    &__dropdown {
+        display: none;
+    }
+}

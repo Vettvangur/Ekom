@@ -1,4 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Our.Umbraco.Vorto.Extensions;
+using Our.Umbraco.Vorto.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using Umbraco.Core;
+using Umbraco.Core.Models;
+using Umbraco.Web;
 
 namespace Ekom.Utilities
 {
@@ -22,5 +30,6 @@ namespace Ekom.Utilities
 
             return val;
         }
+
     }
 }

@@ -78,6 +78,9 @@
     <Reference Include="CookComputing.XmlRpcV2, Version=2.5.0.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d, processorArchitecture=MSIL">
       <HintPath>..\packages\xmlrpcnet.2.5.0\lib\net20\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
+    <Reference Include="Ekom.Vorto.Languages">
+      <HintPath>Ekom.Vorto.Binaries\Ekom.Vorto.Languages.dll</HintPath>
+    </Reference>
     <Reference Include="Examine, Version=0.1.83.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.0.1.83\lib\net45\Examine.dll</HintPath>
     </Reference>
@@ -107,6 +110,9 @@
     </Reference>
     <Reference Include="interfaces, Version=1.0.6396.36619, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Lecoati.LeBlender.Extension, Version=1.0.8.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lecoati.LeBlender.1.0.8.4\lib\Lecoati.LeBlender.Extension.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\log4net.dll</HintPath>
@@ -308,6 +314,28 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.html" />
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.js" />
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\edit.html" />
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\edit.js" />
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\sort.html" />
+    <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\sort.js" />
+    <Content Include="App_Plugins\LeBlender\common\directive\blendereditorwrapper.js" />
+    <Content Include="App_Plugins\LeBlender\common\directive\layersresizabledraggable.js" />
+    <Content Include="App_Plugins\LeBlender\common\directive\propertygrideditorwrapper.js" />
+    <Content Include="App_Plugins\LeBlender\common\filter\orderobjectby.filter.js" />
+    <Content Include="App_Plugins\LeBlender\common\services\requesthelper.service.js" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\assets\parameterconfig.css" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\dialogs\parameterconfig.controller.js" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\dialogs\parameterconfig.html" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\dialogs\parameterconfig.prevalues.controller.js" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\dialogs\parameterconfig.prevalues.html" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\leblendereditor.controller.js" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\leblendereditor.html" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\leblenderproperties.controller.js" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\leblenderproperties.html" />
+    <Content Include="App_Plugins\LeBlender\editors\textstring\textstringconfig.html" />
+    <Content Include="App_Plugins\LeBlender\views_samples\sample_styles.css" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.controller.js" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.htm" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.resource.js" />
@@ -369,7 +397,17 @@
     <Content Include="Views\CheckoutYourInfo.cshtml" />
     <Content Include="Views\CheckoutShippingPayment.cshtml" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
+    <Content Include="App_Plugins\LeBlender\Web.config" />
+    <Content Include="App_Plugins\LeBlender\views_samples\Tabs.cshtml" />
+    <Content Include="App_Plugins\LeBlender\views_samples\Highlight.cshtml" />
+    <Content Include="App_Plugins\LeBlender\views_samples\Carousel.cshtml" />
+    <Content Include="App_Plugins\LeBlender\package.manifest" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\LeBlender.cshtml" />
+    <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
     <None Include="packages.config" />
+    <Content Include="Views\Partials\Structure\_Header.cshtml" />
+    <Content Include="Views\Partials\Structure\_Footer.cshtml" />
+    <Content Include="Views\Partials\Structure\_Meta.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -399,16 +437,9 @@
     <Content Include="Config\Lang\zh-CN.user.xml" />
     <Content Include="Config\Splashes\booting.aspx" />
     <Content Include="Config\Splashes\noNodes.aspx" />
-    <Content Include="Css\app.css" />
-    <Content Include="Css\foundation.css" />
-    <Content Include="Css\foundation.min.css" />
     <Content Include="default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\app.js" />
-    <Content Include="Scripts\vendor\foundation.js" />
-    <Content Include="Scripts\vendor\foundation.min.js" />
-    <Content Include="Scripts\vendor\jquery.js" />
-    <Content Include="Scripts\vendor\what-input.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -418,9 +449,13 @@
     <Folder Include="Views\MacroPartials\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
-      <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
-      <Name>Ekom.Extensions</Name>
+    <ProjectReference Include="..\Ekom.Site.Extensions\Ekom.Site.Extensions.csproj">
+      <Project>{c8d798cd-9d24-444e-a7fc-9cdb0816669f}</Project>
+      <Name>Ekom.Site.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom\Ekom.csproj">
+      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
+      <Name>Ekom</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

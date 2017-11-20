@@ -3,9 +3,11 @@ using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Models.Data;
 using Ekom.Services;
+using Ekom.Utilities;
 using Hangfire;
 using log4net;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Events;
@@ -137,6 +139,7 @@ namespace Ekom
         {
             foreach (var content in e.PublishedEntities)
             {
+                _log.Info("Debug1: " + content.Id);
 
                 var alias = content.ContentType.Alias;
 
@@ -146,24 +149,32 @@ namespace Ekom
 
                     var stores = API.Store.Current.GetAllStores();
 
-                    foreach (var store in stores)
+                    var slugItems = new Dictionary<string, object>();
+                    var titleItems = new Dictionary<string, object>();
+
+                    foreach (var store in stores.OrderBy(x => x.SortOrder))
                     {
+
+                        _log.Info("Debug2: " + store.Alias);
+
+                        var name = content.Name.Trim();
                         var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
                         var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
 
-                        if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
+                        if (string.IsNullOrEmpty(title))
                         {
-                            slug = title.ToUrlSegment().ToLowerInvariant();
+                            title = name;
+                            titleItems.Add(store.Alias, title);
                         }
 
-                        if (content.HasProperty("slug_" + store.Alias))
+                        if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                         {
-                            content.SetValue("slug_" + store.Alias, slug.ToUrlSegment().ToLowerInvariant());
+                            slug = title;
                         }
-                        else
-                        {
-                            content.SetValue("slug", slug.ToUrlSegment().ToLowerInvariant());
-                        }
+
+                        _log.Info("Debug Title: " + title);
+                        _log.Info("Debug Slug: " + slug);
+                        
 
                         var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
 
@@ -175,21 +186,21 @@ namespace Ekom
                             Random rnd = new Random();
 
                             slug = slug + "-" + rnd.Next(1, 150);
-
-                            if (content.HasProperty("slug_" + store.Alias))
-                            {
-                                content.SetValue("slug_" + store.Alias, slug);
-                            } else
-                            {
-                                content.SetValue("slug", slug);
-                            }
-
    
                             _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
 
                             e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
                         }
 
+                        slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
+                        
+                    }
+
+                    content.SetVortoValue("slug", slugItems);
+
+                    if (titleItems.Any())
+                    {
+                        content.SetVortoValue("title", titleItems);
                     }
                 }
             }

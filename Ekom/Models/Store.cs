@@ -10,6 +10,8 @@ using System.Linq;
 using System.Reflection;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Ekom.Services;
+using Umbraco.Web;
 
 namespace Ekom.Models
 {
@@ -37,6 +39,8 @@ namespace Ekom.Models
         public bool VatIncludedInPrice { get; set; }
         public string OrderNumberTemplate { get; set; }
         public string OrderNumberPrefix { get; set; }
+        public string Url { get; set; }
+
         /// <summary>
         /// Used by Ekom extensions
         /// </summary>
@@ -74,6 +78,8 @@ namespace Ekom.Models
 
             item.Fields.TryGetValue("orderNumberPrefix", out string orderNumberPrefix);
             OrderNumberPrefix = orderNumberPrefix;
+
+            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
         }
 
         /// <summary>
@@ -106,6 +112,8 @@ namespace Ekom.Models
             {
                 OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
             }
+
+            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
         }
 
         private static readonly ILog Log =

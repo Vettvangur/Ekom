@@ -1,93 +1,33 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using Ekom.API
+
 @{
     Layout = null;
-    var currentStore = Store.Current.GetStore();
-    var categories = Catalog.Current.GetRootCategories();
-
-    Ekom.Models.OrderInfo order = null;
-    var alias = "";
-
-    if (currentStore != null)
-    {
-        alias = currentStore.Alias;
-        order = Order.Current.GetOrder(alias);
-    }
-
 }
 
 <!doctype html>
 <html class="no-js" lang="en">
-  <head>
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ekom Store</title>
-    <link rel="stylesheet" href="/css/foundation.min.css">
-  </head>
-  <body>
 
-    <!-- Start Top Bar -->
-    <div class="top-bar">
-      <div class="top-bar-left">
-        <ul class="menu">
-          <li class="menu-text"><a href="/">Ekom Site</a></li>
-            @if (categories != null)
-            {
-                foreach (var category in categories)
-                {
-                    <li>
-                        <a href="@category.Url">@category.Title</a>
-                    </li>
-                }
-            }
+    @Html.Partial("Structure/_Meta")
 
-        </ul>
-      </div>
-        <div class="top-bar-right">
-            <ul class="menu">
-                <li>
-                    @if (order != null)
-                    {
-                        <a href="/karfan">Karfa (@order.Quantity)</a>
-                    } else
-                    {
-                        <span>Engin karfa</span>
-                    }
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,600,700" rel="stylesheet">
 
-                </li>
-            </ul>
-        </div>
-    </div>
+    <link rel="stylesheet" href="~/Content/css/app.css?v=@DateTime.Now.Ticks">
 
-	@RenderSection("Main", required: false)
+</head>
+<body>
 
-    <div class="callout large secondary">
-      <div class="row">
-        <div class="large-4 columns">
-          <h5>Vivamus Hendrerit Arcu Sed Erat Molestie</h5>
-          <p>Curabitur vulputate, ligula lacinia scelerisque tempor, lacus lacus ornare ante, ac egestas est urna sit amet arcu. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed molestie augue sit.</p>
-        </div>
-        <div class="large-3 large-offset-2 columns">
-          <ul class="menu vertical">
-            <li><a href="#">One</a></li>
-            <li><a href="#">Two</a></li>
-            <li><a href="#">Three</a></li>
-            <li><a href="#">Four</a></li>
-          </ul>
-        </div>
-        <div class="large-3 columns">
-          <ul class="menu vertical">
-            <li><a href="#">One</a></li>
-            <li><a href="#">Two</a></li>
-            <li><a href="#">Three</a></li>
-            <li><a href="#">Four</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    @Html.Partial("Structure/_Header")
 
-    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-    <script src="http://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.js"></script>
-    <script src="/Scripts/app.js?@DateTime.Now.Ticks"></script>
-  </body>
+    <main>
+        @RenderSection("Main", required: false)
+    </main>
+    
+    @Html.Partial("Structure/_Footer")
+
+    <script src="~/Content/js/app.js?v=@DateTime.Now.Ticks"></script>
+
+</body>
 </html>

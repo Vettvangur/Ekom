@@ -1,4 +1,4 @@
-//  Foundation for Sites Settings
+﻿//  Foundation for Sites Settings
 //  -----------------------------
 //
 //  Table of Contents:
@@ -65,25 +65,28 @@
 // 1. Global
 // ---------
 
+$font-montserrat: 'Montserrat', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+
 $global-font-size: 100%;
 $global-width: rem-calc(1200);
 $global-lineheight: 1.5;
-$foundation-palette: ( primary: #1779ba, secondary: #767676, success: #3adb76, warning: #ffae00, alert: #cc4b37, );
-$light-gray: #e6e6e6;
-$medium-gray: #cacaca;
-$dark-gray: #8a8a8a;
-$black: #0a0a0a;
-$white: #fefefe;
+$foundation-palette: ( primary: #666ee8, secondary: #898ea2, success: #3adb76, warning: #ffae00, alert: #cc4b37, );
+$border-color: #edeef4;
+$light-gray: #ced1db;
+$medium-gray: #6b6f81;
+$dark-gray: #464855;
+$black: #000;
+$white: #fff;
 $body-background: $white;
-$body-font-color: $black;
-$body-font-family: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+$body-font-color: $medium-gray;
+$body-font-family: $font-montserrat;
 $body-antialiased: true;
 $global-margin: 1rem;
 $global-padding: 1rem;
 $global-position: 1rem;
 $global-weight-normal: normal;
 $global-weight-bold: bold;
-$global-radius: 0;
+$global-radius: 4px;
 $global-menu-padding: 0.7rem 1rem;
 $global-menu-nested-margin: 1rem;
 $global-text-direction: ltr;

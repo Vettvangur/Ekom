@@ -55,12 +55,16 @@ namespace Ekom
                                          .ToLower()
                                          .AddTrailing();
 
+                _log.Info("TryFindContent1: umbDomain : " + contentRequest.UmbracoDomain.DomainName);
+
                 Store store = _storeSvc.GetStore(contentRequest.UmbracoDomain, httpContext);
 
                 if (store == null)
                 {
                     throw new Exception("No store found.");
                 }
+
+                _log.Info("TryFindContent2: Store Selected : " + store.Alias);
 
                 #region Product and/or Category
 

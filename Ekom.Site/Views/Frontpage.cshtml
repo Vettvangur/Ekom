@@ -5,7 +5,7 @@
     Layout = "Masterpage.cshtml";
 
     var products = new List<Ekom.Models.Product>();
-    var currentStore = Store.Current.GetStore("IS");
+    var currentStore = Store.Current.GetStore();
     var alias = "";
     Ekom.Models.OrderInfo order = null;
 

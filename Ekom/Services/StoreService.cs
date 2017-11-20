@@ -43,6 +43,8 @@ namespace Ekom.Services
 
         public Store GetStoreByDomain(string domain = "")
         {
+            _log.Info("GetStoreByDomain: " + domain);
+
             Store store = null;
 
             if (!string.IsNullOrEmpty(domain))
@@ -67,6 +69,8 @@ namespace Ekom.Services
                 store = _storeCache.Cache.FirstOrDefault().Value;
             }
 
+            _log.Info("GetStoreByDomain: Store Selected:" + store.Alias);
+
             return store;
         }
 
@@ -78,6 +82,27 @@ namespace Ekom.Services
             // If store is not found by alias then return first store
             return store ?? _storeCache.Cache.FirstOrDefault().Value;
         }
+
+        //private Store GetStoreByAlias(string alias, IDomain umbracoDomain)
+        //{
+        //    var store = _storeCache.Cache
+        //                     .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias) && x.Value.Domains.Any(z => z.Id == umbracoDomain.Id))
+        //                     .Value;
+
+        //    if (store == null)
+        //    {
+        //        store = GetStoreByDomain(umbracoDomain.DomainName);
+
+        //        // If store found in another domain then reset the cookie
+        //        if (store != null)
+        //        {
+        //            UmbracoContext.Current.HttpContext.Response.Cookies["StoreInfo"].Values["StoreAlias"] = store.Alias;
+        //        }
+        //    }
+
+        //    // If store is not found by alias then return first store
+        //    return store ?? _storeCache.Cache.FirstOrDefault().Value;
+        //}
 
         public Store GetStoreFromCache()
         {
@@ -104,22 +129,32 @@ namespace Ekom.Services
         /// <param name="httpContext"></param>
         public Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         {
-            HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
-            string storeAlias = storeInfo?.Values["StoreAlias"];
+            //HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];
 
-            Store store = null;
+            //_log.Info("debug store: " + (storeInfo != null ? storeInfo.Value : ""));
 
-            // Attempt to retrieve Store from cookie data
-            if (!string.IsNullOrEmpty(storeAlias))
-            {
-                store = GetStoreByAlias(storeAlias);
-            }
+            //string storeAlias = storeInfo?.Values["StoreAlias"];
 
-            // Get by Domain
-            if (store == null && umbracoDomain != null)
-            {
-                store = GetStoreByDomain(umbracoDomain.DomainName);
-            }
+            //_log.Info("debug2 store: " + storeAlias);
+
+            _log.Info("GetStore: " + umbracoDomain.DomainName);
+
+            Store store = GetStoreByDomain(umbracoDomain.DomainName);
+
+            //_log.Info("GetStore store: " + store.alias);
+
+            //// Attempt to retrieve Store from cookie data
+            //if (!string.IsNullOrEmpty(storeAlias))
+            //{
+            //    store = GetStoreByAlias(storeAlias, umbracoDomain);
+            //}
+
+            // Get by Alias and Domain. If by alias is not found on the domain then search by domain
+            //if (store == null && umbracoDomain != null)
+            //{
+            //    _log.Info("debug3 store: Get Store By Domain: " + umbracoDomain.DomainName);
+            //    store = GetStoreByDomain(umbracoDomain.DomainName);
+            //}
 
             // Grab default store / First store from cache if no umbracoDomain present
             if (store == null)
@@ -129,5 +164,6 @@ namespace Ekom.Services
 
             return store;
         }
+
     }
 }

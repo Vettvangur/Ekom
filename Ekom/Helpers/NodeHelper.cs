@@ -11,6 +11,7 @@ using System.Web.Script.Serialization;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
+using Ekom.Utilities;
 
 namespace Ekom.Helpers
 {
@@ -222,24 +223,17 @@ namespace Ekom.Helpers
         {
             try
             {
-                var fieldExist = item.Fields.Any(x => x.Key == field + "_" + storeAlias);
+                var fieldExist = item.Fields.Any(x => x.Key == field);
 
                 if (fieldExist)
                 {
-                    // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                    var value = item.Fields[field + "_" + storeAlias];
+                    
+                    var value = item.Fields[field];
 
-                    if ((string.IsNullOrEmpty(value) || value == "0") && storeAlias.ToLower() == "is")
-                    {
-                        value = item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
-                    }
+                    return value.GetVortoValue(storeAlias);
+                }
 
-                    return value;
-                }
-                else
-                {
-                    return item.Fields.Any(x => x.Key == field) ? item.Fields[field] : "";
-                }
+                return string.Empty;
 
             } catch(Exception ex)
             {
@@ -261,17 +255,14 @@ namespace Ekom.Helpers
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this Dictionary<string, string> items, string property, string storeAlias)
         {
-            var fieldExist = items.ContainsKey(property + "_" + storeAlias);
+            var fieldExist = items.ContainsKey(property);
 
             if (fieldExist)
             {
-                return items[property + "_" + storeAlias];
+                return items[property].GetVortoValue(storeAlias);
             }
-            // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-            else
-            {
-                return items.ContainsKey(property) ? items[property] : "";
-            }
+
+            return string.Empty;
         }
 
         /// <summary>
@@ -285,23 +276,14 @@ namespace Ekom.Helpers
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this IContent item, string field, string storeAlias)
         {
-            if (item.HasProperty(field + "_" + storeAlias))
+            if (item.HasProperty(field))
             {
-                var fieldValue = item.GetValue<string>(field + "_" + storeAlias);
+                var fieldValue = item.GetValue<string>(field);
 
-                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
-                                                     fieldValue == "0"))
-                {
-                    fieldValue = item.GetValue<string>(field);
-                }
+                return fieldValue.GetVortoValue(storeAlias);
+            }
 
-                return fieldValue;
-            }
-            else
-            {
-                return item.HasProperty(field) ? item.GetValue<string>(field) : "";
-            }
+            return string.Empty;
         }
 
         /// <summary>
@@ -315,23 +297,15 @@ namespace Ekom.Helpers
         /// <returns>Property Value</returns>
         public static string GetStoreProperty(this IPublishedContent item, string field, string storeAlias)
         {
-            if (item.HasProperty(field + "_" + storeAlias))
-            {
-                var fieldValue = item.GetPropertyValue<string>(field + "_" + storeAlias);
 
-                // temp fix for 66north  2 disable fields. 'disable' && 'disable_IS'
-                if (storeAlias.ToLower() == "is" && (string.IsNullOrEmpty(fieldValue) ||
-                                                     fieldValue == "0"))
-                {
-                    fieldValue = item.GetPropertyValue<string>(field);
-                }
-
-                return fieldValue;
-            }
-            else
+            if (item.HasProperty(field))
             {
-                return item.HasProperty(field) ? item.GetPropertyValue<string>(field) : "";
+                var fieldValue = item.GetPropertyValue<string>(field);
+
+                return fieldValue.GetVortoValue(storeAlias);
             }
+
+            return string.Empty;
         }
     }
 }

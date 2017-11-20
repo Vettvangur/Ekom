@@ -1,100 +1,101 @@
-import formToObject from 'utilities/formToObject';
+﻿import formToObject from 'utilities/formToObject';
 
 var election = {
 
-    init: function () {
+	init: function () {
 
-        var form = document.getElementsByClassName("election")[0];
+		var form = document.getElementsByClassName("election")[0];
 
-        if (form) {
+		if (form) {
 
-            form.addEventListener("submit", function (e) {
-                e.preventDefault();
+			form.addEventListener("submit", function (e) {
+				e.preventDefault();
 
-                election.submit(form);
-            });
+				election.submit(form);
+			});
 
-        }
-    },
+		}
+	},
 
-    submit: function (form) {
-      
-        var button = form.getElementsByTagName("button")[0];
+	submit: function (form) {
 
-        button.disabled = true;
+		var button = form.getElementsByTagName("button")[0];
 
-        var data = formToObject.formToObject(form);
+		button.disabled = true;
 
-
-        var xhr = new XMLHttpRequest();
-        xhr.open(form.getAttribute("method"), form.getAttribute("action"));
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.responseType = 'json';
+		var data = formToObject.formToObject(form);
 
 
-        var message = form.getElementsByClassName("message")[0];
+		var xhr = new XMLHttpRequest();
+		xhr.open(form.getAttribute("method"), form.getAttribute("action"));
+		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		xhr.responseType = 'json';
 
-        if (message) {
-            message.remove();
-        }
 
-        xhr.onload = ev => {
-            var resp = xhr.response;
+		var message = form.getElementsByClassName("message")[0];
 
-            if (typeof resp === 'string') {
-                resp = JSON.parse(resp);
-            }
+		if (message) {
+			message.remove();
+		}
 
-            if (xhr.status >= 200 && xhr.status < 300) {
+		xhr.onload = ev => {
+			var resp = xhr.response;
 
-                if (resp.success) {
-                    election.message(resp.message, form, 'success');
-                    button.disabled = false;
-                } else {
-                    button.disabled = false;
-                    election.message(resp.message, form, 'error');
-                }
+			if (typeof resp === 'string') {
+				resp = JSON.parse(resp);
+			}
 
-            } else {
-                button.disabled = false;
-                election.message(resp.message, form, 'error');
-            }
+			if (xhr.status >= 200 && xhr.status < 300) {
 
-        };
+				if (resp.success) {
+					election.message(resp.message, form, 'success');
+					button.disabled = false;
+				} else {
+					button.disabled = false;
+					election.message(resp.message, form, 'error');
+				}
 
-        xhr.send(data);
-    },
+			} else {
+				button.disabled = false;
+				election.message(resp.message, form, 'error');
+			}
 
-    message: function (message, form, status) {
-        form.classList.add('hold');
+		};
 
-        var m = document.createElement('div');
-        m.classList.add('message');
-        m.classList.add(status);
-        m.innerHTML = '<strong>' + message + '</strong>';
+		xhr.send(data);
+	},
 
-        m.addEventListener('click', function () {
-            election.reset(form);
-        });
+	message: function (message, form, status) {
+		form.classList.add('hold');
 
-        form.insertAdjacentElement('beforeend', m);
-    },
-    reset: function (form) {
+		var m = document.createElement('div');
+		m.classList.add('message');
+		m.classList.add(status);
+		m.innerHTML = '<strong>' + message + '</strong>';
 
-        var election = form.querySelector('input[name=Election]').value;
+		m.addEventListener('click', function () {
+			election.reset(form);
+		});
 
-        form.reset();
+		form.insertAdjacentElement('beforeend', m);
+	},
 
-        form.querySelector('input[name=Election]').value = election;
+	reset: function (form) {
 
-        form.classList.remove('hold');
+		var election = form.querySelector('input[name=Election]').value;
 
-        var message = form.getElementsByClassName("message")[0];
+		form.reset();
 
-        if (message) {
-            message.remove();
-        }
-    }
+		form.querySelector('input[name=Election]').value = election;
+
+		form.classList.remove('hold');
+
+		var message = form.getElementsByClassName("message")[0];
+
+		if (message) {
+			message.remove();
+		}
+	}
 
 };
 
