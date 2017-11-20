@@ -88,7 +88,7 @@
       <HintPath>..\packages\GMO.Umbraco.PropertyHelper.1.1.1\lib\net452\GMO.Umbraco.PropertyHelper.dll</HintPath>
     </Reference>
     <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.0.0.1\lib\net45\GMO.Vorto.dll</HintPath>
+      <HintPath>..\packages\GMO.Vorto.0.0.2\lib\net45\GMO.Vorto.dll</HintPath>
     </Reference>
     <Reference Include="Hangfire.Core, Version=1.6.16.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hangfire.Core.1.6.16\lib\net45\Hangfire.Core.dll</HintPath>

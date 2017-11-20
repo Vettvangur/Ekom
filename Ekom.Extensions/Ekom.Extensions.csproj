@@ -84,7 +84,7 @@
       <HintPath>..\packages\GMO.Umbraco.PropertyHelper.1.1.1\lib\net452\GMO.Umbraco.PropertyHelper.dll</HintPath>
     </Reference>
     <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.0.0.1\lib\net45\GMO.Vorto.dll</HintPath>
+      <HintPath>..\packages\GMO.Vorto.0.0.2\lib\net45\GMO.Vorto.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.4.9.5, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
