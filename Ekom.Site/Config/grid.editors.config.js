@@ -1,46 +1,33 @@
-﻿[
-	{
-	    "name": "Rich text editor",
-	    "alias": "rte",
-	    "view": "rte",
-	    "icon": "icon-article"
-	},
-	{
-	    "name": "Image",
-	    "alias": "media",
-	    "view": "media",
-	    "icon": "icon-picture"
-	},
-	{
-	    "name": "Macro",
-	    "alias": "macro",
-	    "view": "macro",
-	    "icon": "icon-settings-alt"
-	},
-	{
-	    "name": "Embed",
-	    "alias": "embed",
-	    "view": "embed",
-	    "icon": "icon-movie-alt"
-	},
+[
     {
-        "name": "Headline",
-        "alias": "headline",
-        "view": "textstring",
-        "icon": "icon-coin",
-        "config": {
-            "style": "font-size: 36px; line-height: 45px; font-weight: bold",
-            "markup": "<h1>#value#</h1>"
-        }
+        "name": "Rich text editor",
+        "alias": "rte",
+        "view": "rte",
+        "icon": "icon-article"
     },
-	{
-	    "name": "Quote",
-	    "alias": "quote",
-	    "view": "textstring",
-	    "icon": "icon-quote",
-	    "config": {
-	        "style": "border-left: 3px solid #ccc; padding: 10px; color: #ccc; font-family: serif; font-variant: italic; font-size: 18px",
-	        "markup": "<blockquote>#value#</blockquote>"
-	    }
-	}
+    {
+        "name": "Macro",
+        "alias": "macro",
+        "view": "macro",
+        "icon": "icon-settings-alt"
+    },
+    {
+        "name": "Featured Products",
+        "alias": "featuredProducts",
+        "view": "/App_Plugins/LeBlender/editors/leblendereditor/LeBlendereditor.html",
+        "icon": "icon-thumbnail-list",
+        "render": "/App_Plugins/LeBlender/editors/leblendereditor/views/Base.cshtml",
+        "config": {
+            "renderInGrid": "1",
+            "frontView": "/views/partials/leblender/FeaturedProducts.cshtml",
+            "editors": [
+                {
+                    "name": "Products",
+                    "alias": "products",
+                    "propretyType": {},
+                    "dataType": "cab8c907-f3cb-442c-af42-754469d269b1"
+                }
+            ]
+        }
+    }
 ]

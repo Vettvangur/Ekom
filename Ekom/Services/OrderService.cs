@@ -59,7 +59,16 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(string storeAlias)
         {
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+            _log.Info("Get Order: Store: " + storeAlias);
+
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
+            return GetOrder(store);
+        }
+
+        public OrderInfo GetOrder(Store store)
+        {
+            _store = store;
 
             _log.Info("Get Order: Store: " + _store.Alias);
 

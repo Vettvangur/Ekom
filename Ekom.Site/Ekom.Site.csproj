@@ -88,7 +88,7 @@
       <HintPath>..\packages\GMO.Umbraco.PropertyHelper.1.1.1\lib\net452\GMO.Umbraco.PropertyHelper.dll</HintPath>
     </Reference>
     <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.0.0.1\lib\net45\GMO.Vorto.dll</HintPath>
+      <HintPath>..\packages\GMO.Vorto.0.0.2\lib\net45\GMO.Vorto.dll</HintPath>
     </Reference>
     <Reference Include="Hangfire.Core, Version=1.6.16.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hangfire.Core.1.6.16\lib\net45\Hangfire.Core.dll</HintPath>
@@ -374,6 +374,7 @@
     <Content Include="Content\css\app.css" />
     <Content Include="Content\css\app.min.css" />
     <Content Include="Content\js\app.js" />
+    <Content Include="Ekom.Vorto.Binaries\Ekom.Vorto.Languages.dll" />
     <Content Include="Views\Category.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />
     <Content Include="Views\Masterpage.cshtml" />
@@ -404,10 +405,20 @@
     <Content Include="App_Plugins\LeBlender\package.manifest" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\LeBlender.cshtml" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
+    <Content Include="Web\UI\App_Plugins\Vorto\css\vorto.css" />
+    <Content Include="Web\UI\App_Plugins\Vorto\js\jquery.hoverIntent.minified.js" />
+    <Content Include="Web\UI\App_Plugins\Vorto\js\vorto.js" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.html" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languagePicker.html" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languageSourceRadioList.html" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.mandatoryBehaviourPicker.html" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.propertyEditorPicker.html" />
+    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.rtlBehaviourPicker.html" />
     <None Include="packages.config" />
     <Content Include="Views\Partials\Structure\_Header.cshtml" />
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
     <Content Include="Views\Partials\Structure\_Meta.cshtml" />
+    <Content Include="Views\Partials\Modules\_Banner.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

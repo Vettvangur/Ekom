@@ -44,7 +44,7 @@ namespace Ekom
 
             var storeSvc = Configuration.container.GetInstance<StoreService>();
 
-            Store store = storeSvc.GetStoreByDomain(url.AbsoluteUri);
+            Store store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
 
             if (store != null)
             {

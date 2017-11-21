@@ -143,6 +143,8 @@ namespace Ekom
 
                 var alias = content.ContentType.Alias;
 
+                var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
+
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
                     // Need to get this into function
@@ -175,11 +177,8 @@ namespace Ekom
                         _log.Info("Debug Title: " + title);
                         _log.Info("Debug Slug: " + slug);
                         
-
-                        var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id);
-
                         // Update Slug if Slug Exist on same Level and is Published
-                        if (siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
+                        if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
                         {
 
                             // Random not a nice solution

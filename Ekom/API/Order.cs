@@ -23,19 +23,8 @@ namespace Ekom.API
             }
         }
 
-        IOrderService _orderService;
-        IStoreService _storeSvc;
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        /// <param name="orderService"></param>
-        /// <param name="storeSvc"></param>
-        public Order(IOrderService orderService, IStoreService storeSvc)
-        {
-            _orderService = orderService;
-            _storeSvc = storeSvc;
-        }
+        IOrderService _orderService => Configuration.container.GetInstance<IOrderService>();
+        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
         /// <summary>
         /// Get order using cookie data and ekmRequest store.

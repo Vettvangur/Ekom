@@ -11,8 +11,7 @@
 
     if (currentStore != null)
     {
-        alias = currentStore.Alias;
-        order = Order.Current.GetOrder(alias);
+        order = Order.Current.GetOrder();
         products = Catalog.Current.GetAllProducts().ToList();
     }
 
@@ -20,6 +19,13 @@
 
 @section Main {
 
+    @Html.Partial("Modules/_Banner")
+
+    *
+
+    @Html.GetGridHtml(Model.Content, "grid", "Foundation")
+
+    *
     <div class="row column text-center">
         <div>
 
