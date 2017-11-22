@@ -114,7 +114,7 @@ namespace Ekom.Services
 
         public IEnumerable<Store> GetAllStores()
         {
-            return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.Level);
+            return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
         /// <summary>
