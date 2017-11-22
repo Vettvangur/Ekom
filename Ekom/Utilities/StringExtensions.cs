@@ -86,6 +86,8 @@ namespace Ekom.Utilities
 
                     if (value.IsJson())
                     {
+                        Log.Info("GetVortoValue: " + value);
+
                         var o = JsonConvert.DeserializeObject<VortoValue>(value);
 
                         if (o != null)
@@ -125,5 +127,10 @@ namespace Ekom.Utilities
             return input.StartsWith("{") && input.EndsWith("}")
                    || input.StartsWith("[") && input.EndsWith("]");
         }
+
+        private static readonly ILog Log =
+        LogManager.GetLogger(
+            MethodBase.GetCurrentMethod().DeclaringType
+        );
     }
 }

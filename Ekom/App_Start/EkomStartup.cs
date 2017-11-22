@@ -139,7 +139,7 @@ namespace Ekom
         {
             foreach (var content in e.PublishedEntities)
             {
-                _log.Info("Debug1: " + content.Id);
+                _log.Info("Debug: " + content.Id);
 
                 var alias = content.ContentType.Alias;
 
@@ -156,12 +156,13 @@ namespace Ekom
 
                     foreach (var store in stores.OrderBy(x => x.SortOrder))
                     {
-
-                        _log.Info("Debug2: " + store.Alias);
-
                         var name = content.Name.Trim();
+
                         var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
                         var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
+
+                        _log.Info("Debug1 Title: " + title);
+                        _log.Info("Debug1 Slug: " + slug);
 
                         if (string.IsNullOrEmpty(title))
                         {
@@ -174,8 +175,8 @@ namespace Ekom
                             slug = title;
                         }
 
-                        _log.Info("Debug Title: " + title);
-                        _log.Info("Debug Slug: " + slug);
+                        _log.Info("Debu2 Title: " + title);
+                        _log.Info("Debu2 Slug: " + slug);
                         
                         // Update Slug if Slug Exist on same Level and is Published
                         if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))

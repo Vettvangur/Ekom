@@ -278,6 +278,8 @@ namespace Ekom.Helpers
         {
             if (item.HasProperty(field))
             {
+                Log.Info("GetStoreProperty: " + field + " - " + storeAlias);
+
                 var fieldValue = item.GetValue<string>(field);
 
                 return fieldValue.GetVortoValue(storeAlias);

@@ -54,6 +54,11 @@ namespace Ekom
                                          .AbsolutePath
                                          .ToLower()
                                          .AddTrailing();
+                
+                if (path == "/")
+                {
+                    return false;
+                }
 
                 Store store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
 

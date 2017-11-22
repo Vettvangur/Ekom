@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 
 namespace Ekom.Utilities
@@ -24,14 +25,24 @@ namespace Ekom.Utilities
 
             if (property != null)
             {
+                Log.Info("SetVortoValue: Pr : " + property.Alias);
 
-                var vortoValue = new VortoValue();
-                vortoValue.DtdGuid = property.Key;
-                vortoValue.Values = items;
+                var dts = ApplicationContext.Current.Services.DataTypeService;
 
-                var json = JsonConvert.SerializeObject(vortoValue);
+                var dt = dts.GetDataTypeDefinitionByPropertyEditorAlias(property.Alias);
 
-                content.SetValue(alias, json);
+                if (dt.Any())
+                {
+                    Log.Info("SetVortoValue: Dt : " + dt.First().PropertyEditorAlias);
+
+                    var vortoValue = new VortoValue();
+                    vortoValue.DtdGuid = dt.First().Key;
+                    vortoValue.Values = items;
+
+                    var json = JsonConvert.SerializeObject(vortoValue);
+
+                    content.SetValue(alias, json);
+                }
 
             }
         }
