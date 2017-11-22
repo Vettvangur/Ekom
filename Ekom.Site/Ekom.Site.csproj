@@ -419,6 +419,8 @@
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
     <Content Include="Views\Partials\Structure\_Meta.cshtml" />
     <Content Include="Views\Partials\Modules\_Banner.cshtml" />
+    <Content Include="Views\Partials\Leblender\FeaturedProducts.cshtml" />
+    <Content Include="Views\Partials\Grid\Foundation.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

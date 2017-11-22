@@ -92,3 +92,6 @@ UmbracoTraceLog.txt
 *_i.c
 *_p.c
 .builds
+
+**/Ekom.Site/content/css/*
+**/Ekom.Site/content/js/*
