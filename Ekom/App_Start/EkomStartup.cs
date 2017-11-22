@@ -139,15 +139,12 @@ namespace Ekom
         {
             foreach (var content in e.PublishedEntities)
             {
-                _log.Info("Debug: " + content.Id);
-
                 var alias = content.ContentType.Alias;
-
-                var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
-                    // Need to get this into function
+
+                    var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
                     var stores = API.Store.Current.GetAllStores();
 

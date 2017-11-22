@@ -1,9 +1,24 @@
 ﻿@inherits UmbracoViewPage<Lecoati.LeBlender.Extension.Models.LeBlenderModel>
 @using Lecoati.LeBlender.Extension;
+@using Ekom.API;
 
 @if (Model.Items.Any())
 {
-    <div class="featured">
-        asdasd
-    </div>
+
+    foreach (var item in Model.Items)
+    {
+        var productNodes = item.GetValue<IEnumerable<IPublishedContent>>("products");
+
+        var products = Catalog.Current.GetProductsByIds(productNodes.Select(x => x.Id).ToArray());
+
+        <div class="featured">
+
+            @foreach (var p in products)
+            {
+                <p>@p.Title</p>
+            }
+
+        </div>
+    }
+
 }
