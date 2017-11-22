@@ -78,17 +78,16 @@
     <Reference Include="CookComputing.XmlRpcV2, Version=2.5.0.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d, processorArchitecture=MSIL">
       <HintPath>..\packages\xmlrpcnet.2.5.0\lib\net20\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
-    <Reference Include="Ekom.Vorto.Languages">
-      <HintPath>Ekom.Vorto.Binaries\Ekom.Vorto.Languages.dll</HintPath>
+    <Reference Include="Ekom.Vorto.Languages, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\Ekom.Vorto.Languages.dll</HintPath>
     </Reference>
     <Reference Include="Examine, Version=0.1.83.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.0.1.83\lib\net45\Examine.dll</HintPath>
     </Reference>
     <Reference Include="GMO.Umbraco.PropertyHelper, Version=1.1.6502.28012, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Umbraco.PropertyHelper.1.1.1\lib\net452\GMO.Umbraco.PropertyHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.0.0.2\lib\net45\GMO.Vorto.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\GMO.Umbraco.PropertyHelper.dll</HintPath>
     </Reference>
     <Reference Include="Hangfire.Core, Version=1.6.16.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hangfire.Core.1.6.16\lib\net45\Hangfire.Core.dll</HintPath>
@@ -180,6 +179,10 @@
     </Reference>
     <Reference Include="NPoco, Version=3.7.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NPoco.3.7.2\lib\net45\NPoco.dll</HintPath>
+    </Reference>
+    <Reference Include="Our.Umbraco.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dlls\Our.Umbraco.Vorto.dll</HintPath>
     </Reference>
     <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
       <HintPath>..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
@@ -279,15 +282,6 @@
     <Reference Include="Umbraco.ModelsBuilder, Version=3.0.7.99, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.ModelsBuilder.3.0.7\lib\Umbraco.ModelsBuilder.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6502.29796, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.6.1.5\lib\net452\Umbraco.NetPayment.dll</HintPath>
-    </Reference>
-    <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6501.34962, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Borgun.6.1.4\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
-    </Reference>
-    <Reference Include="Umbraco.NetPayment.Valitor, Version=2.0.6501.34970, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Valitor.6.1.4\lib\net452\Umbraco.NetPayment.Valitor.dll</HintPath>
-    </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>
     </Reference>
@@ -374,7 +368,6 @@
     <Content Include="Content\css\app.css" />
     <Content Include="Content\css\app.min.css" />
     <Content Include="Content\js\app.js" />
-    <Content Include="Ekom.Vorto.Binaries\Ekom.Vorto.Languages.dll" />
     <Content Include="Views\Category.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />
     <Content Include="Views\Masterpage.cshtml" />
@@ -405,15 +398,6 @@
     <Content Include="App_Plugins\LeBlender\package.manifest" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\LeBlender.cshtml" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
-    <Content Include="Web\UI\App_Plugins\Vorto\css\vorto.css" />
-    <Content Include="Web\UI\App_Plugins\Vorto\js\jquery.hoverIntent.minified.js" />
-    <Content Include="Web\UI\App_Plugins\Vorto\js\vorto.js" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languagePicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.languageSourceRadioList.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.mandatoryBehaviourPicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.propertyEditorPicker.html" />
-    <Content Include="Web\UI\App_Plugins\Vorto\views\vorto.rtlBehaviourPicker.html" />
     <None Include="packages.config" />
     <Content Include="Views\Partials\Structure\_Header.cshtml" />
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
