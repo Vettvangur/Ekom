@@ -86,8 +86,6 @@ namespace Ekom.Utilities
 
                     if (value.IsJson())
                     {
-                        Log.Info("GetVortoValue: " + value);
-
                         var o = JsonConvert.DeserializeObject<VortoValue>(value);
 
                         if (o != null)
