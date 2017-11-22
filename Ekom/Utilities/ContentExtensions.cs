@@ -25,24 +25,14 @@ namespace Ekom.Utilities
 
             if (property != null)
             {
-                Log.Info("SetVortoValue: Pr : " + property.Alias);
 
-                var dts = ApplicationContext.Current.Services.DataTypeService;
+                var vortoValue = new VortoValue();
+                vortoValue.DtdGuid = property.Key;
+                vortoValue.Values = items;
 
-                var dt = dts.GetDataTypeDefinitionByPropertyEditorAlias(property.Alias);
+                var json = JsonConvert.SerializeObject(vortoValue);
 
-                if (dt.Any())
-                {
-                    Log.Info("SetVortoValue: Dt : " + dt.First().PropertyEditorAlias);
-
-                    var vortoValue = new VortoValue();
-                    vortoValue.DtdGuid = dt.First().Key;
-                    vortoValue.Values = items;
-
-                    var json = JsonConvert.SerializeObject(vortoValue);
-
-                    content.SetValue(alias, json);
-                }
+                content.SetValue(alias, json);
 
             }
         }
