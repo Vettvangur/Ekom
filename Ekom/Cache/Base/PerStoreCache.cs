@@ -146,7 +146,7 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _log.Error("Error on adding item with id: " + r.Id + " from Examine", ex);
+                    _log.Error("Error on adding item with id: " + r.Id + " from Examine in Store: " + store.Alias, ex);
                 }
             }
 
@@ -182,7 +182,7 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _log.Error("Error on Add/Replacing item with id: " + node.Id, ex);
+                    _log.Error("Error on Add/Replacing item with id: " + node.Id + " in store: " + store.Value.Alias, ex);
                 }
             }
         }

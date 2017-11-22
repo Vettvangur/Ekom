@@ -22,6 +22,12 @@
             "frontView": "/views/partials/leblender/FeaturedProducts.cshtml",
             "editors": [
                 {
+                    "name": "Caption",
+                    "alias": "caption",
+                    "propretyType": {},
+                    "dataType": "0cc0eba1-9960-42c9-bf9b-60e150b429ae"
+                },
+                {
                     "name": "Products",
                     "alias": "products",
                     "propretyType": {},

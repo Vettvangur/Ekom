@@ -67,13 +67,6 @@ namespace Ekom
                     throw new Exception("No store found.");
                 }
 
-                // Check if root url on store then dont try to find product/category. better solution needed
-                if (store.Domains.Any(x => x.DomainName == contentRequest.UmbracoDomain.DomainName))
-                {
-                    return false;
-                }
-
-
                 #region Product and/or Category
 
                 // Requesting Product?
@@ -85,7 +78,7 @@ namespace Ekom
                 int contentId = 0;
                 Category category;
 
-                if (product != null)
+                if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {
                     if (virtualContent.InvariantEquals("true"))
                     {
@@ -111,7 +104,7 @@ namespace Ekom
                                                                  x.Value.Urls.Contains(path))
                                             .Value;
 
-                    if (category != null)
+                    if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
                         if (virtualContent.InvariantEquals("true"))
                         {

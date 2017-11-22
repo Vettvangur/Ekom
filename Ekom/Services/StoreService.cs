@@ -47,10 +47,12 @@ namespace Ekom.Services
 
             if (!string.IsNullOrEmpty(domain))
             {
+                domain = domain.TrimEnd("/");
+
                 var storeDomain
                     = _domainCache.Cache
                                       .FirstOrDefault
-                                          (x => x.Value.DomainName.Equals(domain.TrimEnd("/"), StringComparison.InvariantCultureIgnoreCase))
+                                          (x => domain.Contains(x.Value.DomainName))
                                       .Value;
 
                 if (storeDomain != null)
@@ -64,7 +66,7 @@ namespace Ekom.Services
 
             if (store == null)
             {
-                store = _storeCache.Cache.FirstOrDefault().Value;
+                store = GetAllStores().First();
             }
 
             return store;

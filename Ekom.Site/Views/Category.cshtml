@@ -1,12 +1,17 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using Ekom.API
-@using Ekom.Cache;
+@using Ekom.API;
+
 @{
     Layout = "Masterpage.cshtml";
     var category = Catalog.Current.GetCategory();
+    var store = Store.Current.GetStore();
+
 }
 @section Main {
 	
+
+    <h2>@store.Alias</h2>
+
     <div class="row small-up-2 large-up-4">
         <div class="column">
 

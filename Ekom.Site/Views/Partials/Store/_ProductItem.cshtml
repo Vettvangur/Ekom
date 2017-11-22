@@ -1,0 +1,27 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+
+@{
+    var product = (Ekom.Models.Product)ViewData["product"];
+    var gridSize = (string)ViewData["size"];
+
+    if (product != null)
+    {
+        <div class="cell @gridSize">
+
+            <div class="productItem">
+
+                <a href="@product.Url" class="productItem__image">
+                    <img src="~/Content/img/product.jpg" alt="@product.Title"/>
+                </a>
+
+                <a href="@product.Url" class="productItem__caption">
+                    <strong>@product.Title</strong>
+                </a>
+
+                <p class="productItem__price">@product.Price.WithVat.ToCurrencyString()</p>
+
+            </div>
+        </div>
+    }
+}
+

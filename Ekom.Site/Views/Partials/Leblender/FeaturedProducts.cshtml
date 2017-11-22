@@ -8,15 +8,34 @@
     foreach (var item in Model.Items)
     {
         var productNodes = item.GetValue<IEnumerable<IPublishedContent>>("products");
+        var caption = item.GetValue<string>("caption");
 
         var products = Catalog.Current.GetProductsByIds(productNodes.Select(x => x.Id).ToArray());
 
         <div class="featured">
 
-            @foreach (var p in products)
+            @if (!string.IsNullOrEmpty(caption))
             {
-                <p>@p.Title</p>
+                <h2 class="featured__caption">@caption</h2>
             }
+            
+            @if (products.Any())
+            {
+                <div class="featured__list">
+
+                    <div class="grid-x grid-margin-x grid-view">
+                        @foreach (var product in products)
+                        {
+                            @Html.Partial("Store/_ProductItem", new ViewDataDictionary {
+                            {"product", product }, { "size", "medium-3 small-6" }
+                        })
+                        }
+                    </div>
+
+
+                </div>
+            }
+
 
         </div>
     }
