@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Umbraco.Web;
 
 namespace Ekom.Models
 {
@@ -16,23 +17,30 @@ namespace Ekom.Models
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string Title { get; set; }
-
+        public Guid[] ImageIds { get; set; }
         public IEnumerable<OrderedVariant> Variants { get; set; }
+
+        public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
         public OrderedVariantGroup(Variant variant, VariantGroup variantGroup, Store store)
         {
             this.variant = variant;
             this.store = store;
 
+            Properties = variantGroup.Properties;
+
             Id = variantGroup.Id;
             Key = variantGroup.Key;
             Title = variantGroup.Title;
+            ImageIds = variantGroup.Images.Any() ? variantGroup.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
 
             var variants = new List<OrderedVariant>();
 
             variants.Add(new OrderedVariant(variant, store));
 
             Variants = variants;
+
+            
         }
 
         public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
@@ -41,9 +49,12 @@ namespace Ekom.Models
 
             this.storeInfo = storeInfo;
 
+            Properties = variantGroupObject["Properties"].ToObject<Dictionary<string, string>>();
+
             Id = (int)variantGroupObject["Id"];
             Key = (Guid)variantGroupObject["Key"];
             Title = (string)variantGroupObject["Title"];
+            ImageIds = variantGroupObject["ImageIds"].ToObject<Guid[]>();
 
             var variants = variantGroupObject["Variants"];
 
@@ -74,6 +85,7 @@ namespace Ekom.Models
                 Variants = Enumerable.Empty<OrderedVariant>();
             }
         }
+
 
         protected static readonly ILog Log =
             LogManager.GetLogger(

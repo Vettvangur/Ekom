@@ -333,9 +333,46 @@ namespace Ekom.Helpers
                     }
                 }
 
+                if (Guid.TryParse(id, out Guid mediaGuid))
+                {
+                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+
+                    var node = umbracoHelper.TypedMedia(mediaGuid);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Get Ipublished media node
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Property Value</returns>
+        public static IEnumerable<IPublishedContent> GetMediaNodesByGuid(Guid[] ids)
+        {
+            var list = new List<IPublishedContent>();
+
+            if (ids.Any())
+            {
+                foreach (var id in ids)
+                {
+                    var node = GetMediaNode(id.ToString());
+
+                    if (node != null)
+                    {
+                        list.Add(node);
+                    }
+                }
+            }
+
+            return list;
         }
 
         /// <summary>

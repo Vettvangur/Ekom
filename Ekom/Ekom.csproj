@@ -283,7 +283,9 @@
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />
+    <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
+    <Compile Include="Utilities\DictionaryExtensions.cs" />
     <Compile Include="Utilities\PropertyHelper.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />

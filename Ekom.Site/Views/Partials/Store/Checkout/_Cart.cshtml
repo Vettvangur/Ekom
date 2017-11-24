@@ -1,10 +1,13 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.Utilities;
 
 @{
     var order = (Ekom.Models.OrderInfo)ViewData["order"];
 
     if (order != null)
     {
+        <h2>@order.UniqueId</h2>
+
         <table class="cart__table">
             <thead>
                 <tr>
@@ -20,22 +23,35 @@
                 {
                     var product = orderline.Product;
 
+                    var variantGroup = product.VariantGroups.First();
+
+                    var images = variantGroup.ImageIds.GetImageNodes();
+
+                    var catalogProduct = Ekom.API.Catalog.Current.GetProduct(product.StoreInfo.Alias, product.Key);
+
                     <tr>
                         <td>
                             <div class="cart__productInformation">
-                                @product.Title
 
-                                @foreach (var g in orderline.Product.VariantGroups)
+                                @if (images.Any())
                                 {
-                                    <p>
-                                        @g.Title
-
-                                        @foreach (var v in g.Variants)
-                                        {
-                                            <strong>@v.Title</strong><br />
-                                        }
-                                    </p>
+                                    <div class="cart__productImage">
+                                        <img src="@images.First().Url?width=130&height=90&mode=crop&bgcolor=ffffff&anchor=top" alt="@product.Title"/>
+                                    </div>
                                 }
+
+                                <a href="@catalogProduct.Url" class="cart__productCaption">@product.Title</a>
+
+                                <div class="cart__productColor">
+                                    Color <span style="background-color:#@variantGroup.Properties.GetProperty("color");" title="@variantGroup.Title"></span>
+                                </div>
+
+                                <div class="cart__productSize">
+                                    @foreach (var v in variantGroup.Variants)
+                                    {
+                                        @v.Title
+                                    }
+                                </div>
 
                             </div>
                         </td>
@@ -44,9 +60,9 @@
                             @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart_quantity-form" }))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
-                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
+                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.UpdateQuantity" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
-                                <input type="number" name="quantity" value="@orderline.UpdateQuantity" />
+                                <input type="number" name="quantity" value="@orderline.Quantity" />
                                 <button type="submit" class="button small">Update</button>
                             }     
                         </td>

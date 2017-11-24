@@ -179,26 +179,17 @@ namespace Ekom.Models
         /// <param name="alias"></param>
         public string GetProperty(string alias)
         {
-            if (Properties.Any(x => x.Key == alias))
-            {
-                return Properties.FirstOrDefault(x => x.Key == alias).Value;
-            }
-
-            return string.Empty;
+            return Properties.GetProperty(alias);
         }
 
         /// <summary>
         /// Get value in properties by store
         /// </summary>
         /// <param name="alias"></param>
+        /// <param name="storeAlias"></param>
         public string GetProperty(string alias, string storeAlias)
         {
-            if (Properties.Any(x => x.Key == alias))
-            {
-                return Properties.FirstOrDefault(x => x.Key == alias).Value.GetVortoValue(storeAlias);
-            }
-
-            return string.Empty;
+            return Properties.GetProperty(alias, storeAlias);
         }
     }
 }
