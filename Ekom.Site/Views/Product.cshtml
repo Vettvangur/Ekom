@@ -1,104 +1,102 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
-@using Ekom.App_Start
-@using Ekom.Cache
-@using Ekom.Models
-@using Ekom.Services
 @using Ekom.API
-@using Store = Ekom.API.Store
 
 @{
     Layout = "Masterpage.cshtml";
 
-    var currentStore = Store.Current.GetStore();
-    var currentProduct  = Catalog.Current.GetProduct();
-    var currentCategory = Catalog.Current.GetCategory();
-
-    var products = Catalog.Current.GetAllProducts(currentStore.Alias);
-    var categories = Catalog.Current.GetAllCategories(currentStore.Alias);
-    //var storeDomains = container.Resolve<IBaseCache<IDomain>>().Cache.Select(x => x.Value);
-    var stores = Store.Current.GetAllStores();
+    var product = Catalog.Current.GetProduct();
+    var category = Catalog.Current.GetCategory();
+    var groups = product.VariantGroups.Where(x => x.Variants.Any());
 }
 
 @section Main {
 
-    <p>ID: @Model.Content.Id</p>
-	<p>NodeName: @Model.Content.Name</p>
-    <p>Path: @Model.Content.Path</p>
+    <div class="product">
 
-    <p>Current Store: @currentStore.Alias</p>
-    <p>Current Product: @currentProduct.Title</p>
-    <p>Current Category: @currentCategory.Title</p>
+        <div class="product__grid">
 
-    <ul>
-        @foreach(var url in currentProduct.Urls)
-        {
-            <li>@url</li>
-        }
-    </ul>
+            <div class="product__image-container">
+                <img src="~/Content/img/product.jpg?width=685&height=845&mode=crop" alt="@product.Title" />
+            </div>
 
-    <h4>Products</h4>
+            <div class="product__info-container">
 
-    @foreach (var product in products.Where(x => !string.IsNullOrEmpty(x.Title)).OrderBy(x => x.SortOrder))
-    {
-        <div>
-            @product.Id - @product.Title - @product.Slug - @product.Price.Value - @product.Key - <strong>@product.Url</strong>
+                <h4 class="product__category">
+                    <a href="@category.Url">@category.Title</a>
+                </h4>
 
-            @foreach (var url in product.Urls)
-            {
-                <p><strong>@url</strong></p>
-            }
+                <h1 class="product__caption">
+                    @product.Title
+                </h1>
 
-            <ul>
-                @foreach (var group in product.VariantGroups.OrderBy(x => x.SortOrder))
+                <strong class="product__price">@product.Price.WithVat.ToCurrencyString</strong>
+
+                @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "product__form" }))
                 {
-                    <li>
-                        @group.Id - @group.Title - @group.Variants.Count() - Group Key: @group.Key - Product Key: @group.ProductKey
+                    <input type="hidden" name="productId" value="@product.Key" />
+                    <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
 
-                        <ol>
-                            @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
+                    if (groups.Any())
+                    {
+                        var groupFirst = true;
+
+                        <div class="product__variant-groups">
+                            @foreach (var group in groups)
                             {
-                                <li>
-                                    @variant.Title - @variant.Price.Value - @variant.Price.WithVat.ToCurrencyString() - @variant.Stock - @variant.VariantGroupKey - @variant.VariantGroup.Title
-                                </li>
+                                var color = group.GetProperty("color");
+
+                                <button type="button" class="product__groups-item @(groupFirst ? "product__groups-item--is-active" : "")" title="@group.Title" data-key="@group.Key">
+                                    <span class="product__groups-color" style="background-color:#@color"></span>
+                                    <span class="product__groups-caption">@group.Title</span>
+                                </button>
+
+                                groupFirst = false;
                             }
-                        </ol>
+                        </div>
 
-                    </li>
+                        <div class="product__variants">
+                            @{
+                                var first = true;
+
+                                foreach (var group in groups)
+                                {
+                                    <div class="product__variant @(first ? "product__variant--is-active" : "")" data-key="@group.Key">
+                                        <label for="inp_@group.Key">
+                                            Stærð
+                                        </label>
+                                        <select @(first ? "name=variantId" : "") data-name="variantId" id="inp_@group.Key">
+                                            @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
+                                            {
+                                                <option value="@variant.Key">@variant.Title</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    first = false;
+                                }
+                            }
+                        </div>
+                    }
+
+                    <div class="product__quantity">
+                        <label for="inp_qty">
+                            @Umbraco.GetDictionaryValue("PpQuantity")
+                        </label>
+                        <input type="number" value="1" name="quantity" id="inp_qty" />
+                    </div>
+
+                    <div class="product__actions">
+
+                        <button class="button large product__add-to-cart">Setja í körfu</button>
+
+                    </div>
+
                 }
-            </ul>
+
+            </div>
+
         </div>
-    }
 
-    <h4>Categories</h4>
-
-    <ul>
-        @foreach (var category in categories.OrderBy(x => x.SortOrder))
-        {
-            <li>
-                @category.Id - @category.Title - @category.Products.Count() - @category.SubCategories.Count() - @category.ParentCategoryId - @category.Store.Alias - @category.SortOrder - @category.Url
-            
-                @foreach (var url in category.Urls)
-                {
-                    <p><strong>@url</strong></p>
-                }
-            </li>
-        }
-    </ul>
-
-    <h4>Stores</h4>
-
-    <ul>
-        @foreach (var store in stores)
-        {
-            <li>@store.Id - @store.Alias - @store.Domains.Count() - @store.StoreRootNode</li>
-        }
-    </ul>
-
-
-    @*<h4>Store Domains</h4>
-
-    @foreach (var domain in storeDomains) {
-        <p>@domain.Id - @domain.RootContentId - @domain.LanguageIsoCode - @domain.Key - @domain.DomainName</p>
-    }*@
+    </div>
 
 }

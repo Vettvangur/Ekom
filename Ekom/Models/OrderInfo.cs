@@ -66,13 +66,14 @@ namespace Ekom.Models
         /// <summary>
         /// SimplePrice object for total value of all orderlines.
         /// </summary>
-        public SimplePrice ChargedAmount
+        public Price ChargedAmount
         {
             get
             {
                 var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
 
-                return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
+                //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
+                return new Price(amount, StoreInfo);
             }
         }
         public StoreInfo StoreInfo

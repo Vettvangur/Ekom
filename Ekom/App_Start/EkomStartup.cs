@@ -141,8 +141,8 @@ namespace Ekom
             {
                 var alias = content.ContentType.Alias;
 
-                if (alias == "ekmProduct" || alias == "ekmCategory")
-                {
+
+                if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant") {
 
                     var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
@@ -155,11 +155,8 @@ namespace Ekom
                     {
                         var name = content.Name.Trim();
 
-                        var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+                        
                         var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
-
-                        _log.Info("Debug1 Title: " + title);
-                        _log.Info("Debug1 Slug: " + slug);
 
                         if (string.IsNullOrEmpty(title))
                         {
@@ -167,39 +164,46 @@ namespace Ekom
                             titleItems.Add(store.Alias, title);
                         }
 
-                        if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
+                        if (alias == "ekmProduct" || alias == "ekmCategory")
                         {
-                            slug = title;
+                            var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+
+                            if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
+                            {
+                                slug = title;
+                            }
+
+                            // Update Slug if Slug Exist on same Level and is Published
+                            if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
+                            {
+
+                                // Random not a nice solution
+                                Random rnd = new Random();
+
+                                slug = slug + "-" + rnd.Next(1, 150);
+
+                                _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
+
+                                e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
+                            }
+
+                            slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
                         }
 
-                        _log.Info("Debu2 Title: " + title);
-                        _log.Info("Debu2 Slug: " + slug);
-                        
-                        // Update Slug if Slug Exist on same Level and is Published
-                        if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
-                        {
-
-                            // Random not a nice solution
-                            Random rnd = new Random();
-
-                            slug = slug + "-" + rnd.Next(1, 150);
-   
-                            _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
-
-                            e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
-                        }
-
-                        slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
-                        
                     }
 
-                    content.SetVortoValue("slug", slugItems);
+                    if (slugItems.Any())
+                    {
+                        content.SetVortoValue("slug", slugItems);
+                    }  
 
                     if (titleItems.Any())
                     {
                         content.SetVortoValue("title", titleItems);
                     }
+
                 }
+
             }
         }
 

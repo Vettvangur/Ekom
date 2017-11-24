@@ -1,14 +1,14 @@
-import Blazy from 'utilities/blazy';
-import Menu from 'components/menu';
-import Election from 'components/election';
+﻿import Blazy from 'utilities/blazy';
+import Variants from 'components/variants';
+import Cart from 'components/cart';
 
 var global = {
-    init: function () {
+	init: function () {
 
-        Blazy.init();
-        Menu.init();
-        Election.init();
-    }
+		Blazy.init();
+		Variants.init();
+		Cart.init();
+	}
 };
 
 

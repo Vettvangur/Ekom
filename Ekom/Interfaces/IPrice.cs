@@ -6,7 +6,7 @@
     public interface IPrice
     {
         decimal Value { get; }
-        string ToCurrencyString();
+        string ToCurrencyString { get; }
     }
     public interface IVatPrice
     {

@@ -1,13 +1,18 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using Ekom.API;
+@using Ekom.Site.Extensions.Services;
 
 @{ 
     var currentStore = Store.Current.GetStore();
     var allStores = Store.Current.GetAllStores();
     var rootCategories = Catalog.Current.GetRootCategories();
+    var order = Order.Current.GetOrder();
+    var root = UmbracoService.GetRootNode(Model.Content);
+
+    var checkoutNode = root.Children.FirstOrDefault(x => x.GetTemplateAlias() == "Checkout");
 }
 
-<header class="header">
+<header class="header @(Model.Content.Level == 1 || Model.Content.DocumentTypeAlias == "ekmProduct" ? "header--no-margin" : "")">
 
     <div class="header__top">
         <div class="grid-container">
@@ -70,8 +75,9 @@
                         <ul>
                             @foreach (var category in rootCategories)
                             {
+                                var selected = Array.IndexOf(Model.Content.Path.Split(','), category.Id.ToString()) >= 0 ? true : false;
 
-                                <li>
+                                <li class="@(selected ? "header__navItem--is-selected" : "")">
                                     <a href="@category.Url">@category.Title</a>
                                 </li>
 
@@ -91,9 +97,9 @@
 
                 <div class="header__right">
                     
-                    <a href="#" class="header__cart">
+                    <a href="@(checkoutNode != null ? checkoutNode.Url : "")" class="header__cart">
                         <span class="header__cart__text">Your cart:</span>
-                        <span class="header__cart__qty">1</span>
+                        <span class="header__cart__qty">@(order != null ? order.Quantity : 0)</span>
                     </a>
 
                 </div>

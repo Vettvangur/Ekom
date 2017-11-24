@@ -47,6 +47,12 @@ namespace Ekom.Models
         public int SortOrder { get; set; }
         public IEnumerable<string> Urls { get; set; }
         public int Level { get; set; }
+        public Category RootCategory {
+            get
+            {
+                return Ancestors().FirstOrDefault();
+            }
+        }
         public string Url
         {
             get
@@ -217,6 +223,20 @@ namespace Ekom.Models
             UpdateDate = node.UpdateDate;
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
+        }
+
+        /// <summary>
+        /// Get value in properties
+        /// </summary>
+        /// <param name="alias"></param>
+        public string GetProperty(string alias)
+        {
+            if (Properties.Any(x => x.Key == alias))
+            {
+                return Properties.FirstOrDefault(x => x.Key == alias).Value;
+            }
+
+            return string.Empty;
         }
 
         private static readonly ILog Log =

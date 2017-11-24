@@ -6,6 +6,8 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Ekom.Factories
 {
@@ -27,6 +29,8 @@ namespace Ekom.Factories
 
         public VariantGroup Create(SearchResult item, Store store)
         {
+            var properties = new Dictionary<string, string>();
+
             var key = item.Fields["key"];
 
             var _key = new Guid();
@@ -54,8 +58,14 @@ namespace Ekom.Factories
                 throw new Exception("No key present for product in variant group.");
             }
 
+            foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
+            {
+                properties.Add(field.Key, field.Value);
+            }
+
             return new VariantGroup(store, _variantCache)
             {
+                Properties = properties,
                 Key = _key,
                 Id = item.Id,
                 ProductKey = _productKey,
@@ -66,11 +76,18 @@ namespace Ekom.Factories
 
         public VariantGroup Create(IContent item, Store store)
         {
+            var properties = new Dictionary<string, string>();
+
             var productKey = item.Parent().Key;
+
+            foreach (var prop in item.Properties)
+            {
+                properties.Add(prop.Alias, prop.Value?.ToString());
+            }
 
             return new VariantGroup(store, _variantCache)
             {
-
+                Properties = properties,
                 Id = item.Id,
                 Key = item.Key,
                 ProductKey = productKey,

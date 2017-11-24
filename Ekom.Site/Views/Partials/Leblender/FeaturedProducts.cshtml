@@ -23,19 +23,25 @@
             {
                 <div class="featured__list">
 
-                    <div class="grid-x grid-margin-x grid-view">
-                        @foreach (var product in products)
-                        {
-                            @Html.Partial("Store/_ProductItem", new ViewDataDictionary {
-                            {"product", product }, { "size", "medium-3 small-6" }
-                        })
-                        }
+                    <div class="products">
+
+                        <div class="grid-x grid-margin-x grid-view">
+
+                            @foreach (var product in products)
+                            {
+                                @Html.Partial("Store/_ProductItem", new ViewDataDictionary {
+                                    {"product", product },
+                                    { "size", "medium-3 small-6" }
+                                })
+                            }
+                        </div>
+
+
                     </div>
 
 
                 </div>
             }
-
 
         </div>
     }

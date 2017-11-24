@@ -55,14 +55,10 @@ namespace Ekom
                                          .ToLower()
                                          .AddTrailing();
 
-                _log.Info("TryFindContent Current Path: " + path);
-
                 if (path == "/")
                 {
                     return false;
                 }
-
-                _log.Info("TryFindContent Current DomainName: " + contentRequest.UmbracoDomain.DomainName);
 
                 Store store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
 
@@ -84,8 +80,6 @@ namespace Ekom
 
                 if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {
-                    _log.Info("TryFindContent Product Found: " + product.Id);
-
                     if (virtualContent.InvariantEquals("true"))
                     {
                         contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode"));
@@ -112,8 +106,6 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        _log.Info("TryFindContent Category Found: " + category.Id);
-
                         if (virtualContent.InvariantEquals("true"))
                         {
                             contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode"));
@@ -134,8 +126,6 @@ namespace Ekom
                 ekmRequest.Product = product;
                 ekmRequest.Category = category;
 
-                _log.Info("TryFindContent Content ID: " + contentId);
-
                 // Request for Product or Category
                 if (contentId != 0)
                 {
@@ -145,9 +135,6 @@ namespace Ekom
 
                     if (content != null)
                     {
-
-                        _log.Info("TryFindContent Content Node : " + content.Id + " - " + content.Name);
-
                         contentRequest.PublishedContent = content;
 
                         return true;

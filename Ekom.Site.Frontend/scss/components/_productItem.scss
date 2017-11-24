@@ -5,6 +5,9 @@
     font-weight: 600;
 
     &__image {
+        > img {
+            width:100%;
+        }
     }
 
     &__caption {

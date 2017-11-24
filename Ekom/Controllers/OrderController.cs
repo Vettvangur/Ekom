@@ -11,8 +11,7 @@ namespace Ekom.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    [PluginController("Ekom")]
-    public class OrderController : SurfaceController
+    public class EkomOrderController : SurfaceController
     {
         ILog _log;
         OrderService _orderSvc;
@@ -20,12 +19,12 @@ namespace Ekom.Controllers
         /// ctor
         /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
         /// </summary>
-        public OrderController()
+        public EkomOrderController()
         {
             _orderSvc = Configuration.container.GetInstance<OrderService>();
 
             var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(OrderController));
+            _log = logFac.GetLogger(typeof(EkomOrderController));
         }
 
         /// <summary>
@@ -33,7 +32,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
-        public JsonResult addtoOrder(OrderRequest request)
+        public JsonResult AddToOrder(OrderRequest request)
         {
             try
             {

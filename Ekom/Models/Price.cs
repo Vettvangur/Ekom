@@ -115,11 +115,15 @@ namespace Ekom.Models
                 return GetAmount();
             }
         }
-        public string ToCurrencyString()
+        public string ToCurrencyString
         {
-            var amount = GetAmount();
+            get
+            {
+                var amount = GetAmount();
 
-            return (amount).ToString(_config.CurrencyFormat, new CultureInfo(_culture));
+                return (amount).ToString(_config.CurrencyFormat, new CultureInfo(_culture));
+            }
+
         }
 
         private decimal GetAmount()

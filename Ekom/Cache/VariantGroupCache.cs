@@ -1,5 +1,4 @@
 ﻿using Examine;
-using System;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
@@ -12,7 +11,8 @@ namespace Ekom.Cache
 
         protected override VariantGroup New(SearchResult r, Store store)
         {
-            throw new NotImplementedException("Should use the VariantGroup Factory");
+            return new VariantGroup(r, store);
+            //throw new NotImplementedException("Should use the VariantGroup Factory");
         }
 
         public VariantGroupCache(

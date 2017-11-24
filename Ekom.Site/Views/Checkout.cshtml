@@ -1,0 +1,55 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+@using Ekom.API;
+
+@{
+	Layout = "Masterpage.cshtml";
+    var order = Order.Current.GetOrder();
+}
+
+@section Main {
+    
+    <div class="grid-container">
+
+        <div class="checkout">
+
+            @if (order != null && order.Quantity > 0)
+            {
+                <h1 class="checkout__caption">Checkout</h1>
+
+                <div class="checkout__cart">
+                    @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
+                    { "order", order }
+                })
+                </div>
+
+                <div class="checkout__information">
+                    @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
+                    { "order", order }
+                })
+                </div>
+
+                <div class="checkout__shipping">
+                    @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
+                    { "order", order }
+                })
+                </div>
+
+                <div class="checkout__payment">
+                    @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
+                    { "order", order }
+                })
+                </div>
+            }
+            else
+            {
+                <div class="checkout__empty">
+                    <h2>Engar vörur fundust í körfu</h2>
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+}
+

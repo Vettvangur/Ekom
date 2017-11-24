@@ -1,17 +1,20 @@
 ﻿using Ekom.Cache;
+using Ekom.Interfaces;
+using Examine;
 using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
     /// <summary>
     /// A group of variants sharing common properties and a group key
     /// </summary>
-    public class VariantGroup
+    public class VariantGroup : NodeEntity
     {
         Store _store { get; set; }
         IPerStoreCache<Variant> _variantCache;
@@ -58,6 +61,26 @@ namespace Ekom.Models
         public VariantGroup(Store store, IPerStoreCache<Variant> cache)
         {
             _variantCache = cache;
+            _store = store;
+        }
+
+        /// <summary>
+        /// Construct Variant Group from Examine item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store"></param>
+        public VariantGroup(SearchResult item, Store store) : base(item)
+        {
+            _store = store;
+        }
+
+        /// <summary>
+        /// Construct Variant Group from umbraco publish event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="store"></param>
+        public VariantGroup(IContent node, Store store) : base(node)
+        {
             _store = store;
         }
 
