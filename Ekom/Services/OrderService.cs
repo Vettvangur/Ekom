@@ -198,20 +198,20 @@ namespace Ekom.Services
                 _log.Info("AddOrderLineToOrderInfo: existingOrderLine Found");
 
                 // Update orderline quantity with value
-                existingOrderLine.Quantity = existingOrderLine.Quantity + quantity;
+                if (action == OrderAction.UpdateQuantity)
+                {
+                    existingOrderLine.Quantity = quantity;
+                } else
+                {
+                    existingOrderLine.Quantity = existingOrderLine.Quantity + quantity;
+                }
+                
             }
             else
             {
                 // Update orderline when adding product to orderline
 
                 _log.Info("AddOrderLineToOrderInfo: existingOrderLine Not Found");
-
-                // Dont really know why this is here.
-                if (action == OrderAction.Update)
-                {
-                    // Need to check for variant also.
-                    //existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
-                }
 
                 if (existingOrderLine == null)
                 {

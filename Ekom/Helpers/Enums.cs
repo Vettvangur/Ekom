@@ -56,6 +56,7 @@
     public enum OrderAction
     {
         Add,
-        Update
+        Update,
+        UpdateQuantity
     }
 }
