@@ -23,6 +23,19 @@
                     <tr>
                         <td>
                             <div class="cart__productInformation">
+                                @product.Title
+
+                                @foreach (var g in orderline.Product.VariantGroups)
+                                {
+                                    <p>
+                                        @g.Title
+
+                                        @foreach (var v in g.Variants)
+                                        {
+                                            <strong>@v.Title</strong><br />
+                                        }
+                                    </p>
+                                }
 
                             </div>
                         </td>

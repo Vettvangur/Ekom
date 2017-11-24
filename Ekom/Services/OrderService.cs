@@ -134,12 +134,13 @@ namespace Ekom.Services
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
             _date = DateTime.Now;
 
-            _log.Info("Add OrderLine ...  Get Order.. Store: " + _store.Alias);
+            _log.Info("Add OrderLine ... Store: " + _store.Alias);
 
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
 
-            _log.Info("Add OrderLine ...  Get Order..");
+            _log.Info("Add OrderLine ...  Get Order.. Action: " + action.Value);
+
             var orderInfo = GetOrder(storeAlias);
 
             if (orderInfo == null)
@@ -147,6 +148,8 @@ namespace Ekom.Services
                 _log.Info("Add OrderLine ...  Order not found..");
                 orderInfo = CreateEmptyOrder();
             }
+
+            _log.Info("Add OrderLine ...  Order: " + orderInfo.OrderNumber);
 
             AddOrderLineToOrderInfo(orderInfo, productId, variantIds, quantity, cartAction);
 
@@ -186,21 +189,28 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            OrderLine existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Id == productId);
+            _log.Info("AddOrderLineToOrderInfo: Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
+
+            OrderLine existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
 
             if (existingOrderLine != null)
             {
+                _log.Info("AddOrderLineToOrderInfo: existingOrderLine Found");
+
                 // Update orderline quantity with value
-                existingOrderLine.Quantity = quantity;
+                existingOrderLine.Quantity = existingOrderLine.Quantity + quantity;
             }
             else
             {
                 // Update orderline when adding product to orderline
 
+                _log.Info("AddOrderLineToOrderInfo: existingOrderLine Not Found");
+
+                // Dont really know why this is here.
                 if (action == OrderAction.Update)
                 {
                     // Need to check for variant also.
-                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+                    //existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
                 }
 
                 if (existingOrderLine == null)

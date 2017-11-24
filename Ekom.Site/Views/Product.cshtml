@@ -9,7 +9,6 @@
     var groups = product.VariantGroups.Where(x => x.Variants.Any()).OrderBy(x => x.SortOrder);
     var primaryVariantGroup = product.PrimaryVariantGroup;
     var primaryImage = primaryVariantGroup != null && primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url : "/content/img/product.jpg";
-
 }
 
 @section Main {
@@ -38,10 +37,10 @@
                 {
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
+                    <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
 
                     if (groups.Any())
                     {
-                        
 
                         <div class="product__variant-groups">
                             @foreach (var group in groups)
@@ -77,6 +76,7 @@
                                 }
                             }
                         </div>
+
                     }
 
                     <div class="product__quantity">
