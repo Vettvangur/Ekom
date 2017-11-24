@@ -16,29 +16,34 @@
             {
                 <h1 class="checkout__caption">Checkout</h1>
 
-                <div class="checkout__cart">
+                <div class="checkoutCart">
                     @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
                     { "order", order }
                 })
                 </div>
 
-                <div class="checkout__information">
-                    @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
-                    { "order", order }
-                })
+                <div class="checkout__container">
+
+                    <div class="checkoutInformation">
+                        @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
+                            { "order", order }
+                        })
+                    </div>
+
+                    <div class="checkoutShipping">
+                        @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
+                            { "order", order }
+                        })
+                    </div>
+
+                    <div class="checkoutPayment">
+                        @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
+                            { "order", order }
+                        })
+                    </div>
+
                 </div>
 
-                <div class="checkout__shipping">
-                    @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
-                    { "order", order }
-                })
-                </div>
-
-                <div class="checkout__payment">
-                    @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
-                    { "order", order }
-                })
-                </div>
             }
             else
             {

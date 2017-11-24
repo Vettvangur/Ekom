@@ -36,5 +36,39 @@ namespace Ekom.Utilities
 
             }
         }
+
+        public static void SetVortoValue(this IContent content, string alias, string storeAlias, object value)
+        {
+            var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
+
+            if (property != null)
+            {
+                var vortoValue = content.GetVortoObject(alias);
+
+                var vortoItems = new Dictionary<string, object>();
+
+                foreach (var vvalue in vortoValue.Values)
+                {
+                    var val = vvalue.Key == storeAlias ? value : vvalue.Value;
+
+                    vortoItems.Add(vvalue.Key, val);
+                }
+
+                SetVortoValue(content, alias, vortoItems);
+
+            }
+        }
+
+        public static VortoValue GetVortoObject(this IContent content, string alias)
+        {
+            var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
+
+            if (property != null)
+            {
+                return JsonConvert.DeserializeObject<VortoValue>(property.Value.ToString());
+            }
+
+            return null;
+        }
     }
 }

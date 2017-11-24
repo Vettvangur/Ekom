@@ -7,6 +7,7 @@
     var product = Catalog.Current.GetProduct();
     var category = Catalog.Current.GetCategory();
     var groups = product.VariantGroups.Where(x => x.Variants.Any());
+    var primaryVariantGroup = product.PrimaryVariantGroup;
 }
 
 @section Main {
@@ -38,41 +39,39 @@
 
                     if (groups.Any())
                     {
-                        var groupFirst = true;
+                        
 
                         <div class="product__variant-groups">
                             @foreach (var group in groups)
                             {
+                                var groupSelected = group.Id == primaryVariantGroup.Id;
+
                                 var color = group.GetProperty("color");
 
-                                <button type="button" class="product__groups-item @(groupFirst ? "product__groups-item--is-active" : "")" title="@group.Title" data-key="@group.Key">
+                                <button type="button" class="product__groups-item @(groupSelected ? "product__groups-item--is-active" : "")" title="@group.Title" data-key="@group.Key">
                                     <span class="product__groups-color" style="background-color:#@color"></span>
                                     <span class="product__groups-caption">@group.Title</span>
                                 </button>
-
-                                groupFirst = false;
                             }
                         </div>
 
                         <div class="product__variants">
                             @{
-                                var first = true;
-
                                 foreach (var group in groups)
                                 {
-                                    <div class="product__variant @(first ? "product__variant--is-active" : "")" data-key="@group.Key">
+                                    var groupSelected = group.Id == primaryVariantGroup.Id;
+
+                                    <div class="product__variant @(groupSelected ? "product__variant--is-active" : "")" data-key="@group.Key">
                                         <label for="inp_@group.Key">
                                             Stærð
                                         </label>
-                                        <select @(first ? "name=variantId" : "") data-name="variantId" id="inp_@group.Key">
+                                        <select @(groupSelected ? "name=variantId" : "") data-name="variantId" id="inp_@group.Key">
                                             @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
                                             {
                                                 <option value="@variant.Key">@variant.Title</option>
                                             }
                                         </select>
                                     </div>
-
-                                    first = false;
                                 }
                             }
                         </div>

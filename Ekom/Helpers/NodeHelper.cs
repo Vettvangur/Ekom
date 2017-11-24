@@ -12,6 +12,7 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 using Ekom.Utilities;
+using Umbraco.Core;
 
 namespace Ekom.Helpers
 {
@@ -195,7 +196,7 @@ namespace Ekom.Helpers
 
                     if (!string.IsNullOrEmpty(disableField))
                     {
-                        if (disableField == "1" || disableField.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+                        if (disableField.IsBoolean())
                         {
                             return true;
                         }
@@ -307,5 +308,63 @@ namespace Ekom.Helpers
 
             return string.Empty;
         }
+
+
+        /// <summary>
+        /// Get Ipublished media node
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetMediaNode(string id)
+        {
+
+            if (!string.IsNullOrEmpty(id))
+            {
+
+                if (int.TryParse(id, out int mediaId))
+                {
+                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+
+                    var node = umbracoHelper.TypedMedia(mediaId);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get Ipublished content node by Udi
+        /// </summary>
+        /// <param name="udi"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetNodeByUdi(string udi)
+        {
+            if (!string.IsNullOrEmpty(udi))
+            {
+
+                if (Udi.TryParse(udi, out Udi id))
+                {
+                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+
+                    var node = umbracoHelper.TypedContent(id);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+            }
+
+            return null;
+        }
+
+
     }
 }

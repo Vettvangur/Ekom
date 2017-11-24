@@ -5,13 +5,13 @@
 
     if (order != null)
     {
-        <table>
+        <table class="cart__table">
             <thead>
                 <tr>
-                    <th>Vara</th>
-                    <th style="max-width:50px;">Fjöldi</th>
-                    <th>Verð stk.</th>
-                    <th>Samtals</th>
+                    <th>Product Details</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
                     <th></th>
                 </tr>
             </thead>
@@ -19,25 +19,32 @@
                 @foreach (var orderline in order.OrderLines)
                 {
                     var product = orderline.Product;
-                    <tr>
-                        <td>@orderline.Product.Title</td>
-                        <td style="max-width:50px;">
-                            <form method="post" action="/umbraco/Ekom/order/UpdateOrder">
-                                <input type="hidden" name="lineId" value="@orderline.Id" />
-                                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
-                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
-                                <input type="number" name="quantity" value="@orderline.Quantity" />
-                                <button type="submit" class="button small">Uppfæra</button>
-                            </form>
 
+                    <tr>
+                        <td>
+                            <div class="cart__productInformation">
+
+                            </div>
                         </td>
                         <td>@orderline.Product.Price.WithVat.ToCurrencyString</td>
-                        <td>@orderline.Amount.WithVat.ToCurrencyString</td>
+                        <td>
+                            @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart_quantity-form" }))
+                            {
+                                <input type="hidden" name="lineId" value="@orderline.Id" />
+                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.Update" />
+                                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                                <input type="number" name="quantity" value="@orderline.Quantity" />
+                                <button type="submit" class="button small">Update</button>
+                            }     
+                        </td>
+                        <td>
+                            @orderline.Amount.WithVat.ToCurrencyString
+                        </td>
                         <td>
                             <form method="post" action="/umbraco/Ekom/order/RemoveOrderLine">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
-                                <button type="submit" class="button small">Eyða</button>
+                                <button type="submit" class="button small">Delete</button>
                             </form>
                         </td>
                     </tr>

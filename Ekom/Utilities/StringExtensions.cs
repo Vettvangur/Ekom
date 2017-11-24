@@ -1,8 +1,13 @@
 ﻿using log4net;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
+using Umbraco.Core.Models;
 
 namespace Ekom.Utilities
 {
@@ -124,6 +129,41 @@ namespace Ekom.Utilities
             input = input.Trim();
             return input.StartsWith("{") && input.EndsWith("}")
                    || input.StartsWith("[") && input.EndsWith("]");
+        }
+
+        public static IEnumerable<IPublishedContent> GetMediaNodes(this string nodeIds)
+        {
+            var list = new List<IPublishedContent>();
+
+            if (!string.IsNullOrEmpty(nodeIds))
+            {
+                var imageIds = nodeIds.Split(',');
+
+                foreach (var imgId in imageIds)
+                {
+                    var node = Helpers.NodeHelper.GetMediaNode(imgId);
+
+                    if (node != null)
+                    {
+                        list.Add(node);
+                    }
+                }
+
+                return list;
+            }
+
+            return Enumerable.Empty<IPublishedContent>();
+        }
+
+        public static bool IsBoolean(this string value)
+        {
+            if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return true;
+            } else
+            {
+                return false;
+            }
         }
 
         private static readonly ILog Log =

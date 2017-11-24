@@ -11,7 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Web.Extensions;
 
 namespace Ekom.Models
 {
@@ -93,6 +95,47 @@ namespace Ekom.Models
             get
             {
                 throw new NotImplementedException();
+            }
+        }
+
+        public IEnumerable<IPublishedContent> Images
+        {
+            get
+            {
+                var _images = Properties.GetStoreProperty("images", _store.Alias);
+
+                var imageNodes = _images.GetMediaNodes();
+
+                return imageNodes;
+            }
+        }
+
+        public VariantGroup PrimaryVariantGroup
+        {
+            get
+            {
+                var primaryGroupValue = Properties.GetStoreProperty("primaryVariantGroup", _store.Alias);
+
+                if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
+                {
+                    var node = NodeHelper.GetNodeByUdi(primaryGroupValue);
+
+                    if (node != null)
+                    {
+                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == _store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+
+                        return variantGroup.Value;
+                        
+                    }
+                }
+
+                if (VariantGroups.Any())
+                {
+                    return VariantGroups.FirstOrDefault();
+                }
+
+                return null;
+
             }
         }
 

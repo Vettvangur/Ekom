@@ -141,67 +141,74 @@ namespace Ekom
             {
                 var alias = content.ContentType.Alias;
 
-
-                if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant") {
-
-                    var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
-
-                    var stores = API.Store.Current.GetAllStores();
-
-                    var slugItems = new Dictionary<string, object>();
-                    var titleItems = new Dictionary<string, object>();
-
-                    foreach (var store in stores.OrderBy(x => x.SortOrder))
+                try
+                {
+                    if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant")
                     {
-                        var name = content.Name.Trim();
 
-                        
-                        var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
+                        var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
-                        if (string.IsNullOrEmpty(title))
+                        var stores = API.Store.Current.GetAllStores();
+
+                        var slugItems = new Dictionary<string, object>();
+                        var titleItems = new Dictionary<string, object>();
+
+                        foreach (var store in stores.OrderBy(x => x.SortOrder))
                         {
-                            title = name;
-                            titleItems.Add(store.Alias, title);
+                            var name = content.Name.Trim();
+
+                            var title = NodeHelper.GetStoreProperty(content, "title", store.Alias).Trim();
+
+                            if (string.IsNullOrEmpty(title))
+                            {
+                                title = name;
+                                titleItems.Add(store.Alias, title);
+                            }
+
+                            if (alias == "ekmProduct" || alias == "ekmCategory")
+                            {
+                                var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+
+                                if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
+                                {
+                                    slug = title;
+                                }
+
+                                // Update Slug if Slug Exist on same Level and is Published
+                                if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
+                                {
+
+                                    // Random not a nice solution
+                                    Random rnd = new Random();
+
+                                    slug = slug + "-" + rnd.Next(1, 150);
+
+                                    _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
+
+                                    e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
+                                }
+
+                                slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
+                            }
+
+
                         }
 
-                        if (alias == "ekmProduct" || alias == "ekmCategory")
+                        if (slugItems.Any())
                         {
-                            var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+                            content.SetVortoValue("slug", slugItems);
+                        }
 
-                            if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
-                            {
-                                slug = title;
-                            }
-
-                            // Update Slug if Slug Exist on same Level and is Published
-                            if (!string.IsNullOrEmpty(slug) && siblings.Any(x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) == slug.ToLowerInvariant()))
-                            {
-
-                                // Random not a nice solution
-                                Random rnd = new Random();
-
-                                slug = slug + "-" + rnd.Next(1, 150);
-
-                                _log.Warn("Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
-
-                                e.Messages.Add(new EventMessage("Duplicate Slug Found.", "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, EventMessageType.Warning));
-                            }
-
-                            slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
+                        if (titleItems.Any())
+                        {
+                            content.SetVortoValue("title", titleItems);
                         }
 
                     }
 
-                    if (slugItems.Any())
-                    {
-                        content.SetVortoValue("slug", slugItems);
-                    }  
-
-                    if (titleItems.Any())
-                    {
-                        content.SetVortoValue("title", titleItems);
-                    }
-
+                } catch(Exception ex)
+                {
+                    _log.Error("ContentService_Publishing Failed", ex);
                 }
 
             }

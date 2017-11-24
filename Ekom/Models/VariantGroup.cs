@@ -1,4 +1,6 @@
 ﻿using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Utilities;
 using Ekom.Interfaces;
 using Examine;
 using log4net;
@@ -39,6 +41,21 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public int SortOrder { get; set; }
+
+        public bool Primary { get; set; }
+
+        public IEnumerable<IPublishedContent> Images
+        {
+            get
+            {
+                var _images = Properties.GetStoreProperty("images", _store.Alias);
+
+                var imageNodes = _images.GetMediaNodes();
+
+                return imageNodes;
+            }
+        }
+
         /// <summary>
         /// Get all variants in this group
         /// </summary>
