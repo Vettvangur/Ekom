@@ -1,21 +1,20 @@
-﻿using Examine;
-using System;
-using System.Web;
-using Umbraco.Core;
-using Umbraco.Core.Models;
-using Umbraco.Web;
-using Ekom.Cache;
+﻿using Ekom.Cache;
 using Ekom.Domain.Repositories;
-using Ekom.Factories;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Repository;
 using Ekom.Services;
-using Unity.ServiceLocation;
+using Examine;
+using System;
+using System.Web;
+using Umbraco.Core;
+using Umbraco.Core.Models;
+using Umbraco.Web;
 using Unity;
 using Unity.Injection;
 using Unity.Lifetime;
+using Unity.ServiceLocation;
 
 namespace Ekom.App_Start
 {
@@ -78,7 +77,6 @@ namespace Ekom.App_Start
             container.RegisterType<IStockRepository, StockRepository>();
 
             container.RegisterType<ILogFactory, LogFactory>();
-            container.RegisterType<IObjectFactory<VariantGroup>, VariantGroupFactory>();
         }
     }
 }

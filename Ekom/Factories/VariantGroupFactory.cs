@@ -1,16 +1,19 @@
-﻿using Examine;
-using System;
-using Umbraco.Core.Models;
-using Ekom.Cache;
+﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
-using System.Linq;
+using Examine;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Umbraco.Core.Models;
 
 namespace Ekom.Factories
 {
+    /// <summary>
+    /// Unused atm
+    /// </summary>
     class VariantGroupFactory : IObjectFactory<VariantGroup>
     {
         ExamineService _examineSvc;

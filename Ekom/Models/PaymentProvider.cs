@@ -12,6 +12,11 @@ namespace Ekom.Models
     public class PaymentProvider : ProviderBase
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public string Name => Properties["nodeName"];
+
+        /// <summary>
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>

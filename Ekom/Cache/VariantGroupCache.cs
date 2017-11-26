@@ -1,7 +1,6 @@
-﻿using Examine;
-using Ekom.Interfaces;
-using Ekom.Models;
+﻿using Ekom.Models;
 using Ekom.Services;
+using Examine;
 
 namespace Ekom.Cache
 {
@@ -19,11 +18,11 @@ namespace Ekom.Cache
             ILogFactory logFac,
             Configuration config,
             ExamineManager examineManager,
-            IBaseCache<Store> storeCache,
-            IObjectFactory<VariantGroup> objFac
+            IBaseCache<Store> storeCache
+        //IObjectFactory<VariantGroup> objFac
         ) : base(config, examineManager, storeCache)
         {
-            _objFac = objFac;
+            //_objFac = objFac;
 
             _log = logFac.GetLogger(typeof(VariantGroupCache));
         }

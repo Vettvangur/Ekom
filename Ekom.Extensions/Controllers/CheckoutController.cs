@@ -45,7 +45,7 @@ namespace Ekom.Extensions.Controllers
             var order = Order.Current.GetOrder();
             var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
 
-            var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Title);
+            var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
             if (_config.StoreCustomerData)
             {
@@ -85,7 +85,7 @@ namespace Ekom.Extensions.Controllers
                 order.ChargedAmount.Value,
                 orderItems,
                 skipReceipt: true,
-                culture: Umbraco.CultureDictionary.Culture.TwoLetterISOLanguageName,
+                culture: order.StoreInfo.Alias,
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
                 orderCustomString: "Ekom Store"
             );

@@ -11,9 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using Umbraco.Core;
 using Umbraco.Core.Models;
-using Umbraco.Web.Extensions;
 
 namespace Ekom.Models
 {
@@ -42,17 +40,6 @@ namespace Ekom.Models
             get
             {
                 return Properties.GetPropertyValue("sku");
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override string Title
-        {
-            get
-            {
-                return Properties.GetStoreProperty("title", _store.Alias);
             }
         }
 
@@ -89,14 +76,11 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [JsonIgnore]
-        public int Stock
-        {
-            get
-            {
-                return 0;
-            }
-        }
+        public int Stock => API.Stock.Current.GetStock(Key);
 
         public IEnumerable<IPublishedContent> Images
         {
@@ -125,7 +109,7 @@ namespace Ekom.Models
                         var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == _store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
 
                         return variantGroup.Value;
-                        
+
                     }
                 }
 

@@ -26,6 +26,9 @@ namespace Ekom.Models
 
         private Store _store;
 
+        /// <summary>
+        /// Stock Keeping Unit, identifier
+        /// </summary>
         public string SKU
         {
             get
@@ -34,13 +37,11 @@ namespace Ekom.Models
             }
         }
 
-        public int Stock
-        {
-            get
-            {
-                return 0;
-            }
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonIgnore]
+        public int Stock => API.Stock.Current.GetStock(Key);
 
         public Guid ProductKey
         {
