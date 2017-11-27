@@ -10,40 +10,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
+using Ekom.API;
 
 namespace Ekom.Models
 {
     /// <summary>
     /// A group of variants sharing common properties and a group key
     /// </summary>
-    public class VariantGroup : NodeEntity
+    public class VariantGroup : NodeEntity, INodeEntity
     {
         Store _store { get; set; }
-        IPerStoreCache<Variant> _variantCache;
 
         /// <summary>
-        /// 
+        /// Get the Product Key
         /// </summary>
-        public int Id { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public Guid Key { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public Guid ProductKey { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Title { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public int SortOrder { get; set; }
+        public Guid ProductKey {
+            get
+            {
+                var parentId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
+                var product = Catalog.Current.GetProduct(_store.Alias, parentId);
 
-        public bool Primary { get; set; }
+                if (product == null)
+                {
+                    throw new Exception("Product not found for Variant group. Id:" + Id);
+                }
 
+                return product.Key;
+            }
+        }
+
+        /// <summary>
+        /// Get Images
+        /// </summary>
         public IEnumerable<IPublishedContent> Images
         {
             get
@@ -64,9 +62,7 @@ namespace Ekom.Models
         {
             get
             {
-                return _variantCache.Cache[_store.Alias]
-                                   .Where(x => x.Value.VariantGroupKey == Key)
-                                   .Select(x => x.Value);
+                return API.Catalog.Current.GetVariantsByGroup(_store.Alias, Key);
             }
         }
 
@@ -77,7 +73,7 @@ namespace Ekom.Models
         /// <param name="cache"></param>
         public VariantGroup(Store store, IPerStoreCache<Variant> cache)
         {
-            _variantCache = cache;
+
             _store = store;
         }
 

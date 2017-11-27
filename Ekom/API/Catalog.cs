@@ -237,5 +237,12 @@ namespace Ekom.API
         {
             return _variantCache.Cache[storeAlias][Id];
         }
+
+        public IEnumerable<Variant> GetVariantsByGroup(string storeAlias, Guid Id)
+        {
+            return _variantCache.Cache[storeAlias]
+                                   .Where(x => x.Value.VariantGroupKey == Id)
+                                   .Select(x => x.Value);
+        }
     }
 }

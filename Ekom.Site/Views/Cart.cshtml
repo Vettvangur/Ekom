@@ -57,8 +57,8 @@
                             </form>
                             
                         </td>
-                        <td>@orderline.Product.Price.WithVat.ToCurrencyString()</td>
-                        <td>@orderline.Amount.WithVat.ToCurrencyString()</td>
+                        <td>@orderline.Product.Price.WithVat.ToCurrencyString</td>
+                        <td>@orderline.Amount.WithVat.ToCurrencyString</td>
                         <td>
                             <form method="post" action="/umbraco/Ekom/order/RemoveOrderLine">
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
