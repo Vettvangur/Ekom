@@ -1,5 +1,6 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using Ekom.API;
+@using Ekom.Utilities;
 
 @{
 	Layout = "Masterpage.cshtml";
@@ -18,8 +19,8 @@
 
                 <div class="checkoutCart">
                     @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
-                    { "order", order }
-                })
+                        { "order", order }
+                    })
                 </div>
 
                 <div class="checkout__container">

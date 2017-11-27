@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ekom.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,11 +9,44 @@ namespace Ekom.Models
 {
     public class ShippingInfo
     {
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string City { get; set; }
-        public string Country { get; set; }
-        public string ZipCode { get; set; }
+        public string Name
+        {
+
+            get
+            {
+                return Properties.GetProperty("shippingName");
+            }
+        }
+        public string Address
+        {
+            get
+            {
+                return Properties.GetProperty("shippingAddress");
+            }
+        }
+        public string City
+        {
+            get
+            {
+                return Properties.GetProperty("shippingCity");
+            }
+        }
+        public string Country
+        {
+            get
+            {
+                return Properties.GetProperty("shippingCountry");
+            }
+        }
+        public string ZipCode
+        {
+            get
+            {
+                return Properties.GetProperty("shippingZipCode");
+            }
+        }
+
+
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
     }
 }

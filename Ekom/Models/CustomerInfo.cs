@@ -8,8 +8,8 @@ namespace Ekom.Models
 {
     public class CustomerInfo
     {
-        public string CustomerIpAddress { get; set; }
-        public Customer Customer { get; set; }
-        public ShippingInfo Shipping { get; set; }
+        public string CustomerIpAddress = string.Empty;
+        public Customer Customer = new Customer();
+        public ShippingInfo Shipping = new ShippingInfo();
     }
 }

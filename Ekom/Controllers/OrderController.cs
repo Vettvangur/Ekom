@@ -63,6 +63,34 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Update Customer Information to Order
+        /// </summary>
+        /// <param name="form">FormData</param>
+        /// <returns></returns>
+        public JsonResult UpdateCustomerInformation(FormCollection form)
+        {
+            try
+            {
+                var orderInfo = _orderSvc.UpdateCustomerInformation(form["storeAlias"], form);
+
+                return Json(new
+                {
+                    success = true,
+                    orderInfo = orderInfo
+                });
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
         /// Update order, change quantity of line in cart/order
         /// </summary>
         /// <param name="lineId">Guid Key of line to update</param>

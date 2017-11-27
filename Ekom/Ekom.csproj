@@ -282,6 +282,7 @@
     <Compile Include="Interfaces\IStockRepository.cs" />
     <Compile Include="Models\ShippingInfo.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
+    <Compile Include="Models\User.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Services\LogFactory.cs" />
