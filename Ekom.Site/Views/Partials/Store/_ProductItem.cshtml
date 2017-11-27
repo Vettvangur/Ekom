@@ -7,14 +7,16 @@
     if (product != null)
     {
         var primaryVariantGroup = product.PrimaryVariantGroup;
-        var primaryImage = primaryVariantGroup != null && primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url : "/content/img/product.jpg";
+        var primaryImage = primaryVariantGroup != null &&
+            primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url :
+            product.Images.Any() ? product.Images.First().Url : "/content/img/product.jpg";
 
         <div class="cell @gridSize">
 
             <div class="productItem">
 
                 <a href="@product.Url" class="productItem__image">
-                    <img src="@primaryImage?width=370&height=500&mode=crop" alt="@product.Title"/>
+                    <img src="@primaryImage?width=370&height=500&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title"/>
                 </a>
 
                 <a href="@product.Url" class="productItem__caption">

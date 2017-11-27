@@ -17,6 +17,11 @@
         > tr {
             > td {
                 padding:20px 30px;
+                border-bottom: 1px solid $border-color;
+
+                &.no-padding-left {
+                    padding-left:0;
+                }
             }
         }
     }

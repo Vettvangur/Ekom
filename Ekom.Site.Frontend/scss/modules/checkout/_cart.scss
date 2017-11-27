@@ -30,4 +30,16 @@
     .cart__productSize {
         display: inline;
     }
+
+    .cart__price {
+        color: $dark-gray;
+        font-weight: 600;
+    }
+
+    .cart__quantity-form {
+        input {
+            width:50px;
+            margin:0;
+        }
+    }
 }

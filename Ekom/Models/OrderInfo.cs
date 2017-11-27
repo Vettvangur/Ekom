@@ -63,6 +63,8 @@ namespace Ekom.Models
             }
         }
 
+        public CustomerInfo CustomerInformation = new CustomerInfo();
+
         /// <summary>
         /// SimplePrice object for total value of all orderlines.
         /// </summary>

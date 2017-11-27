@@ -422,6 +422,7 @@
     <Content Include="Views\Partials\Store\Checkout\_Information.cshtml" />
     <Content Include="Views\Partials\Store\Checkout\_Payment.cshtml" />
     <Content Include="Views\Partials\Store\Checkout\_Shipping.cshtml" />
+    <Content Include="Views\Loginpage.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -460,8 +461,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Plugins\Vorto\js\" />
-    <Folder Include="App_Plugins\Vorto\views\" />
     <Folder Include="Views\MacroPartials\" />
   </ItemGroup>
   <ItemGroup>

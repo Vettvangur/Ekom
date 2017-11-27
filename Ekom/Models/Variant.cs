@@ -43,7 +43,7 @@ namespace Ekom.Models
         [JsonIgnore]
         public int Stock => API.Stock.Current.GetStock(Key);
 
-        public Guid ProductKey
+        public Product Product
         {
             get
             {
@@ -58,7 +58,15 @@ namespace Ekom.Models
                     throw new Exception("Variant ProductKey could not be created. Product not found. Key: " + productId);
                 }
 
-                return product.Key;
+                return product;
+            }
+        }
+
+        public Guid ProductKey
+        {
+            get
+            {
+                return Product.Key;
             }
         }
 
@@ -109,12 +117,20 @@ namespace Ekom.Models
             }
         }
 
-        IDiscountedPrice _price;
-        /// <summary>
-        /// 
-        /// </summary>
-        public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
+        public IDiscountedPrice Price
+        {
+            get
+            {
+                var variantPrice = Properties.GetStoreProperty("price", _store.Alias);
+
+                if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
+                {
+                    return Product.Price;
+                }
+
+                return new Price(variantPrice, _store);
+            }
+        }
 
         /// <summary>
         /// All categories variant belongs to, includes parent category.

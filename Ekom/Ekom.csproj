@@ -273,11 +273,14 @@
     <Compile Include="Models\Base\ProviderBase.cs" />
     <Compile Include="Models\Country.cs" />
     <Compile Include="Models\Base\NodeEntity.cs" />
+    <Compile Include="Models\Customer.cs" />
+    <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />
     <Compile Include="Interfaces\IStockRepository.cs" />
+    <Compile Include="Models\ShippingInfo.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />

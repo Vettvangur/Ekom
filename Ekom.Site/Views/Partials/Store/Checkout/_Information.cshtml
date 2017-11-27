@@ -1,1 +1,16 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
+
+@{
+    var order = (Ekom.Models.OrderInfo)ViewData["order"];
+
+    if (order != null)
+    {
+        <h1 class="checkout__caption">Your Details</h1>
+
+        using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart__quantity-form" }))
+        {
+
+        }
+
+    }
+}

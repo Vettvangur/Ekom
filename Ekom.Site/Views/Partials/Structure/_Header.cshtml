@@ -10,6 +10,7 @@
     var root = UmbracoService.GetRootNode(Model.Content);
 
     var checkoutNode = root.Children.FirstOrDefault(x => x.GetTemplateAlias() == "Checkout");
+    var LoginNode = root.Children.FirstOrDefault(x => x.GetTemplateAlias() == "Loginpage");
 }
 
 <header class="header @(Model.Content.Level == 1 || Model.Content.DocumentTypeAlias == "ekmProduct" ? "header--no-margin" : "")">
@@ -56,7 +57,9 @@
                    
                     <span class="header__divider"></span>
 
-                    <a href="#" class="header__top__link">@Umbraco.GetDictionaryValue("HeMyAccount")</a>
+                    <a href="@(LoginNode != null ? LoginNode.Url : "")" class="header__top__link">
+                        @(Umbraco.MemberIsLoggedOn() ? User.Identity.Name : Umbraco.GetDictionaryValue("HeMyAccount"))
+                    </a>
 
                 </div>
 
