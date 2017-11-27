@@ -47,11 +47,17 @@ namespace Ekom.Utilities
 
                 var vortoItems = new Dictionary<string, object>();
 
-                foreach (var vvalue in vortoValue.Values)
+                if (vortoValue != null && vortoValue.Values.Any())
                 {
-                    var val = vvalue.Key == storeAlias ? value : vvalue.Value;
+                    foreach (var vvalue in vortoValue.Values)
+                    {
+                        var val = vvalue.Key == storeAlias ? value : vvalue.Value;
 
-                    vortoItems.Add(vvalue.Key, val);
+                        vortoItems.Add(vvalue.Key, val);
+                    }
+                } else
+                {
+                    vortoItems.Add(storeAlias, value);
                 }
 
                 SetVortoValue(content, alias, vortoItems);
