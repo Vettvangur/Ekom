@@ -344,6 +344,7 @@ namespace Ekom.Helpers
                         return node;
                     }
                 }
+                return GetMediaByUdi(id);
 
             }
 
@@ -390,6 +391,32 @@ namespace Ekom.Helpers
                     var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
 
                     var node = umbracoHelper.TypedContent(id);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Get Ipublished content node by Udi
+        /// </summary>
+        /// <param name="udi"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetMediaByUdi(string udi)
+        {
+            if (!string.IsNullOrEmpty(udi))
+            {
+
+                if (Udi.TryParse(udi, out Udi id))
+                {
+                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+
+                    var node = umbracoHelper.TypedMedia(id);
 
                     if (node != null)
                     {
