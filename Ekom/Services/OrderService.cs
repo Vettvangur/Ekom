@@ -311,9 +311,13 @@ namespace Ekom.Services
             //    throw new Exception("Trying to load order without data (xml), id: " + (orderData == null ? "no data!" : orderData.UniqueId.ToString()) + ", ordernumber: " + (orderData == null ? "no data!" : orderData.OrderNumber));
             //}
 
+            // This Need Complete overhaul!!
             var orderInfo = new OrderInfo(orderData, _store)
             {
-                OrderLines = CreateOrderLinesFromJson(orderData.OrderInfo)
+                OrderLines = CreateOrderLinesFromJson(orderData.OrderInfo),
+                ShippingProvider = CreateShippingProviderFromJson(orderData.OrderInfo),
+                PaymentProvider = CreatePaymentProviderFromJson(orderData.OrderInfo),
+                CustomerInformation = CreateCustomerInformationFromJson(orderData.OrderInfo)
             };
 
             return orderInfo;
@@ -381,6 +385,96 @@ namespace Ekom.Services
             }
 
             return orderLines;
+        }
+
+        private OrderedShippingProvider CreateShippingProviderFromJson(string json)
+        {
+            if (!string.IsNullOrEmpty(json))
+            {
+                var orderInfoJObject = JObject.Parse(json);
+
+                if (orderInfoJObject["ShippingProvider"] != null)
+                {
+                    var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();
+
+                    if (!string.IsNullOrEmpty(shippingProviderJson))
+                    {
+                        var shippingProviderObject = JObject.Parse(shippingProviderJson);
+
+                        if (shippingProviderObject != null)
+                        {
+                            var storeJson = orderInfoJObject["StoreInfo"].ToString();
+
+                            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
+
+                            var p = new OrderedShippingProvider(shippingProviderObject, storeInfo);
+
+                            return p;
+                        }
+                    }
+                }
+
+
+            }
+
+            return null;
+        }
+
+        private OrderedPaymentProvider CreatePaymentProviderFromJson(string json)
+        {
+            if (!string.IsNullOrEmpty(json))
+            {
+                var orderInfoJObject = JObject.Parse(json);
+
+                if (orderInfoJObject["PaymentProvider"] != null)
+                {
+                    var paymentProviderJson = orderInfoJObject["PaymentProvider"].ToString();
+
+                    if (!string.IsNullOrEmpty(paymentProviderJson))
+                    {
+                        var paymentProviderObject = JObject.Parse(paymentProviderJson);
+
+                        if (paymentProviderObject != null)
+                        {
+                            var storeJson = orderInfoJObject["StoreInfo"].ToString();
+
+                            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
+
+                            var p = new OrderedPaymentProvider(paymentProviderObject, storeInfo);
+
+                            return p;
+                        }
+                    }
+                }
+
+
+            }
+
+            return null;
+        }
+
+        private CustomerInfo CreateCustomerInformationFromJson(string json)
+        {
+            if (!string.IsNullOrEmpty(json))
+            {
+                var orderInfoJObject = JObject.Parse(json);
+
+                if (orderInfoJObject["CustomerInformation"] != null)
+                {
+                    var customerInfoJson = orderInfoJObject["CustomerInformation"].ToString();
+
+                    if (!string.IsNullOrEmpty(customerInfoJson))
+                    {
+                        var customerInfo = JsonConvert.DeserializeObject<CustomerInfo>(customerInfoJson);
+
+                        return customerInfo;
+                    }
+                }
+
+
+            }
+
+            return null;
         }
 
         public OrderInfo UpdateCustomerInformation(string storeAlias, FormCollection form)

@@ -72,9 +72,20 @@ namespace Ekom.Models
         {
             get
             {
+                // OrderLines Exlude OrderDiscount included
+                var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+                
+                return new Price(amount, StoreInfo);
+            }
+        }
+
+        public Price SubTotal
+        {
+            get
+            {
+                // OrderLines with OrderDiscount included
                 var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
 
-                //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
                 return new Price(amount, StoreInfo);
             }
         }

@@ -15,37 +15,69 @@
 
             @if (order != null && order.Quantity > 0)
             {
-                <h1 class="checkout__caption">Checkout</h1>
+                <div class="grid-x grid-margin-x">
 
-                @order.ChargedAmount.WithVat.ToCurrencyString
+                    <div class="cell medium-8">
 
-                <div class="checkoutCart">
-                    @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
-                        { "order", order }
-                    })
+                        <h1 class="checkout__caption">Checkout</h1>
+
+                        <div class="checkoutCart">
+                            @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
+                                { "order", order }
+                            })
+                        </div>
+
+                        <div class="checkout__container">
+
+                            <div class="checkoutInformation">
+                                @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                            <div class="checkoutShipping">
+                                @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                            <div class="checkoutPayment">
+                                @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="cell medium-4">
+
+                        <h1 class="checkout__caption">Total</h1>
+
+                        <div>
+                            Subtotal: <strong>@order.SubTotal.WithVat.ToCurrencyString</strong>
+                        </div>
+                        @if (order.ShippingProvider != null)
+                        {
+                            <div>
+                                Shipping: <strong>@order.ShippingProvider.Price.WithVat.ToCurrencyString</strong>
+                            </div>
+                        }
+                        @if (order.PaymentProvider != null)
+                        {
+                            <div>
+                                Payment: <strong>@order.PaymentProvider.Price.WithVat.ToCurrencyString</strong>
+                            </div>
+                        }
+                        <div>
+                            Total: <strong>@order.ChargedAmount.WithVat.ToCurrencyString</strong>
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <div class="checkout__container">
-
-                    <div class="checkoutInformation">
-                        @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
-                            { "order", order }
-                        })
-                    </div>
-
-                    <div class="checkoutShipping">
-                        @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
-                            { "order", order }
-                        })
-                    </div>
-
-                    <div class="checkoutPayment">
-                        @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
-                            { "order", order }
-                        })
-                    </div>
-
-                </div>
 
             }
             else
