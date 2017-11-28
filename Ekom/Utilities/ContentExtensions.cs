@@ -69,7 +69,7 @@ namespace Ekom.Utilities
         {
             var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
 
-            if (property != null)
+            if (property != null && property.Value != null)
             {
                 return JsonConvert.DeserializeObject<VortoValue>(property.Value.ToString());
             }
