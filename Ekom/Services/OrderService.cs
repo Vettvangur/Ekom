@@ -125,7 +125,9 @@ namespace Ekom.Services
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch  || status == OrderStatus.OfflinePayment)
             {
-                // clean cookie state
+                var key = CreateKey();
+
+                DeleteOrderCookie(key);
             }
 
             _orderRepository.UpdateOrder(order);
@@ -417,7 +419,61 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        private string CreateKey()
+        public OrderInfo UpdateShippingInformation(string storeAlias, Guid shippingProviderId)
+        {
+            _log.Info("UpdateShippingInformation...");
+
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+            _date = DateTime.Now;
+
+            var orderInfo = GetOrder(storeAlias);
+
+            if (shippingProviderId != Guid.Empty)
+            {
+                var provider = API.Providers.Current.GetShippingProvider(shippingProviderId, _store);
+
+                if (provider != null)
+                {
+                    var orderedShippingProvider = new OrderedShippingProvider(provider);
+
+                    orderInfo.ShippingProvider = orderedShippingProvider;
+
+                    UpdateOrderAndOrderInfo(orderInfo);
+                }
+
+            }
+
+            return orderInfo;
+        }
+
+        public OrderInfo UpdatePaymentInformation(string storeAlias, Guid paymentProviderId)
+        {
+            _log.Info("UpdatePaymentInformation...");
+
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+            _date = DateTime.Now;
+
+            var orderInfo = GetOrder(storeAlias);
+
+            if (paymentProviderId != Guid.Empty)
+            {
+                var provider = API.Providers.Current.GetPaymentProvider(paymentProviderId, _store);
+
+                if (provider != null)
+                {
+                    var orderedPaymentProvider = new OrderedPaymentProvider(provider);
+
+                    orderInfo.PaymentProvider = orderedPaymentProvider;
+
+                    UpdateOrderAndOrderInfo(orderInfo);
+                }
+
+            }
+
+            return orderInfo;
+        }
+
+        public string CreateKey()
         {
             var key = "ekmOrder";
 
@@ -429,7 +485,7 @@ namespace Ekom.Services
             return key;
         }
 
-        private Guid GetOrderIdFromCookie(string key)
+        public Guid GetOrderIdFromCookie(string key)
         {
             var cookie = _httpCtx.Request.Cookies[key];
             if (cookie != null)
@@ -440,7 +496,7 @@ namespace Ekom.Services
             return Guid.Empty;
         }
 
-        private Guid CreateOrderIdCookie(string key)
+        public Guid CreateOrderIdCookie(string key)
         {
             var _guid = Guid.NewGuid();
             var guidCookie = new HttpCookie(key)
@@ -452,6 +508,11 @@ namespace Ekom.Services
             _httpCtx.Response.Cookies.Add(guidCookie);
             return _guid;
         }
+
+        private void DeleteOrderCookie(string key)
+        {
+            _httpCtx.Request.Cookies.Remove(key);
+        } 
 
         private void GenerateOrderNumber(out int referenceId, out string orderNumber)
         {

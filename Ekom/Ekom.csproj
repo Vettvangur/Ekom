@@ -264,6 +264,7 @@
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Controllers\ApiController.cs" />
+    <Compile Include="Controllers\CatalogController.cs" />
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Exceptions\StockException.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
@@ -277,11 +278,13 @@
     <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
     <Compile Include="Models\Image.cs" />
+    <Compile Include="Models\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />
     <Compile Include="Interfaces\IStockRepository.cs" />
-    <Compile Include="Models\ShippingInfo.cs" />
+    <Compile Include="Models\CustomerShippingInfo.cs" />
+    <Compile Include="Models\OrderedShippingProvider.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />

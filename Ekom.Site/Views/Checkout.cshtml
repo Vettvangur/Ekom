@@ -17,6 +17,8 @@
             {
                 <h1 class="checkout__caption">Checkout</h1>
 
+                @order.ChargedAmount.WithVat.ToCurrencyString
+
                 <div class="checkoutCart">
                     @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
                         { "order", order }

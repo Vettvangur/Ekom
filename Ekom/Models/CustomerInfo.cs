@@ -10,6 +10,6 @@ namespace Ekom.Models
     {
         public string CustomerIpAddress = string.Empty;
         public Customer Customer = new Customer();
-        public ShippingInfo Shipping = new ShippingInfo();
+        public CustomerShippingInfo Shipping = new CustomerShippingInfo();
     }
 }

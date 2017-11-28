@@ -50,8 +50,11 @@ namespace Ekom.Models
                 return _orderData.OrderNumber;
             }
         }
+
         public List<OrderLine> OrderLines { get; set; }
 
+        public OrderedShippingProvider ShippingProvider { get; set; }
+        public OrderedPaymentProvider PaymentProvider { get; set; }
         /// <summary>
         /// Total count of items and subitems on each order line.
         /// </summary>
@@ -73,6 +76,11 @@ namespace Ekom.Models
             get
             {
                 var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+
+                if (ShippingProvider != null)
+                {
+                    amount = amount + ShippingProvider.Price.WithVat.Value;
+                }
 
                 //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
                 return new Price(amount, StoreInfo);

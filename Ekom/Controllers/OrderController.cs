@@ -91,6 +91,62 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Update Shipping Information
+        /// </summary>
+        /// <param name="form">FormData</param>
+        /// <returns></returns>
+        public JsonResult UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
+        {
+            try
+            {
+                var orderInfo = _orderSvc.UpdateShippingInformation(storeAlias, ShippingProvider);
+
+                return Json(new
+                {
+                    success = true,
+                    orderInfo = orderInfo
+                });
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Update Payment Information
+        /// </summary>
+        /// <param name="form">FormData</param>
+        /// <returns></returns>
+        public JsonResult UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
+        {
+            try
+            {
+                var orderInfo = _orderSvc.UpdatePaymentInformation(storeAlias, PaymentProvider);
+
+                return Json(new
+                {
+                    success = true,
+                    orderInfo = orderInfo
+                });
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
         /// Update order, change quantity of line in cart/order
         /// </summary>
         /// <param name="lineId">Guid Key of line to update</param>
@@ -147,5 +203,6 @@ namespace Ekom.Controllers
                 });
             }
         }
+
     }
 }

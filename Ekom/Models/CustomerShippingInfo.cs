@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Ekom.Models
 {
-    public class ShippingInfo
+    public class CustomerShippingInfo
     {
         public string Name
         {
