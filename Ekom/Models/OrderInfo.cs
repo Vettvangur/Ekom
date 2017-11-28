@@ -68,6 +68,17 @@ namespace Ekom.Models
 
         public CustomerInfo CustomerInformation = new CustomerInfo();
 
+        public Price OrderLineTotal
+        {
+            get
+            {
+                var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+
+                //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
+                return new Price(amount, StoreInfo);
+            }
+        }
+
         /// <summary>
         /// SimplePrice object for total value of all orderlines.
         /// </summary>
@@ -80,6 +91,11 @@ namespace Ekom.Models
                 if (ShippingProvider != null)
                 {
                     amount = amount + ShippingProvider.Price.WithVat.Value;
+                }
+
+                if (PaymentProvider != null)
+                {
+                    amount = amount + PaymentProvider.Price.WithVat.Value;
                 }
 
                 //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
