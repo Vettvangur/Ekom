@@ -41,5 +41,6 @@ namespace Ekom.Models
         public string DomainPrefix { get; set; }
         public Product Product { get; set; }
         public Category Category { get; set; }
+        public User User { get; set; }
     }
 }

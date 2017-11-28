@@ -10,6 +10,7 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
+using Umbraco.Web;
 
 namespace Ekom.Models
 {
@@ -128,6 +129,8 @@ namespace Ekom.Models
             }
         }
 
+        public Guid[] ImageIds { get; set; }
+
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
@@ -153,6 +156,8 @@ namespace Ekom.Models
             }
 
             storeInfo = new StoreInfo(store);
+
+            ImageIds = product.Images.Any() ? product.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
 
             Properties = product.Properties;
 
@@ -202,6 +207,8 @@ namespace Ekom.Models
             var productPropertiesObject = JObject.Parse(productJson);
 
             Properties = productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>();
+
+            ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 
             // Add Variant Group
 

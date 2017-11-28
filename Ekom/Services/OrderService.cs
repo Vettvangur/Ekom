@@ -11,6 +11,8 @@ using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Repository;
+using Umbraco.Core;
+using Umbraco.Core.Cache;
 
 namespace Ekom.Services
 {
@@ -32,10 +34,15 @@ namespace Ekom.Services
                 }
             }
         }
+
+        ApplicationContext _appCtx;
+        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+
         private Store _store;
         private DateTime _date;
         private OrderRepository _orderRepository;
         private IStoreService _storeSvc;
+        private ContentRequest ekmRequest;
 
         /// <summary>
         /// ctor
@@ -43,11 +50,14 @@ namespace Ekom.Services
         /// <param name="orderRepo"></param>
         /// <param name="logFac"></param>
         /// <param name="storeService"></param>
-        public OrderService(OrderRepository orderRepo, ILogFactory logFac, IStoreService storeService)
+        /// <param name="appCtx"></param>
+        public OrderService(OrderRepository orderRepo, ILogFactory logFac, IStoreService storeService, ApplicationContext appCtx)
         {
+            _appCtx = appCtx;
             _orderRepository = orderRepo;
             _storeSvc = storeService;
             _log = logFac.GetLogger(typeof(OrderService));
+            ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
         }
 
         public OrderInfo GetOrderInfo(Guid uniqueId)
@@ -149,6 +159,17 @@ namespace Ekom.Services
                 orderInfo = CreateEmptyOrder();
             }
 
+            orderInfo.CustomerInformation.CustomerIpAddress = HttpContext.Current.Request.UserHostAddress;
+
+            if (ekmRequest.User != null)
+            {
+                var name = orderInfo.CustomerInformation.Customer.Name;
+                var email = orderInfo.CustomerInformation.Customer.Email;
+
+                orderInfo.CustomerInformation.Customer.UserId = ekmRequest.User.UserId;
+                orderInfo.CustomerInformation.Customer.UserName = ekmRequest.User.Username;
+            }
+
             _log.Info("Add OrderLine ...  Order: " + orderInfo.OrderNumber);
 
             AddOrderLineToOrderInfo(orderInfo, productId, variantIds, quantity, cartAction);
@@ -232,9 +253,26 @@ namespace Ekom.Services
         {
             _log.Info("Update Order with new OrderInfo");
 
+            orderInfo.CustomerInformation.CustomerIpAddress = HttpContext.Current.Request.UserHostAddress;
+
+            if (ekmRequest.User != null)
+            {
+                orderInfo.CustomerInformation.Customer.UserId = ekmRequest.User.UserId;
+                orderInfo.CustomerInformation.Customer.UserName = ekmRequest.User.Username;
+            }
+
             var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo);
 
             var orderData = _orderRepository.GetOrder(orderInfo.UniqueId);
+
+            // Put inside constructor ? 
+            if (ekmRequest.User != null)
+            {
+                orderData.CustomerEmail = ekmRequest.User.Email;
+                orderData.CustomerUsername = ekmRequest.User.Username;
+                orderData.CustomerId = ekmRequest.User.UserId;
+                orderData.CustomerName = ekmRequest.User.Name;
+            }
 
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
@@ -286,6 +324,7 @@ namespace Ekom.Services
 
             GenerateOrderNumber(out int referenceId, out orderNumber);
 
+
             var orderData = new OrderData
             {
                 UniqueId = uniqueId,
@@ -293,8 +332,16 @@ namespace Ekom.Services
                 StoreAlias = _store.Alias,
                 ReferenceId = referenceId,
                 OrderNumber = orderNumber,
-                OrderStatus = OrderStatus.Incomplete,
+                OrderStatus = OrderStatus.Incomplete
             };
+
+            if (ekmRequest.User != null)
+            {
+                orderData.CustomerEmail = ekmRequest.User.Email;
+                orderData.CustomerUsername = ekmRequest.User.Username;
+                orderData.CustomerId = ekmRequest.User.UserId;
+                orderData.CustomerName = ekmRequest.User.Name;
+            }
 
             _orderRepository.InsertOrder(orderData);
 
@@ -332,6 +379,42 @@ namespace Ekom.Services
             }
 
             return orderLines;
+        }
+
+        public OrderInfo UpdateCustomerInformation(string storeAlias, FormCollection form)
+        {
+            _log.Info("UpdateCustomerInformation...");
+
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+            _date = DateTime.Now;
+
+            var orderInfo = GetOrder(storeAlias);
+
+            var customerProperties = new Dictionary<string, string>();
+
+            foreach (var key in form.AllKeys.Where(x => x.StartsWith("customer")))
+            {
+                var value = form[key];
+
+                customerProperties.Add(key, value);
+            }
+
+            orderInfo.CustomerInformation.Customer.Properties = customerProperties;
+
+            var shippingProperties = new Dictionary<string, string>();
+
+            foreach (var key in form.AllKeys.Where(x => x.StartsWith("shipping")))
+            {
+                var value = form[key];
+
+                shippingProperties.Add(key, value);
+            }
+
+            orderInfo.CustomerInformation.Shipping.Properties = shippingProperties;
+
+            UpdateOrderAndOrderInfo(orderInfo);
+
+            return orderInfo;
         }
 
         private string CreateKey()

@@ -8,7 +8,9 @@
     var category = Catalog.Current.GetCategory();
     var groups = product.VariantGroups.Where(x => x.Variants.Any()).OrderBy(x => x.SortOrder);
     var primaryVariantGroup = product.PrimaryVariantGroup;
-    var primaryImage = primaryVariantGroup != null && primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url : "/content/img/product.jpg";
+    var primaryImage = primaryVariantGroup != null &&
+        primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url :
+        product.Images.Any() ? product.Images.First().Url : "/content/img/product.jpg";
 }
 
 @section Main {
@@ -18,7 +20,7 @@
         <div class="product__grid">
 
             <div class="product__image-container">
-                <img src="@(primaryImage)?width=685&height=845&mode=crop" alt="@product.Title" />
+                <img src="@(primaryImage)?width=685&height=845&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title" />
             </div>
 
             <div class="product__info-container">
@@ -72,6 +74,12 @@
                                                 <option value="@variant.Key">@variant.Title</option>
                                             }
                                         </select>
+
+                                        @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
+                                        {
+                                            <p>@variant.Title - @variant.Price.WithVat.ToCurrencyString</p>
+                                        }
+
                                     </div>
                                 }
                             }

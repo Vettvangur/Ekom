@@ -6,8 +6,6 @@
 
     if (order != null)
     {
-        <h2>@order.UniqueId</h2>
-
         <table class="cart__table">
             <thead>
                 <tr>
@@ -23,58 +21,67 @@
                 {
                     var product = orderline.Product;
 
-                    var variantGroup = product.VariantGroups.First();
+                    Ekom.Models.OrderedVariantGroup variantGroup = product.VariantGroups.Any() ? product.VariantGroups.First() : null;
 
-                    var images = variantGroup.ImageIds.GetImageNodes();
+                    var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
 
                     var catalogProduct = Ekom.API.Catalog.Current.GetProduct(product.StoreInfo.Alias, product.Key);
 
                     <tr>
-                        <td>
+                        <td class="no-padding-left">
                             <div class="cart__productInformation">
 
                                 @if (images.Any())
                                 {
                                     <div class="cart__productImage">
-                                        <img src="@images.First().Url?width=130&height=90&mode=crop&bgcolor=ffffff&anchor=top" alt="@product.Title"/>
+                                        <a href="@catalogProduct.Url">
+                                            <img src="@images.First().Url?width=130&height=90&mode=crop&bgcolor=ffffff&anchor=top&format=jpg" alt="@product.Title" />
+                                        </a>
+                                        
                                     </div>
                                 }
 
                                 <a href="@catalogProduct.Url" class="cart__productCaption">@product.Title</a>
 
-                                <div class="cart__productColor">
-                                    Color <span style="background-color:#@variantGroup.Properties.GetProperty("color");" title="@variantGroup.Title"></span>
-                                </div>
+                                @if (variantGroup != null)
+                                {
+                                    <div class="cart__productColor">
+                                        Color <span style="background-color:#@variantGroup.Properties.GetProperty("color");" title="@variantGroup.Title"></span>
+                                    </div>
 
-                                <div class="cart__productSize">
-                                    @foreach (var v in variantGroup.Variants)
-                                    {
-                                        @v.Title
-                                    }
-                                </div>
+                                    <div class="cart__productSize">
+                                        @foreach (var v in variantGroup.Variants)
+                                        {
+                                            @v.Title
+                                        }
+                                    </div>
+                                }
 
                             </div>
                         </td>
-                        <td>@orderline.Product.Price.WithVat.ToCurrencyString</td>
                         <td>
-                            @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart_quantity-form" }))
+                            <span class="cart__price">@orderline.Product.Price.WithVat.ToCurrencyString</span>
+                        </td>
+                        <td>
+                            @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart__quantity-form" }))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.UpdateQuantity" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <input type="number" name="quantity" value="@orderline.Quantity" />
-                                <button type="submit" class="button small">Update</button>
+                                <button type="submit" class="button small show-for-sr">Update</button>
                             }     
                         </td>
                         <td>
-                            @orderline.Amount.WithVat.ToCurrencyString
+                            <span class="cart__price">@orderline.Amount.WithVat.ToCurrencyString</span>
                         </td>
-                        <td>
-                            <form method="post" action="/umbraco/Ekom/order/RemoveOrderLine">
+                        <td class="text-center">
+                            @using (Html.BeginUmbracoForm("RemoveOrderLine", "EkomOrder", null, new { @Class = "cart__remove-form" }))
+                            {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <button type="submit" class="button small">Delete</button>
-                            </form>
+                            }
                         </td>
                     </tr>
                 }
