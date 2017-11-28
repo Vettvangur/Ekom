@@ -157,7 +157,7 @@ namespace Ekom.Models
 
             storeInfo = new StoreInfo(store);
 
-            ImageIds = product.Images.Any() ? product.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
+            ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
             Properties = product.Properties;
 

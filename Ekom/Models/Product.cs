@@ -82,13 +82,13 @@ namespace Ekom.Models
         [JsonIgnore]
         public int Stock => API.Stock.Current.GetStock(Key);
 
-        public IEnumerable<IPublishedContent> Images
+        public IEnumerable<Image> Images
         {
             get
             {
                 var _images = Properties.GetStoreProperty("images", _store.Alias);
 
-                var imageNodes = _images.GetMediaNodes();
+                var imageNodes = _images.GetImages();
 
                 return imageNodes;
             }

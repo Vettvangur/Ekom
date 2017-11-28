@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Ekom.Models;
+using log4net;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
 using System;
@@ -154,6 +155,30 @@ namespace Ekom.Utilities
 
             return Enumerable.Empty<IPublishedContent>();
         }
+        public static IEnumerable<Image> GetImages(this string nodeIds)
+        {
+            var list = new List<Image>();
+
+            if (!string.IsNullOrEmpty(nodeIds))
+            {
+                var imageIds = nodeIds.Split(',');
+
+                foreach (var imgId in imageIds)
+                {
+                    var node = Helpers.NodeHelper.GetMediaNode(imgId);
+
+                    if (node != null)
+                    {
+                        list.Add(new Image(node));
+                    }
+                }
+
+                return list;
+            }
+
+            return Enumerable.Empty<Image>();
+        }
+
 
         public static bool IsBoolean(this string value)
         {

@@ -276,6 +276,7 @@
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
+    <Compile Include="Models\Image.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />
