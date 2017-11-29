@@ -58,13 +58,13 @@
                         <div>
                             Subtotal: <strong>@order.SubTotal.WithVat.ToCurrencyString</strong>
                         </div>
-                        @if (order.ShippingProvider != null)
+                        @if (order.ShippingProvider != null && order.ShippingProvider.Price.Value > 0)
                         {
                             <div>
                                 Shipping: <strong>@order.ShippingProvider.Price.WithVat.ToCurrencyString</strong>
                             </div>
                         }
-                        @if (order.PaymentProvider != null)
+                        @if (order.PaymentProvider != null && order.PaymentProvider.Price.Value > 0)
                         {
                             <div>
                                 Payment: <strong>@order.PaymentProvider.Price.WithVat.ToCurrencyString</strong>

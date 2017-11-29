@@ -128,21 +128,6 @@ namespace Ekom
                 ekmRequest.Product = product;
                 ekmRequest.Category = category;
 
-                // Optimize Cache This please!
-                if (httpContext.User.Identity.IsAuthenticated)
-                {
-                    var member = memberShipHelper.GetCurrentMemberProfileModel();
-                    
-                    var u = new User() {
-                        Email = member.Email,
-                        Username = member.UserName,
-                        UserId = memberShipHelper.GetCurrentMemberId(),
-                        Name = member.Name
-                    };
-
-                    ekmRequest.User = u;
-                }
-
                 // Request for Product or Category
                 if (contentId != 0)
                 {
@@ -152,6 +137,21 @@ namespace Ekom
 
                     if (content != null)
                     {
+                        if (httpContext.User.Identity.IsAuthenticated)
+                        {
+                            var member = memberShipHelper.GetCurrentMemberProfileModel();
+
+                            var u = new User()
+                            {
+                                Email = member.Email,
+                                Username = member.UserName,
+                                UserId = memberShipHelper.GetCurrentMemberId(),
+                                Name = member.Name
+                            };
+
+                            ekmRequest.User = u;
+                        }
+
                         contentRequest.PublishedContent = content;
 
                         return true;

@@ -191,7 +191,6 @@ namespace Ekom
                                 slugItems.Add(store.Alias, slug.ToUrlSegment().ToLowerInvariant());
                             }
 
-
                         }
 
                         if (slugItems.Any())
