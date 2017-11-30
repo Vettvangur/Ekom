@@ -218,7 +218,7 @@ namespace Ekom.Models
             get
             {
                 return _variantGroupCache.Cache[_store.Alias]
-                                        .Where(x => x.Value.ProductKey == Key)
+                                        .Where(x => x.Value.ProductId == Id)
                                         .Select(x => x.Value);
             }
         }
@@ -232,7 +232,7 @@ namespace Ekom.Models
             get
             {
                 return _variantCache.Cache[_store.Alias]
-                    .Where(x => x.Value.ProductKey == Key)
+                    .Where(x => x.Value.ProductId == Id)
                     .Select(x => x.Value);
             }
         }

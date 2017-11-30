@@ -47,9 +47,7 @@ namespace Ekom.Models
         {
             get
             {
-                var paths = Path.Split(',');
-
-                int productId = Convert.ToInt32(paths[paths.Length - 3]);
+                var productId = ProductId;
 
                 var product = Catalog.Current.GetProduct(_store.Alias, productId);
 
@@ -59,6 +57,18 @@ namespace Ekom.Models
                 }
 
                 return product;
+            }
+        }
+
+        public int ProductId
+        {
+            get
+            {
+                var paths = Path.Split(',');
+
+                int productId = Convert.ToInt32(paths[paths.Length - 3]);
+
+                return productId;
             }
         }
 

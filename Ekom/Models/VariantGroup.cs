@@ -21,21 +21,39 @@ namespace Ekom.Models
     {
         Store _store { get; set; }
 
+        public Product Product
+        {
+            get
+            {
+                var product = Catalog.Current.GetProduct(_store.Alias, ProductId);
+
+                if (product == null)
+                {
+                    throw new Exception("Variant ProductKey could not be created. Product not found. Key: " + ProductId);
+                }
+
+                return product;
+            }
+        }
+
+
         /// <summary>
         /// Get the Product Key
         /// </summary>
         public Guid ProductKey {
             get
             {
+                return Product.Key;
+            }
+        }
+
+        public int ProductId
+        {
+            get
+            {
                 var parentId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
-                var product = Catalog.Current.GetProduct(_store.Alias, parentId);
 
-                if (product == null)
-                {
-                    throw new Exception("Product not found for Variant group. Id:" + Id);
-                }
-
-                return product.Key;
+                return parentId;
             }
         }
 
