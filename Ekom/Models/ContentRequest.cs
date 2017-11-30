@@ -38,6 +38,7 @@ namespace Ekom.Models
         }
 
         public object Currency { get; set; }
+        public string IPAddress { get; set; }
         public string DomainPrefix { get; set; }
         public Product Product { get; set; }
         public Category Category { get; set; }

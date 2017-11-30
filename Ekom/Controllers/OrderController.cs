@@ -3,6 +3,7 @@ using Ekom.Services;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
@@ -53,6 +54,62 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
+
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }
+
+        public JsonResult AddMultipleToOrder(OrderMultipleRequest request)
+        {
+            try
+            {
+                var os = Ekom.API.Order.Current;
+
+                _log.Info("Add To Multiple Order: " + request.productId);
+
+                if (request.variant.Any())
+                {
+                    OrderInfo o = null;
+
+                    var variantIds = new List<Guid>();
+
+                    foreach (var variant in request.variant)
+                    {
+                        _log.Info("Add To Multiple Order: Variant: " + variant.Id + " - " + variant.Quantity);
+
+                        if (Guid.TryParse(variant.Id.ToString(), out Guid variantId))
+                        {
+                            var items = new List<Guid>();
+                            items.Add(variantId);
+
+                            o = os.AddOrderLine(request.productId, items, variant.Quantity, request.storeAlias, request.action);
+
+                        }
+
+                    }
+
+                    return Json(new
+                    {
+                        success = true,
+                        orderInfo = o
+                    });
+
+                }
+
+                return Json(new
+                {
+                    success = false
+                });
+
+            }
+
+            catch (Exception ex)
+            {
+                _log.Error("Add to multiple order Failed!", ex);
 
                 return Json(new
                 {

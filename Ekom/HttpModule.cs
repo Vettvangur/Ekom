@@ -69,6 +69,7 @@ namespace Ekom
                         Store = store,
                         Currency = Currency,
                         DomainPrefix = path,
+                        IPAddress = httpCtx.Request.UserHostAddress
                     }
                 );
             }

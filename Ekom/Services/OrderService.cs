@@ -161,7 +161,15 @@ namespace Ekom.Services
                 orderInfo = CreateEmptyOrder();
             }
 
-            orderInfo.CustomerInformation.CustomerIpAddress = HttpContext.Current.Request.UserHostAddress;
+            //todo: fix
+            if (orderInfo.CustomerInformation == null)
+            {
+                var c = new CustomerInfo();
+
+                orderInfo.CustomerInformation = new CustomerInfo();
+            }
+
+            orderInfo.CustomerInformation.CustomerIpAddress = ekmRequest.IPAddress;
 
             if (ekmRequest.User != null)
             {
