@@ -97,7 +97,23 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+                decimal amount = 0;  
+
+                foreach (var orderline in OrderLines)
+                {
+                    if (orderline.Product.VariantGroups.Any())
+                    {
+                        var variant = orderline.Product.VariantGroups.First().Variants.FirstOrDefault();
+
+                        if (variant != null)
+                        {
+                            amount += variant.Price.Value;
+                        }
+                    } else
+                    {
+                        amount += orderline.Product.Price.Value;
+                    }
+                }
 
                 if (ShippingProvider != null)
                 {

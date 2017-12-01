@@ -217,6 +217,7 @@ namespace Ekom.Models
         {
             get
             {
+                // Use ID Instead of Key, Key is much slower.
                 return _variantGroupCache.Cache[_store.Alias]
                                         .Where(x => x.Value.ProductId == Id)
                                         .Select(x => x.Value);
@@ -231,6 +232,7 @@ namespace Ekom.Models
         {
             get
             {
+                // Use ID Instead of Key, Key is much slower.
                 return _variantCache.Cache[_store.Alias]
                     .Where(x => x.Value.ProductId == Id)
                     .Select(x => x.Value);
