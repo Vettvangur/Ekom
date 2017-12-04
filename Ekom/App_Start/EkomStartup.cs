@@ -144,19 +144,10 @@ namespace Ekom
 
                 try
                 {
-                    if (alias == "subpage")
-                    {
-                        var value = content.GetValue<string>("asdasdasd");
-
-                        _log.Info("Debug1: " + value);
-
-                    }
 
                     if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant")
                     {
                         var value = content.GetValue<string>("title");
-
-                        _log.Info("Debug2: " + value);
 
                         var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
