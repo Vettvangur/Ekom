@@ -11,12 +11,11 @@ using System.Web.Script.Serialization;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using Ekom.Utilities;
 using Umbraco.Core;
 
 namespace Ekom.Helpers
 {
-    static class NodeHelper
+    public static class NodeHelper
     {
         private static readonly ILog Log =
             LogManager.GetLogger(
