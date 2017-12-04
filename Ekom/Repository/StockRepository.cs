@@ -1,11 +1,11 @@
-﻿using log4net;
-using System;
-using System.Collections.Generic;
-using Umbraco.Core;
-using Ekom.Exceptions;
+﻿using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
+using log4net;
+using System;
+using System.Collections.Generic;
+using Umbraco.Core;
 
 namespace Ekom.Repository
 {
@@ -82,27 +82,32 @@ namespace Ekom.Repository
         /// Increment or decrement stock by the supplied value
         /// </summary>
         /// <param name="uniqueId"></param>
-        /// <param name="value">This value can be negative or positive depending on whether the indended action is to increment or decrement stock</param>
+        /// <param name="value"></param>
+        /// <param name="oldValue">Old stock value</param>
+        /// <exception cref="StockException">
+        /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
+        /// </exception>
         /// <returns></returns>
-        public int Update(string uniqueId, int value)
+        public int Set(string uniqueId, int value, int oldValue)
         {
             var stockData = GetStockByUniqueId(uniqueId);
 
-            if (stockData.Stock + value >= 0)
+            if (stockData.Stock != oldValue)
             {
-                stockData.Stock += value;
-                stockData.UpdateDate = DateTime.Now;
-
-                // Called synchronously and hopefully contained by a locking construct
-                using (var db = _dbCtx.Database)
+                throw new StockException($"The database and cache are out of sync!")
                 {
-                    db.Update(stockData);
-                    return stockData.Stock;
-                }
+                    RepoValue = stockData.Stock,
+                };
             }
-            else
+
+            stockData.Stock = value;
+            stockData.UpdateDate = DateTime.Now;
+
+            // Called synchronously and hopefully contained by a locking construct
+            using (var db = _dbCtx.Database)
             {
-                throw new StockException($"Not enough stock available in database for {uniqueId}. This indicates that the database and cache are out of sync!");
+                db.Update(stockData);
+                return stockData.Stock;
             }
         }
     }

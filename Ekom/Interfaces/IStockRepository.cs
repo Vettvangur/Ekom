@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Ekom.Models.Data;
+﻿using Ekom.Models.Data;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
@@ -45,7 +45,8 @@ namespace Ekom.Interfaces
         /// Guid otherwise
         /// </param>
         /// <param name="modifyAmount">This value can be negative or positive depending on whether the indended action is to increment or decrement stock</param>
+        /// <param name="oldValue">Old stock value</param>
         /// <returns></returns>
-        int Update(string uniqueId, int modifyAmount);
+        int Set(string uniqueId, int modifyAmount, int oldValue);
     }
 }

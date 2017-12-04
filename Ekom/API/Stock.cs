@@ -137,7 +137,12 @@ namespace Ekom.API
 
                 var stockData = _stockCache.Cache[key];
 
-                UpdateStockWithLock(stockData, value);
+                if (stockData.Stock + value < 0)
+                {
+                    throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
+                }
+
+                SetStockWithLock(stockData, stockData.Stock + value);
             }
         }
 
@@ -155,7 +160,54 @@ namespace Ekom.API
 
             var stockData = _stockPerStoreCache.Cache[storeAlias][key];
 
-            UpdateStockWithLock(stockData, value);
+            if (stockData.Stock + value < 0)
+            {
+                throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
+            }
+
+            SetStockWithLock(stockData, stockData.Stock + value);
+        }
+
+        /// <summary>
+        /// Sets stock count of item. 
+        /// If PerStoreStock is configured, gets store from cache and updates relevant item.
+        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void SetStock(Guid key, int value)
+        {
+            if (_config.PerStoreStock)
+            {
+                var store = _storeSvc.GetStoreFromCache();
+                SetStock(key, store.Alias, value);
+            }
+            else
+            {
+                EnsureStockEntryExists(key);
+
+                var stockData = _stockCache.Cache[key];
+
+                SetStockWithLock(stockData, value);
+            }
+        }
+
+        /// <summary>
+        /// Sets stock count of store item. 
+        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="storeAlias"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public void SetStock(Guid key, string storeAlias, int value)
+        {
+            EnsurePerStoreEntryExists(key, storeAlias);
+
+            var stockData = _stockPerStoreCache.Cache[storeAlias][key];
+
+            SetStockWithLock(stockData, value);
         }
 
         /// <summary>
@@ -249,33 +301,38 @@ namespace Ekom.API
             }
         }
 
-        private void UpdateStockWithLock(StockData stockData, int value)
+        /// <summary>
+        /// Sets stock of provided <see cref="StockData"/> item and updates database.
+        /// Ensures proper locking while change is performed.
+        /// </summary>
+        /// <param name="stockData"></param>
+        /// <param name="value"></param>
+        /// <exception cref="ArgumentException">
+        /// Throws an exception when current value and provided value are equal
+        /// </exception>
+        /// <exception cref="ArgumentNullException"/>
+        private void SetStockWithLock(StockData stockData, int value)
         {
-            if (stockData.Stock + value >= 0)
+            if (stockData == null)
             {
-                lock (stockData)
-                {
-                    stockData.Stock += value;
-
-                    var repoVal = _stockRepo.Update(stockData.UniqueId, value);
-
-                    if (repoVal != stockData.Stock)
-                    {
-                        var prevCachedVal = stockData.Stock;
-
-                        // Memory always follows database data
-                        stockData.Stock = repoVal;
-
-                        throw new StockException(
-                            $"Stock for item {stockData.UniqueId} is out of sync!. Repo value {repoVal} != cache value {prevCachedVal}"
-                        + "This indicates that the requested value + Db stock > 0 but Cache and Db are out of sync"
-                        );
-                    }
-                }
+                throw new ArgumentNullException(nameof(stockData));
             }
-            else
+            if (stockData.Stock == value)
             {
-                throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
+                throw new ArgumentException($"Stock is already set to provided value.", nameof(value));
+            }
+            if (value < 0)
+            {
+                throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));
+            }
+
+            lock (stockData)
+            {
+                var oldValue = stockData.Stock;
+                var modifyAmount = value - stockData.Stock;
+                stockData.Stock = value;
+
+                _stockRepo.Set(stockData.UniqueId, modifyAmount, oldValue);
             }
         }
 

@@ -13,5 +13,10 @@ namespace Ekom.Exceptions
         /// </summary>
         /// <param name="message"></param>
         public StockException(string message) : base(message) { }
+
+        /// <summary>
+        /// Stock value in repository at time of exception
+        /// </summary>
+        public int RepoValue { get; set; }
     }
 }
