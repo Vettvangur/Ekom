@@ -57,7 +57,7 @@ namespace Ekom
                                          .ToLower()
                                          .AddTrailing();
 
-                if (path == "/")
+                if (path == "/" || httpContext.Request.Path.StartsWith("/umbraco"))
                 {
                     return false;
                 }
