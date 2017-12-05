@@ -201,13 +201,13 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetStock(Guid key, string storeAlias, int value)
+        public bool SetStock(Guid key, string storeAlias, int value)
         {
             EnsurePerStoreEntryExists(key, storeAlias);
 
             var stockData = _stockPerStoreCache.Cache[storeAlias][key];
 
-            SetStockWithLock(stockData, value);
+            return SetStockWithLock(stockData, value);
         }
 
         /// <summary>
@@ -311,7 +311,7 @@ namespace Ekom.API
         /// Throws an exception when current value and provided value are equal
         /// </exception>
         /// <exception cref="ArgumentNullException"/>
-        private void SetStockWithLock(StockData stockData, int value)
+        private bool SetStockWithLock(StockData stockData, int value)
         {
             if (stockData == null)
             {
@@ -333,6 +333,8 @@ namespace Ekom.API
                 stockData.Stock = value;
 
                 _stockRepo.Set(stockData.UniqueId, modifyAmount, oldValue);
+
+                return true;
             }
         }
 
