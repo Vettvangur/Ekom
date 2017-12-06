@@ -176,12 +176,12 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void SetStock(Guid key, int value)
+        public bool SetStock(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
                 var store = _storeSvc.GetStoreFromCache();
-                SetStock(key, store.Alias, value);
+                return SetStock(key, store.Alias, value);
             }
             else
             {
@@ -189,7 +189,7 @@ namespace Ekom.API
 
                 var stockData = _stockCache.Cache[key];
 
-                SetStockWithLock(stockData, value);
+                return SetStockWithLock(stockData, value);
             }
         }
 
@@ -329,10 +329,9 @@ namespace Ekom.API
             lock (stockData)
             {
                 var oldValue = stockData.Stock;
-                var modifyAmount = value - stockData.Stock;
                 stockData.Stock = value;
 
-                _stockRepo.Set(stockData.UniqueId, modifyAmount, oldValue);
+                _stockRepo.Set(stockData.UniqueId, value, oldValue);
 
                 return true;
             }
