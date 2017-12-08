@@ -11,5 +11,6 @@ namespace Ekom.Interfaces
         OrderInfo GetOrder(string storeAlias);
         OrderInfo GetOrderInfo(Guid uniqueId);
         OrderInfo RemoveOrderLine(Guid lineId, string storeAlias);
+        void ChangeOrderStatus(Guid uniqueId, OrderStatus status);
     }
 }
