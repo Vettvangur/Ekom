@@ -3,6 +3,7 @@ using Ekom.Interfaces;
 using Ekom.Models;
 using System;
 using System.Collections.Generic;
+using System.Web.Mvc;
 
 namespace Ekom.API
 {
@@ -57,6 +58,22 @@ namespace Ekom.API
         {
             return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
         }
+
+        public OrderInfo UpdateCustomerInformation(FormCollection form)
+        {
+            return _orderService.UpdateCustomerInformation(form);
+        }
+
+        public OrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
+        {
+            return _orderService.UpdateShippingInformation(ShippingProvider, storeAlias);
+        }
+
+        public OrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
+        {
+            return _orderService.UpdatePaymentInformation(PaymentProvider, storeAlias);
+        }
+
 
         public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {

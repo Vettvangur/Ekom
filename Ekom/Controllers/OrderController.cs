@@ -63,6 +63,11 @@ namespace Ekom.Controllers
             }
         }
 
+        /// <summary>
+        /// Add product with multiple variants to order
+        /// </summary>
+        /// <param name="request">OrderMultipleRequest</param>
+        /// <returns></returns>
         public JsonResult AddMultipleToOrder(OrderMultipleRequest request)
         {
             try
@@ -128,7 +133,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.UpdateCustomerInformation(form["storeAlias"], form);
+                var orderInfo = API.Order.Current.UpdateCustomerInformation(form);
 
                 return Json(new
                 {
@@ -156,7 +161,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.UpdateShippingInformation(storeAlias, ShippingProvider);
+                var orderInfo = API.Order.Current.UpdateShippingInformation(ShippingProvider,storeAlias);
 
                 return Json(new
                 {
@@ -184,7 +189,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.UpdatePaymentInformation(storeAlias, PaymentProvider);
+                var orderInfo = API.Order.Current.UpdatePaymentInformation(PaymentProvider, storeAlias);
 
                 return Json(new
                 {

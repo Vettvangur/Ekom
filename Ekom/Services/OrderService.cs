@@ -485,43 +485,52 @@ namespace Ekom.Services
             return null;
         }
 
-        public OrderInfo UpdateCustomerInformation(string storeAlias, FormCollection form)
+        public OrderInfo UpdateCustomerInformation(FormCollection form)
         {
             _log.Info("UpdateCustomerInformation...");
 
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-            _date = DateTime.Now;
-
-            var orderInfo = GetOrder(storeAlias);
-
-            var customerProperties = new Dictionary<string, string>();
-
-            foreach (var key in form.AllKeys.Where(x => x.StartsWith("customer")))
+            if (form.AllKeys.Any(x => x == "storeAlias"))
             {
-                var value = form[key];
+                var storeAlias = form["storeAlias"];
 
-                customerProperties.Add(key, value);
+                _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+                _date = DateTime.Now;
+
+                var orderInfo = GetOrder(storeAlias);
+
+                var customerProperties = new Dictionary<string, string>();
+
+                foreach (var key in form.AllKeys.Where(x => x.StartsWith("customer")))
+                {
+                    var value = form[key];
+
+                    customerProperties.Add(key, value);
+                }
+
+                orderInfo.CustomerInformation.Customer.Properties = customerProperties;
+
+                var shippingProperties = new Dictionary<string, string>();
+
+                foreach (var key in form.AllKeys.Where(x => x.StartsWith("shipping")))
+                {
+                    var value = form[key];
+
+                    shippingProperties.Add(key, value);
+                }
+
+                orderInfo.CustomerInformation.Shipping.Properties = shippingProperties;
+
+                UpdateOrderAndOrderInfo(orderInfo);
+
+                return orderInfo;
             }
 
-            orderInfo.CustomerInformation.Customer.Properties = customerProperties;
+            return null;
 
-            var shippingProperties = new Dictionary<string, string>();
 
-            foreach (var key in form.AllKeys.Where(x => x.StartsWith("shipping")))
-            {
-                var value = form[key];
-
-                shippingProperties.Add(key, value);
-            }
-
-            orderInfo.CustomerInformation.Shipping.Properties = shippingProperties;
-
-            UpdateOrderAndOrderInfo(orderInfo);
-
-            return orderInfo;
         }
 
-        public OrderInfo UpdateShippingInformation(string storeAlias, Guid shippingProviderId)
+        public OrderInfo UpdateShippingInformation(Guid shippingProviderId, string storeAlias)
         {
             _log.Info("UpdateShippingInformation...");
 
@@ -548,7 +557,7 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        public OrderInfo UpdatePaymentInformation(string storeAlias, Guid paymentProviderId)
+        public OrderInfo UpdatePaymentInformation(Guid paymentProviderId, string storeAlias)
         {
             _log.Info("UpdatePaymentInformation...");
 
