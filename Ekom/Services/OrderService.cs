@@ -153,7 +153,7 @@ namespace Ekom.Services
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
 
-            _log.Info("Add OrderLine ...  Get Order.. Action: " + action.Value);
+            _log.Info("Add OrderLine ...  Get Order.. Action: " + cartAction);
 
             var orderInfo = GetOrder(storeAlias);
 
@@ -223,8 +223,15 @@ namespace Ekom.Services
             var lineId = Guid.NewGuid();
 
             _log.Info("AddOrderLineToOrderInfo: Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
-
-            OrderLine existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
+            OrderLine existingOrderLine = null;
+            if (variantIds.Any())
+            {
+                existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
+            }
+            else
+            {
+                existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+            }
 
             if (existingOrderLine != null)
             {
