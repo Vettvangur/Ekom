@@ -12,8 +12,10 @@ namespace Ekom.Interfaces
         OrderInfo GetOrder(string storeAlias);
         OrderInfo GetOrderInfo(Guid uniqueId);
         OrderInfo RemoveOrderLine(Guid lineId, string storeAlias);
+
         OrderInfo UpdateCustomerInformation(FormCollection form);
         OrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias);
         OrderInfo UpdatePaymentInformation(Guid paymentProviderId, string storeAlias);
+        void ChangeOrderStatus(Guid uniqueId, OrderStatus status);
     }
 }

@@ -90,24 +90,24 @@ namespace Ekom.Repository
         /// <returns></returns>
         public int Set(string uniqueId, int value, int oldValue)
         {
-            var stockData = GetStockByUniqueId(uniqueId);
+            var stockDataFromRepo = GetStockByUniqueId(uniqueId);
 
-            if (stockData.Stock != oldValue)
+            if (stockDataFromRepo.Stock != oldValue)
             {
                 throw new StockException($"The database and cache are out of sync!")
                 {
-                    RepoValue = stockData.Stock,
+                    RepoValue = stockDataFromRepo.Stock,
                 };
             }
 
-            stockData.Stock = value;
-            stockData.UpdateDate = DateTime.Now;
+            stockDataFromRepo.Stock = value;
+            stockDataFromRepo.UpdateDate = DateTime.Now;
 
             // Called synchronously and hopefully contained by a locking construct
             using (var db = _dbCtx.Database)
             {
-                db.Update(stockData);
-                return stockData.Stock;
+                db.Update(stockDataFromRepo);
+                return stockDataFromRepo.Stock;
             }
         }
     }

@@ -47,6 +47,11 @@ namespace Ekom.API
         {
             return _orderService.GetOrder(storeAlias);
         }
+        public void UpdateStatus(string storeAlias, OrderStatus newStatus)
+        {
+            var order = _orderService.GetOrder(storeAlias);
+            _orderService.ChangeOrderStatus(order.UniqueId, newStatus);
+        }
 
         public OrderInfo AddOrderLine(
             Guid productId,

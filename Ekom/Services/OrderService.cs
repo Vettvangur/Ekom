@@ -116,9 +116,11 @@ namespace Ekom.Services
             }
         }
 
-        public void ChangeOrderStatus(OrderData order, OrderStatus status)
+        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)
         {
             // Add event handler
+
+            var order = _orderRepository.GetOrder(uniqueId);
 
             order.OrderStatus = status;
 
