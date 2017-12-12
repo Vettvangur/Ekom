@@ -130,6 +130,8 @@ namespace Ekom.Services
                 var key = CreateKey();
 
                 DeleteOrderCookie(key);
+                _httpCtx.Session.Remove(key);
+
             }
 
             _orderRepository.UpdateOrder(order);

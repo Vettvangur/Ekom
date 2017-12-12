@@ -123,6 +123,31 @@ namespace Ekom.Models
             }
         }
 
+        public List<ICategory> CategoryAncestors()
+        {
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
+
+            var list = new List<ICategory>();
+
+            foreach (var item in examineItemsFromPath)
+            {
+                var alias = item.Fields.GetProperty("nodeTypeAlias");
+
+                if (alias == "ekmCategory")
+                {
+                    var c = API.Catalog.Current.GetCategory(Store.Alias, item.Id);
+
+                    if (c != null)
+                    {
+                        list.Add(c);
+                    }
+                }
+            }
+
+            return list;
+
+        }
+
         /// <summary>
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
