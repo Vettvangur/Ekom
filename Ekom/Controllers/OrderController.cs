@@ -133,7 +133,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdateCustomerInformation(form);
+                var orderInfo = API.Order.Current.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
 
                 return Json(new
                 {

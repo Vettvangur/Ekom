@@ -494,11 +494,11 @@ namespace Ekom.Services
             return null;
         }
 
-        public OrderInfo UpdateCustomerInformation(FormCollection form)
+        public OrderInfo UpdateCustomerInformation(Dictionary<string,string> form)
         {
             _log.Info("UpdateCustomerInformation...");
 
-            if (form.AllKeys.Any(x => x == "storeAlias"))
+            if (form.Keys.Any(x => x == "storeAlias"))
             {
                 var storeAlias = form["storeAlias"];
 
@@ -509,7 +509,7 @@ namespace Ekom.Services
 
                 var customerProperties = new Dictionary<string, string>();
 
-                foreach (var key in form.AllKeys.Where(x => x.StartsWith("customer")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("customer")))
                 {
                     var value = form[key];
 
@@ -520,7 +520,7 @@ namespace Ekom.Services
 
                 var shippingProperties = new Dictionary<string, string>();
 
-                foreach (var key in form.AllKeys.Where(x => x.StartsWith("shipping")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping")))
                 {
                     var value = form[key];
 

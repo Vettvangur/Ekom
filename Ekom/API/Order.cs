@@ -64,7 +64,7 @@ namespace Ekom.API
             return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
         }
 
-        public OrderInfo UpdateCustomerInformation(FormCollection form)
+        public OrderInfo UpdateCustomerInformation(Dictionary<string,string> form)
         {
             return _orderService.UpdateCustomerInformation(form);
         }
