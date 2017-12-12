@@ -291,6 +291,7 @@
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />
+    <Compile Include="Services\SearchService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />
