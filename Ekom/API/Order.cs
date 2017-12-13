@@ -53,6 +53,11 @@ namespace Ekom.API
             _orderService.ChangeOrderStatus(order.UniqueId, newStatus);
         }
 
+        public void UpdateStatus(string storeAlias, OrderStatus newStatus, Guid orderId)
+        {
+            _orderService.ChangeOrderStatus(orderId, newStatus);
+        }
+
         public OrderInfo AddOrderLine(
             Guid productId,
             IEnumerable<Guid> variantIds,

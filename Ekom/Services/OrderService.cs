@@ -80,11 +80,7 @@ namespace Ekom.Services
         {
             _store = store;
 
-            _log.Info("Get Order: Store: " + _store.Alias);
-
             var key = CreateKey();
-
-            _log.Info("Get Order: Key: " + key);
 
             // Get Cart UniqueId from Cookie.
             var orderUniqueId = GetOrderIdFromCookie(key);
@@ -92,7 +88,6 @@ namespace Ekom.Services
             // If Cookie Exist then return Cart
             if (orderUniqueId != Guid.Empty)
             {
-                _log.Info("Get Order: " + orderUniqueId);
 
                 // If the cart is not in the session, fetch order from sql and insert to session
                 if (_httpCtx.Session[key] == null)
@@ -108,12 +103,16 @@ namespace Ekom.Services
                     _log.Info("Order Found in Session!");
                 }
 
-                return (OrderInfo)_httpCtx.Session[key];
+                var orderInfo = (OrderInfo)_httpCtx.Session[key];
+
+                if (orderInfo != null && (orderInfo.OrderStatus != OrderStatus.ReadyForDispatch || orderInfo.OrderStatus != OrderStatus.Confirmed))
+                {
+                    return orderInfo;
+                }
+
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)
@@ -127,7 +126,7 @@ namespace Ekom.Services
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch  || status == OrderStatus.OfflinePayment)
             {
-                var key = CreateKey();
+                var key = CreateKey(order.StoreAlias);
 
                 DeleteOrderCookie(key);
                 _httpCtx.Session.Remove(key);
@@ -135,6 +134,8 @@ namespace Ekom.Services
             }
 
             _orderRepository.UpdateOrder(order);
+
+            _log.Info("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }
 
         public OrderInfo AddOrderLine(
@@ -595,14 +596,13 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        public string CreateKey()
+        public string CreateKey(string storeAlias = null)
         {
             var key = "ekmOrder";
 
-            if (_store != null)
-            {
-                key += "-" + _store.Alias;
-            }
+            storeAlias = string.IsNullOrEmpty(storeAlias) ? _store.Alias : storeAlias;
+
+            key += "-" + storeAlias;
 
             return key;
         }
@@ -633,7 +633,13 @@ namespace Ekom.Services
 
         private void DeleteOrderCookie(string key)
         {
-            _httpCtx.Request.Cookies.Remove(key);
+            HttpCookie cookie = new HttpCookie(key)
+            {
+                Expires = DateTime.Now.AddDays(-1)
+            };
+
+            _httpCtx.Response.Cookies.Set(cookie);
+
         } 
 
         private void GenerateOrderNumber(out int referenceId, out string orderNumber)
