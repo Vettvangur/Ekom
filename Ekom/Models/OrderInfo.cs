@@ -73,7 +73,7 @@ namespace Ekom.Models
             get
             {
                 // OrderLines Exlude OrderDiscount included
-                var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+                var amount = OrderLines.Sum(x => x.Amount.Value);
                 
                 return new Price(amount, StoreInfo);
             }
@@ -84,7 +84,7 @@ namespace Ekom.Models
             get
             {
                 // OrderLines with OrderDiscount included
-                var amount = OrderLines.Sum(x => x.Product.Price.WithVat.Value * x.Quantity);
+                var amount = OrderLines.Sum(x => x.Amount.Value);
 
                 return new Price(amount, StoreInfo);
             }
@@ -97,23 +97,7 @@ namespace Ekom.Models
         {
             get
             {
-                decimal amount = 0;  
-
-                foreach (var orderline in OrderLines)
-                {
-                    if (orderline.Product.VariantGroups.Any())
-                    {
-                        var variant = orderline.Product.VariantGroups.First().Variants.FirstOrDefault();
-
-                        if (variant != null)
-                        {
-                            amount += variant.Price.Value;
-                        }
-                    } else
-                    {
-                        amount += orderline.Product.Price.Value;
-                    }
-                }
+                var amount = SubTotal.Value;
 
                 if (ShippingProvider != null)
                 {
