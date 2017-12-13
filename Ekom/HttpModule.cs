@@ -34,45 +34,55 @@ namespace Ekom
 
         private void Application_BeginRequest(Object source, EventArgs e)
         {
-            HttpApplication application = (HttpApplication)source;
-            HttpContext httpCtx = application.Context;
-
-            var url = httpCtx.Request.Url;
-            var uri = url.AbsoluteUri;
-
-            if (uri.Contains(".css") || uri.Contains(".js")) { return; }
-
-            var storeSvc = Configuration.container.GetInstance<StoreService>();
-
-            Store store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
-
-            if (store != null)
+            // Gives error when examine is empty. Need better fix
+            try
             {
-                #region Currency 
 
-                // Unfinished - move to currency service
+                HttpApplication application = (HttpApplication)source;
+                HttpContext httpCtx = application.Context;
 
-                HttpCookie storeInfo = httpCtx.Request.Cookies["StoreInfo"];
+                var url = httpCtx.Request.Url;
+                var uri = url.AbsoluteUri;
 
-                object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
+                if (uri.Contains(".css") || uri.Contains(".js")) { return; }
 
-                #endregion
+                var storeSvc = Configuration.container.GetInstance<StoreService>();
 
-                var path = url.AbsolutePath.ToLower().AddTrailing();
+                Store store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
 
-                var appCtx = Configuration.container.GetInstance<ApplicationContext>();
+                if (store != null)
+                {
+                    #region Currency 
 
-                var appCache = appCtx.ApplicationCache;
-                appCache.RequestCache.GetCacheItem("ekmRequest", () =>
-                    new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
-                    {
-                        Store = store,
-                        Currency = Currency,
-                        DomainPrefix = path,
-                        IPAddress = httpCtx.Request.UserHostAddress
-                    }
-                );
+                    // Unfinished - move to currency service
+
+                    HttpCookie storeInfo = httpCtx.Request.Cookies["StoreInfo"];
+
+                    object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
+
+                    #endregion
+
+                    var path = url.AbsolutePath.ToLower().AddTrailing();
+
+                    var appCtx = Configuration.container.GetInstance<ApplicationContext>();
+
+                    var appCache = appCtx.ApplicationCache;
+                    appCache.RequestCache.GetCacheItem("ekmRequest", () =>
+                        new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
+                        {
+                            Store = store,
+                            Currency = Currency,
+                            DomainPrefix = path,
+                            IPAddress = httpCtx.Request.UserHostAddress
+                        }
+                    );
+                }
+
+            } catch
+            {
+
             }
+
         }
 
         /// <summary>
