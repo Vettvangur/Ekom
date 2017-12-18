@@ -227,14 +227,19 @@ namespace Ekom.Services
 
             _log.Info("AddOrderLineToOrderInfo: Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
             OrderLine existingOrderLine = null;
-            if (variantIds.Any())
+
+            if (orderInfo.OrderLines != null)
             {
-                existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
+                if (variantIds.Any())
+                {
+                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
+                }
+                else
+                {
+                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+                }
             }
-            else
-            {
-                existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
-            }
+
 
             if (existingOrderLine != null)
             {

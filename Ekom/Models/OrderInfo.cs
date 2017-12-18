@@ -6,6 +6,8 @@ using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using log4net;
+using System.Reflection;
 
 namespace Ekom.Models
 {
@@ -34,7 +36,6 @@ namespace Ekom.Models
 
             if (!string.IsNullOrEmpty(orderData.OrderInfo))
             {
-
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
                 _storeInfo = CreateStoreInfoFromJson(orderInfoJObject);
@@ -42,6 +43,9 @@ namespace Ekom.Models
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
+            } else
+            {
+                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
 
         }
@@ -71,7 +75,7 @@ namespace Ekom.Models
             }
         }
 
-        public List<OrderLine> OrderLines { get; set; }
+        public List<OrderLine> OrderLines = new List<OrderLine>();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
@@ -95,7 +99,7 @@ namespace Ekom.Models
             {
                 // OrderLines Exlude OrderDiscount included
                 var amount = OrderLines.Sum(x => x.Amount.Value);
-                
+
                 return new Price(amount, StoreInfo);
             }
         }
@@ -296,5 +300,10 @@ namespace Ekom.Models
 
             return null;
         }
+
+        protected static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }

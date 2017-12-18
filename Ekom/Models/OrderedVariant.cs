@@ -7,6 +7,8 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
+using log4net;
+using System.Reflection;
 
 namespace Ekom.Models
 {
@@ -133,5 +135,11 @@ namespace Ekom.Models
 
             Properties = variantObject["Properties"].ToObject<Dictionary<string, string>>();
         }
+
+        protected static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
+
     }
 }

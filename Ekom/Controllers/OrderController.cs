@@ -54,6 +54,7 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
+                _log.Error("Failed to add to order!", ex);
 
                 return Json(new
                 {

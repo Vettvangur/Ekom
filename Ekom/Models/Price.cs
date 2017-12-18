@@ -2,11 +2,18 @@
 using System.Web.Mvc;
 using Ekom.Interfaces;
 using Ekom.Services;
+using log4net;
+using System.Reflection;
 
 namespace Ekom.Models
 {
     public class Price : IDiscountedPrice
     {
+        protected static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
+
         private decimal _originalPrice;
         private string _culture;
         private decimal _vat;
@@ -120,7 +127,6 @@ namespace Ekom.Models
             get
             {
                 var amount = GetAmount();
-
                 return (amount).ToString(_config.CurrencyFormat, new CultureInfo(_culture));
             }
 
@@ -150,5 +156,10 @@ namespace Ekom.Models
 
             return price;
         }
+
+        private static readonly ILog Log =
+                LogManager.GetLogger(
+                    MethodBase.GetCurrentMethod().DeclaringType
+                );
     }
 }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Ekom.Interfaces;
+using log4net;
+using System.Reflection;
 
 namespace Ekom.Models
 {
@@ -30,7 +32,6 @@ namespace Ekom.Models
                     }
                 }
 
-
                 return new Price(_price * Quantity, _storeInfo);
             }
         }
@@ -51,5 +52,11 @@ namespace Ekom.Models
             Id = lineId;
             Product = new OrderedProduct(productId, variantIds, store);
         }
+
+        protected static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
+
     }
 }
