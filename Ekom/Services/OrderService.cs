@@ -332,13 +332,7 @@ namespace Ekom.Services
             //}
 
             // This Need Complete overhaul!!
-            var orderInfo = new OrderInfo(orderData, _store)
-            {
-                OrderLines = CreateOrderLinesFromJson(orderData.OrderInfo),
-                ShippingProvider = CreateShippingProviderFromJson(orderData.OrderInfo),
-                PaymentProvider = CreatePaymentProviderFromJson(orderData.OrderInfo),
-                CustomerInformation = CreateCustomerInformationFromJson(orderData.OrderInfo)
-            };
+            var orderInfo = new OrderInfo(orderData);
 
             return orderInfo;
         }
@@ -374,128 +368,6 @@ namespace Ekom.Services
             return orderData;
         }
 
-        private List<OrderLine> CreateOrderLinesFromJson(string json)
-        {
-            var orderLines = new List<OrderLine>();
-
-            _log.Info("Add OrderLine ...  Create OrderLines from Json.. Json: " + json);
-
-            if (!string.IsNullOrEmpty(json))
-            {
-                _log.Info("Add OrderLine ...  Create OrderLines from Json.. Creating...");
-
-                var orderInfoJObject = JObject.Parse(json);
-
-                var orderLinesArray = (JArray)orderInfoJObject["OrderLines"];
-
-                var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                foreach (var line in orderLinesArray)
-                {
-                    var lineId = (Guid)line["Id"];
-                    var quantity = (int)line["Quantity"];
-                    var productJson = line["Product"].ToString();
-
-                    var orderLine = new OrderLine(lineId, quantity, productJson, storeInfo);
-
-                    orderLines.Add(orderLine);
-                }
-            }
-
-            return orderLines;
-        }
-
-        private OrderedShippingProvider CreateShippingProviderFromJson(string json)
-        {
-            if (!string.IsNullOrEmpty(json))
-            {
-                var orderInfoJObject = JObject.Parse(json);
-
-                if (orderInfoJObject["ShippingProvider"] != null)
-                {
-                    var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();
-
-                    if (!string.IsNullOrEmpty(shippingProviderJson))
-                    {
-                        var shippingProviderObject = JObject.Parse(shippingProviderJson);
-
-                        if (shippingProviderObject != null)
-                        {
-                            var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                            var p = new OrderedShippingProvider(shippingProviderObject, storeInfo);
-
-                            return p;
-                        }
-                    }
-                }
-
-
-            }
-
-            return null;
-        }
-
-        private OrderedPaymentProvider CreatePaymentProviderFromJson(string json)
-        {
-            if (!string.IsNullOrEmpty(json))
-            {
-                var orderInfoJObject = JObject.Parse(json);
-
-                if (orderInfoJObject["PaymentProvider"] != null)
-                {
-                    var paymentProviderJson = orderInfoJObject["PaymentProvider"].ToString();
-
-                    if (!string.IsNullOrEmpty(paymentProviderJson))
-                    {
-                        var paymentProviderObject = JObject.Parse(paymentProviderJson);
-
-                        if (paymentProviderObject != null)
-                        {
-                            var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                            var p = new OrderedPaymentProvider(paymentProviderObject, storeInfo);
-
-                            return p;
-                        }
-                    }
-                }
-
-
-            }
-
-            return null;
-        }
-
-        private CustomerInfo CreateCustomerInformationFromJson(string json)
-        {
-            if (!string.IsNullOrEmpty(json))
-            {
-                var orderInfoJObject = JObject.Parse(json);
-
-                if (orderInfoJObject["CustomerInformation"] != null)
-                {
-                    var customerInfoJson = orderInfoJObject["CustomerInformation"].ToString();
-
-                    if (!string.IsNullOrEmpty(customerInfoJson))
-                    {
-                        var customerInfo = JsonConvert.DeserializeObject<CustomerInfo>(customerInfoJson);
-
-                        return customerInfo;
-                    }
-                }
-
-
-            }
-
-            return null;
-        }
 
         public OrderInfo UpdateCustomerInformation(Dictionary<string,string> form)
         {

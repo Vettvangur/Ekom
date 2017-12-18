@@ -4,6 +4,8 @@ using System.Linq;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace Ekom.Models
 {
@@ -14,7 +16,7 @@ namespace Ekom.Models
     {
         private OrderData _orderData;
         private Store _store;
-
+        private StoreInfo _storeInfo;
         /// <summary>
         /// 
         /// </summary>
@@ -24,6 +26,24 @@ namespace Ekom.Models
         {
             _orderData = orderData;
             _store = store;
+        }
+
+        public OrderInfo(OrderData orderData)
+        {
+            _orderData = orderData;
+
+            if (!string.IsNullOrEmpty(orderData.OrderInfo))
+            {
+
+                var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
+
+                _storeInfo = CreateStoreInfoFromJson(orderInfoJObject);
+                OrderLines = CreateOrderLinesFromJson(orderInfoJObject);
+                ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
+                PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
+                CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
+            }
+
         }
 
         /// <summary>
@@ -67,6 +87,8 @@ namespace Ekom.Models
         }
 
         public CustomerInfo CustomerInformation = new CustomerInfo();
+        private OrderData orderData;
+
         public Price OrderLineTotal
         {
             get
@@ -116,7 +138,14 @@ namespace Ekom.Models
         {
             get
             {
-                return new StoreInfo(_store);
+                if (_storeInfo == null)
+                {
+                    return new StoreInfo(_store);
+                } else
+                {
+                    return _storeInfo;
+                }
+                
             }
         }
         /// <summary>
@@ -154,5 +183,118 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public OrderStatus OrderStatus => _orderData.OrderStatus;
+
+        private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)
+        {
+            var orderLines = new List<OrderLine>();
+
+            var orderLinesArray = (JArray)orderInfoJObject["OrderLines"];
+
+            var storeJson = orderInfoJObject["StoreInfo"].ToString();
+
+            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
+
+            foreach (var line in orderLinesArray)
+            {
+                var lineId = (Guid)line["Id"];
+                var quantity = (int)line["Quantity"];
+                var productJson = line["Product"].ToString();
+
+                var orderLine = new OrderLine(lineId, quantity, productJson, storeInfo);
+
+                orderLines.Add(orderLine);
+            }
+
+            return orderLines;
+        }
+
+        private OrderedShippingProvider CreateShippingProviderFromJson(JObject orderInfoJObject)
+        {
+ 
+            if (orderInfoJObject["ShippingProvider"] != null)
+            {
+                var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();
+
+                if (!string.IsNullOrEmpty(shippingProviderJson))
+                {
+                    var shippingProviderObject = JObject.Parse(shippingProviderJson);
+
+                    if (shippingProviderObject != null)
+                    {
+                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
+
+                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
+
+                        var p = new OrderedShippingProvider(shippingProviderObject, storeInfo);
+
+                        return p;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private OrderedPaymentProvider CreatePaymentProviderFromJson(JObject orderInfoJObject)
+        {
+
+            if (orderInfoJObject["PaymentProvider"] != null)
+            {
+                var paymentProviderJson = orderInfoJObject["PaymentProvider"].ToString();
+
+                if (!string.IsNullOrEmpty(paymentProviderJson))
+                {
+                    var paymentProviderObject = JObject.Parse(paymentProviderJson);
+
+                    if (paymentProviderObject != null)
+                    {
+                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
+
+                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
+
+                        var p = new OrderedPaymentProvider(paymentProviderObject, storeInfo);
+
+                        return p;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private CustomerInfo CreateCustomerInformationFromJson(JObject orderInfoJObject)
+        {
+
+            if (orderInfoJObject["CustomerInformation"] != null)
+            {
+                var customerInfoJson = orderInfoJObject["CustomerInformation"].ToString();
+
+                if (!string.IsNullOrEmpty(customerInfoJson))
+                {
+                    var customerInfo = JsonConvert.DeserializeObject<CustomerInfo>(customerInfoJson);
+
+                    return customerInfo;
+                }
+            }
+
+            return null;
+        }
+        private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
+        {
+
+            if (orderInfoJObject["StoreInfo"] != null)
+            {
+                var storeInfoJson = orderInfoJObject["StoreInfo"].ToString();
+
+                if (!string.IsNullOrEmpty(storeInfoJson))
+                {
+                    var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeInfoJson);
+
+                    return storeInfo;
+                }
+            }
+
+            return null;
+        }
     }
 }
