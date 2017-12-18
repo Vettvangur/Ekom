@@ -67,7 +67,6 @@ namespace Ekom.Models
         }
 
         public CustomerInfo CustomerInformation = new CustomerInfo();
-
         public Price OrderLineTotal
         {
             get

@@ -2,6 +2,8 @@
 using Ekom.Services;
 using log4net;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Umbraco.Core;
 
 namespace Ekom.Repository
@@ -45,6 +47,14 @@ namespace Ekom.Repository
             using (var db = _dbCtx.Database)
             {
                 db.Update(orderData);
+            }
+        }
+
+        public IEnumerable<OrderData> GetCompleteOrderByCustomerId(int customerId)
+        {
+            using (var db = _dbCtx.Database)
+            {
+                return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
             }
         }
 

@@ -84,10 +84,14 @@ namespace Ekom.API
             return _orderService.UpdatePaymentInformation(PaymentProvider, storeAlias);
         }
 
-
         public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
             return _orderService.RemoveOrderLine(lineId, storeAlias);
+        }
+
+        public IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId)
+        {
+            return _orderService.GetCompleteCustomerOrders(customerId);
         }
     }
 }

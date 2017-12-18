@@ -130,7 +130,7 @@ namespace Ekom.Services
 
                 DeleteOrderCookie(key);
                 _httpCtx.Session.Remove(key);
-
+                order.PaidDate = DateTime.Now;
             }
 
             _orderRepository.UpdateOrder(order);
@@ -324,7 +324,7 @@ namespace Ekom.Services
 
         private OrderInfo CreateOrderInfoFromOrderData(OrderData orderData, bool empty)
         {
-            _log.Info("Add OrderLine ...  Create OrderInfo from OrderData..");
+            //_log.Info("Add OrderLine ...  Create OrderInfo from OrderData..");
 
             //if (!empty && (orderData == null || string.IsNullOrEmpty(orderData.OrderInfo)))
             //{
@@ -594,6 +594,20 @@ namespace Ekom.Services
             }
 
             return orderInfo;
+        }
+
+        public IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId)
+        {
+            var list = new List<OrderInfo>();
+            
+            var orders = _orderRepository.GetCompleteOrderByCustomerId(customerId);
+
+            foreach (var o in orders)
+            {
+                list.Add(CreateOrderInfoFromOrderData(o, false));
+            }
+
+            return list;
         }
 
         public string CreateKey(string storeAlias = null)

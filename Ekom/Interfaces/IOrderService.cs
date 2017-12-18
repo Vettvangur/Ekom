@@ -16,6 +16,7 @@ namespace Ekom.Interfaces
         OrderInfo UpdateCustomerInformation(Dictionary<string,string> form);
         OrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias);
         OrderInfo UpdatePaymentInformation(Guid paymentProviderId, string storeAlias);
+        IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId);
         void ChangeOrderStatus(Guid uniqueId, OrderStatus status);
     }
 }
