@@ -46,7 +46,6 @@ namespace Ekom
                 var umbracoContext = contentRequest.RoutingContext.UmbracoContext;
                 var httpContext = umbracoContext.HttpContext;
                 var umbracoHelper = new UmbracoHelper(umbracoContext);
-                var memberShipHelper = new MembershipHelper(umbracoContext);
 
                 // Allows for configuration of content nodes to use for matching all requests
                 // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
@@ -127,22 +126,6 @@ namespace Ekom
 
                 ekmRequest.Product = product;
                 ekmRequest.Category = category;
-
-                if (httpContext.User.Identity.IsAuthenticated)
-                {
-                    var member = memberShipHelper.GetCurrentMemberProfileModel();
-
-                    var u = new User()
-                    {
-                        Email = member.Email,
-                        Username = member.UserName,
-                        UserId = memberShipHelper.GetCurrentMemberId(),
-                        Name = member.Name
-                    };
-
-                    ekmRequest.User = u;
-                }
-
 
                 // Request for Product or Category
                 if (contentId != 0)
