@@ -1,6 +1,7 @@
 ﻿using CommonServiceLocator;
 using Ekom.Cache;
 using Ekom.Models;
+using Ekom.Models.Discounts;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
@@ -138,6 +139,7 @@ namespace Ekom
                 { container.GetInstance<IBaseCache<Zone>>() },
                 { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
                 { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
+                { container.GetInstance<IPerStoreCache<Discount>>() },
             };
         });
 
@@ -150,5 +152,7 @@ namespace Ekom
 
             return CacheList.Value.Skip(indexOf + 1);
         }
+
+        internal const string DiscountStockTableName = "EkomDiscountStock";
     }
 }

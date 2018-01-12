@@ -229,7 +229,7 @@ namespace Ekom.Models
         /// Get value in properties
         /// </summary>
         /// <param name="alias"></param>
-        public string GetProperty(string alias)
+        public string GetPropertyValue(string alias)
         {
             if (Properties.Any(x => x.Key == alias))
             {

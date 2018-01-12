@@ -1,4 +1,5 @@
-﻿using Examine;
+﻿using Ekom.Models.Abstractions;
+using Examine;
 using log4net;
 using Lucene.Net.QueryParsers;
 using System;
@@ -10,18 +11,25 @@ using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
-    public class SearchService
+    class SearchService
     {
+        ExamineManagerBase _examineManager;
+        public SearchService(ExamineManagerBase examineManager)
+        {
+            _examineManager = examineManager;
+        }
+
         /// <summary>
+        /// Unused, missing DI
         /// Builds and run the Lucene query.
         /// </summary>
-        public static ISearchResults SearchResult(string query, string searchProvider, out int total)
+        public ISearchResults SearchResult(string query, string searchProvider, out int total)
         {
             total = 0;
 
             try
             {
-                var searcher = ExamineManager.Instance.SearchProviderCollection[searchProvider];
+                var searcher = _examineManager.SearchProviderCollection[searchProvider];
                 var luceneQuery = new StringBuilder();
 
                 if (!string.IsNullOrWhiteSpace(query))

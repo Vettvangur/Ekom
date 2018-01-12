@@ -2,7 +2,9 @@
 using Ekom.Domain.Repositories;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Abstractions;
 using Ekom.Models.Data;
+using Ekom.Models.Discounts;
 using Ekom.Repository;
 using Ekom.Services;
 using Examine;
@@ -51,8 +53,7 @@ namespace Ekom.App_Start
 
             container.RegisterType<ApplicationContext>(new InjectionFactory(c => ApplicationContext.Current));
             container.RegisterType<UmbracoContext>(new InjectionFactory(c => UmbracoContext.Current));
-            container.RegisterType<DatabaseContext>(new InjectionFactory(c => c.Resolve<ApplicationContext>().DatabaseContext));
-            container.RegisterType<ExamineManager>(new InjectionFactory(c => ExamineManager.Instance));
+            container.RegisterType<ExamineManagerBase>(new InjectionFactory(c => new ExamineManagerWrapper(ExamineManager.Instance)));
 
             container.RegisterType<Configuration>(new ContainerControlledLifetimeManager());
 
@@ -69,12 +70,14 @@ namespace Ekom.App_Start
             container.RegisterType<IPerStoreCache<ShippingProvider>, ShippingProviderCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<StockData>, StockCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<StockData>, StockPerStoreCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IPerStoreCache<Discount>, DiscountCache>(new ContainerControlledLifetimeManager());
 
             container.RegisterType<IStoreService, StoreService>();
-            container.RegisterType<IOrderService, OrderService>();
+            //container.RegisterType<IOrderService, OrderService>();
 
             container.RegisterType<ICountriesRepository, CountriesRepository>();
             container.RegisterType<IStockRepository, StockRepository>();
+            container.RegisterType<IDiscountStockRepository, DiscountStockRepository>();
 
             container.RegisterType<ILogFactory, LogFactory>();
         }

@@ -1,10 +1,14 @@
-﻿using Examine;
+﻿using Ekom.Models.Abstractions;
+using Examine;
 using Examine.SearchCriteria;
 using System;
 using System.Linq;
 
 namespace Ekom.Services
 {
+    /// <summary>
+    /// Unused as service currently
+    /// </summary>
     class ExamineService
     {
         public static DateTime ConvertToDatetime(string value)
@@ -13,8 +17,8 @@ namespace Ekom.Services
         }
 
         Configuration _config;
-        ExamineManager _examineMgr;
-        public ExamineService(Configuration config, ExamineManager examineMgr)
+        ExamineManagerBase _examineMgr;
+        public ExamineService(Configuration config, ExamineManagerBase examineMgr)
         {
             _config = config;
             _examineMgr = examineMgr;

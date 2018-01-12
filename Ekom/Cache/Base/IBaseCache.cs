@@ -13,5 +13,12 @@ namespace Ekom.Cache
         /// 
         /// </summary>
         ConcurrentDictionary<Guid, T> Cache { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        T this[Guid index] { get; set; }
     }
 }

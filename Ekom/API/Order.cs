@@ -1,6 +1,8 @@
-﻿using Ekom.Helpers;
+﻿using Ekom.Exceptions;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
 using System;
 using System.Collections.Generic;
 using System.Web.Mvc;
@@ -24,7 +26,7 @@ namespace Ekom.API
             }
         }
 
-        IOrderService _orderService => Configuration.container.GetInstance<IOrderService>();
+        OrderService _orderService => Configuration.container.GetInstance<OrderService>();
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
         /// <summary>
@@ -93,5 +95,87 @@ namespace Ekom.API
         {
             return _orderService.GetCompleteCustomerOrders(customerId);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="DiscountNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrder(Guid discountKey)
+        {
+            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+            return ApplyDiscountToOrder(discountKey, storeAlias);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="DiscountNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrder(Guid discountKey, string storeAlias)
+            => _orderService.ApplyDiscountToOrder(discountKey, storeAlias);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        public void RemoveDiscountFromOrder()
+        {
+            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+
+            RemoveDiscountFromOrder(storeAlias);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        public void RemoveDiscountFromOrder(string storeAlias)
+            => _orderService.RemoveDiscountFromOrder(storeAlias);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <exception cref="DiscountNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrderLine(Guid productKey, Guid discountKey)
+        {
+            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+
+            return ApplyDiscountToOrderLine(productKey, discountKey, storeAlias);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <exception cref="DiscountNotFoundException"></exception>
+        /// <exception cref="ArgumentException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrderLine(Guid productKey, Guid discountKey, string storeAlias)
+            => _orderService.ApplyDiscountToOrderLine(productKey, discountKey, storeAlias);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void RemoveDiscountFromOrderLine(Guid productKey)
+        {
+            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+
+            RemoveDiscountFromOrderLine(productKey, storeAlias);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="productKey"></param>
+        /// <param name="storeAlias"></param>
+        public void RemoveDiscountFromOrderLine(Guid productKey, string storeAlias)
+            => _orderService.RemoveDiscountFromOrderLine(productKey, storeAlias);
     }
 }

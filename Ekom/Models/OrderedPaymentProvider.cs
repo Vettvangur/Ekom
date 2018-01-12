@@ -1,13 +1,12 @@
 ﻿using Ekom.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// Object describing a payment provider at the point a transaction was completed.
+    /// </summary>
     public class OrderedPaymentProvider
     {
         private PaymentProvider _provider;

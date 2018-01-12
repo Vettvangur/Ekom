@@ -35,7 +35,7 @@
 
                 <strong class="product__price">@product.Price.WithVat.ToCurrencyString</strong>
 
-                @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "product__form" }))
+                @using (Html.BeginEkomForm(FormType.AddToOrderProduct))
                 {
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
@@ -49,7 +49,7 @@
                             {
                                 var groupSelected = group.Id == primaryVariantGroup.Id;
 
-                                var color = group.GetProperty("color");
+                                var color = group.GetPropertyValue("color");
 
                                 <button type="button" class="product__groups-item @(groupSelected ? "product__groups-item--is-active" : "")" title="@group.Title" data-key="@group.Key">
                                     <span class="product__groups-color" style="background-color:#@color"></span>

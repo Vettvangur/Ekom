@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Umbraco.Core.Models;
 using Ekom.Helpers;
+using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -16,7 +17,7 @@ namespace Ekom.Cache
     abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
     {
         protected Configuration _config;
-        protected ExamineManager _examineManager;
+        protected ExamineManagerBase _examineManager;
         protected ILog _log;
 
         /// <summary>
@@ -27,6 +28,11 @@ namespace Ekom.Cache
         public ConcurrentDictionary<Guid, TItem> Cache { get; }
          = new ConcurrentDictionary<Guid, TItem>();
 
+        public TItem this[Guid index]
+        {
+            get => Cache[index];
+            set => Cache[index] = value;
+        }
 
         protected void AddOrReplaceFromCache(Guid id, TItem newCacheItem)
         {

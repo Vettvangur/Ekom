@@ -27,5 +27,11 @@ namespace Ekom.Cache
         /// 
         /// </summary>
         ConcurrentDictionary<string, ConcurrentDictionary<Guid, T>> Cache { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        ConcurrentDictionary<Guid, T> this[string index] { get; }
     }
 }

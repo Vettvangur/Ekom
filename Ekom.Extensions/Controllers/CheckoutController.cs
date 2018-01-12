@@ -87,7 +87,7 @@ namespace Ekom.Extensions.Controllers
                 skipReceipt: true,
                 culture: order.StoreInfo.Alias,
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                orderCustomString: "Ekom Store"
+                orderCustomString: order.UniqueId.ToString()
             );
         }
     }

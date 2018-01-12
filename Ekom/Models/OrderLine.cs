@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Ekom.Interfaces;
-using log4net;
 using System.Reflection;
+using Ekom.Interfaces;
+using Ekom.Models.Discounts;
+using log4net;
 
 namespace Ekom.Models
 {
@@ -16,6 +17,12 @@ namespace Ekom.Models
         public Guid Id { get; set; }
         public OrderedProduct Product { get; set; }
         public int Quantity { get; set; }
+
+        /// <summary>
+        /// Force changes to come through order api, 
+        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
+        /// </summary>
+        internal Discount discount;
 
         public IDiscountedPrice Amount
         {

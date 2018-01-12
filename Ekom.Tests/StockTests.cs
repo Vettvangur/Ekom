@@ -1,13 +1,15 @@
-﻿using log4net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using System;
-using Ekom.API;
+﻿using Ekom.API;
+using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
+using log4net;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using System;
+using Unity;
 
 namespace Ekom.Tests
 {
@@ -28,7 +30,7 @@ namespace Ekom.Tests
                 Mock.Of<ILogFactory>(),
                 stockRepo.Object
             );
-            stockCache.Cache[newGuid] = new StockData();
+            stockCache[newGuid] = new StockData();
 
             var stockApi = new Stock(
                 logFac.Object,
@@ -40,6 +42,24 @@ namespace Ekom.Tests
             );
 
             Assert.ThrowsException<StockException>(() => stockApi.UpdateStock(newGuid, -5));
+        }
+
+        [TestMethod]
+        public void CanCallUpdateStockStaticMethod()
+        {
+            var guid = Guid.NewGuid();
+
+            var c = UnityConfig.GetConfiguredContainer();
+            var stockRepo = new Mock<IStockRepository>();
+            stockRepo.Setup(sr => sr.CreateNewStockRecord(It.IsAny<string>()))
+                .Returns(new StockData
+                {
+                    UniqueId = guid.ToString(),
+                });
+
+            c.RegisterInstance(stockRepo.Object);
+
+            Stock.UpdateStockHangfire(guid, 1);
         }
     }
 }

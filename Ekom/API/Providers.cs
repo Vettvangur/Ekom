@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Ekom.Cache;
+﻿using Ekom.Cache;
 using Ekom.Domain.Repositories;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Base;
+using Ekom.Models.Behaviors;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Ekom.API
 {
@@ -38,7 +38,11 @@ namespace Ekom.API
         /// <param name="shippingProviderCache"></param>
         /// <param name="storeSvc"></param>
         /// <param name="countryRepo"></param>
-        public Providers(IPerStoreCache<ShippingProvider> shippingProviderCache, IPerStoreCache<PaymentProvider> paymentProviderCache, IStoreService storeSvc, ICountriesRepository countryRepo)
+        public Providers(
+            IPerStoreCache<ShippingProvider> shippingProviderCache,
+            IPerStoreCache<PaymentProvider> paymentProviderCache,
+            IStoreService storeSvc,
+            ICountriesRepository countryRepo)
         {
             _shippingProviderCache = shippingProviderCache;
             _paymentProviderCache = paymentProviderCache;
@@ -75,7 +79,7 @@ namespace Ekom.API
         )
         {
             return GetProviders(
-                storeAlias => _shippingProviderCache.Cache[storeAlias].Select(x => x.Value).ToList(),
+                storeAlias => _shippingProviderCache[storeAlias].Select(x => x.Value).ToList(),
                 store,
                 countryCode,
                 orderAmount
@@ -100,7 +104,7 @@ namespace Ekom.API
         )
         {
             return GetProviders(
-                storeAlias => _paymentProviderCache.Cache[storeAlias].Select(x => x.Value).ToList(),
+                storeAlias => _paymentProviderCache[storeAlias].Select(x => x.Value).ToList(),
                 store,
                 countryCode,
                 orderAmount
@@ -115,8 +119,8 @@ namespace Ekom.API
         /// <param name="countryCode"></param>
         /// <param name="orderAmount"></param>
         /// <returns></returns>
-        private IEnumerable<ProviderBase> GetProviders(
-            Func<string, IEnumerable<ProviderBase>> cacheFunc,
+        private IEnumerable<IConstrained> GetProviders(
+            Func<string, IEnumerable<IConstrained>> cacheFunc,
             Models.Store store = null,
             string countryCode = null,
             decimal orderAmount = 0
@@ -132,14 +136,14 @@ namespace Ekom.API
             if (countryCode != null)
             {
                 providers = providers
-                    .Where(x => x.CountriesInZone.Contains(countryCode.ToUpper()));
+                    .Where(x => x.Constraints.CountriesInZone.Contains(countryCode.ToUpper()));
             }
             if (orderAmount != 0)
             {
                 providers = providers
                     .Where(x =>
-                        x.StartRange <= orderAmount &&
-                        (x.EndRange == 0 || x.EndRange >= orderAmount)
+                        x.Constraints.StartRange <= orderAmount &&
+                        (x.Constraints.EndRange == 0 || x.Constraints.EndRange >= orderAmount)
                     );
             }
 
@@ -149,20 +153,20 @@ namespace Ekom.API
         /// <summary>
         /// Determine if the given provider is valid given the provided properties.
         /// </summary>
-        /// <param name="provider"></param>
+        /// <param name="constraints"></param>
         /// <param name="countryCode"></param>
         /// <param name="orderAmount"></param>
         /// <returns></returns>
         public bool IsValid(
-            ProviderBase provider,
+            Constraints constraints,
             string countryCode,
             decimal orderAmount
         )
         {
             return
-                provider.CountriesInZone.Contains(countryCode.ToUpper()) &&
-                provider.StartRange <= orderAmount &&
-                provider.EndRange >= orderAmount
+                constraints.CountriesInZone.Contains(countryCode.ToUpper()) &&
+                constraints.StartRange <= orderAmount &&
+                constraints.EndRange >= orderAmount
             ;
         }
 
@@ -187,7 +191,7 @@ namespace Ekom.API
                 store = _storeSvc.GetStoreFromCache();
             }
 
-            return _shippingProviderCache.Cache[store.Alias][key];
+            return _shippingProviderCache[store.Alias][key];
         }
 
         /// <summary>
@@ -203,7 +207,7 @@ namespace Ekom.API
                 store = _storeSvc.GetStoreFromCache();
             }
 
-            return _paymentProviderCache.Cache[store.Alias][key];
+            return _paymentProviderCache[store.Alias][key];
         }
     }
 }

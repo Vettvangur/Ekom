@@ -8,7 +8,7 @@
         var paymentProviders = Ekom.API.Providers.Current.GetPaymentProviders();
         var currentPaymentProviderKey = order.PaymentProvider != null ? order.PaymentProvider.Key : Guid.Empty;
 
-        using (Html.BeginUmbracoForm("UpdatePaymentProvider", "EkomOrder", null, new { @Class = "cart__payment-form" }))
+        using (Html.BeginEkomForm(FormType.UpdatePaymentProvider))
         {
             <h1 class="checkout__caption">Choose Payment</h1>
 
@@ -28,6 +28,5 @@
                 <button type="submit" class="button">Update</button>
             </div>
         }
-
     }
 }

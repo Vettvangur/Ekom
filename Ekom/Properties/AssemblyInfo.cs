@@ -22,9 +22,10 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("3db90c8f-dc87-4020-bc97-4a8e85ab89a0")]
 
-[assembly: InternalsVisibleTo("Ekom.Site")]
+//[assembly: InternalsVisibleTo("Ekom.Site")]
 [assembly: InternalsVisibleTo("Ekom.Extensions")]
 [assembly: InternalsVisibleTo("Ekom.Tests")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ekom.Utilities
 {
@@ -11,43 +8,43 @@ namespace Ekom.Utilities
         /// <summary>
         /// Get value in properties
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this Dictionary<string,string> properties, string alias)
+        public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value;
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val;
         }
 
         /// <summary>
         /// Get value in properties
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this IDictionary<string, string> properties, string alias)
+        public static string GetPropertyValue(this IDictionary<string, string> properties, string propertyAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value;
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val;
         }
 
         /// <summary>
         /// Get value in properties by store
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this Dictionary<string, string> properties, string alias, string storeAlias)
+        public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias, string storeAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value.GetVortoValue(storeAlias);
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val?.GetVortoValue(storeAlias);
         }
     }
 }

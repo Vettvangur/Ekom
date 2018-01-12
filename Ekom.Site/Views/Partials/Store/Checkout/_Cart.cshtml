@@ -1,6 +1,5 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using Ekom.Utilities;
-
 @{
     var order = (Ekom.Models.OrderInfo)ViewData["order"];
 
@@ -46,7 +45,7 @@
                                 @if (variantGroup != null)
                                 {
                                     <div class="cart__productColor">
-                                        Color <span style="background-color:#@variantGroup.Properties.GetProperty("color");" title="@variantGroup.Title"></span>
+                                        Color <span style="background-color:#@variantGroup.Properties.GetPropertyValue("color");" title="@variantGroup.Title"></span>
                                     </div>
 
                                     <div class="cart__productSize">
@@ -63,7 +62,7 @@
                             <span class="cart__price">@orderline.Product.Price.WithVat.ToCurrencyString</span>
                         </td>
                         <td>
-                            @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart__quantity-form" }))
+                            @using (Html.BeginEkomForm(FormType.AddToOrderCart))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.UpdateQuantity" />
@@ -76,7 +75,7 @@
                             <span class="cart__price">@orderline.Amount.WithVat.ToCurrencyString</span>
                         </td>
                         <td class="text-center">
-                            @using (Html.BeginUmbracoForm("RemoveOrderLine", "EkomOrder", null, new { @Class = "cart__remove-form" }))
+                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />

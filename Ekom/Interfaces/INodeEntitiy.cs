@@ -84,7 +84,7 @@ namespace Ekom.Interfaces
         /// <value>
         /// The path.
         /// </value>
-        string GetProperty(string alias);
+        string GetPropertyValue(string alias);
     }
 
     /// <summary>

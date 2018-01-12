@@ -9,19 +9,19 @@ namespace Ekom.Models
     /// </summary>
     public abstract class PerStoreNodeEntity : NodeEntity
     {
-        internal Store _store;
+        internal Store store;
 
         /// <summary>
         /// 
         /// </summary>
-        public override string Title => Properties.GetStoreProperty("title", _store.Alias);
+        public override string Title => Properties.GetStoreProperty("title", store.Alias);
 
         /// <summary>
         /// ctor
         /// </summary>
         public PerStoreNodeEntity(Store store)
         {
-            _store = store;
+            this.store = store;
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public PerStoreNodeEntity(SearchResult item, Store store) : base(item)
         {
-            _store = store;
+            this.store = store;
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public PerStoreNodeEntity(IContent node, Store store) : base(node)
         {
-            _store = store;
+            this.store = store;
         }
     }
 }

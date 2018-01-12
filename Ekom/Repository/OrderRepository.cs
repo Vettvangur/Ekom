@@ -12,23 +12,23 @@ namespace Ekom.Repository
     {
         ILog _log;
         Configuration _config;
-        DatabaseContext _dbCtx;
+        ApplicationContext _appCtx;
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="config"></param>
-        /// <param name="dbCtx"></param>
+        /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public OrderRepository(Configuration config, DatabaseContext dbCtx, ILogFactory logFac)
+        public OrderRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
         {
             _config = config;
-            _dbCtx = dbCtx;
+            _appCtx = appCtx;
             _log = logFac.GetLogger(typeof(OrderRepository));
         }
 
         public OrderData GetOrder(Guid uniqueId)
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.FirstOrDefault<OrderData>("WHERE UniqueId = @0", uniqueId);
             }
@@ -36,7 +36,7 @@ namespace Ekom.Repository
 
         public void InsertOrder(OrderData orderData)
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Insert(orderData);
             }
@@ -44,7 +44,7 @@ namespace Ekom.Repository
 
         public void UpdateOrder(OrderData orderData)
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(orderData);
             }
@@ -52,7 +52,7 @@ namespace Ekom.Repository
 
         public IEnumerable<OrderData> GetCompleteOrderByCustomerId(int customerId)
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
             }
@@ -62,7 +62,7 @@ namespace Ekom.Repository
         {
             int orderNumber = 1;
 
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 var _orderNumber = "1";
 

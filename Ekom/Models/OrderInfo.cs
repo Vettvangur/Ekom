@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
+using Ekom.Models.Discounts;
 using log4net;
-using System.Reflection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Ekom.Models
 {
@@ -19,6 +20,12 @@ namespace Ekom.Models
         private OrderData _orderData;
         private Store _store;
         private StoreInfo _storeInfo;
+        /// <summary>
+        /// Force changes to come through order api, 
+        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
+        /// </summary>
+        internal Discount discount;
+
         /// <summary>
         /// 
         /// </summary>
@@ -39,7 +46,7 @@ namespace Ekom.Models
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
                 _storeInfo = CreateStoreInfoFromJson(orderInfoJObject);
-                OrderLines = CreateOrderLinesFromJson(orderInfoJObject);
+                _orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
@@ -75,7 +82,15 @@ namespace Ekom.Models
             }
         }
 
-        public List<OrderLine> OrderLines = new List<OrderLine>();
+        /// <summary>
+        /// Force changes to come through order api
+        /// </summary>
+        internal List<OrderLine> _orderLines = new List<OrderLine>();
+
+        /// <summary>
+        /// Force changes to come through order api, ensuring lines are never changed without 
+        /// </summary>
+        public IReadOnlyCollection<OrderLine> OrderLines => _orderLines.AsReadOnly();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
@@ -86,7 +101,7 @@ namespace Ekom.Models
         {
             get
             {
-                return OrderLines != null && OrderLines.Any() ? OrderLines.Sum(x => x.Quantity) : 0;
+                return OrderLines?.Any() == true ? OrderLines.Sum(x => x.Quantity) : 0;
             }
         }
 
@@ -116,7 +131,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// SimplePrice object for total value of all orderlines.
+        /// <see cref="Price"/> object for total value of all orderlines.
         /// </summary>
         public Price ChargedAmount
         {
@@ -126,15 +141,14 @@ namespace Ekom.Models
 
                 if (ShippingProvider != null)
                 {
-                    amount = amount + ShippingProvider.Price.WithVat.Value;
+                    amount += ShippingProvider.Price.WithVat.Value;
                 }
 
                 if (PaymentProvider != null)
                 {
-                    amount = amount + PaymentProvider.Price.WithVat.Value;
+                    amount += PaymentProvider.Price.WithVat.Value;
                 }
 
-                //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
                 return new Price(amount, StoreInfo);
             }
         }
@@ -188,6 +202,7 @@ namespace Ekom.Models
         /// </summary>
         public OrderStatus OrderStatus => _orderData.OrderStatus;
 
+        #region JSON Parsing
         private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)
         {
             var orderLines = new List<OrderLine>();
@@ -300,6 +315,7 @@ namespace Ekom.Models
 
             return null;
         }
+        #endregion
 
         protected static readonly ILog Log =
             LogManager.GetLogger(

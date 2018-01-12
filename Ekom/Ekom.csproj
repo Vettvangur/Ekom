@@ -230,6 +230,9 @@
     <Reference Include="umbraco.MacroEngines, Version=1.0.6396.36635, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.MacroEngines.dll</HintPath>
     </Reference>
+    <Reference Include="Umbraco.NetPayment">
+      <HintPath>..\Dlls\Umbraco.NetPayment.dll</HintPath>
+    </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>
     </Reference>
@@ -255,6 +258,7 @@
   <ItemGroup>
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />
+    <Compile Include="API\Stock.Discounts.cs" />
     <Compile Include="API\Stock.cs" />
     <Compile Include="API\Store.cs" />
     <Compile Include="App_Start\EkomStartup.cs" />
@@ -263,20 +267,32 @@
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
+    <Compile Include="Cache\DiscountCache.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\CatalogController.cs" />
+    <Compile Include="Controllers\OrderController.Discounts.cs" />
     <Compile Include="Controllers\OrderController.cs" />
+    <Compile Include="Exceptions\DiscountNotFoundException.cs" />
+    <Compile Include="Exceptions\OrderLineNotFoundException.cs" />
+    <Compile Include="Exceptions\OrderException.cs" />
     <Compile Include="Exceptions\StockException.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />
+    <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
+    <Compile Include="Models\Abstractions\ExamineManagerBase.cs" />
+    <Compile Include="Models\Abstractions\ExamineManagerWrapper.cs" />
     <Compile Include="Models\Base\PerStoreNodeEntity.cs" />
-    <Compile Include="Models\Base\ProviderBase.cs" />
+    <Compile Include="Models\Behaviors\Constraints.cs" />
     <Compile Include="Models\Country.cs" />
     <Compile Include="Models\Base\NodeEntity.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
+    <Compile Include="Models\Data\DiscountStockData.cs" />
+    <Compile Include="Models\Discounts\Discount.cs" />
+    <Compile Include="Models\Discounts\DiscountAmount.cs" />
+    <Compile Include="Models\Discounts\DiscountType.cs" />
     <Compile Include="Models\Image.cs" />
     <Compile Include="Models\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderRequest.cs" />
@@ -289,13 +305,16 @@
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />
+    <Compile Include="Repository\DiscountStockRepository.cs" />
+    <Compile Include="Interfaces\IDiscountStockRepository.cs" />
+    <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />
+    <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\SearchService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />
-    <Compile Include="Utilities\PropertyHelper.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />
     <Compile Include="Cache\Base\PerStoreCache.cs" />
@@ -353,6 +372,7 @@
     <Compile Include="Services\PriceCalculationService.cs" />
     <Compile Include="Services\StoreService.cs" />
     <Compile Include="Services\UrlService.cs" />
+    <Compile Include="Utilities\HtmlHelperExtensions.cs" />
     <Compile Include="Utilities\StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -361,7 +381,9 @@
     <None Include="Ekom.nuspec">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Views\web.config.transform" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -50,7 +50,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("description", _store.Alias);
+                return Properties.GetStoreProperty("description", store.Alias);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("summary", _store.Alias);
+                return Properties.GetStoreProperty("summary", store.Alias);
             }
         }
 
@@ -72,7 +72,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("slug", _store.Alias);
+                return Properties.GetStoreProperty("slug", store.Alias);
             }
         }
 
@@ -86,7 +86,7 @@ namespace Ekom.Models
         {
             get
             {
-                var _images = Properties.GetStoreProperty("images", _store.Alias);
+                var _images = Properties.GetStoreProperty("images", store.Alias);
 
                 var imageNodes = _images.GetImages();
 
@@ -98,7 +98,7 @@ namespace Ekom.Models
         {
             get
             {
-                var primaryGroupValue = Properties.GetStoreProperty("primaryVariantGroup", _store.Alias);
+                var primaryGroupValue = Properties.GetStoreProperty("primaryVariantGroup", store.Alias);
 
                 if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
                 {
@@ -106,7 +106,7 @@ namespace Ekom.Models
 
                     if (node != null)
                     {
-                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == _store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
 
                         return variantGroup.Value;
 
@@ -131,7 +131,7 @@ namespace Ekom.Models
 
             foreach (var item in examineItemsFromPath)
             {
-                var alias = item.Fields.GetProperty("nodeTypeAlias");
+                var alias = item.Fields.GetPropertyValue("nodeTypeAlias");
 
                 if (alias == "ekmCategory")
                 {
@@ -161,7 +161,7 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = _categoryCache.Cache[_store.Alias]
+            var primaryCategory = _categoryCache.Cache[store.Alias]
                                                 .FirstOrDefault(x => x.Value.Id == categoryId)
                                                 .Value;
 
@@ -179,7 +179,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = _categoryCache.Cache[_store.Alias]
+                        = _categoryCache.Cache[store.Alias]
                                         .FirstOrDefault(x => x.Value.Id == intCatId)
                                         .Value;
 
@@ -198,7 +198,7 @@ namespace Ekom.Models
         {
             get
             {
-                return _store;
+                return store;
             }
         }
 
@@ -235,7 +235,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
+            ?? (_price = new Price(Properties.GetStoreProperty("price", store.Alias), store));
 
         [JsonIgnore]
         public IEnumerable<VariantGroup> VariantGroups
@@ -243,7 +243,7 @@ namespace Ekom.Models
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantGroupCache.Cache[_store.Alias]
+                return _variantGroupCache.Cache[store.Alias]
                                         .Where(x => x.Value.ProductId == Id)
                                         .Select(x => x.Value);
             }
@@ -258,7 +258,7 @@ namespace Ekom.Models
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantCache.Cache[_store.Alias]
+                return _variantCache.Cache[store.Alias]
                     .Where(x => x.Value.ProductId == Id)
                     .Select(x => x.Value);
             }
@@ -269,20 +269,6 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="store"></param>
         public Product(Store store) : base(store) { }
-
-        /// <summary>
-        /// Get value in properties
-        /// </summary>
-        /// <param name="alias"></param>
-        public string GetProperty(string alias)
-        {
-            if (Properties.Any(x => x.Key == alias))
-            {
-                return Properties.FirstOrDefault(x => x.Key == alias).Value;
-            }
-
-            return string.Empty;
-        }
 
         /// <summary>
         /// Construct Product from Examine item

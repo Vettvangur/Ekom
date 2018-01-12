@@ -12,7 +12,7 @@ namespace Ekom.API
     /// <summary>
     /// The Ekom API, get/update stock for item
     /// </summary>
-    public class Stock
+    public partial class Stock
     {
         private static Stock _current;
         /// <summary>
@@ -32,6 +32,7 @@ namespace Ekom.API
         IBaseCache<StockData> _stockCache;
         IPerStoreCache<StockData> _stockPerStoreCache;
         IStockRepository _stockRepo;
+        IDiscountStockRepository _discountStockRepo;
         Configuration _config;
 
         /// <summary>
@@ -43,6 +44,7 @@ namespace Ekom.API
             IPerStoreCache<StockData> stockPerStoreCache,
             Configuration config,
             IStockRepository stockRepo,
+            IDiscountStockRepository discountStockRepo,
             IStoreService storeSvc
         )
         {
@@ -51,6 +53,7 @@ namespace Ekom.API
             _config = config;
             _storeSvc = storeSvc;
             _stockRepo = stockRepo;
+            _discountStockRepo = discountStockRepo;
 
             _log = logFac.GetLogger(typeof(Stock));
         }

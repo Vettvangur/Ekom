@@ -1,26 +1,27 @@
-﻿using Ekom.Services;
+﻿using Ekom.Models;
+using Ekom.Services;
 using log4net;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Mvc;
 using Umbraco.Web.Mvc;
+using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
 {
-    public class EkomCatalogController : SurfaceController
+    /// <summary>
+    /// Product catalog
+    /// </summary>
+    [PluginController("Ekom")]
+    public class CatalogController : UmbracoApiController
     {
         ILog _log;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public EkomCatalogController()
+        public CatalogController()
         {
-            var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(EkomOrderController));
+            var logFac = Ekom.Configuration.container.GetInstance<ILogFactory>();
+            _log = logFac.GetLogger(typeof(CatalogController));
         }
 
         /// <summary>
@@ -28,7 +29,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Guid Key of product</param>
         /// <returns></returns>
-        public object GetProduct(Guid Id)
+        public Product GetProduct(Guid Id)
         {
             return API.Catalog.Current.GetProduct(Id);
         }

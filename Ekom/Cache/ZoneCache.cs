@@ -1,6 +1,7 @@
 ﻿using Examine;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -17,7 +18,7 @@ namespace Ekom.Cache
         public ZoneCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager
+            ExamineManagerBase examineManager
         )
         {
             _config = config;

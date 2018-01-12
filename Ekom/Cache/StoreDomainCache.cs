@@ -4,6 +4,7 @@ using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Ekom.Services;
+using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -23,7 +24,7 @@ namespace Ekom.Cache
             ApplicationContext appCtx,
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager
+            ExamineManagerBase examineManager
         )
         {
             _config = config;

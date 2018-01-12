@@ -1,23 +1,23 @@
 ﻿using Ekom.Cache;
 using Ekom.Helpers;
-using Ekom.Interfaces;
-using Examine;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
-using Umbraco.Core.Models;
 
-namespace Ekom.Models.Base
+namespace Ekom.Models.Behaviors
 {
     /// <summary>
-    /// Base class for Shipping/Payment providers
+    /// Constraints behavior for Shipping/Payment providers, and Discounts.
     /// </summary>
-    public abstract class ProviderBase : PerStoreNodeEntity, INodeEntity
+    public class Constraints
     {
         private IBaseCache<Zone> __zoneCache;
         private IBaseCache<Zone> _zoneCache =>
             __zoneCache ?? (__zoneCache = Configuration.container.GetInstance<IBaseCache<Zone>>());
+
+        NodeEntity _node;
 
         /// <summary>
         /// Start of range that provider supports.
@@ -26,14 +26,18 @@ namespace Ekom.Models.Base
         {
             get
             {
-                if (int.TryParse(Properties.GetStoreProperty("startOfRange", _store.Alias), out int startRange))
+                int startRange = 0;
+
+                if (_node is PerStoreNodeEntity perStoreNode)
                 {
-                    return startRange;
+                    int.TryParse(_node.Properties.GetStoreProperty("startOfRange", perStoreNode.store.Alias), out startRange);
                 }
                 else
                 {
-                    return 0;
+                    int.TryParse(_node.Properties.GetPropertyValue("startOfRange"), out startRange);
                 }
+
+                return startRange;
             }
         }
 
@@ -45,14 +49,18 @@ namespace Ekom.Models.Base
         {
             get
             {
-                if (int.TryParse(Properties.GetStoreProperty("endOfRange", _store.Alias), out int endRange))
+                int endRange = 0;
+
+                if (_node is PerStoreNodeEntity perStoreNode)
                 {
-                    return endRange;
+                    int.TryParse(_node.Properties.GetStoreProperty("endOfRange", perStoreNode.store.Alias), out endRange);
                 }
                 else
                 {
-                    return 0;
+                    int.TryParse(_node.Properties.GetPropertyValue("endOfRange"), out endRange);
                 }
+
+                return endRange;
             }
         }
 
@@ -64,7 +72,7 @@ namespace Ekom.Models.Base
         {
             get
             {
-                if (Properties.ContainsKey("zone") && GuidUdi.TryParse(Properties["zone"], out var zoneKey))
+                if (_node.Properties.ContainsKey("zone") && GuidUdi.TryParse(_node.Properties["zone"], out var zoneKey))
                 {
                     return zoneKey.Guid;
                 }
@@ -94,31 +102,20 @@ namespace Ekom.Models.Base
             }
         }
 
-        IDiscountedPrice _price;
         /// <summary>
-        /// 
+        /// ctor
         /// </summary>
-        public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
+        public Constraints(NodeEntity node)
+        {
+            _node = node;
+        }
 
         /// <summary>
-        /// Used by Ekom extensions
+        /// ctor
         /// </summary>
-        /// <param name="store"></param>
-        public ProviderBase(Store store) : base(store) { }
-
-        /// <summary>
-        /// Construct Provider from Examine item
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="store"></param>
-        public ProviderBase(SearchResult item, Store store) : base(item, store) { }
-
-        /// <summary>
-        /// Construct Provider from umbraco publish event
-        /// </summary>
-        /// <param name="node"></param>
-        /// <param name="store"></param>
-        public ProviderBase(IContent node, Store store) : base(node, store) { }
+        public Constraints(PerStoreNodeEntity node)
+        {
+            _node = node;
+        }
     }
 }

@@ -6,7 +6,6 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Hangfire;
 using log4net;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +16,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
+using Umbraco.NetPayment;
 using Umbraco.Web.Routing;
 using Unity;
 
@@ -134,6 +134,17 @@ namespace Ekom
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
             new BackgroundJobServer();
+
+            // Hook into NetPayment completion event
+
+            LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
+        }
+
+        private void CompleteCheckout(Umbraco.NetPayment.OrderStatus o)
+        {
+            var checkoutSvc = Configuration.container.GetInstance<CheckoutService>();
+
+            checkoutSvc.Complete(o);
         }
 
         private void ContentService_Publishing(IPublishingStrategy strategy, PublishEventArgs<IContent> e)
@@ -208,7 +219,8 @@ namespace Ekom
 
                     }
 
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     _log.Error("ContentService_Publishing Failed", ex);
                 }

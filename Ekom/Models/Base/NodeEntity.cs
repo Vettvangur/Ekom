@@ -177,9 +177,9 @@ namespace Ekom.Models
         /// Get value in properties
         /// </summary>
         /// <param name="alias"></param>
-        public string GetProperty(string alias)
+        public virtual string GetPropertyValue(string alias)
         {
-            return Properties.GetProperty(alias);
+            return Properties.GetPropertyValue(alias);
         }
 
         /// <summary>
@@ -187,9 +187,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="alias"></param>
         /// <param name="storeAlias"></param>
-        public string GetProperty(string alias, string storeAlias)
+        public virtual string GetPropertyValue(string alias, string storeAlias)
         {
-            return Properties.GetProperty(alias, storeAlias);
+            return Properties.GetPropertyValue(alias, storeAlias);
         }
     }
 }

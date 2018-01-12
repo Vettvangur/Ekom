@@ -9,6 +9,7 @@ using Umbraco.Core.Models;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -20,14 +21,14 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ExamineManager _examineManager;
+        protected ExamineManagerBase _examineManager;
         protected ILog _log;
         protected IBaseCache<Store> _storeCache;
         protected IObjectFactory<TItem> _objFac;
 
         public PerStoreCache(
             Configuration config,
-            ExamineManager examineManager,
+            ExamineManagerBase examineManager,
             IBaseCache<Store> storeCache
         )
         {
@@ -46,6 +47,8 @@ namespace Ekom.Cache
         /// </summary>
         public ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
          = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
+
+        public ConcurrentDictionary<Guid, TItem> this[string index] => Cache[index];
 
         /// <summary>
         /// Derived classes define simple instantiation methods, 

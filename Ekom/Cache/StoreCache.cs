@@ -1,5 +1,6 @@
 ﻿using Ekom.Helpers;
 using Ekom.Models;
+using Ekom.Models.Abstractions;
 using Ekom.Services;
 using Examine;
 using Examine.Providers;
@@ -24,7 +25,7 @@ namespace Ekom.Cache
         public StoreCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager
+            ExamineManagerBase examineManager
         )
         {
             _config = config;
@@ -40,7 +41,7 @@ namespace Ekom.Cache
             BaseSearchProvider searcher = null;
             try
             {
-                searcher = ExamineManager.Instance.SearchProviderCollection[_config.ExamineSearcher];
+                searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
             }
             catch // Restart Application if Examine just initialized
             {

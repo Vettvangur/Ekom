@@ -1,4 +1,5 @@
-﻿using Ekom.Models;
+﻿using Ekom.API;
+using Ekom.Models;
 using Ekom.Services;
 using log4net;
 using System;
@@ -12,20 +13,18 @@ namespace Ekom.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    public class EkomOrderController : SurfaceController
+    [PluginController("Ekom")]
+    public partial class OrderController : SurfaceController
     {
         ILog _log;
-        OrderService _orderSvc;
         /// <summary>
         /// ctor
         /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
         /// </summary>
-        public EkomOrderController()
+        public OrderController()
         {
-            _orderSvc = Configuration.container.GetInstance<OrderService>();
-
             var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(EkomOrderController));
+            _log = logFac.GetLogger(typeof(OrderController));
         }
 
         /// <summary>
@@ -44,7 +43,7 @@ namespace Ekom.Controllers
                     variantIds.Add(request.variantId.Value);
                 }
 
-                var orderInfo = _orderSvc.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
+                var orderInfo = Order.Current.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -73,7 +72,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var os = Ekom.API.Order.Current;
+                var os = Order.Current;
 
                 _log.Info("Add To Multiple Order: " + request.productId);
 
@@ -134,7 +133,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
+                var orderInfo = Order.Current.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
 
                 return Json(new
                 {
@@ -156,13 +155,12 @@ namespace Ekom.Controllers
         /// <summary>
         /// Update Shipping Information
         /// </summary>
-        /// <param name="form">FormData</param>
         /// <returns></returns>
         public JsonResult UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdateShippingInformation(ShippingProvider,storeAlias);
+                var orderInfo = Order.Current.UpdateShippingInformation(ShippingProvider, storeAlias);
 
                 return Json(new
                 {
@@ -184,13 +182,12 @@ namespace Ekom.Controllers
         /// <summary>
         /// Update Payment Information
         /// </summary>
-        /// <param name="form">FormData</param>
         /// <returns></returns>
         public JsonResult UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdatePaymentInformation(PaymentProvider, storeAlias);
+                var orderInfo = Order.Current.UpdatePaymentInformation(PaymentProvider, storeAlias);
 
                 return Json(new
                 {
@@ -220,7 +217,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var orderInfo = Order.Current.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -248,7 +245,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.RemoveOrderLine(lineId, storeAlias);
+                var orderInfo = Order.Current.RemoveOrderLine(lineId, storeAlias);
 
                 return Json(new
                 {
@@ -266,6 +263,5 @@ namespace Ekom.Controllers
                 });
             }
         }
-
     }
 }

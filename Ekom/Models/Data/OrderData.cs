@@ -86,7 +86,7 @@ namespace Ekom.Models.Data
         public DateTime CreateDate { get; set; }
 
         /// <summary>
-        /// 
+        /// Last update date
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
         public DateTime UpdateDate { get; set; }

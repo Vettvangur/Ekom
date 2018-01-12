@@ -13,43 +13,43 @@ namespace Ekom.Models
 
             get
             {
-                return Properties.GetProperty("customerName");
+                return Properties.GetPropertyValue("customerName");
             }
         }
         public string Email {
             get
             {
-                return Properties.GetProperty("customerEmail");
+                return Properties.GetPropertyValue("customerEmail");
             }
         }
         public string Address {
             get
             {
-                return Properties.GetProperty("customerAddress");
+                return Properties.GetPropertyValue("customerAddress");
             }
         }
         public string City {
             get
             {
-                return Properties.GetProperty("customerCity");
+                return Properties.GetPropertyValue("customerCity");
             }
         }
         public string Country {
             get
             {
-                return Properties.GetProperty("customerCountry");
+                return Properties.GetPropertyValue("customerCountry");
             }
         }
         public string ZipCode {
             get
             {
-                return Properties.GetProperty("customerZipCode");
+                return Properties.GetPropertyValue("customerZipCode");
             }
         }
         public string Phone {
             get
             {
-                return Properties.GetProperty("customerPhone");
+                return Properties.GetPropertyValue("customerPhone");
             }
         }
         public int UserId { get; set; }

@@ -7,7 +7,7 @@
     if (order != null)
     {
 
-        using (Html.BeginUmbracoForm("UpdateCustomerInformation", "EkomOrder", null, new { @Class = "cart__quantity-form" }))
+        using (Html.BeginEkomForm(FormType.UpdateCustomerInformation))
         {
             <h1 class="checkout__caption">Customer Details</h1>
 
@@ -50,7 +50,7 @@
 
             <div>
                 <label for="customerComment">Comment</label>
-                <textarea name="customerComment" id="customerComment">@order.CustomerInformation.Customer.Properties.GetProperty("customerComment")</textarea>
+                <textarea name="customerComment" id="customerComment">@order.CustomerInformation.Customer.Properties.GetPropertyValue("customerComment")</textarea>
             </div>
 
             <h1 class="checkout__caption">Shipping Details</h1>

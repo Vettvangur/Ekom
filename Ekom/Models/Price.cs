@@ -109,6 +109,8 @@ namespace Ekom.Models
             _culture = culture;
             _vat = vat;
             _includeVat = includeVat;
+            _vatIncludeInPrice = vatIncludeInPrice;
+
             _config = Configuration.container.GetInstance<Configuration>();
         }
 
@@ -127,7 +129,7 @@ namespace Ekom.Models
             get
             {
                 var amount = GetAmount();
-                return (amount).ToString(_config.CurrencyFormat, new CultureInfo(_culture));
+                return amount.ToString(_config.CurrencyFormat, new CultureInfo(_culture));
             }
 
         }
@@ -144,7 +146,6 @@ namespace Ekom.Models
                 {
                     price = price - vatAmount;
                 }
-
             }
             else
             {
