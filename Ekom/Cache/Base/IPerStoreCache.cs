@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Ekom.Models;
+using System;
 using System.Collections.Concurrent;
-using Ekom.Models;
 
 namespace Ekom.Cache
 {
@@ -28,7 +28,7 @@ namespace Ekom.Cache
         /// </summary>
         ConcurrentDictionary<string, ConcurrentDictionary<Guid, T>> Cache { get; }
         /// <summary>
-        /// 
+        /// Class indexer
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>

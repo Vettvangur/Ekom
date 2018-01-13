@@ -1,8 +1,11 @@
 ﻿using Ekom.API;
+using Ekom.Exceptions;
 using Ekom.Models.Data;
 using log4net;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.NetPayment;
@@ -40,7 +43,7 @@ namespace Ekom.Extensions.Controllers
         /// <param name="paymentRequest"></param>
         /// <param name="form"></param>
         /// <returns></returns>
-        public async Task<string> Pay(PaymentRequest paymentRequest, FormCollection form)
+        public async Task<ActionResult> Pay(PaymentRequest paymentRequest, FormCollection form)
         {
             var order = Order.Current.GetOrder();
             var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
@@ -58,13 +61,46 @@ namespace Ekom.Extensions.Controllers
                 }
             }
 
-            var orderItems = order.OrderLines.Select(x => new OrderItem
+            var orderItems = new List<OrderItem>();
+            foreach (var line in order.OrderLines)
             {
-                GrandTotal = x.Amount.Value,
-                Price = x.Product.OriginalPrice,
-                Title = x.Product.Title,
-                Quantity = x.Quantity,
-            });
+                try
+                {
+                    Stock.Current.ReserveStock(line.Id, line.Quantity);
+
+                    if (line.Discount != null)
+                    {
+                        Stock.Current.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon);
+
+                        if (line.Discount.HasMasterStock)
+                        {
+                            Stock.Current.ReserveDiscountStock(line.Discount.Key, 1);
+                        }
+                    }
+                }
+                catch (StockException)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                }
+
+                orderItems.Add(new OrderItem
+                {
+                    GrandTotal = line.Amount.Value,
+                    Price = line.Product.OriginalPrice,
+                    Title = line.Product.Title,
+                    Quantity = line.Quantity,
+                });
+            }
+
+            if (order.Discount != null)
+            {
+                Stock.Current.ReserveDiscountStock(order.Discount.Key, 1, order.Coupon);
+
+                if (order.Discount.HasMasterStock)
+                {
+                    Stock.Current.ReserveDiscountStock(order.Discount.Key, 1);
+                }
+            }
 
             if (paymentRequest.ShippingProvider != Guid.Empty)
             {
@@ -81,14 +117,14 @@ namespace Ekom.Extensions.Controllers
                 orderItems = orderItemsList;
             }
 
-            return await pp.RequestAsync(
+            return Content(await pp.RequestAsync(
                 order.ChargedAmount.Value,
                 orderItems,
                 skipReceipt: true,
                 culture: order.StoreInfo.Alias,
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
                 orderCustomString: order.UniqueId.ToString()
-            );
+            ));
         }
     }
 

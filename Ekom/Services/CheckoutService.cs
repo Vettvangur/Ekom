@@ -1,5 +1,7 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.API;
+using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Discounts;
 using Ekom.Repository;
 using log4net;
 using System;
@@ -35,17 +37,42 @@ namespace Ekom.Services
 
                 var oi = new OrderInfo(o);
 
-                if (oi.discount != null)
+                if (oi.Discount != null)
                 {
-                    _discountStockRepo.Update(oi.discount.Key.ToString(), -1);
-                    oi.discount.OnCouponApply();
+                    try
+                    {
+                        //Stock.Current.CancelRollback()
+
+                    }
+                    catch { } // unfinished
+                    try
+                    {
+                        (oi.Discount as Discount).OnCouponApply();
+                    }
+                    catch (Exception ex) // Swallow all event subscriber exceptions
+                    {
+                        _log.Error(ex);
+                    }
                 }
 
-                foreach (var line in oi.OrderLines.Where(line => line.discount != null))
+                foreach (var line in oi.OrderLines.Where(line => line.Discount != null))
                 {
-                    var id = $"{line.discount.Key}"
-                    _discountStockRepo.Update()
-                    line.discount.OnCouponApply();
+                    var id = $"{line.Discount.Key}_{line.Coupon}";
+                    _discountStockRepo.Update(id, -1);
+
+                    if (line.Discount.HasMasterStock)
+                    {
+                        _discountStockRepo.Update(line.Discount.Key.ToString(), -1);
+                    }
+
+                    try
+                    {
+                        (line.Discount as Discount).OnCouponApply();
+                    }
+                    catch (Exception ex) // Swallow all event subscriber exceptions
+                    {
+                        _log.Error(ex);
+                    }
                 }
             }
             catch (Exception ex)

@@ -220,10 +220,15 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
         /// <param name="timeSpan">How long to reserve</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, int value, TimeSpan timeSpan)
+        public string ReserveStock(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (timeSpan == default(TimeSpan))
+            {
+                timeSpan = _config.ReservationTimeout;
+            }
 
             UpdateStock(key, value);
 
@@ -243,10 +248,15 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
         /// <param name="timeSpan">How long to reserve</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan)
+        public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (timeSpan == default(TimeSpan))
+            {
+                timeSpan = _config.ReservationTimeout;
+            }
 
             UpdateStock(key, storeAlias, value);
 

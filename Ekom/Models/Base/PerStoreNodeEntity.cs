@@ -7,7 +7,7 @@ namespace Ekom.Models
     /// <summary>
     /// Base Per Store Umbraco node entity
     /// </summary>
-    public abstract class PerStoreNodeEntity : NodeEntity
+    public abstract class PerStoreNodeEntity : NodeEntity, IPerStoreNodeEntity
     {
         internal Store store;
 

@@ -283,7 +283,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ekom\Ekom.csproj">
-      <Project>{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}</Project>
+      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
       <Name>Ekom</Name>
     </ProjectReference>
   </ItemGroup>

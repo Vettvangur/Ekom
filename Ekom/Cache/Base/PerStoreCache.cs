@@ -1,4 +1,8 @@
-﻿using Examine;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Models.Abstractions;
+using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -6,10 +10,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Models;
-using Ekom.Helpers;
-using Ekom.Interfaces;
-using Ekom.Models;
-using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -48,6 +48,11 @@ namespace Ekom.Cache
         public ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
          = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
 
+        /// <summary>
+        /// Class indexer
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public ConcurrentDictionary<Guid, TItem> this[string index] => Cache[index];
 
         /// <summary>
@@ -121,13 +126,11 @@ namespace Ekom.Cache
         /// <param name="store">The current store being filled of TItem</param>
         /// <param name="results">Examine search results</param>
         /// <returns>Count of items added</returns>
-        private int FillStoreCache(Store store, ISearchResults results)
+        protected virtual int FillStoreCache(Store store, ISearchResults results)
         {
             int count = 0;
 
-            Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
-
-            var curStoreCache = Cache[store.Alias];
+            var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
 
             foreach (var r in results)
             {

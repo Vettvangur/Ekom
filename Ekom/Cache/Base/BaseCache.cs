@@ -1,12 +1,12 @@
-﻿using Examine;
+﻿using Ekom.Helpers;
+using Ekom.Models.Abstractions;
+using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Umbraco.Core.Models;
-using Ekom.Helpers;
-using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -28,6 +28,11 @@ namespace Ekom.Cache
         public ConcurrentDictionary<Guid, TItem> Cache { get; }
          = new ConcurrentDictionary<Guid, TItem>();
 
+        /// <summary>
+        /// Class indexer
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public TItem this[Guid index]
         {
             get => Cache[index];

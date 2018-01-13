@@ -38,6 +38,7 @@ namespace Ekom.Tests
                 Mock.Of<IPerStoreCache<StockData>>(),
                 Mock.Of<Configuration>(),
                 stockRepo.Object,
+                Mock.Of<IDiscountStockRepository>(),
                 Mock.Of<IStoreService>()
             );
 

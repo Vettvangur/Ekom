@@ -19,7 +19,7 @@ namespace Ekom
         /// <summary>
         /// Current dependency resolver instance
         /// </summary>
-        public static IServiceLocator container;
+        internal static IServiceLocator container;
 
         /// <summary>
         /// ekmPerStoreStock
@@ -112,6 +112,13 @@ namespace Ekom
                 return int.Parse(ConfigurationManager.AppSettings["ekmCategoryRootLevel"] ?? "3");
             }
         }
+
+        /// <summary>
+        /// Time we give the user to complete checkout.
+        /// Give value in minutes when overriding default
+        /// </summary>
+        public virtual TimeSpan ReservationTimeout
+            => TimeSpan.FromMinutes(double.Parse(ConfigurationManager.AppSettings["ekmReservationTimeout"] ?? "30"));
 
         /// <summary>
         /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 

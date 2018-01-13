@@ -1,18 +1,18 @@
-﻿using Ekom.Exceptions;
+﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models;
+using Ekom.Models.Discounts;
 using Ekom.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
-using System.Web.Mvc;
 
 namespace Ekom.API
 {
     /// <summary>
     /// The Ekom API, get/update/remove operations on orders 
     /// </summary>
-    public class Order
+    public partial class Order
     {
         private static Order _current;
         /// <summary>
@@ -29,12 +29,26 @@ namespace Ekom.API
         OrderService _orderService => Configuration.container.GetInstance<OrderService>();
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
+        ILog _log;
+        Configuration _config;
+        DiscountCache _discountCache;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        internal Order(ILogFactory logFac, Configuration config, IPerStoreCache<Discount> discountCache)
+        {
+            _log = logFac.GetLogger<Order>();
+            _config = config;
+            _discountCache = discountCache as DiscountCache;
+        }
+
         /// <summary>
         /// Get order using cookie data and ekmRequest store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public OrderInfo GetOrder()
+        public IOrderInfo GetOrder()
         {
             var store = _storeSvc.GetStoreFromCache();
             return GetOrder(store.Alias);
@@ -45,7 +59,7 @@ namespace Ekom.API
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public OrderInfo GetOrder(string storeAlias)
+        public IOrderInfo GetOrder(string storeAlias)
         {
             return _orderService.GetOrder(storeAlias);
         }
@@ -60,7 +74,7 @@ namespace Ekom.API
             _orderService.ChangeOrderStatus(orderId, newStatus);
         }
 
-        public OrderInfo AddOrderLine(
+        public IOrderInfo AddOrderLine(
             Guid productId,
             IEnumerable<Guid> variantIds,
             int quantity,
@@ -71,111 +85,29 @@ namespace Ekom.API
             return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
         }
 
-        public OrderInfo UpdateCustomerInformation(Dictionary<string,string> form)
+        public IOrderInfo UpdateCustomerInformation(Dictionary<string, string> form)
         {
             return _orderService.UpdateCustomerInformation(form);
         }
 
-        public OrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
+        public IOrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
         {
             return _orderService.UpdateShippingInformation(ShippingProvider, storeAlias);
         }
 
-        public OrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
+        public IOrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
         {
             return _orderService.UpdatePaymentInformation(PaymentProvider, storeAlias);
         }
 
-        public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
             return _orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
-        public IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId)
+        public IEnumerable<IOrderInfo> GetCompleteCustomerOrders(int customerId)
         {
             return _orderService.GetCompleteCustomerOrders(customerId);
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public bool ApplyDiscountToOrder(Guid discountKey)
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-            return ApplyDiscountToOrder(discountKey, storeAlias);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public bool ApplyDiscountToOrder(Guid discountKey, string storeAlias)
-            => _orderService.ApplyDiscountToOrder(discountKey, storeAlias);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="storeAlias"></param>
-        public void RemoveDiscountFromOrder()
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            RemoveDiscountFromOrder(storeAlias);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="storeAlias"></param>
-        public void RemoveDiscountFromOrder(string storeAlias)
-            => _orderService.RemoveDiscountFromOrder(storeAlias);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public bool ApplyDiscountToOrderLine(Guid productKey, Guid discountKey)
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            return ApplyDiscountToOrderLine(productKey, discountKey, storeAlias);
-        }
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public bool ApplyDiscountToOrderLine(Guid productKey, Guid discountKey, string storeAlias)
-            => _orderService.ApplyDiscountToOrderLine(productKey, discountKey, storeAlias);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void RemoveDiscountFromOrderLine(Guid productKey)
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            RemoveDiscountFromOrderLine(productKey, storeAlias);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="productKey"></param>
-        /// <param name="storeAlias"></param>
-        public void RemoveDiscountFromOrderLine(Guid productKey, string storeAlias)
-            => _orderService.RemoveDiscountFromOrderLine(productKey, storeAlias);
     }
 }

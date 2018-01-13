@@ -21,11 +21,11 @@ namespace Ekom.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public ActionResult ApplyDiscountToOrder(Guid discountKey, string storeAlias)
+        public ActionResult ApplyCouponToOrder(string coupon, string storeAlias)
         {
             try
             {
-                if (Order.Current.ApplyDiscountToOrder(discountKey, storeAlias))
+                if (Order.Current.ApplyCouponToOrder(coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -51,18 +51,28 @@ namespace Ekom.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public void RemoveDiscountFromOrder(string storeAlias)
-            => Order.Current.RemoveDiscountFromOrder(storeAlias);
+        public ActionResult RemoveCouponFromOrder(string storeAlias)
+        {
+            try
+            {
+                Order.Current.RemoveCouponFromOrder(storeAlias);
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+            catch (ArgumentException)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
-        public ActionResult ApplyDiscountToOrderLine(Guid productKey, Guid discountKey, string storeAlias)
+        public ActionResult ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
         {
             try
             {
-                if (Order.Current.ApplyDiscountToOrderLine(productKey, discountKey, storeAlias))
+                if (Order.Current.ApplyCouponToOrderLine(productKey, coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -89,11 +99,11 @@ namespace Ekom.Controllers
         /// </summary>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public ActionResult RemoveDiscountFromOrderLine(Guid productKey, string storeAlias)
+        public ActionResult RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
         {
             try
             {
-                Order.Current.RemoveDiscountFromOrderLine(productKey, storeAlias);
+                Order.Current.RemoveCouponFromOrderLine(productKey, storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (Exception ex)

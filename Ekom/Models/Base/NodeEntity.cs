@@ -1,12 +1,12 @@
-﻿using Examine;
+﻿using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
+using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core.Models;
-using Ekom.Interfaces;
-using Ekom.Services;
-using Ekom.Utilities;
 
 namespace Ekom.Models
 {

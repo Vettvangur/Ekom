@@ -1,21 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Ekom.Models
 {
     /// <summary>
     /// Order/Cart
     /// </summary>
-    public class OrderInfo : IOrderInfo
+    class OrderInfo : IOrderInfo
     {
         private OrderData _orderData;
         private Store _store;
@@ -24,7 +24,11 @@ namespace Ekom.Models
         /// Force changes to come through order api, 
         /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
         /// </summary>
-        internal Discount discount;
+        public IDiscount Discount { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Coupon { get; internal set; }
 
         /// <summary>
         /// 
@@ -50,7 +54,8 @@ namespace Ekom.Models
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
-            } else
+            }
+            else
             {
                 _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
@@ -90,7 +95,7 @@ namespace Ekom.Models
         /// <summary>
         /// Force changes to come through order api, ensuring lines are never changed without 
         /// </summary>
-        public IReadOnlyCollection<OrderLine> OrderLines => _orderLines.AsReadOnly();
+        public IReadOnlyCollection<IOrderLine> OrderLines => _orderLines.AsReadOnly();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
@@ -106,7 +111,6 @@ namespace Ekom.Models
         }
 
         public CustomerInfo CustomerInformation = new CustomerInfo();
-        private OrderData orderData;
 
         public Price OrderLineTotal
         {
@@ -159,11 +163,12 @@ namespace Ekom.Models
                 if (_storeInfo == null)
                 {
                     return new StoreInfo(_store);
-                } else
+                }
+                else
                 {
                     return _storeInfo;
                 }
-                
+
             }
         }
         /// <summary>
@@ -229,7 +234,7 @@ namespace Ekom.Models
 
         private OrderedShippingProvider CreateShippingProviderFromJson(JObject orderInfoJObject)
         {
- 
+
             if (orderInfoJObject["ShippingProvider"] != null)
             {
                 var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();

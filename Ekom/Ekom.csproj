@@ -256,6 +256,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Order.Discounts.cs" />
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />
     <Compile Include="API\Stock.Discounts.cs" />
@@ -272,9 +273,11 @@
     <Compile Include="Controllers\CatalogController.cs" />
     <Compile Include="Controllers\OrderController.Discounts.cs" />
     <Compile Include="Controllers\OrderController.cs" />
+    <Compile Include="Exceptions\CouponDuplicateException.cs" />
     <Compile Include="Exceptions\DiscountNotFoundException.cs" />
     <Compile Include="Exceptions\OrderLineNotFoundException.cs" />
     <Compile Include="Exceptions\OrderException.cs" />
+    <Compile Include="Exceptions\StockRollbackException.cs" />
     <Compile Include="Exceptions\StockException.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />
@@ -282,6 +285,7 @@
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Models\Abstractions\ExamineManagerBase.cs" />
     <Compile Include="Models\Abstractions\ExamineManagerWrapper.cs" />
+    <Compile Include="Interfaces\IPerStoreNodeEntity.cs" />
     <Compile Include="Models\Base\PerStoreNodeEntity.cs" />
     <Compile Include="Models\Behaviors\Constraints.cs" />
     <Compile Include="Models\Country.cs" />
@@ -293,7 +297,9 @@
     <Compile Include="Models\Discounts\Discount.cs" />
     <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
+    <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Models\Image.cs" />
+    <Compile Include="Interfaces\IOrderLine.cs" />
     <Compile Include="Models\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
@@ -340,7 +346,6 @@
     <Compile Include="Interfaces\IOrderInfo.cs" />
     <Compile Include="Interfaces\IOrderedProduct.cs" />
     <Compile Include="Interfaces\IOrderedProductVariant.cs" />
-    <Compile Include="Interfaces\IOrderLine.cs" />
     <Compile Include="Interfaces\IPrice.cs" />
     <Compile Include="Interfaces\IPriceCalculationService.cs" />
     <Compile Include="Interfaces\IVariant.cs" />

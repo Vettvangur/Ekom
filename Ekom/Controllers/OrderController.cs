@@ -1,4 +1,5 @@
 ﻿using Ekom.API;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -78,7 +79,7 @@ namespace Ekom.Controllers
 
                 if (request.variant.Any())
                 {
-                    OrderInfo o = null;
+                    IOrderInfo o = null;
 
                     var variantIds = new List<Guid>();
 
@@ -88,13 +89,14 @@ namespace Ekom.Controllers
 
                         if (Guid.TryParse(variant.Id.ToString(), out Guid variantId))
                         {
-                            var items = new List<Guid>();
-                            items.Add(variantId);
+                            var items = new List<Guid>
+                            {
+                                variantId
+                            };
 
                             o = os.AddOrderLine(request.productId, items, variant.Quantity, request.storeAlias, request.action);
 
                         }
-
                     }
 
                     return Json(new

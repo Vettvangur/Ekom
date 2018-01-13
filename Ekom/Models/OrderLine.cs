@@ -1,29 +1,46 @@
-﻿using System;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Discounts;
+using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Ekom.Interfaces;
-using Ekom.Models.Discounts;
-using log4net;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class OrderLine : IOrderLine
     {
         private Guid _productId;
         private IEnumerable<Guid> _variantIds;
         private StoreInfo _storeInfo;
 
-        public Guid Id { get; set; }
-        public OrderedProduct Product { get; set; }
-        public int Quantity { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public Guid Id { get; internal set; }
+
+        public OrderedProduct Product { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Quantity { get; internal set; }
 
         /// <summary>
         /// Force changes to come through order api, 
         /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
         /// </summary>
-        internal Discount discount;
+        public IDiscount Discount { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Coupon { get; internal set; }
 
+        /// <summary>
+        /// Price
+        /// </summary>
         public IDiscountedPrice Amount
         {
             get
@@ -42,6 +59,9 @@ namespace Ekom.Models
                 return new Price(_price * Quantity, _storeInfo);
             }
         }
+        /// <summary>
+        /// ctor
+        /// </summary>
         public OrderLine(Guid lineId, int quantity, string productJson, StoreInfo storeInfo)
         {
             Id = lineId;
@@ -50,6 +70,9 @@ namespace Ekom.Models
             Product = new OrderedProduct(productJson, storeInfo);
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, Guid lineId, Store store)
         {
             _productId = productId;

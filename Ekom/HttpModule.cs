@@ -6,9 +6,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Web;
-using System.Web.Caching;
 using System.Web.Hosting;
-using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Web;
@@ -76,11 +74,11 @@ namespace Ekom
                     object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
 
                     #endregion
-                    
+
                     var path = url.AbsolutePath.ToLower().AddTrailing();
 
                     var appCtx = Configuration.container.GetInstance<ApplicationContext>();
-                    
+
                     var appCache = appCtx.ApplicationCache;
                     appCache.RequestCache.GetCacheItem("ekmRequest", () =>
                         new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
@@ -93,9 +91,10 @@ namespace Ekom
                     );
                 }
 
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                Log.Error("Http module Begin Request failed",ex);
+                Log.Error("Http module Begin Request failed", ex);
             }
 
         }
@@ -144,19 +143,15 @@ namespace Ekom
 
                             ekmRequest.User = u;
                         }
-
-
-
-                    } 
+                    }
                 }
 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Log.Error("AuthenticateRequest Failed", ex);
             }
         }
-
 
 
         /// <summary>

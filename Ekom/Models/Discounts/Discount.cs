@@ -11,7 +11,7 @@ namespace Ekom.Models.Discounts
     /// <summary>
     /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    public class Discount : PerStoreNodeEntity, IComparable<Discount>, IConstrained
+    class Discount : PerStoreNodeEntity, IConstrained, IDiscount
     {
         public Constraints Constraints { get; private set; }
         public DiscountAmount Amount { get; private set; }
@@ -21,14 +21,9 @@ namespace Ekom.Models.Discounts
 
 
         /// <summary>
-        /// Name of coupon code
-        /// </summary>
-        public string CouponCode => Properties.GetPropertyValue("couponCode");
-
-        /// <summary>
         /// Coupon code activations left
         /// </summary>
-        public int ActivationsLeft => Convert.ToInt32(Properties.GetPropertyValue("activationsLeft"));
+        public bool HasMasterStock => Properties.GetPropertyValue("masterStock").ConvertToBool();
 
         /// <summary>
         /// Used by Ekom extensions
@@ -57,42 +52,17 @@ namespace Ekom.Models.Discounts
         private void Construct()
         {
             Constraints = new Constraints(this);
-            var couponsInternal = Properties.GetPropertyValue("couponsInternal");
+            var couponsInternal = Properties.GetPropertyValue("coupons");
 
             CouponsInternal = couponsInternal?.Split(',');
         }
 
-        internal void OnCouponApply() => CouponApplied?.Invoke(this, CouponAction.Applied);
-        internal void OnCouponRemove() => CouponRemoved?.Invoke(this, CouponAction.Removed);
+        internal void OnCouponApply() => CouponApplied?.Invoke(this);
 
         /// <summary>
         /// Called on coupon application
         /// </summary>
         public event CouponEventHandler CouponApplied;
-        /// <summary>
-        /// Called on coupon removal
-        /// </summary>
-        public event CouponEventHandler CouponRemoved;
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="d"></param>
-        /// <param name="ca"></param>
-        public delegate void CouponEventHandler(Discount d, CouponAction ca);
-        /// <summary>
-        /// Was coupon applied or removed?
-        /// </summary>
-        public enum CouponAction
-        {
-            /// <summary>
-            /// 
-            /// </summary>
-            Applied,
-            /// <summary>
-            /// 
-            /// </summary>
-            Removed
-        };
 
         #region Comparisons
         /// <summary>
@@ -100,7 +70,7 @@ namespace Ekom.Models.Discounts
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
-        public int CompareTo(Discount other)
+        public int CompareTo(IDiscount other)
         {
             if (other == null)
                 return 1;
@@ -121,7 +91,7 @@ namespace Ekom.Models.Discounts
         /// <param name="d1"></param>
         /// <param name="d2"></param>
         /// <returns></returns>
-        public static bool operator <(Discount d1, Discount d2)
+        public static bool operator <(Discount d1, IDiscount d2)
         {
             return d1.CompareTo(d2) < 0;
         }
@@ -132,11 +102,17 @@ namespace Ekom.Models.Discounts
         /// <param name="d1"></param>
         /// <param name="d2"></param>
         /// <returns></returns>
-        public static bool operator >(Discount d1, Discount d2)
+        public static bool operator >(Discount d1, IDiscount d2)
         {
             return d1.CompareTo(d2) > 0;
         }
         #endregion
 
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="d"></param>
+    public delegate void CouponEventHandler(IDiscount d);
 }

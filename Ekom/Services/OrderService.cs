@@ -192,7 +192,7 @@ namespace Ekom.Services
 
                 if (orderLine != null)
                 {
-                    orderInfo._orderLines.Remove(orderLine);
+                    orderInfo._orderLines.Remove(orderLine as OrderLine);
                 }
             }
 
@@ -217,14 +217,23 @@ namespace Ekom.Services
             {
                 if (variantIds.Any())
                 {
-                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId && x.Product.VariantGroups.SelectMany(b => b.Variants.Select(z => z.Key).Intersect(variantIds)).Any());
+                    existingOrderLine 
+                        = orderInfo.OrderLines
+                            .FirstOrDefault(
+                                x => x.Product.Key == productId 
+                                && x.Product.VariantGroups
+                                    .SelectMany(b => b.Variants.Select(z => z.Key)
+                                    .Intersect(variantIds))
+                            .Any())
+                            as OrderLine;
                 }
                 else
                 {
-                    existingOrderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId);
+                    existingOrderLine 
+                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId)
+                        as OrderLine;
                 }
             }
-
 
             if (existingOrderLine != null)
             {
