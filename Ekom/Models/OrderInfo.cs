@@ -20,15 +20,6 @@ namespace Ekom.Models
         private OrderData _orderData;
         private Store _store;
         private StoreInfo _storeInfo;
-        /// <summary>
-        /// Force changes to come through order api, 
-        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
-        /// </summary>
-        public IDiscount Discount { get; internal set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Coupon { get; internal set; }
 
         /// <summary>
         /// 
@@ -59,8 +50,17 @@ namespace Ekom.Models
             {
                 _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
-
         }
+
+        /// <summary>
+        /// Force changes to come through order api, 
+        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
+        /// </summary>
+        public IDiscount Discount { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Coupon { get; internal set; }
 
         /// <summary>
         /// Order UniqueId
@@ -137,7 +137,7 @@ namespace Ekom.Models
         /// <summary>
         /// <see cref="Price"/> object for total value of all orderlines.
         /// </summary>
-        public Price ChargedAmount
+        public IDiscountedPrice ChargedAmount
         {
             get
             {
@@ -162,6 +162,7 @@ namespace Ekom.Models
             {
                 if (_storeInfo == null)
                 {
+                    // Should we be saving the result to _storeInfo ?
                     return new StoreInfo(_store);
                 }
                 else
@@ -206,6 +207,14 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public OrderStatus OrderStatus => _orderData.OrderStatus;
+
+        internal List<string> _hangfireJobs { get; set; } = new List<string>();
+        public IReadOnlyCollection<string> HangfireJobs
+        {
+            get => _hangfireJobs.AsReadOnly();
+
+            internal set => _hangfireJobs = value.ToList();
+        }
 
         #region JSON Parsing
         private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)

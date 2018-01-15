@@ -1,4 +1,5 @@
 ﻿using Ekom.Helpers;
+using Ekom.Models.Discounts;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;

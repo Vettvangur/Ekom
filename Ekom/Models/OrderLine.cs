@@ -29,8 +29,6 @@ namespace Ekom.Models
         public int Quantity { get; internal set; }
 
         /// <summary>
-        /// Force changes to come through order api, 
-        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
         /// </summary>
         public IDiscount Discount { get; internal set; }
         /// <summary>
@@ -83,6 +81,9 @@ namespace Ekom.Models
             Product = new OrderedProduct(productId, variantIds, store);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType

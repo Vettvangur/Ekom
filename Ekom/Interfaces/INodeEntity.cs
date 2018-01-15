@@ -107,5 +107,10 @@ namespace Ekom.Interfaces
         /// The url.
         /// </value>
         string Url { get; }
+
+        /// <summary>
+        /// Short spaceless descriptive title used to create URLs
+        /// </summary>
+        string Slug { get; }
     }
 }

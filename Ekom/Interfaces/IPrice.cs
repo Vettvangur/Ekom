@@ -1,4 +1,6 @@
-﻿namespace Ekom.Interfaces
+﻿using Ekom.Models.Discounts;
+
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// 
@@ -55,7 +57,7 @@
         /// <value>
         /// The discount.
         /// </value>
-        IVatPrice Discount { get; }
+        IDiscount Discount { get; }
     }
 
 

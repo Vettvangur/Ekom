@@ -1,4 +1,5 @@
-﻿using Ekom.Models;
+﻿using Ekom.Helpers;
+using Ekom.Models;
 using Ekom.Models.Discounts;
 using System;
 using System.Collections.Generic;
@@ -52,6 +53,46 @@ namespace Ekom.Interfaces
         /// <summary>
         /// <see cref="Price"/> object for total value of all orderlines.
         /// </summary>
-        Price ChargedAmount { get; }
+        IDiscountedPrice ChargedAmount { get; }
+
+        /// <summary>
+        /// A collection of hangfire job ids linked to this order,
+        /// each job id represents a stock reservation for a store item or discount.
+        /// </summary>
+        IReadOnlyCollection<string> HangfireJobs { get; }
+        string OrderNumber { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        OrderStatus OrderStatus { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        OrderedPaymentProvider PaymentProvider { get; set; }
+
+
+        int ReferenceId { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        OrderedShippingProvider ShippingProvider { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        DateTime CreateDate { get; }
+
+        /// <summary>
+        /// Date order was paid
+        /// </summary>
+        DateTime PaidDate { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        DateTime UpdateDate { get; }
     }
 }

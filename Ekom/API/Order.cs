@@ -28,19 +28,18 @@ namespace Ekom.API
 
         OrderService _orderService => Configuration.container.GetInstance<OrderService>();
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+        DiscountCache _discountCache => Configuration.container.GetInstance<DiscountCache>();
 
         ILog _log;
         Configuration _config;
-        DiscountCache _discountCache;
 
         /// <summary>
         /// ctor
         /// </summary>
-        internal Order(ILogFactory logFac, Configuration config, IPerStoreCache<Discount> discountCache)
+        public Order(ILogFactory logFac, Configuration config)
         {
             _log = logFac.GetLogger<Order>();
             _config = config;
-            _discountCache = discountCache as DiscountCache;
         }
 
         /// <summary>
@@ -105,9 +104,34 @@ namespace Ekom.API
             return _orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
+        /// <summary>
+        /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <returns></returns>
         public IEnumerable<IOrderInfo> GetCompleteCustomerOrders(int customerId)
         {
             return _orderService.GetCompleteCustomerOrders(customerId);
+        }
+
+        /// <summary>
+        /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
+        /// </summary>
+        /// <param name="hangfireJobs">Job IDs to add</param>
+        public void AddHangfireJobsToOrder(IEnumerable<string> hangfireJobs)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            AddHangfireJobsToOrder(store.Alias, hangfireJobs);
+        }
+        /// <summary>
+        /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        /// <param name="hangfireJobs">Job IDs to add</param>
+        public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            _orderService.AddHangfireJobsToOrder(store.Alias, hangfireJobs);
         }
     }
 }

@@ -272,6 +272,7 @@ namespace Ekom.API
         /// Cancel a previously scheduled stock reservation rollback.
         /// </summary>
         /// <param name="jobId"></param>
+        /// <exception cref="StockException"></exception>
         public void CancelRollback(string jobId)
         {
             if (!Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName)

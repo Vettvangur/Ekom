@@ -242,11 +242,11 @@
     <Reference Include="UmbracoExamine, Version=0.7.0.36626, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\UmbracoExamine.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=6d32ff45e0ccc69f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.Abstractions.2.0.1\lib\net45\Unity.Abstractions.dll</HintPath>
+    <Reference Include="Unity.Abstractions, Version=2.3.1.0, Culture=neutral, PublicKeyToken=6d32ff45e0ccc69f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Unity.Abstractions.2.3.1\lib\net45\Unity.Abstractions.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Container, Version=5.0.0.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.Container.5.0.0\lib\net45\Unity.Container.dll</HintPath>
+    <Reference Include="Unity.Container, Version=5.3.2.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
+      <HintPath>..\packages\Unity.Container.5.3.2\lib\net45\Unity.Container.dll</HintPath>
     </Reference>
     <Reference Include="Unity.ServiceLocation, Version=2.0.0.0, Culture=neutral, PublicKeyToken=6d32ff45e0ccc69f, processorArchitecture=MSIL">
       <HintPath>..\packages\Unity.ServiceLocation.2.0.0\lib\net45\Unity.ServiceLocation.dll</HintPath>

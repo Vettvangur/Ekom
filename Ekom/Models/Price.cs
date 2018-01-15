@@ -1,13 +1,13 @@
-﻿using System.Globalization;
-using System.Web.Mvc;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Discounts;
 using Ekom.Services;
 using log4net;
+using System.Globalization;
 using System.Reflection;
 
 namespace Ekom.Models
 {
-    public class Price : IDiscountedPrice
+    class Price : IDiscountedPrice
     {
         protected static readonly ILog Log =
             LogManager.GetLogger(
@@ -19,56 +19,41 @@ namespace Ekom.Models
         private decimal _vat;
         private bool _vatIncludeInPrice;
 
-        private readonly IPriceCalculationService _priceCalculationService;
+        private readonly IPriceCalculationService _priceCalculationService = new PriceCalculationService();
+
+        public IDiscount Discount { get; internal set; }
 
         public Price(string originalPrice, Store store)
         {
-            if (decimal.TryParse(originalPrice, out decimal result))
-            {
-                _originalPrice = result;
-            }
-            else
-            {
-                _originalPrice = 0;
-            }
+            decimal.TryParse(originalPrice, out decimal result);
 
-            _vat = store.Vat;
-            _vatIncludeInPrice = store.VatIncludedInPrice;
-            _culture = store.Culture.Name;
-
-            _priceCalculationService = new PriceCalculationService();
+            Construct(result, new StoreInfo(store));
         }
 
         public Price(decimal originalPrice, Store store)
         {
-            _originalPrice = originalPrice;
-            _vat = store.Vat;
-            _vatIncludeInPrice = store.VatIncludedInPrice;
-            _culture = store.Culture.Name;
-
-            _priceCalculationService = new PriceCalculationService();
+            Construct(originalPrice, new StoreInfo(store));
         }
 
         public Price(decimal originalPrice, StoreInfo storeInfo)
+        {
+            Construct(originalPrice, storeInfo);
+        }
+
+        private void Construct(decimal originalPrice, StoreInfo storeInfo)
         {
             _originalPrice = originalPrice;
             _vat = storeInfo.Vat;
             _vatIncludeInPrice = storeInfo.VatIncludedInPrice;
             _culture = storeInfo.Culture;
-
-            _priceCalculationService = new PriceCalculationService();
         }
 
+        public decimal OriginalValue => _originalPrice;
 
         public decimal Value
         {
-            get
-            {
-                return _originalPrice;
-            }
-            set { }
+            get;
         }
-
 
         public IPrice WithVat
         {
@@ -90,7 +75,6 @@ namespace Ekom.Models
             get;
         }
 
-        public IVatPrice Discount { get; }
         public IPrice Vat { get; }
     }
 

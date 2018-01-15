@@ -23,6 +23,8 @@ namespace Ekom.Extensions.Controllers
     {
         ILog _log;
         Configuration _config;
+        Stock _stock => Stock.Current;
+
         //IDatabaseFactory _dbFac;
 
         /// <summary>
@@ -45,6 +47,8 @@ namespace Ekom.Extensions.Controllers
         /// <returns></returns>
         public async Task<ActionResult> Pay(PaymentRequest paymentRequest, FormCollection form)
         {
+            var hangfireJobs = new List<string>();
+
             var order = Order.Current.GetOrder();
             var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
 
@@ -66,15 +70,15 @@ namespace Ekom.Extensions.Controllers
             {
                 try
                 {
-                    Stock.Current.ReserveStock(line.Id, line.Quantity);
+                    hangfireJobs.Add(_stock.ReserveStock(line.Id, line.Quantity));
 
                     if (line.Discount != null)
                     {
-                        Stock.Current.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon);
+                        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
 
                         if (line.Discount.HasMasterStock)
                         {
-                            Stock.Current.ReserveDiscountStock(line.Discount.Key, 1);
+                            hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
                         }
                     }
                 }
@@ -94,11 +98,18 @@ namespace Ekom.Extensions.Controllers
 
             if (order.Discount != null)
             {
-                Stock.Current.ReserveDiscountStock(order.Discount.Key, 1, order.Coupon);
-
-                if (order.Discount.HasMasterStock)
+                try
                 {
-                    Stock.Current.ReserveDiscountStock(order.Discount.Key, 1);
+                    hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1, order.Coupon));
+
+                    if (order.Discount.HasMasterStock)
+                    {
+                        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1));
+                    }
+                }
+                catch (StockException)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
                 }
             }
 
@@ -116,6 +127,9 @@ namespace Ekom.Extensions.Controllers
 
                 orderItems = orderItemsList;
             }
+
+            // save job ids to sql for retrieval after checkout completion
+            Order.Current.AddHangfireJobsToOrder(hangfireJobs);
 
             return Content(await pp.RequestAsync(
                 order.ChargedAmount.Value,

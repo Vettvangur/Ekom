@@ -31,7 +31,6 @@ namespace Ekom.Services
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="T">Type of class this logger logs for</param>
         /// <returns></returns>
         ILog GetLogger<T>();
     }

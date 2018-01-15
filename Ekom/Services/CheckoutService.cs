@@ -1,6 +1,8 @@
 ﻿using Ekom.API;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Repository;
 using log4net;
@@ -30,21 +32,22 @@ namespace Ekom.Services
 
         public void Complete(OrderStatus orderStatus)
         {
+            OrderData o = null;
+            OrderInfo oi = null;
             try
             {
                 var orderKey = Guid.Parse(orderStatus.Custom);
-                var o = _orderRepo.GetOrder(orderKey);
+                o = _orderRepo.GetOrder(orderKey);
 
-                var oi = new OrderInfo(o);
+                oi = new OrderInfo(o);
+
+                foreach (var job in oi.HangfireJobs)
+                {
+                    Stock.Current.CancelRollback(job);
+                }
 
                 if (oi.Discount != null)
                 {
-                    try
-                    {
-                        //Stock.Current.CancelRollback()
-
-                    }
-                    catch { } // unfinished
                     try
                     {
                         (oi.Discount as Discount).OnCouponApply();
@@ -74,6 +77,12 @@ namespace Ekom.Services
                         _log.Error(ex);
                     }
                 }
+            }
+            catch (StockException)
+            {
+                _log.Info($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                    + $"Order id: {oi?.UniqueId}");
+                throw;
             }
             catch (Exception ex)
             {

@@ -1,15 +1,13 @@
-﻿using log4net;
-using System;
+﻿using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Models;
+using log4net;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using Ekom.Cache;
-using Ekom.Interfaces;
-using Ekom.Models;
 
 namespace Ekom.Services
 {
@@ -119,12 +117,12 @@ namespace Ekom.Services
             return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
-        /// <summary>
-        /// Gets the current store from available request data <para/>
-        /// Saves store in cache and cookies
-        /// </summary>
-        /// <param name="umbracoDomain"></param>
-        /// <param name="httpContext"></param>
+        ///// <summary>
+        ///// Gets the current store from available request data <para/>
+        ///// Saves store in cache and cookies
+        ///// </summary>
+        ///// <param name="umbracoDomain"></param>
+        ///// <param name="httpContext"></param>
         //public Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         //{
         //    //HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];

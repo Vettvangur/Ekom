@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Ekom.Models;
+using System;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
@@ -15,13 +17,6 @@ namespace Ekom.Interfaces
         /// </value>
         IDiscountedPrice Price { get; }
 
-        /// <summary>
-        /// Gets the slug.
-        /// </summary>
-        /// <value>
-        /// The slug.
-        /// </value>
-        string Slug { get; }
 
         /// <summary>
         /// Gets the stock.
@@ -37,6 +32,19 @@ namespace Ekom.Interfaces
         /// <value>
         /// The categories.
         /// </value>
-        List<ICategory> Categories();
+        IEnumerable<ICategory> Categories();
+
+        IEnumerable<Guid> CategoriesIds { get; }
+        string Description { get; }
+        IEnumerable<Image> Images { get; }
+        VariantGroup PrimaryVariantGroup { get; }
+        string SKU { get; }
+        Store Store { get; }
+        string Summary { get; }
+        string Url { get; }
+        IEnumerable<string> Urls { get; set; }
+        IEnumerable<VariantGroup> VariantGroups { get; }
+
+        List<ICategory> CategoryAncestors();
     }
 }

@@ -217,10 +217,10 @@ namespace Ekom.Services
             {
                 if (variantIds.Any())
                 {
-                    existingOrderLine 
+                    existingOrderLine
                         = orderInfo.OrderLines
                             .FirstOrDefault(
-                                x => x.Product.Key == productId 
+                                x => x.Product.Key == productId
                                 && x.Product.VariantGroups
                                     .SelectMany(b => b.Variants.Select(z => z.Key)
                                     .Intersect(variantIds))
@@ -229,7 +229,7 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    existingOrderLine 
+                    existingOrderLine
                         = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId)
                         as OrderLine;
                 }
@@ -295,11 +295,24 @@ namespace Ekom.Services
             UpdateOrderInfoInSession(orderInfo);
         }
 
+        /// <summary>
+        /// Is this necessary?
+        /// </summary>
+        /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInSession(OrderInfo orderInfo)
         {
             var key = CreateKey();
 
             _httpCtx.Session[key] = orderInfo;
+        }
+
+        public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
+        {
+            var o = GetOrder(storeAlias);
+
+            o._hangfireJobs.AddRange(hangfireJobs);
+
+            UpdateOrderAndOrderInfo(o);
         }
 
         private OrderInfo CreateEmptyOrder()
