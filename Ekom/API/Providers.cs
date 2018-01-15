@@ -1,5 +1,4 @@
 ﻿using Ekom.Cache;
-using Ekom.Domain.Repositories;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Behaviors;
@@ -26,27 +25,20 @@ namespace Ekom.API
             }
         }
 
-        IPerStoreCache<ShippingProvider> _shippingProviderCache;
-        IPerStoreCache<PaymentProvider> _paymentProviderCache;
-        IStoreService _storeSvc;
+        IPerStoreCache<ShippingProvider> _shippingProviderCache
+            = Configuration.container.GetInstance<IPerStoreCache<ShippingProvider>>();
+        IPerStoreCache<PaymentProvider> _paymentProviderCache
+            = Configuration.container.GetInstance<IPerStoreCache<PaymentProvider>>();
+
+        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
         ICountriesRepository _countryRepo;
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="paymentProviderCache"></param>
-        /// <param name="shippingProviderCache"></param>
-        /// <param name="storeSvc"></param>
         /// <param name="countryRepo"></param>
-        public Providers(
-            IPerStoreCache<ShippingProvider> shippingProviderCache,
-            IPerStoreCache<PaymentProvider> paymentProviderCache,
-            IStoreService storeSvc,
-            ICountriesRepository countryRepo)
+        public Providers(ICountriesRepository countryRepo)
         {
-            _shippingProviderCache = shippingProviderCache;
-            _paymentProviderCache = paymentProviderCache;
-            _storeSvc = storeSvc;
             _countryRepo = countryRepo;
         }
 
@@ -54,7 +46,7 @@ namespace Ekom.API
         /// Get all shipping providers, using the store from request cache.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<ShippingProvider> GetShippingProviders()
+        public IEnumerable<IShippingProvider> GetShippingProviders()
         {
             var store = _storeSvc.GetStoreFromCache();
 
@@ -72,8 +64,8 @@ namespace Ekom.API
         /// Only show <see cref="ShippingProvider"/> where the given amount falls within their range.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<ShippingProvider> GetShippingProviders(
-            Models.Store store = null,
+        public IEnumerable<IShippingProvider> GetShippingProviders(
+            IStore store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
@@ -97,8 +89,8 @@ namespace Ekom.API
         /// Only show <see cref="PaymentProvider"/> where the given amount falls within their range.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<PaymentProvider> GetPaymentProviders(
-            Models.Store store = null,
+        public IEnumerable<IPaymentProvider> GetPaymentProviders(
+            IStore store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
@@ -121,7 +113,7 @@ namespace Ekom.API
         /// <returns></returns>
         private IEnumerable<IConstrained> GetProviders(
             Func<string, IEnumerable<IConstrained>> cacheFunc,
-            Models.Store store = null,
+            IStore store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
@@ -184,7 +176,7 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="store"></param>
         /// <returns></returns>
-        public ShippingProvider GetShippingProvider(Guid key, Models.Store store = null)
+        public IShippingProvider GetShippingProvider(Guid key, IStore store = null)
         {
             if (store == null)
             {
@@ -200,7 +192,7 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="store"></param>
         /// <returns></returns>
-        public PaymentProvider GetPaymentProvider(Guid key, Models.Store store = null)
+        public IPaymentProvider GetPaymentProvider(Guid key, IStore store = null)
         {
             if (store == null)
             {

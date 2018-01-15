@@ -300,6 +300,9 @@
     <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Models\Image.cs" />
     <Compile Include="Interfaces\IOrderLine.cs" />
+    <Compile Include="Interfaces\IVariantGroup.cs" />
+    <Compile Include="Interfaces\IPaymentProvider.cs" />
+    <Compile Include="Interfaces\IShippingProvider.cs" />
     <Compile Include="Models\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
@@ -350,7 +353,7 @@
     <Compile Include="Interfaces\IPriceCalculationService.cs" />
     <Compile Include="Interfaces\IVariant.cs" />
     <Compile Include="Interfaces\IProduct.cs" />
-    <Compile Include="Interfaces\INodeEntitiy.cs" />
+    <Compile Include="Interfaces\INodeEntity.cs" />
     <Compile Include="Interfaces\IStore.cs" />
     <Compile Include="Models\ContentRequest.cs" />
     <Compile Include="Models\Data\StockData.cs" />

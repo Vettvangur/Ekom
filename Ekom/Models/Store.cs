@@ -18,7 +18,7 @@ namespace Ekom.Models
     /// <summary>
     /// Ekom Store, used to f.x. have seperate products and entities per store.
     /// </summary>
-    public class Store : NodeEntity, IStore
+    class Store : NodeEntity, IStore
     {
         private IBaseCache<IDomain> _storeDomainCache
         {

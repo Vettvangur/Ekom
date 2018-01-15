@@ -27,13 +27,13 @@ namespace Ekom.API
         }
 
         ILog _log;
-
-        IStoreService _storeSvc;
-        IBaseCache<StockData> _stockCache;
-        IPerStoreCache<StockData> _stockPerStoreCache;
+        Configuration _config;
         IStockRepository _stockRepo;
         IDiscountStockRepository _discountStockRepo;
-        Configuration _config;
+        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+
+        IBaseCache<StockData> _stockCache;
+        IPerStoreCache<StockData> _stockPerStoreCache = Configuration.container.GetInstance<IPerStoreCache<StockData>>();
 
         /// <summary>
         /// ctor
@@ -41,17 +41,13 @@ namespace Ekom.API
         public Stock(
             ILogFactory logFac,
             IBaseCache<StockData> stockCache,
-            IPerStoreCache<StockData> stockPerStoreCache,
             Configuration config,
             IStockRepository stockRepo,
-            IDiscountStockRepository discountStockRepo,
-            IStoreService storeSvc
+            IDiscountStockRepository discountStockRepo
         )
         {
             _stockCache = stockCache;
-            _stockPerStoreCache = stockPerStoreCache;
             _config = config;
-            _storeSvc = storeSvc;
             _stockRepo = stockRepo;
             _discountStockRepo = discountStockRepo;
 

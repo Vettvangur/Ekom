@@ -1,4 +1,5 @@
-﻿using Ekom.Cache;
+﻿using CommonServiceLocator;
+using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Discounts;
@@ -26,9 +27,10 @@ namespace Ekom.API
             }
         }
 
+        DiscountCache _discountCache = Configuration.container.GetInstance<DiscountCache>();
+
         OrderService _orderService => Configuration.container.GetInstance<OrderService>();
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
-        DiscountCache _discountCache => Configuration.container.GetInstance<DiscountCache>();
 
         ILog _log;
         Configuration _config;

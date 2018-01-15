@@ -1,6 +1,7 @@
 ﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
+using Ekom.Utilities;
 using Examine;
 using Umbraco.Core.Models;
 
@@ -9,7 +10,7 @@ namespace Ekom.Models
     /// <summary>
     /// F.x. Borgun/Valitor
     /// </summary>
-    public class PaymentProvider : PerStoreNodeEntity, IConstrained
+    class PaymentProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IPaymentProvider
     {
         /// <summary>
         /// 
@@ -26,7 +27,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", store.Alias), store));
+            ?? (_price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store));
 
         /// <summary>
         /// Used by Ekom extensions

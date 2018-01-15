@@ -9,7 +9,7 @@ namespace Ekom.Interfaces
         IEnumerable<IProduct> Products { get; }
         IEnumerable<IProduct> ProductsRecursive { get; }
         ICategory RootCategory { get; }
-        Store Store { get; }
+        IStore Store { get; }
         IEnumerable<ICategory> SubCategories { get; }
         IEnumerable<ICategory> SubCategoriesRecursive { get; }
 

@@ -11,7 +11,7 @@ namespace Ekom.Models
     /// <summary>
     /// 
     /// </summary>
-    public class OrderLine : IOrderLine
+    class OrderLine : IOrderLine
     {
         private Guid _productId;
         private IEnumerable<Guid> _variantIds;

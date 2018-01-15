@@ -14,7 +14,7 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
-    public class Variant : NodeEntity, IVariant, INodeEntity
+    class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         private IPerStoreCache<Category> __categoryCache;
         private IPerStoreCache<Category> _categoryCache =>
@@ -43,7 +43,7 @@ namespace Ekom.Models
         [JsonIgnore]
         public int Stock => API.Stock.Current.GetStock(Key);
 
-        public Product Product
+        public IProduct Product
         {
             get
             {
@@ -96,7 +96,7 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public VariantGroup VariantGroup
+        public IVariantGroup VariantGroup
         {
             get
             {
@@ -118,20 +118,11 @@ namespace Ekom.Models
             }
         }
 
-        [JsonIgnore]
-        public Store Store
-        {
-            get
-            {
-                return _store;
-            }
-        }
-
         public IDiscountedPrice Price
         {
             get
             {
-                var variantPrice = Properties.GetStoreProperty("price", _store.Alias);
+                var variantPrice = Properties.GetPropertyValue("price", _store.Alias);
 
                 if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
                 {
@@ -193,7 +184,7 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public Variant(Store store)
+        public Variant(Store store) : base(store)
         {
             _store = store;
         }
@@ -203,7 +194,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Variant(SearchResult item, Store store) : base(item)
+        public Variant(SearchResult item, Store store) : base(item, store)
         {
             _store = store;
         }
@@ -213,7 +204,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public Variant(IContent node, Store store) : base(node)
+        public Variant(IContent node, Store store) : base(node, store)
         {
 
             _store = store;

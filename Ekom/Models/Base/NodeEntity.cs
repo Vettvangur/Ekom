@@ -5,6 +5,7 @@ using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Umbraco.Core.Models;
 
@@ -84,10 +85,15 @@ namespace Ekom.Models
         /// </summary>
         public virtual string ContentTypeAlias => Properties.GetPropertyValue("nodeTypeAlias");
 
+        public IReadOnlyDictionary<string, string> Properties
+        {
+            get => new ReadOnlyDictionary<string, string>(_properties);
+        }
+
         /// <summary>
         /// All node properties
         /// </summary>
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        internal Dictionary<string, string> _properties = new Dictionary<string, string>();
 
         /// <summary>
         /// ctor
@@ -102,7 +108,7 @@ namespace Ekom.Models
         {
             foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
             {
-                Properties.Add(field.Key, field.Value);
+                _properties.Add(field.Key, field.Value);
             }
         }
 
@@ -112,11 +118,11 @@ namespace Ekom.Models
         /// <param name="node"></param>
         public NodeEntity(IContent node)
         {
-            Properties = CreateDefaultUmbracoProperties(node);
+            _properties = CreateDefaultUmbracoProperties(node);
 
             foreach (var prop in node.Properties)
             {
-                Properties.Add(prop.Alias, prop.Value?.ToString());
+                _properties.Add(prop.Alias, prop.Value?.ToString());
             }
         }
 

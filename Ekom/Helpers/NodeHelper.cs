@@ -15,7 +15,7 @@ using Umbraco.Core;
 
 namespace Ekom.Helpers
 {
-    public static class NodeHelper
+    static class NodeHelper
     {
         private static readonly ILog Log =
             LogManager.GetLogger(
@@ -242,27 +242,6 @@ namespace Ekom.Helpers
                 throw ex;
             }
 
-        }
-
-        /// <summary>
-        /// Retrieve a store specific property <para/>
-        /// alias name = field + "_" + storeAlias <para/>
-        /// f.x. disabled_IS
-        /// </summary>
-        /// <param name="items"></param>
-        /// <param name="property"></param>
-        /// <param name="storeAlias">Umbraco Alias</param>
-        /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this Dictionary<string, string> items, string property, string storeAlias)
-        {
-            var fieldExist = items.ContainsKey(property);
-
-            if (fieldExist)
-            {
-                return items[property].GetVortoValue(storeAlias);
-            }
-
-            return string.Empty;
         }
 
         /// <summary>

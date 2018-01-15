@@ -9,7 +9,7 @@ namespace Ekom.Cache
     /// The store cache looks at the list of caches when it is updated and runs through them.
     /// Updating all per store caches.
     /// </summary>
-    public interface IPerStoreCache : ICache
+    interface IPerStoreCache : ICache
     {
         /// <summary>
         /// Handles initial population of cache data
@@ -21,7 +21,7 @@ namespace Ekom.Cache
     /// Used to register per store caches with unity
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IPerStoreCache<T> : ICache, IPerStoreCache
+    interface IPerStoreCache<T> : ICache, IPerStoreCache
     {
         /// <summary>
         /// 

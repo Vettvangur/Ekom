@@ -1,4 +1,5 @@
 ﻿using Ekom.Domain.Repositories;
+using Ekom.Interfaces;
 using Ekom.Models;
 using System.Collections.Generic;
 using Umbraco.Web.Mvc;

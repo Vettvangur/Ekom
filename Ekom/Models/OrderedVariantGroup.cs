@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Ekom.Interfaces;
+using log4net;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,8 @@ namespace Ekom.Models
 {
     public class OrderedVariantGroup
     {
-        private Variant variant;
-        private Store store;
+        private IVariant variant;
+        private IStore store;
         private StoreInfo storeInfo;
 
         public int Id { get; set; }
@@ -20,9 +21,9 @@ namespace Ekom.Models
         public Guid[] ImageIds { get; set; }
         public IEnumerable<OrderedVariant> Variants { get; set; }
 
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> Properties;
 
-        public OrderedVariantGroup(Variant variant, VariantGroup variantGroup, Store store)
+        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, IStore store)
         {
             this.variant = variant;
             this.store = store;

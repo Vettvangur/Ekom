@@ -1,8 +1,9 @@
 ﻿using Ekom.Models.Behaviors;
+using Ekom.Models.Discounts;
 using System;
 using System.Collections.Generic;
 
-namespace Ekom.Models.Discounts
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>

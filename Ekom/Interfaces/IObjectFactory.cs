@@ -16,7 +16,7 @@ namespace Ekom.Interfaces
         /// <param name="item">Examine item</param>
         /// <param name="store"></param>
         /// <returns></returns>
-        T Create(SearchResult item, Store store);
+        T Create(SearchResult item, IStore store);
 
         /// <summary>
         /// Create object from Umbraco event with explicit store
@@ -24,6 +24,6 @@ namespace Ekom.Interfaces
         /// <param name="item">Examine item</param>
         /// <param name="store"></param>
         /// <returns></returns>
-        T Create(IContent item, Store store);
+        T Create(IContent item, IStore store);
     }
 }

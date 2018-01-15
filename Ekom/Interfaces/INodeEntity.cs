@@ -85,6 +85,11 @@ namespace Ekom.Interfaces
         /// The path.
         /// </value>
         string GetPropertyValue(string alias);
+
+        /// <summary>
+        /// Umbraco node properties
+        /// </summary>
+        IReadOnlyDictionary<string, string> Properties { get; }
     }
 
     /// <summary>

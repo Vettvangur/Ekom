@@ -9,10 +9,10 @@ namespace Ekom.Models
     /// </summary>
     public class OrderedPaymentProvider
     {
-        private PaymentProvider _provider;
+        private IPaymentProvider _provider;
         private JObject paymentProviderObject;
 
-        public OrderedPaymentProvider(PaymentProvider provider)
+        public OrderedPaymentProvider(IPaymentProvider provider)
         {
             this._provider = provider;
             Id = _provider.Id;

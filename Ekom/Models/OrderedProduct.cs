@@ -73,7 +73,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("title", storeInfo.Alias);
+                return Properties.GetPropertyValue("title", storeInfo.Alias);
             }
         }
         [JsonIgnore]
@@ -81,7 +81,7 @@ namespace Ekom.Models
         {
             get
             {
-                var priceField = Properties.GetStoreProperty("price", storeInfo.Alias);
+                var priceField = Properties.GetPropertyValue("price", storeInfo.Alias);
 
                 decimal originalPrice = 0;
                 decimal.TryParse(priceField, out originalPrice);
@@ -131,13 +131,14 @@ namespace Ekom.Models
 
         public Guid[] ImageIds { get; set; }
 
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> Properties;
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
-        public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, Store store)
+        public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, IStore store)
         {
-            var product = Catalog.Current.GetProduct(store.Alias, productId);
+            var product = Catalog.Current.GetProduct(store.Alias, productId)
+                as Product;
 
             if (product == null)
             {
@@ -167,7 +168,8 @@ namespace Ekom.Models
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = Catalog.Current.GetVariant(store.Alias, variantId);
+                    var variant = Catalog.Current.GetVariant(store.Alias, variantId)
+                        as Variant;
 
                     if (variant == null)
                     {
@@ -254,11 +256,11 @@ namespace Ekom.Models
 
     public class CustomOrderProductPriceEventArgs : EventArgs
     {
-        public Product Product { get; set; }
+        public IProduct Product { get; set; }
     }
 
     public class CustomOrderVariantPriceEventArgs : EventArgs
     {
-        public Variant Variant { get; set; }
+        public IVariant Variant { get; set; }
     }
 }

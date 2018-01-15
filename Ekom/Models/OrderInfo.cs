@@ -48,7 +48,7 @@ namespace Ekom.Models
             }
             else
             {
-                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
+                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias) as Store);
             }
         }
 
@@ -110,9 +110,9 @@ namespace Ekom.Models
             }
         }
 
-        public CustomerInfo CustomerInformation = new CustomerInfo();
+        public CustomerInfo CustomerInformation { get; } = new CustomerInfo();
 
-        public Price OrderLineTotal
+        public IDiscountedPrice OrderLineTotal
         {
             get
             {
@@ -123,7 +123,7 @@ namespace Ekom.Models
             }
         }
 
-        public Price SubTotal
+        public IDiscountedPrice SubTotal
         {
             get
             {
@@ -135,7 +135,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// <see cref="Price"/> object for total value of all orderlines.
+        /// <see cref="IDiscountedPrice"/> object for total value of all orderlines.
         /// </summary>
         public IDiscountedPrice ChargedAmount
         {

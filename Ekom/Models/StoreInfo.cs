@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Ekom.Interfaces;
+using System;
 
 namespace Ekom.Models
 {
     public class StoreInfo
     {
 
-        public StoreInfo(Store store)
+        public StoreInfo(IStore store)
         {
             if (store != null)
             {

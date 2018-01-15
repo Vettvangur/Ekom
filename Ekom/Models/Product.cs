@@ -18,7 +18,7 @@ namespace Ekom.Models
     /// <summary>
     /// An Ekom store product
     /// </summary>
-    public class Product : PerStoreNodeEntity, IProduct
+    class Product : PerStoreNodeEntity, IProduct
     {
         private IPerStoreCache<Category> __categoryCache;
         private IPerStoreCache<Category> _categoryCache =>
@@ -50,7 +50,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("description", store.Alias);
+                return Properties.GetPropertyValue("description", Store.Alias);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("summary", store.Alias);
+                return Properties.GetPropertyValue("summary", Store.Alias);
             }
         }
 
@@ -72,7 +72,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("slug", store.Alias);
+                return Properties.GetPropertyValue("slug", Store.Alias);
             }
         }
 
@@ -86,7 +86,7 @@ namespace Ekom.Models
         {
             get
             {
-                var _images = Properties.GetStoreProperty("images", store.Alias);
+                var _images = Properties.GetPropertyValue("images", Store.Alias);
 
                 var imageNodes = _images.GetImages();
 
@@ -94,11 +94,11 @@ namespace Ekom.Models
             }
         }
 
-        public VariantGroup PrimaryVariantGroup
+        public IVariantGroup PrimaryVariantGroup
         {
             get
             {
-                var primaryGroupValue = Properties.GetStoreProperty("primaryVariantGroup", store.Alias);
+                var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
 
                 if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
                 {
@@ -106,7 +106,7 @@ namespace Ekom.Models
 
                     if (node != null)
                     {
-                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
 
                         return variantGroup.Value;
 
@@ -145,14 +145,13 @@ namespace Ekom.Models
             }
 
             return list;
-
         }
 
         /// <summary>
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories()
+        public IEnumerable<ICategory> Categories()
         {
             int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
 
@@ -161,7 +160,7 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = _categoryCache.Cache[store.Alias]
+            var primaryCategory = _categoryCache.Cache[Store.Alias]
                                                 .FirstOrDefault(x => x.Value.Id == categoryId)
                                                 .Value;
 
@@ -179,7 +178,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = _categoryCache.Cache[store.Alias]
+                        = _categoryCache.Cache[Store.Alias]
                                         .FirstOrDefault(x => x.Value.Id == intCatId)
                                         .Value;
 
@@ -191,15 +190,6 @@ namespace Ekom.Models
             }
 
             return categories;
-        }
-
-        [JsonIgnore]
-        public Store Store
-        {
-            get
-            {
-                return store;
-            }
         }
 
         [JsonIgnore]
@@ -235,15 +225,15 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", store.Alias), store));
+            ?? (_price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store));
 
         [JsonIgnore]
-        public IEnumerable<VariantGroup> VariantGroups
+        public IEnumerable<IVariantGroup> VariantGroups
         {
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantGroupCache.Cache[store.Alias]
+                return _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.ProductId == Id)
                                         .Select(x => x.Value);
             }
@@ -258,7 +248,7 @@ namespace Ekom.Models
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantCache.Cache[store.Alias]
+                return _variantCache.Cache[Store.Alias]
                     .Where(x => x.Value.ProductId == Id)
                     .Select(x => x.Value);
             }

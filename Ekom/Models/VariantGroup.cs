@@ -1,27 +1,25 @@
-﻿using Ekom.Cache;
+﻿using Ekom.API;
 using Ekom.Helpers;
-using Ekom.Utilities;
 using Ekom.Interfaces;
+using Ekom.Utilities;
 using Examine;
 using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Umbraco.Core.Models;
-using Ekom.API;
 
 namespace Ekom.Models
 {
     /// <summary>
     /// A group of variants sharing common properties and a group key
     /// </summary>
-    public class VariantGroup : NodeEntity, INodeEntity
+    class VariantGroup : NodeEntity, INodeEntity, IVariantGroup
     {
         Store _store { get; set; }
 
-        public Product Product
+        public IProduct Product
         {
             get
             {
@@ -40,7 +38,8 @@ namespace Ekom.Models
         /// <summary>
         /// Get the Product Key
         /// </summary>
-        public Guid ProductKey {
+        public Guid ProductKey
+        {
             get
             {
                 return Product.Key;
@@ -64,7 +63,7 @@ namespace Ekom.Models
         {
             get
             {
-                var _images = Properties.GetStoreProperty("images", _store.Alias);
+                var _images = Properties.GetPropertyValue("images", _store.Alias);
 
                 var imageNodes = _images.GetMediaNodes();
 
@@ -76,11 +75,11 @@ namespace Ekom.Models
         /// Get all variants in this group
         /// </summary>
         [JsonIgnore]
-        public IEnumerable<Variant> Variants
+        public IEnumerable<IVariant> Variants
         {
             get
             {
-                return API.Catalog.Current.GetVariantsByGroup(_store.Alias, Key);
+                return Catalog.Current.GetVariantsByGroup(_store.Alias, Key);
             }
         }
 
@@ -88,8 +87,7 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        /// <param name="cache"></param>
-        public VariantGroup(Store store, IPerStoreCache<Variant> cache)
+        public VariantGroup(Store store)
         {
 
             _store = store;

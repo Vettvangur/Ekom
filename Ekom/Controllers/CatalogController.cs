@@ -1,4 +1,5 @@
-﻿using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Services;
 using log4net;
 using System;
@@ -29,7 +30,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Guid Key of product</param>
         /// <returns></returns>
-        public Product GetProduct(Guid Id)
+        public IProduct GetProduct(Guid Id)
         {
             return API.Catalog.Current.GetProduct(Id);
         }

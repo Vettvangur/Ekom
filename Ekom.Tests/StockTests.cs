@@ -35,11 +35,9 @@ namespace Ekom.Tests
             var stockApi = new Stock(
                 logFac.Object,
                 stockCache,
-                Mock.Of<IPerStoreCache<StockData>>(),
                 Mock.Of<Configuration>(),
                 stockRepo.Object,
-                Mock.Of<IDiscountStockRepository>(),
-                Mock.Of<IStoreService>()
+                Mock.Of<IDiscountStockRepository>()
             );
 
             Assert.ThrowsException<StockException>(() => stockApi.UpdateStock(newGuid, -5));

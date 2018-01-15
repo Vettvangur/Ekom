@@ -60,17 +60,29 @@ namespace Ekom.App_Start
             container.RegisterType<UmbracoHelper>(new InjectionConstructor(typeof(UmbracoContext)));
 
             container.RegisterType<IBaseCache<IDomain>, StoreDomainCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<StoreDomainCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Store>, StoreCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<StoreCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Variant>, VariantCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<VariantCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<VariantGroup>, VariantGroupCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<VariantGroupCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Category>, CategoryCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<CategoryCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Product>, ProductCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<ProductCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<Zone>, ZoneCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<ZoneCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<PaymentProvider>, PaymentProviderCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<PaymentProviderCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<ShippingProvider>, ShippingProviderCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<ShippingProviderCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IBaseCache<StockData>, StockCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<StockCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<StockData>, StockPerStoreCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<StockPerStoreCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<Discount>, DiscountCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<DiscountCache>(new ContainerControlledLifetimeManager());
 
             container.RegisterType<IStoreService, StoreService>();
             //container.RegisterType<IOrderService, OrderService>();

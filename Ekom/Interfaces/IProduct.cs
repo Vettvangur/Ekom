@@ -37,13 +37,13 @@ namespace Ekom.Interfaces
         IEnumerable<Guid> CategoriesIds { get; }
         string Description { get; }
         IEnumerable<Image> Images { get; }
-        VariantGroup PrimaryVariantGroup { get; }
+        IVariantGroup PrimaryVariantGroup { get; }
         string SKU { get; }
-        Store Store { get; }
+        IStore Store { get; }
         string Summary { get; }
         string Url { get; }
         IEnumerable<string> Urls { get; set; }
-        IEnumerable<VariantGroup> VariantGroups { get; }
+        IEnumerable<IVariantGroup> VariantGroups { get; }
 
         List<ICategory> CategoryAncestors();
     }

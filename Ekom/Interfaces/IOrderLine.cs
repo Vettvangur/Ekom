@@ -1,8 +1,8 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.Models;
 using Ekom.Models.Discounts;
 using System;
 
-namespace Ekom.Models
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Order/Cart

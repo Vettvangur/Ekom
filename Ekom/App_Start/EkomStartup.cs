@@ -164,6 +164,7 @@ namespace Ekom
                 catch (Exception ex)
                 {
                     _log.Error("ContentService_Publishing Failed", ex);
+                    throw;
                 }
             }
         }

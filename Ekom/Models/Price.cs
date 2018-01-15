@@ -23,14 +23,14 @@ namespace Ekom.Models
 
         public IDiscount Discount { get; internal set; }
 
-        public Price(string originalPrice, Store store)
+        public Price(string originalPrice, IStore store)
         {
             decimal.TryParse(originalPrice, out decimal result);
 
             Construct(result, new StoreInfo(store));
         }
 
-        public Price(decimal originalPrice, Store store)
+        public Price(decimal originalPrice, IStore store)
         {
             Construct(originalPrice, new StoreInfo(store));
         }

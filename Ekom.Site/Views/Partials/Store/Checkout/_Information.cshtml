@@ -2,7 +2,7 @@
 @using Ekom.Utilities;
 
 @{
-    var order = (Ekom.Models.OrderInfo)ViewData["order"];
+    var order = (Ekom.Interfaces.IOrderInfo)ViewData["order"];
 
     if (order != null)
     {

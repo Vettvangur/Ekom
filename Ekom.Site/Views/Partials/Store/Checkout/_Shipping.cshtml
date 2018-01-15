@@ -1,7 +1,7 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 
 @{
-    var order = (Ekom.Models.OrderInfo)ViewData["order"];
+    var order = (Ekom.Interfaces.IOrderInfo)ViewData["order"];
 
     if (order != null)
     {

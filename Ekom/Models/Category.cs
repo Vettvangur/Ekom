@@ -1,4 +1,9 @@
-﻿using Examine;
+﻿using Ekom.Cache;
+using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
+using Examine;
 using log4net;
 using Newtonsoft.Json;
 using System;
@@ -6,17 +11,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using Umbraco.Core.Models;
-using Ekom.Cache;
-using Ekom.Helpers;
-using Ekom.Interfaces;
-using Ekom.Services;
 
 namespace Ekom.Models
 {
-    public class Category : ICategory
+    class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
         private IPerStoreCache<Category> _categoryCache
         {
@@ -34,20 +34,21 @@ namespace Ekom.Models
             }
         }
 
-        public int Id { get; set; }
-        public Guid Key { get; set; }
-        public string ContentTypeAlias { get; set; }
-        public string Title { get; set; }
-        public string Slug { get; set; }
-        public string Path { get; set; }
-        public DateTime CreateDate { get; set; }
-        public DateTime UpdateDate { get; set; }
+        /// <summary>
+        /// Short spaceless descriptive title used to create URLs
+        /// </summary>
+        public string Slug
+        {
+            get
+            {
+                return Properties.GetPropertyValue("slug", base.Store.Alias);
+            }
+        }
         public int ParentCategoryId { get; set; }
-        public Store Store { get; set; }
-        public int SortOrder { get; set; }
+
         public IEnumerable<string> Urls { get; set; }
-        public int Level { get; set; }
-        public Category RootCategory {
+        public ICategory RootCategory
+        {
             get
             {
                 return Ancestors().FirstOrDefault();
@@ -68,7 +69,7 @@ namespace Ekom.Models
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
-        public IEnumerable<Category> SubCategories
+        public IEnumerable<ICategory> SubCategories
         {
             get
             {
@@ -81,7 +82,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
-        public IEnumerable<Product> Products
+        public IEnumerable<IProduct> Products
         {
             get
             {
@@ -94,7 +95,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
-        public IEnumerable<Category> SubCategoriesRecursive
+        public IEnumerable<ICategory> SubCategoriesRecursive
         {
             get
             {
@@ -108,7 +109,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
-        public IEnumerable<Product> ProductsRecursive
+        public IEnumerable<IProduct> ProductsRecursive
         {
             get
             {
@@ -121,7 +122,7 @@ namespace Ekom.Models
             }
         }
 
-        public IEnumerable<Category> Ancestors()
+        public IEnumerable<ICategory> Ancestors()
         {
             var list = new List<Category>();
 
@@ -147,97 +148,31 @@ namespace Ekom.Models
 
         }
 
-        // Use NodeEntity ?
-
         /// <summary>
-        /// All node properties
+        /// Used by Ekom extensions
         /// </summary>
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
-
-        public Category() : base() { }
-        public Category(SearchResult item, Store store)
+        /// <param name="store"></param>
+        public Category(Store store) : base(store) { }
+        public Category(SearchResult item, Store store) : base(item, store)
         {
             var pathField = item.Fields["path"];
 
-            var key = item.Fields["key"];
-
-            var _key = new Guid();
-
-            if (!Guid.TryParse(key, out _key))
-            {
-                throw new Exception("No key present for product.");
-            }
-
-            var contentTypeAlias = item.Fields["__NodeTypeAlias"];
-
-            int parentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
-
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
-            {
-                Properties.Add(field.Key, field.Value);
-            }
-
-            Id = item.Id;
-            Key = _key;
-            Path = pathField;
-            ParentCategoryId = parentCategoryId;
-            Store = store;
-            ContentTypeAlias = contentTypeAlias;
-            Title = item.GetStoreProperty("title", store.Alias);
-            Slug = item.GetStoreProperty("slug", store.Alias);
-
-            SortOrder = Convert.ToInt32(item.Fields["sortOrder"]);
-            Level = Convert.ToInt32(item.Fields["level"]);
-            CreateDate = ExamineService.ConvertToDatetime(item.Fields["createDate"]);
-            UpdateDate = ExamineService.ConvertToDatetime(item.Fields["updateDate"]);
+            ParentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
-        public Category(IContent node, Store store)
+        public Category(IContent node, Store store) : base(node, store)
         {
             var pathField = node.Path;
-
-            int parentCategoryId = node.ParentId;
-
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            foreach (var prop in node.Properties)
-            {
-                Properties.Add(prop.Alias, prop.Value?.ToString());
-            }
-
-            Id = node.Id;
-            Key = node.Key;
-            Path = pathField;
-            ParentCategoryId = parentCategoryId;
-            Store = store;
-
-            Title = node.GetStoreProperty("title", store.Alias);
-            Slug = node.GetStoreProperty("slug", store.Alias);
-
-            SortOrder = node.SortOrder;
-            Level = node.Level;
-            CreateDate = node.CreateDate;
-            UpdateDate = node.UpdateDate;
+            ParentCategoryId = node.ParentId;
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
 
-        /// <summary>
-        /// Get value in properties
-        /// </summary>
-        /// <param name="alias"></param>
-        public string GetPropertyValue(string alias)
-        {
-            if (Properties.Any(x => x.Key == alias))
-            {
-                return Properties.FirstOrDefault(x => x.Key == alias).Value;
-            }
-
-            return string.Empty;
-        }
 
         private static readonly ILog Log =
             LogManager.GetLogger(

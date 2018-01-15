@@ -1,5 +1,6 @@
 ﻿using Ekom.Cache;
 using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace Ekom.Models.Behaviors
         private IBaseCache<Zone> _zoneCache =>
             __zoneCache ?? (__zoneCache = Configuration.container.GetInstance<IBaseCache<Zone>>());
 
-        NodeEntity _node;
+        INodeEntity _node;
 
         /// <summary>
         /// Start of range that provider supports.
@@ -30,7 +31,7 @@ namespace Ekom.Models.Behaviors
 
                 if (_node is PerStoreNodeEntity perStoreNode)
                 {
-                    int.TryParse(_node.Properties.GetStoreProperty("startOfRange", perStoreNode.store.Alias), out startRange);
+                    int.TryParse(_node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias), out startRange);
                 }
                 else
                 {
@@ -53,7 +54,7 @@ namespace Ekom.Models.Behaviors
 
                 if (_node is PerStoreNodeEntity perStoreNode)
                 {
-                    int.TryParse(_node.Properties.GetStoreProperty("endOfRange", perStoreNode.store.Alias), out endRange);
+                    int.TryParse(_node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias), out endRange);
                 }
                 else
                 {
@@ -105,15 +106,7 @@ namespace Ekom.Models.Behaviors
         /// <summary>
         /// ctor
         /// </summary>
-        public Constraints(NodeEntity node)
-        {
-            _node = node;
-        }
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public Constraints(PerStoreNodeEntity node)
+        public Constraints(INodeEntity node)
         {
             _node = node;
         }

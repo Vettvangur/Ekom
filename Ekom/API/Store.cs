@@ -1,4 +1,5 @@
-﻿using Ekom.Interfaces;
+﻿using CommonServiceLocator;
+using Ekom.Interfaces;
 using Ekom.Services;
 using log4net;
 using System.Collections.Generic;
@@ -27,31 +28,29 @@ namespace Ekom.API
         ILog _log;
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-
-        IStoreService _storeSvc;
+        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Store(ApplicationContext appCtx, IStoreService storeSvc, ILogFactory logFac)
+        public Store(ApplicationContext appCtx, ILogFactory logFac)
         {
             _appCtx = appCtx;
-            _storeSvc = storeSvc;
 
             _log = logFac.GetLogger(typeof(Store));
         }
 
-        public Models.Store GetStore()
+        public IStore GetStore()
         {
             return _storeSvc.GetStoreFromCache();
         }
 
-        public Models.Store GetStore(string storeAlias)
+        public IStore GetStore(string storeAlias)
         {
             return _storeSvc.GetStoreByAlias(storeAlias);
         }
 
-        public IEnumerable<Models.Store> GetAllStores()
+        public IEnumerable<IStore> GetAllStores()
         {
             return _storeSvc.GetAllStores();
         }

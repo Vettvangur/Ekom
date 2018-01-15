@@ -1,6 +1,4 @@
-﻿using Ekom.Interfaces;
-
-namespace Ekom.Models
+﻿namespace Ekom.Interfaces
 {
     /// <summary>
     /// Base Per Store Umbraco node entity
@@ -8,8 +6,8 @@ namespace Ekom.Models
     public interface IPerStoreNodeEntity : INodeEntity
     {
         /// <summary>
-        /// 
+        /// Ekom Store
         /// </summary>
-        new string Title { get; }
+        IStore Store { get; }
     }
 }

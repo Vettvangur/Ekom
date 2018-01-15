@@ -55,7 +55,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.GetStoreProperty("title", storeInfo.Alias);
+                return Properties.GetPropertyValue("title", storeInfo.Alias);
             }
         }
         [JsonIgnore]
@@ -63,7 +63,7 @@ namespace Ekom.Models
         {
             get
             {
-                var priceField = Properties.GetStoreProperty("price", storeInfo.Alias);
+                var priceField = Properties.GetPropertyValue("price", storeInfo.Alias);
 
                 decimal originalPrice = 0;
                 decimal.TryParse(priceField, out originalPrice);
@@ -111,17 +111,18 @@ namespace Ekom.Models
             }
         }
 
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> Properties;
 
-        public OrderedVariant(Guid variantId, Store store)
+        public OrderedVariant(Guid variantId, IStore store)
         {
-            var variant = Catalog.Current.GetVariant(store.Alias, variantId);
+            var variant = Catalog.Current.GetVariant(store.Alias, variantId)
+                as Variant;
             storeInfo = new StoreInfo(store);
 
             Properties = variant.Properties;
         }
 
-        public OrderedVariant(Variant variant, Store store)
+        public OrderedVariant(IVariant variant, IStore store)
         {
             storeInfo = new StoreInfo(store);
 

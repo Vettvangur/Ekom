@@ -10,10 +10,10 @@ namespace Ekom.Models
 {
     public class OrderedShippingProvider
     {
-        private ShippingProvider _provider;
+        private IShippingProvider _provider;
         private JObject shippingProviderObject;
 
-        public OrderedShippingProvider(ShippingProvider provider)
+        public OrderedShippingProvider(IShippingProvider provider)
         {
             this._provider = provider;
 

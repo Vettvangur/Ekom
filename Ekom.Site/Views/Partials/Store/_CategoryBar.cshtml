@@ -1,7 +1,7 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 
 @{ 
-    var currentCategory = (Ekom.Models.Category)ViewData["category"];
+    var currentCategory = (Ekom.Interfaces.ICategory)ViewData["category"];
     var categories = currentCategory.RootCategory.SubCategories;
 }
 
@@ -19,7 +19,7 @@
 
 </div>
 
-@helper RenderList(IEnumerable<Ekom.Models.Category> categories, Ekom.Models.Category currentCategory) {
+@helper RenderList(IEnumerable<Ekom.Interfaces.ICategory> categories, Ekom.Interfaces.ICategory currentCategory) {
 
     if (categories.Any())
     {
