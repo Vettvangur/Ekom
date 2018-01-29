@@ -3,14 +3,11 @@ using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
 using System;
-using System.IO;
 using System.Reflection;
 using System.Web;
-using System.Web.Hosting;
 using Umbraco.Core;
-using Umbraco.Core.Configuration;
 using Umbraco.Web;
-using Umbraco.Web.Routing;
+using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Security;
 
 namespace Ekom
@@ -106,42 +103,32 @@ namespace Ekom
                 HttpApplication application = (HttpApplication)source;
                 HttpContext httpCtx = application.Context;
 
-                if (httpCtx != null && httpCtx.User != null && httpCtx.User.Identity.IsAuthenticated)
+                if (httpCtx?.User?.Identity.IsAuthenticated == true)
                 {
-                    var context = new HttpContextWrapper(new HttpContext(new SimpleWorkerRequest("/", string.Empty, new StringWriter())));
-                    UmbracoContext.EnsureContext(
-                                    context,
-                                    ApplicationContext.Current,
-                                    new WebSecurity(context, ApplicationContext.Current),
-                                    UmbracoConfig.For.UmbracoSettings(),
-                                    UrlProviderResolver.Current.Providers,
-                                    false);
-
-
                     var appCtx = Configuration.container.GetInstance<ApplicationContext>();
 
                     var appCache = appCtx.ApplicationCache;
-                    var ekmRequest = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
 
-                    // This is always firing!, ekmRequest.User.Username is always empty
-                    if (ekmRequest != null && ekmRequest.User.Username != httpCtx.User.Identity.Name)
+                    if (appCache.RequestCache.GetCacheItem("ekmRequest") is ContentRequest ekmRequest)
                     {
-                        var umbracoContext = UmbracoContext.Current;
-                        var memberShipHelper = new MembershipHelper(umbracoContext);
-
-                        var member = memberShipHelper.GetByUsername(httpCtx.User.Identity.Name);
-
-                        if (member != null)
+                        // This is always firing!, ekmRequest.User.Username is always empty
+                        if (ekmRequest.User.Username != httpCtx.User.Identity.Name)
                         {
-                            var u = new User()
-                            {
-                                Email = member.GetPropertyValue<string>("Email"),
-                                Username = httpCtx.User.Identity.Name,
-                                UserId = member.Id,
-                                Name = member.Name
-                            };
+                            var umbracoContext = UmbracoContext.Current;
+                            var memberShipHelper = new MembershipHelper(umbracoContext);
 
-                            ekmRequest.User = u;
+                            var member = memberShipHelper.GetByUsername(httpCtx.User.Identity.Name);
+
+                            if (member is MemberPublishedContent memberContent)
+                            {
+                                ekmRequest.User = new User
+                                {
+                                    Email = memberContent.Email,
+                                    Username = memberContent.UserName,
+                                    UserId = memberContent.Id,
+                                    Name = memberContent.Name
+                                }; ;
+                            }
                         }
                     }
                 }
@@ -152,7 +139,6 @@ namespace Ekom
                 Log.Error("AuthenticateRequest Failed", ex);
             }
         }
-
 
         /// <summary>
         /// No actions needed

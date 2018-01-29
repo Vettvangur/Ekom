@@ -15,7 +15,7 @@ namespace Ekom.Interfaces
         /// <value>
         /// The price.
         /// </value>
-        IDiscountedPrice Price { get; }
+        IPrice Price { get; }
 
 
         /// <summary>

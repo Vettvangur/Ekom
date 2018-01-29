@@ -112,22 +112,13 @@ namespace Ekom.Models
 
         public CustomerInfo CustomerInformation { get; } = new CustomerInfo();
 
-        public IDiscountedPrice OrderLineTotal
+        /// <summary>
+        /// OrderLines with OrderDiscount excluded
+        /// </summary>
+        public IPrice OrderLineTotal
         {
             get
             {
-                // OrderLines Exlude OrderDiscount included
-                var amount = OrderLines.Sum(x => x.Amount.Value);
-
-                return new Price(amount, StoreInfo);
-            }
-        }
-
-        public IDiscountedPrice SubTotal
-        {
-            get
-            {
-                // OrderLines with OrderDiscount included
                 var amount = OrderLines.Sum(x => x.Amount.Value);
 
                 return new Price(amount, StoreInfo);
@@ -135,9 +126,29 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// <see cref="IDiscountedPrice"/> object for total value of all orderlines.
+        /// OrderLines with OrderDiscount included
         /// </summary>
-        public IDiscountedPrice ChargedAmount
+        public IPrice SubTotal
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line =>
+                {
+                    if (line.Discount == null)
+                    {
+                        return new Price(line.Amount.Value, StoreInfo, Discount).Value;
+                    }
+                    return line.Amount.Value;
+                });
+
+                return new Price(amount, StoreInfo);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="IPrice"/> object for total value of all orderlines.
+        /// </summary>
+        public IPrice ChargedAmount
         {
             get
             {

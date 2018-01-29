@@ -55,6 +55,24 @@ namespace Ekom.Models.Discounts
             var couponsInternal = Properties.GetPropertyValue("coupons");
 
             CouponsInternal = couponsInternal?.Split(',');
+
+            DiscountType type = DiscountType.Fixed;
+
+            switch (Properties.GetPropertyValue("discountType"))
+            {
+                case "Fixed":
+                    break;
+
+                case "Percentage":
+                    type = DiscountType.Percentage;
+                    break;
+            }
+
+            Amount = new DiscountAmount
+            {
+                Amount = Convert.ToDecimal(Properties.GetPropertyValue("discountAmount")) / 100,
+                Type = type,
+            };
         }
 
         internal void OnCouponApply() => CouponApplied?.Invoke(this);

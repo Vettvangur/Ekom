@@ -12,7 +12,7 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Price
         /// </summary>
-        IDiscountedPrice Amount { get; }
+        IPrice Amount { get; }
         /// <summary>
         /// Currently set coupon
         /// </summary>

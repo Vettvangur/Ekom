@@ -6,7 +6,7 @@ namespace Ekom.Interfaces
 {
     public interface IVariant : INodeEntity
     {
-        IDiscountedPrice Price { get; }
+        IPrice Price { get; }
         IProduct Product { get; }
         int ProductId { get; }
         Guid ProductKey { get; }

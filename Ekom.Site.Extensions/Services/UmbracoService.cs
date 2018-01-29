@@ -1,9 +1,4 @@
 ﻿using Ekom.API;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -19,9 +14,6 @@ namespace Ekom.Site.Extensions.Services
 
             if (root.DocumentTypeAlias == "ekom")
             {
-
-                //var local = Store.Instance.GetStore();
-
                 var local = Store.Current.GetStore();
 
                 if (local != null)

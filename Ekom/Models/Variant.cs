@@ -118,7 +118,7 @@ namespace Ekom.Models
             }
         }
 
-        public IDiscountedPrice Price
+        public IPrice Price
         {
             get
             {

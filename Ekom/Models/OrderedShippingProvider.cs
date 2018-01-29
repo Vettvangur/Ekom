@@ -38,6 +38,6 @@ namespace Ekom.Models
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string Title { get; set; }
-        public IDiscountedPrice Price { get; set; }
+        public IPrice Price { get; set; }
     }
 }

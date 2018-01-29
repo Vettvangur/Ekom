@@ -14,11 +14,13 @@ namespace Ekom.Models.Discounts
         /// <summary>
         /// Fixed or percentage?
         /// </summary>
-        public DiscountType Type { get; set; }
+        public DiscountType Type { get; internal set; }
 
         /// <summary>
-        /// 28.35 = 28.35% 
+        /// Umbraco input: 28.5 <para></para>
+        /// Stored value: 0.285<para></para>
+        /// Effective value: 28.5%<para></para>
         /// </summary>
-        public double Amount { get; }
+        public decimal Amount { get; internal set; }
     }
 }

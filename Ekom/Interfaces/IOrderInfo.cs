@@ -53,9 +53,9 @@ namespace Ekom.Interfaces
         /// <summary>
         /// <see cref="Price"/> object for total value of all orderlines.
         /// </summary>
-        IDiscountedPrice ChargedAmount { get; }
-        IDiscountedPrice SubTotal { get; }
-        IDiscountedPrice OrderLineTotal { get; }
+        IPrice ChargedAmount { get; }
+        IPrice SubTotal { get; }
+        IPrice OrderLineTotal { get; }
 
         /// <summary>
         /// A collection of hangfire job ids linked to this order,

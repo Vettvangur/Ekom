@@ -2,6 +2,6 @@
 {
     public interface IShippingProvider : IPerStoreNodeEntity, IConstrained
     {
-        IDiscountedPrice Price { get; }
+        IPrice Price { get; }
     }
 }

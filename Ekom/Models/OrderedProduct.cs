@@ -113,7 +113,7 @@ namespace Ekom.Models
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
-        public IDiscountedPrice Price
+        public IPrice Price
         {
             get
             {

@@ -16,6 +16,18 @@ namespace Ekom
     /// </summary>
     public class Configuration
     {
+        private static Configuration _current;
+        /// <summary>
+        /// Configuration Singleton
+        /// </summary>
+        public static Configuration Current
+        {
+            get
+            {
+                return _current ?? (_current = container.GetInstance<Configuration>());
+            }
+        }
+
         /// <summary>
         /// Current dependency resolver instance
         /// </summary>

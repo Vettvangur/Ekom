@@ -3,6 +3,6 @@
     public interface IPaymentProvider : IPerStoreNodeEntity, IConstrained
     {
         string Name { get; }
-        IDiscountedPrice Price { get; }
+        IPrice Price { get; }
     }
 }

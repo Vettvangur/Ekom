@@ -22,11 +22,11 @@ namespace Ekom.Models
         /// </summary>
         public Constraints Constraints { get; }
 
-        IDiscountedPrice _price;
+        IPrice _price;
         /// <summary>
         /// 
         /// </summary>
-        public IDiscountedPrice Price => _price
+        public IPrice Price => _price
             ?? (_price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store));
 
         /// <summary>

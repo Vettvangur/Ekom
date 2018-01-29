@@ -39,7 +39,7 @@ namespace Ekom.Models
         /// <summary>
         /// Price
         /// </summary>
-        public IDiscountedPrice Amount
+        public IPrice Amount
         {
             get
             {

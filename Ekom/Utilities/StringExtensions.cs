@@ -192,8 +192,8 @@ namespace Ekom.Utilities
         }
 
         private static readonly ILog Log =
-        LogManager.GetLogger(
-            MethodBase.GetCurrentMethod().DeclaringType
-        );
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }
