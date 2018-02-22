@@ -6,6 +6,7 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
@@ -243,26 +244,17 @@ namespace Ekom.Controllers
         /// <param name="lineId">Guid Key of product/line</param>
         /// <param name="storeAlias"></param>
         /// <returns></returns>
-        public JsonResult RemoveOrderLine(Guid lineId, string storeAlias)
+        public ActionResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
             try
             {
                 var orderInfo = Order.Current.RemoveOrderLine(lineId, storeAlias);
 
-                return Json(new
-                {
-                    success = true,
-                    orderInfo = orderInfo
-                });
+                return Json(new { orderInfo, date = DateTime.Now });
             }
             catch (Exception ex)
             {
-
-                return Json(new
-                {
-                    success = false,
-                    error = ex.Message
-                });
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
             }
         }
     }
