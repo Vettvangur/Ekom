@@ -1,7 +1,6 @@
 ﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Models.Discounts;
 using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -93,7 +92,8 @@ namespace Ekom.Models
         internal List<OrderLine> _orderLines = new List<OrderLine>();
 
         /// <summary>
-        /// Force changes to come through order api, ensuring lines are never changed without 
+        /// Force changes to come through order api, 
+        /// ensuring lines are never changed without passing through the correct channels.
         /// </summary>
         public IReadOnlyCollection<IOrderLine> OrderLines => _orderLines.AsReadOnly();
 

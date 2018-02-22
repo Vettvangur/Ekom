@@ -205,12 +205,8 @@ namespace Ekom.Models
         {
             get
             {
-                //var appCache = ApplicationContext.Current.ApplicationCache;
-                //var r = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
-
-                //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
-
-                var path = HttpContext.Current.Request.Url.AbsolutePath;
+                var httpCtx = Configuration.container.GetInstance<HttpContextBase>();
+                var path = httpCtx.Request.Url.AbsolutePath;
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();

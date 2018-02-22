@@ -1,15 +1,14 @@
-﻿using log4net;
+﻿using Ekom.API;
+using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
+using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Ekom.API;
-using Ekom.Helpers;
-using Ekom.Interfaces;
-using Ekom.Services;
-using Ekom.Utilities;
 using Umbraco.Web;
 
 namespace Ekom.Models
@@ -160,7 +159,7 @@ namespace Ekom.Models
 
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
-            Properties = product.Properties;
+            Properties = new Dictionary<string, string>(product._properties);
 
             if (variantIds.Any())
             {
