@@ -202,8 +202,6 @@ namespace Ekom.Models
             this.productJson = productJson;
             this.storeInfo = storeInfo;
 
-            Log.Info("Created OrderedProduct from json");
-
             var productPropertiesObject = JObject.Parse(productJson);
 
             Properties = productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>();
@@ -218,13 +216,10 @@ namespace Ekom.Models
 
             if (variantGroups != null && !string.IsNullOrEmpty(variantGroups.ToString()))
             {
-                Log.Info("OrderedProduct: Variant Groups found in Json");
-
                 var variantGroupsArray = (JArray)variantGroups;
 
                 if (variantGroupsArray != null && variantGroupsArray.Any())
                 {
-                    Log.Info("OrderedProduct: Variant Groups items found in array json");
 
                     foreach (var variantGroupObject in variantGroupsArray)
                     {

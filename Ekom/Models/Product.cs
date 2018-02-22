@@ -265,6 +265,21 @@ namespace Ekom.Models
         }
 
         /// <summary>
+        /// Get Variant Count
+        /// </summary>
+        [JsonIgnore]
+        public int AllVariantsCount
+        {
+            get
+            {
+                // AllVariants is slower with Select, this is done for performance
+                return _variantCache.Cache[_store.Alias]
+                    .Count(x => x.Value.ProductId == Id);
+            }
+
+        }
+
+        /// <summary>
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>

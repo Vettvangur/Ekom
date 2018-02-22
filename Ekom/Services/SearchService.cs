@@ -22,6 +22,7 @@ namespace Ekom.Services
             try
             {
                 var searcher = ExamineManager.Instance.SearchProviderCollection[searchProvider];
+
                 var luceneQuery = new StringBuilder();
 
                 if (!string.IsNullOrWhiteSpace(query))

@@ -73,7 +73,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var os = Ekom.API.Order.Current;
+                var os = API.Order.Current;
 
                 _log.Info("Add To Multiple Order: " + request.productId);
 
