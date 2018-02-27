@@ -3,7 +3,6 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
-using Ekom.Models.Discounts;
 using Ekom.Repository;
 using log4net;
 using Newtonsoft.Json;
@@ -23,7 +22,7 @@ namespace Ekom.Services
         HttpContextBase _httpCtx;
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-        IPerStoreCache<Discount> _discountCache;
+        IPerStoreCache<IDiscount> _discountCache;
 
         Store _store;
         DateTime _date;
@@ -38,7 +37,7 @@ namespace Ekom.Services
             OrderRepository orderRepo,
             ILogFactory logFac,
             IStoreService storeService,
-            IPerStoreCache<Discount> discountCache,
+            IPerStoreCache<IDiscount> discountCache,
             ApplicationContext appCtx)
         {
             _log = logFac.GetLogger<OrderService>();
@@ -47,7 +46,6 @@ namespace Ekom.Services
             _orderRepository = orderRepo;
             _storeSvc = storeService;
             _discountCache = discountCache;
-            _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
         }
 
         /// <summary>
@@ -58,11 +56,12 @@ namespace Ekom.Services
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
-            IPerStoreCache<Discount> discountCache,
+            IPerStoreCache<IDiscount> discountCache,
             HttpContextBase httpCtx)
             : this(orderRepo, logFac, storeService, discountCache, appCtx)
         {
             _httpCtx = httpCtx;
+            _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
         }
 
         public OrderInfo GetOrderInfo(Guid uniqueId)
@@ -151,17 +150,11 @@ namespace Ekom.Services
             OrderAction? action
         )
         {
-            _log.Info("Add OrderLine... ProductId: " + productId + " variantIds: " + variantIds.Any() + " qty: " + quantity + " Action: " + action);
-
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
             _date = DateTime.Now;
 
-            _log.Info("Add OrderLine ... Store: " + _store.Alias);
-
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
-
-            _log.Info("Add OrderLine ...  Get Order.. Action: " + cartAction);
 
             var orderInfo = GetOrder(storeAlias);
 
@@ -171,7 +164,14 @@ namespace Ekom.Services
                 orderInfo = CreateEmptyOrder();
             }
 
-            _log.Info("Add OrderLine ...  Order: " + orderInfo.OrderNumber);
+            _log.Info("ProductId: " + productId +
+                " variantIds: " + variantIds.Any() +
+                " qty: " + quantity +
+                " Action: " + action +
+                " Order: " + orderInfo.OrderNumber +
+                " Store: " + _store.Alias +
+                " Cart action " + cartAction
+            );
 
             AddOrderLineToOrderInfo(orderInfo, productId, variantIds, quantity, cartAction);
 
@@ -210,7 +210,7 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            _log.Info("AddOrderLineToOrderInfo: Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
+            _log.Info("Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
             OrderLine existingOrderLine = null;
 
             if (orderInfo.OrderLines != null)

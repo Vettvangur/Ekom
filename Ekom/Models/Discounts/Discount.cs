@@ -52,9 +52,11 @@ namespace Ekom.Models.Discounts
         private void Construct()
         {
             Constraints = new Constraints(this);
-            var couponsInternal = Properties.GetPropertyValue("coupons");
 
-            CouponsInternal = couponsInternal?.Split(',');
+            // Not applicable while coupons are represented as umbraco nodes
+            //var couponsInternal = Properties.GetPropertyValue("coupons");
+
+            //CouponsInternal = couponsInternal?.Split(',');
 
             DiscountType type = DiscountType.Fixed;
 
@@ -109,6 +111,7 @@ namespace Ekom.Models.Discounts
         /// <param name="d1"></param>
         /// <param name="d2"></param>
         /// <returns></returns>
+        [Obsolete("Unused")]
         public static bool operator <(Discount d1, IDiscount d2)
         {
             return d1.CompareTo(d2) < 0;
@@ -120,6 +123,7 @@ namespace Ekom.Models.Discounts
         /// <param name="d1"></param>
         /// <param name="d2"></param>
         /// <returns></returns>
+        [Obsolete("Unused")]
         public static bool operator >(Discount d1, IDiscount d2)
         {
             return d1.CompareTo(d2) > 0;

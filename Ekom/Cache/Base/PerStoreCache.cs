@@ -93,7 +93,7 @@ namespace Ekom.Cache
                     IBooleanOperation query = searchCriteria.NodeTypeAlias(NodeAlias);
                     ISearchResults results = searcher.Search(query.Compile());
 
-                    if (storeParam == null) // Startup initalization
+                    if (storeParam == null) // Startup initialization
                     {
                         foreach (var store in _storeCache.Cache.Select(x => x.Value))
                         {
@@ -116,7 +116,7 @@ namespace Ekom.Cache
             }
             else
             {
-                _log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
+                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill category cache.");
             }
         }
 

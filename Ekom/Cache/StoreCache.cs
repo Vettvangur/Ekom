@@ -2,7 +2,6 @@
 using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Services;
-using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
@@ -76,7 +75,7 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _log.Info("Failed to map to store. Id: " + r.Id, ex);
+                        _log.Warn("Failed to map to store. Id: " + r.Id, ex);
                     }
                 }
 
@@ -86,7 +85,7 @@ namespace Ekom.Cache
             }
             else
             {
-                _log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
+                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
             }
         }
 

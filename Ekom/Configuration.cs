@@ -1,5 +1,6 @@
 ﻿using CommonServiceLocator;
 using Ekom.Cache;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
 using Ekom.Utilities;
@@ -158,7 +159,7 @@ namespace Ekom
                 { container.GetInstance<IBaseCache<Zone>>() },
                 { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
                 { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
-                { container.GetInstance<IPerStoreCache<Discount>>() },
+                { container.GetInstance<IPerStoreCache<IDiscount>>() },
             };
         });
 

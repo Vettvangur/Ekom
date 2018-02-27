@@ -252,7 +252,7 @@ namespace Ekom.Controllers
 
                 return Json(new { orderInfo, date = DateTime.Now });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
             }

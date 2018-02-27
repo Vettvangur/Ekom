@@ -41,8 +41,6 @@ namespace Ekom.Interfaces
         string SKU { get; }
         IStore Store { get; }
         string Summary { get; }
-        string Url { get; }
-        IEnumerable<string> Urls { get; set; }
         IEnumerable<IVariantGroup> VariantGroups { get; }
 
         List<ICategory> CategoryAncestors();

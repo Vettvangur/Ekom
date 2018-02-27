@@ -78,10 +78,6 @@
     <Reference Include="CookComputing.XmlRpcV2, Version=2.5.0.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d, processorArchitecture=MSIL">
       <HintPath>..\packages\xmlrpcnet.2.5.0\lib\net20\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
-    <Reference Include="Ekom.Vorto.Languages, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Dlls\Ekom.Vorto.Languages.dll</HintPath>
-    </Reference>
     <Reference Include="Examine, Version=0.1.83.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.0.1.83\lib\net45\Examine.dll</HintPath>
     </Reference>
@@ -472,6 +468,10 @@
     <ProjectReference Include="..\Ekom.Site.Extensions\Ekom.Site.Extensions.csproj">
       <Project>{c8d798cd-9d24-444e-a7fc-9cdb0816669f}</Project>
       <Name>Ekom.Site.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom.Vorto.Languages\Ekom.Vorto.Languages.csproj">
+      <Project>{53095664-1dc8-4c12-a4d6-c70cea9d2b58}</Project>
+      <Name>Ekom.Vorto.Languages</Name>
     </ProjectReference>
     <ProjectReference Include="..\Ekom\Ekom.csproj">
       <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>

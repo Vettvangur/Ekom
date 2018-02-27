@@ -14,6 +14,5 @@ namespace Ekom.Interfaces
         IEnumerable<ICategory> SubCategoriesRecursive { get; }
 
         IEnumerable<ICategory> Ancestors();
-        string GetPropertyValue(string alias);
     }
 }

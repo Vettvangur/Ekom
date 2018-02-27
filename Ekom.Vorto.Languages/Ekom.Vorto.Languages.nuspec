@@ -1,0 +1,18 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Ekom.Vorto.Languages</id>
+    <version>0.0.4</version>
+    <title>Ekom Vorto Languages</title>
+    <authors>Vettvangur</authors>
+    <owners>Vettvangur</owners>
+    <licenseUrl>http://www.vettvangur.is</licenseUrl>
+    <projectUrl>https://github.com/Vettvangur/uWebshopV3</projectUrl>
+    <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Custom language retriever for Vorto</description>
+    <releaseNotes>Use store Alias not Title to distinguish</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags></tags>
+  </metadata>
+</package>

@@ -22,7 +22,7 @@ namespace Ekom.Models
         public delegate void CustomOrderProductPriceEventHandler(CustomOrderProductPriceEventArgs e);
 
         /// <summary>
-        /// Occurs before product is binded to OrderedProduct
+        /// Occurs before product is bound to OrderedProduct
         /// </summary>
         public static event CustomOrderProductPriceEventHandler CustomOrderProductPriceEvent;
 
@@ -144,9 +144,7 @@ namespace Ekom.Models
                 throw new Exception("OrderedProduct could not be created. Product not found. Key: " + productId);
             }
 
-            var config = new Configuration();
-
-            if (config.CustomOrderPrice)
+            if (Configuration.Current.CustomOrderPrice)
             {
                 // This gives null error if not fired
                 CustomOrderProductPriceEvent(new CustomOrderProductPriceEventArgs
@@ -175,7 +173,7 @@ namespace Ekom.Models
                         throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
                     }
 
-                    if (config.CustomOrderPrice)
+                    if (Configuration.Current.CustomOrderPrice)
                     {
                         // This gives null error if not fired
                         CustomOrderVariantPriceEvent(new CustomOrderVariantPriceEventArgs

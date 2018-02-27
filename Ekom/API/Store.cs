@@ -1,5 +1,4 @@
-﻿using CommonServiceLocator;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Services;
 using log4net;
 using System.Collections.Generic;
@@ -40,16 +39,29 @@ namespace Ekom.API
             _log = logFac.GetLogger(typeof(Store));
         }
 
+        /// <summary>
+        /// Get store from <see cref="Ekom.Models.ContentRequest"/> or first store available
+        /// </summary>
+        /// <returns></returns>
         public IStore GetStore()
         {
             return _storeSvc.GetStoreFromCache();
         }
 
+        /// <summary>
+        /// Get store by alias
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
         public IStore GetStore(string storeAlias)
         {
             return _storeSvc.GetStoreByAlias(storeAlias);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public IEnumerable<IStore> GetAllStores()
         {
             return _storeSvc.GetAllStores();

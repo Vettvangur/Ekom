@@ -1,4 +1,5 @@
 ﻿using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
 using System;
@@ -12,7 +13,7 @@ namespace Ekom.Services
         /// 
         /// </summary>
         /// <returns></returns>
-        public bool ApplyDiscountToOrder(Discount discount, string coupon, string storeAlias)
+        public bool ApplyDiscountToOrder(IDiscount discount, string coupon, string storeAlias)
         {
             var orderInfo = GetOrder(storeAlias);
 
@@ -52,7 +53,7 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
-        public bool ApplyDiscountToOrderLine(Guid productKey, Discount discount, string coupon, string storeAlias)
+        public bool ApplyDiscountToOrderLine(Guid productKey, IDiscount discount, string coupon, string storeAlias)
         {
             var orderInfo = GetOrder(storeAlias);
             OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Id == productKey)
@@ -118,11 +119,11 @@ namespace Ekom.Services
             UpdateOrderAndOrderInfo(orderInfo);
         }
 
-        private bool IsBetterDiscount(OrderInfo orderInfo, Discount discount)
+        private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
             if (orderInfo.Discount.Amount.Type
             == discount.Amount.Type)
-                return discount > orderInfo.Discount;
+                return discount.CompareTo(orderInfo.Discount) > 0;
 
             var oldDiscount = orderInfo.Discount;
             var oldTotal = orderInfo.ChargedAmount;
@@ -136,11 +137,11 @@ namespace Ekom.Services
             return result;
         }
 
-        private bool IsBetterDiscount(OrderLine orderLine, Discount discount)
+        private bool IsBetterDiscount(OrderLine orderLine, IDiscount discount)
         {
             if (orderLine.Discount.Amount.Type
             == discount.Amount.Type)
-                return discount > orderLine.Discount;
+                return discount.CompareTo(orderLine.Discount) > 0;
 
             var oldDiscount = orderLine.Discount;
             var oldTotal = orderLine.Amount;

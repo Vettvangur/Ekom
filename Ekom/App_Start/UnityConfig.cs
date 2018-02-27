@@ -81,7 +81,7 @@ namespace Ekom.App_Start
             container.RegisterType<StockCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<IPerStoreCache<StockData>, StockPerStoreCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<StockPerStoreCache>(new ContainerControlledLifetimeManager());
-            container.RegisterType<IPerStoreCache<Discount>, DiscountCache>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IPerStoreCache<IDiscount>, DiscountCache>(new ContainerControlledLifetimeManager());
             container.RegisterType<DiscountCache>(new ContainerControlledLifetimeManager());
 
             container.RegisterType<IStoreService, StoreService>();

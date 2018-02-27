@@ -1,6 +1,7 @@
 ﻿using Ekom.Interfaces;
 using Ekom.Services;
 using log4net;
+using System;
 using System.Globalization;
 using System.Reflection;
 
@@ -180,11 +181,11 @@ namespace Ekom.Models
         /// </summary>
         public bool IsDiscounted { get; }
 
-        public ICalculatedPrice WithVat => throw new System.NotImplementedException();
+        public ICalculatedPrice WithVat => throw new NotImplementedException();
 
-        public ICalculatedPrice WithoutVat => throw new System.NotImplementedException();
+        public ICalculatedPrice WithoutVat => throw new NotImplementedException();
 
-        public decimal Vat => throw new System.NotImplementedException();
+        public decimal Vat => throw new NotImplementedException();
 
         private static readonly ILog Log =
             LogManager.GetLogger(
