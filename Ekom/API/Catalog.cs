@@ -35,9 +35,9 @@ namespace Ekom.API
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
-        ProductCache _productCache = Configuration.container.GetInstance<ProductCache>();
-        CategoryCache _categoryCache = Configuration.container.GetInstance<CategoryCache>();
-        VariantCache _variantCache = Configuration.container.GetInstance<VariantCache>();
+        IPerStoreCache<Product> _productCache = Configuration.container.GetInstance<IPerStoreCache<Product>>();
+        IPerStoreCache<Category> _categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>();
+        IPerStoreCache<Variant> _variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>();
 
         /// <summary>
         /// ctor
@@ -139,11 +139,15 @@ namespace Ekom.API
             return _productCache.Cache[storeAlias].Where(x => productIds.Contains(x.Value.Id)).Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
+        /// <summary>
+        /// Get category from ekmRequest
+        /// </summary>
+        /// <returns></returns>
         public ICategory GetCategory()
         {
-            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Category != null)
+            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r)
             {
-                return r.Category;
+                return r?.Category;
             }
 
             return null;
@@ -185,9 +189,9 @@ namespace Ekom.API
         public IEnumerable<ICategory> GetRootCategories(string storeAlias)
         {
             return _categoryCache.Cache[storeAlias]
-                                .Where(x => x.Value.Level == _config.CategoryRootLevel)
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder);
+                .Where(x => x.Value.Level == _config.CategoryRootLevel)
+                .Select(x => x.Value)
+                .OrderBy(x => x.SortOrder);
         }
 
         public IEnumerable<ICategory> GetAllCategories()

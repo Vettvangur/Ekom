@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TINYIOC_INTERNAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Ekom.xml</DocumentationFile>
@@ -242,15 +242,6 @@
     <Reference Include="UmbracoExamine, Version=0.7.0.36626, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\UmbracoExamine.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Abstractions, Version=2.3.1.0, Culture=neutral, PublicKeyToken=6d32ff45e0ccc69f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.Abstractions.2.3.1\lib\net45\Unity.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Container, Version=5.3.2.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.Container.5.3.2\lib\net45\Unity.Container.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.ServiceLocation, Version=2.0.0.0, Culture=neutral, PublicKeyToken=6d32ff45e0ccc69f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Unity.ServiceLocation.2.0.0\lib\net45\Unity.ServiceLocation.dll</HintPath>
-    </Reference>
     <Reference Include="WebActivatorEx, Version=2.0.0.0, Culture=neutral, PublicKeyToken=7b26dc2a43f6a0d4, processorArchitecture=MSIL">
       <HintPath>..\packages\WebActivatorEx.2.2.0\lib\net40\WebActivatorEx.dll</HintPath>
     </Reference>
@@ -264,7 +255,8 @@
     <Compile Include="API\Store.cs" />
     <Compile Include="App_Start\EkomStartup.cs" />
     <Compile Include="App_Start\RegisterHttpModule.cs" />
-    <Compile Include="App_Start\UnityConfig.cs" />
+    <Compile Include="App_Start\TinyIoCActivator.cs" />
+    <Compile Include="App_Start\TinyIoCConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
@@ -283,6 +275,11 @@
     <Compile Include="HttpModule.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
+    <Compile Include="IoC\ContainerRegistration.cs" />
+    <Compile Include="IoC\IActivatorContainerRegistration.cs" />
+    <Compile Include="IoC\IContainerRegistration.cs" />
+    <Compile Include="IoC\Lifetime.cs" />
+    <Compile Include="IoC\Resolver.cs" />
     <Compile Include="Models\Abstractions\ExamineManagerBase.cs" />
     <Compile Include="Models\Abstractions\ExamineManagerWrapper.cs" />
     <Compile Include="Interfaces\IPerStoreNodeEntity.cs" />
@@ -321,6 +318,9 @@
     <Compile Include="API\Providers.cs" />
     <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\SearchService.cs" />
+    <Compile Include="TinyIoC\TinyIoC.cs" />
+    <Compile Include="TinyIoC\TinyIoCAspNetExtensions.cs" />
+    <Compile Include="TinyIoC\TinyIoCServiceLocator.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />

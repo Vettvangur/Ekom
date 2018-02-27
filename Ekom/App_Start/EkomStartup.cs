@@ -1,6 +1,7 @@
 ﻿using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Helpers;
+using Ekom.IoC;
 using Ekom.Models.Data;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -9,6 +10,7 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TinyIoC;
 using Umbraco.Core;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
@@ -18,7 +20,6 @@ using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
 using Umbraco.NetPayment;
 using Umbraco.Web.Routing;
-using Unity;
 using ILogFactory = Ekom.Services.ILogFactory;
 
 namespace Ekom
@@ -41,8 +42,8 @@ namespace Ekom
         /// <summary>
         /// Methods that override unity type registrations
         /// </summary>
-        /// <param name="c"></param>
-        public delegate void ExtensionRegistrations(IUnityContainer c);
+        /// <param name="typeMappings"></param>
+        public delegate void ExtensionRegistrations(List<IContainerRegistration> typeMappings);
 
         /// <summary>
         /// Umbraco startup lifecycle method
@@ -69,16 +70,72 @@ namespace Ekom
         {
             LogHelper.Info(GetType(), "ApplicationStarted...");
 
-            // Register extension types
-            var container = UnityConfig.GetConfiguredContainer();
-            ApplicationStartedCalled?.Invoke(container);
+            var container = Configuration.container;
+
+            TinyIoC();
 
             // Startup Dependencies
-            var logFac = container.Resolve<ILogFactory>();
-            _log = logFac.GetLogger(typeof(EkomStartup));
-            _config = container.Resolve<Configuration>();
+            var logFac = container.GetInstance<ILogFactory>();
+            _log = logFac.GetLogger<EkomStartup>();
+            _config = container.GetInstance<Configuration>();
 
+            PrepareDatabase(applicationContext);
 
+            // Controls which stock cache will be populated
+            var stockCache = _config.PerStoreStock
+                ? container.GetInstance<IPerStoreCache<StockData>>()
+                : container.GetInstance<IBaseCache<StockData>>()
+                as ICache;
+
+            _config.CacheList.Value.Add(stockCache);
+
+            // Fill Caches
+            foreach (var cacheEntry in _config.CacheList.Value)
+            {
+                cacheEntry.FillCache();
+            }
+
+            // VirtualContent=true allows for configuration of content nodes to use for matching all requests
+            // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
+
+            if (!_config.VirtualContent)
+            {
+                // Hook into Umbraco Events
+                ContentService.Published += ContentService_Published;
+                ContentService.UnPublished += ContentService_UnPublished;
+                ContentService.Deleted += ContentService_Deleted;
+                ContentService.Publishing += ContentService_Publishing;
+            }
+
+            // Hangfire
+            GlobalConfiguration.Configuration.UseSqlServerStorage(applicationContext.DatabaseContext.ConnectionString);
+            new BackgroundJobServer();
+
+            // Hook into NetPayment completion event
+
+            LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
+        }
+
+        private void TinyIoC()
+        {
+            var tinyIoCContainer = TinyIoCContainer.Current;
+
+            // Finish type registrations
+            tinyIoCContainer.RegisterTypes();
+            tinyIoCContainer.RegisterTypes(TinyIoCConfig.containerRegistrations);
+
+            // Register extension types
+            if (ApplicationStartedCalled != null)
+            {
+                var typeMappings = new List<IContainerRegistration>();
+                ApplicationStartedCalled.Invoke(typeMappings);
+
+                tinyIoCContainer.RegisterTypes(typeMappings);
+            }
+        }
+
+        private void PrepareDatabase(ApplicationContext applicationContext)
+        {
             var dbCtx = applicationContext.DatabaseContext;
             var dbHelper = new DatabaseSchemaHelper(dbCtx.Database, applicationContext.ProfilingLogger.Logger, dbCtx.SqlSyntax);
 
@@ -103,40 +160,6 @@ namespace Ekom
             {
                 dbHelper.CreateTable<CustomerData>(false);
             }
-
-            // Controls which stock cache will be populated
-            var stockCache = _config.PerStoreStock
-                ? container.Resolve<IPerStoreCache<StockData>>()
-                : container.Resolve<IBaseCache<StockData>>()
-                as ICache;
-
-            _config.CacheList.Value.Add(stockCache);
-
-            // Fill Caches
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
-
-            // VirtualContent=true allows for configuration of content nodes to use for matching all requests
-            // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
-
-            if (!_config.VirtualContent)
-            {
-                // Hook into Umbraco Events
-                ContentService.Published += ContentService_Published;
-                ContentService.UnPublished += ContentService_UnPublished;
-                ContentService.Deleted += ContentService_Deleted;
-                ContentService.Publishing += ContentService_Publishing;
-            }
-
-            // Hangfire
-            GlobalConfiguration.Configuration.UseSqlServerStorage(dbCtx.ConnectionString);
-            new BackgroundJobServer();
-
-            // Hook into NetPayment completion event
-
-            LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
         }
 
         private void CompleteCheckout(Umbraco.NetPayment.OrderStatus o)

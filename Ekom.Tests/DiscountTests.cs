@@ -11,7 +11,6 @@ using Moq;
 using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Persistence;
-using Unity;
 
 namespace Ekom.Tests
 {

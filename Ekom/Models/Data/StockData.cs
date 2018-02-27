@@ -19,20 +19,20 @@ namespace Ekom.Models.Data
         /// </summary>
         [Length(39)]
         [PrimaryKeyColumn(AutoIncrement = false)]
-        public string UniqueId { get; set; }
+        public string UniqueId { get; internal set; }
 
         /// <summary>
         /// Unit count
         /// </summary>
-        public int Stock { get; set; }
+        public int Stock { get; internal set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public DateTime CreateDate { get; set; }
+        public DateTime CreateDate { get; internal set; }
         /// <summary>
         /// 
         /// </summary>
-        public DateTime UpdateDate { get; set; }
+        public DateTime UpdateDate { get; internal set; }
     }
 }

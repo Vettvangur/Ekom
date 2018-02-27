@@ -33,7 +33,8 @@ namespace Ekom.API
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
         IBaseCache<StockData> _stockCache;
-        IPerStoreCache<StockData> _stockPerStoreCache = Configuration.container.GetInstance<IPerStoreCache<StockData>>();
+        IPerStoreCache<StockData> _stockPerStoreCache;
+
 
         /// <summary>
         /// ctor
@@ -50,8 +51,10 @@ namespace Ekom.API
             _config = config;
             _stockRepo = stockRepo;
             _discountStockRepo = discountStockRepo;
+            // Private interface but public constructor
+            _stockPerStoreCache = Configuration.container.GetInstance<IPerStoreCache<StockData>>();
 
-            _log = logFac.GetLogger(typeof(Stock));
+            _log = logFac.GetLogger<Stock>();
         }
 
         /// <summary>

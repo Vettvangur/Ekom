@@ -9,7 +9,6 @@ using log4net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
-using Unity;
 
 namespace Ekom.Tests
 {
@@ -21,6 +20,8 @@ namespace Ekom.Tests
         {
             var newGuid = Guid.NewGuid();
 
+            var c = TinyIoCActivator.Start();
+
             var logFac = new Mock<ILogFactory>();
             logFac.Setup(x => x.GetLogger(It.IsAny<Type>())).Returns(Mock.Of<ILog>());
 
@@ -31,6 +32,8 @@ namespace Ekom.Tests
                 stockRepo.Object
             );
             stockCache[newGuid] = new StockData();
+
+            c.Register<IBaseCache<StockData>, StockCache>(stockCache);
 
             var stockApi = new Stock(
                 logFac.Object,
@@ -48,7 +51,7 @@ namespace Ekom.Tests
         {
             var guid = Guid.NewGuid();
 
-            var c = UnityConfig.GetConfiguredContainer();
+            var c = TinyIoCActivator.Start();
             var stockRepo = new Mock<IStockRepository>();
             stockRepo.Setup(sr => sr.CreateNewStockRecord(It.IsAny<string>()))
                 .Returns(new StockData
@@ -56,7 +59,7 @@ namespace Ekom.Tests
                     UniqueId = guid.ToString(),
                 });
 
-            c.RegisterInstance(stockRepo.Object);
+            c.Register(stockRepo.Object);
 
             Stock.UpdateStockHangfire(guid, 1);
         }

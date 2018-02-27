@@ -10,7 +10,6 @@ using Ekom.App_Start;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Services;
-using Unity;
 using System.Web;
 
 namespace Ekom.Tests
