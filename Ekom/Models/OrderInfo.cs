@@ -234,17 +234,13 @@ namespace Ekom.Models
 
             var orderLinesArray = (JArray)orderInfoJObject["OrderLines"];
 
-            var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
             foreach (var line in orderLinesArray)
             {
                 var lineId = (Guid)line["Id"];
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
 
-                var orderLine = new OrderLine(lineId, quantity, productJson, storeInfo);
+                var orderLine = new OrderLine(lineId, quantity, productJson, _storeInfo);
 
                 orderLines.Add(orderLine);
             }
@@ -254,7 +250,6 @@ namespace Ekom.Models
 
         private OrderedShippingProvider CreateShippingProviderFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["ShippingProvider"] != null)
             {
                 var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();
@@ -265,11 +260,7 @@ namespace Ekom.Models
 
                     if (shippingProviderObject != null)
                     {
-                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                        var p = new OrderedShippingProvider(shippingProviderObject, storeInfo);
+                        var p = new OrderedShippingProvider(shippingProviderObject, _storeInfo);
 
                         return p;
                     }
@@ -281,7 +272,6 @@ namespace Ekom.Models
 
         private OrderedPaymentProvider CreatePaymentProviderFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["PaymentProvider"] != null)
             {
                 var paymentProviderJson = orderInfoJObject["PaymentProvider"].ToString();
@@ -292,11 +282,7 @@ namespace Ekom.Models
 
                     if (paymentProviderObject != null)
                     {
-                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                        var p = new OrderedPaymentProvider(paymentProviderObject, storeInfo);
+                        var p = new OrderedPaymentProvider(paymentProviderObject, _storeInfo);
 
                         return p;
                     }
@@ -308,7 +294,6 @@ namespace Ekom.Models
 
         private CustomerInfo CreateCustomerInformationFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["CustomerInformation"] != null)
             {
                 var customerInfoJson = orderInfoJObject["CustomerInformation"].ToString();
@@ -323,9 +308,9 @@ namespace Ekom.Models
 
             return null;
         }
+
         private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["StoreInfo"] != null)
             {
                 var storeInfoJson = orderInfoJObject["StoreInfo"].ToString();

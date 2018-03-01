@@ -131,7 +131,7 @@ namespace Ekom.Models
 
             Properties = new ReadOnlyDictionary<string, string>(
                 product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
-            Price = new Price(Properties.GetPropertyValue("price", storeInfo.Alias), storeInfo);
+            Price = product.Price.Clone() as IPrice;
 
             if (variantIds.Any())
             {

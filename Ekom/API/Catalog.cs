@@ -35,23 +35,29 @@ namespace Ekom.API
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
-        IPerStoreCache<IProduct> _productCache = Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
-        IPerStoreCache<ICategory> _categoryCache = Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
-        IPerStoreCache<IVariant> _variantCache = Configuration.container.GetInstance<IPerStoreCache<IVariant>>();
+        IPerStoreCache<IProduct> _productCache;
+        IPerStoreCache<ICategory> _categoryCache;
+        IPerStoreCache<IVariant> _variantCache;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Catalog(
+        internal Catalog(
             ApplicationContext appCtx,
             Configuration config,
-            ILogFactory logFac
+            ILogFactory logFac,
+            IPerStoreCache<IProduct> productCache,
+            IPerStoreCache<ICategory> categoryCache,
+            IPerStoreCache<IVariant> variantCache
         )
         {
             _appCtx = appCtx;
             _config = config;
+            _productCache = productCache;
+            _categoryCache = categoryCache;
+            _variantCache = variantCache;
 
-            _log = logFac.GetLogger(typeof(Catalog));
+            _log = logFac.GetLogger<Catalog>();
         }
 
         /// <summary>

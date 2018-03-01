@@ -1,4 +1,6 @@
-﻿namespace Ekom.Interfaces
+﻿using System;
+
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// An object that contains the calculated price given the provided parameters
@@ -24,7 +26,7 @@
     /// Price of item including all data to fully calculate 
     /// before and after VAT/Discount.
     /// </summary>
-    public interface IPrice : IVatPrice
+    public interface IPrice : IVatPrice, ICloneable
     {
         /// <summary>
         /// Original Price

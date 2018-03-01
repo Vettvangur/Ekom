@@ -14,7 +14,7 @@ namespace Ekom.Models
             );
 
         private string _culture;
-        public bool _vatIncludedInPrice;
+        private bool _vatIncludedInPrice;
         public IDiscount Discount { get; internal set; }
 
         /// <summary>

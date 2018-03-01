@@ -97,13 +97,7 @@ namespace Ekom.Models
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
-        public IPrice Price
-        {
-            get
-            {
-                return new Price(OriginalPrice, storeInfo);
-            }
-        }
+        public IPrice Price { get; }
         [JsonIgnore]
         public StoreInfo StoreInfo
         {
@@ -119,6 +113,7 @@ namespace Ekom.Models
         {
             var variant = Catalog.Current.GetVariant(store.Alias, variantId);
             storeInfo = new StoreInfo(store);
+            Price = variant.Price.Clone() as IPrice;
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
