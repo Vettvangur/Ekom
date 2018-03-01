@@ -85,10 +85,10 @@ namespace Ekom.Models
         /// </summary>
         public virtual string ContentTypeAlias => Properties.GetPropertyValue("nodeTypeAlias");
 
-        public IReadOnlyDictionary<string, string> Properties
-        {
-            get => new ReadOnlyDictionary<string, string>(_properties);
-        }
+        /// <summary>
+        /// Read only dictionary of all umbraco base and custom properties for this item
+        /// </summary>
+        public IReadOnlyDictionary<string, string> Properties => new ReadOnlyDictionary<string, string>(_properties);
 
         /// <summary>
         /// All node properties

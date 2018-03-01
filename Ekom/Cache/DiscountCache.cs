@@ -53,6 +53,10 @@ namespace Ekom.Cache
         {
             return new Discount(r, s);
         }
+        protected override IDiscount New(IContent content, Store store)
+        {
+            return new Discount(content, store);
+        }
 
         /// <summary>
         /// Fill the given stores cache of TItem

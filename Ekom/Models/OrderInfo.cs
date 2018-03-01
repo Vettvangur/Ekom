@@ -17,7 +17,7 @@ namespace Ekom.Models
     class OrderInfo : IOrderInfo
     {
         private OrderData _orderData;
-        private Store _store;
+        private IStore _store;
         private StoreInfo _storeInfo;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="orderData"></param>
         /// <param name="store"></param>
-        public OrderInfo(OrderData orderData, Store store)
+        public OrderInfo(OrderData orderData, IStore store)
         {
             _orderData = orderData;
             _store = store;
@@ -47,7 +47,7 @@ namespace Ekom.Models
             }
             else
             {
-                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias) as Store);
+                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
         }
 

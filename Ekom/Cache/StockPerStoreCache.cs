@@ -8,6 +8,7 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Repository;
 using Ekom.Services;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
@@ -27,11 +28,6 @@ namespace Ekom.Cache
 
         public override string NodeAlias { get; } = "";
 
-        protected override StockData New(SearchResult r, Store store)
-        {
-            return null;
-        }
-
         public override void FillCache()
         {
             var stopwatch = new Stopwatch();
@@ -50,6 +46,16 @@ namespace Ekom.Cache
 
             stopwatch.Stop();
             _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+        }
+
+        protected override StockData New(SearchResult r, Store store)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override StockData New(IContent r, Store store)
+        {
+            throw new NotImplementedException();
         }
 
         private int FillStoreCache(Store store, IEnumerable<StockData> stockData)

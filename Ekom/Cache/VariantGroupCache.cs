@@ -1,18 +1,23 @@
-﻿using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Services;
 using Examine;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class VariantGroupCache : PerStoreCache<VariantGroup>
+    class VariantGroupCache : PerStoreCache<IVariantGroup>
     {
         public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
-        protected override VariantGroup New(SearchResult r, Store store)
+        protected override IVariantGroup New(SearchResult r, Store store)
         {
             return new VariantGroup(r, store);
-            //throw new NotImplementedException("Should use the VariantGroup Factory");
+        }
+        protected override IVariantGroup New(IContent r, Store store)
+        {
+            return new VariantGroup(r, store);
         }
 
         public VariantGroupCache(
@@ -20,12 +25,9 @@ namespace Ekom.Cache
             Configuration config,
             ExamineManagerBase examineManager,
             IBaseCache<Store> storeCache
-        //IObjectFactory<VariantGroup> objFac
         ) : base(config, examineManager, storeCache)
         {
-            //_objFac = objFac;
-
-            _log = logFac.GetLogger(typeof(VariantGroupCache));
+            _log = logFac.GetLogger<VariantGroupCache>();
         }
     }
 }

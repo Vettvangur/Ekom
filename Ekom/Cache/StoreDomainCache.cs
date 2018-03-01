@@ -58,5 +58,15 @@ namespace Ekom.Cache
                 _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
             }
         }
+
+        protected override IDomain New(SearchResult r)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected override IDomain New(IContent r)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

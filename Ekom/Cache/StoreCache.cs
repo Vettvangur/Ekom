@@ -2,6 +2,7 @@
 using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Services;
+using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
@@ -30,6 +31,15 @@ namespace Ekom.Cache
             _config = config;
             _examineManager = examineManager;
             _log = logFac.GetLogger(typeof(StoreCache));
+        }
+
+        protected override Store New(SearchResult r)
+        {
+            return new Store(r);
+        }
+        protected override Store New(IContent content)
+        {
+            return new Store(content);
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace Ekom.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = new Store(node);
+                var item = New(node);
 
                 if (item != null)
                 {

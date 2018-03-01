@@ -25,10 +25,10 @@ namespace Ekom.API
             }
         }
 
-        IPerStoreCache<ShippingProvider> _shippingProviderCache
-            = Configuration.container.GetInstance<IPerStoreCache<ShippingProvider>>();
-        IPerStoreCache<PaymentProvider> _paymentProviderCache
-            = Configuration.container.GetInstance<IPerStoreCache<PaymentProvider>>();
+        IPerStoreCache<IShippingProvider> _shippingProviderCache
+            = Configuration.container.GetInstance<IPerStoreCache<IShippingProvider>>();
+        IPerStoreCache<IPaymentProvider> _paymentProviderCache
+            = Configuration.container.GetInstance<IPerStoreCache<IPaymentProvider>>();
 
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
         ICountriesRepository _countryRepo;

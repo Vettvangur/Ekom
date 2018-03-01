@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System.Web;
 using Ekom.Services;
+using Ekom.Interfaces;
 
 namespace Ekom.Models
 {
@@ -31,8 +32,8 @@ namespace Ekom.Models
         public object Currency { get; set; }
         public string IPAddress => _httpCtx.Request.UserHostAddress;
         public string DomainPrefix { get; set; }
-        public Product Product { get; set; }
-        public Category Category { get; set; }
+        public IProduct Product { get; set; }
+        public ICategory Category { get; set; }
         public User User { get; set; }
     }
 }

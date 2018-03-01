@@ -35,9 +35,9 @@ namespace Ekom.API
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
-        IPerStoreCache<Product> _productCache = Configuration.container.GetInstance<IPerStoreCache<Product>>();
-        IPerStoreCache<Category> _categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>();
-        IPerStoreCache<Variant> _variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>();
+        IPerStoreCache<IProduct> _productCache = Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
+        IPerStoreCache<ICategory> _categoryCache = Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
+        IPerStoreCache<IVariant> _variantCache = Configuration.container.GetInstance<IPerStoreCache<IVariant>>();
 
         /// <summary>
         /// ctor
@@ -69,13 +69,13 @@ namespace Ekom.API
         /// Get product by Guid
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProduct(Guid Id)
+        public IProduct GetProduct(Guid Key)
         {
             var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
             if (r?.Store != null)
             {
-                var product = GetProduct(r.Store.Alias, Id);
+                var product = GetProduct(r.Store.Alias, Key);
 
                 return product;
             }
@@ -229,15 +229,20 @@ namespace Ekom.API
             return null;
         }
 
-        public IVariant GetVariant(string storeAlias, Guid Id)
+        public IVariant GetVariant(string storeAlias, Guid Key)
         {
-            return _variantCache.Cache[storeAlias][Id];
+            if (_variantCache.Cache[storeAlias].TryGetValue(Key, out var val))
+            {
+                return val;
+            }
+
+            return null;
         }
 
-        public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, Guid Id)
+        public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, int Id)
         {
             return _variantCache.Cache[storeAlias]
-                                   .Where(x => x.Value.VariantGroupKey == Id)
+                                   .Where(x => x.Value.VariantGroup.Id == Id)
                                    .Select(x => x.Value);
         }
     }

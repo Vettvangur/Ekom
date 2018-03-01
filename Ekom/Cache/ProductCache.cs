@@ -1,17 +1,23 @@
-﻿using Examine;
+﻿using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
 using Ekom.Models.Abstractions;
+using Ekom.Services;
+using Examine;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class ProductCache : PerStoreCache<Product>
+    class ProductCache : PerStoreCache<IProduct>
     {
         public override string NodeAlias { get; } = "ekmProduct";
 
-        protected override Product New(SearchResult r, Store store)
+        protected override IProduct New(SearchResult r, Store store)
         {
             return new Product(r, store);
+        }
+        protected override IProduct New(IContent ontent, Store store)
+        {
+            return new Product(ontent, store);
         }
 
         public ProductCache(
@@ -21,7 +27,7 @@ namespace Ekom.Cache
             IBaseCache<Store> storeCache
         ) : base(config, examineManager, storeCache)
         {
-            _log = logFac.GetLogger(typeof(ProductCache));
+            _log = logFac.GetLogger<ProductCache>();
         }
     }
 }

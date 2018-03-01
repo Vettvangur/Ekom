@@ -104,12 +104,7 @@ namespace Ekom.Services
         {
             var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
-            if (r == null || r.Store == null)
-            {
-                return GetAllStores().FirstOrDefault();
-            }
-
-            return r?.Store;
+            return r?.Store ?? GetAllStores().FirstOrDefault();
         }
 
         public IEnumerable<Store> GetAllStores()

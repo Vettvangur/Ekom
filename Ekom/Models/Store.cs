@@ -58,7 +58,7 @@ namespace Ekom.Models
             else
             {
                 var srn = Udi.Parse(item.Fields["storeRootNode"]);
-                var umbracoHelper = new Umbraco.Web.UmbracoHelper(Umbraco.Web.UmbracoContext.Current);
+                var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
                 var rootNode = umbracoHelper.TypedContent(srn);
                 StoreRootNode = rootNode.Id;
             }
@@ -79,7 +79,8 @@ namespace Ekom.Models
             item.Fields.TryGetValue("orderNumberPrefix", out string orderNumberPrefix);
             OrderNumberPrefix = orderNumberPrefix;
 
-            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
+            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
 
         /// <summary>
@@ -113,7 +114,8 @@ namespace Ekom.Models
                 OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
             }
 
-            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
+            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
 
         private static readonly ILog Log =

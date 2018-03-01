@@ -152,13 +152,13 @@ namespace Ekom
             {
                 { container.GetInstance<IBaseCache<IDomain>>() },
                 { container.GetInstance<IBaseCache<Store>>() },
-                { container.GetInstance<IPerStoreCache<Variant>>() },
-                { container.GetInstance<IPerStoreCache<VariantGroup>>() },
-                { container.GetInstance<IPerStoreCache<Category>>() },
-                { container.GetInstance<IPerStoreCache<Product>>() },
+                { container.GetInstance<IPerStoreCache<ICategory>>() },
+                { container.GetInstance<IPerStoreCache<IProduct>>() },
+                { container.GetInstance<IPerStoreCache<IVariant>>() },
+                { container.GetInstance<IPerStoreCache<IVariantGroup>>() },
                 { container.GetInstance<IBaseCache<Zone>>() },
-                { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
-                { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
+                { container.GetInstance<IPerStoreCache<IPaymentProvider>>() },
+                { container.GetInstance<IPerStoreCache<IShippingProvider>>() },
                 { container.GetInstance<IPerStoreCache<IDiscount>>() },
             };
         });

@@ -2,16 +2,22 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Models.Abstractions;
+using Ekom.Interfaces;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class VariantCache : PerStoreCache<Variant>
+    class VariantCache : PerStoreCache<IVariant>
     {
         public override string NodeAlias { get; } = "ekmProductVariant";
 
-        protected override Variant New(SearchResult r, Store store)
+        protected override IVariant New(SearchResult r, Store store)
         {
             return new Variant(r, store);
+        }
+        protected override IVariant New(IContent content, Store store)
+        {
+            return new Variant(content, store);
         }
 
         public VariantCache(

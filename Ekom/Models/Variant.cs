@@ -1,6 +1,5 @@
 ﻿using Ekom.API;
 using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
@@ -14,52 +13,44 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
-    class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
+    public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
-        private IPerStoreCache<Category> __categoryCache;
-        private IPerStoreCache<Category> _categoryCache =>
-            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
-
-        private IPerStoreCache<VariantGroup> __variantGroupCache;
-        private IPerStoreCache<VariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
-
-        private Store _store;
+        private IPerStoreCache<IVariantGroup> __variantGroupCache;
+        private IPerStoreCache<IVariantGroup> _variantGroupCache =>
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
 
         /// <summary>
         /// Stock Keeping Unit, identifier
         /// </summary>
-        public string SKU
-        {
-            get
-            {
-                return Properties.GetPropertyValue("sku");
-            }
-        }
+        public string SKU => Properties.GetPropertyValue("sku");
 
         /// <summary>
         /// 
         /// </summary>
         [JsonIgnore]
-        public int Stock => API.Stock.Current.GetStock(Key);
+        public virtual int Stock => API.Stock.Current.GetStock(Key);
 
+        /// <summary>
+        /// Parent <see cref="IProduct"/> of Variant
+        /// </summary>
         public IProduct Product
         {
             get
             {
-                var productId = ProductId;
-
-                var product = Catalog.Current.GetProduct(_store.Alias, productId);
+                var product = Catalog.Current.GetProduct(Store.Alias, ProductId);
 
                 if (product == null)
                 {
-                    throw new Exception("Variant ProductKey could not be created. Product not found. Key: " + productId);
+                    throw new KeyNotFoundException("Variant Product not found. Key: " + ProductId);
                 }
 
                 return product;
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public int ProductId
         {
             get
@@ -72,6 +63,9 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// Get the Product Key
+        /// </summary>
         public Guid ProductKey
         {
             get
@@ -79,6 +73,16 @@ namespace Ekom.Models
                 return Product.Key;
             }
         }
+
+        // Waiting for variants to be composed with their parent product
+        ///// <summary>
+        ///// Get the Product Key
+        ///// </summary>
+        //public Guid ProductKey => Product.Key;
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public int ProductId => Product.Id;
 
         public Guid VariantGroupKey
         {
@@ -104,13 +108,9 @@ namespace Ekom.Models
 
                 if (int.TryParse(parentId, out int _parentId))
                 {
-                    var group = _variantGroupCache.Cache[_store.Alias]
-                        .Where(x => x.Value.Id == _parentId)
-                        .Select(x => x.Value);
-
-                    if (group != null && group.Any())
+                    if (_variantGroupCache.Cache[Store.Alias].TryGetValue(Key, out var group))
                     {
-                        return group.First();
+                        return group;
                     }
                 }
 
@@ -118,20 +118,10 @@ namespace Ekom.Models
             }
         }
 
-        public IPrice Price
-        {
-            get
-            {
-                var variantPrice = Properties.GetPropertyValue("price", _store.Alias);
-
-                if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
-                {
-                    return Product.Price;
-                }
-
-                return new Price(variantPrice, _store);
-            }
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual IPrice Price { get; }
 
         /// <summary>
         /// All categories variant belongs to, includes parent category.
@@ -148,9 +138,7 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = _categoryCache.Cache[_store.Alias]
-                                                .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                .Value;
+            var primaryCategory = API.Catalog.Current.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -166,9 +154,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = _categoryCache.Cache[_store.Alias]
-                                        .FirstOrDefault(x => x.Value.Id == intCatId)
-                                        .Value;
+                        = API.Catalog.Current.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
@@ -184,19 +170,23 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public Variant(Store store) : base(store)
-        {
-            _store = store;
-        }
+        public Variant(IStore store) : base(store) { }
 
         /// <summary>
         /// Construct Variant from Examine item
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Variant(SearchResult item, Store store) : base(item, store)
+        public Variant(SearchResult item, IStore store) : base(item, store)
         {
-            _store = store;
+            var variantPrice = Properties.GetPropertyValue("price", Store.Alias);
+
+            if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
+            {
+                Price = Product.Price;
+            }
+
+            Price = new Price(variantPrice, Store);
         }
 
         /// <summary>
@@ -204,10 +194,8 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public Variant(IContent node, Store store) : base(node, store)
+        public Variant(IContent node, IStore store) : base(node, store)
         {
-
-            _store = store;
         }
 
         private static readonly ILog Log =

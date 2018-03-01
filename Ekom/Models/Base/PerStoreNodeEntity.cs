@@ -10,8 +10,11 @@ namespace Ekom.Models
     /// <summary>
     /// Base Per Store Umbraco node entity
     /// </summary>
-    abstract class PerStoreNodeEntity : NodeEntity, IPerStoreNodeEntity
+    public abstract class PerStoreNodeEntity : NodeEntity, IPerStoreNodeEntity
     {
+        /// <summary>
+        /// Store this node entity belongs to
+        /// </summary>
         [JsonIgnore]
         public IStore Store { get; internal set; }
 
@@ -23,7 +26,7 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public PerStoreNodeEntity(Store store)
+        public PerStoreNodeEntity(IStore store)
         {
             Store = store;
         }
@@ -33,7 +36,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public PerStoreNodeEntity(SearchResult item, Store store) : base(item)
+        public PerStoreNodeEntity(SearchResult item, IStore store) : base(item)
         {
             Store = store;
         }
@@ -43,7 +46,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public PerStoreNodeEntity(IContent node, Store store) : base(node)
+        public PerStoreNodeEntity(IContent node, IStore store) : base(node)
         {
             Store = store;
         }

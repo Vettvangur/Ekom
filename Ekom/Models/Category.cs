@@ -16,21 +16,21 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
-    class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
+    public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
-        private IPerStoreCache<Category> _categoryCache
+        private IPerStoreCache<ICategory> _categoryCache
         {
             get
             {
-                return Configuration.container.GetInstance<IPerStoreCache<Category>>();
+                return Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
             }
         }
 
-        private IPerStoreCache<Product> _productCache
+        private IPerStoreCache<IProduct> _productCache
         {
             get
             {
-                return Configuration.container.GetInstance<IPerStoreCache<Product>>();
+                return Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
             }
         }
 
@@ -124,7 +124,7 @@ namespace Ekom.Models
 
         public IEnumerable<ICategory> Ancestors()
         {
-            var list = new List<Category>();
+            var list = new List<ICategory>();
 
             foreach (var id in Path.Split(','))
             {
@@ -152,8 +152,8 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public Category(Store store) : base(store) { }
-        public Category(SearchResult item, Store store) : base(item, store)
+        public Category(IStore store) : base(store) { }
+        public Category(SearchResult item, IStore store) : base(item, store)
         {
             var pathField = item.Fields["path"];
 
@@ -163,7 +163,7 @@ namespace Ekom.Models
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
-        public Category(IContent node, Store store) : base(node, store)
+        public Category(IContent node, IStore store) : base(node, store)
         {
             var pathField = node.Path;
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);

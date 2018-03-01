@@ -44,13 +44,13 @@ namespace Ekom.App_Start
 
             container.Register<IBaseCache<IDomain>, StoreDomainCache>().AsSingleton();
             container.Register<IBaseCache<Store>, StoreCache>().AsSingleton();
-            container.Register<IPerStoreCache<Variant>, VariantCache>().AsSingleton();
-            container.Register<IPerStoreCache<VariantGroup>, VariantGroupCache>().AsSingleton();
-            container.Register<IPerStoreCache<Category>, CategoryCache>().AsSingleton();
-            container.Register<IPerStoreCache<Product>, ProductCache>().AsSingleton();
+            container.Register<IPerStoreCache<IVariant>, VariantCache>().AsSingleton();
+            container.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>().AsSingleton();
+            container.Register<IPerStoreCache<ICategory>, CategoryCache>().AsSingleton();
+            container.Register<IPerStoreCache<IProduct>, ProductCache>().AsSingleton();
             container.Register<IBaseCache<Zone>, ZoneCache>().AsSingleton();
-            container.Register<IPerStoreCache<PaymentProvider>, PaymentProviderCache>().AsSingleton();
-            container.Register<IPerStoreCache<ShippingProvider>, ShippingProviderCache>().AsSingleton();
+            container.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>().AsSingleton();
+            container.Register<IPerStoreCache<IShippingProvider>, ShippingProviderCache>().AsSingleton();
             container.Register<IBaseCache<StockData>, StockCache>().AsSingleton();
             container.Register<IPerStoreCache<StockData>, StockPerStoreCache>().AsSingleton();
 

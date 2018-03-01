@@ -3,6 +3,7 @@ using log4net;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Web;
@@ -28,7 +29,8 @@ namespace Ekom.Models
             this.variant = variant;
             this.store = store;
 
-            Properties = variantGroup.Properties;
+            Properties = new ReadOnlyDictionary<string, string>(
+                variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
             Id = variantGroup.Id;
             Key = variantGroup.Key;
@@ -50,7 +52,8 @@ namespace Ekom.Models
 
             this.storeInfo = storeInfo;
 
-            Properties = variantGroupObject["Properties"].ToObject<Dictionary<string, string>>();
+            Properties = new ReadOnlyDictionary<string, string>(
+                variantGroupObject["Properties"].ToObject<Dictionary<string, string>>());
 
             Id = (int)variantGroupObject["Id"];
             Key = (Guid)variantGroupObject["Key"];

@@ -1,4 +1,5 @@
 ﻿using Ekom.Cache;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -18,8 +19,8 @@ namespace Ekom
         ILog _log;
         Configuration _config;
         StoreService _storeSvc;
-        IPerStoreCache<Category> _categoryCache;
-        IPerStoreCache<Product> _productCache;
+        IPerStoreCache<ICategory> _categoryCache;
+        IPerStoreCache<IProduct> _productCache;
 
         public CatalogContentFinder()
         {
@@ -27,8 +28,8 @@ namespace Ekom
 
             _config = container.GetInstance<Configuration>();
             _storeSvc = container.GetInstance<StoreService>();
-            _categoryCache = container.GetInstance<IPerStoreCache<Category>>();
-            _productCache = container.GetInstance<IPerStoreCache<Product>>();
+            _categoryCache = container.GetInstance<IPerStoreCache<ICategory>>();
+            _productCache = container.GetInstance<IPerStoreCache<IProduct>>();
 
             var logFac = container.GetInstance<ILogFactory>();
             _log = logFac.GetLogger(typeof(CatalogContentFinder));
@@ -77,7 +78,7 @@ namespace Ekom
                                           .Value;
 
                 int contentId = 0;
-                Category category;
+                ICategory category;
 
                 if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {

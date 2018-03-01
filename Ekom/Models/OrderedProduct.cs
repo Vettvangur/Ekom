@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Web;
@@ -17,22 +18,6 @@ namespace Ekom.Models
     {
         private string productJson;
         private StoreInfo storeInfo;
-
-
-        public delegate void CustomOrderProductPriceEventHandler(CustomOrderProductPriceEventArgs e);
-
-        /// <summary>
-        /// Occurs before product is bound to OrderedProduct
-        /// </summary>
-        public static event CustomOrderProductPriceEventHandler CustomOrderProductPriceEvent;
-
-
-        public delegate void CustomOrderVariantPriceEventHandler(CustomOrderVariantPriceEventArgs e);
-
-        /// <summary>
-        /// Occurs before product is binded to OrderedProduct
-        /// </summary>
-        public static event CustomOrderVariantPriceEventHandler CustomOrderVariantPriceEvent;
 
         [JsonIgnore]
         public int Id
@@ -112,13 +97,10 @@ namespace Ekom.Models
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
-        public IPrice Price
-        {
-            get
-            {
-                return new Price(OriginalPrice, storeInfo);
-            }
-        }
+
+        [Obsolete("Unused")]
+        public IPrice Price { get; }
+
         [JsonIgnore]
         public StoreInfo StoreInfo
         {
@@ -136,28 +118,20 @@ namespace Ekom.Models
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, IStore store)
         {
-            var product = Catalog.Current.GetProduct(store.Alias, productId)
-                as Product;
+            var product = Catalog.Current.GetProduct(store.Alias, productId);
 
             if (product == null)
             {
                 throw new Exception("OrderedProduct could not be created. Product not found. Key: " + productId);
             }
 
-            if (Configuration.Current.CustomOrderPrice)
-            {
-                // This gives null error if not fired
-                CustomOrderProductPriceEvent(new CustomOrderProductPriceEventArgs
-                {
-                    Product = product
-                });
-            }
-
             storeInfo = new StoreInfo(store);
 
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
-            Properties = new Dictionary<string, string>(product._properties);
+            Properties = new ReadOnlyDictionary<string, string>(
+                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+            Price = new Price(Properties.GetPropertyValue("price", storeInfo.Alias), storeInfo);
 
             if (variantIds.Any())
             {
@@ -165,22 +139,11 @@ namespace Ekom.Models
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = Catalog.Current.GetVariant(store.Alias, variantId)
-                        as Variant;
+                    var variant = Catalog.Current.GetVariant(store.Alias, variantId);
 
                     if (variant == null)
                     {
                         throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
-                    }
-
-                    if (Configuration.Current.CustomOrderPrice)
-                    {
-                        // This gives null error if not fired
-                        CustomOrderVariantPriceEvent(new CustomOrderVariantPriceEventArgs
-                        {
-                            Variant = variant
-                        });
-
                     }
 
                     var variantGroup = variant.VariantGroup;
@@ -205,7 +168,9 @@ namespace Ekom.Models
 
             var productPropertiesObject = JObject.Parse(productJson);
 
-            Properties = productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>();
+            Properties = new ReadOnlyDictionary<string, string>(
+                productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
+            Price = new Price(Properties.GetPropertyValue("price", storeInfo.Alias), storeInfo);
 
             ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 
@@ -249,15 +214,5 @@ namespace Ekom.Models
                 MethodBase.GetCurrentMethod().DeclaringType
             );
 
-    }
-
-    public class CustomOrderProductPriceEventArgs : EventArgs
-    {
-        public IProduct Product { get; set; }
-    }
-
-    public class CustomOrderVariantPriceEventArgs : EventArgs
-    {
-        public IVariant Variant { get; set; }
     }
 }

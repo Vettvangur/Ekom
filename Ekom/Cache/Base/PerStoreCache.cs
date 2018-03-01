@@ -60,6 +60,11 @@ namespace Ekom.Cache
         /// saving performance vs Activator.CreateInstance
         /// </summary>
         protected abstract TItem New(SearchResult r, Store store);
+        /// <summary>
+        /// Derived classes define simple instantiation methods, 
+        /// saving performance vs Activator.CreateInstance
+        /// </summary>
+        protected abstract TItem New(IContent r, Store store);
 
 
         public virtual void FillCache()

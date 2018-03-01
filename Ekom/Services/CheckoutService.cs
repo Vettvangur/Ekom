@@ -50,7 +50,7 @@ namespace Ekom.Services
                 {
                     try
                     {
-                        (oi.Discount as Discount).OnCouponApply();
+                        (oi.Discount as Discount)?.OnCouponApply();
                     }
                     catch (Exception ex) // Swallow all event subscriber exceptions
                     {
@@ -70,7 +70,7 @@ namespace Ekom.Services
 
                     try
                     {
-                        (line.Discount as Discount).OnCouponApply();
+                        (line.Discount as Discount)?.OnCouponApply();
                     }
                     catch (Exception ex) // Swallow all event subscriber exceptions
                     {

@@ -53,10 +53,12 @@ namespace Ekom.Cache
         /// Derived classes should define simple instantiation methods, <para/> 
         /// saving performance vs Activator.CreateInstance
         /// </summary>
-        protected virtual TItem New(SearchResult r)
-        {
-            return (TItem)Activator.CreateInstance(typeof(TItem), r);
-        }
+        protected abstract TItem New(SearchResult r);
+        /// <summary>
+        /// Derived classes should define simple instantiation methods, <para/> 
+        /// saving performance vs Activator.CreateInstance
+        /// </summary>
+        protected abstract TItem New(IContent r);
 
         /// <summary>
         /// Base FillCache method appropriate for most derived caches

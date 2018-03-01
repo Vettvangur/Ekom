@@ -25,7 +25,7 @@ namespace Ekom.Services
         /// <param name="examineItems">All categories in hierarchy inclusive</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
-        public static IEnumerable<string> BuildCategoryUrls(IEnumerable<SearchResult> examineItems, Store store)
+        public static IEnumerable<string> BuildCategoryUrls(IEnumerable<SearchResult> examineItems, IStore store)
         {
             var urls = new HashSet<string>();
 
@@ -58,7 +58,7 @@ namespace Ekom.Services
         /// <param name="hierarchy">Ordered list of slugs for all parents</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
-        public static IEnumerable<string> BuildCategoryUrls(string slug, IEnumerable<string> hierarchy, Store store)
+        public static IEnumerable<string> BuildCategoryUrls(string slug, IEnumerable<string> hierarchy, IStore store)
         {
             var urls = new HashSet<string>();
 
@@ -94,7 +94,7 @@ namespace Ekom.Services
             return urls;
         }
 
-        public static IEnumerable<string> BuildProductUrls(string slug, IEnumerable<ICategory> categories, Store store)
+        public static IEnumerable<string> BuildProductUrls(string slug, IEnumerable<ICategory> categories, IStore store)
         {
             var urls = new HashSet<string>();
 

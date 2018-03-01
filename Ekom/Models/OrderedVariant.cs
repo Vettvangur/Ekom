@@ -9,6 +9,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
 using System.Reflection;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Ekom.Models
 {
@@ -115,18 +117,19 @@ namespace Ekom.Models
 
         public OrderedVariant(Guid variantId, IStore store)
         {
-            var variant = Catalog.Current.GetVariant(store.Alias, variantId)
-                as Variant;
+            var variant = Catalog.Current.GetVariant(store.Alias, variantId);
             storeInfo = new StoreInfo(store);
 
-            Properties = variant.Properties;
+            Properties = new ReadOnlyDictionary<string, string>(
+                variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
         }
 
         public OrderedVariant(IVariant variant, IStore store)
         {
             storeInfo = new StoreInfo(store);
 
-            Properties = variant.Properties;
+            Properties = new ReadOnlyDictionary<string, string>(
+                variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
         }
 
         public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
@@ -134,7 +137,8 @@ namespace Ekom.Models
             this.variantObject = variantObject;
             this.storeInfo = storeInfo;
 
-            Properties = variantObject["Properties"].ToObject<Dictionary<string, string>>();
+            Properties = new ReadOnlyDictionary<string, string>(
+                variantObject["Properties"].ToObject<Dictionary<string, string>>());
         }
 
         protected static readonly ILog Log =

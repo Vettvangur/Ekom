@@ -18,63 +18,35 @@ namespace Ekom.Models
     /// <summary>
     /// An Ekom store product
     /// </summary>
-    class Product : PerStoreNodeEntity, IProduct
+    public class Product : PerStoreNodeEntity, IProduct
     {
-        private IPerStoreCache<Category> __categoryCache;
-        private IPerStoreCache<Category> _categoryCache =>
-            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
+        private IPerStoreCache<IVariant> __variantCache;
+        private IPerStoreCache<IVariant> _variantCache =>
+            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<IVariant>>());
 
-        private IPerStoreCache<Variant> __variantCache;
-        private IPerStoreCache<Variant> _variantCache =>
-            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>());
-
-        private IPerStoreCache<VariantGroup> __variantGroupCache;
-        private IPerStoreCache<VariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
+        private IPerStoreCache<IVariantGroup> __variantGroupCache;
+        private IPerStoreCache<IVariantGroup> _variantGroupCache =>
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
 
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
-        public string SKU
-        {
-            get
-            {
-                return Properties.GetPropertyValue("sku");
-            }
-        }
+        public string SKU => Properties.GetPropertyValue("sku");
 
         /// <summary>
         /// 
         /// </summary>
-        public string Description
-        {
-            get
-            {
-                return Properties.GetPropertyValue("description", Store.Alias);
-            }
-        }
+        public string Description => Properties.GetPropertyValue("description", Store.Alias);
 
         /// <summary>
         /// 
         /// </summary>
-        public string Summary
-        {
-            get
-            {
-                return Properties.GetPropertyValue("summary", Store.Alias);
-            }
-        }
+        public string Summary => Properties.GetPropertyValue("summary", Store.Alias);
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
         /// </summary>
-        public string Slug
-        {
-            get
-            {
-                return Properties.GetPropertyValue("slug", Store.Alias);
-            }
-        }
+        public string Slug => Properties.GetPropertyValue("slug", Store.Alias);
 
         /// <summary>
         /// 
@@ -160,9 +132,8 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = _categoryCache.Cache[Store.Alias]
-                                                .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                .Value;
+
+            var primaryCategory = API.Catalog.Current.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -178,9 +149,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = _categoryCache.Cache[Store.Alias]
-                                        .FirstOrDefault(x => x.Value.Id == intCatId)
-                                        .Value;
+                        = API.Catalog.Current.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
@@ -214,14 +183,12 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public IEnumerable<string> Urls { get; set; }
+        public IEnumerable<string> Urls { get; internal set; }
 
-        IPrice _price;
         /// <summary>
         /// 
         /// </summary>
-        public IPrice Price => _price
-            ?? (_price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store));
+        public virtual IPrice Price { get; }
 
         [JsonIgnore]
         public IEnumerable<IVariantGroup> VariantGroups
@@ -239,7 +206,7 @@ namespace Ekom.Models
         /// All variants belonging to product.
         /// </summary>
         [JsonIgnore]
-        public IEnumerable<Variant> AllVariants
+        public IEnumerable<IVariant> AllVariants
         {
             get
             {
@@ -254,15 +221,16 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public Product(Store store) : base(store) { }
+        public Product(IStore store) : base(store) { }
 
         /// <summary>
         /// Construct Product from Examine item
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Product(SearchResult item, Store store) : base(item, store)
+        public Product(SearchResult item, IStore store) : base(item, store)
         {
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -276,8 +244,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public Product(IContent node, Store store) : base(node, store)
+        public Product(IContent node, IStore store) : base(node, store)
         {
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

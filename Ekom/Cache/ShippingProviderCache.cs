@@ -2,16 +2,22 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Models.Abstractions;
+using Ekom.Interfaces;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class ShippingProviderCache : PerStoreCache<ShippingProvider>
+    class ShippingProviderCache : PerStoreCache<IShippingProvider>
     {
         public override string NodeAlias { get; } = "ekmShippingProvider";
 
-        protected override ShippingProvider New(SearchResult r, Store store)
+        protected override IShippingProvider New(SearchResult r, Store store)
         {
             return new ShippingProvider(r, store);
+        }
+        protected override IShippingProvider New(IContent content, Store store)
+        {
+            return new ShippingProvider(content, store);
         }
 
         public ShippingProviderCache(

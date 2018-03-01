@@ -2,12 +2,22 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Models.Abstractions;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
     class ZoneCache : BaseCache<Zone>
     {
         public override string NodeAlias { get; } = "ekmZone";
+
+        protected override Zone New(SearchResult r)
+        {
+            return new Zone(r);
+        }
+        protected override Zone New(IContent content)
+        {
+            return new Zone(content);
+        }
 
         /// <summary>
         /// ctor
@@ -23,12 +33,7 @@ namespace Ekom.Cache
         {
             _config = config;
             _examineManager = examineManager;
-            _log = logFac.GetLogger(typeof(ZoneCache));
-        }
-
-        protected override Zone New(SearchResult r)
-        {
-            return new Zone(r);
+            _log = logFac.GetLogger<ZoneCache>();
         }
     }
 }

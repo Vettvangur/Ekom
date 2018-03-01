@@ -4,6 +4,8 @@ using System.Linq;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
+using Examine;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
@@ -42,6 +44,16 @@ namespace Ekom.Cache
 
             stopwatch.Stop();
             _log.Info("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
+        }
+
+        protected override StockData New(SearchResult r)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override StockData New(IContent r)
+        {
+            throw new NotImplementedException();
         }
     }
 }

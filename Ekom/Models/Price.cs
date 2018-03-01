@@ -1,5 +1,4 @@
 ﻿using Ekom.Interfaces;
-using Ekom.Services;
 using log4net;
 using System;
 using System.Globalization;
@@ -15,27 +14,29 @@ namespace Ekom.Models
             );
 
         private string _culture;
-        private bool _vatIncludedInPrice;
-        private IDiscount _discount;
-
-        private readonly IPriceCalculationService _priceCalculationService = new PriceCalculationService();
-
+        public bool _vatIncludedInPrice;
         public IDiscount Discount { get; internal set; }
 
         /// <summary>
         /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
         /// </summary>
         public bool DiscountAlwaysBeforeVAT { get; internal set; }
+
         public Price(string originalPrice, IStore store, IDiscount discount = null)
         {
-            decimal.TryParse(originalPrice, out decimal result);
-
+            decimal result = decimal.Parse(originalPrice);
             Construct(result, new StoreInfo(store));
         }
 
         public Price(decimal originalPrice, IStore store, IDiscount discount = null)
         {
             Construct(originalPrice, new StoreInfo(store));
+        }
+
+        public Price(string originalPrice, StoreInfo storeInfo, IDiscount discount = null)
+        {
+            decimal result = decimal.Parse(originalPrice);
+            Construct(result, storeInfo, discount);
         }
 
         public Price(decimal originalPrice, StoreInfo storeInfo, IDiscount discount = null)
@@ -49,55 +50,95 @@ namespace Ekom.Models
             Vat = storeInfo.Vat;
             _vatIncludedInPrice = storeInfo.VatIncludedInPrice;
             _culture = storeInfo.Culture;
-            _discount = discount;
+            Discount = discount;
         }
         private CalculatedPrice CreateSimplePrice(bool includeVat, decimal price, bool isDiscounted = false)
             => new CalculatedPrice(includeVat, price, _culture, Vat, _vatIncludedInPrice, isDiscounted);
 
+        public object Clone()
+        {
+            return new Price(OriginalValue, Vat, _vatIncludedInPrice, _culture, Discount);
+        }
+        private Price(decimal originalPrice, decimal vat, bool vatIncludedInPrice, string culture, IDiscount discount)
+        {
+            OriginalValue = originalPrice;
+            Vat = vat;
+            _vatIncludedInPrice = vatIncludedInPrice;
+            _culture = culture;
+            Discount = discount;
+        }
+
         public decimal OriginalValue { get; private set; }
         private ICalculatedPrice _beforeDiscount;
         public ICalculatedPrice BeforeDiscount
-            => _beforeDiscount ?? (_beforeDiscount = CreateSimplePrice(includeVat: false, price: OriginalValue));
+        {
+            get
+            {
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_beforeDiscount == null)
+                {
+                    lock (this)
+                    {
+                        if (_beforeDiscount == null)
+                        {
+                            _beforeDiscount = CreateSimplePrice(includeVat: false, price: OriginalValue);
+                        }
+                    }
+                }
+
+                return _beforeDiscount;
+            }
+        }
 
         private ICalculatedPrice _afterDiscount;
         public ICalculatedPrice AfterDiscount
         {
             get
             {
-                if (_afterDiscount != null)
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_afterDiscount == null)
                 {
-                    return _afterDiscount;
-                }
-
-                var price = OriginalValue;
-
-                if (_discount != null)
-                {
-                    switch (_discount.Amount.Type)
+                    lock (this)
                     {
-                        case Discounts.DiscountType.Fixed:
+                        if (_afterDiscount == null)
+                        {
+                            var price = OriginalValue;
 
-                            if (DiscountAlwaysBeforeVAT && _vatIncludedInPrice)
+                            if (Discount != null)
                             {
-                                price /= Vat;
-                            }
-                            price -= _discount.Amount.Amount;
-                            if (DiscountAlwaysBeforeVAT && _vatIncludedInPrice)
-                            {
-                                price *= Vat;
-                            }
-                            break;
+                                switch (Discount.Amount.Type)
+                                {
+                                    case Discounts.DiscountType.Fixed:
 
-                        case Discounts.DiscountType.Percentage:
+                                        if (DiscountAlwaysBeforeVAT && _vatIncludedInPrice)
+                                        {
+                                            price /= Vat;
+                                        }
+                                        price -= Discount.Amount.Amount;
+                                        if (DiscountAlwaysBeforeVAT && _vatIncludedInPrice)
+                                        {
+                                            price *= Vat;
+                                        }
+                                        break;
 
-                            price -= price * _discount.Amount.Amount;
-                            break;
+                                    case Discounts.DiscountType.Percentage:
+
+                                        price -= price * Discount.Amount.Amount;
+                                        break;
+                                }
+
+                                _afterDiscount
+                                    = CreateSimplePrice(includeVat: false, price: price, isDiscounted: true);
+                            }
+
+                            _afterDiscount = CreateSimplePrice(includeVat: false, price: price);
+                        }
                     }
-
-                    return _afterDiscount = CreateSimplePrice(includeVat: false, price: price, isDiscounted: true);
                 }
 
-                return _afterDiscount = CreateSimplePrice(includeVat: false, price: price);
+                return _afterDiscount;
             }
         }
         public ICalculatedPrice WithoutVat => AfterDiscount;
@@ -105,7 +146,29 @@ namespace Ekom.Models
         public decimal Value => WithVat.Value;
         private ICalculatedPrice _withVat;
         public ICalculatedPrice WithVat
-            => _withVat ?? (_withVat = CreateSimplePrice(includeVat: true, price: AfterDiscount.Value, isDiscounted: AfterDiscount.IsDiscounted));
+        {
+            get
+            {
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_withVat == null)
+                {
+                    lock (this)
+                    {
+                        if (_withVat == null)
+                        {
+                            _withVat = CreateSimplePrice(
+                                includeVat: true,
+                                price: AfterDiscount.Value,
+                                isDiscounted: AfterDiscount.IsDiscounted);
+
+                        }
+                    }
+                }
+
+                return _withVat;
+            }
+        }
 
         public decimal Vat { get; private set; }
     }
