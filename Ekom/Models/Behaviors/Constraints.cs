@@ -1,6 +1,7 @@
 ﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace Ekom.Models.Behaviors
     /// <summary>
     /// Constraints behavior for Shipping/Payment providers, and Discounts.
     /// </summary>
-    public class Constraints
+    public class Constraints : IConstraints
     {
         private IBaseCache<Zone> __zoneCache;
         private IBaseCache<Zone> _zoneCache =>

@@ -20,7 +20,7 @@
                 {
                     var product = orderline.Product;
 
-                    Ekom.Models.OrderedVariantGroup variantGroup = product.VariantGroups.Any() ? product.VariantGroups.First() : null;
+                    Ekom.Models.OrderedObjects.OrderedVariantGroup variantGroup = product.VariantGroups.FirstOrDefault();
 
                     var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
 

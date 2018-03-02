@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     /// <summary>
     /// Object describing a payment provider at the point a transaction was completed.

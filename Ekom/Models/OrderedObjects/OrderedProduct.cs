@@ -12,7 +12,7 @@ using System.Linq;
 using System.Reflection;
 using Umbraco.Web;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     public class OrderedProduct
     {
@@ -61,19 +61,6 @@ namespace Ekom.Models
             }
         }
         [JsonIgnore]
-        public decimal OriginalPrice
-        {
-            get
-            {
-                var priceField = Properties.GetPropertyValue("price", storeInfo.Alias);
-
-                decimal originalPrice = 0;
-                decimal.TryParse(priceField, out originalPrice);
-
-                return originalPrice;
-            }
-        }
-        [JsonIgnore]
         public string Path
         {
             get
@@ -98,7 +85,6 @@ namespace Ekom.Models
             }
         }
 
-        [Obsolete("Unused")]
         public IPrice Price { get; }
 
         [JsonIgnore]
@@ -170,7 +156,7 @@ namespace Ekom.Models
 
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            Price = new Price(Properties.GetPropertyValue("price", storeInfo.Alias), storeInfo);
+            Price = new OrderedPrice(productPropertiesObject["Price"]);
 
             ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 

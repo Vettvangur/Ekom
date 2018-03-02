@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ekom.Models.OrderedObjects;
+using System;
 
 namespace Ekom.Interfaces
 {
@@ -53,7 +54,7 @@ namespace Ekom.Interfaces
         /// <value>
         /// The discount.
         /// </value>
-        IDiscount Discount { get; }
+        OrderedDiscount Discount { get; }
     }
 
     /// <summary>

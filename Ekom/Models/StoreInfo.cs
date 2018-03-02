@@ -20,11 +20,11 @@ namespace Ekom.Models
 
         }
 
-        public Guid Key { get; set; }
-        public string Currency { get; set; }
-        public string Culture { get; set; }
-        public string Alias { get; set; }
-        public bool VatIncludedInPrice { get; set; }
-        public decimal Vat { get; set; }
+        public Guid Key { get; internal set; }
+        public string Currency { get; internal set; }
+        public string Culture { get; internal set; }
+        public string Alias { get; internal set; }
+        public bool VatIncludedInPrice { get; internal set; }
+        public decimal Vat { get; internal set; }
     }
 }

@@ -1,13 +1,13 @@
-﻿using Ekom.Models.Behaviors;
-
-namespace Ekom.Interfaces
+﻿namespace Ekom.Interfaces
 {
     /// <summary>
     /// Represents an object that has constraints available
     /// </summary>
     public interface IConstrained
     {
-
-        Constraints Constraints { get; }
+        /// <summary>
+        /// Start + end price ranges and applicable zones
+        /// </summary>
+        IConstraints Constraints { get; }
     }
 }

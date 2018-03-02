@@ -1,6 +1,7 @@
 ﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
+using Ekom.Models.OrderedObjects;
 using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,9 +17,8 @@ namespace Ekom.Models
     /// </summary>
     class OrderInfo : IOrderInfo
     {
+        public StoreInfo StoreInfo { get; }
         private OrderData _orderData;
-        private IStore _store;
-        private StoreInfo _storeInfo;
 
         /// <summary>
         /// 
@@ -28,7 +28,7 @@ namespace Ekom.Models
         public OrderInfo(OrderData orderData, IStore store)
         {
             _orderData = orderData;
-            _store = store;
+            StoreInfo = new StoreInfo(store);
         }
 
         public OrderInfo(OrderData orderData)
@@ -39,7 +39,7 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                _storeInfo = CreateStoreInfoFromJson(orderInfoJObject);
+                StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
                 _orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
@@ -47,7 +47,7 @@ namespace Ekom.Models
             }
             else
             {
-                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
+                StoreInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
         }
 
@@ -55,7 +55,7 @@ namespace Ekom.Models
         /// Force changes to come through order api, 
         /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
         /// </summary>
-        public IDiscount Discount { get; internal set; }
+        public OrderedDiscount Discount { get; internal set; }
         /// <summary>
         /// 
         /// </summary>
@@ -119,7 +119,7 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(x => x.Amount.Value);
+                var amount = OrderLines.Sum(x => x.Amount.OriginalValue);
 
                 return new Price(amount, StoreInfo);
             }
@@ -136,9 +136,9 @@ namespace Ekom.Models
                 {
                     if (line.Discount == null)
                     {
-                        return new Price(line.Amount.Value, StoreInfo, Discount).Value;
+                        return new Price(line.Amount.OriginalValue, StoreInfo, Discount).Value;
                     }
-                    return line.Amount.Value;
+                    return line.Amount.OriginalValue;
                 });
 
                 return new Price(amount, StoreInfo);
@@ -156,31 +156,15 @@ namespace Ekom.Models
 
                 if (ShippingProvider != null)
                 {
-                    amount += ShippingProvider.Price.WithVat.Value;
+                    amount += ShippingProvider.Price.OriginalValue;
                 }
 
                 if (PaymentProvider != null)
                 {
-                    amount += PaymentProvider.Price.WithVat.Value;
+                    amount += PaymentProvider.Price.OriginalValue;
                 }
 
                 return new Price(amount, StoreInfo);
-            }
-        }
-        public StoreInfo StoreInfo
-        {
-            get
-            {
-                if (_storeInfo == null)
-                {
-                    // Should we be saving the result to _storeInfo ?
-                    return new StoreInfo(_store);
-                }
-                else
-                {
-                    return _storeInfo;
-                }
-
             }
         }
         /// <summary>
@@ -240,7 +224,7 @@ namespace Ekom.Models
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
 
-                var orderLine = new OrderLine(lineId, quantity, productJson, _storeInfo);
+                var orderLine = new OrderLine(lineId, quantity, productJson, StoreInfo);
 
                 orderLines.Add(orderLine);
             }
@@ -260,7 +244,7 @@ namespace Ekom.Models
 
                     if (shippingProviderObject != null)
                     {
-                        var p = new OrderedShippingProvider(shippingProviderObject, _storeInfo);
+                        var p = new OrderedShippingProvider(shippingProviderObject, StoreInfo);
 
                         return p;
                     }
@@ -282,7 +266,7 @@ namespace Ekom.Models
 
                     if (paymentProviderObject != null)
                     {
-                        var p = new OrderedPaymentProvider(paymentProviderObject, _storeInfo);
+                        var p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
 
                         return p;
                     }

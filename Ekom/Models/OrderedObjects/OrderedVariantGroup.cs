@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using Umbraco.Web;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     public class OrderedVariantGroup
     {
@@ -43,7 +43,7 @@ namespace Ekom.Models
 
             Variants = variants;
 
-            
+
         }
 
         public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)

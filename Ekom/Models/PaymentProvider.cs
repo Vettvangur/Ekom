@@ -19,7 +19,7 @@ namespace Ekom.Models
         /// <summary>
         /// Ranges and zones
         /// </summary>
-        public virtual Constraints Constraints { get; }
+        public virtual IConstraints Constraints { get; }
 
         /// <summary>
         /// 

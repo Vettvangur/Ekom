@@ -16,6 +16,7 @@ using Umbraco.Core;
 using Umbraco.Core.Configuration;
 using Umbraco.Core.Models;
 using Umbraco.Web;
+using Catalog = Ekom.API.Catalog;
 
 namespace Ekom.App_Start
 {
@@ -61,6 +62,15 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
 
+            container.Register<Catalog>((c, p) => 
+                new Catalog(
+                    c.Resolve<ApplicationContext>(),
+                    c.Resolve<Configuration>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<IPerStoreCache<IProduct>>(),
+                    c.Resolve<IPerStoreCache<ICategory>>(),
+                    c.Resolve<IPerStoreCache<IVariant>>())
+                );
             container.Register<ILogFactory, LogFactory>();
 
             var discountCache = container.Resolve<DiscountCache>();

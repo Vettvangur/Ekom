@@ -3,7 +3,6 @@ using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
-using Ekom.Models.Discounts;
 using Ekom.Repository;
 using log4net;
 using System;
@@ -50,7 +49,8 @@ namespace Ekom.Services
                 {
                     try
                     {
-                        (oi.Discount as Discount)?.OnCouponApply();
+                        //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
+                        //oi.Discount?.OnCouponApply();
                     }
                     catch (Exception ex) // Swallow all event subscriber exceptions
                     {
@@ -70,7 +70,8 @@ namespace Ekom.Services
 
                     try
                     {
-                        (line.Discount as Discount)?.OnCouponApply();
+                        //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
+                        //line.Discount?.OnCouponApply();
                     }
                     catch (Exception ex) // Swallow all event subscriber exceptions
                     {

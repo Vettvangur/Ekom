@@ -1,12 +1,8 @@
 ﻿using Ekom.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     public class OrderedShippingProvider
     {

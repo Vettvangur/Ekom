@@ -1,5 +1,6 @@
 ﻿using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
+using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
 using System;
@@ -11,9 +12,9 @@ namespace Ekom.Models.Discounts
     /// <summary>
     /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    class Discount : PerStoreNodeEntity, IConstrained, IDiscount
+    class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
-        public Constraints Constraints { get; private set; }
+        public IConstraints Constraints { get; private set; }
         public DiscountAmount Amount { get; private set; }
 
         internal string[] CouponsInternal;
@@ -91,6 +92,25 @@ namespace Ekom.Models.Discounts
         /// <param name="other"></param>
         /// <returns></returns>
         public int CompareTo(IDiscount other)
+        {
+            if (other == null)
+                return 1;
+
+            else if (Amount.Type != other.Amount.Type)
+                throw new FormatException("Discounts are not equal, please compare type before comparing value.");
+            else if (Amount.Amount == other.Amount.Amount)
+                return 0;
+            else if (Amount.Amount > other.Amount.Amount)
+                return 1;
+            else
+                return -1;
+        }
+        /// <summary>
+        /// <see cref="IComparable{T}"/> implementation
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(OrderedDiscount other)
         {
             if (other == null)
                 return 1;

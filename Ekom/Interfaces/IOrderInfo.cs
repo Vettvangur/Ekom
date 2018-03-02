@@ -1,6 +1,6 @@
 ﻿using Ekom.Helpers;
 using Ekom.Models;
-using Ekom.Models.Discounts;
+using Ekom.Models.OrderedObjects;
 using System;
 using System.Collections.Generic;
 
@@ -15,7 +15,7 @@ namespace Ekom.Interfaces
         /// Force changes to come through order api, 
         /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
         /// </summary>
-        IDiscount Discount { get; }
+        OrderedDiscount Discount { get; }
         /// <summary>
         /// 
         /// </summary>

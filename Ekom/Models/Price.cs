@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Ekom.Models.OrderedObjects;
 using log4net;
 using System;
 using System.Globalization;
@@ -15,36 +16,36 @@ namespace Ekom.Models
 
         private string _culture;
         private bool _vatIncludedInPrice;
-        public IDiscount Discount { get; internal set; }
+        public OrderedDiscount Discount { get; internal set; }
 
         /// <summary>
         /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
         /// </summary>
         public bool DiscountAlwaysBeforeVAT { get; internal set; }
 
-        public Price(string originalPrice, IStore store, IDiscount discount = null)
+        public Price(string originalPrice, IStore store, OrderedDiscount discount = null)
         {
-            decimal result = decimal.Parse(originalPrice);
-            Construct(result, new StoreInfo(store));
+            decimal.TryParse(originalPrice, out var result);
+            Construct(result, new StoreInfo(store), discount);
         }
 
-        public Price(decimal originalPrice, IStore store, IDiscount discount = null)
+        public Price(decimal originalPrice, IStore store, OrderedDiscount discount = null)
         {
-            Construct(originalPrice, new StoreInfo(store));
+            Construct(originalPrice, new StoreInfo(store), discount);
         }
 
-        public Price(string originalPrice, StoreInfo storeInfo, IDiscount discount = null)
+        public Price(string originalPrice, StoreInfo storeInfo, OrderedDiscount discount = null)
         {
-            decimal result = decimal.Parse(originalPrice);
+            decimal.TryParse(originalPrice, out var result);
             Construct(result, storeInfo, discount);
         }
 
-        public Price(decimal originalPrice, StoreInfo storeInfo, IDiscount discount = null)
+        public Price(decimal originalPrice, StoreInfo storeInfo, OrderedDiscount discount = null)
         {
             Construct(originalPrice, storeInfo, discount);
         }
 
-        private void Construct(decimal originalPrice, StoreInfo storeInfo, IDiscount discount = null)
+        private void Construct(decimal originalPrice, StoreInfo storeInfo, OrderedDiscount discount = null)
         {
             OriginalValue = originalPrice;
             Vat = storeInfo.Vat;
@@ -55,11 +56,16 @@ namespace Ekom.Models
         private CalculatedPrice CreateSimplePrice(bool includeVat, decimal price, bool isDiscounted = false)
             => new CalculatedPrice(includeVat, price, _culture, Vat, _vatIncludedInPrice, isDiscounted);
 
-        public object Clone()
-        {
-            return new Price(OriginalValue, Vat, _vatIncludedInPrice, _culture, Discount);
-        }
-        private Price(decimal originalPrice, decimal vat, bool vatIncludedInPrice, string culture, IDiscount discount)
+        /// <summary>
+        /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() => MemberwiseClone();
+
+        /// <summary>
+        /// Clone ctor
+        /// </summary>
+        private Price(decimal originalPrice, decimal vat, bool vatIncludedInPrice, string culture, OrderedDiscount discount)
         {
             OriginalValue = originalPrice;
             Vat = vat;
@@ -177,7 +183,7 @@ namespace Ekom.Models
     /// An object that contains the calculated price given the provided parameters
     /// Also offers a way of printing the value using the provided culture.
     /// </summary>
-    class CalculatedPrice : ICalculatedPrice, IVatPrice
+    class CalculatedPrice : ICalculatedPrice
     {
         private decimal _price;
         private string _culture;
@@ -243,12 +249,6 @@ namespace Ekom.Models
         /// if the <see cref="OrderLine"/> already has a discount present
         /// </summary>
         public bool IsDiscounted { get; }
-
-        public ICalculatedPrice WithVat => throw new NotImplementedException();
-
-        public ICalculatedPrice WithoutVat => throw new NotImplementedException();
-
-        public decimal Vat => throw new NotImplementedException();
 
         private static readonly ILog Log =
             LogManager.GetLogger(

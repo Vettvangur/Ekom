@@ -2,6 +2,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
+using Ekom.Models.OrderedObjects;
 using System;
 using System.Linq;
 
@@ -29,7 +30,7 @@ namespace Ekom.Services
                     }
                 }
 
-                orderInfo.Discount = discount;
+                orderInfo.Discount = new OrderedDiscount(discount);
                 orderInfo.Coupon = coupon;
 
                 UpdateOrderAndOrderInfo(orderInfo);
@@ -68,7 +69,7 @@ namespace Ekom.Services
             {
                 if (IsBetterDiscount(orderLine, discount))
                 {
-                    orderLine.Discount = discount;
+                    orderLine.Discount = new OrderedDiscount(discount);
                     orderLine.Coupon = coupon;
 
                     UpdateOrderAndOrderInfo(orderInfo);
@@ -83,7 +84,7 @@ namespace Ekom.Services
 
                 if (IsBetterDiscount(orderLine, discount))
                 {
-                    orderLine.Discount = discount;
+                    orderLine.Discount = new OrderedDiscount(discount);
                     orderLine.Coupon = coupon;
 
                     UpdateOrderAndOrderInfo(orderInfo);
@@ -128,7 +129,7 @@ namespace Ekom.Services
             var oldDiscount = orderInfo.Discount;
             var oldTotal = orderInfo.ChargedAmount;
 
-            orderInfo.Discount = discount;
+            orderInfo.Discount = new OrderedDiscount(discount);
 
             var result = orderInfo.ChargedAmount.Value > oldTotal.Value;
 
@@ -146,13 +147,26 @@ namespace Ekom.Services
             var oldDiscount = orderLine.Discount;
             var oldTotal = orderLine.Amount;
 
-            orderLine.Discount = discount;
+            orderLine.Discount = new OrderedDiscount(discount);
 
             var result = orderLine.Amount.Value > oldTotal.Value;
 
             orderLine.Discount = oldDiscount;
 
             return result;
+        }
+
+        /// <summary>
+        /// Although Discounts are store specific, coupons are not.
+        /// We therefore 
+        /// </summary>
+        /// <param name="Key"></param>
+        public void CouponApply(Guid Key)
+        {
+            var defStore =_storeSvc.GetAllStores().First();
+            var discount = _discountCache[defStore.Alias][Key];
+
+            (discount as Discount)?.OnCouponApply();
         }
     }
 }

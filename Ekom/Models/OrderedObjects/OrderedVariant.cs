@@ -1,18 +1,17 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using Ekom.API;
-using Ekom.Helpers;
+﻿using Ekom.API;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
-using System.Reflection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     public class OrderedVariant
     {
@@ -61,19 +60,6 @@ namespace Ekom.Models
             }
         }
         [JsonIgnore]
-        public decimal OriginalPrice
-        {
-            get
-            {
-                var priceField = Properties.GetPropertyValue("price", storeInfo.Alias);
-
-                decimal originalPrice = 0;
-                decimal.TryParse(priceField, out originalPrice);
-
-                return originalPrice;
-            }
-        }
-        [JsonIgnore]
         public string Path
         {
             get
@@ -97,6 +83,9 @@ namespace Ekom.Models
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public IPrice Price { get; }
         [JsonIgnore]
         public StoreInfo StoreInfo
@@ -122,6 +111,7 @@ namespace Ekom.Models
         public OrderedVariant(IVariant variant, IStore store)
         {
             storeInfo = new StoreInfo(store);
+            Price = variant.Price.Clone() as IPrice;
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
@@ -131,6 +121,7 @@ namespace Ekom.Models
         {
             this.variantObject = variantObject;
             this.storeInfo = storeInfo;
+            Price = new OrderedPrice(variantObject["Price"]);
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantObject["Properties"].ToObject<Dictionary<string, string>>());

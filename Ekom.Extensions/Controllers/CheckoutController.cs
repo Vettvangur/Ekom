@@ -90,10 +90,21 @@ namespace Ekom.Extensions.Controllers
                 orderItems.Add(new OrderItem
                 {
                     GrandTotal = line.Amount.Value,
-                    Price = line.Product.OriginalPrice,
+                    Price = line.Product.Price.BeforeDiscount.Value,
                     Title = line.Product.Title,
                     Quantity = line.Quantity,
                 });
+
+                if (line.Discount != null)
+                {
+                    orderItems.Add(new OrderItem
+                    {
+                        Title = "Line discount " + line.Discount.Amount.Type,
+                        Price = -line.Discount.Amount.Amount,
+                        Quantity = 1,
+                        GrandTotal = -line.Discount.Amount.Amount,
+                    });
+                }
             }
 
             if (order.Discount != null)
@@ -126,6 +137,17 @@ namespace Ekom.Extensions.Controllers
                 });
 
                 orderItems = orderItemsList;
+            }
+
+            if (order.Discount != null)
+            {
+                orderItems.Add(new OrderItem
+                {
+                    Title = "Order discount " + order.Discount.Amount.Type,
+                    Quantity = 1,
+                    Price = order.Discount.Amount.Amount,
+                    GrandTotal = order.Discount.Amount.Amount,
+                });
             }
 
             // save job ids to sql for retrieval after checkout completion

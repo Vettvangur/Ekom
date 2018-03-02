@@ -1,5 +1,5 @@
 ﻿using Ekom.Interfaces;
-using Ekom.Models.Discounts;
+using Ekom.Models.OrderedObjects;
 using log4net;
 using System;
 using System.Collections.Generic;
@@ -30,27 +30,27 @@ namespace Ekom.Models
 
         /// <summary>
         /// </summary>
-        public IDiscount Discount { get; internal set; }
+        public OrderedDiscount Discount { get; internal set; }
         /// <summary>
         /// 
         /// </summary>
         public string Coupon { get; internal set; }
 
         /// <summary>
-        /// Price
+        /// Line price with discount and quantity and variant modifications
         /// </summary>
         public IPrice Amount
         {
             get
             {
 
-                decimal _price = Product.OriginalPrice;
+                decimal _price = Product.Price.OriginalValue;
 
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        _price = _price + (v.OriginalPrice - _price);
+                        _price = _price + (v.Price.OriginalValue - _price);
                     }
                 }
 
