@@ -21,7 +21,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TINYIOC_INTERNAL</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Ekom.xml</DocumentationFile>
@@ -271,10 +271,18 @@
     <Compile Include="Exceptions\OrderException.cs" />
     <Compile Include="Exceptions\StockRollbackException.cs" />
     <Compile Include="Exceptions\StockException.cs" />
+    <Compile Include="Factories\CategoryFactory.cs" />
+    <Compile Include="Factories\DiscountFactory.cs" />
+    <Compile Include="Factories\PaymentProviderFactory.cs" />
+    <Compile Include="Factories\ShippingProviderFactory.cs" />
+    <Compile Include="Factories\ProductFactory.cs" />
+    <Compile Include="Factories\VariantFactory.cs" />
+    <Compile Include="Factories\StoreFactory.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
+    <Compile Include="Interfaces\IPerStoreFactory.cs" />
     <Compile Include="IoC\ContainerRegistration.cs" />
     <Compile Include="IoC\IActivatorContainerRegistration.cs" />
     <Compile Include="IoC\IContainerRegistration.cs" />
@@ -301,11 +309,10 @@
     <Compile Include="Interfaces\IVariantGroup.cs" />
     <Compile Include="Interfaces\IPaymentProvider.cs" />
     <Compile Include="Interfaces\IShippingProvider.cs" />
+    <Compile Include="Interfaces\IZone.cs" />
     <Compile Include="Models\OrderedObjects\OrderedConstraints.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedCalculatedPrice.cs" />
     <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedPrice.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />
@@ -355,7 +362,6 @@
     <Compile Include="Interfaces\IOrderedProduct.cs" />
     <Compile Include="Interfaces\IOrderedProductVariant.cs" />
     <Compile Include="Interfaces\IPrice.cs" />
-    <Compile Include="Interfaces\IPriceCalculationService.cs" />
     <Compile Include="Interfaces\IVariant.cs" />
     <Compile Include="Interfaces\IProduct.cs" />
     <Compile Include="Interfaces\INodeEntity.cs" />
@@ -381,7 +387,6 @@
     <Compile Include="Repository\OrderRepository.cs" />
     <Compile Include="Repository\StockRepository.cs" />
     <Compile Include="Services\OrderService.cs" />
-    <Compile Include="Services\PriceCalculationService.cs" />
     <Compile Include="Services\StoreService.cs" />
     <Compile Include="Services\UrlService.cs" />
     <Compile Include="Utilities\HtmlHelperExtensions.cs" />

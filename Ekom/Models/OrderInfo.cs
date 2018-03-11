@@ -40,7 +40,7 @@ namespace Ekom.Models
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
                 StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
-                _orderLines = CreateOrderLinesFromJson(orderInfoJObject);
+                orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
@@ -89,13 +89,13 @@ namespace Ekom.Models
         /// <summary>
         /// Force changes to come through order api
         /// </summary>
-        internal List<OrderLine> _orderLines = new List<OrderLine>();
+        internal List<OrderLine> orderLines = new List<OrderLine>();
 
         /// <summary>
         /// Force changes to come through order api, 
         /// ensuring lines are never changed without passing through the correct channels.
         /// </summary>
-        public IReadOnlyCollection<IOrderLine> OrderLines => _orderLines.AsReadOnly();
+        public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
@@ -136,9 +136,11 @@ namespace Ekom.Models
                 {
                     if (line.Discount == null)
                     {
-                        return new Price(line.Amount.OriginalValue, StoreInfo, Discount).Value;
+                        var lineWithOrderDiscount = new Price(line.Amount.OriginalValue, StoreInfo, Discount);
+
+                        return lineWithOrderDiscount.AfterDiscount.Value;
                     }
-                    return line.Amount.OriginalValue;
+                    return line.Amount.AfterDiscount.Value;
                 });
 
                 return new Price(amount, StoreInfo);

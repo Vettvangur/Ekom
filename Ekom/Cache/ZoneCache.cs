@@ -3,21 +3,13 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Models.Abstractions;
 using Umbraco.Core.Models;
+using Ekom.Interfaces;
 
 namespace Ekom.Cache
 {
-    class ZoneCache : BaseCache<Zone>
+    class ZoneCache : BaseCache<IZone>
     {
         public override string NodeAlias { get; } = "ekmZone";
-
-        protected override Zone New(SearchResult r)
-        {
-            return new Zone(r);
-        }
-        protected override Zone New(IContent content)
-        {
-            return new Zone(content);
-        }
 
         /// <summary>
         /// ctor
@@ -29,10 +21,8 @@ namespace Ekom.Cache
             ILogFactory logFac,
             Configuration config,
             ExamineManagerBase examineManager
-        )
+        ) : base(config, examineManager, null)
         {
-            _config = config;
-            _examineManager = examineManager;
             _log = logFac.GetLogger<ZoneCache>();
         }
     }

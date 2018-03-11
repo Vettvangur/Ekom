@@ -1,4 +1,5 @@
-﻿using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
@@ -58,7 +59,7 @@ namespace Ekom
 
                 var storeSvc = Configuration.container.GetInstance<StoreService>();
 
-                Store store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
+                IStore store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
 
                 if (store != null)
                 {

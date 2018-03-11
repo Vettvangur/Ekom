@@ -60,8 +60,11 @@ namespace Ekom.Services
 
                 foreach (var line in oi.OrderLines.Where(line => line.Discount != null))
                 {
-                    var id = $"{line.Discount.Key}_{line.Coupon}";
-                    _discountStockRepo.Update(id, -1);
+                    if (!string.IsNullOrEmpty(line.Coupon))
+                    {
+                        var id = $"{line.Discount.Key}_{line.Coupon}";
+                        _discountStockRepo.Update(id, -1);
+                    }
 
                     if (line.Discount.HasMasterStock)
                     {

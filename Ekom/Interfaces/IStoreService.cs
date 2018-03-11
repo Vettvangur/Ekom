@@ -5,9 +5,9 @@ namespace Ekom.Interfaces
 {
     interface IStoreService
     {
-        IEnumerable<Store> GetAllStores();
-        Store GetStoreByAlias(string alias);
-        Store GetStoreByDomain(string domain = "");
-        Store GetStoreFromCache();
+        IEnumerable<IStore> GetAllStores();
+        IStore GetStoreByAlias(string alias);
+        IStore GetStoreByDomain(string domain = "");
+        IStore GetStoreFromCache();
     }
 }

@@ -76,7 +76,8 @@
             $("#vorto-" + $scope.model.id)
                 .find(".vorto-tabs__item--menu")
                 .removeClass("active")
-                .find(".vorto-menu").hide();
+                .find(".vorto-menu")
+                .hide();
         };
 
         $scope.setActiveLanguage = function (language, dontBroadcast) {

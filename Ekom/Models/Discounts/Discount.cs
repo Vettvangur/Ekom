@@ -3,8 +3,10 @@ using Ekom.Models.Behaviors;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
+using log4net;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models.Discounts
@@ -14,22 +16,24 @@ namespace Ekom.Models.Discounts
     /// </summary>
     class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
-        public IConstraints Constraints { get; private set; }
-        public DiscountAmount Amount { get; private set; }
+        public virtual IConstraints Constraints { get; private set; }
+        public virtual DiscountAmount Amount { get; private set; }
 
-        internal string[] CouponsInternal;
-        public IReadOnlyCollection<string> Coupons => Array.AsReadOnly(CouponsInternal);
-
+        internal string[] couponsInternal;
+        public virtual IReadOnlyCollection<string> Coupons
+            => Array.AsReadOnly(couponsInternal ?? new string[0]);
+        internal List<IProduct> discountItems = new List<IProduct>();
+        public virtual IReadOnlyCollection<IProduct> DiscountItems => discountItems.AsReadOnly();
 
         /// <summary>
         /// Coupon code activations left
         /// </summary>
-        public bool HasMasterStock => Properties.GetPropertyValue("masterStock").ConvertToBool();
+        public virtual bool HasMasterStock => Properties.GetPropertyValue("masterStock").ConvertToBool();
 
         /// <summary>
         /// Used by Ekom extensions
         /// </summary>
-        public Discount(Store store) : base(store)
+        public Discount(IStore store) : base(store)
         {
             Construct();
         }
@@ -37,7 +41,7 @@ namespace Ekom.Models.Discounts
         /// <summary>
         /// Construct ShippingProvider from Examine item
         /// </summary>
-        public Discount(SearchResult item, Store store) : base(item, store)
+        public Discount(SearchResult item, IStore store) : base(item, store)
         {
             Construct();
         }
@@ -45,7 +49,7 @@ namespace Ekom.Models.Discounts
         /// <summary>
         /// Construct ShippingProvider from umbraco publish event
         /// </summary>
-        public Discount(IContent node, Store store) : base(node, store)
+        public Discount(IContent node, IStore store) : base(node, store)
         {
             Construct();
         }
@@ -76,6 +80,34 @@ namespace Ekom.Models.Discounts
                 Amount = Convert.ToDecimal(Properties.GetPropertyValue("discountAmount")) / 100,
                 Type = type,
             };
+
+            var discountItemsProp = Properties.GetPropertyValue("discountItems", Store.Alias);
+
+            if (!string.IsNullOrEmpty(discountItemsProp))
+            {
+                foreach (var discountItem in discountItemsProp.Split(','))
+                {
+                    if (Uri.TryCreate(discountItem, UriKind.Absolute, out var umbDocUri))
+                    {
+                        var guidStr = umbDocUri.AbsolutePath.TrimStart('/');
+                        var key = Guid.Parse(guidStr);
+
+                        var product = API.Catalog.Current.GetProduct(Store.Alias, key);
+
+                        if (product != null)
+                        {
+                            discountItems.Add(product);
+
+                            // Link discount to product
+                            // If a previous discount exists on product, it's setter will determine if discount is better than previous one 
+                            if (product is Product productItem)
+                            {
+                                productItem.Discount = this;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         internal void OnCouponApply() => CouponApplied?.Invoke(this);
@@ -150,6 +182,10 @@ namespace Ekom.Models.Discounts
         }
         #endregion
 
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 
     /// <summary>

@@ -1,8 +1,8 @@
 ﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Services;
-using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
@@ -12,34 +12,21 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class StoreCache : BaseCache<Store>
+    class StoreCache : BaseCache<IStore>
     {
         public override string NodeAlias { get; } = "ekmStore";
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
         public StoreCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManagerBase examineManager
-        )
+            ExamineManagerBase examineManager,
+            IObjectFactory<IStore> objectFactory
+        ) : base(config, examineManager, objectFactory)
         {
-            _config = config;
-            _examineManager = examineManager;
-            _log = logFac.GetLogger(typeof(StoreCache));
-        }
-
-        protected override Store New(SearchResult r)
-        {
-            return new Store(r);
-        }
-        protected override Store New(IContent content)
-        {
-            return new Store(content);
+            _log = logFac.GetLogger<StoreCache>();
         }
 
         /// <summary>
@@ -107,7 +94,7 @@ namespace Ekom.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = New(node);
+                var item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
 
                 if (item != null)
                 {

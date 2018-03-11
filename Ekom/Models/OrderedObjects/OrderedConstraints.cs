@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -10,11 +11,15 @@ namespace Ekom.Models.OrderedObjects
     public class OrderedConstraints : IConstraints
     {
         /// <summary>
-        /// ctor
+        /// 
         /// </summary>
-        public OrderedConstraints()
+        [JsonConstructor]
+        public OrderedConstraints(int startRange, int endRange, Guid zone, IEnumerable<string> countriesInZone)
         {
-
+            StartRange = startRange;
+            EndRange = endRange;
+            Zone = zone;
+            CountriesInZone = countriesInZone;
         }
 
         /// <summary>
@@ -28,6 +33,7 @@ namespace Ekom.Models.OrderedObjects
             Zone = constraints.Zone;
             CountriesInZone = new List<string>(constraints.CountriesInZone);
         }
+
 
         /// <summary>
         /// Start of range that provider supports.

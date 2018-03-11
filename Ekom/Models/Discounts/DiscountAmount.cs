@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Newtonsoft.Json;
 
 namespace Ekom.Models.Discounts
 {
@@ -11,6 +7,21 @@ namespace Ekom.Models.Discounts
     /// </summary>
     public class DiscountAmount
     {
+        public DiscountAmount()
+        {
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public DiscountAmount(DiscountType type, decimal amount)
+        {
+            Type = type;
+            Amount = amount;
+        }
+
         /// <summary>
         /// Fixed or percentage?
         /// </summary>

@@ -1,10 +1,24 @@
 ﻿using Ekom.Interfaces;
+using Newtonsoft.Json;
 using System;
 
 namespace Ekom.Models
 {
     public class StoreInfo
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public StoreInfo(Guid key, string currency, string culture, string alias, bool vatIncludedInPrice, decimal vat)
+        {
+            Key = key;
+            Currency = currency;
+            Culture = culture;
+            Alias = alias;
+            VatIncludedInPrice = vatIncludedInPrice;
+            Vat = vat;
+        }
 
         public StoreInfo(IStore store)
         {

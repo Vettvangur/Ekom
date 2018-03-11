@@ -59,7 +59,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="cart__price">@orderline.Product.Price.WithVat.ToCurrencyString</span>
+                            <span class="cart__price">@orderline.Product.Price.WithVat.CurrencyString</span>
                         </td>
                         <td>
                             @using (Html.BeginEkomForm(FormType.AddToOrderCart))
@@ -72,7 +72,7 @@
                             }     
                         </td>
                         <td>
-                            <span class="cart__price">@orderline.Amount.WithVat.ToCurrencyString</span>
+                            <span class="cart__price">@orderline.Amount.WithVat.CurrencyString</span>
                         </td>
                         <td class="text-center">
                             @using (Html.BeginEkomForm(FormType.RemoveOrderLine))

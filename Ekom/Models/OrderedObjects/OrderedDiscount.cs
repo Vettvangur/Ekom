@@ -1,20 +1,32 @@
 ﻿using Ekom.Interfaces;
-using Ekom.Models.Behaviors;
 using Ekom.Models.Discounts;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
 namespace Ekom.Models.OrderedObjects
 {
-    public class OrderedDiscount
+    /// <summary>
+    /// Frozen <see cref="Discount"/> with coupons and <see cref="DiscountAmount"/>
+    /// </summary>
+    public class OrderedDiscount : IComparable<IDiscount>
     {
-        public OrderedDiscount()
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public OrderedDiscount(Guid key, DiscountAmount amount, OrderedConstraints constraints, IReadOnlyCollection<string> coupons, bool hasMasterStock)
         {
-
+            Key = key;
+            Amount = amount;
+            Constraints = constraints;
+            Coupons = coupons;
+            HasMasterStock = hasMasterStock;
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public OrderedDiscount(IDiscount discount)
         {
             Key = discount.Key;
@@ -24,17 +36,34 @@ namespace Ekom.Models.OrderedObjects
             HasMasterStock = discount.HasMasterStock;
         }
 
-        public Guid Key { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public Guid Key { get; internal set; }
 
-        public DiscountAmount Amount { get; }
+        /// <summary>
+        /// Discount amount in the specified <see cref="DiscountType"/>
+        /// </summary>
+        public DiscountAmount Amount { get; internal set; }
 
-        [JsonIgnore]
+        /// <summary>
+        /// Ranges
+        /// </summary>
         public IConstraints Constraints { get; internal set; }
 
-        public IReadOnlyCollection<string> Coupons { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public IReadOnlyCollection<string> Coupons { get; internal set; }
 
-        public bool HasMasterStock { get; }
+        /// <summary>
+        /// Coupon code activations left
+        /// </summary>
+        public bool HasMasterStock { get; internal set; }
 
+        /// <summary>
+        /// <see cref="IComparable{T}"/> implementation
+        /// </summary>
         public int CompareTo(IDiscount other)
         {
             if (other == null)

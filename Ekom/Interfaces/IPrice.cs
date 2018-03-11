@@ -14,13 +14,9 @@ namespace Ekom.Interfaces
         /// </summary>
         decimal Value { get; }
         /// <summary>
-        /// Value with vat and discount if applicable
-        /// </summary>
-        bool IsDiscounted { get; }
-        /// <summary>
         /// 
         /// </summary>
-        string ToCurrencyString { get; }
+        string CurrencyString { get; }
     }
 
     /// <summary>
@@ -42,6 +38,14 @@ namespace Ekom.Interfaces
         /// Same as OriginalValue
         /// </value>
         ICalculatedPrice BeforeDiscount { get; }
+        /// <summary>
+        /// Price after discount with VAT left as-is
+        /// </summary>
+        ICalculatedPrice AfterDiscount { get; }
+        /// <summary>
+        /// VAT included or to be included in price
+        /// </summary>
+        ICalculatedPrice Vat { get; }
 
         /// <summary>
         /// Value with discount and VAT
@@ -78,14 +82,5 @@ namespace Ekom.Interfaces
         /// The price without vat.
         /// </value>
         ICalculatedPrice WithoutVat { get; }
-
-        // Var IPrice return type, virkar ekki gagnlegt
-        /// <summary>
-        /// Gets the vat.
-        /// </summary>
-        /// <value>
-        /// The vat.
-        /// </value>
-        decimal Vat { get; }
     }
 }

@@ -40,7 +40,7 @@ namespace Ekom.API
 
             if (_discountCache.CouponCache[storeAlias].TryGetValue(coupon, out var discount))
             {
-                return _orderService.ApplyDiscountToOrder(discount, coupon, storeAlias);
+                return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
             }
             else
             {
@@ -112,7 +112,7 @@ namespace Ekom.API
 
             if (_discountCache.CouponCache[storeAlias].TryGetValue(coupon, out var discount))
             {
-                return _orderService.ApplyDiscountToOrderLine(productKey, discount, coupon, storeAlias);
+                return _orderService.ApplyDiscountToOrderLine(productKey, discount, storeAlias, coupon);
             }
             else
             {

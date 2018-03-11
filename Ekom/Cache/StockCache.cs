@@ -1,10 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
 using Examine;
+using System;
+using System.Diagnostics;
+using System.Linq;
 using Umbraco.Core.Models;
 
 namespace Ekom.Cache
@@ -20,7 +20,7 @@ namespace Ekom.Cache
         public StockCache(
             ILogFactory logFac,
             IStockRepository stockRepo
-        )
+        ) : base(null, null, null)
         {
             _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));
@@ -44,16 +44,6 @@ namespace Ekom.Cache
 
             stopwatch.Stop();
             _log.Info("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
-        }
-
-        protected override StockData New(SearchResult r)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override StockData New(IContent r)
-        {
-            throw new NotImplementedException();
         }
     }
 }

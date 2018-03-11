@@ -17,7 +17,7 @@ namespace Ekom.Services
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IBaseCache<IDomain> _domainCache;
-        IBaseCache<Store> _storeCache;
+        IBaseCache<IStore> _storeCache;
 
         /// <summary>
         /// ctor
@@ -29,7 +29,7 @@ namespace Ekom.Services
         public StoreService(
             ILogFactory logFac,
             IBaseCache<IDomain> domainCache,
-            IBaseCache<Store> storeCache,
+            IBaseCache<IStore> storeCache,
             ApplicationContext appCtx
         )
         {
@@ -39,9 +39,9 @@ namespace Ekom.Services
             _storeCache = storeCache;
         }
 
-        public Store GetStoreByDomain(string domain = "")
+        public IStore GetStoreByDomain(string domain = "")
         {
-            Store store = null;
+            IStore store = null;
 
             if (!string.IsNullOrEmpty(domain))
             {
@@ -70,7 +70,7 @@ namespace Ekom.Services
             return store;
         }
 
-        public Store GetStoreByAlias(string alias)
+        public IStore GetStoreByAlias(string alias)
         {
             var store = _storeCache.Cache
                              .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias))
@@ -100,14 +100,14 @@ namespace Ekom.Services
         //    return store ?? _storeCache.Cache.FirstOrDefault().Value;
         //}
 
-        public Store GetStoreFromCache()
+        public IStore GetStoreFromCache()
         {
             var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
             return r?.Store ?? GetAllStores().FirstOrDefault();
         }
 
-        public IEnumerable<Store> GetAllStores()
+        public IEnumerable<IStore> GetAllStores()
         {
             return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.SortOrder);
         }

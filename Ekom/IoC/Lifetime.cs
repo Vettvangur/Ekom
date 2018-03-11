@@ -1,7 +1,7 @@
 ﻿namespace Ekom.IoC
 {
     /// <summary>
-    /// how the object in a container is managed
+    /// How the object in a container is managed
     /// </summary>
     public enum Lifetime
     {

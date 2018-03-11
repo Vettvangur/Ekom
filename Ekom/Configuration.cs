@@ -151,12 +151,12 @@ namespace Ekom
             return new List<ICache>
             {
                 { container.GetInstance<IBaseCache<IDomain>>() },
-                { container.GetInstance<IBaseCache<Store>>() },
+                { container.GetInstance<IBaseCache<IStore>>() },
                 { container.GetInstance<IPerStoreCache<ICategory>>() },
                 { container.GetInstance<IPerStoreCache<IProduct>>() },
                 { container.GetInstance<IPerStoreCache<IVariant>>() },
                 { container.GetInstance<IPerStoreCache<IVariantGroup>>() },
-                { container.GetInstance<IBaseCache<Zone>>() },
+                { container.GetInstance<IBaseCache<IZone>>() },
                 { container.GetInstance<IPerStoreCache<IPaymentProvider>>() },
                 { container.GetInstance<IPerStoreCache<IShippingProvider>>() },
                 { container.GetInstance<IPerStoreCache<IDiscount>>() },

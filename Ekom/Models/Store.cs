@@ -70,7 +70,7 @@ namespace Ekom.Models
 
             Culture = new CultureInfo(_culture);
 
-            Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]);
+            Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]) / 100;
             VatIncludedInPrice = item.Fields["vatIncludedInPrice"].ConvertToBool();
 
             item.Fields.TryGetValue("orderNumberTemplate", out string orderNumberTemplate);
@@ -97,7 +97,7 @@ namespace Ekom.Models
 
             var vat = item.GetValue<string>("vat");
 
-            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat);
+            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat) / 100;
 
             var _culture = item.GetValue<string>("culture");
 

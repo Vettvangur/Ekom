@@ -62,7 +62,7 @@ namespace Ekom
                     return false;
                 }
 
-                Store store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
+                IStore store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
 
                 if (store == null)
                 {

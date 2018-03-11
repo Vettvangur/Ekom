@@ -1,6 +1,7 @@
 ﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.Models.OrderedObjects;
 using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
@@ -28,6 +29,33 @@ namespace Ekom.Models
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
 
+        private IDiscount _discount;
+        /// <summary>
+        /// Best discount mapped to product, populated after discount cache fills.
+        /// </summary>
+        public virtual IDiscount Discount
+        {
+            get => _discount;
+            internal set
+            {
+                if (_discount == null 
+                || (_discount.Amount.Type == value.Amount.Type
+                && value.CompareTo(_discount) > 0))
+                {
+                    _discount = value;
+                }
+
+                var oldPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(_discount));
+
+                var newPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(value));
+
+                if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
+                {
+                    _discount = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
@@ -52,9 +80,9 @@ namespace Ekom.Models
         /// 
         /// </summary>
         [JsonIgnore]
-        public int Stock => API.Stock.Current.GetStock(Key);
+        public virtual int Stock => API.Stock.Current.GetStock(Key);
 
-        public IEnumerable<Image> Images
+        public virtual IEnumerable<Image> Images
         {
             get
             {
@@ -66,7 +94,7 @@ namespace Ekom.Models
             }
         }
 
-        public IVariantGroup PrimaryVariantGroup
+        public virtual IVariantGroup PrimaryVariantGroup
         {
             get
             {
@@ -95,7 +123,7 @@ namespace Ekom.Models
             }
         }
 
-        public List<ICategory> CategoryAncestors()
+        public virtual List<ICategory> CategoryAncestors()
         {
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
 
@@ -123,7 +151,7 @@ namespace Ekom.Models
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public IEnumerable<ICategory> Categories()
+        public virtual IEnumerable<ICategory> Categories()
         {
             int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
 
@@ -162,7 +190,7 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public IEnumerable<Guid> CategoriesIds
+        public virtual IEnumerable<Guid> CategoriesIds
         {
             get
             {
@@ -170,7 +198,7 @@ namespace Ekom.Models
             }
         }
 
-        public string Url
+        public virtual string Url
         {
             get
             {
@@ -183,7 +211,7 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public IEnumerable<string> Urls { get; internal set; }
+        public virtual IEnumerable<string> Urls { get; internal set; }
 
         /// <summary>
         /// 
@@ -191,7 +219,7 @@ namespace Ekom.Models
         public virtual IPrice Price { get; }
 
         [JsonIgnore]
-        public IEnumerable<IVariantGroup> VariantGroups
+        public virtual IEnumerable<IVariantGroup> VariantGroups
         {
             get
             {
@@ -206,7 +234,7 @@ namespace Ekom.Models
         /// All variants belonging to product.
         /// </summary>
         [JsonIgnore]
-        public IEnumerable<IVariant> AllVariants
+        public virtual IEnumerable<IVariant> AllVariants
         {
             get
             {

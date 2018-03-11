@@ -1,7 +1,6 @@
 ﻿using Ekom.Exceptions;
 using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Models.Discounts;
 using Ekom.Services;
@@ -12,6 +11,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Umbraco.Core.Models;
+using GlobalDiscountCache
+    = System.Collections.Concurrent.ConcurrentDictionary<string,
+        System.Collections.Concurrent.ConcurrentStack<Ekom.Interfaces.IDiscount>>;
 using PerStoreCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string,
         System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Interfaces.IDiscount>>;
@@ -27,6 +29,11 @@ namespace Ekom.Cache
         /// </summary>
         public PerStoreCouponCache CouponCache { get; }
             = new PerStoreCouponCache();
+        /// <summary>
+        /// All order <see cref="IDiscount"/>'s containing no coupon
+        /// </summary>
+        public GlobalDiscountCache GlobalDiscounts { get; }
+            = new GlobalDiscountCache();
 
         public override string NodeAlias { get; } = "ekmDiscount";
         public virtual string CouponNodeAlias { get; } = "ekmCoupon";
@@ -38,24 +45,14 @@ namespace Ekom.Cache
             ILogFactory logFac,
             Configuration config,
             ExamineManagerBase examineManager,
-            IBaseCache<Store> storeCache
+            IBaseCache<IStore> storeCache,
+            IPerStoreFactory<IDiscount> perStoreFactory
         )
-            : base(config, examineManager, storeCache)
+            : base(config, examineManager, storeCache, perStoreFactory)
         {
-            _config = config;
-            _examineManager = examineManager;
             _log = logFac.GetLogger<DiscountCache>();
 
             _searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
-        }
-
-        protected override IDiscount New(SearchResult r, Store s)
-        {
-            return new Discount(r, s);
-        }
-        protected override IDiscount New(IContent content, Store store)
-        {
-            return new Discount(content, store);
         }
 
         /// <summary>
@@ -64,12 +61,16 @@ namespace Ekom.Cache
         /// <param name="store">The current store being filled of TItem</param>
         /// <param name="results">Examine search results</param>
         /// <returns>Count of items added</returns>
-        protected override int FillStoreCache(Store store, ISearchResults results)
+        protected override int FillStoreCache(IStore store, ISearchResults results)
         {
             int count = 0;
 
-            var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
-            var curStoreCouponCache = CouponCache[store.Alias] = new ConcurrentDictionary<string, IDiscount>();
+            var curStoreCache
+                = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
+            var curStoreCouponCache
+                = CouponCache[store.Alias] = new ConcurrentDictionary<string, IDiscount>();
+            var curStoreGlobalDiscountCache
+                = GlobalDiscounts[store.Alias] = new ConcurrentStack<IDiscount>();
 
             foreach (var r in results)
             {
@@ -78,10 +79,10 @@ namespace Ekom.Cache
                     // Traverse up parent nodes, checking disabled status and published status
                     if (!r.IsItemDisabled(store))
                     {
-                        ISearchCriteria searchCriteria = 
+                        ISearchCriteria searchCriteria =
                             _searcher.CreateSearchCriteria()
                             .RawQuery($@"+path:\{r.Fields["path"]},* +nodeTypeAlias:{CouponNodeAlias}");
-                        
+
                         ISearchResults coupons = _searcher.Search(searchCriteria);
 
                         // Ensure coupons are distinct
@@ -93,24 +94,30 @@ namespace Ekom.Cache
                             {
                                 count++;
 
-                                foreach (var coupon in coupons)
+                                if (coupons.Any())
                                 {
-                                    // no empty strings
-                                    if (!string.IsNullOrEmpty(coupon.Fields["nodeName"]))
+                                    foreach (var coupon in coupons)
                                     {
-                                        curStoreCouponCache[coupon.Fields["nodeName"]] = item;
+                                        // no empty strings
+                                        if (!string.IsNullOrEmpty(coupon.Fields["nodeName"]))
+                                        {
+                                            curStoreCouponCache[coupon.Fields["nodeName"]] = item;
+                                        }
+                                    }
+
+                                    if (item is Discount discountItem)
+                                    {
+                                        discountItem.couponsInternal = coupons.Select(c => c.Fields["nodeName"]).ToArray();
                                     }
                                 }
-
-                                if (item is Discount discountItem)
+                                else
                                 {
-                                    discountItem.CouponsInternal = coupons.Select(c => c.Fields["nodeName"]).ToArray();
+                                    curStoreGlobalDiscountCache.Push(item);
                                 }
 
                                 var itemKey = Guid.Parse(r.Fields["key"]);
                                 curStoreCache[itemKey] = item;
-
-                                _log.Info($"Added {coupons.Count()} coupons for discount {r.Fields["nodeName"]}");
+                                _log.Debug($"Added {coupons.Count()} coupons for discount {r.Fields["nodeName"]}");
                             }
                         }
                         else
@@ -161,7 +168,7 @@ namespace Ekom.Cache
 
                                 if (item is Discount discountItem)
                                 {
-                                    discountItem.CouponsInternal = coupons.Select(c => c.Name).ToArray();
+                                    discountItem.couponsInternal = coupons.Select(c => c.Name).ToArray();
                                 }
 
                                 Cache[store.Value.Alias][node.Key] = item;

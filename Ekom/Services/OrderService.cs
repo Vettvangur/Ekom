@@ -23,9 +23,9 @@ namespace Ekom.Services
         HttpContextBase _httpCtx;
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-        IPerStoreCache<IDiscount> _discountCache;
+        DiscountCache _discountCache;
 
-        Store _store;
+        IStore _store;
         DateTime _date;
         OrderRepository _orderRepository;
         IStoreService _storeSvc;
@@ -38,7 +38,7 @@ namespace Ekom.Services
             OrderRepository orderRepo,
             ILogFactory logFac,
             IStoreService storeService,
-            IPerStoreCache<IDiscount> discountCache,
+            DiscountCache discountCache,
             ApplicationContext appCtx)
         {
             _log = logFac.GetLogger<OrderService>();
@@ -57,7 +57,7 @@ namespace Ekom.Services
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
-            IPerStoreCache<IDiscount> discountCache,
+            DiscountCache discountCache,
             HttpContextBase httpCtx)
             : this(orderRepo, logFac, storeService, discountCache, appCtx)
         {
@@ -81,7 +81,7 @@ namespace Ekom.Services
             return GetOrder(store);
         }
 
-        public OrderInfo GetOrder(Store store)
+        public OrderInfo GetOrder(IStore store)
         {
             _store = store;
 
@@ -193,7 +193,7 @@ namespace Ekom.Services
 
                 if (orderLine != null)
                 {
-                    orderInfo._orderLines.Remove(orderLine as OrderLine);
+                    orderInfo.orderLines.Remove(orderLine as OrderLine);
                 }
             }
 
@@ -202,7 +202,7 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productId, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
+        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productKey, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
         {
             if (quantity < 0)
             {
@@ -211,7 +211,7 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            _log.Info("Order: " + orderInfo.OrderNumber + " Product Key: " + productId + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
+            _log.Info("Order: " + orderInfo.OrderNumber + " Product Key: " + productKey + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
             OrderLine existingOrderLine = null;
 
             if (orderInfo.OrderLines != null)
@@ -221,7 +221,7 @@ namespace Ekom.Services
                     existingOrderLine
                         = orderInfo.OrderLines
                             .FirstOrDefault(
-                                x => x.Product.Key == productId
+                                x => x.Product.Key == productKey
                                 && x.Product.VariantGroups
                                     .SelectMany(b => b.Variants.Select(z => z.Key)
                                     .Intersect(variantIds))
@@ -231,7 +231,7 @@ namespace Ekom.Services
                 else
                 {
                     existingOrderLine
-                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productId)
+                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productKey)
                         as OrderLine;
                 }
             }
@@ -256,9 +256,20 @@ namespace Ekom.Services
 
                 _log.Info("AddOrderLineToOrderInfo: existingOrderLine Not Found");
 
-                var orderLine = new OrderLine(productId, variantIds, quantity, lineId, _store);
+                var orderLine = new OrderLine(productKey, variantIds, quantity, lineId, _store);
 
-                orderInfo._orderLines.Add(orderLine);
+                orderInfo.orderLines.Add(orderLine);
+
+                var product = API.Catalog.Current.GetProduct(productKey);
+
+                if (product.Discount != null)
+                {
+                    ApplyDiscountToOrderLine(
+                        productKey, 
+                        product.Discount,
+                        _store.Alias, 
+                        orderInfo: orderInfo);
+                }
             }
 
             UpdateOrderAndOrderInfo(orderInfo);
@@ -267,6 +278,9 @@ namespace Ekom.Services
         private void UpdateOrderAndOrderInfo(OrderInfo orderInfo)
         {
             _log.Info("Update Order with new OrderInfo");
+
+            // We need to verify all discount constraints here after changes
+            // Determine if any global discounts should be applied
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 

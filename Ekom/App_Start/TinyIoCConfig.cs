@@ -1,6 +1,7 @@
 ﻿using CommonServiceLocator.TinyIoCAdapter;
 using Ekom.Cache;
 using Ekom.Domain.Repositories;
+using Ekom.Factories;
 using Ekom.Interfaces;
 using Ekom.IoC;
 using Ekom.Models;
@@ -44,12 +45,12 @@ namespace Ekom.App_Start
             container.Register<Configuration>().AsSingleton();
 
             container.Register<IBaseCache<IDomain>, StoreDomainCache>().AsSingleton();
-            container.Register<IBaseCache<Store>, StoreCache>().AsSingleton();
+            container.Register<IBaseCache<IStore>, StoreCache>().AsSingleton();
             container.Register<IPerStoreCache<IVariant>, VariantCache>().AsSingleton();
             container.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>().AsSingleton();
             container.Register<IPerStoreCache<ICategory>, CategoryCache>().AsSingleton();
             container.Register<IPerStoreCache<IProduct>, ProductCache>().AsSingleton();
-            container.Register<IBaseCache<Zone>, ZoneCache>().AsSingleton();
+            container.Register<IBaseCache<IZone>, ZoneCache>().AsSingleton();
             container.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>().AsSingleton();
             container.Register<IPerStoreCache<IShippingProvider>, ShippingProviderCache>().AsSingleton();
             container.Register<IBaseCache<StockData>, StockCache>().AsSingleton();
@@ -62,7 +63,7 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
 
-            container.Register<Catalog>((c, p) => 
+            container.Register<Catalog>((c, p) =>
                 new Catalog(
                     c.Resolve<ApplicationContext>(),
                     c.Resolve<Configuration>(),
@@ -73,6 +74,9 @@ namespace Ekom.App_Start
                 );
             container.Register<ILogFactory, LogFactory>();
 
+            container.RegisterTypes(containerRegistrations);
+
+            // Resolve last
             var discountCache = container.Resolve<DiscountCache>();
             container.Register<IPerStoreCache<IDiscount>, DiscountCache>(discountCache);
             container.Register<DiscountCache>(discountCache);
@@ -97,22 +101,46 @@ namespace Ekom.App_Start
             }
         }
 
+        /// <summary>
+        /// Not working for TinyIoC
+        /// </summary>
         private static TinyIoCContainer.RegisterOptions SetLifetime(TinyIoCContainer.RegisterOptions options, IContainerRegistration reg)
         {
-            return reg.Lifetime == Lifetime.Transient
-                ? options.AsMultiInstance()
-                : reg.Lifetime == Lifetime.ExternallyOwned
-                    ? options.AsSingleton()
-                    : reg.Lifetime == Lifetime.Request
-                        ? options.AsPerRequestSingleton()
-                        : options.AsMultiInstance();
+            //switch (reg.Lifetime)
+            //{
+            //    case Lifetime.Transient:
+            //        return options.AsMultiInstance();
+
+            //    case Lifetime.ExternallyOwned:
+            //        return options.AsSingleton();
+
+            //    case Lifetime.Request:
+            //        return options.AsPerRequestSingleton();
+
+            //    case Lifetime.Singleton:
+            //        return options.AsSingleton();
+
+            //    default:
+            //        return options.AsMultiInstance();
+            //}
+
+            return options;
         }
 
         /// <summary>
-        /// Perhaps one day...
+        /// WIP - migrate all to here.
+        /// Abstracts dependency on containers during registration
         /// </summary>
         internal static List<IContainerRegistration> containerRegistrations = new List<IContainerRegistration>
         {
+            new ContainerRegistration<IObjectFactory<IStore>>(Lifetime.Transient, c => c.GetInstance<StoreFactory>()),
+            new ContainerRegistration<IPerStoreFactory<ICategory>>(Lifetime.Transient, c => c.GetInstance<CategoryFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IDiscount>>(Lifetime.Transient, c => c.GetInstance<DiscountFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IPaymentProvider>>(Lifetime.Transient, c => c.GetInstance<PaymentProviderFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IShippingProvider>>(Lifetime.Transient, c => c.GetInstance<ShippingProviderFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IProduct>>(Lifetime.Transient, c => c.GetInstance<ProductFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IVariant>>(Lifetime.Transient, c => c.GetInstance<VariantFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IVariantGroup>>(Lifetime.Transient, c => c.GetInstance<VariantGroupFactory>()),
         };
     }
 }

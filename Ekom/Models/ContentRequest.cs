@@ -15,8 +15,8 @@ namespace Ekom.Models
             _httpCtx = httpContext;
         }
 
-        private Store _store;
-        public Store Store
+        private IStore _store;
+        public IStore Store
         {
             get { return _store; }
 

@@ -25,10 +25,8 @@ namespace Ekom.Cache
             ILogFactory logFac,
             Configuration config,
             ExamineManagerBase examineManager
-        )
+        ) : base(config, examineManager, null)
         {
-            _config = config;
-            _examineManager = examineManager;
             _appCtx = appCtx;
             _log = logFac.GetLogger(typeof(StoreDomainCache));
         }
@@ -57,16 +55,6 @@ namespace Ekom.Cache
 
                 _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
             }
-        }
-
-        protected override IDomain New(SearchResult r)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override IDomain New(IContent r)
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

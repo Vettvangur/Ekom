@@ -71,7 +71,7 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, Guid lineId, Store store)
+        public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, Guid lineId, IStore store)
         {
             _productId = productId;
             _variantIds = variantIds;

@@ -44,5 +44,9 @@ namespace Ekom.Interfaces
         IEnumerable<IVariantGroup> VariantGroups { get; }
 
         List<ICategory> CategoryAncestors();
+        /// <summary>
+        /// Best discount mapped to product, populated after discount cache fills.
+        /// </summary>
+        IDiscount Discount { get; }
     }
 }

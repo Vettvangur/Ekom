@@ -10,6 +10,7 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TinyIoC;
 using Umbraco.Core;
 using Umbraco.Core.Events;
@@ -29,7 +30,7 @@ namespace Ekom
     /// We use ApplicationEventHandler so that these lifecycle methods are only run
     /// when umbraco is in a stable condition.
     /// </summary>
-    class EkomStartup : ApplicationEventHandler
+    public class EkomStartup : ApplicationEventHandler
     {
         Configuration _config;
         ILog _log;
@@ -69,7 +70,6 @@ namespace Ekom
         protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             LogHelper.Info(GetType(), "ApplicationStarted...");
-
             var container = Configuration.container;
 
             TinyIoC();
@@ -114,7 +114,14 @@ namespace Ekom
             // Hook into NetPayment completion event
 
             LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
+
+            _log.Info("Ekom Started");
         }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
 
         private void TinyIoC()
         {

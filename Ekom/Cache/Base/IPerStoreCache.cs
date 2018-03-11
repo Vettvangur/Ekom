@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+﻿using Ekom.Interfaces;
 using System;
 using System.Collections.Concurrent;
 
@@ -14,7 +14,7 @@ namespace Ekom.Cache
         /// <summary>
         /// Handles initial population of cache data
         /// </summary>
-        void FillCache(Store store);
+        void FillCache(IStore store);
     }
 
     /// <summary>

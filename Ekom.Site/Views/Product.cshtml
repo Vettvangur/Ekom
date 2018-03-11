@@ -33,7 +33,7 @@
                     @product.Title
                 </h1>
 
-                <strong class="product__price">@product.Price.WithVat.ToCurrencyString</strong>
+                <strong class="product__price">@product.Price.WithVat.CurrencyString</strong>
 
                 @using (Html.BeginEkomForm(FormType.AddToOrderProduct))
                 {
@@ -77,7 +77,7 @@
 
                                         @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
                                         {
-                                            <p>@variant.Title - @variant.Price.WithVat.ToCurrencyString</p>
+                                            <p>@variant.Title - @variant.Price.WithVat.CurrencyString</p>
                                         }
 
                                     </div>

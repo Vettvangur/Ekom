@@ -1,4 +1,5 @@
-﻿using Examine;
+﻿using Ekom.Interfaces;
+using Examine;
 using log4net;
 using System.Collections.Generic;
 using System.Reflection;
@@ -9,7 +10,7 @@ namespace Ekom.Models
     /// <summary>
     /// A grouping of countries, used to map payment providers and shipping providers to regions
     /// </summary>
-    public class Zone : NodeEntity
+    public class Zone : NodeEntity, IZone
     {
         /// <summary>
         /// Countries encompassing this Zone

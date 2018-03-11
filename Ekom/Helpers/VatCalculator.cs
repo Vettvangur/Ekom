@@ -5,59 +5,47 @@ namespace Ekom.Helpers
     static class VatCalculator
     {
         /// <summary>
-        /// Without vat.
+        /// Removes VAT from amount.
         /// </summary>
         /// <param name="withVat">The with vat.</param>
         /// <param name="vat">The vat.</param>
         /// <returns></returns>
-        public static int WithoutVat(int withVat, decimal vat)
+        public static decimal WithoutVat(decimal withVat, decimal vat)
         {
-            return withVat - VatAmountFromWithVat(withVat, vat);
-            //return (int)Math.Ceiling(withVat / (100 + vat) * 100); // correct(?)
+            return withVat / (1 + vat);
         }
 
         /// <summary>
-        /// With vat.
+        /// Returns the amount with VAT included.
         /// </summary>
         /// <param name="withoutVat">The without vat.</param>
         /// <param name="vat">The vat.</param>
         /// <returns></returns>
-        public static int WithVat(int withoutVat, decimal vat)
+        public static decimal WithVat(decimal withoutVat, decimal vat)
         {
-            return (int)Math.Round(withoutVat * (100 + vat) / 100, MidpointRounding.AwayFromZero);
+            return withoutVat * (1 + vat);
         }
 
         /// <summary>
-        /// Vats the amount from without vat.
+        /// Calculates the VAT amount that would be added if VAT would be applied.
         /// </summary>
         /// <param name="withoutVat">The without vat.</param>
         /// <param name="vat">The vat.</param>
         /// <returns></returns>
-        public static int VatAmountFromWithoutVat(int withoutVat, decimal vat)
+        public static decimal VatAmountFromWithoutVat(decimal withoutVat, decimal vat)
         {
             return WithVat(withoutVat, vat) - withoutVat;
         }
 
         /// <summary>
-        /// Vats the amount from with vat.
+        /// Calculates the VAT amount included in a price including VAT already.
         /// </summary>
         /// <param name="withVat">The with vat.</param>
         /// <param name="vat">The vat.</param>
         /// <returns></returns>
-        public static int VatAmountFromWithVat(int withVat, decimal vat)
+        public static decimal VatAmountFromWithVat(decimal withVat, decimal vat)
         {
-            return (int)Math.Round(withVat - (withVat / (100m + vat) * 100m), MidpointRounding.AwayFromZero); // verified correct
-        }
-
-        /// <summary>
-        /// Gets the vat amount from the original amount.
-        /// </summary>
-        /// <param name="original">The original.</param>
-        /// <param name="vat">The vat.</param>
-        /// <returns></returns>
-        public static int VatAmountFromOriginal(int original, decimal vat)
-        {
-            return vat > 0 ? VatAmountFromWithVat(original, vat) : VatAmountFromWithoutVat(original, vat);
+            return withVat - WithoutVat(withVat, vat); // verified correct
         }
     }
 }

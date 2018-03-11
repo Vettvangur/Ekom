@@ -1,6 +1,6 @@
 ﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Models.Abstractions;
-using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -15,10 +15,23 @@ namespace Ekom.Cache
     /// </summary>
     /// <typeparam name="TItem">Type of data to cache</typeparam>
     abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
+        where TItem : class
     {
         protected Configuration _config;
         protected ExamineManagerBase _examineManager;
         protected ILog _log;
+        protected IObjectFactory<TItem> _objFac;
+
+        public BaseCache(
+            Configuration config,
+            ExamineManagerBase examineManager,
+            IObjectFactory<TItem> objectFactory
+        )
+        {
+            _config = config;
+            _examineManager = examineManager;
+            _objFac = objectFactory;
+        }
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -50,17 +63,6 @@ namespace Ekom.Cache
         }
 
         /// <summary>
-        /// Derived classes should define simple instantiation methods, <para/> 
-        /// saving performance vs Activator.CreateInstance
-        /// </summary>
-        protected abstract TItem New(SearchResult r);
-        /// <summary>
-        /// Derived classes should define simple instantiation methods, <para/> 
-        /// saving performance vs Activator.CreateInstance
-        /// </summary>
-        protected abstract TItem New(IContent r);
-
-        /// <summary>
         /// Base FillCache method appropriate for most derived caches
         /// </summary>
         public virtual void FillCache()
@@ -73,7 +75,7 @@ namespace Ekom.Cache
 
                 stopwatch.Start();
 
-                _log.Info("Starting to fill...");
+                _log.Debug("Starting to fill...");
 
                 var count = 0;
 
@@ -88,7 +90,7 @@ namespace Ekom.Cache
                         // Traverse up parent nodes, checking only published status
                         if (!r.IsItemUnpublished())
                         {
-                            var item = New(r);
+                            var item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
 
                             if (item != null)
                             {
@@ -107,7 +109,7 @@ namespace Ekom.Cache
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Debug("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
@@ -123,7 +125,7 @@ namespace Ekom.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = (TItem)Activator.CreateInstance(typeof(TItem), node);
+                var item = (TItem)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(TItem), node));
 
                 if (item != null) AddOrReplaceFromCache(node.Key, item);
             }

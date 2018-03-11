@@ -72,16 +72,16 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get product by Guid
+        /// Get product by Guid using store from ekmRequest
         /// </summary>
         /// <returns></returns>
         public IProduct GetProduct(Guid Key)
         {
-            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
+            var store = _storeSvc.GetStoreFromCache();
 
-            if (r?.Store != null)
+            if (store != null)
             {
-                var product = GetProduct(r.Store.Alias, Key);
+                var product = GetProduct(store.Alias, Key);
 
                 return product;
             }
@@ -89,16 +89,25 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Get product by Guid from specific store
+        /// </summary>
         public IProduct GetProduct(string storeAlias, Guid Id)
         {
-            return _productCache.Cache[storeAlias][Id];
+            _productCache.Cache[storeAlias].TryGetValue(Id, out var prod);
+            return prod;
         }
 
+        /// <summary>
+        /// Get product by id using store from ekmRequest
+        /// </summary>
         public IProduct GetProduct(int Id)
         {
-            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
             {
-                var product = GetProduct(r.Store.Alias, Id);
+                var product = GetProduct(store.Alias, Id);
 
                 return product;
             }
@@ -106,16 +115,24 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Get product by id from specific store
+        /// </summary>
         public IProduct GetProduct(string storeAlias, int Id)
         {
             return _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
+        /// <summary>
+        /// Get all products in store, using store from ekmRequest
+        /// </summary>
         public IEnumerable<IProduct> GetAllProducts()
         {
-            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
             {
-                var products = GetAllProducts(r.Store.Alias);
+                var products = GetAllProducts(store.Alias);
 
                 return products;
             }
@@ -123,16 +140,24 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Get all products from specific store
+        /// </summary>
         public IEnumerable<IProduct> GetAllProducts(string storeAlias)
         {
             return _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
-        public IEnumerable<IProduct> GetProductsByIds(int[] productIds)
+        /// <summary>
+        /// Get multiple products by id from store in ekmRequest
+        /// </summary>
+        public IEnumerable<IProduct> GetProductsByIds(IEnumerable<int> productIds)
         {
-            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r && r.Store != null)
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
             {
-                var products = GetProductsByIds(productIds, r.Store.Alias);
+                var products = GetProductsByIds(productIds, store.Alias);
 
                 return products;
             }
@@ -140,7 +165,10 @@ namespace Ekom.API
             return null;
         }
 
-        public IEnumerable<IProduct> GetProductsByIds(int[] productIds, string storeAlias)
+        /// <summary>
+        /// Get multiple products by id from specific store
+        /// </summary>
+        public IEnumerable<IProduct> GetProductsByIds(IEnumerable<int> productIds, string storeAlias)
         {
             return _productCache.Cache[storeAlias].Where(x => productIds.Contains(x.Value.Id)).Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
@@ -159,6 +187,9 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Get category by id using store from ekmRequest
+        /// </summary>
         public ICategory GetCategory(int Id)
         {
             var store = _storeSvc.GetStoreFromCache();

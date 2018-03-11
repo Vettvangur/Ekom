@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+﻿using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
 using Examine.SearchCriteria;
@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web.Script.Serialization;
+using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using Umbraco.Core;
 
 namespace Ekom.Helpers
 {
@@ -139,10 +139,11 @@ namespace Ekom.Helpers
         /// <param name="path"></param>
         /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
-        public static bool IsItemDisabled(this SearchResult searchResult,
-                                          Store store,
-                                          string path = "",
-                                          IEnumerable<SearchResult> allCatalogItems = null)
+        public static bool IsItemDisabled(
+            this SearchResult searchResult,
+            IStore store,
+            string path = "",
+            IEnumerable<SearchResult> allCatalogItems = null)
         {
             path = string.IsNullOrEmpty(path) ? searchResult.Fields["path"] : path;
 
@@ -178,10 +179,11 @@ namespace Ekom.Helpers
         /// <param name="path"></param>
         /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
-        public static bool IsItemDisabled(this IContent node,
-                                          Store store,
-                                          string path = "",
-                                          IEnumerable<SearchResult> allCatalogItems = null)
+        public static bool IsItemDisabled(
+            this IContent node,
+            IStore store,
+            string path = "",
+            IEnumerable<SearchResult> allCatalogItems = null)
         {
             path = string.IsNullOrEmpty(path) ? node.Path : path;
 
@@ -227,7 +229,7 @@ namespace Ekom.Helpers
 
                 if (fieldExist)
                 {
-                    
+
                     var value = item.Fields[field];
 
                     return value.GetVortoValue(storeAlias);
@@ -235,7 +237,8 @@ namespace Ekom.Helpers
 
                 return string.Empty;
 
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 var json = new JavaScriptSerializer().Serialize(item);
                 Log.Error("Failed to get StoreProperty. Item : " + json + " field: " + field + " store: " + storeAlias);

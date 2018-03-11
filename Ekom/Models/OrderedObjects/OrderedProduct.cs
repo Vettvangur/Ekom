@@ -156,7 +156,7 @@ namespace Ekom.Models.OrderedObjects
 
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            Price = new OrderedPrice(productPropertiesObject["Price"]);
+            Price = productPropertiesObject["Price"].ToObject<Price>();
 
             ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 

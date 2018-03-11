@@ -14,9 +14,13 @@ namespace Ekom.Services
         /// 
         /// </summary>
         /// <returns></returns>
-        public bool ApplyDiscountToOrder(IDiscount discount, string coupon, string storeAlias)
+        public bool ApplyDiscountToOrder(
+            IDiscount discount, 
+            string storeAlias, 
+            string coupon = null,
+            OrderInfo orderInfo = null)
         {
-            var orderInfo = GetOrder(storeAlias);
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
 
             if (IsBetterDiscount(orderInfo, discount))
             {
@@ -54,10 +58,15 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
-        public bool ApplyDiscountToOrderLine(Guid productKey, IDiscount discount, string coupon, string storeAlias)
+        public bool ApplyDiscountToOrderLine(
+            Guid productKey, 
+            IDiscount discount, 
+            string storeAlias, 
+            string coupon = null, 
+            OrderInfo orderInfo = null)
         {
-            var orderInfo = GetOrder(storeAlias);
-            OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Id == productKey)
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                 as OrderLine;
 
             if (orderLine == null)
@@ -106,7 +115,7 @@ namespace Ekom.Services
         public void RemoveDiscountFromOrderLine(Guid productKey, string storeAlias)
         {
             var orderInfo = GetOrder(storeAlias);
-            var orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Id == productKey)
+            var orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                 as OrderLine;
 
             if (orderLine == null)
@@ -122,9 +131,15 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
-            if (orderInfo.Discount.Amount.Type
-            == discount.Amount.Type)
+            if (orderInfo.Discount == null)
+            {
+                return true;
+            }
+
+            if (orderInfo.Discount.Amount.Type == discount.Amount.Type)
+            {
                 return discount.CompareTo(orderInfo.Discount) > 0;
+            }
 
             var oldDiscount = orderInfo.Discount;
             var oldTotal = orderInfo.ChargedAmount;
@@ -140,9 +155,15 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderLine orderLine, IDiscount discount)
         {
-            if (orderLine.Discount.Amount.Type
-            == discount.Amount.Type)
+            if (orderLine.Discount == null)
+            {
+                return true;
+            }
+
+            if (orderLine.Discount.Amount.Type == discount.Amount.Type)
+            {
                 return discount.CompareTo(orderLine.Discount) > 0;
+            }
 
             var oldDiscount = orderLine.Discount;
             var oldTotal = orderLine.Amount;
