@@ -35,7 +35,7 @@ namespace Ekom.Interfaces
         /// <value>
         /// The quantity.
         /// </value>
-        int Quantity { get; }
+        int TotalQuantity { get; }
 
         /// <summary>
         /// Gets the store info.

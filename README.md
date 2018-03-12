@@ -1,10 +1,10 @@
-## Ekom
+﻿## Ekom
 
 
 ### Hvað er það sem við viljum ná fram með þessari útgáfu ?
 -  1. Virkar!
 -  2. Hröð
--  3. Einfalari
+-  3. Einfaldari
 -  4. Öruggari
 -  6. Virki með 100 vörur en líka 100.000 vörur.
 
