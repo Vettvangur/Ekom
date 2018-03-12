@@ -28,7 +28,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         [JsonIgnore]
-        public virtual int Stock => API.Stock.Current.GetStock(Key);
+        public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
@@ -37,7 +37,7 @@ namespace Ekom.Models
         {
             get
             {
-                var product = Catalog.Current.GetProduct(Store.Alias, ProductId);
+                var product = Catalog.Instance.GetProduct(Store.Alias, ProductId);
 
                 if (product == null)
                 {
@@ -138,7 +138,7 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = API.Catalog.Current.GetCategory(Store.Alias, categoryId);
+            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -154,7 +154,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = API.Catalog.Current.GetCategory(Store.Alias, intCatId);
+                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {

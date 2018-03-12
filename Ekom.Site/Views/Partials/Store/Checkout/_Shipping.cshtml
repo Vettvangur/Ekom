@@ -5,7 +5,7 @@
 
     if (order != null)
     {
-        var shippingProviders = Ekom.API.Providers.Current.GetShippingProviders();
+        var shippingProviders = Ekom.API.Providers.Instance.GetShippingProviders();
         var currentShippingProviderKey = order.ShippingProvider != null ? order.ShippingProvider.Key : Guid.Empty;
 
         using (Html.BeginEkomForm(FormType.UpdateShippingProvider))

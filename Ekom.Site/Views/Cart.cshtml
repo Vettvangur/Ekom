@@ -3,7 +3,7 @@
 
 @{
     Layout = "Masterpage.cshtml";
-    var order = Order.Current.GetOrder();
+    var order = Order.Instance.GetOrder();
 }
 
 @section Main {

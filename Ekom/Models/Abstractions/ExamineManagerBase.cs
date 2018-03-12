@@ -6,7 +6,7 @@ using System.Xml.Linq;
 
 namespace Ekom.Models.Abstractions
 {
-    abstract class ExamineManagerBase
+    public abstract class ExamineManagerBase
     {
         public abstract IndexProviderCollection IndexProviderCollection { get; }
         public abstract SearchProviderCollection SearchProviderCollection { get; }

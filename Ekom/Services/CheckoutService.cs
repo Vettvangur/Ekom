@@ -7,7 +7,6 @@ using Ekom.Repository;
 using log4net;
 using System;
 using System.Linq;
-using Umbraco.NetPayment;
 
 namespace Ekom.Services
 {
@@ -29,20 +28,19 @@ namespace Ekom.Services
             _discountStockRepo = discountStockRepo;
         }
 
-        public void Complete(OrderStatus orderStatus)
+        public void Complete(Guid key)
         {
             OrderData o = null;
             OrderInfo oi = null;
             try
             {
-                var orderKey = Guid.Parse(orderStatus.Custom);
-                o = _orderRepo.GetOrder(orderKey);
+                o = _orderRepo.GetOrder(key);
 
                 oi = new OrderInfo(o);
 
                 foreach (var job in oi.HangfireJobs)
                 {
-                    Stock.Current.CancelRollback(job);
+                    Stock.Instance.CancelRollback(job);
                 }
 
                 if (oi.Discount != null)

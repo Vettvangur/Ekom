@@ -3,7 +3,6 @@ using log4net;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -74,7 +73,8 @@ namespace Ekom.Utilities
                     return true;
                 }
 
-            } catch {}
+            }
+            catch { }
 
             return false;
 
@@ -112,14 +112,16 @@ namespace Ekom.Utilities
 
 
                         }
-                    } else
+                    }
+                    else
                     {
                         return value;
                     }
 
                 }
 
-            } catch {}
+            }
+            catch { }
 
             return string.Empty;
 
@@ -179,13 +181,13 @@ namespace Ekom.Utilities
             return Enumerable.Empty<Image>();
         }
 
-
         public static bool IsBoolean(this string value)
         {
             if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
-            } else
+            }
+            else
             {
                 return false;
             }

@@ -14,7 +14,7 @@ namespace Ekom.Site.Extensions.Services
 
             if (root.DocumentTypeAlias == "ekom")
             {
-                var local = Store.Current.GetStore();
+                var local = Store.Instance.GetStore();
 
                 if (local != null)
                 {

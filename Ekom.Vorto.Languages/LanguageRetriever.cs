@@ -9,7 +9,7 @@ namespace Ekom.Vorto.Languages
     {
         public IEnumerable<Language> GetLanguages()
         {
-            var stores = Store.Current.GetAllStores();
+            var stores = Store.Instance.GetAllStores();
 
             return stores.Select(x => new Language
             {

@@ -1,8 +1,6 @@
-﻿using CommonServiceLocator;
-using Ekom.Cache;
+﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models.Discounts;
 using Ekom.Services;
 using log4net;
 using System;
@@ -15,33 +13,33 @@ namespace Ekom.API
     /// </summary>
     public partial class Order
     {
-        private static Order _current;
         /// <summary>
-        /// Order Singleton
+        /// Order Instance
         /// </summary>
-        public static Order Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Order>());
-            }
-        }
-
-        DiscountCache _discountCache = Configuration.container.GetInstance<DiscountCache>();
-
-        OrderService _orderService => Configuration.container.GetInstance<OrderService>();
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+        public static Order Instance => Configuration.container.GetInstance<Order>();
 
         ILog _log;
         Configuration _config;
+        DiscountCache _discountCache;
+        OrderService _orderService;
+        IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Order(ILogFactory logFac, Configuration config)
+        internal Order(
+            Configuration config,
+            ILogFactory logFac,
+            DiscountCache discountCache,
+            OrderService orderService,
+            IStoreService storeService
+        )
         {
-            _log = logFac.GetLogger<Order>();
+            _discountCache = discountCache;
+            _orderService = orderService;
+            _storeSvc = storeService;
             _config = config;
+            _log = logFac.GetLogger<Order>();
         }
 
         /// <summary>

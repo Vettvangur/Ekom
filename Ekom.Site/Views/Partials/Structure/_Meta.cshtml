@@ -4,10 +4,10 @@
 
 @{
 
-    var local = Store.Current.GetStore();
+    var local = Store.Instance.GetStore();
 
-    var product = Catalog.Current.GetProduct();
-    var category = Catalog.Current.GetCategory();
+    var product = Catalog.Instance.GetProduct();
+    var category = Catalog.Instance.GetCategory();
 
     string _host = Request.Url.Host.ToLower();
     string host = Request.Url.Scheme + "://" + _host;

@@ -1,10 +1,10 @@
 ﻿using CommonServiceLocator.TinyIoCAdapter;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Domain.Repositories;
 using Ekom.Factories;
 using Ekom.Interfaces;
 using Ekom.IoC;
-using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Ekom.Models.Data;
 using Ekom.Repository;
@@ -63,6 +63,8 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
 
+            container.Register<ILogFactory, LogFactory>();
+
             container.Register<Catalog>((c, p) =>
                 new Catalog(
                     c.Resolve<ApplicationContext>(),
@@ -70,9 +72,47 @@ namespace Ekom.App_Start
                     c.Resolve<ILogFactory>(),
                     c.Resolve<IPerStoreCache<IProduct>>(),
                     c.Resolve<IPerStoreCache<ICategory>>(),
-                    c.Resolve<IPerStoreCache<IVariant>>())
-                );
-            container.Register<ILogFactory, LogFactory>();
+                    c.Resolve<IPerStoreCache<IVariant>>(),
+                    c.Resolve<IStoreService>()
+                )
+            );
+            container.Register<Order>((c, p) =>
+                new Order(
+                    c.Resolve<Configuration>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<DiscountCache>(),
+                    c.Resolve<OrderService>(),
+                    c.Resolve<IStoreService>()
+                )
+            );
+            container.Register<Providers>((c, p) =>
+                new Providers(
+                    c.Resolve<Configuration>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<IPerStoreCache<IShippingProvider>>(),
+                    c.Resolve<IPerStoreCache<IPaymentProvider>>(),
+                    c.Resolve<IStoreService>(),
+                    c.Resolve<ICountriesRepository>()
+                )
+            );
+            container.Register<Stock>((c, p) =>
+                new Stock(
+                    c.Resolve<Configuration>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<IBaseCache<StockData>>(),
+                    c.Resolve<IStockRepository>(),
+                    c.Resolve<IDiscountStockRepository>(),
+                    c.Resolve<IStoreService>(),
+                    c.Resolve<IPerStoreCache<StockData>>()
+                )
+            );
+            container.Register<Store>((c, p) =>
+                new Store(
+                    c.Resolve<ApplicationContext>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<IStoreService>()
+                )
+            );
 
             container.RegisterTypes(containerRegistrations);
 

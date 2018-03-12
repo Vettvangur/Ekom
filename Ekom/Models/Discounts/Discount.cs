@@ -7,6 +7,7 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Umbraco.Core;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models.Discounts
@@ -63,6 +64,8 @@ namespace Ekom.Models.Discounts
 
             //CouponsInternal = couponsInternal?.Split(',');
 
+            var discountAmount = Convert.ToDecimal(Properties.GetPropertyValue("discount"));
+
             DiscountType type = DiscountType.Fixed;
 
             switch (Properties.GetPropertyValue("discountType"))
@@ -72,12 +75,14 @@ namespace Ekom.Models.Discounts
 
                 case "Percentage":
                     type = DiscountType.Percentage;
+                    discountAmount /= 100;
                     break;
             }
 
+
             Amount = new DiscountAmount
             {
-                Amount = Convert.ToDecimal(Properties.GetPropertyValue("discountAmount")) / 100,
+                Amount = discountAmount,
                 Type = type,
             };
 
@@ -87,12 +92,9 @@ namespace Ekom.Models.Discounts
             {
                 foreach (var discountItem in discountItemsProp.Split(','))
                 {
-                    if (Uri.TryCreate(discountItem, UriKind.Absolute, out var umbDocUri))
+                    if (GuidUdi.TryParse(discountItem, out var udi))
                     {
-                        var guidStr = umbDocUri.AbsolutePath.TrimStart('/');
-                        var key = Guid.Parse(guidStr);
-
-                        var product = API.Catalog.Current.GetProduct(Store.Alias, key);
+                        var product = API.Catalog.Instance.GetProduct(Store.Alias, udi.Guid);
 
                         if (product != null)
                         {

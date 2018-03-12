@@ -16,7 +16,7 @@ using Umbraco.Core.Cache;
 
 namespace Ekom.Services
 {
-    partial class OrderService //: IOrderService
+    partial class OrderService
     {
         ILog _log;
 
@@ -260,14 +260,14 @@ namespace Ekom.Services
 
                 orderInfo.orderLines.Add(orderLine);
 
-                var product = API.Catalog.Current.GetProduct(productKey);
+                var product = API.Catalog.Instance.GetProduct(productKey);
 
                 if (product.Discount != null)
                 {
                     ApplyDiscountToOrderLine(
-                        productKey, 
+                        productKey,
                         product.Discount,
-                        _store.Alias, 
+                        _store.Alias,
                         orderInfo: orderInfo);
                 }
             }
@@ -444,7 +444,7 @@ namespace Ekom.Services
 
             if (shippingProviderId != Guid.Empty)
             {
-                var provider = API.Providers.Current.GetShippingProvider(shippingProviderId, _store);
+                var provider = API.Providers.Instance.GetShippingProvider(shippingProviderId, _store);
 
                 if (provider != null)
                 {
@@ -471,7 +471,7 @@ namespace Ekom.Services
 
             if (paymentProviderId != Guid.Empty)
             {
-                var provider = API.Providers.Current.GetPaymentProvider(paymentProviderId, _store);
+                var provider = API.Providers.Instance.GetPaymentProvider(paymentProviderId, _store);
 
                 if (provider != null)
                 {

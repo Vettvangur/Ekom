@@ -24,7 +24,7 @@
 
                     var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
 
-                    var catalogProduct = Ekom.API.Catalog.Current.GetProduct(product.StoreInfo.Alias, product.Key);
+                    var catalogProduct = Ekom.API.Catalog.Instance.GetProduct(product.StoreInfo.Alias, product.Key);
 
                     <tr>
                         <td class="no-padding-left">

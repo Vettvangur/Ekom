@@ -20,7 +20,7 @@ namespace Ekom.Cache
         public StockCache(
             ILogFactory logFac,
             IStockRepository stockRepo
-        ) : base(null, null, null)
+        ) : base(null, null)
         {
             _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));

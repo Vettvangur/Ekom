@@ -4,8 +4,8 @@
 @{
     Layout = "Masterpage.cshtml";
 
-    var product = Catalog.Current.GetProduct();
-    var category = Catalog.Current.GetCategory();
+    var product = Catalog.Instance.GetProduct();
+    var category = Catalog.Instance.GetCategory();
     var groups = product.VariantGroups.Where(x => x.Variants.Any()).OrderBy(x => x.SortOrder);
     var primaryVariantGroup = product.PrimaryVariantGroup;
     var primaryImage = primaryVariantGroup != null &&

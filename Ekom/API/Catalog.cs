@@ -17,23 +17,16 @@ namespace Ekom.API
     /// </summary>
     public class Catalog
     {
-        private static Catalog _current;
         /// <summary>
-        /// Catalog Singleton
+        /// Catalog Instance
         /// </summary>
-        public static Catalog Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Catalog>());
-            }
-        }
+        public static Catalog Instance => Configuration.container.GetInstance<Catalog>();
 
         ILog _log;
         Configuration _config;
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+        IStoreService _storeSvc;
 
         IPerStoreCache<IProduct> _productCache;
         IPerStoreCache<ICategory> _categoryCache;
@@ -48,7 +41,8 @@ namespace Ekom.API
             ILogFactory logFac,
             IPerStoreCache<IProduct> productCache,
             IPerStoreCache<ICategory> categoryCache,
-            IPerStoreCache<IVariant> variantCache
+            IPerStoreCache<IVariant> variantCache,
+            IStoreService storeService
         )
         {
             _appCtx = appCtx;
@@ -56,6 +50,7 @@ namespace Ekom.API
             _productCache = productCache;
             _categoryCache = categoryCache;
             _variantCache = variantCache;
+            _storeSvc = storeService;
 
             _log = logFac.GetLogger<Catalog>();
         }

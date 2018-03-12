@@ -93,7 +93,7 @@ namespace Ekom.Models
         /// <summary>
         /// All node properties
         /// </summary>
-        internal Dictionary<string, string> _properties = new Dictionary<string, string>();
+        protected Dictionary<string, string> _properties = new Dictionary<string, string>();
 
         /// <summary>
         /// ctor

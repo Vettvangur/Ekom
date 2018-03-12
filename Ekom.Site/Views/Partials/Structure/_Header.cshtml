@@ -3,10 +3,10 @@
 @using Ekom.Site.Extensions.Services;
 
 @{ 
-    var currentStore = Store.Current.GetStore();
-    var allStores = Store.Current.GetAllStores();
-    var rootCategories = Catalog.Current.GetRootCategories();
-    var order = Order.Current.GetOrder();
+    var currentStore = Store.Instance.GetStore();
+    var allStores = Store.Instance.GetAllStores();
+    var rootCategories = Catalog.Instance.GetRootCategories();
+    var order = Order.Instance.GetOrder();
     var root = UmbracoService.GetRootNode(Model.Content);
 
     var checkoutNode = root.Children.FirstOrDefault(x => x.GetTemplateAlias() == "Checkout");

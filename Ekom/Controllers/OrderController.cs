@@ -45,7 +45,7 @@ namespace Ekom.Controllers
                     variantIds.Add(request.variantId.Value);
                 }
 
-                var orderInfo = Order.Current.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
+                var orderInfo = Order.Instance.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -74,7 +74,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var os = Order.Current;
+                var os = Order.Instance;
 
                 _log.Info("Add To Multiple Order: " + request.productId);
 
@@ -136,7 +136,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Current.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
+                var orderInfo = Order.Instance.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
 
                 return Json(new
                 {
@@ -163,7 +163,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Current.UpdateShippingInformation(ShippingProvider, storeAlias);
+                var orderInfo = Order.Instance.UpdateShippingInformation(ShippingProvider, storeAlias);
 
                 return Json(new
                 {
@@ -190,7 +190,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Current.UpdatePaymentInformation(PaymentProvider, storeAlias);
+                var orderInfo = Order.Instance.UpdatePaymentInformation(PaymentProvider, storeAlias);
 
                 return Json(new
                 {
@@ -220,7 +220,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Current.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var orderInfo = Order.Instance.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -248,7 +248,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Current.RemoveOrderLine(lineId, storeAlias);
+                var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
                 return Json(new { orderInfo, date = DateTime.Now });
             }

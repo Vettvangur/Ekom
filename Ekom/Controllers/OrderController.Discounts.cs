@@ -25,7 +25,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                if (Order.Current.ApplyCouponToOrder(coupon, storeAlias))
+                if (Order.Instance.ApplyCouponToOrder(coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -55,7 +55,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                Order.Current.RemoveCouponFromOrder(storeAlias);
+                Order.Instance.RemoveCouponFromOrder(storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (ArgumentException)
@@ -72,7 +72,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                if (Order.Current.ApplyCouponToOrderLine(productKey, coupon, storeAlias))
+                if (Order.Instance.ApplyCouponToOrderLine(productKey, coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -103,7 +103,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                Order.Current.RemoveCouponFromOrderLine(productKey, storeAlias);
+                Order.Instance.RemoveCouponFromOrderLine(productKey, storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (Exception ex)

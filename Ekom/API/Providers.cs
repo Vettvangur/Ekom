@@ -2,6 +2,8 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Behaviors;
+using Ekom.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,33 +15,35 @@ namespace Ekom.API
     /// </summary>
     public class Providers
     {
-        private static Providers _current;
         /// <summary>
-        /// Providers Singleton
+        /// Providers Instance
         /// </summary>
-        public static Providers Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Providers>());
-            }
-        }
+        public static Providers Instance => Configuration.container.GetInstance<Providers>();
 
-        IPerStoreCache<IShippingProvider> _shippingProviderCache
-            = Configuration.container.GetInstance<IPerStoreCache<IShippingProvider>>();
-        IPerStoreCache<IPaymentProvider> _paymentProviderCache
-            = Configuration.container.GetInstance<IPerStoreCache<IPaymentProvider>>();
+        ILog _log;
+        IPerStoreCache<IShippingProvider> _shippingProviderCache;
+        IPerStoreCache<IPaymentProvider> _paymentProviderCache;
 
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+        IStoreService _storeSvc;
         ICountriesRepository _countryRepo;
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="countryRepo"></param>
-        public Providers(ICountriesRepository countryRepo)
+        internal Providers(
+            Configuration config,
+            ILogFactory logFac,
+            IPerStoreCache<IShippingProvider> shippingProviderCache,
+            IPerStoreCache<IPaymentProvider> paymentProviderCache,
+            IStoreService storeService,
+            ICountriesRepository countryRepo
+        )
         {
+            _shippingProviderCache = shippingProviderCache;
+            _paymentProviderCache = paymentProviderCache;
+            _storeSvc = storeService;
             _countryRepo = countryRepo;
+            _log = logFac.GetLogger<Providers>();
         }
 
         /// <summary>

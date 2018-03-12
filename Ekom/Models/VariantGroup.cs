@@ -23,7 +23,7 @@ namespace Ekom.Models
         {
             get
             {
-                var product = Catalog.Current.GetProduct(Store.Alias, ProductId);
+                var product = Catalog.Instance.GetProduct(Store.Alias, ProductId);
 
                 if (product == null)
                 {
@@ -93,7 +93,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Catalog.Current.GetVariantsByGroup(Store.Alias, Id);
+                return Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
             }
         }
 

@@ -81,9 +81,6 @@
     <Reference Include="Examine, Version=0.1.83.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.0.1.83\lib\net45\Examine.dll</HintPath>
     </Reference>
-    <Reference Include="GMO.Umbraco.PropertyHelper, Version=1.1.6502.28012, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Umbraco.PropertyHelper.1.1.2\lib\net452\GMO.Umbraco.PropertyHelper.dll</HintPath>
-    </Reference>
     <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\GMO.Vorto.0.0.3\lib\net45\GMO.Vorto.dll</HintPath>
     </Reference>
@@ -276,14 +273,14 @@
     <Reference Include="Umbraco.ModelsBuilder, Version=3.0.7.99, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.ModelsBuilder.3.0.7\lib\Umbraco.ModelsBuilder.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6606.42273, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.7.1.0\lib\net452\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=2.1.6645.18970, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.7.2.1\lib\net452\Umbraco.NetPayment.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6606.42278, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Borgun.7.1.0\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6645.18975, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.Borgun.7.2.1\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment.Valitor, Version=2.0.6606.42284, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Valitor.7.1.0\lib\net452\Umbraco.NetPayment.Valitor.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment.Valitor, Version=2.0.6645.18971, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.Valitor.7.2.1\lib\net452\Umbraco.NetPayment.Valitor.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>

@@ -3,11 +3,11 @@ using Ekom.Utilities;
 using Examine;
 using Examine.SearchCriteria;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Web.Script.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -15,7 +15,7 @@ using Umbraco.Web;
 
 namespace Ekom.Helpers
 {
-    static class NodeHelper
+    public static class NodeHelper
     {
         private static readonly ILog Log =
             LogManager.GetLogger(
@@ -240,11 +240,10 @@ namespace Ekom.Helpers
             }
             catch (Exception ex)
             {
-                var json = new JavaScriptSerializer().Serialize(item);
-                Log.Error("Failed to get StoreProperty. Item : " + json + " field: " + field + " store: " + storeAlias);
-                throw ex;
+                var json = JsonConvert.SerializeObject(item);
+                Log.Error("Failed to get StoreProperty. Item : " + json + " field: " + field + " store: " + storeAlias, ex);
+                throw;
             }
-
         }
 
         /// <summary>

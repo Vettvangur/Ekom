@@ -5,7 +5,7 @@
 
     if (order != null)
     {
-        var paymentProviders = Ekom.API.Providers.Current.GetPaymentProviders();
+        var paymentProviders = Ekom.API.Providers.Instance.GetPaymentProviders();
         var currentPaymentProviderKey = order.PaymentProvider != null ? order.PaymentProvider.Key : Guid.Empty;
 
         using (Html.BeginEkomForm(FormType.UpdatePaymentProvider))

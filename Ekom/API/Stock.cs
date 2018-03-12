@@ -14,45 +14,38 @@ namespace Ekom.API
     /// </summary>
     public partial class Stock
     {
-        private static Stock _current;
         /// <summary>
-        /// Stock Singleton
+        /// Stock Instance
         /// </summary>
-        public static Stock Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Stock>());
-            }
-        }
+        public static Stock Instance => Configuration.container.GetInstance<Stock>();
 
         ILog _log;
         Configuration _config;
         IStockRepository _stockRepo;
         IDiscountStockRepository _discountStockRepo;
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
-
+        IStoreService _storeSvc;
         IBaseCache<StockData> _stockCache;
         IPerStoreCache<StockData> _stockPerStoreCache;
-
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Stock(
+        internal Stock(
+            Configuration config,
             ILogFactory logFac,
             IBaseCache<StockData> stockCache,
-            Configuration config,
             IStockRepository stockRepo,
-            IDiscountStockRepository discountStockRepo
+            IDiscountStockRepository discountStockRepo,
+            IStoreService storeService,
+            IPerStoreCache<StockData> stockPerStoreCache
         )
         {
-            _stockCache = stockCache;
             _config = config;
+            _stockCache = stockCache;
             _stockRepo = stockRepo;
             _discountStockRepo = discountStockRepo;
-            // Private interface but public constructor
-            _stockPerStoreCache = Configuration.container.GetInstance<IPerStoreCache<StockData>>();
+            _storeSvc = storeService;
+            _stockPerStoreCache = stockPerStoreCache;
 
             _log = logFac.GetLogger<Stock>();
         }
@@ -357,7 +350,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, int value)
         {
-            Current.UpdateStock(key, value);
+            Instance.UpdateStock(key, value);
         }
         /// <summary>
         /// Allows hangfire to serialise the method call to database
@@ -367,7 +360,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
         {
-            Current.UpdateStock(key, storeAlias, value);
+            Instance.UpdateStock(key, storeAlias, value);
         }
     }
 }

@@ -114,7 +114,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateDiscountStockHangfire(Guid key, int value)
         {
-            Current.UpdateDiscountStock(key, value);
+            Instance.UpdateDiscountStock(key, value);
         }
     }
 }

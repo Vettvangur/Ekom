@@ -23,7 +23,7 @@ namespace Ekom.Extensions.Controllers
     {
         ILog _log;
         Configuration _config;
-        Stock _stock => Stock.Current;
+        Stock _stock => Stock.Instance;
 
         //IDatabaseFactory _dbFac;
 
@@ -49,8 +49,8 @@ namespace Ekom.Extensions.Controllers
         {
             var hangfireJobs = new List<string>();
 
-            var order = Order.Current.GetOrder();
-            var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
+            var order = Order.Instance.GetOrder();
+            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
             var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
@@ -126,7 +126,7 @@ namespace Ekom.Extensions.Controllers
 
             if (paymentRequest.ShippingProvider != Guid.Empty)
             {
-                var ekomSP = Providers.Current.GetShippingProvider(paymentRequest.ShippingProvider);
+                var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
                 var orderItemsList = orderItems.ToList();
                 orderItemsList.Add(new OrderItem
                 {
@@ -151,7 +151,7 @@ namespace Ekom.Extensions.Controllers
             }
 
             // save job ids to sql for retrieval after checkout completion
-            Order.Current.AddHangfireJobsToOrder(hangfireJobs);
+            Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
 
             return Content(await pp.RequestAsync(
                 order.ChargedAmount.Value,

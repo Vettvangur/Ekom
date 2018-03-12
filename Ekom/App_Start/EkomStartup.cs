@@ -10,7 +10,6 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using TinyIoC;
 using Umbraco.Core;
 using Umbraco.Core.Events;
@@ -19,9 +18,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Publishing;
 using Umbraco.Core.Services;
-using Umbraco.NetPayment;
 using Umbraco.Web.Routing;
-using ILogFactory = Ekom.Services.ILogFactory;
 
 namespace Ekom
 {
@@ -44,7 +41,7 @@ namespace Ekom
         /// Methods that override unity type registrations
         /// </summary>
         /// <param name="typeMappings"></param>
-        public delegate void ExtensionRegistrations(List<IContainerRegistration> typeMappings);
+        public delegate void ExtensionRegistrations(IList<IContainerRegistration> typeMappings);
 
         /// <summary>
         /// Umbraco startup lifecycle method
@@ -111,17 +108,8 @@ namespace Ekom
             GlobalConfiguration.Configuration.UseSqlServerStorage(applicationContext.DatabaseContext.ConnectionString);
             new BackgroundJobServer();
 
-            // Hook into NetPayment completion event
-
-            LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
-
             _log.Info("Ekom Started");
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
 
         private void TinyIoC()
         {
@@ -167,13 +155,6 @@ namespace Ekom
             {
                 dbHelper.CreateTable<CustomerData>(false);
             }
-        }
-
-        private void CompleteCheckout(Umbraco.NetPayment.OrderStatus o)
-        {
-            var checkoutSvc = Configuration.container.GetInstance<CheckoutService>();
-
-            checkoutSvc.Complete(o);
         }
 
         private void ContentService_Publishing(
@@ -249,7 +230,7 @@ namespace Ekom
 
             var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
-            var stores = API.Store.Current.GetAllStores();
+            var stores = API.Store.Instance.GetAllStores();
 
             var slugItems = new Dictionary<string, object>();
             var titleItems = new Dictionary<string, object>();

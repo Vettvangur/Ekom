@@ -22,9 +22,8 @@ namespace Ekom.Cache
         public StoreCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManagerBase examineManager,
             IObjectFactory<IStore> objectFactory
-        ) : base(config, examineManager, objectFactory)
+        ) : base(config, objectFactory)
         {
             _log = logFac.GetLogger<StoreCache>();
         }

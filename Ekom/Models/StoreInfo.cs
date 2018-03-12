@@ -4,13 +4,22 @@ using System;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// Frozen representation of <see cref="IStore"/>
+    /// </summary>
     public class StoreInfo
     {
         /// <summary>
         /// 
         /// </summary>
         [JsonConstructor]
-        public StoreInfo(Guid key, string currency, string culture, string alias, bool vatIncludedInPrice, decimal vat)
+        public StoreInfo(
+            Guid key,
+            string currency,
+            string culture,
+            string alias,
+            bool vatIncludedInPrice,
+            decimal vat)
         {
             Key = key;
             Currency = currency;
@@ -31,14 +40,13 @@ namespace Ekom.Models
                 VatIncludedInPrice = store.VatIncludedInPrice;
                 Vat = store.Vat;
             }
-
         }
 
-        public Guid Key { get; internal set; }
-        public string Currency { get; internal set; }
-        public string Culture { get; internal set; }
-        public string Alias { get; internal set; }
-        public bool VatIncludedInPrice { get; internal set; }
-        public decimal Vat { get; internal set; }
+        public Guid Key { get; }
+        public string Currency { get; }
+        public string Culture { get; }
+        public string Alias { get; }
+        public bool VatIncludedInPrice { get; }
+        public decimal Vat { get; }
     }
 }

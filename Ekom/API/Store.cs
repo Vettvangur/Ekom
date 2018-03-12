@@ -12,30 +12,27 @@ namespace Ekom.API
     /// </summary>
     public class Store
     {
-        private static Store _current;
         /// <summary>
-        /// Store Singleton
+        /// Store Instance
         /// </summary>
-        public static Store Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Store>());
-            }
-        }
+        public static Store Instance => Configuration.container.GetInstance<Store>();
 
         ILog _log;
         ApplicationContext _appCtx;
+        IStoreService _storeSvc;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Store(ApplicationContext appCtx, ILogFactory logFac)
+        internal Store(
+            ApplicationContext appCtx,
+            ILogFactory logFac,
+            IStoreService storeService
+        )
         {
             _appCtx = appCtx;
-
+            _storeSvc = storeService;
             _log = logFac.GetLogger(typeof(Store));
         }
 

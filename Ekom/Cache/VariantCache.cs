@@ -11,10 +11,9 @@ namespace Ekom.Cache
         public VariantCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManagerBase examineManager,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IVariant> perStoreFactory
-        ) : base(config, examineManager, storeCache, perStoreFactory)
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(VariantCache));
         }

@@ -11,10 +11,9 @@ namespace Ekom.Cache
         public CategoryCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManagerBase examineManager,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<ICategory> perStoreFactory
-        ) : base(config, examineManager, storeCache, perStoreFactory)
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(CategoryCache));
         }

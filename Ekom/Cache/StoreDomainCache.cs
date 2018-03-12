@@ -16,16 +16,11 @@ namespace Ekom.Cache
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="appCtx"></param>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
         public StoreDomainCache(
             ApplicationContext appCtx,
             ILogFactory logFac,
-            Configuration config,
-            ExamineManagerBase examineManager
-        ) : base(config, examineManager, null)
+            Configuration config
+        ) : base(config, null)
         {
             _appCtx = appCtx;
             _log = logFac.GetLogger(typeof(StoreDomainCache));

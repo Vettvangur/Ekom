@@ -22,7 +22,7 @@ namespace Ekom.Cache
 {
     class DiscountCache : PerStoreCache<IDiscount>
     {
-        protected BaseSearchProvider _searcher;
+        protected BaseSearchProvider _searcher => _examineManager.SearchProviderCollection[_config.ExamineSearcher];
 
         /// <summary>
         /// Map coupon strings back to their parent <see cref="IDiscount"/>
@@ -44,15 +44,12 @@ namespace Ekom.Cache
         public DiscountCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManagerBase examineManager,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IDiscount> perStoreFactory
         )
-            : base(config, examineManager, storeCache, perStoreFactory)
+            : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger<DiscountCache>();
-
-            _searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
         }
 
         /// <summary>

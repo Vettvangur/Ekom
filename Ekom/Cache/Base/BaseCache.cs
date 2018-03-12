@@ -18,18 +18,17 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ExamineManagerBase _examineManager;
         protected ILog _log;
         protected IObjectFactory<TItem> _objFac;
 
+        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
+
         public BaseCache(
             Configuration config,
-            ExamineManagerBase examineManager,
             IObjectFactory<TItem> objectFactory
         )
         {
             _config = config;
-            _examineManager = examineManager;
             _objFac = objectFactory;
         }
 

@@ -11,10 +11,9 @@ namespace Ekom.Cache
         public ShippingProviderCache(
             Configuration config,
             ILogFactory logFac,
-            ExamineManagerBase examineManager,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IShippingProvider> perStoreFactory
-        ) : base(config, examineManager, storeCache, perStoreFactory)
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(ShippingProviderCache));
         }

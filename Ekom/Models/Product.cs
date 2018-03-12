@@ -80,7 +80,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         [JsonIgnore]
-        public virtual int Stock => API.Stock.Current.GetStock(Key);
+        public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         public virtual IEnumerable<Image> Images
         {
@@ -135,7 +135,7 @@ namespace Ekom.Models
 
                 if (alias == "ekmCategory")
                 {
-                    var c = API.Catalog.Current.GetCategory(Store.Alias, item.Id);
+                    var c = API.Catalog.Instance.GetCategory(Store.Alias, item.Id);
 
                     if (c != null)
                     {
@@ -161,7 +161,7 @@ namespace Ekom.Models
             var categories = new List<ICategory>();
 
 
-            var primaryCategory = API.Catalog.Current.GetCategory(Store.Alias, categoryId);
+            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -177,7 +177,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = API.Catalog.Current.GetCategory(Store.Alias, intCatId);
+                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {

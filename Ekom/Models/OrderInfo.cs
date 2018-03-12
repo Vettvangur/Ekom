@@ -47,7 +47,7 @@ namespace Ekom.Models
             }
             else
             {
-                StoreInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
+                StoreInfo = new StoreInfo(API.Store.Instance.GetStore(orderData.StoreAlias));
             }
         }
 

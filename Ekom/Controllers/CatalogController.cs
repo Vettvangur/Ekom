@@ -32,7 +32,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public IProduct GetProduct(Guid Id)
         {
-            return API.Catalog.Current.GetProduct(Id);
+            return API.Catalog.Instance.GetProduct(Id);
         }
     }
 }

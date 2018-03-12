@@ -9,14 +9,20 @@ using System.Reflection;
 
 namespace Ekom.Models
 {
-    class Price : IPrice
+    public class Price : IPrice
     {
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
 
+        /// <summary>
+        /// 
+        /// </summary>
         public OrderedDiscount Discount { get; }
+        /// <summary>
+        /// 
+        /// </summary>
         public StoreInfo Store { get; }
 
         /// <summary>
@@ -29,39 +35,43 @@ namespace Ekom.Models
         /// </summary>
         [JsonConstructor]
         public Price(
-            OrderedDiscount discount, 
-            StoreInfo store, 
-            decimal originalValue, 
-            bool discountAlwaysBeforeVAT)
-            : this(originalValue, store, discount)
+            OrderedDiscount discount,
+            StoreInfo store,
+            decimal originalValue,
+            bool discountAlwaysBeforeVAT,
+            int quantity)
+            : this(originalValue, store, discount, quantity)
         {
             DiscountAlwaysBeforeVAT = discountAlwaysBeforeVAT;
         }
 
-        public Price(string price, IStore store, OrderedDiscount discount = null)
-            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price), 
+        public Price(string price, IStore store, OrderedDiscount discount = null, int quantity = 1)
+            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  new StoreInfo(store),
-                 discount)
+                 discount,
+                 quantity)
         {
         }
 
-        public Price(decimal price, IStore store, OrderedDiscount discount = null)
-            : this(price, new StoreInfo(store), discount)
+        public Price(decimal price, IStore store, OrderedDiscount discount = null, int quantity = 1)
+            : this(price, new StoreInfo(store), discount, quantity)
         {
         }
 
-        public Price(string price, StoreInfo storeInfo, OrderedDiscount discount = null)
+        public Price(string price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  storeInfo,
-                 discount)
+                 discount,
+                 quantity)
         {
         }
 
-        public Price(decimal price, StoreInfo storeInfo, OrderedDiscount discount = null)
+        public Price(decimal price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
         {
             OriginalValue = price;
             Store = storeInfo;
             Discount = discount;
+            Quantity = quantity;
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
@@ -74,6 +84,7 @@ namespace Ekom.Models
         public object Clone() => MemberwiseClone();
 
         public decimal OriginalValue { get; }
+        public int Quantity { get; }
 
         private ICalculatedPrice _beforeDiscount;
         /// <summary>
@@ -92,7 +103,7 @@ namespace Ekom.Models
                     {
                         if (_beforeDiscount == null)
                         {
-                            _beforeDiscount = CreateSimplePrice(OriginalValue);
+                            _beforeDiscount = CreateSimplePrice(OriginalValue * Quantity);
                         }
                     }
                 }
@@ -144,7 +155,7 @@ namespace Ekom.Models
                                 }
                             }
 
-                            _afterDiscount = CreateSimplePrice(price);
+                            _afterDiscount = CreateSimplePrice(price * Quantity);
                         }
                     }
                 }

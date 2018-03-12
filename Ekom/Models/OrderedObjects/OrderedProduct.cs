@@ -104,7 +104,7 @@ namespace Ekom.Models.OrderedObjects
 
         public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, IStore store)
         {
-            var product = Catalog.Current.GetProduct(store.Alias, productId);
+            var product = Catalog.Instance.GetProduct(store.Alias, productId);
 
             if (product == null)
             {
@@ -125,7 +125,7 @@ namespace Ekom.Models.OrderedObjects
 
                 foreach (var variantId in variantIds)
                 {
-                    var variant = Catalog.Current.GetVariant(store.Alias, variantId);
+                    var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
 
                     if (variant == null)
                     {
@@ -150,7 +150,7 @@ namespace Ekom.Models.OrderedObjects
             this.productJson = productJson;
             this.storeInfo = storeInfo;
 
-            Log.Info("Created OrderedProduct from json");
+            Log.Debug("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
 
@@ -168,13 +168,13 @@ namespace Ekom.Models.OrderedObjects
 
             if (variantGroups != null && !string.IsNullOrEmpty(variantGroups.ToString()))
             {
-                Log.Info("OrderedProduct: Variant Groups found in Json");
+                Log.Debug("OrderedProduct: Variant Groups found in Json");
 
                 var variantGroupsArray = (JArray)variantGroups;
 
                 if (variantGroupsArray != null && variantGroupsArray.Any())
                 {
-                    Log.Info("OrderedProduct: Variant Groups items found in array json");
+                    Log.Debug("OrderedProduct: Variant Groups items found in array json");
 
                     foreach (var variantGroupObject in variantGroupsArray)
                     {

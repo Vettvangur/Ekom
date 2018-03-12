@@ -36,11 +36,13 @@ namespace Ekom.Tests
             c.Register<IBaseCache<StockData>, StockCache>(stockCache);
 
             var stockApi = new Stock(
+                Mock.Of<Configuration>(),
                 logFac.Object,
                 stockCache,
-                Mock.Of<Configuration>(),
                 stockRepo.Object,
-                Mock.Of<IDiscountStockRepository>()
+                Mock.Of<IDiscountStockRepository>(),
+                Mock.Of<IStoreService>(),
+                Mock.Of<IPerStoreCache<StockData>>()
             );
 
             Assert.ThrowsException<StockException>(() => stockApi.UpdateStock(newGuid, -5));

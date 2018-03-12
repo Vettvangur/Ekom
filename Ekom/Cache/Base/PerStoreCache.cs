@@ -21,20 +21,19 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ExamineManagerBase _examineManager;
         protected ILog _log;
         protected IBaseCache<IStore> _storeCache;
         protected IPerStoreFactory<TItem> _objFac;
 
+        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
+
         public PerStoreCache(
             Configuration config,
-            ExamineManagerBase examineManager,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<TItem> objFac
         )
         {
             _config = config;
-            _examineManager = examineManager;
             _storeCache = storeCache;
             _objFac = objFac;
         }

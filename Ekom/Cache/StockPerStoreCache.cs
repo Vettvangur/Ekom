@@ -17,7 +17,7 @@ namespace Ekom.Cache
             ILogFactory logFac,
             StockRepository stockRepo,
             IBaseCache<IStore> storeCache
-        ) : base(null, null, storeCache, null)
+        ) : base(null, storeCache, null)
         {
             _stockRepo = stockRepo;
 

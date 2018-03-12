@@ -100,7 +100,7 @@ namespace Ekom.Models.OrderedObjects
 
         public OrderedVariant(Guid variantId, IStore store)
         {
-            var variant = Catalog.Current.GetVariant(store.Alias, variantId);
+            var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
             storeInfo = new StoreInfo(store);
             Price = variant.Price.Clone() as IPrice;
 

@@ -20,14 +20,14 @@ namespace Ekom
 
             if (content != null && (content.DocumentTypeAlias == "ekmProduct" || content.DocumentTypeAlias == "ekmCategory"))
             {
-                var stores = API.Store.Current.GetAllStores();
+                var stores = API.Store.Instance.GetAllStores();
 
                 if (stores.Any())
                 {
                     
                     if (content.DocumentTypeAlias == "ekmProduct")
                     {
-                        var product = API.Catalog.Current.GetProduct(stores.First().Alias, id);
+                        var product = API.Catalog.Instance.GetProduct(stores.First().Alias, id);
 
                         if (product != null)
                         {
@@ -36,7 +36,7 @@ namespace Ekom
                         
                     } else
                     {
-                        var category = API.Catalog.Current.GetCategory(stores.First().Alias, id);
+                        var category = API.Catalog.Instance.GetCategory(stores.First().Alias, id);
 
                         if (category != null)
                         {
@@ -60,7 +60,7 @@ namespace Ekom
             {
                 var list = new List<string>();
 
-                var stores = API.Store.Current.GetAllStores();
+                var stores = API.Store.Instance.GetAllStores();
 
                 if (stores.Count() > 1)
                 {
@@ -70,7 +70,7 @@ namespace Ekom
 
                         if (content.DocumentTypeAlias == "ekmProduct")
                         {
-                            var product = API.Catalog.Current.GetProduct(store.Alias, id);
+                            var product = API.Catalog.Instance.GetProduct(store.Alias, id);
 
                             if (product != null)
                             {
@@ -80,7 +80,7 @@ namespace Ekom
                         }
                         else
                         {
-                            var category = API.Catalog.Current.GetCategory(store.Alias, id);
+                            var category = API.Catalog.Instance.GetCategory(store.Alias, id);
 
                             if (category != null)
                             {
