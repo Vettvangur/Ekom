@@ -1,24 +1,19 @@
-﻿using Examine;
-using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Abstractions;
 using Ekom.Services;
 
 namespace Ekom.Cache
 {
-    class PaymentProviderCache : PerStoreCache<PaymentProvider>
+    class PaymentProviderCache : PerStoreCache<IPaymentProvider>
     {
         public override string NodeAlias { get; } = "ekmPaymentProvider";
-
-        protected override PaymentProvider New(SearchResult r, Store store)
-        {
-            return new PaymentProvider(r, store);
-        }
 
         public PaymentProviderCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
-        ) : base(config, examineManager, storeCache)
+            IBaseCache<IStore> storeCache,
+            IPerStoreFactory<IPaymentProvider> perStoreFactory
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(PaymentProviderCache));
         }

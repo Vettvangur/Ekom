@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
+using Umbraco.Core.Models;
 
 namespace Ekom.Interfaces
 {
@@ -22,5 +24,12 @@ namespace Ekom.Interfaces
         /// The culture.
         /// </value>
         CultureInfo Culture { get; }
+        string Alias { get; }
+        IEnumerable<IDomain> Domains { get; set; }
+        string OrderNumberPrefix { get; set; }
+        string OrderNumberTemplate { get; set; }
+        int StoreRootNode { get; set; }
+        string Url { get; set; }
+        bool VatIncludedInPrice { get; set; }
     }
 }

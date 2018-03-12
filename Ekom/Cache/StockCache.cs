@@ -1,9 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
+using Examine;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
@@ -18,7 +20,7 @@ namespace Ekom.Cache
         public StockCache(
             ILogFactory logFac,
             IStockRepository stockRepo
-        )
+        ) : base(null, null)
         {
             _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));

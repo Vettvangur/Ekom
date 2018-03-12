@@ -1,11 +1,12 @@
-﻿using Examine;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models.Abstractions;
 using Examine.SearchCriteria;
 using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Umbraco.Core.Models;
-using Ekom.Helpers;
 
 namespace Ekom.Cache
 {
@@ -14,10 +15,22 @@ namespace Ekom.Cache
     /// </summary>
     /// <typeparam name="TItem">Type of data to cache</typeparam>
     abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
+        where TItem : class
     {
         protected Configuration _config;
-        protected ExamineManager _examineManager;
         protected ILog _log;
+        protected IObjectFactory<TItem> _objFac;
+
+        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
+
+        public BaseCache(
+            Configuration config,
+            IObjectFactory<TItem> objectFactory
+        )
+        {
+            _config = config;
+            _objFac = objectFactory;
+        }
 
         /// <summary>
         /// Umbraco Node Alias name used in Examine search
@@ -27,6 +40,16 @@ namespace Ekom.Cache
         public ConcurrentDictionary<Guid, TItem> Cache { get; }
          = new ConcurrentDictionary<Guid, TItem>();
 
+        /// <summary>
+        /// Class indexer
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public TItem this[Guid index]
+        {
+            get => Cache[index];
+            set => Cache[index] = value;
+        }
 
         protected void AddOrReplaceFromCache(Guid id, TItem newCacheItem)
         {
@@ -36,15 +59,6 @@ namespace Ekom.Cache
         protected void RemoveItemFromCache(Guid id)
         {
             Cache.TryRemove(id, out TItem i);
-        }
-
-        /// <summary>
-        /// Derived classes should define simple instantiation methods, <para/> 
-        /// saving performance vs Activator.CreateInstance
-        /// </summary>
-        protected virtual TItem New(SearchResult r)
-        {
-            return (TItem)Activator.CreateInstance(typeof(TItem), r);
         }
 
         /// <summary>
@@ -60,7 +74,7 @@ namespace Ekom.Cache
 
                 stopwatch.Start();
 
-                _log.Info("Starting to fill...");
+                _log.Debug("Starting to fill...");
 
                 var count = 0;
 
@@ -75,7 +89,7 @@ namespace Ekom.Cache
                         // Traverse up parent nodes, checking only published status
                         if (!r.IsItemUnpublished())
                         {
-                            var item = New(r);
+                            var item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
 
                             if (item != null)
                             {
@@ -88,17 +102,17 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _log.Info("Failed to map to store. Id: " + r.Id, ex);
+                        _log.Warn("Failed to map to store. Id: " + r.Id, ex);
                     }
                 }
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Debug("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
-                _log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
+                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill category cache.");
             }
         }
 
@@ -110,7 +124,7 @@ namespace Ekom.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = (TItem)Activator.CreateInstance(typeof(TItem), node);
+                var item = (TItem)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(TItem), node));
 
                 if (item != null) AddOrReplaceFromCache(node.Key, item);
             }

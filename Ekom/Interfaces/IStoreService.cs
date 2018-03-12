@@ -1,15 +1,13 @@
-﻿using System.Collections.Generic;
-using System.Web;
-using Umbraco.Core.Models;
-using Ekom.Models;
+﻿using Ekom.Models;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
-    public interface IStoreService
+    interface IStoreService
     {
-        IEnumerable<Store> GetAllStores();
-        Store GetStoreByAlias(string alias);
-        Store GetStoreByDomain(string domain = "");
-        Store GetStoreFromCache();
+        IEnumerable<IStore> GetAllStores();
+        IStore GetStoreByAlias(string alias);
+        IStore GetStoreByDomain(string domain = "");
+        IStore GetStoreFromCache();
     }
 }

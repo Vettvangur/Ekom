@@ -1,24 +1,19 @@
-﻿using Examine;
-using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Abstractions;
 using Ekom.Services;
 
 namespace Ekom.Cache
 {
-    class ShippingProviderCache : PerStoreCache<ShippingProvider>
+    class ShippingProviderCache : PerStoreCache<IShippingProvider>
     {
         public override string NodeAlias { get; } = "ekmShippingProvider";
-
-        protected override ShippingProvider New(SearchResult r, Store store)
-        {
-            return new ShippingProvider(r, store);
-        }
 
         public ShippingProviderCache(
             Configuration config,
             ILogFactory logFac,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
-        ) : base(config, examineManager, storeCache)
+            IBaseCache<IStore> storeCache,
+            IPerStoreFactory<IShippingProvider> perStoreFactory
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(ShippingProviderCache));
         }

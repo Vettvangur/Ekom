@@ -1,24 +1,19 @@
-﻿using Examine;
-using Ekom.Models;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Abstractions;
 using Ekom.Services;
 
 namespace Ekom.Cache
 {
-    class VariantCache : PerStoreCache<Variant>
+    class VariantCache : PerStoreCache<IVariant>
     {
         public override string NodeAlias { get; } = "ekmProductVariant";
-
-        protected override Variant New(SearchResult r, Store store)
-        {
-            return new Variant(r, store);
-        }
 
         public VariantCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
-        ) : base(config, examineManager, storeCache)
+            IBaseCache<IStore> storeCache,
+            IPerStoreFactory<IVariant> perStoreFactory
+        ) : base(config, storeCache, perStoreFactory)
         {
             _log = logFac.GetLogger(typeof(VariantCache));
         }

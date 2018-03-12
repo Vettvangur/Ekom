@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
+using Ekom.Models.OrderedObjects;
 using log4net;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Ekom.Models
@@ -14,20 +15,20 @@ namespace Ekom.Models
     /// <summary>
     /// Order/Cart
     /// </summary>
-    public class OrderInfo : IOrderInfo
+    class OrderInfo : IOrderInfo
     {
+        public StoreInfo StoreInfo { get; }
         private OrderData _orderData;
-        private Store _store;
-        private StoreInfo _storeInfo;
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="orderData"></param>
         /// <param name="store"></param>
-        public OrderInfo(OrderData orderData, Store store)
+        public OrderInfo(OrderData orderData, IStore store)
         {
             _orderData = orderData;
-            _store = store;
+            StoreInfo = new StoreInfo(store);
         }
 
         public OrderInfo(OrderData orderData)
@@ -38,17 +39,27 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                _storeInfo = CreateStoreInfoFromJson(orderInfoJObject);
-                OrderLines = CreateOrderLinesFromJson(orderInfoJObject);
+                StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
+                orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
-            } else
-            {
-                _storeInfo = new StoreInfo(API.Store.Current.GetStore(orderData.StoreAlias));
             }
-
+            else
+            {
+                StoreInfo = new StoreInfo(API.Store.Instance.GetStore(orderData.StoreAlias));
+            }
         }
+
+        /// <summary>
+        /// Force changes to come through order api, 
+        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
+        /// </summary>
+        public OrderedDiscount Discount { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Coupon { get; internal set; }
 
         /// <summary>
         /// Order UniqueId
@@ -75,7 +86,16 @@ namespace Ekom.Models
             }
         }
 
-        public List<OrderLine> OrderLines = new List<OrderLine>();
+        /// <summary>
+        /// Force changes to come through order api
+        /// </summary>
+        internal List<OrderLine> orderLines = new List<OrderLine>();
+
+        /// <summary>
+        /// Force changes to come through order api, 
+        /// ensuring lines are never changed without passing through the correct channels.
+        /// </summary>
+        public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
@@ -86,39 +106,51 @@ namespace Ekom.Models
         {
             get
             {
-                return OrderLines != null && OrderLines.Any() ? OrderLines.Sum(x => x.Quantity) : 0;
+                return OrderLines?.Any() == true ? OrderLines.Sum(x => x.Quantity) : 0;
             }
         }
 
-        public CustomerInfo CustomerInformation = new CustomerInfo();
-        private OrderData orderData;
+        public CustomerInfo CustomerInformation { get; } = new CustomerInfo();
 
-        public Price OrderLineTotal
+        /// <summary>
+        /// OrderLines with OrderDiscount excluded
+        /// </summary>
+        public IPrice OrderLineTotal
         {
             get
             {
-                // OrderLines Exlude OrderDiscount included
-                var amount = OrderLines.Sum(x => x.Amount.Value);
-
-                return new Price(amount, StoreInfo);
-            }
-        }
-
-        public Price SubTotal
-        {
-            get
-            {
-                // OrderLines with OrderDiscount included
-                var amount = OrderLines.Sum(x => x.Amount.Value);
+                var amount = OrderLines.Sum(x => x.Amount.OriginalValue);
 
                 return new Price(amount, StoreInfo);
             }
         }
 
         /// <summary>
-        /// SimplePrice object for total value of all orderlines.
+        /// OrderLines with OrderDiscount included
         /// </summary>
-        public Price ChargedAmount
+        public IPrice SubTotal
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line =>
+                {
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount = new Price(line.Amount.OriginalValue, StoreInfo, Discount);
+
+                        return lineWithOrderDiscount.AfterDiscount.Value;
+                    }
+                    return line.Amount.AfterDiscount.Value;
+                });
+
+                return new Price(amount, StoreInfo);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="IPrice"/> object for total value of all orderlines.
+        /// </summary>
+        public IPrice ChargedAmount
         {
             get
             {
@@ -126,30 +158,15 @@ namespace Ekom.Models
 
                 if (ShippingProvider != null)
                 {
-                    amount = amount + ShippingProvider.Price.WithVat.Value;
+                    amount += ShippingProvider.Price.OriginalValue;
                 }
 
                 if (PaymentProvider != null)
                 {
-                    amount = amount + PaymentProvider.Price.WithVat.Value;
+                    amount += PaymentProvider.Price.OriginalValue;
                 }
 
-                //return new SimplePrice(false, amount, StoreInfo.Culture, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
                 return new Price(amount, StoreInfo);
-            }
-        }
-        public StoreInfo StoreInfo
-        {
-            get
-            {
-                if (_storeInfo == null)
-                {
-                    return new StoreInfo(_store);
-                } else
-                {
-                    return _storeInfo;
-                }
-                
             }
         }
         /// <summary>
@@ -188,15 +205,20 @@ namespace Ekom.Models
         /// </summary>
         public OrderStatus OrderStatus => _orderData.OrderStatus;
 
+        internal List<string> _hangfireJobs { get; set; } = new List<string>();
+        public IReadOnlyCollection<string> HangfireJobs
+        {
+            get => _hangfireJobs.AsReadOnly();
+
+            internal set => _hangfireJobs = value.ToList();
+        }
+
+        #region JSON Parsing
         private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)
         {
             var orderLines = new List<OrderLine>();
 
             var orderLinesArray = (JArray)orderInfoJObject["OrderLines"];
-
-            var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-            var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
 
             foreach (var line in orderLinesArray)
             {
@@ -204,7 +226,7 @@ namespace Ekom.Models
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
 
-                var orderLine = new OrderLine(lineId, quantity, productJson, storeInfo);
+                var orderLine = new OrderLine(lineId, quantity, productJson, StoreInfo);
 
                 orderLines.Add(orderLine);
             }
@@ -214,7 +236,6 @@ namespace Ekom.Models
 
         private OrderedShippingProvider CreateShippingProviderFromJson(JObject orderInfoJObject)
         {
- 
             if (orderInfoJObject["ShippingProvider"] != null)
             {
                 var shippingProviderJson = orderInfoJObject["ShippingProvider"].ToString();
@@ -225,11 +246,7 @@ namespace Ekom.Models
 
                     if (shippingProviderObject != null)
                     {
-                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                        var p = new OrderedShippingProvider(shippingProviderObject, storeInfo);
+                        var p = new OrderedShippingProvider(shippingProviderObject, StoreInfo);
 
                         return p;
                     }
@@ -241,7 +258,6 @@ namespace Ekom.Models
 
         private OrderedPaymentProvider CreatePaymentProviderFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["PaymentProvider"] != null)
             {
                 var paymentProviderJson = orderInfoJObject["PaymentProvider"].ToString();
@@ -252,11 +268,7 @@ namespace Ekom.Models
 
                     if (paymentProviderObject != null)
                     {
-                        var storeJson = orderInfoJObject["StoreInfo"].ToString();
-
-                        var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeJson);
-
-                        var p = new OrderedPaymentProvider(paymentProviderObject, storeInfo);
+                        var p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
 
                         return p;
                     }
@@ -268,7 +280,6 @@ namespace Ekom.Models
 
         private CustomerInfo CreateCustomerInformationFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["CustomerInformation"] != null)
             {
                 var customerInfoJson = orderInfoJObject["CustomerInformation"].ToString();
@@ -283,9 +294,9 @@ namespace Ekom.Models
 
             return null;
         }
+
         private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
         {
-
             if (orderInfoJObject["StoreInfo"] != null)
             {
                 var storeInfoJson = orderInfoJObject["StoreInfo"].ToString();
@@ -300,6 +311,7 @@ namespace Ekom.Models
 
             return null;
         }
+        #endregion
 
         protected static readonly ILog Log =
             LogManager.GetLogger(

@@ -1,8 +1,7 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 @using Ekom.Utilities;
-
 @{
-    var order = (Ekom.Models.OrderInfo)ViewData["order"];
+    var order = (Ekom.Interfaces.IOrderInfo)ViewData["order"];
 
     if (order != null)
     {
@@ -21,11 +20,11 @@
                 {
                     var product = orderline.Product;
 
-                    Ekom.Models.OrderedVariantGroup variantGroup = product.VariantGroups.Any() ? product.VariantGroups.First() : null;
+                    Ekom.Models.OrderedObjects.OrderedVariantGroup variantGroup = product.VariantGroups.FirstOrDefault();
 
                     var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
 
-                    var catalogProduct = Ekom.API.Catalog.Current.GetProduct(product.StoreInfo.Alias, product.Key);
+                    var catalogProduct = Ekom.API.Catalog.Instance.GetProduct(product.StoreInfo.Alias, product.Key);
 
                     <tr>
                         <td class="no-padding-left">
@@ -46,7 +45,7 @@
                                 @if (variantGroup != null)
                                 {
                                     <div class="cart__productColor">
-                                        Color <span style="background-color:#@variantGroup.Properties.GetProperty("color");" title="@variantGroup.Title"></span>
+                                        Color <span style="background-color:#@variantGroup.Properties.GetPropertyValue("color");" title="@variantGroup.Title"></span>
                                     </div>
 
                                     <div class="cart__productSize">
@@ -60,10 +59,10 @@
                             </div>
                         </td>
                         <td>
-                            <span class="cart__price">@orderline.Product.Price.WithVat.ToCurrencyString</span>
+                            <span class="cart__price">@orderline.Product.Price.WithVat.CurrencyString</span>
                         </td>
                         <td>
-                            @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "cart__quantity-form" }))
+                            @using (Html.BeginEkomForm(FormType.AddToOrderCart))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.UpdateQuantity" />
@@ -73,10 +72,10 @@
                             }     
                         </td>
                         <td>
-                            <span class="cart__price">@orderline.Amount.WithVat.ToCurrencyString</span>
+                            <span class="cart__price">@orderline.Amount.WithVat.CurrencyString</span>
                         </td>
                         <td class="text-center">
-                            @using (Html.BeginUmbracoForm("RemoveOrderLine", "EkomOrder", null, new { @Class = "cart__remove-form" }))
+                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine))
                             {
                                 <input type="hidden" name="lineId" value="@orderline.Id" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />

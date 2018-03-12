@@ -1,15 +1,13 @@
-﻿using log4net;
-using System;
+﻿using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Models;
+using log4net;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Models;
 using Umbraco.Web;
-using Ekom.Cache;
-using Ekom.Interfaces;
-using Ekom.Models;
 
 namespace Ekom.Services
 {
@@ -19,7 +17,7 @@ namespace Ekom.Services
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IBaseCache<IDomain> _domainCache;
-        IBaseCache<Store> _storeCache;
+        IBaseCache<IStore> _storeCache;
 
         /// <summary>
         /// ctor
@@ -31,7 +29,7 @@ namespace Ekom.Services
         public StoreService(
             ILogFactory logFac,
             IBaseCache<IDomain> domainCache,
-            IBaseCache<Store> storeCache,
+            IBaseCache<IStore> storeCache,
             ApplicationContext appCtx
         )
         {
@@ -41,9 +39,9 @@ namespace Ekom.Services
             _storeCache = storeCache;
         }
 
-        public Store GetStoreByDomain(string domain = "")
+        public IStore GetStoreByDomain(string domain = "")
         {
-            Store store = null;
+            IStore store = null;
 
             if (!string.IsNullOrEmpty(domain))
             {
@@ -72,7 +70,7 @@ namespace Ekom.Services
             return store;
         }
 
-        public Store GetStoreByAlias(string alias)
+        public IStore GetStoreByAlias(string alias)
         {
             var store = _storeCache.Cache
                              .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias))
@@ -102,29 +100,24 @@ namespace Ekom.Services
         //    return store ?? _storeCache.Cache.FirstOrDefault().Value;
         //}
 
-        public Store GetStoreFromCache()
+        public IStore GetStoreFromCache()
         {
             var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
 
-            if (r == null || r.Store == null)
-            {
-                return GetAllStores().FirstOrDefault();
-            }
-
-            return r?.Store;
+            return r?.Store ?? GetAllStores().FirstOrDefault();
         }
 
-        public IEnumerable<Store> GetAllStores()
+        public IEnumerable<IStore> GetAllStores()
         {
             return _storeCache.Cache.Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
-        /// <summary>
-        /// Gets the current store from available request data <para/>
-        /// Saves store in cache and cookies
-        /// </summary>
-        /// <param name="umbracoDomain"></param>
-        /// <param name="httpContext"></param>
+        ///// <summary>
+        ///// Gets the current store from available request data <para/>
+        ///// Saves store in cache and cookies
+        ///// </summary>
+        ///// <param name="umbracoDomain"></param>
+        ///// <param name="httpContext"></param>
         //public Store GetStore(IDomain umbracoDomain, HttpContextBase httpContext)
         //{
         //    //HttpCookie storeInfo = httpContext.Request.Cookies["StoreInfo"];

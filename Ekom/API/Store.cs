@@ -12,46 +12,54 @@ namespace Ekom.API
     /// </summary>
     public class Store
     {
-        private static Store _current;
         /// <summary>
-        /// Store Singleton
+        /// Store Instance
         /// </summary>
-        public static Store Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Store>());
-            }
-        }
+        public static Store Instance => Configuration.container.GetInstance<Store>();
 
         ILog _log;
         ApplicationContext _appCtx;
-        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-
         IStoreService _storeSvc;
+        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Store(ApplicationContext appCtx, IStoreService storeSvc, ILogFactory logFac)
+        internal Store(
+            ApplicationContext appCtx,
+            ILogFactory logFac,
+            IStoreService storeService
+        )
         {
             _appCtx = appCtx;
-            _storeSvc = storeSvc;
-
+            _storeSvc = storeService;
             _log = logFac.GetLogger(typeof(Store));
         }
 
-        public Models.Store GetStore()
+        /// <summary>
+        /// Get store from <see cref="Ekom.Models.ContentRequest"/> or first store available
+        /// </summary>
+        /// <returns></returns>
+        public IStore GetStore()
         {
             return _storeSvc.GetStoreFromCache();
         }
 
-        public Models.Store GetStore(string storeAlias)
+        /// <summary>
+        /// Get store by alias
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        public IStore GetStore(string storeAlias)
         {
             return _storeSvc.GetStoreByAlias(storeAlias);
         }
 
-        public IEnumerable<Models.Store> GetAllStores()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<IStore> GetAllStores()
         {
             return _storeSvc.GetAllStores();
         }

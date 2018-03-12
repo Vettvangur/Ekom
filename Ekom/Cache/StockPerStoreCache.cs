@@ -1,13 +1,12 @@
-﻿using Examine;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Data;
+using Ekom.Repository;
+using Ekom.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Ekom.Models;
-using Ekom.Models.Data;
-using Ekom.Repository;
-using Ekom.Services;
 
 namespace Ekom.Cache
 {
@@ -17,8 +16,8 @@ namespace Ekom.Cache
         public StockPerStoreCache(
             ILogFactory logFac,
             StockRepository stockRepo,
-            IBaseCache<Store> storeCache
-        ) : base(null, null, storeCache)
+            IBaseCache<IStore> storeCache
+        ) : base(null, storeCache, null)
         {
             _stockRepo = stockRepo;
 
@@ -26,11 +25,6 @@ namespace Ekom.Cache
         }
 
         public override string NodeAlias { get; } = "";
-
-        protected override StockData New(SearchResult r, Store store)
-        {
-            return null;
-        }
 
         public override void FillCache()
         {
@@ -52,7 +46,7 @@ namespace Ekom.Cache
             _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
         }
 
-        private int FillStoreCache(Store store, IEnumerable<StockData> stockData)
+        private int FillStoreCache(IStore store, IEnumerable<StockData> stockData)
         {
             int count = 0;
 

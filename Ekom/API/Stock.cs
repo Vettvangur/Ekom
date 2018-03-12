@@ -12,47 +12,42 @@ namespace Ekom.API
     /// <summary>
     /// The Ekom API, get/update stock for item
     /// </summary>
-    public class Stock
+    public partial class Stock
     {
-        private static Stock _current;
         /// <summary>
-        /// Stock Singleton
+        /// Stock Instance
         /// </summary>
-        public static Stock Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Stock>());
-            }
-        }
+        public static Stock Instance => Configuration.container.GetInstance<Stock>();
 
         ILog _log;
-
+        Configuration _config;
+        IStockRepository _stockRepo;
+        IDiscountStockRepository _discountStockRepo;
         IStoreService _storeSvc;
         IBaseCache<StockData> _stockCache;
         IPerStoreCache<StockData> _stockPerStoreCache;
-        IStockRepository _stockRepo;
-        Configuration _config;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Stock(
+        internal Stock(
+            Configuration config,
             ILogFactory logFac,
             IBaseCache<StockData> stockCache,
-            IPerStoreCache<StockData> stockPerStoreCache,
-            Configuration config,
             IStockRepository stockRepo,
-            IStoreService storeSvc
+            IDiscountStockRepository discountStockRepo,
+            IStoreService storeService,
+            IPerStoreCache<StockData> stockPerStoreCache
         )
         {
-            _stockCache = stockCache;
-            _stockPerStoreCache = stockPerStoreCache;
             _config = config;
-            _storeSvc = storeSvc;
+            _stockCache = stockCache;
             _stockRepo = stockRepo;
+            _discountStockRepo = discountStockRepo;
+            _storeSvc = storeService;
+            _stockPerStoreCache = stockPerStoreCache;
 
-            _log = logFac.GetLogger(typeof(Stock));
+            _log = logFac.GetLogger<Stock>();
         }
 
         /// <summary>
@@ -217,10 +212,15 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
         /// <param name="timeSpan">How long to reserve</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, int value, TimeSpan timeSpan)
+        public string ReserveStock(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (timeSpan == default(TimeSpan))
+            {
+                timeSpan = _config.ReservationTimeout;
+            }
 
             UpdateStock(key, value);
 
@@ -240,10 +240,15 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
         /// <param name="timeSpan">How long to reserve</param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan)
+        public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (timeSpan == default(TimeSpan))
+            {
+                timeSpan = _config.ReservationTimeout;
+            }
 
             UpdateStock(key, storeAlias, value);
 
@@ -259,6 +264,7 @@ namespace Ekom.API
         /// Cancel a previously scheduled stock reservation rollback.
         /// </summary>
         /// <param name="jobId"></param>
+        /// <exception cref="StockException"></exception>
         public void CancelRollback(string jobId)
         {
             if (!Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName)
@@ -344,7 +350,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, int value)
         {
-            Current.UpdateStock(key, value);
+            Instance.UpdateStock(key, value);
         }
         /// <summary>
         /// Allows hangfire to serialise the method call to database
@@ -354,7 +360,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
         {
-            Current.UpdateStock(key, storeAlias, value);
+            Instance.UpdateStock(key, storeAlias, value);
         }
     }
 }

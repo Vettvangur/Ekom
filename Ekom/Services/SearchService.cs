@@ -1,28 +1,44 @@
-﻿using Examine;
+﻿using Ekom.Models.Abstractions;
+using Examine;
 using log4net;
 using Lucene.Net.QueryParsers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
+    /// <summary>
+    /// Intended for Ekom library users, will have more Ekom specific functionality later on
+    /// </summary>
     public class SearchService
     {
         /// <summary>
+        /// SearchService Instance
+        /// </summary>
+        public static SearchService Instance => Configuration.container.GetInstance<SearchService>();
+
+        ExamineManagerBase _examineManager;
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SearchService(ExamineManagerBase examineManager)
+        {
+            _examineManager = examineManager;
+        }
+
+        /// <summary>
+        /// Intended for Ekom library users, will have more Ekom specific functionality later on
         /// Builds and run the Lucene query.
         /// </summary>
-        public static ISearchResults SearchResult(string query, string searchProvider, out int total)
+        public ISearchResults SearchResult(string query, string searchProvider, out int total)
         {
             total = 0;
 
             try
             {
-                var searcher = ExamineManager.Instance.SearchProviderCollection[searchProvider];
-
+                var searcher = _examineManager.SearchProviderCollection[searchProvider];
                 var luceneQuery = new StringBuilder();
 
                 if (!string.IsNullOrWhiteSpace(query))
@@ -70,7 +86,6 @@ namespace Ekom.Services
                 total = searchResults.TotalItemCount;
 
                 return searchResults;
-
             }
             catch (Exception ex)
             {
@@ -78,7 +93,6 @@ namespace Ekom.Services
 
                 return null;
             }
-
         }
 
         private static readonly ILog Log =

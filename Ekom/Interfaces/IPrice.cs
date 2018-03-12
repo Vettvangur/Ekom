@@ -1,13 +1,70 @@
-﻿namespace Ekom.Interfaces
+﻿using Ekom.Models.OrderedObjects;
+using System;
+
+namespace Ekom.Interfaces
 {
     /// <summary>
-    /// 
+    /// An object that contains the calculated price given the provided parameters
+    /// Also offers a way of printing the value using the provided culture.
     /// </summary>
-    public interface IPrice
+    public interface ICalculatedPrice
     {
+        /// <summary>
+        /// Value with vat and discount if applicable
+        /// </summary>
         decimal Value { get; }
-        string ToCurrencyString { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        string CurrencyString { get; }
     }
+
+    /// <summary>
+    /// Price of item including all data to fully calculate 
+    /// before and after VAT/Discount.
+    /// </summary>
+    public interface IPrice : IVatPrice, ICloneable
+    {
+        /// <summary>
+        /// Original Price
+        /// </summary>
+        decimal OriginalValue { get; }
+        /// <summary>
+        /// Gets the original price before the discount.
+        /// Same as OriginalValue
+        /// </summary>
+        /// <value>
+        /// The original price before the discount.
+        /// Same as OriginalValue
+        /// </value>
+        ICalculatedPrice BeforeDiscount { get; }
+        /// <summary>
+        /// Price after discount with VAT left as-is
+        /// </summary>
+        ICalculatedPrice AfterDiscount { get; }
+        /// <summary>
+        /// VAT included or to be included in price
+        /// </summary>
+        ICalculatedPrice Vat { get; }
+
+        /// <summary>
+        /// Value with discount and VAT
+        /// </summary>
+        decimal Value { get; }
+
+        /// <summary>
+        /// Gets the discount.
+        /// </summary>
+        /// <value>
+        /// The discount.
+        /// </value>
+        OrderedDiscount Discount { get; }
+    }
+
+    /// <summary>
+    /// <see cref="IPrice"/> sub interface.
+    /// Currently serves no obvious purpose..
+    /// </summary>
     public interface IVatPrice
     {
         /// <summary>
@@ -16,7 +73,7 @@
         /// <value>
         /// The price with vat.
         /// </value>
-        IPrice WithVat { get; }
+        ICalculatedPrice WithVat { get; }
 
         /// <summary>
         /// Gets the price without vat.
@@ -24,39 +81,6 @@
         /// <value>
         /// The price without vat.
         /// </value>
-        IPrice WithoutVat { get; }
-
-        /// <summary>
-        /// Gets the vat.
-        /// </summary>
-        /// <value>
-        /// The vat.
-        /// </value>
-        IPrice Vat { get; }
+        ICalculatedPrice WithoutVat { get; }
     }
-
-    public interface IDiscountedPrice : IVatPrice
-    {
-        /// <summary>
-        /// Original Price
-        /// </summary>
-        decimal Value { get; }
-        /// <summary>
-        /// Gets the original price before the discount.
-        /// </summary>
-        /// <value>
-        /// The original price before the discount.
-        /// </value>
-        IVatPrice BeforeDiscount { get; }
-
-        /// <summary>
-        /// Gets the discount.
-        /// </summary>
-        /// <value>
-        /// The discount.
-        /// </value>
-        IVatPrice Discount { get; }
-    }
-
-
 }

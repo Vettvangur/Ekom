@@ -2,7 +2,7 @@
 @using Ekom.API;
 @{
     Layout = "Masterpage.cshtml";
-    var order = Order.Current.GetOrder();
+    var order = Order.Instance.GetOrder();
 }
 
 @* the fun starts here *@
@@ -17,7 +17,7 @@
                 <h3 class="">@Umbraco.Field("#CustomerInformation")</h3>
 
                 <div class="accordion-pane open">
-                    @if (Store.Current.GetStore().Alias == "IS")
+                    @if (Store.Instance.GetStore().Alias == "IS")
                     {
                         <div class="form-group">
                             <label for="customerSocialId">customerSocialId</label>
@@ -64,7 +64,7 @@
                         <label for="customerCountry">customerCountry</label>
                         <select class="form-control" name="customerCountry" id="customerCountry" required>
                             <option value="">customerCountry</option>
-                            @foreach (var country in Providers.Current.GetAllCountries())
+                            @foreach (var country in Providers.Instance.GetAllCountries())
                             {
                                 <option value="@country.Code">@country.Name</option>
                             }

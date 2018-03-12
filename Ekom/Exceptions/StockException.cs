@@ -17,6 +17,6 @@ namespace Ekom.Exceptions
         /// <summary>
         /// Stock value in repository at time of exception
         /// </summary>
-        public int RepoValue { get; set; }
+        public int? RepoValue { get; set; }
     }
 }

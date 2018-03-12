@@ -1,4 +1,8 @@
-﻿using Examine;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Models.Abstractions;
+using Examine;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -6,9 +10,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Models;
-using Ekom.Helpers;
-using Ekom.Interfaces;
-using Ekom.Models;
 
 namespace Ekom.Cache
 {
@@ -20,20 +21,21 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ExamineManager _examineManager;
         protected ILog _log;
-        protected IBaseCache<Store> _storeCache;
-        protected IObjectFactory<TItem> _objFac;
+        protected IBaseCache<IStore> _storeCache;
+        protected IPerStoreFactory<TItem> _objFac;
+
+        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
 
         public PerStoreCache(
             Configuration config,
-            ExamineManager examineManager,
-            IBaseCache<Store> storeCache
+            IBaseCache<IStore> storeCache,
+            IPerStoreFactory<TItem> objFac
         )
         {
             _config = config;
-            _examineManager = examineManager;
             _storeCache = storeCache;
+            _objFac = objFac;
         }
 
         /// <summary>
@@ -48,11 +50,11 @@ namespace Ekom.Cache
          = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
 
         /// <summary>
-        /// Derived classes define simple instantiation methods, 
-        /// saving performance vs Activator.CreateInstance
+        /// Class indexer
         /// </summary>
-        protected abstract TItem New(SearchResult r, Store store);
-
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public ConcurrentDictionary<Guid, TItem> this[string index] => Cache[index];
 
         public virtual void FillCache()
         {
@@ -66,7 +68,7 @@ namespace Ekom.Cache
         /// This parameter is supplied when adding a store at runtime, 
         /// triggering the given stores filling
         /// </param>
-        public virtual void FillCache(Store storeParam = null)
+        public virtual void FillCache(IStore storeParam = null)
         {
             var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
 
@@ -76,7 +78,7 @@ namespace Ekom.Cache
 
                 stopwatch.Start();
 
-                _log.Info("Starting to fill...");
+                _log.Debug("Starting to fill...");
                 int count = 0;
 
                 try
@@ -85,7 +87,7 @@ namespace Ekom.Cache
                     IBooleanOperation query = searchCriteria.NodeTypeAlias(NodeAlias);
                     ISearchResults results = searcher.Search(query.Compile());
 
-                    if (storeParam == null) // Startup initalization
+                    if (storeParam == null) // Startup initialization
                     {
                         foreach (var store in _storeCache.Cache.Select(x => x.Value))
                         {
@@ -104,11 +106,11 @@ namespace Ekom.Cache
 
                 stopwatch.Stop();
 
-                _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _log.Debug("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
             else
             {
-                _log.Info("No examine search found with the name ExternalSearcher, Can not fill category cache.");
+                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill category cache.");
             }
         }
 
@@ -118,13 +120,11 @@ namespace Ekom.Cache
         /// <param name="store">The current store being filled of TItem</param>
         /// <param name="results">Examine search results</param>
         /// <returns>Count of items added</returns>
-        private int FillStoreCache(Store store, ISearchResults results)
+        protected virtual int FillStoreCache(IStore store, ISearchResults results)
         {
             int count = 0;
 
-            Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
-
-            var curStoreCache = Cache[store.Alias];
+            var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
 
             foreach (var r in results)
             {
@@ -133,7 +133,8 @@ namespace Ekom.Cache
                     // Traverse up parent nodes, checking disabled status and published status
                     if (!r.IsItemDisabled(store))
                     {
-                        var item = _objFac?.Create(r, store) ?? New(r, store);
+                        var item = _objFac?.Create(r, store)
+                            ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
 
                         if (item != null)
                         {
@@ -158,7 +159,7 @@ namespace Ekom.Cache
             Cache[store.Alias][id] = newCacheItem;
         }
 
-        public bool RemoveItemFromCache(Store store, Guid id)
+        public bool RemoveItemFromCache(IStore store, Guid id)
         {
             return Cache[store.Alias].TryRemove(id, out TItem i);
         }

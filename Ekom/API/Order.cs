@@ -1,38 +1,53 @@
-﻿using Ekom.Helpers;
+﻿using Ekom.Cache;
+using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models;
+using Ekom.Services;
+using log4net;
 using System;
 using System.Collections.Generic;
-using System.Web.Mvc;
 
 namespace Ekom.API
 {
     /// <summary>
     /// The Ekom API, get/update/remove operations on orders 
     /// </summary>
-    public class Order
+    public partial class Order
     {
-        private static Order _current;
         /// <summary>
-        /// Order Singleton
+        /// Order Instance
         /// </summary>
-        public static Order Current
-        {
-            get
-            {
-                return _current ?? (_current = Configuration.container.GetInstance<Order>());
-            }
-        }
+        public static Order Instance => Configuration.container.GetInstance<Order>();
 
-        IOrderService _orderService => Configuration.container.GetInstance<IOrderService>();
-        IStoreService _storeSvc => Configuration.container.GetInstance<IStoreService>();
+        ILog _log;
+        Configuration _config;
+        DiscountCache _discountCache;
+        OrderService _orderService;
+        IStoreService _storeSvc;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        internal Order(
+            Configuration config,
+            ILogFactory logFac,
+            DiscountCache discountCache,
+            OrderService orderService,
+            IStoreService storeService
+        )
+        {
+            _discountCache = discountCache;
+            _orderService = orderService;
+            _storeSvc = storeService;
+            _config = config;
+            _log = logFac.GetLogger<Order>();
+        }
 
         /// <summary>
         /// Get order using cookie data and ekmRequest store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public OrderInfo GetOrder()
+        public IOrderInfo GetOrder()
         {
             var store = _storeSvc.GetStoreFromCache();
             return GetOrder(store.Alias);
@@ -43,7 +58,7 @@ namespace Ekom.API
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public OrderInfo GetOrder(string storeAlias)
+        public IOrderInfo GetOrder(string storeAlias)
         {
             return _orderService.GetOrder(storeAlias);
         }
@@ -58,7 +73,7 @@ namespace Ekom.API
             _orderService.ChangeOrderStatus(orderId, newStatus);
         }
 
-        public OrderInfo AddOrderLine(
+        public IOrderInfo AddOrderLine(
             Guid productId,
             IEnumerable<Guid> variantIds,
             int quantity,
@@ -69,29 +84,54 @@ namespace Ekom.API
             return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
         }
 
-        public OrderInfo UpdateCustomerInformation(Dictionary<string,string> form)
+        public IOrderInfo UpdateCustomerInformation(Dictionary<string, string> form)
         {
             return _orderService.UpdateCustomerInformation(form);
         }
 
-        public OrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
+        public IOrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
         {
             return _orderService.UpdateShippingInformation(ShippingProvider, storeAlias);
         }
 
-        public OrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
+        public IOrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
         {
             return _orderService.UpdatePaymentInformation(PaymentProvider, storeAlias);
         }
 
-        public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
             return _orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
-        public IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId)
+        /// <summary>
+        /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <returns></returns>
+        public IEnumerable<IOrderInfo> GetCompleteCustomerOrders(int customerId)
         {
             return _orderService.GetCompleteCustomerOrders(customerId);
+        }
+
+        /// <summary>
+        /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
+        /// </summary>
+        /// <param name="hangfireJobs">Job IDs to add</param>
+        public void AddHangfireJobsToOrder(IEnumerable<string> hangfireJobs)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            AddHangfireJobsToOrder(store.Alias, hangfireJobs);
+        }
+        /// <summary>
+        /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        /// <param name="hangfireJobs">Job IDs to add</param>
+        public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+            _orderService.AddHangfireJobsToOrder(store.Alias, hangfireJobs);
         }
     }
 }

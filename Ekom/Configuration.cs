@@ -1,6 +1,6 @@
 ﻿using CommonServiceLocator;
 using Ekom.Cache;
-using Ekom.Models;
+using Ekom.Interfaces;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
@@ -16,9 +16,14 @@ namespace Ekom
     public class Configuration
     {
         /// <summary>
+        /// Configuration Singleton
+        /// </summary>
+        public static Configuration Current => container.GetInstance<Configuration>();
+
+        /// <summary>
         /// Current dependency resolver instance
         /// </summary>
-        public static IServiceLocator container;
+        internal static IServiceLocator container;
 
         /// <summary>
         /// ekmPerStoreStock
@@ -113,6 +118,13 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Time we give the user to complete checkout.
+        /// Give value in minutes when overriding default
+        /// </summary>
+        public virtual TimeSpan ReservationTimeout
+            => TimeSpan.FromMinutes(double.Parse(ConfigurationManager.AppSettings["ekmReservationTimeout"] ?? "30"));
+
+        /// <summary>
         /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
         /// submitted to the checkout controller?
         /// </summary>
@@ -130,14 +142,15 @@ namespace Ekom
             return new List<ICache>
             {
                 { container.GetInstance<IBaseCache<IDomain>>() },
-                { container.GetInstance<IBaseCache<Store>>() },
-                { container.GetInstance<IPerStoreCache<Variant>>() },
-                { container.GetInstance<IPerStoreCache<VariantGroup>>() },
-                { container.GetInstance<IPerStoreCache<Category>>() },
-                { container.GetInstance<IPerStoreCache<Product>>() },
-                { container.GetInstance<IBaseCache<Zone>>() },
-                { container.GetInstance<IPerStoreCache<PaymentProvider>>() },
-                { container.GetInstance<IPerStoreCache<ShippingProvider>>() },
+                { container.GetInstance<IBaseCache<IStore>>() },
+                { container.GetInstance<IPerStoreCache<ICategory>>() },
+                { container.GetInstance<IPerStoreCache<IProduct>>() },
+                { container.GetInstance<IPerStoreCache<IVariant>>() },
+                { container.GetInstance<IPerStoreCache<IVariantGroup>>() },
+                { container.GetInstance<IBaseCache<IZone>>() },
+                { container.GetInstance<IPerStoreCache<IPaymentProvider>>() },
+                { container.GetInstance<IPerStoreCache<IShippingProvider>>() },
+                { container.GetInstance<IPerStoreCache<IDiscount>>() },
             };
         });
 
@@ -150,5 +163,7 @@ namespace Ekom
 
             return CacheList.Value.Skip(indexOf + 1);
         }
+
+        internal const string DiscountStockTableName = "EkomDiscountStock";
     }
 }

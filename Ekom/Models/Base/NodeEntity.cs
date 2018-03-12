@@ -1,12 +1,13 @@
-﻿using Examine;
+﻿using Ekom.Interfaces;
+using Ekom.Services;
+using Ekom.Utilities;
+using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Umbraco.Core.Models;
-using Ekom.Interfaces;
-using Ekom.Services;
-using Ekom.Utilities;
 
 namespace Ekom.Models
 {
@@ -85,9 +86,14 @@ namespace Ekom.Models
         public virtual string ContentTypeAlias => Properties.GetPropertyValue("nodeTypeAlias");
 
         /// <summary>
+        /// Read only dictionary of all umbraco base and custom properties for this item
+        /// </summary>
+        public IReadOnlyDictionary<string, string> Properties => new ReadOnlyDictionary<string, string>(_properties);
+
+        /// <summary>
         /// All node properties
         /// </summary>
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        protected Dictionary<string, string> _properties = new Dictionary<string, string>();
 
         /// <summary>
         /// ctor
@@ -102,7 +108,7 @@ namespace Ekom.Models
         {
             foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
             {
-                Properties.Add(field.Key, field.Value);
+                _properties.Add(field.Key, field.Value);
             }
         }
 
@@ -112,11 +118,11 @@ namespace Ekom.Models
         /// <param name="node"></param>
         public NodeEntity(IContent node)
         {
-            Properties = CreateDefaultUmbracoProperties(node);
+            _properties = CreateDefaultUmbracoProperties(node);
 
             foreach (var prop in node.Properties)
             {
-                Properties.Add(prop.Alias, prop.Value?.ToString());
+                _properties.Add(prop.Alias, prop.Value?.ToString());
             }
         }
 
@@ -177,9 +183,9 @@ namespace Ekom.Models
         /// Get value in properties
         /// </summary>
         /// <param name="alias"></param>
-        public string GetProperty(string alias)
+        public virtual string GetPropertyValue(string alias)
         {
-            return Properties.GetProperty(alias);
+            return Properties.GetPropertyValue(alias);
         }
 
         /// <summary>
@@ -187,9 +193,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="alias"></param>
         /// <param name="storeAlias"></param>
-        public string GetProperty(string alias, string storeAlias)
+        public virtual string GetPropertyValue(string alias, string storeAlias)
         {
-            return Properties.GetProperty(alias, storeAlias);
+            return Properties.GetPropertyValue(alias, storeAlias);
         }
     }
 }

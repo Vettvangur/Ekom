@@ -4,7 +4,7 @@
 
 @{
 	Layout = "Masterpage.cshtml";
-    var order = Order.Current.GetOrder();
+    var order = Order.Instance.GetOrder();
 }
 
 @section Main {
@@ -56,22 +56,25 @@
                         <h1 class="checkout__caption">Total</h1>
 
                         <div>
-                            Subtotal: <strong>@order.SubTotal.WithVat.ToCurrencyString</strong>
+                            Subtotal: <strong>@order.SubTotal.WithVat.CurrencyString</strong>
                         </div>
                         @if (order.ShippingProvider != null && order.ShippingProvider.Price.Value > 0)
                         {
                             <div>
-                                Shipping: <strong>@order.ShippingProvider.Price.WithVat.ToCurrencyString</strong>
+                                Shipping: <strong>@order.ShippingProvider.Price.WithVat.CurrencyString</strong>
                             </div>
                         }
                         @if (order.PaymentProvider != null && order.PaymentProvider.Price.Value > 0)
                         {
                             <div>
-                                Payment: <strong>@order.PaymentProvider.Price.WithVat.ToCurrencyString</strong>
+                                Payment: <strong>@order.PaymentProvider.Price.WithVat.CurrencyString</strong>
                             </div>
                         }
                         <div>
-                            Total: <strong>@order.ChargedAmount.WithVat.ToCurrencyString</strong>
+                            VAT: <strong>@order.ChargedAmount.Vat.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Total: <strong>@order.ChargedAmount.WithVat.CurrencyString</strong>
                         </div>
 
                     </div>

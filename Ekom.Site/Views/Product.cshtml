@@ -4,8 +4,8 @@
 @{
     Layout = "Masterpage.cshtml";
 
-    var product = Catalog.Current.GetProduct();
-    var category = Catalog.Current.GetCategory();
+    var product = Catalog.Instance.GetProduct();
+    var category = Catalog.Instance.GetCategory();
     var groups = product.VariantGroups.Where(x => x.Variants.Any()).OrderBy(x => x.SortOrder);
     var primaryVariantGroup = product.PrimaryVariantGroup;
     var primaryImage = primaryVariantGroup != null &&
@@ -33,9 +33,9 @@
                     @product.Title
                 </h1>
 
-                <strong class="product__price">@product.Price.WithVat.ToCurrencyString</strong>
+                <strong class="product__price">@product.Price.WithVat.CurrencyString</strong>
 
-                @using (Html.BeginUmbracoForm("AddToOrder", "EkomOrder", null, new { @Class = "product__form" }))
+                @using (Html.BeginEkomForm(FormType.AddToOrderProduct))
                 {
                     <input type="hidden" name="productId" value="@product.Key" />
                     <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
@@ -49,7 +49,7 @@
                             {
                                 var groupSelected = group.Id == primaryVariantGroup.Id;
 
-                                var color = group.GetProperty("color");
+                                var color = group.GetPropertyValue("color");
 
                                 <button type="button" class="product__groups-item @(groupSelected ? "product__groups-item--is-active" : "")" title="@group.Title" data-key="@group.Key">
                                     <span class="product__groups-color" style="background-color:#@color"></span>
@@ -77,7 +77,7 @@
 
                                         @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
                                         {
-                                            <p>@variant.Title - @variant.Price.WithVat.ToCurrencyString</p>
+                                            <p>@variant.Title - @variant.Price.WithVat.CurrencyString</p>
                                         }
 
                                     </div>

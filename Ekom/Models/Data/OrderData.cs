@@ -1,4 +1,5 @@
 ﻿using Ekom.Helpers;
+using Ekom.Models.Discounts;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
@@ -86,7 +87,7 @@ namespace Ekom.Models.Data
         public DateTime CreateDate { get; set; }
 
         /// <summary>
-        /// 
+        /// Last update date
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
         public DateTime UpdateDate { get; set; }

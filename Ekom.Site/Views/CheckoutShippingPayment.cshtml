@@ -5,7 +5,7 @@
     Layout = "Masterpage.cshtml";
 
     var country = Request["customerCountry"];
-    var order = Order.Current.GetOrder();
+    var order = Order.Instance.GetOrder();
 }
 
 @* the fun starts here *@
@@ -17,7 +17,7 @@
 
             <h3>Payment Providers</h3>
             <ul>
-                @foreach (var paymentProvider in Providers.Current.GetPaymentProviders(
+                @foreach (var paymentProvider in Providers.Instance.GetPaymentProviders(
                     countryCode: country,
                     orderAmount: order.ChargedAmount.Value
                 ))
@@ -33,7 +33,7 @@
 
             <h3>Shipping Providers</h3>
             <ul>
-                @foreach (var shippingProvider in Providers.Current.GetShippingProviders(
+                @foreach (var shippingProvider in Providers.Instance.GetShippingProviders(
                     countryCode: country,
                     orderAmount: order.ChargedAmount.Value
                 ))

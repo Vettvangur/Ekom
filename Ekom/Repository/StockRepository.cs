@@ -15,16 +15,16 @@ namespace Ekom.Repository
     class StockRepository : IStockRepository
     {
         ILog _log;
-        DatabaseContext _dbCtx;
+        ApplicationContext _appCtx;
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="config"></param>
-        /// <param name="dbCtx"></param>
+        /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public StockRepository(Configuration config, DatabaseContext dbCtx, ILogFactory logFac)
+        public StockRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
         {
-            _dbCtx = dbCtx;
+            _appCtx = appCtx;
             _log = logFac.GetLogger(typeof(StockRepository));
         }
 
@@ -39,7 +39,7 @@ namespace Ekom.Repository
         /// <returns></returns>
         public StockData GetStockByUniqueId(string uniqueId)
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 var stockData = db.FirstOrDefault<StockData>("WHERE UniqueId = @0", uniqueId);
 
@@ -58,7 +58,7 @@ namespace Ekom.Repository
             };
 
             // Run synchronously to ensure that callers can expect a db record present after method runs
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Insert(stockData);
             }
@@ -72,7 +72,7 @@ namespace Ekom.Repository
         /// <returns></returns>
         public IEnumerable<StockData> GetAllStock()
         {
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.Query<StockData>("");
             }
@@ -104,7 +104,7 @@ namespace Ekom.Repository
             stockDataFromRepo.UpdateDate = DateTime.Now;
 
             // Called synchronously and hopefully contained by a locking construct
-            using (var db = _dbCtx.Database)
+            using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(stockDataFromRepo);
                 return stockDataFromRepo.Stock;

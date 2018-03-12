@@ -1,7 +1,7 @@
-﻿using Common.Logging;
-using Ekom.Models.Base;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Behaviors;
+using Ekom.Utilities;
 using Examine;
-using System.Reflection;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -9,31 +9,44 @@ namespace Ekom.Models
     /// <summary>
     /// F.x. home delivery or pickup.
     /// </summary>
-    public class ShippingProvider : ProviderBase
+    public class ShippingProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IShippingProvider
     {
+        /// <summary>
+        /// Ranges and zones
+        /// </summary>
+        public virtual IConstraints Constraints { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual IPrice Price { get; }
+
         /// <summary>
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public ShippingProvider(Store store) : base(store) { }
+        public ShippingProvider(IStore store) : base(store) { }
 
         /// <summary>
         /// Construct ShippingProvider from Examine item
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public ShippingProvider(SearchResult item, Store store) : base(item, store) { }
+        public ShippingProvider(SearchResult item, IStore store) : base(item, store)
+        {
+            Constraints = new Constraints(this);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
+        }
 
         /// <summary>
         /// Construct ShippingProvider from umbraco publish event
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public ShippingProvider(IContent node, Store store) : base(node, store) { }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
+        public ShippingProvider(IContent node, IStore store) : base(node, store)
+        {
+            Constraints = new Constraints(this);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
+        }
     }
 }

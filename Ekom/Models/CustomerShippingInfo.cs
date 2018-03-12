@@ -14,35 +14,35 @@ namespace Ekom.Models
 
             get
             {
-                return Properties.GetProperty("shippingName");
+                return Properties.GetPropertyValue("shippingName");
             }
         }
         public string Address
         {
             get
             {
-                return Properties.GetProperty("shippingAddress");
+                return Properties.GetPropertyValue("shippingAddress");
             }
         }
         public string City
         {
             get
             {
-                return Properties.GetProperty("shippingCity");
+                return Properties.GetPropertyValue("shippingCity");
             }
         }
         public string Country
         {
             get
             {
-                return Properties.GetProperty("shippingCountry");
+                return Properties.GetPropertyValue("shippingCountry");
             }
         }
         public string ZipCode
         {
             get
             {
-                return Properties.GetProperty("shippingZipCode");
+                return Properties.GetPropertyValue("shippingZipCode");
             }
         }
 

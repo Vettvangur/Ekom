@@ -18,7 +18,7 @@ namespace Ekom.Models
     /// <summary>
     /// Ekom Store, used to f.x. have seperate products and entities per store.
     /// </summary>
-    public class Store : NodeEntity, IStore
+    class Store : NodeEntity, IStore
     {
         private IBaseCache<IDomain> _storeDomainCache
         {
@@ -58,7 +58,7 @@ namespace Ekom.Models
             else
             {
                 var srn = Udi.Parse(item.Fields["storeRootNode"]);
-                var umbracoHelper = new Umbraco.Web.UmbracoHelper(Umbraco.Web.UmbracoContext.Current);
+                var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
                 var rootNode = umbracoHelper.TypedContent(srn);
                 StoreRootNode = rootNode.Id;
             }
@@ -70,7 +70,7 @@ namespace Ekom.Models
 
             Culture = new CultureInfo(_culture);
 
-            Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]);
+            Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]) / 100;
             VatIncludedInPrice = item.Fields["vatIncludedInPrice"].ConvertToBool();
 
             item.Fields.TryGetValue("orderNumberTemplate", out string orderNumberTemplate);
@@ -79,7 +79,8 @@ namespace Ekom.Models
             item.Fields.TryGetValue("orderNumberPrefix", out string orderNumberPrefix);
             OrderNumberPrefix = orderNumberPrefix;
 
-            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
+            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
 
         /// <summary>
@@ -96,7 +97,7 @@ namespace Ekom.Models
 
             var vat = item.GetValue<string>("vat");
 
-            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat);
+            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat) / 100;
 
             var _culture = item.GetValue<string>("culture");
 
@@ -113,7 +114,8 @@ namespace Ekom.Models
                 OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
             }
 
-            Url = UmbracoContext.Current.UrlProvider.GetUrl(StoreRootNode);
+            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
 
         private static readonly ILog Log =

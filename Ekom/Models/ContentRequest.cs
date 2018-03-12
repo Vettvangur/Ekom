@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System.Web;
 using Ekom.Services;
+using Ekom.Interfaces;
 
 namespace Ekom.Models
 {
@@ -14,34 +15,25 @@ namespace Ekom.Models
             _httpCtx = httpContext;
         }
 
-        private Store _store;
-        public Store Store
+        private IStore _store;
+        public IStore Store
         {
-
             get { return _store; }
 
             set
             {
                 // Make sure to update users cookies on store change
-                if (_httpCtx != null)
-                {
-                    _httpCtx.Response.Cookies["StoreInfo"].Values["StoreAlias"] = value.Alias;
-                }
-                else
-                {
-                    _log.Info("Unable to change cookies for user when switching stores." +
-                                              "HttpContext == null");
-                }
+                _httpCtx.Response.Cookies["StoreInfo"].Values["StoreAlias"] = value.Alias;
 
                 _store = value;
             }
         }
 
         public object Currency { get; set; }
-        public string IPAddress { get; set; }
+        public string IPAddress => _httpCtx.Request.UserHostAddress;
         public string DomainPrefix { get; set; }
-        public Product Product { get; set; }
-        public Category Category { get; set; }
+        public IProduct Product { get; set; }
+        public ICategory Category { get; set; }
         public User User { get; set; }
     }
 }

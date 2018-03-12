@@ -1,6 +1,7 @@
 ﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.Models.OrderedObjects;
 using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
@@ -20,73 +21,72 @@ namespace Ekom.Models
     /// </summary>
     public class Product : PerStoreNodeEntity, IProduct
     {
-        private IPerStoreCache<Category> __categoryCache;
-        private IPerStoreCache<Category> _categoryCache =>
-            __categoryCache ?? (__categoryCache = Configuration.container.GetInstance<IPerStoreCache<Category>>());
+        private IPerStoreCache<IVariant> __variantCache;
+        private IPerStoreCache<IVariant> _variantCache =>
+            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<IVariant>>());
 
-        private IPerStoreCache<Variant> __variantCache;
-        private IPerStoreCache<Variant> _variantCache =>
-            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<Variant>>());
+        private IPerStoreCache<IVariantGroup> __variantGroupCache;
+        private IPerStoreCache<IVariantGroup> _variantGroupCache =>
+            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
 
-        private IPerStoreCache<VariantGroup> __variantGroupCache;
-        private IPerStoreCache<VariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<VariantGroup>>());
+        private IDiscount _discount;
+        /// <summary>
+        /// Best discount mapped to product, populated after discount cache fills.
+        /// </summary>
+        public virtual IDiscount Discount
+        {
+            get => _discount;
+            internal set
+            {
+                if (_discount == null 
+                || (_discount.Amount.Type == value.Amount.Type
+                && value.CompareTo(_discount) > 0))
+                {
+                    _discount = value;
+                }
+
+                var oldPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(_discount));
+
+                var newPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(value));
+
+                if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
+                {
+                    _discount = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
-        public string SKU
-        {
-            get
-            {
-                return Properties.GetPropertyValue("sku");
-            }
-        }
+        public string SKU => Properties.GetPropertyValue("sku");
 
         /// <summary>
         /// 
         /// </summary>
-        public string Description
-        {
-            get
-            {
-                return Properties.GetStoreProperty("description", _store.Alias);
-            }
-        }
+        public string Description => Properties.GetPropertyValue("description", Store.Alias);
 
         /// <summary>
         /// 
         /// </summary>
-        public string Summary
-        {
-            get
-            {
-                return Properties.GetStoreProperty("summary", _store.Alias);
-            }
-        }
+        public string Summary => Properties.GetPropertyValue("summary", Store.Alias);
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
         /// </summary>
-        public string Slug
-        {
-            get
-            {
-                return Properties.GetStoreProperty("slug", _store.Alias);
-            }
-        }
+        public string Slug => Properties.GetPropertyValue("slug", Store.Alias);
 
         /// <summary>
         /// 
         /// </summary>
         [JsonIgnore]
-        public int Stock => API.Stock.Current.GetStock(Key);
+        public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
-        public IEnumerable<Image> Images
+        public virtual IEnumerable<Image> Images
         {
             get
             {
-                var _images = Properties.GetStoreProperty("images", _store.Alias);
+                var _images = Properties.GetPropertyValue("images", Store.Alias);
 
                 var imageNodes = _images.GetImages();
 
@@ -94,11 +94,11 @@ namespace Ekom.Models
             }
         }
 
-        public VariantGroup PrimaryVariantGroup
+        public virtual IVariantGroup PrimaryVariantGroup
         {
             get
             {
-                var primaryGroupValue = Properties.GetStoreProperty("primaryVariantGroup", _store.Alias);
+                var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
 
                 if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
                 {
@@ -106,7 +106,7 @@ namespace Ekom.Models
 
                     if (node != null)
                     {
-                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == _store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
 
                         return variantGroup.Value;
 
@@ -123,7 +123,7 @@ namespace Ekom.Models
             }
         }
 
-        public List<ICategory> CategoryAncestors()
+        public virtual List<ICategory> CategoryAncestors()
         {
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
 
@@ -131,11 +131,11 @@ namespace Ekom.Models
 
             foreach (var item in examineItemsFromPath)
             {
-                var alias = item.Fields.GetProperty("nodeTypeAlias");
+                var alias = item.Fields.GetPropertyValue("nodeTypeAlias");
 
                 if (alias == "ekmCategory")
                 {
-                    var c = API.Catalog.Current.GetCategory(Store.Alias, item.Id);
+                    var c = API.Catalog.Instance.GetCategory(Store.Alias, item.Id);
 
                     if (c != null)
                     {
@@ -145,14 +145,13 @@ namespace Ekom.Models
             }
 
             return list;
-
         }
 
         /// <summary>
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories()
+        public virtual IEnumerable<ICategory> Categories()
         {
             int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
 
@@ -161,9 +160,8 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = _categoryCache.Cache[_store.Alias]
-                                                .FirstOrDefault(x => x.Value.Id == categoryId)
-                                                .Value;
+
+            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -179,9 +177,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = _categoryCache.Cache[_store.Alias]
-                                        .FirstOrDefault(x => x.Value.Id == intCatId)
-                                        .Value;
+                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
@@ -194,16 +190,7 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public Store Store
-        {
-            get
-            {
-                return _store;
-            }
-        }
-
-        [JsonIgnore]
-        public IEnumerable<Guid> CategoriesIds
+        public virtual IEnumerable<Guid> CategoriesIds
         {
             get
             {
@@ -211,16 +198,12 @@ namespace Ekom.Models
             }
         }
 
-        public string Url
+        public virtual string Url
         {
             get
             {
-                //var appCache = ApplicationContext.Current.ApplicationCache;
-                //var r = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
-
-                //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
-
-                var path = HttpContext.Current.Request.Url.AbsolutePath;
+                var httpCtx = Configuration.container.GetInstance<HttpContextBase>();
+                var path = httpCtx.Request.Url.AbsolutePath;
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
@@ -228,22 +211,20 @@ namespace Ekom.Models
         }
 
         [JsonIgnore]
-        public IEnumerable<string> Urls { get; set; }
+        public virtual IEnumerable<string> Urls { get; internal set; }
 
-        IDiscountedPrice _price;
         /// <summary>
         /// 
         /// </summary>
-        public IDiscountedPrice Price => _price
-            ?? (_price = new Price(Properties.GetStoreProperty("price", _store.Alias), _store));
+        public virtual IPrice Price { get; }
 
         [JsonIgnore]
-        public IEnumerable<VariantGroup> VariantGroups
+        public virtual IEnumerable<IVariantGroup> VariantGroups
         {
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantGroupCache.Cache[_store.Alias]
+                return _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.ProductId == Id)
                                         .Select(x => x.Value);
             }
@@ -253,12 +234,12 @@ namespace Ekom.Models
         /// All variants belonging to product.
         /// </summary>
         [JsonIgnore]
-        public IEnumerable<Variant> AllVariants
+        public virtual IEnumerable<IVariant> AllVariants
         {
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantCache.Cache[_store.Alias]
+                return _variantCache.Cache[Store.Alias]
                     .Where(x => x.Value.ProductId == Id)
                     .Select(x => x.Value);
             }
@@ -273,7 +254,7 @@ namespace Ekom.Models
             get
             {
                 // AllVariants is slower with Select, this is done for performance
-                return _variantCache.Cache[_store.Alias]
+                return _variantCache.Cache[Store.Alias]
                     .Count(x => x.Value.ProductId == Id);
             }
 
@@ -283,29 +264,16 @@ namespace Ekom.Models
         /// Used by Ekom extensions
         /// </summary>
         /// <param name="store"></param>
-        public Product(Store store) : base(store) { }
-
-        /// <summary>
-        /// Get value in properties
-        /// </summary>
-        /// <param name="alias"></param>
-        public string GetProperty(string alias)
-        {
-            if (Properties.Any(x => x.Key == alias))
-            {
-                return Properties.FirstOrDefault(x => x.Key == alias).Value;
-            }
-
-            return string.Empty;
-        }
+        public Product(IStore store) : base(store) { }
 
         /// <summary>
         /// Construct Product from Examine item
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Product(SearchResult item, Store store) : base(item, store)
+        public Product(SearchResult item, IStore store) : base(item, store)
         {
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -319,8 +287,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public Product(IContent node, Store store) : base(node, store)
+        public Product(IContent node, IStore store) : base(node, store)
         {
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
             Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

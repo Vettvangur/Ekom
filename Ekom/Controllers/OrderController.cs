@@ -1,9 +1,12 @@
-﻿using Ekom.Models;
+﻿using Ekom.API;
+using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Services;
 using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
@@ -12,20 +15,18 @@ namespace Ekom.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    public class EkomOrderController : SurfaceController
+    [PluginController("Ekom")]
+    public partial class OrderController : SurfaceController
     {
         ILog _log;
-        OrderService _orderSvc;
         /// <summary>
         /// ctor
         /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
         /// </summary>
-        public EkomOrderController()
+        public OrderController()
         {
-            _orderSvc = Configuration.container.GetInstance<OrderService>();
-
             var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(EkomOrderController));
+            _log = logFac.GetLogger(typeof(OrderController));
         }
 
         /// <summary>
@@ -44,7 +45,7 @@ namespace Ekom.Controllers
                     variantIds.Add(request.variantId.Value);
                 }
 
-                var orderInfo = _orderSvc.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
+                var orderInfo = Order.Instance.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -73,13 +74,13 @@ namespace Ekom.Controllers
         {
             try
             {
-                var os = API.Order.Current;
+                var os = Order.Instance;
 
                 _log.Info("Add To Multiple Order: " + request.productId);
 
                 if (request.variant.Any())
                 {
-                    OrderInfo o = null;
+                    IOrderInfo o = null;
 
                     var variantIds = new List<Guid>();
 
@@ -89,13 +90,14 @@ namespace Ekom.Controllers
 
                         if (Guid.TryParse(variant.Id.ToString(), out Guid variantId))
                         {
-                            var items = new List<Guid>();
-                            items.Add(variantId);
+                            var items = new List<Guid>
+                            {
+                                variantId
+                            };
 
                             o = os.AddOrderLine(request.productId, items, variant.Quantity, request.storeAlias, request.action);
 
                         }
-
                     }
 
                     return Json(new
@@ -134,7 +136,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
+                var orderInfo = Order.Instance.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
 
                 return Json(new
                 {
@@ -156,13 +158,12 @@ namespace Ekom.Controllers
         /// <summary>
         /// Update Shipping Information
         /// </summary>
-        /// <param name="form">FormData</param>
         /// <returns></returns>
         public JsonResult UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdateShippingInformation(ShippingProvider,storeAlias);
+                var orderInfo = Order.Instance.UpdateShippingInformation(ShippingProvider, storeAlias);
 
                 return Json(new
                 {
@@ -184,13 +185,12 @@ namespace Ekom.Controllers
         /// <summary>
         /// Update Payment Information
         /// </summary>
-        /// <param name="form">FormData</param>
         /// <returns></returns>
         public JsonResult UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = API.Order.Current.UpdatePaymentInformation(PaymentProvider, storeAlias);
+                var orderInfo = Order.Instance.UpdatePaymentInformation(PaymentProvider, storeAlias);
 
                 return Json(new
                 {
@@ -220,7 +220,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = _orderSvc.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var orderInfo = Order.Instance.AddOrderLine(lineId, null, quantity, storeAlias, null);
 
                 return Json(new
                 {
@@ -244,28 +244,18 @@ namespace Ekom.Controllers
         /// <param name="lineId">Guid Key of product/line</param>
         /// <param name="storeAlias"></param>
         /// <returns></returns>
-        public JsonResult RemoveOrderLine(Guid lineId, string storeAlias)
+        public ActionResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
             try
             {
-                var orderInfo = _orderSvc.RemoveOrderLine(lineId, storeAlias);
+                var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
-                return Json(new
-                {
-                    success = true,
-                    orderInfo = orderInfo
-                });
+                return Json(new { orderInfo, date = DateTime.Now });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
-                return Json(new
-                {
-                    success = false,
-                    error = ex.Message
-                });
+                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
             }
         }
-
     }
 }

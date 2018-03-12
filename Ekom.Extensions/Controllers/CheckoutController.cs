@@ -1,8 +1,11 @@
 ﻿using Ekom.API;
+using Ekom.Exceptions;
 using Ekom.Models.Data;
 using log4net;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.NetPayment;
@@ -20,6 +23,8 @@ namespace Ekom.Extensions.Controllers
     {
         ILog _log;
         Configuration _config;
+        Stock _stock = Stock.Instance;
+
         //IDatabaseFactory _dbFac;
 
         /// <summary>
@@ -40,10 +45,12 @@ namespace Ekom.Extensions.Controllers
         /// <param name="paymentRequest"></param>
         /// <param name="form"></param>
         /// <returns></returns>
-        public async Task<string> Pay(PaymentRequest paymentRequest, FormCollection form)
+        public async Task<ActionResult> Pay(PaymentRequest paymentRequest, FormCollection form)
         {
-            var order = Order.Current.GetOrder();
-            var ekomPP = Providers.Current.GetPaymentProvider(paymentRequest.PaymentProvider);
+            var hangfireJobs = new List<string>();
+
+            var order = Order.Instance.GetOrder();
+            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
             var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
@@ -58,17 +65,68 @@ namespace Ekom.Extensions.Controllers
                 }
             }
 
-            var orderItems = order.OrderLines.Select(x => new OrderItem
+            var orderItems = new List<OrderItem>();
+            foreach (var line in order.OrderLines)
             {
-                GrandTotal = x.Amount.Value,
-                Price = x.Product.OriginalPrice,
-                Title = x.Product.Title,
-                Quantity = x.Quantity,
-            });
+                try
+                {
+                    hangfireJobs.Add(_stock.ReserveStock(line.Id, line.Quantity));
+
+                    if (line.Discount != null)
+                    {
+                        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+
+                        if (line.Discount.HasMasterStock)
+                        {
+                            hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                        }
+                    }
+                }
+                catch (StockException)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                }
+
+                orderItems.Add(new OrderItem
+                {
+                    GrandTotal = line.Amount.Value,
+                    Price = line.Product.Price.BeforeDiscount.Value,
+                    Title = line.Product.Title,
+                    Quantity = line.Quantity,
+                });
+
+                if (line.Discount != null)
+                {
+                    orderItems.Add(new OrderItem
+                    {
+                        Title = "Line discount " + line.Discount.Amount.Type,
+                        Price = -line.Discount.Amount.Amount,
+                        Quantity = 1,
+                        GrandTotal = -line.Discount.Amount.Amount,
+                    });
+                }
+            }
+
+            if (order.Discount != null)
+            {
+                try
+                {
+                    hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1, order.Coupon));
+
+                    if (order.Discount.HasMasterStock)
+                    {
+                        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1));
+                    }
+                }
+                catch (StockException)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
+                }
+            }
 
             if (paymentRequest.ShippingProvider != Guid.Empty)
             {
-                var ekomSP = Providers.Current.GetShippingProvider(paymentRequest.ShippingProvider);
+                var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
                 var orderItemsList = orderItems.ToList();
                 orderItemsList.Add(new OrderItem
                 {
@@ -81,14 +139,28 @@ namespace Ekom.Extensions.Controllers
                 orderItems = orderItemsList;
             }
 
-            return await pp.RequestAsync(
+            if (order.Discount != null)
+            {
+                orderItems.Add(new OrderItem
+                {
+                    Title = "Order discount " + order.Discount.Amount.Type,
+                    Quantity = 1,
+                    Price = order.Discount.Amount.Amount,
+                    GrandTotal = order.Discount.Amount.Amount,
+                });
+            }
+
+            // save job ids to sql for retrieval after checkout completion
+            Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
+
+            return Content(await pp.RequestAsync(
                 order.ChargedAmount.Value,
                 orderItems,
                 skipReceipt: true,
                 culture: order.StoreInfo.Alias,
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                orderCustomString: "Ekom Store"
-            );
+                orderCustomString: order.UniqueId.ToString()
+            ));
         }
     }
 

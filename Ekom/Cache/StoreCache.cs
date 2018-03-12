@@ -1,7 +1,8 @@
 ﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Abstractions;
 using Ekom.Services;
-using Examine;
 using Examine.Providers;
 using Examine.SearchCriteria;
 using System;
@@ -11,25 +12,20 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
-    class StoreCache : BaseCache<Store>
+    class StoreCache : BaseCache<IStore>
     {
         public override string NodeAlias { get; } = "ekmStore";
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
         public StoreCache(
             ILogFactory logFac,
             Configuration config,
-            ExamineManager examineManager
-        )
+            IObjectFactory<IStore> objectFactory
+        ) : base(config, objectFactory)
         {
-            _config = config;
-            _examineManager = examineManager;
-            _log = logFac.GetLogger(typeof(StoreCache));
+            _log = logFac.GetLogger<StoreCache>();
         }
 
         /// <summary>
@@ -40,7 +36,7 @@ namespace Ekom.Cache
             BaseSearchProvider searcher = null;
             try
             {
-                searcher = ExamineManager.Instance.SearchProviderCollection[_config.ExamineSearcher];
+                searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
             }
             catch // Restart Application if Examine just initialized
             {
@@ -75,7 +71,7 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _log.Info("Failed to map to store. Id: " + r.Id, ex);
+                        _log.Warn("Failed to map to store. Id: " + r.Id, ex);
                     }
                 }
 
@@ -85,7 +81,7 @@ namespace Ekom.Cache
             }
             else
             {
-                _log.Info("No examine search found with the name ExternalSearcher, Can not fill store cache.");
+                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
             }
         }
 
@@ -97,7 +93,7 @@ namespace Ekom.Cache
         {
             if (!node.IsItemUnpublished())
             {
-                var item = new Store(node);
+                var item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
 
                 if (item != null)
                 {

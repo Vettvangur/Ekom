@@ -1,11 +1,35 @@
-﻿using System;
+﻿using Ekom.Interfaces;
+using Newtonsoft.Json;
+using System;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// Frozen representation of <see cref="IStore"/>
+    /// </summary>
     public class StoreInfo
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public StoreInfo(
+            Guid key,
+            string currency,
+            string culture,
+            string alias,
+            bool vatIncludedInPrice,
+            decimal vat)
+        {
+            Key = key;
+            Currency = currency;
+            Culture = culture;
+            Alias = alias;
+            VatIncludedInPrice = vatIncludedInPrice;
+            Vat = vat;
+        }
 
-        public StoreInfo(Store store)
+        public StoreInfo(IStore store)
         {
             if (store != null)
             {
@@ -16,14 +40,13 @@ namespace Ekom.Models
                 VatIncludedInPrice = store.VatIncludedInPrice;
                 Vat = store.Vat;
             }
-
         }
 
-        public Guid Key { get; set; }
-        public string Currency { get; set; }
-        public string Culture { get; set; }
-        public string Alias { get; set; }
-        public bool VatIncludedInPrice { get; set; }
-        public decimal Vat { get; set; }
+        public Guid Key { get; }
+        public string Currency { get; }
+        public string Culture { get; }
+        public string Alias { get; }
+        public bool VatIncludedInPrice { get; }
+        public decimal Vat { get; }
     }
 }

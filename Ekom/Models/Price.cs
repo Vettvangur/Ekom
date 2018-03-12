@@ -1,165 +1,292 @@
-﻿using System.Globalization;
-using System.Web.Mvc;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Services;
+using Ekom.Models.OrderedObjects;
 using log4net;
+using Newtonsoft.Json;
+using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace Ekom.Models
 {
-    public class Price : IDiscountedPrice
+    public class Price : IPrice
     {
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
 
-        private decimal _originalPrice;
-        private string _culture;
-        private decimal _vat;
-        private bool _vatIncludeInPrice;
+        /// <summary>
+        /// 
+        /// </summary>
+        public OrderedDiscount Discount { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public StoreInfo Store { get; }
 
-        private readonly IPriceCalculationService _priceCalculationService;
+        /// <summary>
+        /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
+        /// </summary>
+        public bool DiscountAlwaysBeforeVAT { get; }
 
-        public Price(string originalPrice, Store store)
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public Price(
+            OrderedDiscount discount,
+            StoreInfo store,
+            decimal originalValue,
+            bool discountAlwaysBeforeVAT,
+            int quantity)
+            : this(originalValue, store, discount, quantity)
         {
-            if (decimal.TryParse(originalPrice, out decimal result))
-            {
-                _originalPrice = result;
-            }
-            else
-            {
-                _originalPrice = 0;
-            }
-
-            _vat = store.Vat;
-            _vatIncludeInPrice = store.VatIncludedInPrice;
-            _culture = store.Culture.Name;
-
-            _priceCalculationService = new PriceCalculationService();
+            DiscountAlwaysBeforeVAT = discountAlwaysBeforeVAT;
         }
 
-        public Price(decimal originalPrice, Store store)
+        public Price(string price, IStore store, OrderedDiscount discount = null, int quantity = 1)
+            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
+                 new StoreInfo(store),
+                 discount,
+                 quantity)
         {
-            _originalPrice = originalPrice;
-            _vat = store.Vat;
-            _vatIncludeInPrice = store.VatIncludedInPrice;
-            _culture = store.Culture.Name;
-
-            _priceCalculationService = new PriceCalculationService();
         }
 
-        public Price(decimal originalPrice, StoreInfo storeInfo)
+        public Price(decimal price, IStore store, OrderedDiscount discount = null, int quantity = 1)
+            : this(price, new StoreInfo(store), discount, quantity)
         {
-            _originalPrice = originalPrice;
-            _vat = storeInfo.Vat;
-            _vatIncludeInPrice = storeInfo.VatIncludedInPrice;
-            _culture = storeInfo.Culture;
-
-            _priceCalculationService = new PriceCalculationService();
         }
 
+        public Price(string price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
+            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
+                 storeInfo,
+                 discount,
+                 quantity)
+        {
+        }
 
-        public decimal Value
+        public Price(decimal price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
+        {
+            OriginalValue = price;
+            Store = storeInfo;
+            Discount = discount;
+            Quantity = quantity;
+        }
+
+        private CalculatedPrice CreateSimplePrice(decimal price)
+            => new CalculatedPrice(price, Store.Culture);
+
+        /// <summary>
+        /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() => MemberwiseClone();
+
+        public decimal OriginalValue { get; }
+        public int Quantity { get; }
+
+        private ICalculatedPrice _beforeDiscount;
+        /// <summary>
+        /// Price before discount with VAT left as-is
+        /// </summary>
+        [JsonIgnore]
+        public ICalculatedPrice BeforeDiscount
         {
             get
             {
-                return _originalPrice;
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_beforeDiscount == null)
+                {
+                    lock (this)
+                    {
+                        if (_beforeDiscount == null)
+                        {
+                            _beforeDiscount = CreateSimplePrice(OriginalValue * Quantity);
+                        }
+                    }
+                }
+
+                return _beforeDiscount;
             }
-            set { }
         }
 
-
-        public IPrice WithVat
+        private ICalculatedPrice _afterDiscount;
+        /// <summary>
+        /// Price after discount with VAT left as-is
+        /// </summary>
+        [JsonIgnore]
+        public ICalculatedPrice AfterDiscount
         {
             get
             {
-                return new SimplePrice(true, _originalPrice, _culture, _vat, _vatIncludeInPrice);
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_afterDiscount == null)
+                {
+                    lock (this)
+                    {
+                        if (_afterDiscount == null)
+                        {
+                            var price = OriginalValue;
+
+                            if (Discount != null)
+                            {
+                                switch (Discount.Amount.Type)
+                                {
+                                    case Discounts.DiscountType.Fixed:
+
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithoutVat(price, Store.Vat);
+                                        }
+                                        price -= Discount.Amount.Amount;
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithVat(price, Store.Vat);
+                                        }
+                                        break;
+
+                                    case Discounts.DiscountType.Percentage:
+
+                                        price -= price * Discount.Amount.Amount;
+                                        break;
+                                }
+                            }
+
+                            _afterDiscount = CreateSimplePrice(price * Quantity);
+                        }
+                    }
+                }
+
+                return _afterDiscount;
             }
         }
-        public IPrice WithoutVat
+
+        private ICalculatedPrice _withoutVat;
+        /// <summary>
+        /// Price with discount but without VAT
+        /// </summary>
+        [JsonIgnore]
+        public ICalculatedPrice WithoutVat
         {
             get
             {
-                return new SimplePrice(false, _originalPrice, _culture, _vat, _vatIncludeInPrice);
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_withoutVat == null)
+                {
+                    lock (this)
+                    {
+                        if (_withoutVat == null)
+                        {
+                            decimal price = AfterDiscount.Value;
+                            if (Store.VatIncludedInPrice)
+                            {
+                                price = VatCalculator.WithoutVat(price, Store.Vat);
+                            }
+
+                            _withoutVat = CreateSimplePrice(price);
+                        }
+                    }
+                }
+
+                return _withoutVat;
             }
         }
 
-        public IVatPrice BeforeDiscount
+        public decimal Value => WithVat.Value;
+
+        private ICalculatedPrice _withVat;
+        /// <summary>
+        /// Price with discount and VAT
+        /// </summary>
+        [JsonIgnore]
+        public ICalculatedPrice WithVat
         {
-            get;
+            get
+            {
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_withVat == null)
+                {
+                    lock (this)
+                    {
+                        if (_withVat == null)
+                        {
+                            var price = AfterDiscount.Value;
+                            if (!Store.VatIncludedInPrice)
+                            {
+                                price = VatCalculator.WithVat(price, Store.Vat);
+                            }
+
+                            _withVat = CreateSimplePrice(price);
+                        }
+                    }
+                }
+
+                return _withVat;
+            }
         }
 
-        public IVatPrice Discount { get; }
-        public IPrice Vat { get; }
+        private ICalculatedPrice _vat;
+        /// <summary>
+        /// VAT included or to be included in price
+        /// </summary>
+        [JsonIgnore]
+        public ICalculatedPrice Vat
+        {
+            get
+            {
+                // http://csharpindepth.com/Articles/General/Singleton.aspx
+                // Third version - attempted thread-safety using double-check locking
+                if (_vat == null)
+                {
+                    lock (this)
+                    {
+                        if (_vat == null)
+                        {
+                            decimal price = 0;
+                            if (Store.VatIncludedInPrice)
+                            {
+                                price = VatCalculator.VatAmountFromWithVat(OriginalValue, Store.Vat);
+                            }
+                            else
+                            {
+                                price = VatCalculator.VatAmountFromWithoutVat(OriginalValue, Store.Vat);
+                            }
+
+                            _vat = CreateSimplePrice(price);
+                        }
+                    }
+                }
+
+                return _vat;
+            }
+        }
     }
 
-    public class SimplePrice : IPrice
+    /// <summary>
+    /// An object that contains the calculated price given the provided parameters
+    /// Also offers a way of printing the value using the provided culture.
+    /// </summary>
+    class CalculatedPrice : ICalculatedPrice
     {
-        private decimal _originalPrice;
-        private string _culture;
-        private decimal _vat;
-        private bool _includeVat;
-        private bool _vatIncludeInPrice;
-        private Configuration _config;
-
-        public SimplePrice(bool includeVat, decimal originalPrice, string culture, decimal vat, bool vatIncludeInPrice)
+        public CalculatedPrice(
+            decimal price,
+            string culture
+)
         {
-            _originalPrice = originalPrice;
-            _culture = culture;
-            _vat = vat;
-            _includeVat = includeVat;
-            _config = Configuration.container.GetInstance<Configuration>();
+            Value = price;
+            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(culture));
         }
 
         /// <summary>
         /// Value with vat if applicable
         /// </summary>
-        public decimal Value
-        {
-            get
-            {
-                return GetAmount();
-            }
-        }
-        public string ToCurrencyString
-        {
-            get
-            {
-                var amount = GetAmount();
-                return (amount).ToString(_config.CurrencyFormat, new CultureInfo(_culture));
-            }
+        public decimal Value { get; internal set; }
 
-        }
-
-        private decimal GetAmount()
-        {
-            var price = _originalPrice;
-
-            var vatAmount = price * (_vat / 100m);
-
-            if (_vatIncludeInPrice)
-            {
-                if (!_includeVat)
-                {
-                    price = price - vatAmount;
-                }
-
-            }
-            else
-            {
-                if (_includeVat)
-                {
-                    price = price + vatAmount;
-                }
-            }
-
-            return price;
-        }
-
-        private static readonly ILog Log =
-                LogManager.GetLogger(
-                    MethodBase.GetCurrentMethod().DeclaringType
-                );
+        public string CurrencyString { get; internal set; }
     }
 }

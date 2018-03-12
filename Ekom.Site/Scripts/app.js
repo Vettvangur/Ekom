@@ -31,7 +31,6 @@ $(document).ready(function () {
         .always(function () {
 
         });
-
     });
 
     $('.order-remove-line').on('click', function (e) {
@@ -39,23 +38,23 @@ $(document).ready(function () {
 
         var $btn = $(this);
 
-        var jqxhr = $.post('/Ekom/order/RemoveOrderLine?lineId=' + $btn.attr('data-lineId') + '&storeAlias=' + $btn.attr('data-store'), function (resp) {
+        var jqxhr = $.post($form.attr('action'), function (resp) {
 
         })
-            .done(function (resp) {
+        .done(function (resp) {
 
-                if (resp.success) {
-                    alert('Removed from order!');
-                } else {
-                    alert('Error: ' + resp.error)
-                }
+            if (resp.success) {
+                alert('Removed from order!');
+            } else {
+                alert('Error: ' + resp.error)
+            }
 
-            })
-            .fail(function () {
+        })
+        .fail(function () {
 
-            })
-            .always(function () {
+        })
+        .always(function () {
 
-            });
+        });
     });
 });

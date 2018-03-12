@@ -1,27 +1,34 @@
 ﻿using Examine;
 using Umbraco.Core.Models;
 using Ekom.Helpers;
+using Ekom.Interfaces;
+using Ekom.Utilities;
+using Newtonsoft.Json;
 
 namespace Ekom.Models
 {
     /// <summary>
     /// Base Per Store Umbraco node entity
     /// </summary>
-    public abstract class PerStoreNodeEntity : NodeEntity
+    public abstract class PerStoreNodeEntity : NodeEntity, IPerStoreNodeEntity
     {
-        internal Store _store;
+        /// <summary>
+        /// Store this node entity belongs to
+        /// </summary>
+        [JsonIgnore]
+        public IStore Store { get; internal set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public override string Title => Properties.GetStoreProperty("title", _store.Alias);
+        public override string Title => Properties.GetPropertyValue("title", Store.Alias);
 
         /// <summary>
         /// ctor
         /// </summary>
-        public PerStoreNodeEntity(Store store)
+        public PerStoreNodeEntity(IStore store)
         {
-            _store = store;
+            Store = store;
         }
 
         /// <summary>
@@ -29,9 +36,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public PerStoreNodeEntity(SearchResult item, Store store) : base(item)
+        public PerStoreNodeEntity(SearchResult item, IStore store) : base(item)
         {
-            _store = store;
+            Store = store;
         }
 
         /// <summary>
@@ -39,9 +46,9 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public PerStoreNodeEntity(IContent node, Store store) : base(node)
+        public PerStoreNodeEntity(IContent node, IStore store) : base(node)
         {
-            _store = store;
+            Store = store;
         }
     }
 }

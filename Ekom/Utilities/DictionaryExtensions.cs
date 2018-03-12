@@ -1,53 +1,100 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Ekom.Utilities
 {
     public static class DictionaryExtensions
     {
         /// <summary>
-        /// Get value in properties
+        /// Get value from umbraco properties
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this Dictionary<string,string> properties, string alias)
+        public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value;
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val;
         }
 
         /// <summary>
-        /// Get value in properties
+        /// Get value from umbraco properties by store
+        /// Retrieves a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this IDictionary<string, string> properties, string alias)
+        public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias, string storeAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value;
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val?.GetVortoValue(storeAlias);
         }
 
         /// <summary>
-        /// Get value in properties by store
+        /// Get value from umbraco properties
         /// </summary>
-        /// <param name="alias"></param>
-        public static string GetProperty(this Dictionary<string, string> properties, string alias, string storeAlias)
+        public static string GetPropertyValue(this IDictionary<string, string> properties, string propertyAlias)
         {
-            if (properties.Any(x => x.Key == alias))
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
             {
-                return properties.FirstOrDefault(x => x.Key == alias).Value.GetVortoValue(storeAlias);
+                properties.TryGetValue(propertyAlias, out val);
             }
 
-            return string.Empty;
+            return val;
+        }
+
+        /// <summary>
+        /// Get value from umbraco properties by store
+        /// Retrieves a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
+        /// </summary>
+        public static string GetPropertyValue(this IDictionary<string, string> properties, string propertyAlias, string storeAlias)
+        {
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
+            {
+                properties.TryGetValue(propertyAlias, out val);
+            }
+
+            return val?.GetVortoValue(storeAlias);
+        }
+
+        /// <summary>
+        /// Get value from umbraco properties
+        /// </summary>
+        public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias)
+        {
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
+            {
+                properties.TryGetValue(propertyAlias, out val);
+            }
+
+            return val;
+        }
+
+        /// <summary>
+        /// Get value from umbraco properties by store
+        /// Retrieves a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
+        /// </summary>
+        public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string storeAlias)
+        {
+            string val = null;
+            if (!string.IsNullOrEmpty(propertyAlias))
+            {
+                properties.TryGetValue(propertyAlias, out val);
+            }
+
+            return val?.GetVortoValue(storeAlias);
         }
     }
 }

@@ -10,7 +10,7 @@
         var productNodes = item.GetValue<IEnumerable<IPublishedContent>>("products");
         var caption = item.GetValue<string>("caption");
 
-        var products = Catalog.Current.GetProductsByIds(productNodes.Select(x => x.Id).ToArray());
+        var products = Catalog.Instance.GetProductsByIds(productNodes.Select(x => x.Id).ToArray());
 
         <div class="featured">
 

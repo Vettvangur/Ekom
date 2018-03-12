@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Ekom.Models;
 
-namespace Ekom.Domain.Repositories
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Attempts to parse countries from an xml document, falls back to .NET cultures.

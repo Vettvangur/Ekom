@@ -1,10 +1,28 @@
-﻿using System;
-using Ekom.Models;
+﻿using Ekom.Models;
+using Ekom.Models.Discounts;
+using Ekom.Models.OrderedObjects;
+using System;
 
 namespace Ekom.Interfaces
 {
+    /// <summary>
+    /// Order/Cart
+    /// </summary>
     public interface IOrderLine
     {
+        /// <summary>
+        /// Price
+        /// </summary>
+        IPrice Amount { get; }
+        /// <summary>
+        /// Currently set coupon
+        /// </summary>
+        string Coupon { get; }
+        /// <summary>
+        /// Current discount
+        /// </summary>
+        OrderedDiscount Discount { get; }
+
         /// <summary>
         /// Gets the line Id.
         /// </summary>
@@ -28,5 +46,6 @@ namespace Ekom.Interfaces
         /// The quantity.
         /// </value>
         int Quantity { get; }
+
     }
 }

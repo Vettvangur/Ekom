@@ -4,6 +4,7 @@ using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Ekom.Services;
+using Ekom.Models.Abstractions;
 
 namespace Ekom.Cache
 {
@@ -15,19 +16,12 @@ namespace Ekom.Cache
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="appCtx"></param>
-        /// <param name="logFac"></param>
-        /// <param name="config"></param>
-        /// <param name="examineManager"></param>
         public StoreDomainCache(
             ApplicationContext appCtx,
             ILogFactory logFac,
-            Configuration config,
-            ExamineManager examineManager
-        )
+            Configuration config
+        ) : base(config, null)
         {
-            _config = config;
-            _examineManager = examineManager;
             _appCtx = appCtx;
             _log = logFac.GetLogger(typeof(StoreDomainCache));
         }

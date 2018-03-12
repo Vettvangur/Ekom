@@ -1,14 +1,14 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoTemplatePage
 
 @{
-    var order = (Ekom.Models.OrderInfo)ViewData["order"];
+    var order = (Ekom.Interfaces.IOrderInfo)ViewData["order"];
 
     if (order != null)
     {
-        var shippingProviders = Ekom.API.Providers.Current.GetShippingProviders();
-        var currentShippingProviderKey = order.ShippingProvider != null ? order.ShippingProvider.Key : Guid.Empty; 
+        var shippingProviders = Ekom.API.Providers.Instance.GetShippingProviders();
+        var currentShippingProviderKey = order.ShippingProvider != null ? order.ShippingProvider.Key : Guid.Empty;
 
-        using (Html.BeginUmbracoForm("UpdateShippingProvider", "EkomOrder", null, new { @Class = "cart__shipping-form" }))
+        using (Html.BeginEkomForm(FormType.UpdateShippingProvider))
         {
             <h1 class="checkout__caption">Choose Shipping</h1>
 
