@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Ekom.Extensions</id>
-    <version>0.0.3</version>
+    <version>0.1.0</version>
     <title>Ekom Controllers</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
@@ -11,7 +11,7 @@
     <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Ekom Controllers</description>
-    <releaseNotes>NetPayment 6.1.5</releaseNotes>
+    <releaseNotes>Remove dependencies and discount prototype</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags></tags>
   </metadata>
