@@ -102,7 +102,7 @@ namespace Ekom.Models
         /// <summary>
         /// Total count of items and subitems on each order line.
         /// </summary>
-        public int Quantity
+        public int TotalQuantity
         {
             get
             {
