@@ -279,8 +279,7 @@ namespace Ekom.Services
         {
             _log.Debug("Update Order with new OrderInfo");
 
-            // We need to verify all discount constraints here after changes
-            // Determine if any global discounts should be applied
+            VerifyDiscounts(orderInfo);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 

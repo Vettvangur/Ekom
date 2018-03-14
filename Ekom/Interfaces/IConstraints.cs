@@ -26,5 +26,13 @@ namespace Ekom.Interfaces
         /// Guid.Empty if none.
         /// </summary>
         Guid Zone { get; }
+
+        /// <summary>
+        /// Determine if constraints conditions are met.
+        /// </summary>
+        /// <param name="countryCode"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        bool IsValid(string countryCode, decimal amount);
     }
 }

@@ -158,21 +158,15 @@ namespace Ekom.API
             string countryCode,
             decimal orderAmount
         )
-        {
-            return
-                constraints.CountriesInZone.Contains(countryCode.ToUpper()) &&
-                constraints.StartRange <= orderAmount &&
-                constraints.EndRange >= orderAmount
-            ;
-        }
+            => constraints.CountriesInZone.Contains(countryCode.ToUpper())
+            && constraints.StartRange <= orderAmount
+            && constraints.EndRange >= orderAmount
+        ;
 
         /// <summary>
         /// List of all <see cref="Country"/> objects from xml document or .NET as fallback.
         /// </summary>
-        public List<Country> GetAllCountries()
-        {
-            return _countryRepo.GetAllCountries();
-        }
+        public List<Country> GetAllCountries() => _countryRepo.GetAllCountries();
 
         /// <summary>
         /// Get shipping provider from cache

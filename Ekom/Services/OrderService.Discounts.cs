@@ -15,8 +15,8 @@ namespace Ekom.Services
         /// </summary>
         /// <returns></returns>
         public bool ApplyDiscountToOrder(
-            IDiscount discount, 
-            string storeAlias, 
+            IDiscount discount,
+            string storeAlias,
             string coupon = null,
             OrderInfo orderInfo = null)
         {
@@ -49,8 +49,14 @@ namespace Ekom.Services
         {
             var orderInfo = GetOrder(storeAlias);
 
+            RemoveDiscountFromOrder(orderInfo);
+        }
+        public void RemoveDiscountFromOrder(OrderInfo orderInfo)
+        {
             orderInfo.Discount = null;
             orderInfo.Coupon = null;
+
+            UpdateOrderAndOrderInfo(orderInfo);
         }
 
         /// <summary>
@@ -59,10 +65,10 @@ namespace Ekom.Services
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
         public bool ApplyDiscountToOrderLine(
-            Guid productKey, 
-            IDiscount discount, 
-            string storeAlias, 
-            string coupon = null, 
+            Guid productKey,
+            IDiscount discount,
+            string storeAlias,
+            string coupon = null,
             OrderInfo orderInfo = null)
         {
             orderInfo = orderInfo ?? GetOrder(storeAlias);
@@ -184,10 +190,25 @@ namespace Ekom.Services
         /// <param name="Key"></param>
         public void CouponApply(Guid Key)
         {
-            var defStore =_storeSvc.GetAllStores().First();
+            var defStore = _storeSvc.GetAllStores().First();
             var discount = _discountCache[defStore.Alias][Key];
 
             (discount as Discount)?.OnCouponApply();
+        }
+
+        /// <summary>
+        /// Verifies all <see cref="Discount"/>'s match their constraints.
+        /// Removes non-compliant <see cref="Discount"/>'s
+        /// </summary>
+        private void VerifyDiscounts(OrderInfo orderInfo)
+        {
+            if (orderInfo.Discount != null
+            && !orderInfo.Discount.Constraints.IsValid(
+                orderInfo.StoreInfo.Culture,
+                orderInfo.ChargedAmount.Value))
+            {
+                RemoveDiscountFromOrder(orderInfo.StoreInfo.Alias);
+            }
         }
     }
 }

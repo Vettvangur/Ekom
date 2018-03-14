@@ -22,6 +22,21 @@ namespace Ekom.Models.Behaviors
         INodeEntity _node;
 
         /// <summary>
+        /// Determine if the given provider is valid given the provided properties.
+        /// </summary>
+        /// <param name="countryCode"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public bool IsValid(
+            string countryCode,
+            decimal amount
+        )
+            => CountriesInZone.Contains(countryCode.ToUpper())
+            && StartRange <= amount
+            && EndRange >= amount
+        ;
+
+        /// <summary>
         /// Start of range that provider supports.
         /// </summary>
         public int StartRange

@@ -115,20 +115,20 @@ namespace Ekom.Models
         /// <summary>
         /// OrderLines with OrderDiscount excluded
         /// </summary>
-        public IPrice OrderLineTotal
+        public ICalculatedPrice OrderLineTotal
         {
             get
             {
                 var amount = OrderLines.Sum(x => x.Amount.OriginalValue);
 
-                return new Price(amount, StoreInfo);
+                return new CalculatedPrice(amount, StoreInfo.Culture);
             }
         }
 
         /// <summary>
         /// OrderLines with OrderDiscount included
         /// </summary>
-        public IPrice SubTotal
+        public ICalculatedPrice SubTotal
         {
             get
             {
@@ -143,14 +143,14 @@ namespace Ekom.Models
                     return line.Amount.AfterDiscount.Value;
                 });
 
-                return new Price(amount, StoreInfo);
+                return new CalculatedPrice(amount, StoreInfo.Culture);
             }
         }
 
         /// <summary>
         /// <see cref="IPrice"/> object for total value of all orderlines.
         /// </summary>
-        public IPrice ChargedAmount
+        public ICalculatedPrice ChargedAmount
         {
             get
             {
@@ -166,7 +166,7 @@ namespace Ekom.Models
                     amount += PaymentProvider.Price.OriginalValue;
                 }
 
-                return new Price(amount, StoreInfo);
+                return new CalculatedPrice(amount, StoreInfo.Culture);
             }
         }
         /// <summary>
