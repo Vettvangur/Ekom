@@ -42,6 +42,7 @@ namespace Ekom.Interfaces
         IStore Store { get; }
         string Summary { get; }
         IEnumerable<IVariantGroup> VariantGroups { get; }
+        IEnumerable<IVariant> AllVariants { get; }
 
         List<ICategory> CategoryAncestors();
         /// <summary>
