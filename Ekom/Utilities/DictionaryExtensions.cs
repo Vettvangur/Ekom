@@ -9,13 +9,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val;
+            return val ?? string.Empty;
         }
 
         /// <summary>
@@ -26,13 +27,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias, string storeAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val?.GetVortoValue(storeAlias);
+            return val.GetVortoValue(storeAlias) ?? string.Empty;
         }
 
         /// <summary>
@@ -40,13 +42,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IDictionary<string, string> properties, string propertyAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val;
+            return val ?? string.Empty;
         }
 
         /// <summary>
@@ -57,13 +60,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IDictionary<string, string> properties, string propertyAlias, string storeAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val?.GetVortoValue(storeAlias);
+            return val.GetVortoValue(storeAlias) ?? string.Empty;
         }
 
         /// <summary>
@@ -71,13 +75,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val;
+            return val ?? string.Empty;
         }
 
         /// <summary>
@@ -88,13 +93,14 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string storeAlias)
         {
-            string val = null;
+            string val = string.Empty;
+
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
             }
 
-            return val?.GetVortoValue(storeAlias);
+            return val.GetVortoValue(storeAlias) ?? string.Empty;
         }
     }
 }
