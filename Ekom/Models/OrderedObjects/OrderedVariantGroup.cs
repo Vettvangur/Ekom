@@ -13,7 +13,6 @@ namespace Ekom.Models.OrderedObjects
     public class OrderedVariantGroup
     {
         private IVariant variant;
-        private IStore store;
         private StoreInfo storeInfo;
 
         public int Id { get; set; }
@@ -24,29 +23,32 @@ namespace Ekom.Models.OrderedObjects
 
         public IReadOnlyDictionary<string, string> Properties;
 
-        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, IStore store)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo)
         {
             this.variant = variant;
-            this.store = store;
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
-
 
             Id = variantGroup.Id;
             Key = variantGroup.Key;
             Title = variantGroup.Title;
             ImageIds = variantGroup.Images.Any() ? variantGroup.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
 
-            var variants = new List<OrderedVariant>();
-        
-            variants.Add(new OrderedVariant(variant, store));
+            var variants = new List<OrderedVariant>
+            {
+                new OrderedVariant(variant, storeInfo)
+            };
 
             Variants = variants;
-
-
         }
 
+        /// <summary>
+        /// Json Constructor
+        /// </summary>
         public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
         {
             Log.Info("Creating OrderedVariantGroup from Json");
@@ -91,7 +93,9 @@ namespace Ekom.Models.OrderedObjects
             }
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType

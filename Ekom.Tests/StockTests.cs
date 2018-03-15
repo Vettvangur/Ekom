@@ -53,7 +53,8 @@ namespace Ekom.Tests
         {
             var guid = Guid.NewGuid();
 
-            var c = TinyIoCActivator.Start();
+            var mockedContainer = Helpers.InitMockContainer();
+
             var stockRepo = new Mock<IStockRepository>();
             stockRepo.Setup(sr => sr.CreateNewStockRecord(It.IsAny<string>()))
                 .Returns(new StockData
@@ -61,8 +62,23 @@ namespace Ekom.Tests
                     UniqueId = guid.ToString(),
                 });
 
-            c.Register(stockRepo.Object);
+            var stockCache = new StockCache(
+                Mock.Of<ILogFactory>(),
+                stockRepo.Object
+            );
+            stockCache[guid] = new StockData();
 
+            var stockSvc = new Stock(
+                new Configuration(),
+                Helpers.MockLogFac(),
+                stockCache,
+                stockRepo.Object,
+                Mock.Of<IDiscountStockRepository>(),
+                Mock.Of<IStoreService>(),
+                Mock.Of<IPerStoreCache<StockData>>()
+            );
+
+            mockedContainer.Setup(c => c.GetInstance<Stock>()).Returns(stockSvc);
             Stock.UpdateStockHangfire(guid, 1);
         }
     }

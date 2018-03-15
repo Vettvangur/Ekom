@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Ekom.Models.Behaviors;
 using Ekom.Models.Discounts;
 using Newtonsoft.Json;
 using System;
@@ -15,7 +16,7 @@ namespace Ekom.Models.OrderedObjects
         /// 
         /// </summary>
         [JsonConstructor]
-        public OrderedDiscount(Guid key, DiscountAmount amount, OrderedConstraints constraints, IReadOnlyCollection<string> coupons, bool hasMasterStock)
+        public OrderedDiscount(Guid key, DiscountAmount amount, IConstraints constraints, IReadOnlyCollection<string> coupons, bool hasMasterStock)
         {
             Key = key;
             Amount = amount;
@@ -31,7 +32,7 @@ namespace Ekom.Models.OrderedObjects
         {
             Key = discount.Key;
             Amount = discount.Amount;
-            Constraints = new OrderedConstraints(discount.Constraints);
+            Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
             HasMasterStock = discount.HasMasterStock;
         }

@@ -1,5 +1,4 @@
-﻿using Ekom.API;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
@@ -10,6 +9,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Web;
 
 namespace Ekom.Models.OrderedObjects
@@ -19,7 +20,9 @@ namespace Ekom.Models.OrderedObjects
         private string productJson;
         private StoreInfo storeInfo;
 
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public int Id
         {
             get
@@ -27,7 +30,9 @@ namespace Ekom.Models.OrderedObjects
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public Guid Key
         {
             get
@@ -44,7 +49,9 @@ namespace Ekom.Models.OrderedObjects
                 return _key;
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string SKU
         {
             get
@@ -52,7 +59,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string Title
         {
             get
@@ -60,7 +69,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("title", storeInfo.Alias);
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string Path
         {
             get
@@ -68,7 +79,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("path");
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public DateTime CreateDate
         {
             get
@@ -76,7 +89,9 @@ namespace Ekom.Models.OrderedObjects
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public DateTime UpdateDate
         {
             get
@@ -87,7 +102,9 @@ namespace Ekom.Models.OrderedObjects
 
         public IPrice Price { get; }
 
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public StoreInfo StoreInfo
         {
             get
@@ -102,17 +119,17 @@ namespace Ekom.Models.OrderedObjects
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
-        public OrderedProduct(Guid productId, Guid variantId, IStore store)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
-            var product = Catalog.Instance.GetProduct(store.Alias, productId);
-
             if (product == null)
             {
-                throw new Exception("OrderedProduct could not be created. Product not found. Key: " + productId);
+                throw new ArgumentNullException(nameof(product), "OrderedProduct could not be created. Product not found. Key: " + product.Key);
             }
 
-            storeInfo = new StoreInfo(store);
-
+            this.storeInfo = storeInfo;
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
             Properties = new ReadOnlyDictionary<string, string>(
@@ -120,21 +137,13 @@ namespace Ekom.Models.OrderedObjects
 
             Price = product.Price.Clone() as IPrice;
 
-            if (variantId != null && variantId != Guid.Empty)
+            if (variant != null)
             {
                 var variantGroups = new List<OrderedVariantGroup>();
 
-                var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
-
-                if (variant == null)
-                {
-                    throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
-                }
-
                 var variantGroup = variant.VariantGroup;
 
-                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, store));
-                
+                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo));
 
                 VariantGroups = variantGroups;
             }
@@ -144,6 +153,9 @@ namespace Ekom.Models.OrderedObjects
             }
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public OrderedProduct(string productJson, StoreInfo storeInfo)
         {
             this.productJson = productJson;
@@ -194,10 +206,12 @@ namespace Ekom.Models.OrderedObjects
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
-
     }
 }

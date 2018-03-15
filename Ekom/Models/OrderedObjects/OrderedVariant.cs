@@ -1,5 +1,4 @@
-﻿using Ekom.API;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
@@ -10,6 +9,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 
 namespace Ekom.Models.OrderedObjects
 {
@@ -18,7 +19,9 @@ namespace Ekom.Models.OrderedObjects
         private JToken variantObject;
         private StoreInfo storeInfo;
 
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public int Id
         {
             get
@@ -26,7 +29,9 @@ namespace Ekom.Models.OrderedObjects
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public Guid Key
         {
             get
@@ -43,7 +48,9 @@ namespace Ekom.Models.OrderedObjects
                 return _key;
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string SKU
         {
             get
@@ -51,7 +58,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string Title
         {
             get
@@ -59,7 +68,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("title", storeInfo.Alias);
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public string Path
         {
             get
@@ -67,7 +78,9 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("path");
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public DateTime CreateDate
         {
             get
@@ -75,7 +88,9 @@ namespace Ekom.Models.OrderedObjects
                 return ExamineService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public DateTime UpdateDate
         {
             get
@@ -87,7 +102,9 @@ namespace Ekom.Models.OrderedObjects
         /// 
         /// </summary>
         public IPrice Price { get; }
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public StoreInfo StoreInfo
         {
             get
@@ -98,25 +115,20 @@ namespace Ekom.Models.OrderedObjects
 
         public IReadOnlyDictionary<string, string> Properties;
 
-        public OrderedVariant(Guid variantId, IStore store)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public OrderedVariant(IVariant variant, StoreInfo storeInfo)
         {
-            var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
-            storeInfo = new StoreInfo(store);
             Price = variant.Price.Clone() as IPrice;
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
         }
 
-        public OrderedVariant(IVariant variant, IStore store)
-        {
-            storeInfo = new StoreInfo(store);
-            Price = variant.Price.Clone() as IPrice;
-
-            Properties = new ReadOnlyDictionary<string, string>(
-                variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
-        }
-
+        /// <summary>
+        /// Json Constructor
+        /// </summary>
         public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
         {
             this.variantObject = variantObject;

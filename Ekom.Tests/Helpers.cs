@@ -1,4 +1,11 @@
-﻿using Moq;
+﻿using CommonServiceLocator;
+using Ekom.API;
+using Ekom.Cache;
+using Ekom.Interfaces;
+using Ekom.Models;
+using Ekom.Services;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using System;
 using System.IO;
 using System.Linq;
@@ -23,15 +30,90 @@ using Umbraco.Web.Security;
 
 namespace Ekom.Tests
 {
-    public static class Helpers
+    static class Helpers
     {
+        public static void InitDI()
+        {
+            Ekom.App_Start.TinyIoCActivator.Start();
+        }
+
+        public static OrderService GetOrderService()
+        {
+            InitMockContainer();
+            var httpCtx = GetHttpContext();
+            var logFac = MockLogFac();
+            var orderSvc = MockOrderService();
+
+
+            var ekmReq = new ContentRequest(new HttpContextWrapper(httpCtx), logFac);
+
+            new PrivateObject(orderSvc, new PrivateType(typeof(OrderService)))
+                .SetField("_ekmRequest", ekmReq);
+
+            return orderSvc;
+        }
+
+        public static Catalog GetCatalogApi()
+            => new Catalog(
+                GetSetAppCtx(),
+                new Configuration(),
+                MockLogFac(),
+                (new Mock<IPerStoreCache<IProduct>> { DefaultValue = DefaultValue.Mock }).Object,
+                Mock.Of<IPerStoreCache<ICategory>>(),
+                Mock.Of<IPerStoreCache<IVariant>>(),
+                Mock.Of<IStoreService>()
+            );
+
+        public static Mock<IServiceLocator> InitMockContainer()
+        {
+            var mockLocator = new Mock<IServiceLocator> { DefaultValue = DefaultValue.Mock };
+            Configuration.container = mockLocator.Object;
+
+            return mockLocator;
+        }
+        public static ILogFactory MockLogFac()
+        {
+            var logFac = new Mock<ILogFactory>() { DefaultValue = DefaultValue.Mock };
+            return logFac.Object;
+        }
+        public static DiscountCache MockDiscountCache()
+            => new DiscountCache(
+                MockLogFac(),
+                Mock.Of<Configuration>(),
+                Mock.Of<IBaseCache<IStore>>(),
+                Mock.Of<IPerStoreFactory<IDiscount>>()
+            );
+        public static OrderService MockOrderService()
+            => new OrderService(
+                (new Mock<IOrderRepository> { DefaultValue = DefaultValue.Mock }).Object,
+                MockLogFac(),
+                Mock.Of<IStoreService>(),
+                GetSetAppCtx(),
+                MockDiscountCache(),
+                GetHttpContextBase()
+            );
+
         public static HttpContext GetHttpContext()
         {
             var tw = new Mock<TextWriter>();
-            var req = new HttpRequest("", "", "");
+            var req = new HttpRequest("", "http://127.0.0.1/", "");
             var resp = new HttpResponse(tw.Object);
 
             return new HttpContext(req, resp);
+        }
+        public static HttpContextBase GetHttpContextBase()
+        {
+            var httpReqMock = new Mock<HttpRequestBase> { DefaultValue = DefaultValue.Mock };
+            httpReqMock.Setup(req => req.Cookies).Returns(new HttpCookieCollection());
+            var httpRespMock = new Mock<HttpResponseBase> { DefaultValue = DefaultValue.Mock };
+            httpRespMock.Setup(resp => resp.Cookies).Returns(new HttpCookieCollection());
+            var httpSessMock = new Mock<HttpSessionStateBase> { DefaultValue = DefaultValue.Mock };
+            var httpCtxMock = new Mock<HttpContextBase> { DefaultValue = DefaultValue.Mock };
+            httpCtxMock.Setup(h => h.Request).Returns(httpReqMock.Object);
+            httpCtxMock.Setup(h => h.Response).Returns(httpRespMock.Object);
+            httpCtxMock.Setup(h => h.Session).Returns(httpSessMock.Object);
+
+            return httpCtxMock.Object;
         }
 
         public static ApplicationContext GetSetAppCtx()

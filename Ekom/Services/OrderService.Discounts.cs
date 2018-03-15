@@ -1,4 +1,5 @@
-﻿using Ekom.Exceptions;
+﻿using Ekom.API;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
@@ -15,13 +16,31 @@ namespace Ekom.Services
         /// </summary>
         /// <returns></returns>
         public bool ApplyDiscountToOrder(
-            IDiscount discount, 
-            string storeAlias, 
+            IDiscount discount,
+            string storeAlias = null,
             string coupon = null,
-            OrderInfo orderInfo = null)
+            OrderInfo orderInfo = null
+        )
         {
             orderInfo = orderInfo ?? GetOrder(storeAlias);
 
+            if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+            {
+                UpdateOrderAndOrderInfo(orderInfo);
+                return true;
+            }
+            return false;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool ApplyDiscountToOrder(
+            IDiscount discount,
+            OrderInfo orderInfo,
+            string coupon = null
+        )
+        {
             if (IsBetterDiscount(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
@@ -37,8 +56,6 @@ namespace Ekom.Services
                 orderInfo.Discount = new OrderedDiscount(discount);
                 orderInfo.Coupon = coupon;
 
-                UpdateOrderAndOrderInfo(orderInfo);
-
                 return true;
             }
 
@@ -49,6 +66,11 @@ namespace Ekom.Services
         {
             var orderInfo = GetOrder(storeAlias);
 
+            RemoveDiscountFromOrder(orderInfo);
+            UpdateOrderAndOrderInfo(orderInfo);
+        }
+        private void RemoveDiscountFromOrder(OrderInfo orderInfo)
+        {
             orderInfo.Discount = null;
             orderInfo.Coupon = null;
         }
@@ -59,19 +81,54 @@ namespace Ekom.Services
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
         public bool ApplyDiscountToOrderLine(
-            Guid productKey, 
-            IDiscount discount, 
-            string storeAlias, 
-            string coupon = null, 
-            OrderInfo orderInfo = null)
+            Guid productKey,
+            IDiscount discount,
+            string storeAlias = null,
+            string coupon = null,
+            OrderInfo orderInfo = null
+        )
         {
+            var product = Catalog.Instance.GetProduct(productKey);
+            if (product == null)
+            {
+                throw new ProductNotFoundException("Unable to find product with key " + productKey);
+            }
+
             orderInfo = orderInfo ?? GetOrder(storeAlias);
-            OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
+            if (ApplyDiscountToOrderLine(
+                product,
+                discount,
+                orderInfo,
+                coupon
+            ))
+            {
+                UpdateOrderAndOrderInfo(orderInfo);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <returns></returns>
+        private bool ApplyDiscountToOrderLine(
+            IProduct product,
+            IDiscount discount,
+            OrderInfo orderInfo,
+            string coupon = null
+        )
+        {
+            _log.Debug("Applying discount to orderline");
+
+            OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
                 as OrderLine;
 
             if (orderLine == null)
             {
-                throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
+                throw new OrderLineNotFoundException($"Unable to find order line: {product.Key}");
             }
 
             if (orderLine.Discount != null)
@@ -83,6 +140,7 @@ namespace Ekom.Services
 
                     UpdateOrderAndOrderInfo(orderInfo);
 
+                    _log.Debug("Successfully applied discount to orderline");
                     return true;
                 }
             }
@@ -98,6 +156,7 @@ namespace Ekom.Services
 
                     UpdateOrderAndOrderInfo(orderInfo);
 
+                    _log.Debug("Successfully applied discount to orderline");
                     return true;
                 }
 
@@ -123,10 +182,19 @@ namespace Ekom.Services
                 throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
             }
 
-            orderLine.Discount = null;
-            orderLine.Coupon = null;
+            RemoveDiscountFromOrderLine(orderLine);
 
             UpdateOrderAndOrderInfo(orderInfo);
+        }
+        private void RemoveDiscountFromOrderLine(OrderLine orderLine)
+        {
+            if (orderLine == null)
+            {
+                throw new ArgumentException(nameof(OrderLine));
+            }
+
+            orderLine.Discount = null;
+            orderLine.Coupon = null;
         }
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
@@ -184,10 +252,58 @@ namespace Ekom.Services
         /// <param name="Key"></param>
         public void CouponApply(Guid Key)
         {
-            var defStore =_storeSvc.GetAllStores().First();
+            var defStore = _storeSvc.GetAllStores().First();
             var discount = _discountCache[defStore.Alias][Key];
 
             (discount as Discount)?.OnCouponApply();
+        }
+
+        private void ApplyGlobalDiscounts(OrderInfo orderInfo)
+        {
+
+        }
+
+        /// <summary>
+        /// Verifies all <see cref="Discount"/>'s match their constraints.
+        /// Removes non-compliant <see cref="Discount"/>'s
+        /// </summary>
+        private void VerifyDiscounts(OrderInfo orderInfo)
+        {
+            var total = orderInfo.OrderLineTotal.Value;
+            var storeAlias = orderInfo.StoreInfo.Culture;
+
+            // Verify order discount constraints
+            if (orderInfo.Discount != null
+            && !orderInfo.Discount.Constraints.IsValid(
+                storeAlias,
+                total))
+            {
+                RemoveDiscountFromOrder(orderInfo);
+            }
+
+            var curStoreDiscCache = _discountCache.GlobalDiscounts[storeAlias];
+
+            var gds = curStoreDiscCache.Where(gd =>
+                gd.Constraints.IsValid(storeAlias, total))
+                .ToList();
+
+            // Try apply global order discounts
+            foreach (var gd in gds)
+            {
+                ApplyDiscountToOrder(gd, orderInfo, coupon: null);
+            }
+
+            // Verify order line discount constraints
+            foreach (var line in orderInfo.orderLines)
+            {
+                if (line.Discount != null
+                && !line.Discount.Constraints.IsValid(
+                storeAlias,
+                total))
+                {
+                    RemoveDiscountFromOrderLine(line);
+                }
+            }
         }
     }
 }

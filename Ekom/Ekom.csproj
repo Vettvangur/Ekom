@@ -261,6 +261,9 @@
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Exceptions\CouponDuplicateException.cs" />
     <Compile Include="Exceptions\DiscountNotFoundException.cs" />
+    <Compile Include="Exceptions\VariantNotFoundException.cs" />
+    <Compile Include="Exceptions\StoreNotFoundException.cs" />
+    <Compile Include="Exceptions\ProductNotFoundException.cs" />
     <Compile Include="Exceptions\OrderLineNotFoundException.cs" />
     <Compile Include="Exceptions\OrderException.cs" />
     <Compile Include="Exceptions\StockRollbackException.cs" />
@@ -304,7 +307,6 @@
     <Compile Include="Interfaces\IPaymentProvider.cs" />
     <Compile Include="Interfaces\IShippingProvider.cs" />
     <Compile Include="Interfaces\IZone.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedConstraints.cs" />
     <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
     <Compile Include="Models\OrderRequest.cs" />
@@ -319,6 +321,7 @@
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
+    <Compile Include="Interfaces\IOrderRepository.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />
@@ -395,7 +398,9 @@
     </None>
     <None Include="Views\web.config.transform" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

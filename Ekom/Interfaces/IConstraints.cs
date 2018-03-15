@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
@@ -21,10 +20,13 @@ namespace Ekom.Interfaces
         /// Start of range that provider supports.
         /// </summary>
         int StartRange { get; }
+
         /// <summary>
-        /// Umbraco node id of zone this provider is a member of.
-        /// Guid.Empty if none.
+        /// Determine if constraints conditions are met.
         /// </summary>
-        Guid Zone { get; }
+        /// <param name="countryCode"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        bool IsValid(string countryCode, decimal amount);
     }
 }

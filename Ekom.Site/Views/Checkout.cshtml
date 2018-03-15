@@ -13,7 +13,7 @@
 
         <div class="checkout">
 
-            @if (order != null && order.Quantity > 0)
+            @if (order != null && order.TotalQuantity> 0)
             {
                 <div class="grid-x grid-margin-x">
 
@@ -56,7 +56,7 @@
                         <h1 class="checkout__caption">Total</h1>
 
                         <div>
-                            Subtotal: <strong>@order.SubTotal.WithVat.CurrencyString</strong>
+                            Subtotal: <strong>@order.SubTotal.CurrencyString</strong>
                         </div>
                         @if (order.ShippingProvider != null && order.ShippingProvider.Price.Value > 0)
                         {
@@ -71,10 +71,10 @@
                             </div>
                         }
                         <div>
-                            VAT: <strong>@order.ChargedAmount.Vat.CurrencyString</strong>
+                            VAT: <strong>@order.Vat.CurrencyString</strong>
                         </div>
                         <div>
-                            Total: <strong>@order.ChargedAmount.WithVat.CurrencyString</strong>
+                            Total: <strong>@order.ChargedAmount.CurrencyString</strong>
                         </div>
 
                     </div>

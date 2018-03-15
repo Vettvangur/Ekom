@@ -7,14 +7,17 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
     /// <summary>
-    /// A group of variants sharing common properties and a group key
+    /// Groups multiple <see cref="IVariant"/>'s together with a group key, 
+    /// common properties and a shared parent <see cref="IProduct"/>
     /// </summary>
-    public class VariantGroup : PerStoreNodeEntity, INodeEntity, IVariantGroup
+    public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
@@ -71,7 +74,7 @@ namespace Ekom.Models
         //public int ProductId => Product.Id;
 
         /// <summary>
-        /// Get Images
+        /// Variant group Images
         /// </summary>
         public IEnumerable<IPublishedContent> Images
         {
@@ -88,7 +91,9 @@ namespace Ekom.Models
         /// <summary>
         /// Get all variants in this group
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IEnumerable<IVariant> Variants
         {
             get

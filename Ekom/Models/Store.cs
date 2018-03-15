@@ -10,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using Ekom.Services;
 using Umbraco.Web;
 
 namespace Ekom.Models
@@ -18,28 +17,28 @@ namespace Ekom.Models
     /// <summary>
     /// Ekom Store, used to f.x. have seperate products and entities per store.
     /// </summary>
-    class Store : NodeEntity, IStore
+    public class Store : NodeEntity, IStore
     {
-        private IBaseCache<IDomain> _storeDomainCache
-        {
-            get
-            {
-                return Configuration.container.GetInstance<IBaseCache<IDomain>>();
-            }
-        }
-
         /// <summary>
         /// Usually a two letter code, f.x. EU/IS/DK
         /// </summary>
-        public string Alias => Properties["nodeName"];
-        public int StoreRootNode { get; set; }
-        public IEnumerable<IDomain> Domains { get; set; }
-        public decimal Vat { get; set; }
-        public CultureInfo Culture { get; set; }
-        public bool VatIncludedInPrice { get; set; }
-        public string OrderNumberTemplate { get; set; }
-        public string OrderNumberPrefix { get; set; }
-        public string Url { get; set; }
+        public virtual string Alias => Properties["nodeName"];
+        public virtual int StoreRootNode { get; }
+        public virtual IEnumerable<IDomain> Domains { get; }
+        public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
+        public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
+        public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
+        public virtual string Url { get; }
+        public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
+        public virtual decimal Vat
+        {
+            get
+            {
+                return string.IsNullOrEmpty(Properties.GetPropertyValue("vat"))
+                    ? 0
+                    : Convert.ToDecimal(Properties["vat"]) / 100;
+            }
+        }
 
         /// <summary>
         /// Used by Ekom extensions
@@ -51,6 +50,9 @@ namespace Ekom.Models
         /// <param name="item"></param>
         public Store(SearchResult item) : base(item)
         {
+            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
+
             if (int.TryParse(item.Fields["storeRootNode"], out int tempStoreRootNode))
             {
                 StoreRootNode = tempStoreRootNode;
@@ -62,25 +64,10 @@ namespace Ekom.Models
                 var rootNode = umbracoHelper.TypedContent(srn);
                 StoreRootNode = rootNode.Id;
             }
-
-            Domains = _storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
-                                            .Select(x => x.Value);
-
-            var _culture = item.Fields["culture"];
-
-            Culture = new CultureInfo(_culture);
-
-            Vat = string.IsNullOrEmpty(item.Fields["vat"]) ? 0 : Convert.ToDecimal(item.Fields["vat"]) / 100;
-            VatIncludedInPrice = item.Fields["vatIncludedInPrice"].ConvertToBool();
-
-            item.Fields.TryGetValue("orderNumberTemplate", out string orderNumberTemplate);
-            OrderNumberTemplate = orderNumberTemplate;
-
-            item.Fields.TryGetValue("orderNumberPrefix", out string orderNumberPrefix);
-            OrderNumberPrefix = orderNumberPrefix;
-
-            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
+
+            Domains = storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
+                                            .Select(x => x.Value);
         }
 
         /// <summary>
@@ -89,30 +76,22 @@ namespace Ekom.Models
         /// <param name="item"></param>
         public Store(IContent item) : base(item)
         {
-            StoreRootNode = item.GetValue<int>("storeRootNode");
+            if (int.TryParse(item.GetValue<string>("storeRootNode"), out int tempStoreRootNode))
+            {
+                StoreRootNode = tempStoreRootNode;
+            }
+            else
+            {
+                var srn = Udi.Parse(item.GetValue<string>("storeRootNode"));
+                var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
+                var rootNode = umbracoHelper.TypedContent(srn);
+                StoreRootNode = rootNode.Id;
+            }
 
-            Domains = _storeDomainCache.Cache
+            var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
+            Domains = storeDomainCache.Cache
                                       .Where(x => x.Value.RootContentId == StoreRootNode)
                                       .Select(x => x.Value);
-
-            var vat = item.GetValue<string>("vat");
-
-            Vat = string.IsNullOrEmpty(vat) ? 0 : Convert.ToDecimal(vat) / 100;
-
-            var _culture = item.GetValue<string>("culture");
-
-            Culture = new CultureInfo(_culture);
-
-            VatIncludedInPrice = item.GetValue<bool>("vatIncludedInPrice");
-
-            if (item.HasProperty("orderNumberTemplate"))
-            {
-                OrderNumberTemplate = item.GetValue<string>("orderNumberTemplate");
-            }
-            if (item.HasProperty("orderNumberPrefix"))
-            {
-                OrderNumberPrefix = item.GetValue<string>("orderNumberPrefix");
-            }
 
             var uCtx = Configuration.container.GetInstance<UmbracoContext>();
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);

@@ -1,31 +1,44 @@
-﻿using Ekom;
-using Ekom.App_Start;
-using Ekom.Cache;
-using Ekom.Controllers;
-using Ekom.Interfaces;
-using Ekom.Models.Discounts;
-using Ekom.Repository;
-using Ekom.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using System.Web;
-using Umbraco.Core;
-using Umbraco.Core.Persistence;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Ekom.Tests
 {
     [TestClass]
     public class DiscountTests
     {
-        //[TestMethod]
-        //public void AppliesDiscountToOrder()
-        //{
-        //    var appCtx = Helpers.GetSetAppCtx();
-        //    var orderRepo = new OrderRepository(new Configuration(), appCtx, Mock.Of<ILogFactory>());
-        //    var orderSvc = new OrderService(orderRepo, Mock.Of<ILogFactory>(), Mock.Of<IStoreService>(), Mock.Of<IPerStoreCache<Discount>>(), appCtx);
+        [TestMethod]
+        public void AppliesFixedDiscountToOrder()
+        {
+            var container = Helpers.InitMockContainer();
 
-        //    //orderSvc.ApplyDiscountToOrder()
-        //}
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var discount = Objects.Objects.Get_Discount_fixed_500();
+
+            var orderSvc = Helpers.GetOrderService();
+            var oi = orderSvc.AddOrderLine(product, 2, store);
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
+
+            Assert.IsTrue(oi.SubTotal.Value == 2000);
+        }
+
+        [TestMethod]
+        public void AppliesPercentageDiscountToOrder()
+        {
+            var container = Helpers.InitMockContainer();
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var discount = Objects.Objects.Get_Discount_percentage_50();
+
+            var orderSvc = Helpers.GetOrderService();
+            var oi = orderSvc.AddOrderLine(product, 2, store);
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
+
+            Assert.IsTrue(oi.SubTotal.Value == 1500);
+        }
 
         //[TestMethod]
         //public void ControllerResponseBadRequestWithBadParameters_AddOrderLine()
@@ -41,5 +54,17 @@ namespace Ekom.Tests
 
         //    //ctrl.ApplyDiscountToOrder()
         //}
+
+        //[TestMethod]
+        public void GlobalDiscountGetsApplied()
+        {
+
+        }
+
+        //[TestMethod]
+        public void NonCompliantDiscountGetsRemoved()
+        {
+
+        }
     }
 }

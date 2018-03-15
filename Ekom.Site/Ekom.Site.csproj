@@ -407,6 +407,7 @@
     <Content Include="Views\Partials\Store\Checkout\_Shipping.cshtml" />
     <Content Include="Views\Loginpage.cshtml" />
     <Content Include="Views\Profile.cshtml" />
+    <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -438,7 +439,6 @@
     <Content Include="Config\Splashes\noNodes.aspx" />
     <Content Include="default.aspx" />
     <Content Include="Global.asax" />
-    <Content Include="Scripts\app.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>

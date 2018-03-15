@@ -1,8 +1,7 @@
 ﻿using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,101 +14,107 @@ namespace Ekom.Models.Behaviors
     /// </summary>
     public class Constraints : IConstraints
     {
-        private IBaseCache<Zone> __zoneCache;
-        private IBaseCache<Zone> _zoneCache =>
-            __zoneCache ?? (__zoneCache = Configuration.container.GetInstance<IBaseCache<Zone>>());
-
-        INodeEntity _node;
+        /// <summary>
+        /// Determine if the given provider is valid given the provided properties.
+        /// </summary>
+        /// <param name="countryCode"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public bool IsValid(
+            string countryCode,
+            decimal amount
+        )
+            => (!CountriesInZone.Any() || CountriesInZone.Contains(countryCode.ToUpper()))
+            && StartRange <= amount
+            && (EndRange == 0 || EndRange >= amount)
+        ;
 
         /// <summary>
         /// Start of range that provider supports.
         /// </summary>
-        public int StartRange
-        {
-            get
-            {
-                int startRange = 0;
-
-                if (_node is PerStoreNodeEntity perStoreNode)
-                {
-                    int.TryParse(_node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias), out startRange);
-                }
-                else
-                {
-                    int.TryParse(_node.Properties.GetPropertyValue("startOfRange"), out startRange);
-                }
-
-                return startRange;
-            }
-        }
+        public int StartRange { get; }
 
         /// <summary>
         /// End of range that provider supports.
         /// 0 means this provider supports carts of any cost.
         /// </summary>
-        public int EndRange
-        {
-            get
-            {
-                int endRange = 0;
-
-                if (_node is PerStoreNodeEntity perStoreNode)
-                {
-                    int.TryParse(_node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias), out endRange);
-                }
-                else
-                {
-                    int.TryParse(_node.Properties.GetPropertyValue("endOfRange"), out endRange);
-                }
-
-                return endRange;
-            }
-        }
-
-        /// <summary>
-        /// Umbraco node id of zone this provider is a member of.
-        /// Guid.Empty if none.
-        /// </summary>
-        public Guid Zone
-        {
-            get
-            {
-                if (_node.Properties.ContainsKey("zone") && GuidUdi.TryParse(_node.Properties["zone"], out var zoneKey))
-                {
-                    return zoneKey.Guid;
-                }
-                else
-                {
-                    return Guid.Empty;
-                }
-            }
-        }
+        public int EndRange { get; }
 
         /// <summary>
         /// All countries in <see cref="Models.Zone"/>
         /// </summary>
-        public IEnumerable<string> CountriesInZone
-        {
-            get
-            {
-                if (Zone != Guid.Empty
-                && _zoneCache.Cache.ContainsKey(Zone))
-                {
-                    var zone = _zoneCache.Cache[Zone];
-
-                    return zone.Countries;
-                }
-
-                return Enumerable.Empty<string>();
-            }
-        }
+        public IEnumerable<string> CountriesInZone { get; }
 
         /// <summary>
         /// ctor
         /// </summary>
         public Constraints(INodeEntity node)
         {
-            _node = node;
+            int startRange = 0;
+            int endRange = int.MaxValue;
+            Guid zoneKey = Guid.Empty;
+            if (node is PerStoreNodeEntity perStoreNode)
+            {
+                var startPropValue = node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias);
+                var endPropValue = node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias);
+                int.TryParse(startPropValue, out startRange);
+                int.TryParse(endPropValue, out endRange);
+            }
+            else
+            {
+                var startPropValue = node.Properties.GetPropertyValue("startOfRange");
+                var endPropValue = node.Properties.GetPropertyValue("startOfRange");
+                int.TryParse(startPropValue, out startRange);
+                int.TryParse(endPropValue, out endRange);
+            }
+
+            StartRange = startRange;
+            EndRange = endRange;
+
+            if (node.Properties.ContainsKey("zone")
+            && GuidUdi.TryParse(node.Properties["zone"], out var guidUdi))
+            {
+                zoneKey = guidUdi.Guid;
+            }
+
+            var zoneCache = Configuration.container.GetInstance<IBaseCache<IZone>>();
+            if (zoneKey != Guid.Empty
+            && zoneCache.Cache.ContainsKey(zoneKey))
+            {
+                var zone = zoneCache.Cache[zoneKey];
+
+                CountriesInZone = zone.Countries;
+            }
+            else
+            {
+                CountriesInZone = Enumerable.Empty<string>();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonConstructor]
+        public Constraints(
+            int startRange,
+            int endRange,
+            Guid zone,
+            IEnumerable<string> countriesInZone)
+        {
+            StartRange = startRange;
+            EndRange = endRange;
+            CountriesInZone = countriesInZone;
+        }
+
+        /// <summary>
+        /// Freeze and clone <see cref="IConstraints"/>
+        /// </summary>
+        /// <param name="constraints"></param>
+        public Constraints(IConstraints constraints)
+        {
+            StartRange = constraints.StartRange;
+            EndRange = constraints.EndRange;
+            CountriesInZone = new List<string>(constraints.CountriesInZone);
         }
     }
 }

@@ -17,8 +17,8 @@ namespace Ekom.Models.Discounts
     /// </summary>
     class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
-        public virtual IConstraints Constraints { get; private set; }
-        public virtual DiscountAmount Amount { get; private set; }
+        public virtual IConstraints Constraints { get; protected set; }
+        public virtual DiscountAmount Amount { get; protected set; }
 
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
@@ -68,7 +68,7 @@ namespace Ekom.Models.Discounts
 
             DiscountType type = DiscountType.Fixed;
 
-            switch (Properties.GetPropertyValue("discountType"))
+            switch (Properties.GetPropertyValue("type"))
             {
                 case "Fixed":
                     break;

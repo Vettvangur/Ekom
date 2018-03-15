@@ -1,27 +1,23 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using System.Collections.Generic;
-using System.Reflection;
-using Umbraco.Core;
-using Umbraco.Core.Logging;
-using Umbraco.Core.Persistence;
-using Umbraco.Core.Persistence.SqlSyntax;
-using Ekom.App_Start;
-using Ekom.Models;
+﻿using Ekom.Models;
 using Ekom.Models.Data;
-using Ekom.Services;
-using System.Web;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Ekom.Tests
 {
     [TestClass]
     public class OrderTests
     {
-        //[TestMethod]
-        //public void CreatesOrder()
-        //{
+        [TestMethod]
+        public void CreatesOrder()
+        {
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
 
-        //}
+            var orderSvc = Helpers.GetOrderService();
+            var oi = orderSvc.AddOrderLine(product, 1, store);
+
+            Assert.IsTrue(oi.OrderLines.Count == 1);
+        }
 
         [TestMethod]
         public void CanParseOrderJson()

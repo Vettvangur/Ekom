@@ -25,11 +25,11 @@ namespace Ekom.Interfaces
         /// </value>
         CultureInfo Culture { get; }
         string Alias { get; }
-        IEnumerable<IDomain> Domains { get; set; }
-        string OrderNumberPrefix { get; set; }
-        string OrderNumberTemplate { get; set; }
-        int StoreRootNode { get; set; }
-        string Url { get; set; }
-        bool VatIncludedInPrice { get; set; }
+        IEnumerable<IDomain> Domains { get; }
+        string OrderNumberPrefix { get; }
+        string OrderNumberTemplate { get; }
+        int StoreRootNode { get; }
+        string Url { get; }
+        bool VatIncludedInPrice { get; }
     }
 }
