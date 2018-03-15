@@ -7,6 +7,7 @@ using Ekom.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -42,8 +43,9 @@ namespace Ekom.Tests
             InitMockContainer();
             var httpCtx = GetHttpContext();
             var logFac = MockLogFac();
-            var orderSvc = MockOrderService();
-
+            var discountCache = MockDiscountCache();
+            var orderSvc = MockOrderService(discountCache);
+            discountCache.GlobalDiscounts["is-IS"] = new ConcurrentStack<IDiscount>();
 
             var ekmReq = new ContentRequest(new HttpContextWrapper(httpCtx), logFac);
 
@@ -83,13 +85,13 @@ namespace Ekom.Tests
                 Mock.Of<IBaseCache<IStore>>(),
                 Mock.Of<IPerStoreFactory<IDiscount>>()
             );
-        public static OrderService MockOrderService()
+        public static OrderService MockOrderService(DiscountCache discountCache)
             => new OrderService(
                 (new Mock<IOrderRepository> { DefaultValue = DefaultValue.Mock }).Object,
                 MockLogFac(),
                 Mock.Of<IStoreService>(),
                 GetSetAppCtx(),
-                MockDiscountCache(),
+                discountCache,
                 GetHttpContextBase()
             );
 

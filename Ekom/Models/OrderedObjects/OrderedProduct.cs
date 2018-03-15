@@ -124,7 +124,6 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
-            variant = variant ?? throw new ArgumentNullException(nameof(variant));
             product = product ?? throw new ArgumentNullException(nameof(product));
             storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 

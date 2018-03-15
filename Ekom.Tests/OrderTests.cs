@@ -14,6 +14,7 @@ namespace Ekom.Tests
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var orderSvc = Helpers.GetOrderService();
+
             var oi = orderSvc.AddOrderLine(product, 1, store);
 
             Assert.IsTrue(oi.OrderLines.Count == 1);
