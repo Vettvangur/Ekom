@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -58,7 +60,9 @@ namespace Ekom.Models
         /// <summary>
         /// CSV of node id's describing hierarchy from left to right leading up to node.
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual string Path => Properties.GetPropertyValue("path");
         /// <summary>
         /// 
@@ -186,16 +190,6 @@ namespace Ekom.Models
         public virtual string GetPropertyValue(string alias)
         {
             return Properties.GetPropertyValue(alias);
-        }
-
-        /// <summary>
-        /// Get value in properties by store
-        /// </summary>
-        /// <param name="alias"></param>
-        /// <param name="storeAlias"></param>
-        public virtual string GetPropertyValue(string alias, string storeAlias)
-        {
-            return Properties.GetPropertyValue(alias, storeAlias);
         }
     }
 }

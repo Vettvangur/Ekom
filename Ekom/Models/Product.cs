@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -38,7 +40,7 @@ namespace Ekom.Models
             get => _discount;
             internal set
             {
-                if (_discount == null 
+                if (_discount == null
                 || (_discount.Amount.Type == value.Amount.Type
                 && value.CompareTo(_discount) > 0))
                 {
@@ -79,9 +81,14 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
+        /// <summary>
+        /// Product images
+        /// </summary>
         public virtual IEnumerable<Image> Images
         {
             get
@@ -123,6 +130,11 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// All categories this <see cref="Product"/> belongs to.
+        /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
+        /// </summary>
+        /// <returns></returns>
         public virtual List<ICategory> CategoryAncestors()
         {
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
@@ -189,7 +201,13 @@ namespace Ekom.Models
             return categories;
         }
 
+        /// <summary>
+        /// All ID's of categories product belongs to, includes parent category.
+        /// Does not include categories product is an indirect child of.
+        /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<Guid> CategoriesIds
         {
             get
@@ -198,6 +216,9 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// Product url in relation to current request.
+        /// </summary>
         public virtual string Url
         {
             get
@@ -210,7 +231,12 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// All product urls, computed from stores and categories.
+        /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<string> Urls { get; internal set; }
 
         /// <summary>
@@ -218,7 +244,12 @@ namespace Ekom.Models
         /// </summary>
         public virtual IPrice Price { get; }
 
+        /// <summary>
+        /// All child variant groups of this product
+        /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<IVariantGroup> VariantGroups
         {
             get
@@ -233,7 +264,9 @@ namespace Ekom.Models
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<IVariant> AllVariants
         {
             get
@@ -248,7 +281,9 @@ namespace Ekom.Models
         /// <summary>
         /// Get Variant Count
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public int AllVariantsCount
         {
             get
@@ -261,7 +296,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// Used by Ekom extensions
+        /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
         /// </summary>
         /// <param name="store"></param>
         public Product(IStore store) : base(store) { }

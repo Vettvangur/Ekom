@@ -2,69 +2,69 @@
 
 var cart = {
 
-	init: function () {
-		var me = this;
+  init() {
+    var me = this;
 
-		var form = document.getElementsByClassName("product__form")[0];
+    var form = document.getElementsByClassName("product__form")[0];
 
-		if (form) {
+    if (form) {
 
-			form.addEventListener("submit", function (e) {
-				e.preventDefault();
+      form.addEventListener("submit", function(e) {
+        e.preventDefault();
 
-				me.submit(form);
-			});
+        me.submit(form);
+      });
 
-		}
-	},
+    }
+  },
 
-	submit: function (form) {
-		var me = this;
+  submit(form) {
+    var me = this;
 
-		var button = form.getElementsByTagName("button")[0];
+    var button = form.getElementsByTagName("button")[0];
 
-		button.disabled = true;
+    button.disabled = true;
 
-		var data = formToObject.formToObject(form);
+    var data = formToObject.formToObject(form);
 
-		var xhr = new XMLHttpRequest();
-		xhr.open(form.getAttribute("method"), form.getAttribute("action"));
-		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		xhr.responseType = 'json';
+    var xhr = new XMLHttpRequest();
+    xhr.open(form.getAttribute("method"), form.getAttribute("action"));
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.responseType = 'json';
 
-		xhr.onload = ev => {
-			var resp = xhr.response;
+    xhr.onload = ev => {
+      var resp = xhr.response;
 
-			if (typeof resp === 'string') {
-				resp = JSON.parse(resp);
-			}
+      if (typeof resp === 'string') {
+        resp = JSON.parse(resp);
+      }
 
-			if (xhr.status >= 200 && xhr.status < 300) {
+      if (xhr.status >= 200 && xhr.status < 300) {
 
-				if (resp.success) {
+        if (resp.success) {
 
-					me.updateQty(resp.orderInfo.Quantity);
+          me.updateQty(resp.orderInfo.TotalQuantity);
 
-				} else {
-					alert('Error in order');
-				}
+        } else {
+          alert('Error in order');
+        }
 
-			} else {
-				alert('Error in service');
-			}
+      } else {
+        alert('Error in service');
+      }
 
-		};
+    };
 
-		xhr.send(data);
-	},
+    xhr.send(data);
+  },
 
-	updateQty: function (qty) {
-		var headerCart = document.getElementsByClassName('header__cart__qty')[0];
+  updateQty(qty) {
+    var headerCart = document.getElementsByClassName('header__cart__qty')[0];
 
-		if (headerCart) {
-			headerCart.innerHTML = qty;
-		}
-	}
+    if (headerCart) {
+      headerCart.innerHTML = qty;
+    }
+  },
 
 };
 

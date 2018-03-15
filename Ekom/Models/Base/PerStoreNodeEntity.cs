@@ -1,9 +1,10 @@
-﻿using Examine;
-using Umbraco.Core.Models;
-using Ekom.Helpers;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Utilities;
+using Examine;
 using Newtonsoft.Json;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
+using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
@@ -15,13 +16,25 @@ namespace Ekom.Models
         /// <summary>
         /// Store this node entity belongs to
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IStore Store { get; internal set; }
 
         /// <summary>
         /// 
         /// </summary>
         public override string Title => Properties.GetPropertyValue("title", Store.Alias);
+
+        /// <summary>
+        /// Get value in properties by store
+        /// </summary>
+        /// <param name="alias"></param>
+        /// <param name="storeAlias"></param>
+        public virtual string GetPropertyValue(string alias, string storeAlias)
+        {
+            return Properties.GetPropertyValue(alias, storeAlias);
+        }
 
         /// <summary>
         /// ctor

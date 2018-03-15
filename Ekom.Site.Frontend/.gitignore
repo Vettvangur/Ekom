@@ -1,6 +1,7 @@
-.DS_Store
-.awcache
+﻿\.DS_Store
+\.awcache
 bower_components
 node_modules
-npm-debug.log
+npm-debug\.log
 css
+yarn\.lock

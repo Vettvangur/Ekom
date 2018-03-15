@@ -62,6 +62,11 @@ namespace Ekom.Interfaces
         /// OrderLines with OrderDiscount excluded
         /// </summary>
         ICalculatedPrice OrderLineTotal { get; }
+        /// <summary>
+        /// Total amount of value added tax in order.
+        /// This counts up all vat whether it's included in item prices or not.
+        /// </summary>
+        ICalculatedPrice Vat { get; }
 
         /// <summary>
         /// A collection of hangfire job ids linked to this order,

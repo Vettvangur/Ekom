@@ -1,10 +1,11 @@
-﻿using Ekom.Cache;
+﻿using Ekom.API;
+using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
-using Ekom.Repository;
 using log4net;
 using Newtonsoft.Json;
 using System;
@@ -25,21 +26,22 @@ namespace Ekom.Services
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         DiscountCache _discountCache;
 
-        IStore _store;
-        DateTime _date;
-        OrderRepository _orderRepository;
+        IOrderRepository _orderRepository;
         IStoreService _storeSvc;
         ContentRequest _ekmRequest;
+
+        IStore _store;
+        DateTime _date;
 
         /// <summary>
         /// W/o HttpCtx, for usage in Hangfire f.x. ?
         /// </summary>
         public OrderService(
-            OrderRepository orderRepo,
+            IOrderRepository orderRepo,
             ILogFactory logFac,
             IStoreService storeService,
-            DiscountCache discountCache,
-            ApplicationContext appCtx)
+            ApplicationContext appCtx,
+            DiscountCache discountCache)
         {
             _log = logFac.GetLogger<OrderService>();
 
@@ -53,13 +55,13 @@ namespace Ekom.Services
         /// ctor
         /// </summary>
         public OrderService(
-            OrderRepository orderRepo,
+            IOrderRepository orderRepo,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, logFac, storeService, discountCache, appCtx)
+            : this(orderRepo, logFac, storeService, appCtx, discountCache)
         {
             _httpCtx = httpCtx;
             _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
@@ -69,7 +71,7 @@ namespace Ekom.Services
         {
             var orderData = _orderRepository.GetOrder(uniqueId);
 
-            return orderData != null ? CreateOrderInfoFromOrderData(orderData, false) : null;
+            return orderData != null ? new OrderInfo(orderData) : null;
         }
 
         public OrderInfo GetOrder(string storeAlias)
@@ -144,20 +146,57 @@ namespace Ekom.Services
         }
 
         public OrderInfo AddOrderLine(
-            Guid productId,
-            Guid? variantId,
+            Guid productKey,
             int quantity,
             string storeAlias,
-            OrderAction? action
+            OrderAction? action = null,
+            Guid? variantKey = null
         )
         {
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+            var product = Catalog.Instance.GetProduct(productKey);
+
+            if (product == null)
+            {
+                throw new ProductNotFoundException("Unable to find product with key " + productKey);
+            }
+
+            IVariant variant = null;
+            if (variantKey != null)
+            {
+                variant = Catalog.Instance.GetVariant(variantKey.Value);
+
+                if (variant == null)
+                {
+                    throw new VariantNotFoundException("Unable to find variant with key " + variantKey);
+                }
+            }
+
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
+            return AddOrderLine(
+                product,
+                quantity,
+                store,
+                action,
+                variant
+            );
+        }
+
+        public OrderInfo AddOrderLine(
+            IProduct product,
+            int quantity,
+            IStore store,
+            OrderAction? action = null,
+            IVariant variant = null
+        )
+        {
+            _store = store;
             _date = DateTime.Now;
 
             // If cart action is null then update is the default state
             var cartAction = action != null ? action.Value : OrderAction.Update;
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = GetOrder(_store);
 
             if (orderInfo == null)
             {
@@ -165,8 +204,8 @@ namespace Ekom.Services
                 orderInfo = CreateEmptyOrder();
             }
 
-            _log.Debug("ProductId: " + productId +
-                " variantId: " + variantId +
+            _log.Debug("ProductId: " + product.Id +
+                " variantId: " + variant?.Key +
                 " qty: " + quantity +
                 " Action: " + action +
                 " Order: " + orderInfo.OrderNumber +
@@ -174,7 +213,12 @@ namespace Ekom.Services
                 " Cart action " + cartAction
             );
 
-            AddOrderLineToOrderInfo(orderInfo, productId, variantId, quantity, cartAction);
+            AddOrderLineToOrderInfo(
+                orderInfo,
+                product,
+                quantity,
+                cartAction,
+                variant);
 
             return orderInfo;
         }
@@ -202,7 +246,13 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productKey, Guid? variantId, int quantity, OrderAction action)
+        private void AddOrderLineToOrderInfo(
+            OrderInfo orderInfo,
+            IProduct product,
+            int quantity,
+            OrderAction action,
+            IVariant variant
+        )
         {
             if (quantity < 0)
             {
@@ -211,25 +261,30 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            _log.Info("Order: " + orderInfo.OrderNumber + " Product Key: " + productKey + " Variant: " + (variantId != null ? variantId : Guid.Empty) + " Action: " + action);
+            _log.Debug(
+                "Order: " + orderInfo.OrderNumber +
+                " Product Key: " + product.Key +
+                " Variant: " + variant?.Key +
+                " Action: " + action);
+
             OrderLine existingOrderLine = null;
 
             if (orderInfo.OrderLines != null)
             {
-                if (variantId != null && variantId != Guid.Empty)
+                if (variant != null)
                 {
                     existingOrderLine
                         = orderInfo.OrderLines
                             .FirstOrDefault(
-                                x => x.Product.Key == productKey
+                                x => x.Product.Key == product.Key
                                 && x.Product.VariantGroups
-                                    .Any(b => b.Variants.Any(z => z.Key == variantId)))
+                                    .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
                             as OrderLine;
                 }
                 else
                 {
                     existingOrderLine
-                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productKey)
+                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
                         as OrderLine;
                 }
             }
@@ -254,18 +309,20 @@ namespace Ekom.Services
 
                 _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Not Found");
 
-                var _variantId = (variantId != null && variantId != Guid.Empty) ? variantId.Value : Guid.Empty;
-
-                var orderLine = new OrderLine(productKey, _variantId, quantity, lineId, _store);
+                var orderLine = new OrderLine(
+                    product,
+                    quantity,
+                    lineId,
+                    orderInfo,
+                    variant
+                );
 
                 orderInfo.orderLines.Add(orderLine);
-
-                var product = API.Catalog.Instance.GetProduct(productKey);
 
                 if (product.Discount != null)
                 {
                     ApplyDiscountToOrderLine(
-                        productKey,
+                        product.Key,
                         product.Discount,
                         _store.Alias,
                         orderInfo: orderInfo);
@@ -338,22 +395,7 @@ namespace Ekom.Services
 
             var orderdata = SaveOrderData(orderUniqueId);
 
-            return CreateOrderInfoFromOrderData(orderdata, true);
-        }
-
-        private OrderInfo CreateOrderInfoFromOrderData(OrderData orderData, bool empty)
-        {
-            //_log.Debug("Add OrderLine ...  Create OrderInfo from OrderData..");
-
-            //if (!empty && (orderData == null || string.IsNullOrEmpty(orderData.OrderInfo)))
-            //{
-            //    throw new Exception("Trying to load order without data (xml), id: " + (orderData == null ? "no data!" : orderData.UniqueId.ToString()) + ", ordernumber: " + (orderData == null ? "no data!" : orderData.OrderNumber));
-            //}
-
-            // This Need Complete overhaul!!
-            var orderInfo = new OrderInfo(orderData);
-
-            return orderInfo;
+            return new OrderInfo(orderdata, _store);
         }
 
         private OrderData SaveOrderData(Guid uniqueId)
@@ -362,7 +404,6 @@ namespace Ekom.Services
             string orderNumber = string.Empty;
 
             GenerateOrderNumber(out int referenceId, out orderNumber);
-
 
             var orderData = new OrderData
             {
@@ -493,7 +534,7 @@ namespace Ekom.Services
 
             foreach (var o in orders)
             {
-                list.Add(CreateOrderInfoFromOrderData(o, false));
+                list.Add(new OrderInfo(o));
             }
 
             return list;

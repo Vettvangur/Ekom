@@ -128,7 +128,7 @@ namespace Ekom
                                     Username = memberContent.UserName,
                                     UserId = memberContent.Id,
                                     Name = memberContent.Name
-                                }; ;
+                                };
                             }
                         }
                     }

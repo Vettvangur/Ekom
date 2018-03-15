@@ -38,12 +38,20 @@ namespace Ekom.Interfaces
         /// The product.
         /// </value>
         OrderedProduct Product { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        Guid ProductKey { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        IOrderInfo OrderInfo { get; }
 
         /// <summary>
-        /// Gets the quantity.
+        /// Line quantity, amount of items represented by this order line.
         /// </summary>
         /// <value>
-        /// The quantity.
+        /// Line quantity, amount of items represented by this order line.
         /// </value>
         int Quantity { get; }
 

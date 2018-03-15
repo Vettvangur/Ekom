@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Web;
 using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -82,6 +83,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IEnumerable<IProduct> Products
         {
             get
@@ -95,6 +97,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IEnumerable<ICategory> SubCategoriesRecursive
         {
             get
@@ -109,6 +112,7 @@ namespace Ekom.Models
 
         [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IEnumerable<IProduct> ProductsRecursive
         {
             get

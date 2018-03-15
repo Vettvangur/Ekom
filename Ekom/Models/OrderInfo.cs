@@ -26,8 +26,8 @@ namespace Ekom.Models
         /// <param name="orderData"></param>
         /// <param name="store"></param>
         public OrderInfo(OrderData orderData, IStore store)
+            : this(orderData)
         {
-            _orderData = orderData;
             StoreInfo = new StoreInfo(store);
         }
 
@@ -44,10 +44,6 @@ namespace Ekom.Models
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
-            }
-            else
-            {
-                StoreInfo = new StoreInfo(API.Store.Instance.GetStore(orderData.StoreAlias));
             }
         }
 
@@ -119,14 +115,14 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(x => x.Amount.OriginalValue);
+                var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
 
                 return new CalculatedPrice(amount, StoreInfo.Culture);
             }
         }
 
         /// <summary>
-        /// OrderLines with OrderDiscount included
+        /// OrderLines with OrderDiscount included and Vat left as-is
         /// </summary>
         public ICalculatedPrice SubTotal
         {
@@ -136,7 +132,13 @@ namespace Ekom.Models
                 {
                     if (line.Discount == null)
                     {
-                        var lineWithOrderDiscount = new Price(line.Amount.OriginalValue, StoreInfo, Discount);
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue, 
+                                StoreInfo,
+                                Discount, 
+                                line.Quantity
+                            );
 
                         return lineWithOrderDiscount.AfterDiscount.Value;
                     }
@@ -148,27 +150,57 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// <see cref="IPrice"/> object for total value of all orderlines.
+        /// Total amount of value added tax in order.
+        /// This counts up all vat whether it's included in item prices or not.
+        /// </summary>
+        public ICalculatedPrice Vat
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+
+                return new CalculatedPrice(amount, StoreInfo.Culture);
+            }
+        }
+
+        /// <summary>
+        /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.
         /// </summary>
         public ICalculatedPrice ChargedAmount
         {
             get
             {
-                var amount = SubTotal.Value;
+                var amount = OrderLines.Sum(line =>
+                {
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue, 
+                                StoreInfo, 
+                                Discount, 
+                                line.Quantity
+                            );
+
+                        return lineWithOrderDiscount.Value;
+                    }
+                    return line.Amount.Value;
+                });
 
                 if (ShippingProvider != null)
                 {
-                    amount += ShippingProvider.Price.OriginalValue;
+                    amount += ShippingProvider.Price.Value;
                 }
 
                 if (PaymentProvider != null)
                 {
-                    amount += PaymentProvider.Price.OriginalValue;
+                    amount += PaymentProvider.Price.Value;
                 }
 
                 return new CalculatedPrice(amount, StoreInfo.Culture);
             }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -226,7 +258,7 @@ namespace Ekom.Models
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
 
-                var orderLine = new OrderLine(lineId, quantity, productJson, StoreInfo);
+                var orderLine = new OrderLine(lineId, quantity, productJson, this);
 
                 orderLines.Add(orderLine);
             }

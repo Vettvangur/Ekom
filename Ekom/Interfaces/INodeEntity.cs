@@ -98,19 +98,13 @@ namespace Ekom.Interfaces
     public interface INodeEntityWithUrl : INodeEntity
     {
         /// <summary>
-        /// Urls for the node
+        /// All entity urls, computed from stores and possibly categories.
         /// </summary>
-        /// <value>
-        /// The urls.
-        /// </value>
         IEnumerable<string> Urls { get; }
 
         /// <summary>
-        /// The url for the node
+        /// Matched entity Url in relation to current request
         /// </summary>
-        /// <value>
-        /// The url.
-        /// </value>
         string Url { get; }
 
         /// <summary>

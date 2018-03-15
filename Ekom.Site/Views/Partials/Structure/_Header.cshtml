@@ -102,7 +102,7 @@
                     
                     <a href="@(checkoutNode != null ? checkoutNode.Url : "")" class="header__cart">
                         <span class="header__cart__text">Your cart:</span>
-                        <span class="header__cart__qty">@(order != null ? order.Quantity : 0)</span>
+                        <span class="header__cart__qty">@(order != null ? order.TotalQuantity : 0)</span>
                     </a>
 
                 </div>

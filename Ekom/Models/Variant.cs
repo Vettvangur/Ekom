@@ -9,10 +9,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// A customization of a parent product, currently must belong to a <see cref="Models.VariantGroup"/>
+    /// Price of variant is added to product base price to calculate total price.
+    /// Has seperate stock from base product.
+    /// </summary>
     public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         private IPerStoreCache<IVariantGroup> __variantGroupCache;
@@ -27,7 +34,9 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
@@ -84,6 +93,9 @@ namespace Ekom.Models
         ///// </summary>
         //public int ProductId => Product.Id;
 
+        /// <summary>
+        /// <see cref="IVariantGroup"/> Key
+        /// </summary>
         public Guid VariantGroupKey
         {
             get
@@ -99,7 +111,12 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// Variant group <see cref="IVariant"/> belongs to
+        /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public IVariantGroup VariantGroup
         {
             get
@@ -196,6 +213,14 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(IContent node, IStore store) : base(node, store)
         {
+            var variantPrice = Properties.GetPropertyValue("price", Store.Alias);
+
+            if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
+            {
+                Price = Product.Price;
+            }
+
+            Price = new Price(variantPrice, Store);
         }
 
         private static readonly ILog Log =

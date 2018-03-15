@@ -9,5 +9,13 @@
         /// Ekom Store
         /// </summary>
         IStore Store { get; }
+
+        /// <summary>
+        /// Get value in properties by store
+        /// </summary>
+        /// <value>
+        /// The path.
+        /// </value>
+        string GetPropertyValue(string alias, string storeAlias);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Behaviors;
 using Ekom.Services;
 using log4net;
 using System;
@@ -145,23 +144,6 @@ namespace Ekom.API
 
             return providers;
         }
-
-        /// <summary>
-        /// Determine if the given provider is valid given the provided properties.
-        /// </summary>
-        /// <param name="constraints"></param>
-        /// <param name="countryCode"></param>
-        /// <param name="orderAmount"></param>
-        /// <returns></returns>
-        public bool IsValid(
-            Constraints constraints,
-            string countryCode,
-            decimal orderAmount
-        )
-            => constraints.CountriesInZone.Contains(countryCode.ToUpper())
-            && constraints.StartRange <= orderAmount
-            && constraints.EndRange >= orderAmount
-        ;
 
         /// <summary>
         /// List of all <see cref="Country"/> objects from xml document or .NET as fallback.

@@ -13,7 +13,6 @@ namespace Ekom.Models.OrderedObjects
     public class OrderedVariantGroup
     {
         private IVariant variant;
-        private IStore store;
         private StoreInfo storeInfo;
 
         public int Id { get; set; }
@@ -24,41 +23,32 @@ namespace Ekom.Models.OrderedObjects
 
         public IReadOnlyDictionary<string, string> Properties;
 
-        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, IStore store)
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo)
         {
             this.variant = variant;
-            this.store = store;
-
-            Log.Info("Debug1");
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-            Log.Info("Debug2");
             Id = variantGroup.Id;
-
-            Log.Info("Debug3");
             Key = variantGroup.Key;
-
-            Log.Info("Debug4");
             Title = variantGroup.Title;
-
-            Log.Info("Debug5");
             ImageIds = variantGroup.Images.Any() ? variantGroup.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
 
-
-            Log.Info("Debug6");
-            var variants = new List<OrderedVariant>();
-
-
-            Log.Info("Debug7");
-            variants.Add(new OrderedVariant(variant, store));
+            var variants = new List<OrderedVariant>
+            {
+                new OrderedVariant(variant, storeInfo)
+            };
 
             Variants = variants;
-
-
         }
 
+        /// <summary>
+        /// Json Constructor
+        /// </summary>
         public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
         {
             Log.Info("Creating OrderedVariantGroup from Json");
@@ -103,7 +93,9 @@ namespace Ekom.Models.OrderedObjects
             }
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType

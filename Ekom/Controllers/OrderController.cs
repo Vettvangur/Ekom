@@ -1,12 +1,9 @@
 ﻿using Ekom.API;
-using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
@@ -45,7 +42,12 @@ namespace Ekom.Controllers
                 //    variantIds.Add(request.variantId.Value);
                 //}
 
-                var orderInfo = Order.Instance.AddOrderLine(request.productId, request.variantId, request.quantity, request.storeAlias, request.action);
+                var orderInfo = Order.Instance.AddOrderLine(
+                    request.productId,
+                    request.quantity,
+                    request.storeAlias,
+                    request.action,
+                    request.variantId);
 
                 return Json(new
                 {
@@ -65,11 +67,11 @@ namespace Ekom.Controllers
             }
         }
 
-        /// <summary>
-        /// Add product with multiple variants to order
-        /// </summary>
-        /// <param name="request">OrderMultipleRequest</param>
-        /// <returns></returns>
+        ///// <summary>
+        ///// Add product with multiple variants to order
+        ///// </summary>
+        ///// <param name="request">OrderMultipleRequest</param>
+        ///// <returns></returns>
         //public JsonResult AddMultipleToOrder(OrderMultipleRequest request)
         //{
         //    try
@@ -220,7 +222,10 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Instance.AddOrderLine(lineId, null, quantity, storeAlias, null);
+                var orderInfo = Order.Instance.AddOrderLine(
+                    lineId,
+                    quantity,
+                    storeAlias);
 
                 return Json(new
                 {
@@ -246,16 +251,9 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public ActionResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
-            try
-            {
-                var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
+            var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
-                return Json(new { orderInfo, date = DateTime.Now });
-            }
-            catch (Exception)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError);
-            }
+            return Json(new { orderInfo, date = DateTime.Now });
         }
     }
 }

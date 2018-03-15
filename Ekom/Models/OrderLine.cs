@@ -1,10 +1,12 @@
 ﻿using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -13,9 +15,11 @@ namespace Ekom.Models
     /// </summary>
     class OrderLine : IOrderLine
     {
-        private Guid _productId;
-        private Guid _variantId;
-        private StoreInfo _storeInfo;
+        public Guid ProductKey { get; }
+        [ScriptIgnore]
+        [JsonIgnore]
+        [XmlIgnore]
+        public IOrderInfo OrderInfo { get; }
 
         /// <summary>
         /// 
@@ -54,31 +58,39 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, _storeInfo, Discount, Quantity);
+                return new Price(_price, OrderInfo.StoreInfo, Discount, Quantity);
             }
         }
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderLine(Guid lineId, int quantity, string productJson, StoreInfo storeInfo)
+        public OrderLine(
+            Guid lineId,
+            int quantity,
+            string productJson,
+            OrderInfo orderInfo)
         {
             Id = lineId;
             Quantity = quantity;
-            _storeInfo = storeInfo;
-            Product = new OrderedProduct(productJson, storeInfo);
+            OrderInfo = orderInfo;
+            Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderLine(Guid productId, Guid variantId, int quantity, Guid lineId, IStore store)
+        public OrderLine(
+            IProduct product,
+            int quantity,
+            Guid lineId,
+            OrderInfo orderInfo,
+            IVariant variant = null)
         {
-            _productId = productId;
-            _variantId = variantId;
-            _storeInfo = new StoreInfo(store);
+            ProductKey = product.Key;
+            OrderInfo = orderInfo;
             Quantity = quantity;
             Id = lineId;
-            Product = new OrderedProduct(productId, variantId, store);
+            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo);
         }
 
         /// <summary>

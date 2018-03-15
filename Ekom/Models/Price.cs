@@ -6,11 +6,20 @@ using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// Price of item including all data to fully calculate 
+    /// before and after VAT/Discount.
+    /// </summary>
     public class Price : IPrice
     {
+        /// <summary>
+        /// 
+        /// </summary>
         protected static readonly ILog Log =
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
@@ -31,7 +40,7 @@ namespace Ekom.Models
         public bool DiscountAlwaysBeforeVAT { get; }
 
         /// <summary>
-        /// 
+        /// Json constructor
         /// </summary>
         [JsonConstructor]
         public Price(
@@ -45,6 +54,9 @@ namespace Ekom.Models
             DiscountAlwaysBeforeVAT = discountAlwaysBeforeVAT;
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Price(string price, IStore store, OrderedDiscount discount = null, int quantity = 1)
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  new StoreInfo(store),
@@ -53,11 +65,17 @@ namespace Ekom.Models
         {
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Price(decimal price, IStore store, OrderedDiscount discount = null, int quantity = 1)
             : this(price, new StoreInfo(store), discount, quantity)
         {
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Price(string price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  storeInfo,
@@ -66,6 +84,9 @@ namespace Ekom.Models
         {
         }
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Price(decimal price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
         {
             OriginalValue = price;
@@ -83,14 +104,22 @@ namespace Ekom.Models
         /// <returns></returns>
         public object Clone() => MemberwiseClone();
 
+        /// <summary>
+        /// Original value with Vat as-is
+        /// </summary>
         public decimal OriginalValue { get; }
+        /// <summary>
+        /// Multiplier
+        /// </summary>
         public int Quantity { get; }
 
         private ICalculatedPrice _beforeDiscount;
         /// <summary>
         /// Price before discount with VAT left as-is
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public ICalculatedPrice BeforeDiscount
         {
             get
@@ -116,7 +145,9 @@ namespace Ekom.Models
         /// <summary>
         /// Price after discount with VAT left as-is
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public ICalculatedPrice AfterDiscount
         {
             get
@@ -168,7 +199,9 @@ namespace Ekom.Models
         /// <summary>
         /// Price with discount but without VAT
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public ICalculatedPrice WithoutVat
         {
             get
@@ -196,13 +229,18 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// Value with discount and VAT
+        /// </summary>
         public decimal Value => WithVat.Value;
 
         private ICalculatedPrice _withVat;
         /// <summary>
         /// Price with discount and VAT
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public ICalculatedPrice WithVat
         {
             get
@@ -234,7 +272,9 @@ namespace Ekom.Models
         /// <summary>
         /// VAT included or to be included in price
         /// </summary>
+        [ScriptIgnore]
         [JsonIgnore]
+        [XmlIgnore]
         public ICalculatedPrice Vat
         {
             get
@@ -257,7 +297,7 @@ namespace Ekom.Models
                                 price = VatCalculator.VatAmountFromWithoutVat(OriginalValue, Store.Vat);
                             }
 
-                            _vat = CreateSimplePrice(price);
+                            _vat = CreateSimplePrice(price * Quantity);
                         }
                     }
                 }

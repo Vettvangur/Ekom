@@ -1,14 +1,14 @@
-﻿using Ekom.Models.Data;
+﻿using Ekom.Interfaces;
+using Ekom.Models.Data;
 using Ekom.Services;
 using log4net;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Umbraco.Core;
 
 namespace Ekom.Repository
 {
-    class OrderRepository
+    class OrderRepository : IOrderRepository
     {
         ILog _log;
         Configuration _config;

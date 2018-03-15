@@ -1,4 +1,5 @@
 ﻿using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using log4net;
@@ -76,7 +77,8 @@ namespace Ekom.Services
                              .FirstOrDefault(x => x.Value.Alias.InvariantEquals(alias))
                              .Value;
             // If store is not found by alias then return first store
-            return store ?? _storeCache.Cache.FirstOrDefault().Value;
+            return store ?? _storeCache.Cache.FirstOrDefault().Value
+                ?? throw new StoreNotFoundException("Unable to find any stores!");
         }
 
         //private Store GetStoreByAlias(string alias, IDomain umbracoDomain)
