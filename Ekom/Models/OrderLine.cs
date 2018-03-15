@@ -14,7 +14,7 @@ namespace Ekom.Models
     class OrderLine : IOrderLine
     {
         private Guid _productId;
-        private IEnumerable<Guid> _variantIds;
+        private Guid _variantId;
         private StoreInfo _storeInfo;
 
         /// <summary>
@@ -71,14 +71,14 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderLine(Guid productId, IEnumerable<Guid> variantIds, int quantity, Guid lineId, IStore store)
+        public OrderLine(Guid productId, Guid variantId, int quantity, Guid lineId, IStore store)
         {
             _productId = productId;
-            _variantIds = variantIds;
+            _variantId = variantId;
             _storeInfo = new StoreInfo(store);
             Quantity = quantity;
             Id = lineId;
-            Product = new OrderedProduct(productId, variantIds, store);
+            Product = new OrderedProduct(productId, variantId, store);
         }
 
         /// <summary>

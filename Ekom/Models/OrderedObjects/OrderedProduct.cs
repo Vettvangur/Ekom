@@ -102,7 +102,7 @@ namespace Ekom.Models.OrderedObjects
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
-        public OrderedProduct(Guid productId, IEnumerable<Guid> variantIds, IStore store)
+        public OrderedProduct(Guid productId, Guid variantId, IStore store)
         {
             var product = Catalog.Instance.GetProduct(store.Alias, productId);
 
@@ -117,25 +117,24 @@ namespace Ekom.Models.OrderedObjects
 
             Properties = new ReadOnlyDictionary<string, string>(
                 product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
             Price = product.Price.Clone() as IPrice;
 
-            if (variantIds.Any())
+            if (variantId != null && variantId != Guid.Empty)
             {
                 var variantGroups = new List<OrderedVariantGroup>();
 
-                foreach (var variantId in variantIds)
+                var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
+
+                if (variant == null)
                 {
-                    var variant = Catalog.Instance.GetVariant(store.Alias, variantId);
-
-                    if (variant == null)
-                    {
-                        throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
-                    }
-
-                    var variantGroup = variant.VariantGroup;
-
-                    variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, store));
+                    throw new Exception("OrderedProduct could not be created. Variant not found. Key: " + variantId);
                 }
+
+                var variantGroup = variant.VariantGroup;
+
+                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, store));
+                
 
                 VariantGroups = variantGroups;
             }

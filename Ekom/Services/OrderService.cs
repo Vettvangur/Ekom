@@ -145,7 +145,7 @@ namespace Ekom.Services
 
         public OrderInfo AddOrderLine(
             Guid productId,
-            IEnumerable<Guid> variantIds,
+            Guid? variantId,
             int quantity,
             string storeAlias,
             OrderAction? action
@@ -166,7 +166,7 @@ namespace Ekom.Services
             }
 
             _log.Debug("ProductId: " + productId +
-                " variantIds: " + variantIds.Any() +
+                " variantId: " + variantId +
                 " qty: " + quantity +
                 " Action: " + action +
                 " Order: " + orderInfo.OrderNumber +
@@ -174,7 +174,7 @@ namespace Ekom.Services
                 " Cart action " + cartAction
             );
 
-            AddOrderLineToOrderInfo(orderInfo, productId, variantIds, quantity, cartAction);
+            AddOrderLineToOrderInfo(orderInfo, productId, variantId, quantity, cartAction);
 
             return orderInfo;
         }
@@ -202,7 +202,7 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productKey, IEnumerable<Guid> variantIds, int quantity, OrderAction action)
+        private void AddOrderLineToOrderInfo(OrderInfo orderInfo, Guid productKey, Guid? variantId, int quantity, OrderAction action)
         {
             if (quantity < 0)
             {
@@ -211,21 +211,19 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            _log.Debug("Order: " + orderInfo.OrderNumber + " Product Key: " + productKey + " Variant: " + (variantIds.Any() ? variantIds.First() : Guid.Empty) + " Action: " + action);
+            _log.Info("Order: " + orderInfo.OrderNumber + " Product Key: " + productKey + " Variant: " + (variantId != null ? variantId : Guid.Empty) + " Action: " + action);
             OrderLine existingOrderLine = null;
 
             if (orderInfo.OrderLines != null)
             {
-                if (variantIds.Any())
+                if (variantId != null && variantId != Guid.Empty)
                 {
                     existingOrderLine
                         = orderInfo.OrderLines
                             .FirstOrDefault(
                                 x => x.Product.Key == productKey
                                 && x.Product.VariantGroups
-                                    .SelectMany(b => b.Variants.Select(z => z.Key)
-                                    .Intersect(variantIds))
-                            .Any())
+                                    .Any(b => b.Variants.Any(z => z.Key == variantId)))
                             as OrderLine;
                 }
                 else
@@ -256,7 +254,9 @@ namespace Ekom.Services
 
                 _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Not Found");
 
-                var orderLine = new OrderLine(productKey, variantIds, quantity, lineId, _store);
+                var _variantId = (variantId != null && variantId != Guid.Empty) ? variantId.Value : Guid.Empty;
+
+                var orderLine = new OrderLine(productKey, _variantId, quantity, lineId, _store);
 
                 orderInfo.orderLines.Add(orderLine);
 

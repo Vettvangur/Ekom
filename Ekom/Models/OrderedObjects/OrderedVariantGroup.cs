@@ -29,16 +29,29 @@ namespace Ekom.Models.OrderedObjects
             this.variant = variant;
             this.store = store;
 
+            Log.Info("Debug1");
+
             Properties = new ReadOnlyDictionary<string, string>(
                 variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
+            Log.Info("Debug2");
             Id = variantGroup.Id;
+
+            Log.Info("Debug3");
             Key = variantGroup.Key;
+
+            Log.Info("Debug4");
             Title = variantGroup.Title;
+
+            Log.Info("Debug5");
             ImageIds = variantGroup.Images.Any() ? variantGroup.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
 
+
+            Log.Info("Debug6");
             var variants = new List<OrderedVariant>();
 
+
+            Log.Info("Debug7");
             variants.Add(new OrderedVariant(variant, store));
 
             Variants = variants;

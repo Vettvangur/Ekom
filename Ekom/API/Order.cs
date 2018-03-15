@@ -75,13 +75,13 @@ namespace Ekom.API
 
         public IOrderInfo AddOrderLine(
             Guid productId,
-            IEnumerable<Guid> variantIds,
+            Guid? variantId,
             int quantity,
             string storeAlias,
             OrderAction? action
         )
         {
-            return _orderService.AddOrderLine(productId, variantIds, quantity, storeAlias, action);
+            return _orderService.AddOrderLine(productId, variantId, quantity, storeAlias, action);
         }
 
         public IOrderInfo UpdateCustomerInformation(Dictionary<string, string> form)
