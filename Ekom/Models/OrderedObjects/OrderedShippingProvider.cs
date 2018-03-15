@@ -11,7 +11,7 @@ namespace Ekom.Models.OrderedObjects
 
         public OrderedShippingProvider(IShippingProvider provider)
         {
-            this._provider = provider;
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
             Id = _provider.Id;
             Key = _provider.Key;

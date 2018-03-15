@@ -30,6 +30,8 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedDiscount(IDiscount discount)
         {
+            discount = discount ?? throw new ArgumentNullException(nameof(discount));
+
             Key = discount.Key;
             Amount = discount.Amount;
             Constraints = new Constraints(discount.Constraints);

@@ -14,7 +14,8 @@ namespace Ekom.Models.OrderedObjects
 
         public OrderedPaymentProvider(IPaymentProvider provider)
         {
-            this._provider = provider;
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+
             Id = _provider.Id;
             Key = _provider.Key;
             Title = _provider.Title;

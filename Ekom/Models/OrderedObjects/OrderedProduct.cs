@@ -124,10 +124,9 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
-            if (product == null)
-            {
-                throw new ArgumentNullException(nameof(product), "OrderedProduct could not be created. Product not found. Key: " + product.Key);
-            }
+            variant = variant ?? throw new ArgumentNullException(nameof(variant));
+            product = product ?? throw new ArgumentNullException(nameof(product));
+            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
             this.storeInfo = storeInfo;
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };

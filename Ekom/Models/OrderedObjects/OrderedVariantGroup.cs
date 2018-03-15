@@ -28,7 +28,9 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo)
         {
-            this.variant = variant;
+            this.variant = variant ?? throw new ArgumentNullException(nameof(variant));
+            variantGroup = variantGroup ?? throw new ArgumentNullException(nameof(variantGroup));
+            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
