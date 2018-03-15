@@ -38,14 +38,14 @@ namespace Ekom.Controllers
         {
             try
             {
-                var variantIds = new List<Guid>();
+                //var variantIds = new List<Guid>();
 
-                if (request.variantId != null && request.variantId != Guid.Empty)
-                {
-                    variantIds.Add(request.variantId.Value);
-                }
+                //if (request.variantId != null && request.variantId != Guid.Empty)
+                //{
+                //    variantIds.Add(request.variantId.Value);
+                //}
 
-                var orderInfo = Order.Instance.AddOrderLine(request.productId, variantIds, request.quantity, request.storeAlias, request.action);
+                var orderInfo = Order.Instance.AddOrderLine(request.productId, request.variantId, request.quantity, request.storeAlias, request.action);
 
                 return Json(new
                 {
@@ -70,62 +70,62 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="request">OrderMultipleRequest</param>
         /// <returns></returns>
-        public JsonResult AddMultipleToOrder(OrderMultipleRequest request)
-        {
-            try
-            {
-                var os = Order.Instance;
+        //public JsonResult AddMultipleToOrder(OrderMultipleRequest request)
+        //{
+        //    try
+        //    {
+        //        var os = Order.Instance;
 
-                _log.Info("Add To Multiple Order: " + request.productId);
+        //        _log.Info("Add To Multiple Order: " + request.productId);
 
-                if (request.variant.Any())
-                {
-                    IOrderInfo o = null;
+        //        if (request.variant.Any())
+        //        {
+        //            IOrderInfo o = null;
 
-                    var variantIds = new List<Guid>();
+        //            var variantIds = new List<Guid>();
 
-                    foreach (var variant in request.variant)
-                    {
-                        _log.Info("Add To Multiple Order: Variant: " + variant.Id + " - " + variant.Quantity);
+        //            foreach (var variant in request.variant)
+        //            {
+        //                _log.Info("Add To Multiple Order: Variant: " + variant.Id + " - " + variant.Quantity);
 
-                        if (Guid.TryParse(variant.Id.ToString(), out Guid variantId))
-                        {
-                            var items = new List<Guid>
-                            {
-                                variantId
-                            };
+        //                if (Guid.TryParse(variant.Id.ToString(), out Guid variantId))
+        //                {
+        //                    var items = new List<Guid>
+        //                    {
+        //                        variantId
+        //                    };
 
-                            o = os.AddOrderLine(request.productId, items, variant.Quantity, request.storeAlias, request.action);
+        //                    o = os.AddOrderLine(request.productId, items, variant.Quantity, request.storeAlias, request.action);
 
-                        }
-                    }
+        //                }
+        //            }
 
-                    return Json(new
-                    {
-                        success = true,
-                        orderInfo = o
-                    });
+        //            return Json(new
+        //            {
+        //                success = true,
+        //                orderInfo = o
+        //            });
 
-                }
+        //        }
 
-                return Json(new
-                {
-                    success = false
-                });
+        //        return Json(new
+        //        {
+        //            success = false
+        //        });
 
-            }
+        //    }
 
-            catch (Exception ex)
-            {
-                _log.Error("Add to multiple order Failed!", ex);
+        //    catch (Exception ex)
+        //    {
+        //        _log.Error("Add to multiple order Failed!", ex);
 
-                return Json(new
-                {
-                    success = false,
-                    error = ex.Message
-                });
-            }
-        }
+        //        return Json(new
+        //        {
+        //            success = false,
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
 
         /// <summary>
         /// Update Customer Information to Order
