@@ -297,13 +297,11 @@ namespace Ekom.Helpers
         /// <returns>Property Value</returns>
         public static IPublishedContent GetMediaNode(string id)
         {
-
             if (!string.IsNullOrEmpty(id))
             {
-
                 if (int.TryParse(id, out int mediaId))
                 {
-                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
 
                     var node = umbracoHelper.TypedMedia(mediaId);
 
@@ -312,10 +310,9 @@ namespace Ekom.Helpers
                         return node;
                     }
                 }
-
-                if (Guid.TryParse(id, out Guid mediaGuid))
+                else if (Guid.TryParse(id, out Guid mediaGuid))
                 {
-                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
 
                     var node = umbracoHelper.TypedMedia(mediaGuid);
 
@@ -324,8 +321,8 @@ namespace Ekom.Helpers
                         return node;
                     }
                 }
-                return GetMediaByUdi(id);
 
+                return GetMediaByUdi(id);
             }
 
             return null;

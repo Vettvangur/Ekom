@@ -1,7 +1,6 @@
 ﻿using Ekom.Exceptions;
 using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
 using Ekom.Models.Discounts;
 using Ekom.Services;
 using Examine;
@@ -13,7 +12,7 @@ using System.Linq;
 using Umbraco.Core.Models;
 using GlobalDiscountCache
     = System.Collections.Concurrent.ConcurrentDictionary<string,
-        System.Collections.Concurrent.ConcurrentStack<Ekom.Interfaces.IDiscount>>;
+        System.Collections.Concurrent.ConcurrentDictionary<System.Guid, Ekom.Interfaces.IDiscount>>;
 using PerStoreCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string,
         System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Interfaces.IDiscount>>;
@@ -67,7 +66,7 @@ namespace Ekom.Cache
             var curStoreCouponCache
                 = CouponCache[store.Alias] = new ConcurrentDictionary<string, IDiscount>();
             var curStoreGlobalDiscountCache
-                = GlobalDiscounts[store.Alias] = new ConcurrentStack<IDiscount>();
+                = GlobalDiscounts[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
 
             foreach (var r in results)
             {
@@ -109,7 +108,7 @@ namespace Ekom.Cache
                                 }
                                 else
                                 {
-                                    curStoreGlobalDiscountCache.Push(item);
+                                    curStoreGlobalDiscountCache[item.Key] = item;
                                 }
 
                                 var itemKey = Guid.Parse(r.Fields["key"]);
@@ -154,21 +153,29 @@ namespace Ekom.Cache
 
                             if (item != null)
                             {
-                                foreach (var coupon in coupons)
+                                if (coupons.Any())
                                 {
-                                    // no empty strings
-                                    if (!string.IsNullOrEmpty(coupon.Name))
+                                    foreach (var coupon in coupons)
                                     {
-                                        CouponCache[store.Value.Alias][coupon.Name] = item;
+                                        // no empty strings
+                                        if (!string.IsNullOrEmpty(coupon.Name))
+                                        {
+                                            CouponCache[store.Value.Alias][coupon.Name] = item;
+                                        }
+                                    }
+
+                                    if (item is Discount discountItem)
+                                    {
+                                        discountItem.couponsInternal = coupons.Select(c => c.Name).ToArray();
                                     }
                                 }
-
-                                if (item is Discount discountItem)
+                                else
                                 {
-                                    discountItem.couponsInternal = coupons.Select(c => c.Name).ToArray();
+                                    GlobalDiscounts[store.Value.Alias][item.Key] = item;
                                 }
 
                                 Cache[store.Value.Alias][node.Key] = item;
+                                _log.Debug($"Added {coupons.Count()} coupons for discount {node.Name}");
                             }
                         }
                         else
@@ -188,13 +195,14 @@ namespace Ekom.Cache
         /// <see cref="ICache"/> implementation,
         /// handles removal of nodes when umbraco events fire
         /// </summary>
-        public override void Remove(Guid id)
+        public override void Remove(Guid key)
         {
+            _log.Debug($"Attempting to remove discount with key {key}");
             IDiscount i = null;
 
             foreach (var store in _storeCache.Cache)
             {
-                Cache[store.Value.Alias].TryRemove(id, out i);
+                Cache[store.Value.Alias].TryRemove(key, out i);
 
                 if (i != null)
                 {
@@ -203,6 +211,8 @@ namespace Ekom.Cache
                         CouponCache[store.Value.Alias].TryRemove(coupon, out i);
                     }
                 }
+
+                GlobalDiscounts[store.Value.Alias].TryRemove(key, out i);
             }
         }
     }

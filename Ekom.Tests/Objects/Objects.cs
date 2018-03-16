@@ -29,5 +29,7 @@ namespace Ekom.Tests.Objects
             => new Discount(new CustomSearchResult(Discount_fixed_500.json), Get_IS_Store_Vat_NotIncluded());
         public static Discount Get_Discount_percentage_50()
             => new Discount(new CustomSearchResult(Discount_percentage_50.json), Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_Discount_fixed_1000_Min_2000()
+            => new Discount(new CustomSearchResult(Discount_fixed_1000_Min_2000.json), Get_IS_Store_Vat_NotIncluded());
     }
 }

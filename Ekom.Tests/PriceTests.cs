@@ -1,4 +1,5 @@
 ﻿using Ekom.Models;
+using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
@@ -16,7 +17,7 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = Helpers.GetOrderService();
+            var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
             Assert.IsTrue(oi.OrderLineTotal.Value == 3000);
@@ -28,7 +29,7 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = Helpers.GetOrderService();
+            var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
             Assert.IsTrue(oi.Vat.Value == 300);
@@ -41,7 +42,7 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
             var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = Helpers.GetOrderService();
+            var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
             Assert.IsTrue(oi.Vat.Value == 500);
