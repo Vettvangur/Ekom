@@ -177,12 +177,12 @@ namespace Ekom.Tests
                 oi
             ));
 
-            Assert.IsTrue(oi.SubTotal.Value == 5980);
+            Assert.IsTrue(oi.SubTotal.Value == 1000);
 
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
             oi = orderSvc.AddOrderLine(product3, -1, store);
 
-            Assert.IsTrue(oi.SubTotal.Value == 1995);
+            Assert.IsTrue(oi.SubTotal.Value == 1500);
         }
     }
 }
