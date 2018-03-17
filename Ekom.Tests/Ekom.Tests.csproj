@@ -232,10 +232,13 @@
   <ItemGroup>
     <Compile Include="DiscountTests.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="MockClasses\HttpContextMocks.cs" />
+    <Compile Include="MockClasses\OrderServiceMocks.cs" />
     <Compile Include="Objects\CustomDiscount.cs" />
     <Compile Include="Objects\CustomSearchResult.cs" />
     <Compile Include="Objects\CustomProduct.cs" />
     <Compile Include="Objects\CustomStore.cs" />
+    <Compile Include="Objects\Discount_fixed_1000_Min_2000.cs" />
     <Compile Include="Objects\Discount_percentage_50.cs" />
     <Compile Include="Objects\Objects.cs" />
     <Compile Include="Objects\Shirt_product_2.cs" />

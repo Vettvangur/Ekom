@@ -70,7 +70,7 @@ namespace Ekom.Extensions.Controllers
             {
                 try
                 {
-                    hangfireJobs.Add(_stock.ReserveStock(line.Id, line.Quantity));
+                    hangfireJobs.Add(_stock.ReserveStock(line.Key, line.Quantity));
 
                     if (line.Discount != null)
                     {

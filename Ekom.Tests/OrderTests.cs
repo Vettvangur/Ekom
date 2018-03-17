@@ -1,5 +1,7 @@
-﻿using Ekom.Models;
+﻿using Ekom.Helpers;
+using Ekom.Models;
 using Ekom.Models.Data;
+using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Ekom.Tests
@@ -13,11 +15,75 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = Helpers.GetOrderService();
+            var orderSvc = new OrderServiceMocks().orderSvc;
 
             var oi = orderSvc.AddOrderLine(product, 1, store);
 
             Assert.IsTrue(oi.OrderLines.Count == 1);
+        }
+
+        [TestMethod]
+        public void AddsOrderLine()
+        {
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product2 = Objects.Objects.Get_Shirt2_Product();
+            var product3 = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLine(product2, 1, store);
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLine(product3, 1, store);
+
+            Assert.IsTrue(oi.OrderLines.Count == 2);
+        }
+
+        [TestMethod]
+        public void UpdatesQuantityPositive()
+        {
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLine(product, 2, store);
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLine(product, 2, store);
+
+
+            Assert.IsTrue(oi.TotalQuantity == 4);
+        }
+
+        [TestMethod]
+        public void UpdatesQuantityNegative()
+        {
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLine(product, 3, store);
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLine(product, -1, store);
+
+
+            Assert.IsTrue(oi.TotalQuantity == 2);
+        }
+
+        [TestMethod]
+        public void SetsQuantity()
+        {
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLine(product, 1, store);
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLine(product, 3, store, OrderAction.Set);
+
+
+            Assert.IsTrue(oi.TotalQuantity == 3);
         }
 
         [TestMethod]

@@ -78,9 +78,10 @@ namespace Ekom.Services
         /// <summary>
         /// 
         /// </summary>
+        /// <exception cref="ProductNotFoundException"></exception>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
-        public bool ApplyDiscountToOrderLine(
+        public bool ApplyDiscountToOrderLineProduct(
             Guid productKey,
             IDiscount discount,
             string storeAlias = null,
@@ -88,25 +89,84 @@ namespace Ekom.Services
             OrderInfo orderInfo = null
         )
         {
-            var product = Catalog.Instance.GetProduct(productKey);
+            IProduct product = Catalog.Instance.GetProduct(productKey);
+
             if (product == null)
             {
-                throw new ProductNotFoundException("Unable to find product with key " + productKey);
+                throw new ProductNotFoundException($"Unable to find product: {productKey}");
             }
 
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
-            if (ApplyDiscountToOrderLine(
+            return ApplyDiscountToOrderLineProduct(
                 product,
+                discount,
+                storeAlias,
+                coupon,
+                orderInfo
+            );
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="ProductNotFoundException"></exception>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrderLineProduct(
+            IProduct product,
+            IDiscount discount,
+            string storeAlias = null,
+            string coupon = null,
+            OrderInfo orderInfo = null
+        )
+        {
+
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            OrderLine orderLine
+                = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
+                as OrderLine;
+
+            if (orderLine == null)
+            {
+                throw new OrderLineNotFoundException($"Unable to find order line with product key: {product.Key}");
+            }
+
+            return ApplyDiscountToOrderLine(
+                orderLine,
                 discount,
                 orderInfo,
                 coupon
-            ))
+            );
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <returns></returns>
+        public bool ApplyDiscountToOrderLine(
+            Guid lineKey,
+            IDiscount discount,
+            string storeAlias = null,
+            string coupon = null,
+            OrderInfo orderInfo = null
+        )
+        {
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            OrderLine orderLine
+                = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
+                as OrderLine;
+
+            if (orderLine == null)
             {
-                UpdateOrderAndOrderInfo(orderInfo);
-                return true;
+                throw new OrderLineNotFoundException($"Unable to find order line: {lineKey}");
             }
 
-            return false;
+            return ApplyDiscountToOrderLine(
+                orderLine,
+                discount,
+                orderInfo,
+                coupon
+            );
         }
 
         /// <summary>
@@ -115,21 +175,13 @@ namespace Ekom.Services
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
         private bool ApplyDiscountToOrderLine(
-            IProduct product,
+            OrderLine orderLine,
             IDiscount discount,
             OrderInfo orderInfo,
             string coupon = null
         )
         {
             _log.Debug("Applying discount to orderline");
-
-            OrderLine orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
-                as OrderLine;
-
-            if (orderLine == null)
-            {
-                throw new OrderLineNotFoundException($"Unable to find order line: {product.Key}");
-            }
 
             if (orderLine.Discount != null)
             {
@@ -210,11 +262,11 @@ namespace Ekom.Services
             }
 
             var oldDiscount = orderInfo.Discount;
-            var oldTotal = orderInfo.ChargedAmount;
+            var oldTotal = orderInfo.ChargedAmount.Value;
 
             orderInfo.Discount = new OrderedDiscount(discount);
 
-            var result = orderInfo.ChargedAmount.Value > oldTotal.Value;
+            var result = orderInfo.ChargedAmount.Value < oldTotal;
 
             orderInfo.Discount = oldDiscount;
 
@@ -270,7 +322,7 @@ namespace Ekom.Services
         private void VerifyDiscounts(OrderInfo orderInfo)
         {
             var total = orderInfo.OrderLineTotal.Value;
-            var storeAlias = orderInfo.StoreInfo.Culture;
+            var storeAlias = orderInfo.StoreInfo.Alias;
 
             // Verify order discount constraints
             if (orderInfo.Discount != null
@@ -283,8 +335,9 @@ namespace Ekom.Services
 
             var curStoreDiscCache = _discountCache.GlobalDiscounts[storeAlias];
 
-            var gds = curStoreDiscCache.Where(gd =>
-                gd.Constraints.IsValid(storeAlias, total))
+            var gds = curStoreDiscCache
+                .Where(gd => gd.Value.Constraints.IsValid(storeAlias, total))
+                .Select(gd => gd.Value)
                 .ToList();
 
             // Try apply global order discounts

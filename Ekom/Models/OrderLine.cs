@@ -24,7 +24,7 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        public Guid Id { get; internal set; }
+        public Guid Key { get; internal set; }
 
         public OrderedProduct Product { get; internal set; }
         /// <summary>
@@ -70,7 +70,7 @@ namespace Ekom.Models
             string productJson,
             OrderInfo orderInfo)
         {
-            Id = lineId;
+            Key = lineId;
             Quantity = quantity;
             OrderInfo = orderInfo;
             Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
@@ -89,7 +89,7 @@ namespace Ekom.Models
             ProductKey = product.Key;
             OrderInfo = orderInfo;
             Quantity = quantity;
-            Id = lineId;
+            Key = lineId;
             Product = new OrderedProduct(product, variant, orderInfo.StoreInfo);
         }
 

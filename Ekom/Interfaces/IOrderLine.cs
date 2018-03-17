@@ -29,7 +29,7 @@ namespace Ekom.Interfaces
         /// <value>
         /// The line Id.
         /// </value>
-        Guid Id { get; }
+        Guid Key { get; }
 
         /// <summary>
         /// Gets the product.

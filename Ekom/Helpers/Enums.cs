@@ -53,10 +53,18 @@
         Scheduled,
     }
 
+    /// <summary>
+    /// Default is AddOrUpdate, we also allow to set quantity to fixed amount
+    /// </summary>
     public enum OrderAction
     {
-        Add,
-        Update,
-        UpdateQuantity
+        /// <summary>
+        /// Add or update order line with given product and quantity
+        /// </summary>
+        AddOrUpdate,
+        /// <summary>
+        /// Set quantity to provided amount
+        /// </summary>
+        Set
     }
 }

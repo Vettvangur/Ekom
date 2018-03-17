@@ -4,10 +4,10 @@ using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -36,23 +36,6 @@ namespace Ekom.Tests
         public static void InitDI()
         {
             Ekom.App_Start.TinyIoCActivator.Start();
-        }
-
-        public static OrderService GetOrderService()
-        {
-            InitMockContainer();
-            var httpCtx = GetHttpContext();
-            var logFac = MockLogFac();
-            var discountCache = MockDiscountCache();
-            var orderSvc = MockOrderService(discountCache);
-            discountCache.GlobalDiscounts["is-IS"] = new ConcurrentStack<IDiscount>();
-
-            var ekmReq = new ContentRequest(new HttpContextWrapper(httpCtx), logFac);
-
-            new PrivateObject(orderSvc, new PrivateType(typeof(OrderService)))
-                .SetField("_ekmRequest", ekmReq);
-
-            return orderSvc;
         }
 
         public static Catalog GetCatalogApi()
@@ -85,15 +68,22 @@ namespace Ekom.Tests
                 Mock.Of<IBaseCache<IStore>>(),
                 Mock.Of<IPerStoreFactory<IDiscount>>()
             );
-        public static OrderService MockOrderService(DiscountCache discountCache)
-            => new OrderService(
-                (new Mock<IOrderRepository> { DefaultValue = DefaultValue.Mock }).Object,
-                MockLogFac(),
-                Mock.Of<IStoreService>(),
-                GetSetAppCtx(),
-                discountCache,
-                GetHttpContextBase()
-            );
+
+        public static void AddOrderInfoToHttpSession(OrderInfo orderInfo, IStore store, OrderServiceMocks orderSvcMocks)
+        {
+            // Setup HttpContext Session to return same OrderInfo
+            string sessKey = new PrivateObject(orderSvcMocks.orderSvc, new PrivateType(typeof(OrderService)))
+                .Invoke("CreateKey", store.Alias)
+                as string;
+            orderSvcMocks.httpCtxMocks.httpSessMock.Setup(s => s[sessKey]).Returns(orderInfo);
+            // Setup HttpRequest Cookies to retun oi guid
+            var cookie = new HttpCookie(sessKey)
+            {
+                Value = orderInfo.UniqueId.ToString(),
+            };
+            orderSvcMocks.httpCtxMocks.httpReqMock.Object.Cookies.Add(cookie);
+        }
+
 
         public static HttpContext GetHttpContext()
         {
@@ -103,21 +93,8 @@ namespace Ekom.Tests
 
             return new HttpContext(req, resp);
         }
-        public static HttpContextBase GetHttpContextBase()
-        {
-            var httpReqMock = new Mock<HttpRequestBase> { DefaultValue = DefaultValue.Mock };
-            httpReqMock.Setup(req => req.Cookies).Returns(new HttpCookieCollection());
-            var httpRespMock = new Mock<HttpResponseBase> { DefaultValue = DefaultValue.Mock };
-            httpRespMock.Setup(resp => resp.Cookies).Returns(new HttpCookieCollection());
-            var httpSessMock = new Mock<HttpSessionStateBase> { DefaultValue = DefaultValue.Mock };
-            var httpCtxMock = new Mock<HttpContextBase> { DefaultValue = DefaultValue.Mock };
-            httpCtxMock.Setup(h => h.Request).Returns(httpReqMock.Object);
-            httpCtxMock.Setup(h => h.Response).Returns(httpRespMock.Object);
-            httpCtxMock.Setup(h => h.Session).Returns(httpSessMock.Object);
 
-            return httpCtxMock.Object;
-        }
-
+        #region Umbraco Mocks
         public static ApplicationContext GetSetAppCtx()
         {
             var appCtx = new ApplicationContext(CacheHelper.CreateDisabledCacheHelper(), new ProfilingLogger(Mock.Of<ILogger>(), Mock.Of<IProfiler>()));
@@ -205,6 +182,7 @@ namespace Ekom.Tests
 
             return helper;
         }
+        #endregion
     }
 
     internal class ActivatorServiceProvider : IServiceProvider
@@ -215,6 +193,7 @@ namespace Ekom.Tests
         }
     }
 
+    #region Umbraco Mock Classes
     public class CacheMocks
     {
         public Mock<IRuntimeCacheProvider> runtimeCache;
@@ -289,4 +268,5 @@ namespace Ekom.Tests
             uHelper = helper;
         }
     }
+    #endregion
 }

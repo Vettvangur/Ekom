@@ -145,6 +145,13 @@ namespace Ekom.Services
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OrderException"></exception>
+        /// <exception cref="ProductNotFoundException"></exception>
+        /// <exception cref="VariantNotFoundException"></exception>
         public OrderInfo AddOrderLine(
             Guid productKey,
             int quantity,
@@ -153,6 +160,11 @@ namespace Ekom.Services
             Guid? variantKey = null
         )
         {
+            if (productKey == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(productKey));
+            }
+
             var product = Catalog.Instance.GetProduct(productKey);
 
             if (product == null)
@@ -182,6 +194,11 @@ namespace Ekom.Services
             );
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OrderException"></exception>
         public OrderInfo AddOrderLine(
             IProduct product,
             int quantity,
@@ -190,11 +207,16 @@ namespace Ekom.Services
             IVariant variant = null
         )
         {
-            _store = store;
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            _store = store ?? throw new ArgumentNullException(nameof(store));
             _date = DateTime.Now;
 
             // If cart action is null then update is the default state
-            var cartAction = action != null ? action.Value : OrderAction.Update;
+            var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
             var orderInfo = GetOrder(_store);
 
@@ -231,14 +253,15 @@ namespace Ekom.Services
 
             var orderInfo = GetOrder(storeAlias);
 
-            if (orderInfo != null)
-            {
-                var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Id == lineId);
+            var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
 
-                if (orderLine != null)
-                {
-                    orderInfo.orderLines.Remove(orderLine as OrderLine);
-                }
+            if (orderLine != null)
+            {
+                RemoveOrderLine(orderInfo, orderLine as OrderLine);
+            }
+            else
+            {
+                throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
             UpdateOrderAndOrderInfo(orderInfo);
@@ -246,6 +269,16 @@ namespace Ekom.Services
             return orderInfo;
         }
 
+        private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
+        {
+            orderInfo.orderLines.Remove(orderLine);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OrderException"></exception>
         private void AddOrderLineToOrderInfo(
             OrderInfo orderInfo,
             IProduct product,
@@ -254,9 +287,13 @@ namespace Ekom.Services
             IVariant variant
         )
         {
-            if (quantity < 0)
+            if (quantity == 0)
             {
-                throw new ArgumentException("Quantity can not be less then 0", nameof(quantity));
+                throw new ArgumentException("Quantity can not be 0", nameof(quantity));
+            }
+            if (action == OrderAction.Set && quantity <= 0)
+            {
+                throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
             }
 
             var lineId = Guid.NewGuid();
@@ -294,17 +331,33 @@ namespace Ekom.Services
                 _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Found");
 
                 // Update orderline quantity with value
-                if (action == OrderAction.UpdateQuantity)
+                if (action == OrderAction.Set)
                 {
                     existingOrderLine.Quantity = quantity;
                 }
                 else
                 {
+                    if (existingOrderLine.Quantity + quantity < 0)
+                    {
+                        throw new OrderException("OrderLines cannot be updated to negative quantity");
+                    }
+
                     existingOrderLine.Quantity += quantity;
+
+                    // If the update action ends up setting quantity to zero we remove the order line
+                    if (existingOrderLine.Quantity == 0)
+                    {
+                        RemoveOrderLine(orderInfo, existingOrderLine);
+                    }
                 }
             }
             else
             {
+                if (quantity < 0)
+                {
+                    throw new OrderException("OrderLines cannot be created with negative quantity");
+                }
+
                 // Update orderline when adding product to orderline
 
                 _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Not Found");
@@ -372,7 +425,7 @@ namespace Ekom.Services
         /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInSession(OrderInfo orderInfo)
         {
-            var key = CreateKey();
+            var key = CreateKey(orderInfo.StoreInfo.Alias);
 
             _httpCtx.Session[key] = orderInfo;
         }
