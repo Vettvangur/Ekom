@@ -67,6 +67,34 @@ namespace Ekom.Controllers
             }
         }
 
+        /// <summary>
+        /// Get order
+        /// </summary>
+        /// <returns></returns>
+        public JsonResult GetOrder()
+        {
+            try
+            {
+                var order = Order.Instance.GetOrder();
+
+                return Json(new
+                {
+                    success = true,
+                    cart = order
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Failed to get Order!", ex);
+
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }
+
         ///// <summary>
         ///// Add product with multiple variants to order
         ///// </summary>
