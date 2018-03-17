@@ -125,9 +125,8 @@ namespace Ekom.Models.OrderedObjects
         public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
-            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+            this.storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-            this.storeInfo = storeInfo;
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
             Properties = new ReadOnlyDictionary<string, string>(

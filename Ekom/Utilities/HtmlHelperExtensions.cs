@@ -31,12 +31,6 @@ namespace Ekom.Utilities
                     defaultClassName = "product__form";
                     break;
 
-                case FormType.GetOrder:
-
-                    actionName = "GetOrder";
-                    defaultClassName = "get__order-form";
-                    break;
-
                 case FormType.AddToOrderCart:
 
                     actionName = "AddToOrder";
@@ -79,10 +73,6 @@ namespace Ekom.Utilities
         /// AddOrderLine action with product page class
         /// </summary>
         AddToOrderProduct,
-        /// <summary>
-        /// Get order
-        /// </summary>
-        GetOrder,
         /// <summary>
         /// AddOrderLine action with cart view styles
         /// </summary>
