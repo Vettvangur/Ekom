@@ -10,11 +10,10 @@ namespace Ekom.Interfaces
     public interface IStore : INodeEntity
     {
         /// <summary>
-        /// Gets the vat.
+        /// Umbraco input: 28.5 <para></para>
+        /// Stored VAT value: 0.285<para></para>
+        /// Effective VAT value: 28.5%<para></para>
         /// </summary>
-        /// <value>
-        /// The vat. 0.3 => 30% VAT
-        /// </value>
         decimal Vat { get; }
 
         /// <summary>

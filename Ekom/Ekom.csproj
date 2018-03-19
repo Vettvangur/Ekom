@@ -371,7 +371,7 @@
     <Compile Include="Models\OrderedObjects\OrderedVariantGroup.cs" />
     <Compile Include="Models\OrderInfo.cs" />
     <Compile Include="Models\OrderLine.cs" />
-    <Compile Include="Models\StoreInfo.cs" />
+    <Compile Include="Models\OrderedObjects\StoreInfo.cs" />
     <Compile Include="Models\Zone.cs" />
     <Compile Include="Models\PaymentProvider.cs" />
     <Compile Include="Models\Price.cs" />
