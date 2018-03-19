@@ -369,16 +369,16 @@ namespace Ekom.Services
                     orderInfo,
                     variant
                 );
+                orderLine.Discount = orderInfo.Discount;
 
                 orderInfo.orderLines.Add(orderLine);
 
                 if (product.Discount != null)
                 {
                     ApplyDiscountToOrderLine(
-                        product.Key,
+                        orderLine,
                         product.Discount,
-                        _store.Alias,
-                        orderInfo: orderInfo);
+                        orderInfo);
                 }
             }
 
