@@ -134,9 +134,9 @@ namespace Ekom.Models
                     {
                         var lineWithOrderDiscount
                             = new Price(
-                                line.Amount.OriginalValue, 
+                                line.Amount.OriginalValue,
                                 StoreInfo,
-                                Discount, 
+                                Discount,
                                 line.Quantity
                             );
 
@@ -176,9 +176,9 @@ namespace Ekom.Models
                     {
                         var lineWithOrderDiscount
                             = new Price(
-                                line.Amount.OriginalValue, 
-                                StoreInfo, 
-                                Discount, 
+                                line.Amount.OriginalValue,
+                                StoreInfo,
+                                Discount,
                                 line.Quantity
                             );
 
@@ -254,7 +254,7 @@ namespace Ekom.Models
 
             foreach (var line in orderLinesArray)
             {
-                var lineId = (Guid)line["Id"];
+                var lineId = (Guid)line["Key"];
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
 
