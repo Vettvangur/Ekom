@@ -47,6 +47,10 @@ namespace Ekom.Models
         public string Culture { get; }
         public string Alias { get; }
         public bool VatIncludedInPrice { get; }
+        /// <summary>
+        /// Stored VAT value: 0.285<para></para>
+        /// Effective VAT value: 28.5%<para></para>
+        /// </summary>
         public decimal Vat { get; }
     }
 }

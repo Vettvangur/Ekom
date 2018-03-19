@@ -30,6 +30,11 @@ namespace Ekom.Models
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
+        /// <summary>
+        /// Umbraco input: 28.5 <para></para>
+        /// Stored VAT value: 0.285<para></para>
+        /// Effective VAT value: 28.5%<para></para>
+        /// </summary>
         public virtual decimal Vat
         {
             get
