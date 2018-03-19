@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System;
 
-namespace Ekom.Models
+namespace Ekom.Models.OrderedObjects
 {
     /// <summary>
     /// Frozen representation of <see cref="IStore"/>
