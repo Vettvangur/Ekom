@@ -13,7 +13,7 @@ namespace Ekom.Interfaces
         /// Gets the vat.
         /// </summary>
         /// <value>
-        /// The vat.
+        /// The vat. 0.3 => 30% VAT
         /// </value>
         decimal Vat { get; }
 

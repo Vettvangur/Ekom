@@ -59,7 +59,9 @@
     public enum OrderAction
     {
         /// <summary>
-        /// Add or update order line with given product and quantity
+        /// Add or update order line with given product and quantity.
+        /// Negative values indicate a reduction in quantity.
+        /// F.x. quantity +2/-2
         /// </summary>
         AddOrUpdate,
         /// <summary>
