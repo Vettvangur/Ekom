@@ -107,10 +107,10 @@ namespace Ekom.Models
         /// ctor
         /// </summary>
         public Price(
-            decimal price, 
+            decimal price,
             StoreInfo storeInfo,
-            OrderedDiscount discount = null, 
-            int quantity = 1, 
+            OrderedDiscount discount = null,
+            int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
         {
@@ -224,6 +224,9 @@ namespace Ekom.Models
         private ICalculatedPrice _withoutVat;
         /// <summary>
         /// Price with discount but without VAT
+        /// We cannot depend on AfterDiscount since if rounding is to be applied, 
+        /// it should be applied before multiplying by quantity.
+        /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
         /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
@@ -240,13 +243,38 @@ namespace Ekom.Models
                     {
                         if (_withoutVat == null)
                         {
-                            decimal price = AfterDiscount.Value;
+                            var price = OriginalValue;
+
+                            if (Discount != null)
+                            {
+                                switch (Discount.Amount.Type)
+                                {
+                                    case Discounts.DiscountType.Fixed:
+
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithoutVat(price, Store.Vat);
+                                        }
+                                        price -= Discount.Amount.Amount;
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithVat(price, Store.Vat);
+                                        }
+                                        break;
+
+                                    case Discounts.DiscountType.Percentage:
+
+                                        price -= price * Discount.Amount.Amount;
+                                        break;
+                                }
+                            }
+
                             if (Store.VatIncludedInPrice)
                             {
                                 price = VatCalculator.WithoutVat(price, Store.Vat);
                             }
-                            
-                            _withoutVat = CreateSimplePrice(price);
+
+                            _withoutVat = CreateSimplePrice(price * Quantity);
                         }
                     }
                 }
@@ -262,7 +290,10 @@ namespace Ekom.Models
 
         private ICalculatedPrice _withVat;
         /// <summary>
-        /// Price with discount and VAT
+        /// Price with discount and VAT.
+        /// We cannot depend on AfterDiscount since if rounding is to be applied, 
+        /// it should be applied before multiplying by quantity.
+        /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
         /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
@@ -279,13 +310,38 @@ namespace Ekom.Models
                     {
                         if (_withVat == null)
                         {
-                            var price = AfterDiscount.Value;
+                            var price = OriginalValue;
+
+                            if (Discount != null)
+                            {
+                                switch (Discount.Amount.Type)
+                                {
+                                    case Discounts.DiscountType.Fixed:
+
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithoutVat(price, Store.Vat);
+                                        }
+                                        price -= Discount.Amount.Amount;
+                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                                        {
+                                            price = VatCalculator.WithVat(price, Store.Vat);
+                                        }
+                                        break;
+
+                                    case Discounts.DiscountType.Percentage:
+
+                                        price -= price * Discount.Amount.Amount;
+                                        break;
+                                }
+                            }
+
                             if (!Store.VatIncludedInPrice)
                             {
                                 price = VatCalculator.WithVat(price, Store.Vat);
                             }
 
-                            _withVat = CreateSimplePrice(price);
+                            _withVat = CreateSimplePrice(price * Quantity);
                         }
                     }
                 }
