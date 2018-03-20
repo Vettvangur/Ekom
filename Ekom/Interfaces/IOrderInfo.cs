@@ -51,6 +51,10 @@ namespace Ekom.Interfaces
         IReadOnlyCollection<IOrderLine> OrderLines { get; }
 
         /// <summary>
+        /// Includes Vat and discounts but without shipping providers and payment providers.
+        /// </summary>
+        ICalculatedPrice GrandTotal { get; }
+        /// <summary>
         /// <see cref="Price"/> object for total value of all orderlines.
         /// </summary>
         ICalculatedPrice ChargedAmount { get; }

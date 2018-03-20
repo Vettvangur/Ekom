@@ -289,6 +289,7 @@ namespace Ekom.Services
         {
             if (quantity == 0)
             {
+                // Use remove orderline instead
                 throw new ArgumentException("Quantity can not be 0", nameof(quantity));
             }
             if (action == OrderAction.Set && quantity <= 0)
@@ -369,7 +370,6 @@ namespace Ekom.Services
                     orderInfo,
                     variant
                 );
-                orderLine.Discount = orderInfo.Discount;
 
                 orderInfo.orderLines.Add(orderLine);
 

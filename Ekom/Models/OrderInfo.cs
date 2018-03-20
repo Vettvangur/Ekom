@@ -135,7 +135,7 @@ namespace Ekom.Models
                         var lineWithOrderDiscount
                             = new Price(
                                 line.Amount.OriginalValue,
-                                StoreInfo,
+                                line.Amount.Store,
                                 Discount,
                                 line.Quantity
                             );
@@ -158,6 +158,34 @@ namespace Ekom.Models
             get
             {
                 var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+
+                return new CalculatedPrice(amount, StoreInfo.Culture);
+            }
+        }
+
+        /// <summary>
+        /// Includes Vat and discounts but without shipping providers and payment providers.
+        /// </summary>
+        public ICalculatedPrice GrandTotal
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line =>
+                {
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue,
+                                line.Amount.Store,
+                                Discount,
+                                line.Quantity
+                            );
+
+                        return lineWithOrderDiscount.Value;
+                    }
+                    return line.Amount.Value;
+                });
 
                 return new CalculatedPrice(amount, StoreInfo.Culture);
             }

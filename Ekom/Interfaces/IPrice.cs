@@ -59,6 +59,10 @@ namespace Ekom.Interfaces
         /// The discount.
         /// </value>
         OrderedDiscount Discount { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        StoreInfo Store { get; }
     }
 
     /// <summary>

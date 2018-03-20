@@ -64,8 +64,8 @@
                         <td>
                             @using (Html.BeginEkomForm(FormType.AddToOrderCart))
                             {
-                                <input type="hidden" name="lineId" value="@orderline.Id" />
-                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.UpdateQuantity" />
+                                <input type="hidden" name="lineId" value="@orderline.Key" />
+                                <input type="hidden" name="action" value="@Ekom.Helpers.OrderAction.AddOrUpdate" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <input type="number" name="quantity" value="@orderline.Quantity" />
                                 <button type="submit" class="button small show-for-sr">Update</button>
@@ -77,7 +77,7 @@
                         <td class="text-center">
                             @using (Html.BeginEkomForm(FormType.RemoveOrderLine))
                             {
-                                <input type="hidden" name="lineId" value="@orderline.Id" />
+                                <input type="hidden" name="lineId" value="@orderline.Key" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <button type="submit" class="button small">Delete</button>
                             }
