@@ -16,7 +16,12 @@ namespace Ekom.Models.OrderedObjects
         /// 
         /// </summary>
         [JsonConstructor]
-        public OrderedDiscount(Guid key, DiscountAmount amount, IConstraints constraints, IReadOnlyCollection<string> coupons, bool hasMasterStock)
+        public OrderedDiscount(
+            Guid key,
+            DiscountAmount amount,
+            IConstraints constraints,
+            IReadOnlyCollection<string> coupons,
+            bool hasMasterStock)
         {
             Key = key;
             Amount = amount;

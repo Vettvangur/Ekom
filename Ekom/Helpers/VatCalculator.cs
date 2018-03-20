@@ -7,45 +7,45 @@ namespace Ekom.Helpers
         /// <summary>
         /// Removes VAT from amount.
         /// </summary>
-        /// <param name="withVat">The with vat.</param>
-        /// <param name="vat">The vat.</param>
+        /// <param name="withVatVal">The with vat.</param>
+        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
-        public static decimal WithoutVat(decimal withVat, decimal vat)
+        public static decimal WithoutVat(decimal withVatVal, decimal vatVal)
         {
-            return withVat / (1 + vat);
+            return PerformRounding(withVatVal / (1 + vatVal));
         }
 
         /// <summary>
         /// Returns the amount with VAT included.
         /// </summary>
-        /// <param name="withoutVat">The without vat.</param>
-        /// <param name="vat">The vat.</param>
+        /// <param name="withoutVatVal">The without vat.</param>
+        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
-        public static decimal WithVat(decimal withoutVat, decimal vat)
+        public static decimal WithVat(decimal withoutVatVal, decimal vatVal)
         {
-            return withoutVat * (1 + vat);
+            return PerformRounding(withoutVatVal * (1 + vatVal));
         }
 
         /// <summary>
         /// Calculates the VAT amount that would be added if VAT would be applied.
         /// </summary>
-        /// <param name="withoutVat">The without vat.</param>
-        /// <param name="vat">The vat.</param>
+        /// <param name="withoutVatVal">The without vat.</param>
+        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
-        public static decimal VatAmountFromWithoutVat(decimal withoutVat, decimal vat)
+        public static decimal VatAmountFromWithoutVat(decimal withoutVatVal, decimal vatVal)
         {
-            return WithVat(withoutVat, vat) - withoutVat;
+            return WithVat(withoutVatVal, vatVal) - withoutVatVal;
         }
 
         /// <summary>
         /// Calculates the VAT amount included in a price including VAT already.
         /// </summary>
-        /// <param name="withVat">The with vat.</param>
-        /// <param name="vat">The vat.</param>
+        /// <param name="withoutVatVal">The with vat.</param>
+        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
-        public static decimal VatAmountFromWithVat(decimal withVat, decimal vat)
+        public static decimal VatAmountFromWithVat(decimal withoutVatVal, decimal vatVal)
         {
-            return withVat - WithoutVat(withVat, vat); // verified correct
+            return withoutVatVal - WithoutVat(withoutVatVal, vatVal);
         }
 
         private static decimal PerformRounding(decimal val)
