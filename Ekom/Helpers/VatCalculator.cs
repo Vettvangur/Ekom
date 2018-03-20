@@ -18,8 +18,6 @@ namespace Ekom.Helpers
         /// <summary>
         /// Returns the amount with VAT included.
         /// </summary>
-        /// <param name="withoutVatVal">The without vat.</param>
-        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
         public static decimal WithVat(decimal withoutVatVal, decimal vatVal)
         {
@@ -29,8 +27,6 @@ namespace Ekom.Helpers
         /// <summary>
         /// Calculates the VAT amount that would be added if VAT would be applied.
         /// </summary>
-        /// <param name="withoutVatVal">The without vat.</param>
-        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
         public static decimal VatAmountFromWithoutVat(decimal withoutVatVal, decimal vatVal)
         {
@@ -40,8 +36,6 @@ namespace Ekom.Helpers
         /// <summary>
         /// Calculates the VAT amount included in a price including VAT already.
         /// </summary>
-        /// <param name="withoutVatVal">The with vat.</param>
-        /// <param name="vatVal">The vat.</param>
         /// <returns></returns>
         public static decimal VatAmountFromWithVat(decimal withoutVatVal, decimal vatVal)
         {
