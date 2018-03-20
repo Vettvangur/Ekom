@@ -16,7 +16,7 @@ namespace Ekom.Tests.Objects
         public static Store Get_IS_Store_Vat_Included() => new CustomStore(Store_IS_Vat_Included.json, 1059);
 
         public static Product Get_Shirt2_Product()
-            => new CustomProduct(Shirt_product_2.shirt2_json, Get_IS_Store_Vat_NotIncluded());
+            => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product()
             => new CustomProduct(Shirt_product_3.json, Get_IS_Store_Vat_NotIncluded());
 

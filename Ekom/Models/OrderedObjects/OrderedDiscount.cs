@@ -19,7 +19,7 @@ namespace Ekom.Models.OrderedObjects
         public OrderedDiscount(
             Guid key,
             DiscountAmount amount,
-            IConstraints constraints,
+            Constraints constraints,
             IReadOnlyCollection<string> coupons,
             bool hasMasterStock)
         {
@@ -57,7 +57,7 @@ namespace Ekom.Models.OrderedObjects
         /// <summary>
         /// Ranges
         /// </summary>
-        public IConstraints Constraints { get; internal set; }
+        public Constraints Constraints { get; internal set; }
 
         /// <summary>
         /// 

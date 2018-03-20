@@ -1,5 +1,6 @@
 ﻿using Ekom.Models;
 using Ekom.Tests.MockClasses;
+using Ekom.Tests.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
@@ -20,7 +21,7 @@ namespace Ekom.Tests
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
-            Assert.IsTrue(oi.OrderLineTotal.Value == 3000);
+            Assert.AreEqual(3000m, oi.OrderLineTotal.Value);
         }
 
         [TestMethod]
@@ -32,21 +33,21 @@ namespace Ekom.Tests
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
-            Assert.IsTrue(oi.Vat.Value == 300);
-            Assert.IsTrue(oi.ChargedAmount.Value == 3300);
+            Assert.AreEqual(300m, oi.Vat.Value);
+            Assert.AreEqual(3300m, oi.ChargedAmount.Value);
         }
 
         [TestMethod]
         public void CalculatesVatIncludedStorePrice()
         {
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = Objects.Objects.Get_Shirt3_Product();
+            var product = new CustomProduct(Shirt_product_3.json, store);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
 
-            Assert.IsTrue(oi.Vat.Value == 500);
-            Assert.IsTrue(oi.ChargedAmount.Value == 3000);
+            Assert.AreEqual(500m, oi.Vat.Value);
+            Assert.AreEqual(3000m, oi.ChargedAmount.Value);
         }
 
         [TestMethod]
@@ -55,12 +56,12 @@ namespace Ekom.Tests
             Helpers.InitMockContainer();
 
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = Objects.Objects.Get_Shirt3_Product();
+            var product = new CustomProduct(Shirt_product_3.json, store);
 
             var oi = new OrderInfo(new Models.Data.OrderData(), store);
             var ol = new OrderLine(product, 1, Guid.NewGuid(), oi, null);
 
-            Assert.IsTrue(ol.Amount.WithoutVat.Value == 1500 / 1.2m);
+            Assert.AreEqual(1500 / 1.2m, ol.Amount.WithoutVat.Value);
         }
     }
 }

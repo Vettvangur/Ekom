@@ -39,11 +39,13 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
+                StoreInfo = orderInfoJObject["StoreInfo"].ToObject<StoreInfo>();
                 orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
+
+                Discount = orderInfoJObject["Discount"]?.ToObject<OrderedDiscount>();
             }
         }
 
@@ -285,8 +287,9 @@ namespace Ekom.Models
                 var lineId = (Guid)line["Key"];
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
+                var discount = line["Discount"]?.ToObject<OrderedDiscount>();
 
-                var orderLine = new OrderLine(lineId, quantity, productJson, this);
+                var orderLine = new OrderLine(lineId, quantity, productJson, this, discount);
 
                 orderLines.Add(orderLine);
             }
@@ -355,22 +358,6 @@ namespace Ekom.Models
             return null;
         }
 
-        private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
-        {
-            if (orderInfoJObject["StoreInfo"] != null)
-            {
-                var storeInfoJson = orderInfoJObject["StoreInfo"].ToString();
-
-                if (!string.IsNullOrEmpty(storeInfoJson))
-                {
-                    var storeInfo = JsonConvert.DeserializeObject<StoreInfo>(storeInfoJson);
-
-                    return storeInfo;
-                }
-            }
-
-            return null;
-        }
         #endregion
 
         protected static readonly ILog Log =

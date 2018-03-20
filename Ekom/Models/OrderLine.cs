@@ -68,12 +68,14 @@ namespace Ekom.Models
             Guid lineId,
             int quantity,
             string productJson,
-            OrderInfo orderInfo)
+            OrderInfo orderInfo,
+            OrderedDiscount discount)
         {
             Key = lineId;
             Quantity = quantity;
             OrderInfo = orderInfo;
             Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
+            Discount = discount;
         }
 
         /// <summary>

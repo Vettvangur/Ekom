@@ -349,10 +349,7 @@ namespace Ekom.Services
             // Verify order line discount constraints
             foreach (var line in orderInfo.orderLines)
             {
-                if (line.Discount != null
-                && !line.Discount.Constraints.IsValid(
-                storeAlias,
-                total))
+                if (line.Discount?.Constraints.IsValid(storeAlias, total) == false)
                 {
                     RemoveDiscountFromOrderLine(line);
                 }
