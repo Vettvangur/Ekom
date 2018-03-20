@@ -352,7 +352,7 @@ namespace Ekom.Models
 
         private ICalculatedPrice _vat;
         /// <summary>
-        /// VAT included or to be included in price
+        /// VAT included or to be included in price with discount
         /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
@@ -369,17 +369,8 @@ namespace Ekom.Models
                     {
                         if (_vat == null)
                         {
-                            decimal price = 0;
-                            if (Store.VatIncludedInPrice)
-                            {
-                                price = VatCalculator.VatAmountFromWithVat(OriginalValue, Store.Vat);
-                            }
-                            else
-                            {
-                                price = VatCalculator.VatAmountFromWithoutVat(OriginalValue, Store.Vat);
-                            }
-
-                            _vat = CreateSimplePrice(price * Quantity);
+                            var value = WithVat.Value - WithoutVat.Value;
+                            _vat = CreateSimplePrice(value);
                         }
                     }
                 }
