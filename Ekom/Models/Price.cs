@@ -49,50 +49,76 @@ namespace Ekom.Models
             decimal originalValue,
             bool discountAlwaysBeforeVAT,
             int quantity)
-            : this(originalValue, store, discount, quantity)
+            : this(originalValue, store, discount, quantity, discountAlwaysBeforeVAT)
         {
-            DiscountAlwaysBeforeVAT = discountAlwaysBeforeVAT;
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Price(string price, IStore store, OrderedDiscount discount = null, int quantity = 1)
+        public Price(
+            string price,
+            IStore store,
+            OrderedDiscount discount = null,
+            int quantity = 1,
+            bool discountAlwaysBeforeVat = false
+        )
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  new StoreInfo(store),
                  discount,
-                 quantity)
+                 quantity,
+                 discountAlwaysBeforeVat)
         {
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Price(decimal price, IStore store, OrderedDiscount discount = null, int quantity = 1)
-            : this(price, new StoreInfo(store), discount, quantity)
+        public Price(
+            decimal price,
+            IStore store,
+            OrderedDiscount discount = null,
+            int quantity = 1,
+            bool discountAlwaysBeforeVat = false
+        )
+            : this(price, new StoreInfo(store), discount, quantity, discountAlwaysBeforeVat)
         {
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Price(string price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
+        public Price(
+            string price,
+            StoreInfo storeInfo,
+            OrderedDiscount discount = null,
+            int quantity = 1,
+            bool discountAlwaysBeforeVat = false
+        )
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
                  storeInfo,
                  discount,
-                 quantity)
+                 quantity,
+                 discountAlwaysBeforeVat)
         {
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public Price(decimal price, StoreInfo storeInfo, OrderedDiscount discount = null, int quantity = 1)
+        public Price(
+            decimal price, 
+            StoreInfo storeInfo,
+            OrderedDiscount discount = null, 
+            int quantity = 1, 
+            bool discountAlwaysBeforeVat = false
+        )
         {
             OriginalValue = price;
             Store = storeInfo;
             Discount = discount;
             Quantity = quantity;
+            DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
@@ -219,7 +245,7 @@ namespace Ekom.Models
                             {
                                 price = VatCalculator.WithoutVat(price, Store.Vat);
                             }
-
+                            
                             _withoutVat = CreateSimplePrice(price);
                         }
                     }
