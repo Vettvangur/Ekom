@@ -47,5 +47,30 @@ namespace Ekom.Helpers
         {
             return withVat - WithoutVat(withVat, vat); // verified correct
         }
+
+        private static decimal PerformRounding(decimal val)
+        {
+            switch (Configuration.Current.VatCalculationRounding)
+            {
+                case Rounding.None:
+                    return val;
+
+                case Rounding.RoundDown:
+                    return Math.Floor(val);
+
+                case Rounding.RoundUp:
+                    return Math.Ceiling(val);
+
+                case Rounding.RoundToEven:
+                    return Math.Round(val, MidpointRounding.ToEven);
+
+                case Rounding.AwayFromZero:
+                    return Math.Round(val, MidpointRounding.AwayFromZero);
+
+                default:
+                    // impossible
+                    throw new Exception("Unknown rounding specified");
+            }
+        }
     }
 }

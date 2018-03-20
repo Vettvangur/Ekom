@@ -1,4 +1,6 @@
-﻿namespace Ekom.Helpers
+﻿using System;
+
+namespace Ekom.Helpers
 {
     /// <summary>
     /// 
@@ -68,5 +70,36 @@
         /// Set quantity to provided amount
         /// </summary>
         Set
+    }
+
+    /// <summary>
+    /// Rounding action to perform after Vat calculation
+    /// </summary>
+    public enum Rounding
+    {
+        /// <summary>
+        /// Leave decimal outcome as-is
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// <see cref="Math.Floor(decimal)"/>
+        /// </summary>
+        RoundDown,
+
+        /// <summary>
+        /// <see cref="Math.Ceiling(decimal)"/>
+        /// </summary>
+        RoundUp,
+
+        /// <summary>
+        /// <see cref="MidpointRounding.ToEven"/>
+        /// </summary>
+        RoundToEven,
+
+        /// <summary>
+        /// <see cref="MidpointRounding.AwayFromZero"/>
+        /// </summary>
+        AwayFromZero
     }
 }

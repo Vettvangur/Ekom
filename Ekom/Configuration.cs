@@ -1,5 +1,6 @@
 ﻿using CommonServiceLocator;
 using Ekom.Cache;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using System;
@@ -130,6 +131,27 @@ namespace Ekom
         /// </summary>
         public virtual bool StoreCustomerData
             => ConfigurationManager.AppSettings["ekmCustomerData"].ConvertToBool();
+
+        /// <summary>
+        /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
+        /// submitted to the checkout controller?
+        /// </summary>
+        public virtual Rounding VatCalculationRounding
+        {
+            get
+            {
+                var configVal = ConfigurationManager.AppSettings["ekmVatCalcRounding"];
+
+                if (!Enum.TryParse(configVal, out Rounding preferredRounding))
+                {
+                    // Default
+                    preferredRounding = Rounding.RoundUp;
+                }
+
+                return preferredRounding;
+            }
+        }
+
 
         /// <summary>
         /// Lists in initialization order all caches and the document type alias of
