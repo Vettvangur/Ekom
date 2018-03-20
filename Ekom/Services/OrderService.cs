@@ -375,6 +375,8 @@ namespace Ekom.Services
 
                 if (product.Discount != null)
                 {
+                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
+
                     ApplyDiscountToOrderLine(
                         orderLine,
                         product.Discount,

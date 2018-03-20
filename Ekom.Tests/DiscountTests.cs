@@ -1,5 +1,6 @@
 ﻿using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 
 namespace Ekom.Tests
 {
@@ -38,6 +39,22 @@ namespace Ekom.Tests
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
 
+            Assert.IsTrue(oi.SubTotal.Value == 1500);
+        }
+
+        [TestMethod]
+        public void DiscountLinkedToProductAppliesToNewOrderLines()
+        {
+            var container = Helpers.InitMockContainer();
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product = Objects.Objects.Get_Shirt3_Product();
+            var discount = Objects.Objects.Get_Discount_percentage_50();
+            product.Discount = discount;
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLine(product, 2, store);
+
+            Assert.IsTrue(oi.orderLines.First().Discount != null);
             Assert.IsTrue(oi.SubTotal.Value == 1500);
         }
 

@@ -205,7 +205,7 @@ namespace Ekom.Models
                         var lineWithOrderDiscount
                             = new Price(
                                 line.Amount.OriginalValue,
-                                StoreInfo,
+                                line.Amount.Store,
                                 Discount,
                                 line.Quantity
                             );

@@ -47,20 +47,22 @@ namespace Ekom.Models
         {
             get
             {
-
-                decimal _price = Product.Price.OriginalValue;
-
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
+                    decimal _price = Product.Price.OriginalValue;
+
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
                         _price = _price + (v.Price.OriginalValue - _price);
                     }
+
+                    return new Price(_price, Product.Price.Store, Discount, Quantity);
                 }
 
-                return new Price(_price, Product.Price.Store, Discount, Quantity);
+                return Product.Price;
             }
         }
+
         /// <summary>
         /// ctor
         /// </summary>

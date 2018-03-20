@@ -104,6 +104,7 @@ namespace Ekom.Models.Discounts
                             // If a previous discount exists on product, it's setter will determine if discount is better than previous one 
                             if (product is Product productItem)
                             {
+                                Log.Debug($"Linking product {productItem.Title} with key {productItem.Key} to discount {Title} with key {Key}");
                                 productItem.Discount = this;
                             }
                         }
