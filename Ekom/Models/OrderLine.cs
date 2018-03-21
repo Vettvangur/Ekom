@@ -15,7 +15,8 @@ namespace Ekom.Models
     /// </summary>
     class OrderLine : IOrderLine
     {
-        public Guid ProductKey { get; }
+        public Guid ProductKey => Product.Key;
+
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
@@ -88,7 +89,6 @@ namespace Ekom.Models
             OrderInfo orderInfo,
             IVariant variant = null)
         {
-            ProductKey = product.Key;
             OrderInfo = orderInfo;
             Quantity = quantity;
             Key = lineId;
