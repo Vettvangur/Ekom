@@ -3,6 +3,7 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.JsonDotNet;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
@@ -401,7 +402,7 @@ namespace Ekom.Services
                 orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
             }
 
-            var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo);
+            var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
             var orderData = _orderRepository.GetOrder(orderInfo.UniqueId);
 

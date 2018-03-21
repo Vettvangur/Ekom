@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Ekom.JsonDotNet;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
@@ -136,7 +137,7 @@ namespace Ekom.Models.OrderedObjects
         {
             this.variantObject = variantObject;
             this.storeInfo = storeInfo;
-            Price = variantObject["Price"].ToObject<Price>();
+            Price = variantObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantObject["Properties"].ToObject<Dictionary<string, string>>());

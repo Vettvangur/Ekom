@@ -6,8 +6,6 @@ using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using System.Reflection;
-using System.Web.Script.Serialization;
-using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -48,7 +46,8 @@ namespace Ekom.Models
             StoreInfo store,
             decimal originalValue,
             bool discountAlwaysBeforeVAT,
-            int quantity)
+            int quantity
+        )
             : this(originalValue, store, discount, quantity, discountAlwaysBeforeVAT)
         {
         }
@@ -143,9 +142,6 @@ namespace Ekom.Models
         /// <summary>
         /// Price before discount with VAT left as-is
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public ICalculatedPrice BeforeDiscount
         {
             get
@@ -171,9 +167,6 @@ namespace Ekom.Models
         /// <summary>
         /// Price after discount with VAT left as-is
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public ICalculatedPrice AfterDiscount
         {
             get
@@ -228,9 +221,6 @@ namespace Ekom.Models
         /// it should be applied before multiplying by quantity.
         /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
         /// </summary>
-        //[ScriptIgnore]
-        //[JsonIgnore]
-        //[XmlIgnore]
         public ICalculatedPrice WithoutVat
         {
             get
@@ -295,9 +285,6 @@ namespace Ekom.Models
         /// it should be applied before multiplying by quantity.
         /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public ICalculatedPrice WithVat
         {
             get
@@ -354,9 +341,6 @@ namespace Ekom.Models
         /// <summary>
         /// VAT included or to be included in price with discount
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public ICalculatedPrice Vat
         {
             get
@@ -386,6 +370,16 @@ namespace Ekom.Models
     /// </summary>
     class CalculatedPrice : ICalculatedPrice
     {
+        [JsonConstructor]
+        public CalculatedPrice(
+            string currencyString,
+            decimal value
+        )
+        {
+            Value = value;
+            CurrencyString = currencyString;
+        }
+
         public CalculatedPrice(
             decimal price,
             string culture

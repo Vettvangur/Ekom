@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Ekom.JsonDotNet;
 using Ekom.Services;
 using Ekom.Utilities;
 using log4net;
@@ -164,7 +165,7 @@ namespace Ekom.Models.OrderedObjects
 
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            Price = productPropertiesObject["Price"].ToObject<Price>();
+            Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
 
             ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 
