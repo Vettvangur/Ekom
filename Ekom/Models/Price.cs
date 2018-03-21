@@ -228,9 +228,9 @@ namespace Ekom.Models
         /// it should be applied before multiplying by quantity.
         /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
+        //[ScriptIgnore]
+        //[JsonIgnore]
+        //[XmlIgnore]
         public ICalculatedPrice WithoutVat
         {
             get
