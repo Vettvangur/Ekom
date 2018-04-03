@@ -223,7 +223,6 @@ namespace Ekom.Services
 
             if (orderInfo == null)
             {
-                _log.Debug("Creating OrderInfo ...  Order not found..");
                 orderInfo = CreateEmptyOrder();
             }
 

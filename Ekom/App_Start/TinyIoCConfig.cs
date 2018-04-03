@@ -79,6 +79,7 @@ namespace Ekom.App_Start
                     c.Resolve<IPerStoreCache<IProduct>>(),
                     c.Resolve<IPerStoreCache<ICategory>>(),
                     c.Resolve<IPerStoreCache<IVariant>>(),
+                    c.Resolve<IPerStoreCache<IVariantGroup>>(),
                     c.Resolve<IStoreService>()
                 )
             );
