@@ -39,8 +39,6 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                Log.Info("OrderInfo. Creating.. " + orderData.UniqueId);
-
                 StoreInfo = orderInfoJObject["StoreInfo"].ToObject<StoreInfo>();
                 orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
