@@ -46,6 +46,7 @@ namespace Ekom.Tests
                 (new Mock<IPerStoreCache<IProduct>> { DefaultValue = DefaultValue.Mock }).Object,
                 Mock.Of<IPerStoreCache<ICategory>>(),
                 Mock.Of<IPerStoreCache<IVariant>>(),
+                Mock.Of<IPerStoreCache<IVariantGroup>>(),
                 Mock.Of<IStoreService>()
             );
 
