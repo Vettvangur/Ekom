@@ -125,9 +125,9 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
+          
             product = product ?? throw new ArgumentNullException(nameof(product));
             this.storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
-
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
             Properties = new ReadOnlyDictionary<string, string>(
@@ -135,11 +135,13 @@ namespace Ekom.Models.OrderedObjects
 
             Price = product.Price.Clone() as IPrice;
 
+
             if (variant != null)
             {
                 var variantGroups = new List<OrderedVariantGroup>();
 
                 var variantGroup = variant.VariantGroup;
+
 
                 variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo));
 
@@ -149,6 +151,7 @@ namespace Ekom.Models.OrderedObjects
             {
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
+
         }
 
         /// <summary>

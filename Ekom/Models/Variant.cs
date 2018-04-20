@@ -125,10 +125,7 @@ namespace Ekom.Models
 
                 if (int.TryParse(parentId, out int _parentId))
                 {
-                    if (_variantGroupCache.Cache[Store.Alias].TryGetValue(Key, out var group))
-                    {
-                        return group;
-                    }
+                    return Catalog.Instance.GetVariantGroup(Store.Alias, _parentId); 
                 }
 
                 return null;

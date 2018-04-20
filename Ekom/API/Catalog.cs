@@ -31,7 +31,7 @@ namespace Ekom.API
         IPerStoreCache<IProduct> _productCache;
         IPerStoreCache<ICategory> _categoryCache;
         IPerStoreCache<IVariant> _variantCache;
-
+        IPerStoreCache<IVariantGroup> _variantGroupCache;
         /// <summary>
         /// ctor
         /// </summary>
@@ -42,6 +42,7 @@ namespace Ekom.API
             IPerStoreCache<IProduct> productCache,
             IPerStoreCache<ICategory> categoryCache,
             IPerStoreCache<IVariant> variantCache,
+            IPerStoreCache<IVariantGroup> variantGroupCache,
             IStoreService storeService
         )
         {
@@ -50,6 +51,7 @@ namespace Ekom.API
             _productCache = productCache;
             _categoryCache = categoryCache;
             _variantCache = variantCache;
+            _variantGroupCache = variantGroupCache;
             _storeSvc = storeService;
 
             _log = logFac.GetLogger<Catalog>();
@@ -276,6 +278,12 @@ namespace Ekom.API
             return _variantCache.Cache[storeAlias]
                                    .Where(x => x.Value.VariantGroup.Id == Id)
                                    .Select(x => x.Value);
+        }
+
+        public IVariantGroup GetVariantGroup(string storeAlias, int Id)
+        {
+            return _variantGroupCache.Cache[storeAlias]
+                                   .FirstOrDefault(x => x.Value.Id == Id).Value;
         }
     }
 }
