@@ -194,6 +194,12 @@ namespace Ekom.Models
         }
 
         /// <summary>
+        /// Total monetary value of discount in order
+        /// </summary>
+        public ICalculatedPrice DiscountAmount
+            => new CalculatedPrice(OrderLineTotal.Value - SubTotal.Value, StoreInfo.Culture);
+
+        /// <summary>
         /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.
         /// </summary>
         public ICalculatedPrice ChargedAmount

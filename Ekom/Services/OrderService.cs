@@ -68,13 +68,6 @@ namespace Ekom.Services
             _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
         }
 
-        public OrderInfo GetOrderInfo(Guid uniqueId)
-        {
-            var orderData = _orderRepository.GetOrder(uniqueId);
-
-            return orderData != null ? new OrderInfo(orderData) : null;
-        }
-
         public OrderInfo GetOrder(string storeAlias)
         {
             _log.Debug("Get Order: Store: " + storeAlias);
@@ -102,7 +95,7 @@ namespace Ekom.Services
                 {
                     _log.Debug("Order is not in the session. Creating from sql");
 
-                    var order = GetOrderInfo(orderUniqueId);
+                    var order = GetOrder(orderUniqueId);
 
                     _httpCtx.Session[key] = order;
                 }
@@ -121,6 +114,13 @@ namespace Ekom.Services
             }
 
             return null;
+        }
+
+        public OrderInfo GetOrder(Guid uniqueId)
+        {
+            var orderData = _orderRepository.GetOrder(uniqueId);
+
+            return orderData != null ? new OrderInfo(orderData) : null;
         }
 
         public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)

@@ -17,7 +17,6 @@ namespace Ekom.Interfaces
         /// </value>
         IPrice Price { get; }
 
-
         /// <summary>
         /// Gets the stock.
         /// </summary>

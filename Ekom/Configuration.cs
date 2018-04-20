@@ -159,9 +159,8 @@ namespace Ekom
         /// This object is lazy initialized to make sure that all types have been registered with IoC container
         /// before we attempt to resolve.
         /// </summary>
-        internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() =>
-        {
-            return new List<ICache>
+        internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() 
+            => new List<ICache>
             {
                 { container.GetInstance<IBaseCache<IDomain>>() },
                 { container.GetInstance<IBaseCache<IStore>>() },
@@ -173,8 +172,8 @@ namespace Ekom
                 { container.GetInstance<IPerStoreCache<IPaymentProvider>>() },
                 { container.GetInstance<IPerStoreCache<IShippingProvider>>() },
                 { container.GetInstance<IPerStoreCache<IDiscount>>() },
-            };
-        });
+            }
+        );
 
         /// <summary> 
         /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 

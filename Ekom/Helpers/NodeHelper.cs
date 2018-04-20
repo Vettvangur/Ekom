@@ -1,4 +1,5 @@
 ﻿using Ekom.Interfaces;
+using Ekom.Models.Abstractions;
 using Ekom.Utilities;
 using Examine;
 using Examine.SearchCriteria;
@@ -63,9 +64,46 @@ namespace Ekom.Helpers
             return list;
         }
 
+        /// <summary>
+        /// Recursively gets first <see cref="SearchResult"/> item with matching doc type, null otherwise
+        /// </summary>
+        public static SearchResult GetFirstParentWithDocType(SearchResult item, string docTypeAlias)
+        {
+            if (item == null) return item;
+
+            else if (item.Fields["nodeTypeAlias"] == docTypeAlias)
+            {
+                return item;
+            }
+            else
+            {
+                var parentId = Convert.ToInt32(item.Fields["parentID"]);
+                var parent = GetNodeFromExamine(parentId);
+                return GetFirstParentWithDocType(parent, docTypeAlias);
+            }
+        }
+        /// <summary>
+        /// Recursively gets first <see cref="IContent"/> item with matching doc type, null otherwise
+        /// </summary>
+        public static IContent GetFirstParentWithDocType(IContent node, string docTypeAlias)
+        {
+            if (node == null) return node;
+
+            else if (node.ContentType.Alias == docTypeAlias)
+            {
+                return node;
+            }
+            else
+            {
+
+                return GetFirstParentWithDocType(node.Parent(), docTypeAlias);
+            }
+        }
+
         public static SearchResult GetNodeFromExamine(int id)
         {
-            var searcher = ExamineManager.Instance.SearchProviderCollection["ExternalSearcher"];
+            var examineMgr = Configuration.container.GetInstance<ExamineManagerBase>();
+            var searcher = examineMgr.SearchProviderCollection["ExternalSearcher"];
 
             if (searcher != null)
             {
@@ -80,8 +118,7 @@ namespace Ekom.Helpers
                 }
                 else
                 {
-                    LogHelper.Info(MethodBase.GetCurrentMethod().DeclaringType,
-                        "GetNodeFromExamine Failed. Node with Id " + id + " not found.");
+                    Log.Info("GetNodeFromExamine Failed. Node with Id " + id + " not found.");
                 }
             }
 
@@ -291,7 +328,7 @@ namespace Ekom.Helpers
 
 
         /// <summary>
-        /// Get Ipublished media node
+        /// Get <see cref="IPublishedContent"/> media node
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Property Value</returns>
@@ -329,7 +366,7 @@ namespace Ekom.Helpers
         }
 
         /// <summary>
-        /// Get Ipublished media node
+        /// Get <see cref="IPublishedContent"/> media node
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Property Value</returns>
@@ -354,7 +391,7 @@ namespace Ekom.Helpers
         }
 
         /// <summary>
-        /// Get Ipublished content node by Udi
+        /// Get <see cref="IPublishedContent"/> node by Udi
         /// </summary>
         /// <param name="udi"></param>
         /// <returns>Property Value</returns>
@@ -365,7 +402,7 @@ namespace Ekom.Helpers
 
                 if (Udi.TryParse(udi, out Udi id))
                 {
-                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
 
                     var node = umbracoHelper.TypedContent(id);
 
@@ -380,7 +417,7 @@ namespace Ekom.Helpers
             return null;
         }
         /// <summary>
-        /// Get Ipublished content node by Udi
+        /// Get <see cref="IPublishedContent"/> node by Udi
         /// </summary>
         /// <param name="udi"></param>
         /// <returns>Property Value</returns>
@@ -391,7 +428,7 @@ namespace Ekom.Helpers
 
                 if (Udi.TryParse(udi, out Udi id))
                 {
-                    var umbracoHelper = new UmbracoHelper(UmbracoContext.Current);
+                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
 
                     var node = umbracoHelper.TypedMedia(id);
 
@@ -405,7 +442,5 @@ namespace Ekom.Helpers
 
             return null;
         }
-
-
     }
 }

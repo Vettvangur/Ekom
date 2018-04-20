@@ -1,4 +1,7 @@
 ﻿using Ekom.API;
+using Ekom.Cache;
+using Ekom.Exceptions;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
@@ -22,46 +25,17 @@ namespace Ekom.Models
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        public IProduct Product
-        {
-            get
-            {
-                var product = Catalog.Instance.GetProduct(Store.Alias, ProductId);
-
-                if (product == null)
-                {
-                    throw new Exception("Variant ProductKey could not be created. Product not found. Key: " + ProductId);
-                }
-
-                return product;
-            }
-        }
+        public IProduct Product { get; internal set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public int ProductId
-        {
-            get
-            {
-                var paths = Path.Split(',');
-
-                int productId = Convert.ToInt32(paths[paths.Length - 3]);
-
-                return productId;
-            }
-        }
+        public int ProductId => Product.Id;
 
         /// <summary>
         /// Get the Product Key
         /// </summary>
-        public Guid ProductKey
-        {
-            get
-            {
-                return Product.Key;
-            }
-        }
+        public Guid ProductKey => Product.Key;
 
         // Waiting for variants to be composed with their parent product
         ///// <summary>
@@ -113,14 +87,35 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public VariantGroup(SearchResult item, IStore store) : base(item, store) { }
+        public VariantGroup(SearchResult item, IStore store) : base(item, store)
+        {
+            var parentProductExamine = NodeHelper.GetFirstParentWithDocType(item, "ekmProduct");
+            var parentProduct = Catalog.Instance.GetProduct(parentProductExamine.Id);
+
+            if (parentProduct == null)
+            {
+                throw new ProductNotFoundException("Unable to find parent product of variant group");
+            }
+            Product = parentProduct;
+        }
 
         /// <summary>
         /// Construct Variant Group from umbraco publish event
         /// </summary>
         /// <param name="node"></param>
         /// <param name="store"></param>
-        public VariantGroup(IContent node, IStore store) : base(node, store) { }
+        public VariantGroup(IContent node, IStore store) : base(node, store)
+        {
+            var parentProductExamine = NodeHelper.GetFirstParentWithDocType(node, "ekmProduct");
+            var parentProduct = Catalog.Instance.GetProduct(parentProductExamine.Id);
+
+            if (parentProduct == null)
+            {
+                throw new ProductNotFoundException("Unable to find parent product of variant group");
+            }
+
+            Product = parentProduct;
+        }
 
         private static readonly ILog Log =
             LogManager.GetLogger(

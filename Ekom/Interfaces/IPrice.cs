@@ -46,6 +46,10 @@ namespace Ekom.Interfaces
         /// VAT included or to be included in price
         /// </summary>
         ICalculatedPrice Vat { get; }
+        /// <summary>
+        /// Total monetary value of discount in price
+        /// </summary>
+        ICalculatedPrice DiscountAmount { get; }
 
         /// <summary>
         /// Value with discount and VAT

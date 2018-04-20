@@ -62,6 +62,16 @@ namespace Ekom.API
         {
             return _orderService.GetOrder(storeAlias);
         }
+
+        /// <summary>
+        /// Get order using <see cref="Guid"/>.
+        /// </summary>
+        /// <returns></returns>
+        public IOrderInfo GetOrder(Guid uniqueId)
+        {
+            return _orderService.GetOrder(uniqueId);
+        }
+
         public void UpdateStatus(string storeAlias, OrderStatus newStatus)
         {
             var order = _orderService.GetOrder(storeAlias);
