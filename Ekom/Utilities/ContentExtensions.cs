@@ -57,7 +57,7 @@ namespace Ekom.Utilities
 
                 var vortoItems = new Dictionary<string, object>();
 
-                if (vortoValue != null && vortoValue.Values.Any())
+                if (vortoValue != null && vortoValue.Values != null && vortoValue.Values.Any())
                 {
                     foreach (var vvalue in vortoValue.Values)
                     {
