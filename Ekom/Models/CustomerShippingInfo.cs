@@ -17,6 +17,22 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("shippingName");
             }
         }
+        public string FirstName
+        {
+
+            get
+            {
+                return Properties.GetPropertyValue("shippingFirstName");
+            }
+        }
+        public string LastName
+        {
+
+            get
+            {
+                return Properties.GetPropertyValue("shippingLastName");
+            }
+        }
         public string Address
         {
             get
@@ -29,6 +45,13 @@ namespace Ekom.Models
             get
             {
                 return Properties.GetPropertyValue("shippingCity");
+            }
+        }
+        public string Apartment
+        {
+            get
+            {
+                return Properties.GetPropertyValue("shippingApartment");
             }
         }
         public string Country
