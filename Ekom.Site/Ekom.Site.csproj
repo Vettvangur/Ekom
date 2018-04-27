@@ -299,6 +299,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Plugins\EkomManager\css\site.css" />
+    <Content Include="App_Plugins\EkomManager\site.js" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.html" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.js" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\edit.html" />
@@ -391,6 +393,7 @@
     <Content Include="App_Plugins\LeBlender\package.manifest" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\LeBlender.cshtml" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
+    <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
     <None Include="packages.config" />
     <Content Include="Views\Partials\Structure\_Header.cshtml" />
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
@@ -408,6 +411,7 @@
     <Content Include="Views\Loginpage.cshtml" />
     <Content Include="Views\Profile.cshtml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
+    <Content Include="Views\EkomManager\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -445,6 +449,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="App_Plugins\EkomManager\views\" />
     <Folder Include="Views\MacroPartials\" />
   </ItemGroup>
   <ItemGroup>
