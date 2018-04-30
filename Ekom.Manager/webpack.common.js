@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
@@ -82,7 +82,10 @@ module.exports = isProd => {
 
       // CopyWebpackPlugin copies all the files from set folder to another. The
       // from path is relative to the entry point and to is relative to the outputb folder.
-      new CopyWebpackPlugin([{ from: 'src/assets', to: 'assets' }]),
+      new CopyWebpackPlugin([
+          { from: 'src/assets', to: 'assets' },
+          { from: 'src/views',  to: '../../Views/EkomManager' }
+      ]),
     ],
     optimization: {
       minimizer: [new OptimizeCSSAssetsPlugin({})],

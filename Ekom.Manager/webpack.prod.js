@@ -1,4 +1,4 @@
-const webpack = require('webpack');
+﻿const webpack = require('webpack');
 const merge = require('webpack-merge');
 const path = require('path');
 
@@ -9,7 +9,7 @@ module.exports = merge(common(true), {
   // This is the output webpack. [name] is the key from the entry object.
   output: {
     filename: 'js/[name].min.js',
-    path: path.join(__dirname, '../dist'),
+    path: path.join(__dirname, '../Ekom.Site/App_Plugins/EkomManager'),
   },
 
   plugins: [
