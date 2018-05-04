@@ -29,7 +29,7 @@ namespace Ekom.Interfaces
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        IEnumerable<ICategory> Categories();
+        IEnumerable<ICategory> Categories { get; }
 
         /// <summary>
         /// All ID's of categories product belongs to, includes parent category.
@@ -44,6 +44,11 @@ namespace Ekom.Interfaces
         /// Product images
         /// </summary>
         IEnumerable<Image> Images { get; }
+        /// <summary>
+        /// A product can have multiple variant groups, 
+        /// therefore we allow to configure a default/primary variant group.
+        /// If none is configured, we return the first possible item.
+        /// </summary>
         IVariantGroup PrimaryVariantGroup { get; }
         /// <summary>
         /// Product Stock Keeping Unit.
@@ -67,7 +72,7 @@ namespace Ekom.Interfaces
         /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
         /// </summary>
         /// <returns></returns>
-        List<ICategory> CategoryAncestors();
+        IEnumerable<ICategory> CategoryAncestors { get; }
         /// <summary>
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>

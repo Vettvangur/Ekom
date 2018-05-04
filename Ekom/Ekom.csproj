@@ -275,6 +275,7 @@
     <Compile Include="Factories\PaymentProviderFactory.cs" />
     <Compile Include="Factories\ShippingProviderFactory.cs" />
     <Compile Include="Factories\ProductFactory.cs" />
+    <Compile Include="Factories\ZoneFactory.cs" />
     <Compile Include="Factories\VariantFactory.cs" />
     <Compile Include="Factories\StoreFactory.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
