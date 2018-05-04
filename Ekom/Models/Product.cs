@@ -81,9 +81,6 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
