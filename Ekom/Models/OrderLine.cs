@@ -102,6 +102,5 @@ namespace Ekom.Models
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
-
     }
 }

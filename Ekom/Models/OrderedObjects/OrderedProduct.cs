@@ -18,8 +18,7 @@ namespace Ekom.Models.OrderedObjects
 {
     public class OrderedProduct
     {
-        private string productJson;
-        private StoreInfo storeInfo;
+        private string _productJson;
 
         [ScriptIgnore]
         [JsonIgnore]
@@ -67,7 +66,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Properties.GetPropertyValue("title", storeInfo.Alias);
+                return Properties.GetPropertyValue("title", StoreInfo.Alias);
             }
         }
         [ScriptIgnore]
@@ -106,15 +105,24 @@ namespace Ekom.Models.OrderedObjects
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
-        public StoreInfo StoreInfo
+        public StoreInfo StoreInfo { get; }
+
+        /// <summary>
+        /// Umbraco media uniqueid's
+        /// </summary>
+        public Guid[] ImageIds { get; set; }
+
+        /// <summary>
+        /// Uses <see cref="UmbracoHelper"/> to attempt to get Urls for all <see cref="ImageIds"/>
+        /// </summary>
+        public IEnumerable<string> ImageUrls
         {
             get
             {
-                return storeInfo;
+                var umbHelper = Configuration.container.GetInstance<UmbracoHelper>();
+                return ImageIds.Select(id => umbHelper.TypedMedia(id)?.Url);
             }
         }
-
-        public Guid[] ImageIds { get; set; }
 
         public IReadOnlyDictionary<string, string> Properties;
 
@@ -125,16 +133,14 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
-          
             product = product ?? throw new ArgumentNullException(nameof(product));
-            this.storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+            StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
             ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
 
             Properties = new ReadOnlyDictionary<string, string>(
                 product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
             Price = product.Price.Clone() as IPrice;
-
 
             if (variant != null)
             {
@@ -151,7 +157,6 @@ namespace Ekom.Models.OrderedObjects
             {
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
-
         }
 
         /// <summary>
@@ -159,8 +164,8 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(string productJson, StoreInfo storeInfo)
         {
-            this.productJson = productJson;
-            this.storeInfo = storeInfo;
+            _productJson = productJson;
+            StoreInfo = storeInfo;
 
             Log.Debug("Created OrderedProduct from json");
 

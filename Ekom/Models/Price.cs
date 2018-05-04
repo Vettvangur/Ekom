@@ -143,25 +143,7 @@ namespace Ekom.Models
         /// Price before discount with VAT left as-is
         /// </summary>
         public ICalculatedPrice BeforeDiscount
-        {
-            get
-            {
-                // http://csharpindepth.com/Articles/General/Singleton.aspx
-                // Third version - attempted thread-safety using double-check locking
-                if (_beforeDiscount == null)
-                {
-                    lock (this)
-                    {
-                        if (_beforeDiscount == null)
-                        {
-                            _beforeDiscount = CreateSimplePrice(OriginalValue * Quantity);
-                        }
-                    }
-                }
-
-                return _beforeDiscount;
-            }
-        }
+            => CreateSimplePrice(OriginalValue * Quantity);
 
         private ICalculatedPrice _afterDiscount;
         /// <summary>
@@ -342,26 +324,13 @@ namespace Ekom.Models
         /// VAT included or to be included in price with discount
         /// </summary>
         public ICalculatedPrice Vat
-        {
-            get
-            {
-                // http://csharpindepth.com/Articles/General/Singleton.aspx
-                // Third version - attempted thread-safety using double-check locking
-                if (_vat == null)
-                {
-                    lock (this)
-                    {
-                        if (_vat == null)
-                        {
-                            var value = WithVat.Value - WithoutVat.Value;
-                            _vat = CreateSimplePrice(value);
-                        }
-                    }
-                }
+            => CreateSimplePrice(WithVat.Value - WithoutVat.Value);
 
-                return _vat;
-            }
-        }
+        /// <summary>
+        /// Total monetary value of discount in price
+        /// </summary>
+        public ICalculatedPrice DiscountAmount
+            => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
     }
 
     /// <summary>
@@ -392,8 +361,8 @@ namespace Ekom.Models
         /// <summary>
         /// Value with vat if applicable
         /// </summary>
-        public decimal Value { get; internal set; }
+        public decimal Value { get; }
 
-        public string CurrencyString { get; internal set; }
+        public string CurrencyString { get; }
     }
 }

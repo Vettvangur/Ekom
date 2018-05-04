@@ -1,0 +1,26 @@
+﻿@import '~variables';
+@import '~mixins';
+
+body {
+  background-color: $background-color;
+  font-family: $font;
+  font-size: em(20);
+}
+
+.pageContainer {
+  display: flex;
+  height: 100%;
+}
+
+main {
+    padding: 40px;
+    margin-left: 100px;
+    width: 100%;
+}
+
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}

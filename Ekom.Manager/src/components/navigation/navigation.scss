@@ -1,0 +1,35 @@
+﻿@import '~variables';
+@import '~mixins';
+
+.navigation {
+    background-color: #fff;
+    width: 100px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 2px 5px 10px 0 rgba(69, 73, 91, 0.05);
+    z-index: 10;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.brand {
+    background-color: $primary-color;
+    color: #fff;
+    display:block;
+    height:100px;
+    width:100%;
+    text-align:center;
+    line-height:100px;
+    font-weight: 700;
+    font-size: em(36);
+}
+
+.link {
+    display:block;
+    font-size: em(14);
+    padding:10px 0;
+}

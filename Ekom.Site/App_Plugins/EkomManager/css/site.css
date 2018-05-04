@@ -1,0 +1,93 @@
+ {
+  /* stylelint-disable selector-max-type */
+  /*@import 'components/btn';*/ }
+  * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-kerning: auto; }
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit; }
+  a {
+    text-decoration: none; }
+  html {
+    font-family: sans-serif;
+    text-size-adjust: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    overflow-y: scroll; }
+  body {
+    position: relative;
+    margin: 0;
+    overflow-x: hidden;
+    text-decoration-skip: ink; }
+  html,
+  body {
+    min-height: 100vh; }
+  img {
+    display: block;
+    height: auto;
+    max-width: 100%; }
+  input::-webkit-input-placeholder,
+  textarea::-webkit-input-placeholder,
+  select::-webkit-input-placeholder {
+    color: inherit; }
+  input::-moz-placeholder,
+  textarea::-moz-placeholder,
+  select::-moz-placeholder {
+    opacity: 1;
+    color: inherit; }
+  input:-ms-input-placeholder,
+  textarea:-ms-input-placeholder,
+  select:-ms-input-placeholder {
+    color: inherit; }
+  body {
+    background-color: #f4f5fa;
+    font-family: "Montserrat", "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
+    font-size: 1.25em; }
+  .pageContainer {
+    display: flex;
+    height: 100%; }
+  main {
+    padding: 40px;
+    margin-left: 100px;
+    width: 100%; }
+  ol,
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none; }
+
+.navigation__navigation {
+  background-color: #fff;
+  width: 100px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  box-shadow: 2px 5px 10px 0 rgba(69, 73, 91, 0.05);
+  z-index: 10;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0; }
+
+.navigation__brand {
+  background-color: #3a45e1;
+  color: #fff;
+  display: block;
+  height: 100px;
+  width: 100%;
+  text-align: center;
+  line-height: 100px;
+  font-weight: 700;
+  font-size: 2.25em; }
+
+.navigation__link {
+  display: block;
+  font-size: 0.875em;
+  padding: 10px 0; }
+

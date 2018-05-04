@@ -248,6 +248,7 @@
     <Compile Include="API\Stock.cs" />
     <Compile Include="API\Store.cs" />
     <Compile Include="App_Start\EkomStartup.cs" />
+    <Compile Include="App_Start\IAppEventHandler.cs" />
     <Compile Include="App_Start\RegisterHttpModule.cs" />
     <Compile Include="App_Start\TinyIoCActivator.cs" />
     <Compile Include="App_Start\TinyIoCConfig.cs" />
@@ -257,6 +258,7 @@
     <Compile Include="Cache\DiscountCache.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\CatalogController.cs" />
+    <Compile Include="Controllers\EkomController.cs" />
     <Compile Include="Controllers\OrderController.Discounts.cs" />
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Exceptions\CouponDuplicateException.cs" />

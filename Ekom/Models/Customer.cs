@@ -16,6 +16,22 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("customerName");
             }
         }
+        public string FirstName
+        {
+
+            get
+            {
+                return Properties.GetPropertyValue("customerFirstName");
+            }
+        }
+        public string LastName
+        {
+
+            get
+            {
+                return Properties.GetPropertyValue("customerLastName");
+            }
+        }
         public string Email {
             get
             {
@@ -32,6 +48,13 @@ namespace Ekom.Models
             get
             {
                 return Properties.GetPropertyValue("customerCity");
+            }
+        }
+        public string Apartment
+        {
+            get
+            {
+                return Properties.GetPropertyValue("customerApartment");
             }
         }
         public string Country {

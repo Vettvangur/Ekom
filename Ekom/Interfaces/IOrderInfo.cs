@@ -71,6 +71,10 @@ namespace Ekom.Interfaces
         /// This counts up all vat whether it's included in item prices or not.
         /// </summary>
         ICalculatedPrice Vat { get; }
+        /// <summary>
+        /// Total monetary value of discount in order
+        /// </summary>
+        ICalculatedPrice DiscountAmount { get; }
 
         /// <summary>
         /// A collection of hangfire job ids linked to this order,
