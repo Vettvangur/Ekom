@@ -301,10 +301,8 @@ namespace Ekom.Models
 
                 foreach (var catId in categoryIds)
                 {
-                    var intCatId = Convert.ToInt32(catId);
-
                     var categoryItem
-                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
+                        = API.Catalog.Instance.GetCategory(Store.Alias, catId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
