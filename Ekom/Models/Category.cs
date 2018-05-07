@@ -17,6 +17,10 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
+    /// <summary>
+    /// Categories are groupings of products, categories can also be nested, f.x.
+    /// Women->Winter->Shirts
+    /// </summary>
     public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
         private IPerStoreCache<ICategory> _categoryCache
@@ -45,9 +49,18 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("slug", base.Store.Alias);
             }
         }
-        public int ParentCategoryId { get; set; }
+        /// <summary>
+        /// Parent umbraco node
+        /// </summary>
+        public int ParentId { get; set; }
 
+        /// <summary>
+        /// All category Urls, computed from stores
+        /// </summary>
         public IEnumerable<string> Urls { get; set; }
+        /// <summary>
+        /// Our eldest ancestor category
+        /// </summary>
         public ICategory RootCategory
         {
             get
@@ -55,6 +68,9 @@ namespace Ekom.Models
                 return Ancestors().FirstOrDefault();
             }
         }
+        /// <summary>
+        /// Category Url
+        /// </summary>
         public string Url
         {
             get
@@ -64,37 +80,46 @@ namespace Ekom.Models
 
                 //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                var path = HttpContext.Current.Request.Url.AbsolutePath;
+                var req = Configuration.container.GetInstance<HttpRequestBase>();
+                var path = req.Url.AbsolutePath;
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
             }
         }
+        /// <summary>
+        /// All direct child categories
+        /// </summary>
         public IEnumerable<ICategory> SubCategories
         {
             get
             {
                 return _categoryCache.Cache[Store.Alias]
-                                    .Where(x => x.Value.ParentCategoryId == Id)
+                                    .Where(x => x.Value.ParentId == Id)
                                     .Select(x => x.Value)
                                     .OrderBy(x => x.SortOrder);
             }
         }
 
+        /// <summary>
+        /// All direct child products of category. (No descendants)
+        /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
-        [XmlIgnore]
         public IEnumerable<IProduct> Products
         {
             get
             {
                 return _productCache.Cache[Store.Alias]
-                                   .Where(x => x.Value.Categories().Any(z => z.Id == Id))
+                                   .Where(x => x.Value.Categories.Any(z => z.Id == Id))
                                    .Select(x => x.Value)
                                    .OrderBy(x => x.SortOrder);
             }
         }
 
+        /// <summary>
+        /// All descendant categories, includes grandchild categories
+        /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
@@ -110,6 +135,9 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// All descendant products of category, this includes child products of sub-categories
+        /// </summary>
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
@@ -126,17 +154,18 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// All parent categories, grandparent categories and so on.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerable<ICategory> Ancestors()
         {
             var list = new List<ICategory>();
 
             foreach (var id in Path.Split(','))
             {
-                int categoryId;
-
-                if (int.TryParse(id, out categoryId))
+                if (int.TryParse(id, out int categoryId))
                 {
-
                     var category = _categoryCache.Cache[Store.Alias]
                         .FirstOrDefault(x => x.Value.Id == categoryId);
 
@@ -144,39 +173,46 @@ namespace Ekom.Models
                     {
                         list.Add(category.Value);
                     }
-
                 }
             }
 
             return list;
-
         }
 
         /// <summary>
-        /// Used by Ekom extensions
+        /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
         /// </summary>
         /// <param name="store"></param>
         public Category(IStore store) : base(store) { }
+        /// <summary>
+        /// Construct Category from Examine item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store"></param>
         public Category(SearchResult item, IStore store) : base(item, store)
         {
             var pathField = item.Fields["path"];
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            ParentCategoryId = Convert.ToInt32(item.Fields["parentID"]);
+            ParentId = Convert.ToInt32(item.Fields["parentID"]);
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
+        /// <summary>
+        /// Construct Category from umbraco publish event
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="store"></param>
         public Category(IContent node, IStore store) : base(node, store)
         {
             var pathField = node.Path;
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
 
-            ParentCategoryId = node.ParentId;
+            ParentId = node.ParentId;
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
-
 
         private static readonly ILog Log =
             LogManager.GetLogger(

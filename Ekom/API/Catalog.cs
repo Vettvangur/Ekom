@@ -201,9 +201,41 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Get category by string id using store from ekmRequest
+        /// </summary>
+        public ICategory GetCategory(string Id)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                return GetCategory(store.Alias, Id);
+
+            }
+
+            return null;
+        }
+
         public ICategory GetCategory(string storeAlias, int Id)
         {
             return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
+        }
+
+        public ICategory GetCategory(string storeAlias, string Id)
+        {
+
+            if (GuidUdi.TryParse(Id, out GuidUdi udi))
+            {
+                return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == udi.Guid).Value;
+            }
+            if (int.TryParse(Id, out int id))
+            {
+                return GetCategory(storeAlias, id);
+            }
+
+            return null;
+
         }
 
         public IEnumerable<ICategory> GetRootCategories()

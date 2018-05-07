@@ -98,6 +98,11 @@ namespace Ekom.Models
             }
         }
 
+        /// <summary>
+        /// A product can have multiple variant groups, 
+        /// therefore we allow to configure a default/primary variant group.
+        /// If none is configured, we return the first possible item.
+        /// </summary>
         public virtual IVariantGroup PrimaryVariantGroup
         {
             get
@@ -113,17 +118,10 @@ namespace Ekom.Models
                         var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
 
                         return variantGroup.Value;
-
                     }
                 }
 
-                if (VariantGroups.Any())
-                {
-                    return VariantGroups.FirstOrDefault();
-                }
-
-                return null;
-
+                return VariantGroups.FirstOrDefault();
             }
         }
 
@@ -132,71 +130,15 @@ namespace Ekom.Models
         /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
         /// </summary>
         /// <returns></returns>
-        public virtual List<ICategory> CategoryAncestors()
-        {
-            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
-
-            var list = new List<ICategory>();
-
-            foreach (var item in examineItemsFromPath)
-            {
-                var alias = item.Fields.GetPropertyValue("nodeTypeAlias");
-
-                if (alias == "ekmCategory")
-                {
-                    var c = API.Catalog.Instance.GetCategory(Store.Alias, item.Id);
-
-                    if (c != null)
-                    {
-                        list.Add(c);
-                    }
-                }
-            }
-
-            return list;
-        }
+        public virtual IEnumerable<ICategory> CategoryAncestors => categoryAncestors.AsReadOnly();
+        internal List<ICategory> categoryAncestors = new List<ICategory>();
 
         /// <summary>
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public virtual IEnumerable<ICategory> Categories()
-        {
-            int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
-
-            var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                Properties.GetPropertyValue("categories") : "";
-
-            var categories = new List<ICategory>();
-
-
-            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
-
-            if (primaryCategory != null)
-            {
-                categories.Add(primaryCategory);
-            }
-
-            if (!string.IsNullOrEmpty(categoryField))
-            {
-                var categoryIds = categoryField.Split(',');
-
-                foreach (var catId in categoryIds)
-                {
-                    var intCatId = Convert.ToInt32(catId);
-
-                    var categoryItem
-                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
-
-                    if (categoryItem != null && !categories.Contains(categoryItem))
-                    {
-                        categories.Add(categoryItem);
-                    }
-                }
-            }
-
-            return categories;
-        }
+        public virtual IEnumerable<ICategory> Categories => categories.AsReadOnly();
+        internal List<ICategory> categories = new List<ICategory>();
 
         /// <summary>
         /// All ID's of categories product belongs to, includes parent category.
@@ -209,7 +151,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Categories().Select(x => x.Key);
+                return Categories.Select(x => x.Key);
             }
         }
 
@@ -305,8 +247,11 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Product(SearchResult item, IStore store) : base(item, store)
         {
+            PopulateCategoryAncestors();
+            PopulateCategories();
+
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
-            Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
+            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
@@ -321,12 +266,66 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Product(IContent node, IStore store) : base(node, store)
         {
+            PopulateCategoryAncestors();
+            PopulateCategories();
+
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
-            Urls = UrlService.BuildProductUrls(Slug, Categories(), store);
+            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
                 throw new Exception("No url's or no title present in product");
+            }
+        }
+
+        private void PopulateCategories()
+        {
+            int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
+
+            var categoryField = Properties.Any(x => x.Key == "categories") ?
+                                Properties.GetPropertyValue("categories") : "";
+
+            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
+
+            if (primaryCategory != null)
+            {
+                categories.Add(primaryCategory);
+            }
+
+            if (!string.IsNullOrEmpty(categoryField))
+            {
+                var categoryIds = categoryField.Split(',');
+
+                foreach (var catId in categoryIds)
+                {
+                    var categoryItem
+                        = API.Catalog.Instance.GetCategory(Store.Alias, catId);
+
+                    if (categoryItem != null && !categories.Contains(categoryItem))
+                    {
+                        categories.Add(categoryItem);
+                    }
+                }
+            }
+        }
+
+        private void PopulateCategoryAncestors()
+        {
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(Path);
+
+            foreach (var item in examineItemsFromPath)
+            {
+                var alias = item.Fields.GetPropertyValue("nodeTypeAlias");
+
+                if (alias == "ekmCategory")
+                {
+                    var c = API.Catalog.Instance.GetCategory(Store.Alias, item.Id);
+
+                    if (c != null)
+                    {
+                        categoryAncestors.Add(c);
+                    }
+                }
             }
         }
 

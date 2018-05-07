@@ -181,6 +181,7 @@ namespace Ekom.App_Start
         internal static List<IContainerRegistration> containerRegistrations = new List<IContainerRegistration>
         {
             new ContainerRegistration<IObjectFactory<IStore>>(Lifetime.Transient, c => c.GetInstance<StoreFactory>()),
+            new ContainerRegistration<IObjectFactory<IZone>>(Lifetime.Transient, c => c.GetInstance<ZoneFactory>()),
             new ContainerRegistration<IPerStoreFactory<ICategory>>(Lifetime.Transient, c => c.GetInstance<CategoryFactory>()),
             new ContainerRegistration<IPerStoreFactory<IDiscount>>(Lifetime.Transient, c => c.GetInstance<DiscountFactory>()),
             new ContainerRegistration<IPerStoreFactory<IPaymentProvider>>(Lifetime.Transient, c => c.GetInstance<PaymentProviderFactory>()),

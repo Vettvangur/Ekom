@@ -41,7 +41,7 @@ namespace Ekom.Cache
             catch // Restart Application if Examine just initialized
             {
                 // I have no idea if this does any good
-                _log.Info("Unloading Application Domain");
+                _log.Warn("Unloading Application Domain");
                 Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
             }
 
