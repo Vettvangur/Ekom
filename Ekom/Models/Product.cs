@@ -130,6 +130,9 @@ namespace Ekom.Models
         /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
         /// </summary>
         /// <returns></returns>
+        [ScriptIgnore]
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<ICategory> CategoryAncestors => categoryAncestors.AsReadOnly();
         internal List<ICategory> categoryAncestors = new List<ICategory>();
 
@@ -137,6 +140,9 @@ namespace Ekom.Models
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
+        [ScriptIgnore]
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<ICategory> Categories => categories.AsReadOnly();
         internal List<ICategory> categories = new List<ICategory>();
 
