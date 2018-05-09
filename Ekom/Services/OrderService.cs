@@ -454,17 +454,12 @@ namespace Ekom.Services
         private OrderData SaveOrderData(Guid uniqueId)
         {
             _log.Debug("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
-            string orderNumber = string.Empty;
-
-            GenerateOrderNumber(out int referenceId, out orderNumber);
 
             var orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
                 StoreAlias = _store.Alias,
-                ReferenceId = referenceId,
-                OrderNumber = orderNumber,
                 OrderStatus = OrderStatus.Incomplete
             };
 
@@ -477,6 +472,8 @@ namespace Ekom.Services
             }
 
             _orderRepository.InsertOrder(orderData);
+            orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
+            _orderRepository.UpdateOrder(orderData);
 
             return orderData;
         }
@@ -628,13 +625,6 @@ namespace Ekom.Services
 
             _httpCtx.Response.Cookies.Set(cookie);
 
-        }
-
-        private void GenerateOrderNumber(out int referenceId, out string orderNumber)
-        {
-            var lastOrderNumber = _orderRepository.GetHighestOrderNumber(_store.Alias);
-            referenceId = lastOrderNumber + 1;
-            orderNumber = GenerateOrderNumberTemplate(referenceId);
         }
 
         private string GenerateOrderNumberTemplate(int referenceId)

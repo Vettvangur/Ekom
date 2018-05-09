@@ -122,7 +122,7 @@ namespace Ekom.Models.OrderedObjects
         public OrderedVariant(IVariant variant, StoreInfo storeInfo)
         {
             variant = variant ?? throw new ArgumentNullException(nameof(variant));
-            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+            this.storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
             Price = variant.Price.Clone() as IPrice;
 

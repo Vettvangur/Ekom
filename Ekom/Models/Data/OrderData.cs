@@ -1,5 +1,4 @@
 ﻿using Ekom.Helpers;
-using Ekom.Models.Discounts;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
@@ -11,15 +10,16 @@ namespace Ekom.Models.Data
     /// SQL Representation of <see cref="OrderInfo"/>
     /// </summary>
     [TableName("EkomOrders")]
-    [PrimaryKey("UniqueId", autoIncrement = false)]
+    [PrimaryKey("ReferenceId", autoIncrement = true)]
     public class OrderData
     {
         /// <summary>
         /// 
         /// </summary>
-        [PrimaryKeyColumn(AutoIncrement = false)]
+        [Index(IndexTypes.Clustered)]
         public Guid UniqueId { get; set; }
 
+        [PrimaryKeyColumn(AutoIncrement = true, Clustered = false)]
         public int ReferenceId { get; set; }
 
         /// <summary>
