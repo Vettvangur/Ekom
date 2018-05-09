@@ -70,8 +70,6 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(string storeAlias)
         {
-            _log.Debug("Get Order: Store: " + storeAlias);
-
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             return GetOrder(store);
