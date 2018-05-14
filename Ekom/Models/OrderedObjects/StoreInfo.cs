@@ -34,7 +34,7 @@ namespace Ekom.Models.OrderedObjects
             if (store != null)
             {
                 Key = store.Key;
-                Currency = "";
+                Currency = "ISK"; // FIX - need to set up localization. store currency
                 Culture = store.Culture.Name;
                 Alias = store.Alias;
                 VatIncludedInPrice = store.VatIncludedInPrice;
