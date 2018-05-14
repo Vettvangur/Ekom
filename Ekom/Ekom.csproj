@@ -256,6 +256,7 @@
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Cache\DiscountCache.cs" />
+    <Compile Include="Controllers\ManagerApiController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\CatalogController.cs" />
     <Compile Include="Controllers\EkomController.cs" />
@@ -282,6 +283,7 @@
     <Compile Include="HttpModule.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
+    <Compile Include="Interfaces\IManagerRepository .cs" />
     <Compile Include="Interfaces\IPerStoreFactory.cs" />
     <Compile Include="IoC\ContainerRegistration.cs" />
     <Compile Include="IoC\IActivatorContainerRegistration.cs" />
@@ -325,6 +327,7 @@
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
     <Compile Include="Interfaces\IOrderRepository.cs" />
+    <Compile Include="Repository\ManagerRepository.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />

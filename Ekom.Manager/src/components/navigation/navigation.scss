@@ -16,20 +16,25 @@
     bottom: 0;
 }
 
+.list {
+    width: 100%;
+    text-align: center;
+}
+
 .brand {
     background-color: $primary-color;
     color: #fff;
-    display:block;
-    height:100px;
-    width:100%;
-    text-align:center;
-    line-height:100px;
+    display: block;
+    height: 100px;
+    width: 100%;
+    text-align: center;
+    line-height: 100px;
     font-weight: 700;
     font-size: em(36);
 }
 
 .link {
-    display:block;
-    font-size: em(14);
-    padding:10px 0;
+    display: block;
+    font-size: em(24);
+    padding: 30px 0;
 }

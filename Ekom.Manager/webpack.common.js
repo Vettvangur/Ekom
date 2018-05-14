@@ -13,6 +13,8 @@ module.exports = isProd => {
 
     module: {
       rules: [
+
+        //{ test: /\.(png|woff|woff2|eot|ttf|svg)$/, loader: 'url-loader?limit=100000' },
         {
           // This transpiles the js and jsx files.
           test: /\.jsx?$/,
@@ -39,7 +41,6 @@ module.exports = isProd => {
                 importLoaders: 1,
                 // To enable CSS Modules set modules to true
                 modules: true,
-
                 // localIdentName set the formula for CSS Modules.
                 // In production classes are set to random hash to save bytes.
                 localIdentName: isProd ? '[hash:base64:6]' : '[name]__[local]',
@@ -50,6 +51,17 @@ module.exports = isProd => {
             'sass-loader',
           ],
         },
+        {
+          test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+          use: [{
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              publicPath: '../assets/fonts',
+              outputPath: '/assets/fonts/'
+            }
+          }]
+        }
       ],
     },
     resolve: {
@@ -82,10 +94,10 @@ module.exports = isProd => {
 
       // CopyWebpackPlugin copies all the files from set folder to another. The
       // from path is relative to the entry point and to is relative to the outputb folder.
-      new CopyWebpackPlugin([
-          { from: 'src/assets', to: 'assets' },
-          { from: 'src/views',  to: '../../Views/EkomManager' }
-      ]),
+      //new CopyWebpackPlugin([
+      //    { from: 'src/assets', to: 'assets' },
+      //    { from: 'src/views',  to: '../../Views/EkomManager' }
+      //]),
     ],
     optimization: {
       minimizer: [new OptimizeCSSAssetsPlugin({})],

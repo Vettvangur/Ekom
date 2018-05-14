@@ -5,6 +5,7 @@ body {
   background-color: $background-color;
   font-family: $font;
   font-size: em(20);
+  color: $black;
 }
 
 .pageContainer {
@@ -16,6 +17,15 @@ main {
     padding: 40px;
     margin-left: 100px;
     width: 100%;
+}
+
+a {
+    color: $black;
+    transition: color .2s ease-in-out;
+
+    &:hover {
+        color: $primary-color;
+    }
 }
 
 ol,
