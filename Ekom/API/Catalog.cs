@@ -171,6 +171,31 @@ namespace Ekom.API
         }
 
         /// <summary>
+        /// Get multiple products by key from store in ekmRequest
+        /// </summary>
+        public IEnumerable<IProduct> GetProductsByKeys(IEnumerable<Guid> productKeys)
+        {
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                var products = GetProductsByKeys(productKeys, store.Alias);
+
+                return products;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get multiple products by key from specific store
+        /// </summary>
+        public IEnumerable<IProduct> GetProductsByKeys(IEnumerable<Guid> productKeys, string storeAlias)
+        {
+            return _productCache.Cache[storeAlias].Where(x => productKeys.Contains(x.Value.Key)).Select(x => x.Value).OrderBy(x => x.SortOrder);
+        }
+
+        /// <summary>
         /// Get category from ekmRequest
         /// </summary>
         /// <returns></returns>
