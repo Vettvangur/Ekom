@@ -12,7 +12,7 @@ namespace Ekom.Controllers
     /// <summary>
     /// Private api, used by Ekom Manager
     [PluginController("Ekom")]
-    [UmbracoAuthorize]
+    [Umbraco.Web.Mvc.UmbracoAuthorize]
     public class ManagerApiController : UmbracoApiController
     {
         IManagerRepository _managerRepository;
@@ -23,6 +23,7 @@ namespace Ekom.Controllers
         {
             _managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
         }
+
         /// <summary>
         /// List of orders.
         /// </summary>

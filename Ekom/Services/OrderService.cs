@@ -410,10 +410,18 @@ namespace Ekom.Services
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
                 orderData.CustomerName = _ekmRequest.User.Name;
+            } else
+            {
+                orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+                orderData.CustomerName = orderInfo.CustomerInformation.Customer.FirstName + " " + orderInfo.CustomerInformation.Customer.LastName;
             }
+
+            orderData.CustomerCountry = orderInfo.CustomerInformation.Customer.Country;
 
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
+            orderData.TotalAmount = orderInfo.ChargedAmount.Value;
+            
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInSession(orderInfo);
