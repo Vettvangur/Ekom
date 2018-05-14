@@ -16,12 +16,14 @@ namespace Ekom.Controllers
     public class ManagerApiController : UmbracoApiController
     {
         IManagerRepository _managerRepository;
+        IOrderRepository _orderRepository;
         /// <summary>
         /// ctor
         /// </summary>
         public ManagerApiController()
         {
             _managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
+            _orderRepository = Ekom.Configuration.container.GetInstance<IOrderRepository>();
         }
 
         /// <summary>
@@ -30,7 +32,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public IEnumerable<OrderData> GetOrders()
         {
-            return _managerRepository.GetOrders();
+            return _orderRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
         }
     }
 }

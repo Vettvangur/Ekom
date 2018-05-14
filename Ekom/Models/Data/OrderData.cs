@@ -93,6 +93,13 @@ namespace Ekom.Models.Data
         /// <summary>
         /// 
         /// </summary>
+        [Length(3)]
+        [NullSetting(NullSetting = NullSettings.Null)]
+        public string Currency { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         [Length(50)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string StoreAlias { get; set; }

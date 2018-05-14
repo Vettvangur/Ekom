@@ -105,7 +105,7 @@ namespace Ekom.Services
                 var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
                 if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                && orderInfo?.OrderStatus != OrderStatus.Confirmed)
+                && orderInfo?.OrderStatus != OrderStatus.Dispatched)
                 {
                     return orderInfo;
                 }
@@ -421,7 +421,7 @@ namespace Ekom.Services
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-            
+            orderData.Currency = orderInfo.StoreInfo.Currency; //FIX - Need to save currency in the orderInfo. Store can have multiple currencies.
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInSession(orderInfo);
@@ -588,7 +588,7 @@ namespace Ekom.Services
         {
             var list = new List<OrderInfo>();
 
-            var orders = _orderRepository.GetCompleteOrderByCustomerId(customerId);
+            var orders = _orderRepository.GetCompletedOrdersByCustomerId(customerId);
 
             foreach (var o in orders)
             {

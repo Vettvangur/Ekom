@@ -38,7 +38,7 @@ namespace Ekom.Repository
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("ORDER BY UniqueId");
+                return db.Query<OrderData>("ORDER BY ReferenceId");
             }
         }
 
@@ -62,7 +62,8 @@ namespace Ekom.Repository
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
+                return null;
+                //return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
             }
         }
     }
