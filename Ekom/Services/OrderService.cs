@@ -70,8 +70,6 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(string storeAlias)
         {
-            _log.Debug("Get Order: Store: " + storeAlias);
-
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             return GetOrder(store);
@@ -107,7 +105,7 @@ namespace Ekom.Services
                 var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
                 if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                && orderInfo?.OrderStatus != OrderStatus.Confirmed)
+                && orderInfo?.OrderStatus != OrderStatus.Dispatched)
                 {
                     return orderInfo;
                 }
@@ -412,10 +410,18 @@ namespace Ekom.Services
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
                 orderData.CustomerName = _ekmRequest.User.Name;
+            } else
+            {
+                orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+                orderData.CustomerName = orderInfo.CustomerInformation.Customer.FirstName + " " + orderInfo.CustomerInformation.Customer.LastName;
             }
+
+            orderData.CustomerCountry = orderInfo.CustomerInformation.Customer.Country;
 
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
+            orderData.TotalAmount = orderInfo.ChargedAmount.Value;
+            orderData.Currency = orderInfo.StoreInfo.Currency; //FIX - Need to save currency in the orderInfo. Store can have multiple currencies.
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInSession(orderInfo);
@@ -456,17 +462,12 @@ namespace Ekom.Services
         private OrderData SaveOrderData(Guid uniqueId)
         {
             _log.Debug("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
-            string orderNumber = string.Empty;
-
-            GenerateOrderNumber(out int referenceId, out orderNumber);
 
             var orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
                 StoreAlias = _store.Alias,
-                ReferenceId = referenceId,
-                OrderNumber = orderNumber,
                 OrderStatus = OrderStatus.Incomplete
             };
 
@@ -479,6 +480,8 @@ namespace Ekom.Services
             }
 
             _orderRepository.InsertOrder(orderData);
+            orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
+            _orderRepository.UpdateOrder(orderData);
 
             return orderData;
         }
@@ -585,7 +588,7 @@ namespace Ekom.Services
         {
             var list = new List<OrderInfo>();
 
-            var orders = _orderRepository.GetCompleteOrderByCustomerId(customerId);
+            var orders = _orderRepository.GetCompletedOrdersByCustomerId(customerId);
 
             foreach (var o in orders)
             {
@@ -630,13 +633,6 @@ namespace Ekom.Services
 
             _httpCtx.Response.Cookies.Set(cookie);
 
-        }
-
-        private void GenerateOrderNumber(out int referenceId, out string orderNumber)
-        {
-            var lastOrderNumber = _orderRepository.GetHighestOrderNumber(_store.Alias);
-            referenceId = lastOrderNumber + 1;
-            orderNumber = GenerateOrderNumberTemplate(referenceId);
         }
 
         private string GenerateOrderNumberTemplate(int referenceId)

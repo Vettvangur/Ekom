@@ -1,5 +1,4 @@
 ﻿using Ekom.Helpers;
-using Ekom.Models.Discounts;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
@@ -11,15 +10,16 @@ namespace Ekom.Models.Data
     /// SQL Representation of <see cref="OrderInfo"/>
     /// </summary>
     [TableName("EkomOrders")]
-    [PrimaryKey("UniqueId", autoIncrement = false)]
+    [PrimaryKey("ReferenceId", autoIncrement = true)]
     public class OrderData
     {
         /// <summary>
         /// 
         /// </summary>
-        [PrimaryKeyColumn(AutoIncrement = false)]
+        [Index(IndexTypes.Clustered)]
         public Guid UniqueId { get; set; }
 
+        [PrimaryKeyColumn(AutoIncrement = true, Clustered = false)]
         public int ReferenceId { get; set; }
 
         /// <summary>
@@ -63,6 +63,9 @@ namespace Ekom.Models.Data
         [NullSetting(NullSetting = NullSettings.Null)]
         public string CustomerName { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
         public int CustomerId { get; set; }
 
@@ -72,6 +75,27 @@ namespace Ekom.Models.Data
         [Length(200)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string CustomerUsername { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Length(50)]
+        [NullSetting(NullSetting = NullSettings.Null)]
+        public string CustomerCountry { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Length(8)]
+        [NullSetting(NullSetting = NullSettings.Null)]
+        public decimal TotalAmount { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Length(3)]
+        [NullSetting(NullSetting = NullSettings.Null)]
+        public string Currency { get; set; }
 
         /// <summary>
         /// 

@@ -63,6 +63,7 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
             container.Register<IOrderRepository, OrderRepository>();
+            container.Register<IManagerRepository, ManagerRepository>();
 
             container.Register<ILogFactory, LogFactory>();
 

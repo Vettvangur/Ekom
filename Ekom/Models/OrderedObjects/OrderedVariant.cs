@@ -18,7 +18,6 @@ namespace Ekom.Models.OrderedObjects
     public class OrderedVariant
     {
         private JToken variantObject;
-        private StoreInfo storeInfo;
 
         [ScriptIgnore]
         [JsonIgnore]
@@ -66,7 +65,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Properties.GetPropertyValue("title", storeInfo.Alias);
+                return Properties.GetPropertyValue("title", StoreInfo.Alias);
             }
         }
         [ScriptIgnore]
@@ -106,13 +105,7 @@ namespace Ekom.Models.OrderedObjects
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
-        public StoreInfo StoreInfo
-        {
-            get
-            {
-                return storeInfo;
-            }
-        }
+        public StoreInfo StoreInfo { get; }
 
         public IReadOnlyDictionary<string, string> Properties;
 
@@ -122,7 +115,7 @@ namespace Ekom.Models.OrderedObjects
         public OrderedVariant(IVariant variant, StoreInfo storeInfo)
         {
             variant = variant ?? throw new ArgumentNullException(nameof(variant));
-            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+            StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
             Price = variant.Price.Clone() as IPrice;
 
@@ -136,7 +129,7 @@ namespace Ekom.Models.OrderedObjects
         public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
         {
             this.variantObject = variantObject;
-            this.storeInfo = storeInfo;
+            StoreInfo = storeInfo;
             Price = variantObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
 
             Properties = new ReadOnlyDictionary<string, string>(

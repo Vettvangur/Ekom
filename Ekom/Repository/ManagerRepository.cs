@@ -1,5 +1,4 @@
-﻿using Ekom.Helpers;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
 using log4net;
@@ -9,7 +8,7 @@ using Umbraco.Core;
 
 namespace Ekom.Repository
 {
-    class OrderRepository : IOrderRepository
+    class ManagerRepository : IManagerRepository
     {
         ILog _log;
         Configuration _config;
@@ -20,7 +19,7 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public OrderRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
         {
             _config = config;
             _appCtx = appCtx;
@@ -32,6 +31,14 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.FirstOrDefault<OrderData>("WHERE UniqueId = @0", uniqueId);
+            }
+        }
+
+        public IEnumerable<OrderData> GetOrders()
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderData>("ORDER BY ReferenceId");
             }
         }
 
@@ -50,25 +57,13 @@ namespace Ekom.Repository
                 db.Update(orderData);
             }
         }
-        public IEnumerable<OrderData> GetCompletedOrders()
+
+        public IEnumerable<OrderData> GetCompleteOrderByCustomerId(int customerId)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2)", OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
-            }
-        }
-        public IEnumerable<OrderData> GetOrdersByStatus(OrderStatus orderStatus)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderData>("WHERE OrderStatusCol = @0", orderStatus);
-            }
-        }
-        public IEnumerable<OrderData> GetCompletedOrdersByCustomerId(int customerId)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
+                return null;
+                //return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
             }
         }
     }

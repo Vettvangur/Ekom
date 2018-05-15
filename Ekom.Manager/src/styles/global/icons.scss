@@ -1,0 +1,109 @@
+﻿[data-icon]:before {
+    font-family: "ekommanager" !important;
+    content: attr(data-icon);
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+    font-family: "ekommanager" !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-store:before {
+    content: "\61";
+}
+
+.icon-bag:before {
+    content: "\62";
+}
+
+.icon-cart:before {
+    content: "\63";
+}
+
+.icon-receipt:before {
+    content: "\64";
+}
+
+.icon-credit-card:before {
+    content: "\65";
+}
+
+.icon-cash-dollar:before {
+    content: "\66";
+}
+
+.icon-tags:before {
+    content: "\67";
+}
+
+.icon-tag:before {
+    content: "\68";
+}
+
+.icon-screen:before {
+    content: "\69";
+}
+
+.icon-graph:before {
+    content: "\6a";
+}
+
+.icon-truck:before {
+    content: "\6b";
+}
+
+.icon-magnifier:before {
+    content: "\6c";
+}
+
+.icon-menu:before {
+    content: "\6d";
+}
+
+.icon-list:before {
+    content: "\6e";
+}
+
+.icon-chevron-left:before {
+    content: "\6f";
+}
+
+.icon-chevron-right:before {
+    content: "\70";
+}
+
+.icon-home3:before {
+    content: "\71";
+}
+
+.icon-cog:before {
+    content: "\72";
+}
+
+.icon-clipboard-text:before {
+    content: "\73";
+}
+
+.icon-pie-chart:before {
+    content: "\74";
+}
+
+.icon-chart-growth:before {
+    content: "\75";
+}

@@ -1,6 +1,6 @@
 ﻿const merge = require('webpack-merge');
 const path = require('path');
-const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+//const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
 
 const common = require('./webpack.common.js');
 
@@ -15,11 +15,11 @@ module.exports = merge(common(false), {
     path: path.join(__dirname, '../Ekom.Site/App_Plugins/EkomManager'),
   },
 
-  plugins: [
+  //plugins: [
     // This runs BrowserSync.
-    new BrowserSyncPlugin({
-      host: 'ekom.localhost.vettvangur.is',
-      notify: false,
-    }),
-  ],
+    //new BrowserSyncPlugin({
+    //  host: 'ekom.localhost.vettvangur.is',
+    //  notify: false,
+    //}),
+  //],
 });

@@ -1,6 +1,11 @@
+@font-face {
+  font-family: "ekommanager";
+  src: url(../assets/fonts/ekommanager.woff) format("woff");
+  font-weight: normal;
+  font-style: normal; }
+
  {
-  /* stylelint-disable selector-max-type */
-  /*@import 'components/btn';*/ }
+  /* stylelint-disable selector-max-type */ }
   * {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -47,7 +52,8 @@
   body {
     background-color: #f4f5fa;
     font-family: "Montserrat", "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif;
-    font-size: 1.25em; }
+    font-size: 1.25em;
+    color: #232323; }
   .pageContainer {
     display: flex;
     height: 100%; }
@@ -55,11 +61,84 @@
     padding: 40px;
     margin-left: 100px;
     width: 100%; }
+  a {
+    color: #232323;
+    transition: color .2s ease-in-out; }
+    a:hover {
+      color: #3a45e1; }
   ol,
   ul {
     margin: 0;
     padding: 0;
     list-style-type: none; }
+  [data-icon]:before {
+    font-family: "ekommanager" !important;
+    content: attr(data-icon);
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale; }
+  [class^="icon-"]:before,
+  [class*=" icon-"]:before {
+    font-family: "ekommanager" !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale; }
+  .icon-store:before {
+    content: "a"; }
+  .icon-bag:before {
+    content: "b"; }
+  .icon-cart:before {
+    content: "c"; }
+  .icon-receipt:before {
+    content: "d"; }
+  .icon-credit-card:before {
+    content: "e"; }
+  .icon-cash-dollar:before {
+    content: "f"; }
+  .icon-tags:before {
+    content: "g"; }
+  .icon-tag:before {
+    content: "h"; }
+  .icon-screen:before {
+    content: "i"; }
+  .icon-graph:before {
+    content: "j"; }
+  .icon-truck:before {
+    content: "k"; }
+  .icon-magnifier:before {
+    content: "l"; }
+  .icon-menu:before {
+    content: "m"; }
+  .icon-list:before {
+    content: "n"; }
+  .icon-chevron-left:before {
+    content: "o"; }
+  .icon-chevron-right:before {
+    content: "p"; }
+  .icon-home3:before {
+    content: "q"; }
+  .icon-cog:before {
+    content: "r"; }
+  .icon-clipboard-text:before {
+    content: "s"; }
+  .icon-pie-chart:before {
+    content: "t"; }
+  .icon-chart-growth:before {
+    content: "u"; }
+  .table {
+    width: 100%; }
+    .table th {
+      text-align: left; }
 
 .navigation__navigation {
   background-color: #fff;
@@ -75,6 +154,10 @@
   top: 0;
   bottom: 0; }
 
+.navigation__list {
+  width: 100%;
+  text-align: center; }
+
 .navigation__brand {
   background-color: #3a45e1;
   color: #fff;
@@ -88,6 +171,6 @@
 
 .navigation__link {
   display: block;
-  font-size: 0.875em;
-  padding: 10px 0; }
+  font-size: 1.5em;
+  padding: 30px 0; }
 

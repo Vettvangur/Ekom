@@ -26,10 +26,6 @@ namespace Ekom.Helpers
         /// <summary>
         /// 
         /// </summary>
-        Confirmed,
-        /// <summary>
-        /// 
-        /// </summary>
         OfflinePayment,
         /// <summary>
         /// 
@@ -47,12 +43,10 @@ namespace Ekom.Helpers
         /// 
         /// </summary>
         Dispatched,
-        Undeliverable,
         WaitingForPayment,
         WaitingForPaymentProvider,
         Returned,
         Wishlist,
-        Scheduled,
     }
 
     /// <summary>
