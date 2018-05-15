@@ -31,7 +31,6 @@ namespace Ekom.Models
 
         public object Currency { get; set; }
         public string IPAddress => _httpCtx.Request.UserHostAddress;
-        public string DomainPrefix { get; set; }
         public IProduct Product { get; set; }
         public ICategory Category { get; set; }
         public User User { get; set; }

@@ -42,7 +42,6 @@ namespace Ekom.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
                 }
 
-                _log.Error(ex);
                 throw;
             }
         }

@@ -1,7 +1,5 @@
-﻿using Ekom.Interfaces;
-using Ekom.Models;
+﻿using Ekom.Models;
 using Ekom.Services;
-using Ekom.Utilities;
 using log4net;
 using System;
 using System.Reflection;
@@ -46,22 +44,15 @@ namespace Ekom
 
         private void Application_BeginRequest(Object source, EventArgs e)
         {
-            // Gives error when examine is empty. Need better fix
             try
             {
                 HttpApplication application = (HttpApplication)source;
                 HttpContext httpCtx = application.Context;
 
-                var url = httpCtx.Request.Url;
-                var uri = url.AbsoluteUri;
+                var umbCtx = Configuration.container.GetInstance<UmbracoContext>();
 
-                if (uri.Contains(".css") || uri.Contains(".js")) { return; }
-
-                var storeSvc = Configuration.container.GetInstance<StoreService>();
-
-                IStore store = storeSvc.GetStoreByDomain(url.Host + url.AbsolutePath);
-
-                if (store != null)
+                // No umbraco context exists for static file requests
+                if (umbCtx != null)
                 {
                     #region Currency 
 
@@ -73,28 +64,23 @@ namespace Ekom
 
                     #endregion
 
-                    var path = url.AbsolutePath.ToLower().AddTrailing();
-
                     var appCtx = Configuration.container.GetInstance<ApplicationContext>();
+                    var logFac = Configuration.container.GetInstance<ILogFactory>();
 
                     var appCache = appCtx.ApplicationCache;
                     appCache.RequestCache.GetCacheItem("ekmRequest", () =>
-                        new ContentRequest(new HttpContextWrapper(httpCtx), new LogFactory())
+                        new ContentRequest(new HttpContextWrapper(httpCtx), logFac)
                         {
-                            Store = store,
                             Currency = Currency,
-                            DomainPrefix = path,
                             User = new User()
                         }
                     );
                 }
-
             }
             catch (Exception ex)
             {
                 Log.Error("Http module Begin Request failed", ex);
             }
-
         }
 
         private void Application_AuthenticateRequest(Object source, EventArgs e)
@@ -104,7 +90,7 @@ namespace Ekom
                 HttpApplication application = (HttpApplication)source;
                 HttpContext httpCtx = application.Context;
 
-                if (httpCtx?.User?.Identity.IsAuthenticated == true)
+                if (httpCtx.User?.Identity.IsAuthenticated == true)
                 {
                     var appCtx = Configuration.container.GetInstance<ApplicationContext>();
 
