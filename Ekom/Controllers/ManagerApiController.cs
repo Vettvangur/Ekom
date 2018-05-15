@@ -4,16 +4,14 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
-using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
 {
     /// <summary>
     /// Private api, used by Ekom Manager
-    [PluginController("Ekom")]
-    [Umbraco.Web.Mvc.UmbracoAuthorize]
-    public class ManagerApiController : UmbracoApiController
+    [Umbraco.Web.Mvc.PluginController("Ekom")]
+    public class ManagerApiController : UmbracoAuthorizedApiController
     {
         IManagerRepository _managerRepository;
         IOrderRepository _orderRepository;
