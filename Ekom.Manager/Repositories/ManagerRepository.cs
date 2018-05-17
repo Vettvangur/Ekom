@@ -1,4 +1,5 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
 using log4net;
@@ -58,12 +59,33 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderData> GetCompleteOrderByCustomerId(int customerId)
+        public IEnumerable<OrderData> GetCompletedOrders()
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return null;
-                //return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, Helpers.OrderStatus.ReadyForDispatch, Helpers.OrderStatus.OfflinePayment, Helpers.OrderStatus.Confirmed);
+                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2)", OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
+            }
+        }
+        public IEnumerable<OrderData> GetCompletedOrders(DateTime start, DateTime end)
+        {
+            var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2) AND CreateDate >= @3 AND CreateDate < @4",
+                    OrderStatus.ReadyForDispatch,
+                    OrderStatus.OfflinePayment,
+                    OrderStatus.Dispatched,
+                    startDate,
+                    endDate);
+            }
+        }
+        public IEnumerable<OrderData> GetOrdersByStatus(OrderStatus orderStatus)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderData>("WHERE OrderStatusCol = @0", orderStatus);
             }
         }
     }

@@ -1,24 +1,19 @@
-﻿using System;
+﻿using Ekom.Interfaces;
+using Ekom.IoC;
+using Ekom.Repository;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web.Routing;
 using umbraco;
 using Umbraco.Core;
 
-namespace Ekom.App_Start
+namespace Umbraco.Extensions.Events
 {
-    class IAppEventHandler : IApplicationEventHandler
+    class EkomEvents : ApplicationEventHandler
     {
-        /// <summary> 
-        /// Umbraco lifecycle method 
-        /// </summary>  
-        /// <param name="httpApplication"></param> 
-        /// <param name="applicationContext"></param> 
-        public void OnApplicationStarted(UmbracoApplicationBase httpApplication, ApplicationContext applicationContext)
+        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
+            Ekom.EkomStartup.ApplicationStartedCalled += EkomStartup_ApplicationStarted;
 
             RouteTable.Routes.MapRoute(
                 name: "EkomManager",
@@ -56,15 +51,15 @@ namespace Ekom.App_Start
             //        id = UrlParameter.Optional
             //    });
 
-
         }
 
-        public void OnApplicationInitialized(UmbracoApplicationBase httpApplication, ApplicationContext applicationContext)
+        private void EkomStartup_ApplicationStarted(IList<IContainerRegistration> typeMappings)
         {
-        }
-
-        public void OnApplicationStarting(UmbracoApplicationBase httpApplication, ApplicationContext applicationContext)
-        {
+            typeMappings.Add(
+                new ContainerRegistration<IManagerRepository>(
+                    Lifetime.Transient, c => c.GetInstance<ManagerRepository>()
+                )
+            );
         }
     }
 }

@@ -1,9 +1,8 @@
-﻿using Ekom.Domain.Repositories;
-using Ekom.Interfaces;
-using Ekom.Models;
+﻿using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
+using System.Web.Http;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
@@ -30,7 +29,16 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public IEnumerable<OrderData> GetOrders()
         {
-            return _orderRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
+            return _managerRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
+        }
+
+        /// <summary>
+        /// List of orders.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<OrderData> GetOrders([FromUri] DateTime start, [FromUri] DateTime end)
+        {
+            return _managerRepository.GetCompletedOrders(start, end);
         }
     }
 }

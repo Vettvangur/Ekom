@@ -24,7 +24,7 @@ namespace Ekom.Repository
         {
             _config = config;
             _appCtx = appCtx;
-            _log = logFac.GetLogger(typeof(OrderRepository));
+            _log = logFac.GetLogger<OrderRepository>();
         }
 
         public OrderData GetOrder(Guid uniqueId)
@@ -50,20 +50,7 @@ namespace Ekom.Repository
                 db.Update(orderData);
             }
         }
-        public IEnumerable<OrderData> GetCompletedOrders()
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2)", OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
-            }
-        }
-        public IEnumerable<OrderData> GetOrdersByStatus(OrderStatus orderStatus)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderData>("WHERE OrderStatusCol = @0", orderStatus);
-            }
-        }
+
         public IEnumerable<OrderData> GetCompletedOrdersByCustomerId(int customerId)
         {
             using (var db = _appCtx.DatabaseContext.Database)

@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 //[assembly: InternalsVisibleTo("Ekom.Site")]
 
 [assembly: InternalsVisibleTo("Ekom.Extensions")]
+[assembly: InternalsVisibleTo("Ekom.Manager")]
 [assembly: InternalsVisibleTo("Ekom.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 

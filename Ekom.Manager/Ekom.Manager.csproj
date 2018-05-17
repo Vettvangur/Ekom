@@ -1,39 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props')" />
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AB2C71E4-09F8-41A7-A1B0-B62DBB12E011}</ProjectGuid>
+    <ProjectGuid>{F73650A8-CAAC-466D-AC8B-5F9220A237DD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Ekom</RootNamespace>
-    <AssemblyName>Ekom</AssemblyName>
+    <RootNamespace>Ekom.Manager</RootNamespace>
+    <AssemblyName>Ekom.Manager</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;TINYIOC_INTERNAL</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Ekom.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;TINYIOC_INTERNAL</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Ekom.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AutoMapper, Version=3.3.1.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
@@ -45,8 +39,8 @@
     <Reference Include="businesslogic, Version=1.0.6396.36624, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\businesslogic.dll</HintPath>
     </Reference>
-    <Reference Include="ClientDependency.Core, Version=1.9.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ClientDependency.1.9.3\lib\net45\ClientDependency.Core.dll</HintPath>
+    <Reference Include="ClientDependency.Core, Version=1.9.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ClientDependency.1.9.2\lib\net45\ClientDependency.Core.dll</HintPath>
     </Reference>
     <Reference Include="ClientDependency.Core.Mvc, Version=1.8.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ClientDependency-Mvc5.1.8.0.0\lib\net45\ClientDependency.Core.Mvc.dll</HintPath>
@@ -66,23 +60,14 @@
     <Reference Include="Examine, Version=0.1.83.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.0.1.83\lib\net45\Examine.dll</HintPath>
     </Reference>
-    <Reference Include="GMO.Vorto, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.0.0.3\lib\net45\GMO.Vorto.dll</HintPath>
-    </Reference>
-    <Reference Include="Hangfire.Core, Version=1.6.16.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hangfire.Core.1.6.16\lib\net45\Hangfire.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Hangfire.SqlServer, Version=1.6.16.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hangfire.SqlServer.1.6.16\lib\net45\Hangfire.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.4.9.5, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.4.9.5\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
-    <Reference Include="ImageProcessor, Version=2.5.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ImageProcessor.2.5.4\lib\net45\ImageProcessor.dll</HintPath>
+    <Reference Include="ImageProcessor, Version=2.5.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ImageProcessor.2.5.3\lib\net45\ImageProcessor.dll</HintPath>
     </Reference>
     <Reference Include="ImageProcessor.Web, Version=4.8.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ImageProcessor.Web.4.8.3\lib\net45\ImageProcessor.Web.dll</HintPath>
@@ -138,8 +123,8 @@
     <Reference Include="MiniProfiler, Version=2.1.0.0, Culture=neutral, PublicKeyToken=b44f9351044011a3, processorArchitecture=MSIL">
       <HintPath>..\packages\MiniProfiler.2.1.0\lib\net40\MiniProfiler.dll</HintPath>
     </Reference>
-    <Reference Include="MySql.Data, Version=6.9.11.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
-      <HintPath>..\..\www.Wurth.is\packages\MySql.Data.6.9.11\lib\net45\MySql.Data.dll</HintPath>
+    <Reference Include="MySql.Data, Version=6.9.12.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.6.9.12\lib\net45\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -154,8 +139,6 @@
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\SQLCE4Umbraco.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.SqlServerCe, Version=4.0.0.1, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\System.Data.SqlServerCe.dll</HintPath>
@@ -166,13 +149,10 @@
     <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.6.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
-    <Reference Include="System.Web.Abstractions" />
-    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
     </Reference>
@@ -230,184 +210,31 @@
     <Reference Include="UmbracoExamine, Version=0.7.0.36626, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\UmbracoExamine.dll</HintPath>
     </Reference>
-    <Reference Include="WebActivatorEx, Version=2.0.0.0, Culture=neutral, PublicKeyToken=7b26dc2a43f6a0d4, processorArchitecture=MSIL">
-      <HintPath>..\packages\WebActivatorEx.2.2.0\lib\net40\WebActivatorEx.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\Order.Discounts.cs" />
-    <Compile Include="API\Order.cs" />
-    <Compile Include="API\Catalog.cs" />
-    <Compile Include="API\Stock.Discounts.cs" />
-    <Compile Include="API\Stock.cs" />
-    <Compile Include="API\Store.cs" />
-    <Compile Include="App_Start\EkomStartup.cs" />
-    <Compile Include="App_Start\RegisterHttpModule.cs" />
-    <Compile Include="App_Start\TinyIoCActivator.cs" />
-    <Compile Include="App_Start\TinyIoCConfig.cs" />
-    <Compile Include="Cache\Base\IBaseCache.cs" />
-    <Compile Include="Cache\ShippingProviderCache.cs" />
-    <Compile Include="Cache\StockPerStoreCache.cs" />
-    <Compile Include="Cache\DiscountCache.cs" />
-    <Compile Include="Controllers\ApiController.cs" />
-    <Compile Include="Controllers\CatalogController.cs" />
-    <Compile Include="Controllers\OrderController.Discounts.cs" />
-    <Compile Include="Controllers\OrderController.cs" />
-    <Compile Include="Exceptions\CouponDuplicateException.cs" />
-    <Compile Include="Exceptions\DiscountNotFoundException.cs" />
-    <Compile Include="Exceptions\VariantNotFoundException.cs" />
-    <Compile Include="Exceptions\StoreNotFoundException.cs" />
-    <Compile Include="Exceptions\ProductNotFoundException.cs" />
-    <Compile Include="Exceptions\OrderLineNotFoundException.cs" />
-    <Compile Include="Exceptions\OrderException.cs" />
-    <Compile Include="Exceptions\StockRollbackException.cs" />
-    <Compile Include="Exceptions\StockException.cs" />
-    <Compile Include="Factories\CategoryFactory.cs" />
-    <Compile Include="Factories\DiscountFactory.cs" />
-    <Compile Include="Factories\PaymentProviderFactory.cs" />
-    <Compile Include="Factories\ShippingProviderFactory.cs" />
-    <Compile Include="Factories\ProductFactory.cs" />
-    <Compile Include="Factories\ZoneFactory.cs" />
-    <Compile Include="Factories\VariantFactory.cs" />
-    <Compile Include="Factories\StoreFactory.cs" />
-    <Compile Include="Factories\VariantGroupFactory.cs" />
-    <Compile Include="HttpModule.cs" />
-    <Compile Include="Interfaces\IConstrained.cs" />
-    <Compile Include="Interfaces\IObjectFactory.cs" />
-    <Compile Include="Interfaces\IPerStoreFactory.cs" />
-    <Compile Include="IoC\ContainerRegistration.cs" />
-    <Compile Include="IoC\IActivatorContainerRegistration.cs" />
-    <Compile Include="IoC\IContainerRegistration.cs" />
-    <Compile Include="IoC\Lifetime.cs" />
-    <Compile Include="IoC\Resolver.cs" />
-    <Compile Include="Models\Abstractions\ExamineManagerBase.cs" />
-    <Compile Include="Models\Abstractions\ExamineManagerWrapper.cs" />
-    <Compile Include="Interfaces\IPerStoreNodeEntity.cs" />
-    <Compile Include="Models\Base\PerStoreNodeEntity.cs" />
-    <Compile Include="Models\Behaviors\Constraints.cs" />
-    <Compile Include="Interfaces\IConstraints.cs" />
-    <Compile Include="Models\Country.cs" />
-    <Compile Include="Models\Base\NodeEntity.cs" />
-    <Compile Include="Models\Customer.cs" />
-    <Compile Include="Models\CustomerInfo.cs" />
-    <Compile Include="Models\Data\CustomerData.cs" />
-    <Compile Include="Models\Data\DiscountStockData.cs" />
-    <Compile Include="Models\Discounts\Discount.cs" />
-    <Compile Include="Models\Discounts\DiscountAmount.cs" />
-    <Compile Include="Models\Discounts\DiscountType.cs" />
-    <Compile Include="Interfaces\IDiscount.cs" />
-    <Compile Include="Models\Image.cs" />
-    <Compile Include="Interfaces\IOrderLine.cs" />
-    <Compile Include="Interfaces\IVariantGroup.cs" />
-    <Compile Include="Interfaces\IPaymentProvider.cs" />
-    <Compile Include="Interfaces\IShippingProvider.cs" />
-    <Compile Include="Interfaces\IZone.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
-    <Compile Include="Models\OrderRequest.cs" />
-    <Compile Include="Interfaces\IOrderService.cs" />
-    <Compile Include="Interfaces\IStoreService.cs" />
-    <Compile Include="Interfaces\IStockRepository.cs" />
-    <Compile Include="Models\CustomerShippingInfo.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedShippingProvider.cs" />
-    <Compile Include="Models\ShippingProvider.cs" />
-    <Compile Include="Models\User.cs" />
-    <Compile Include="Repository\CountriesRepository.cs" />
-    <Compile Include="Interfaces\ICountriesRepository.cs" />
-    <Compile Include="Repository\DiscountStockRepository.cs" />
-    <Compile Include="Interfaces\IDiscountStockRepository.cs" />
-    <Compile Include="Interfaces\IOrderRepository.cs" />
-    <Compile Include="Services\CheckoutService.cs" />
-    <Compile Include="Services\LogFactory.cs" />
-    <Compile Include="API\Providers.cs" />
-    <Compile Include="Services\OrderService.Discounts.cs" />
-    <Compile Include="Services\SearchService.cs" />
-    <Compile Include="TinyIoC\TinyIoC.cs" />
-    <Compile Include="TinyIoC\TinyIoCAspNetExtensions.cs" />
-    <Compile Include="TinyIoC\TinyIoCServiceLocator.cs" />
-    <Compile Include="Utilities\ArrayExtensions.cs" />
-    <Compile Include="Utilities\ContentExtensions.cs" />
-    <Compile Include="Utilities\DictionaryExtensions.cs" />
-    <Compile Include="Cache\Base\ICache.cs" />
-    <Compile Include="Cache\Base\IPerStoreCache.cs" />
-    <Compile Include="Cache\Base\PerStoreCache.cs" />
-    <Compile Include="Cache\ZoneCache.cs" />
-    <Compile Include="Cache\StoreDomainCache.cs" />
-    <Compile Include="Cache\VariantGroupCache.cs" />
-    <Compile Include="Cache\Base\BaseCache.cs" />
-    <Compile Include="Cache\PaymentProviderCache.cs" />
-    <Compile Include="Cache\ProductCache.cs" />
-    <Compile Include="Cache\CategoryCache.cs" />
-    <Compile Include="Cache\StockCache.cs" />
-    <Compile Include="Cache\StoreCache.cs" />
-    <Compile Include="Cache\VariantCache.cs" />
-    <Compile Include="CatalogContentFinder.cs" />
-    <Compile Include="CatalogUrlProvider.cs" />
-    <Compile Include="Configuration.cs" />
-    <Compile Include="Helpers\Enums.cs" />
-    <Compile Include="Services\ExamineService.cs" />
-    <Compile Include="Helpers\NodeHelper.cs" />
-    <Compile Include="Helpers\VatCalculator.cs" />
-    <Compile Include="Interfaces\ICategory.cs" />
-    <Compile Include="Interfaces\IOrder.cs" />
-    <Compile Include="Interfaces\IOrderInfo.cs" />
-    <Compile Include="Interfaces\IOrderedProduct.cs" />
-    <Compile Include="Interfaces\IOrderedProductVariant.cs" />
-    <Compile Include="Interfaces\IPrice.cs" />
-    <Compile Include="Interfaces\IVariant.cs" />
-    <Compile Include="Interfaces\IProduct.cs" />
-    <Compile Include="Interfaces\INodeEntity.cs" />
-    <Compile Include="Interfaces\IStore.cs" />
-    <Compile Include="Models\ContentRequest.cs" />
-    <Compile Include="Models\Data\StockData.cs" />
-    <Compile Include="Models\Data\OrderData.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedProduct.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedVariant.cs" />
-    <Compile Include="Models\OrderedObjects\OrderedVariantGroup.cs" />
-    <Compile Include="Models\OrderInfo.cs" />
-    <Compile Include="Models\OrderLine.cs" />
-    <Compile Include="Models\OrderedObjects\StoreInfo.cs" />
-    <Compile Include="Models\Zone.cs" />
-    <Compile Include="Models\PaymentProvider.cs" />
-    <Compile Include="Models\Price.cs" />
-    <Compile Include="Models\Product.cs" />
-    <Compile Include="Models\Category.cs" />
-    <Compile Include="Models\Store.cs" />
-    <Compile Include="Models\Variant.cs" />
-    <Compile Include="Models\VariantGroup.cs" />
+    <Compile Include="App_Start\Startup.cs" />
+    <Compile Include="Controllers\EkomController.cs" />
+    <Compile Include="Controllers\ManagerApiController.cs" />
+    <Compile Include="Interfaces\IManagerRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Repository\OrderRepository.cs" />
-    <Compile Include="Repository\StockRepository.cs" />
-    <Compile Include="Services\OrderService.cs" />
-    <Compile Include="Services\StoreService.cs" />
-    <Compile Include="Services\UrlService.cs" />
-    <Compile Include="Utilities\HtmlHelperExtensions.cs" />
-    <Compile Include="Utilities\StringExtensions.cs" />
-    <Compile Include="Vorto\LanguageRetriever.cs" />
+    <Compile Include="Repositories\ManagerRepository.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ekom\Ekom.csproj">
+      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
+      <Name>Ekom</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <Compile Include="JsonDotNet\JsonDotNet.cs" />
+    <None Include="Ekom.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
-    <Content Include="Views\EkomManager\Index.cshtml" />
-    <None Include="Views\web.config.transform" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Attributes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
