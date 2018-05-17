@@ -81,7 +81,7 @@ namespace Ekom.Models.Data
         /// </summary>
         [Length(50)]
         [NullSetting(NullSetting = NullSettings.Null)]
-        public string CustomerCountry { get; set; }
+        public string ShippingCountry { get; set; }
 
         /// <summary>
         /// 
