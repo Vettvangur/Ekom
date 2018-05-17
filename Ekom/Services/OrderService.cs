@@ -416,7 +416,7 @@ namespace Ekom.Services
                 orderData.CustomerName = orderInfo.CustomerInformation.Customer.FirstName + " " + orderInfo.CustomerInformation.Customer.LastName;
             }
 
-            orderData.CustomerCountry = orderInfo.CustomerInformation.Customer.Country;
+            orderData.ShippingCountry = orderInfo.CustomerInformation.Shipping.Country;
 
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
