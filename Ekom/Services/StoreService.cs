@@ -51,7 +51,7 @@ namespace Ekom.Services
                 var storeDomain
                     = _domainCache.Cache
                                       .FirstOrDefault
-                                          (x => domain.Contains(x.Value.DomainName))
+                                          (x => domain.Equals(x.Value.DomainName, System.StringComparison.InvariantCultureIgnoreCase))
                                       .Value;
 
                 if (storeDomain != null)

@@ -63,12 +63,6 @@
     <Reference Include="cms, Version=1.0.6396.36625, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\cms.dll</HintPath>
     </Reference>
-    <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
-    </Reference>
-    <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
-    </Reference>
     <Reference Include="CommonServiceLocator, Version=2.0.1.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>..\packages\CommonServiceLocator.2.0.1\lib\net45\CommonServiceLocator.dll</HintPath>
     </Reference>
@@ -299,8 +293,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Plugins\EkomManager\css\react-table.css" />
     <Content Include="App_Plugins\EkomManager\css\site.css" />
     <Content Include="App_Plugins\EkomManager\site.js" />
+    <Content Include="App_Plugins\EkomManager\views\manager.htm" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.html" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\delete.js" />
     <Content Include="App_Plugins\LeBlender\backoffice\GridEditorManager\edit.html" />
@@ -394,6 +390,7 @@
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\LeBlender.cshtml" />
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
     <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
+    <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.woff" />
     <None Include="packages.config" />
     <Content Include="Views\Partials\Structure\_Header.cshtml" />
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
@@ -449,13 +446,16 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Plugins\EkomManager\views\" />
     <Folder Include="Views\MacroPartials\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
       <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
       <Name>Ekom.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom.Manager\Ekom.Manager.csproj">
+      <Project>{f73650a8-caac-466d-ac8b-5f9220a237dd}</Project>
+      <Name>Ekom.Manager</Name>
     </ProjectReference>
     <ProjectReference Include="..\Ekom.Site.Extensions\Ekom.Site.Extensions.csproj">
       <Project>{c8d798cd-9d24-444e-a7fc-9cdb0816669f}</Project>

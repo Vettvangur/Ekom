@@ -67,7 +67,7 @@
   <PropertyGroup>
     <PostBuildEvent>cd $(SolutionDir)
 
-nuget pack $(SolutionDir)Ekom -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
+nuget pack $(SolutionDir)Ekom.Manager -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
 nuget pack $(SolutionDir)Ekom.Extensions -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects
 </PostBuildEvent>
   </PropertyGroup>

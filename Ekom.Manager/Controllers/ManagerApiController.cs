@@ -1,19 +1,16 @@
-﻿using Ekom.Domain.Repositories;
-using Ekom.Interfaces;
-using Ekom.Models;
+﻿using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
-using Umbraco.Web.Mvc;
+using System.Web.Http;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
 {
     /// <summary>
     /// Private api, used by Ekom Manager
-    [PluginController("Ekom")]
-    [Umbraco.Web.Mvc.UmbracoAuthorize]
-    public class ManagerApiController : UmbracoApiController
+    [Umbraco.Web.Mvc.PluginController("Ekom")]
+    public class ManagerApiController : UmbracoAuthorizedApiController
     {
         IManagerRepository _managerRepository;
         IOrderRepository _orderRepository;
@@ -32,7 +29,16 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public IEnumerable<OrderData> GetOrders()
         {
-            return _orderRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
+            return _managerRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
+        }
+
+        /// <summary>
+        /// List of orders.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<OrderData> GetOrders([FromUri] DateTime start, [FromUri] DateTime end)
+        {
+            return _managerRepository.GetCompletedOrders(start, end);
         }
     }
 }

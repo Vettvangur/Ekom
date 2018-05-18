@@ -45,26 +45,28 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Tests", "Ekom.Tests\Ek
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site.Extensions", "Ekom.Site.Extensions\Ekom.Site.Extensions.csproj", "{C8D798CD-9D24-444E-A7FC-9CDB0816669F}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager", "Ekom.Manager\", "{344178A3-7FE1-4FEB-9C58-BD1A5C8EB7AA}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ekom.Manager.Frontend\", "{A8E76D41-1323-4B00-A441-8422D89AEF21}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
-		Debug.AspNetCompiler.VirtualPath = "/localhost_54263"
-		Debug.AspNetCompiler.PhysicalPath = "Ekom.Manager\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_54263\"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_27847"
+		Debug.AspNetCompiler.PhysicalPath = "Ekom.Manager.Frontend\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_27847\"
 		Debug.AspNetCompiler.Updateable = "true"
 		Debug.AspNetCompiler.ForceOverwrite = "true"
 		Debug.AspNetCompiler.FixedNames = "false"
 		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/localhost_54263"
-		Release.AspNetCompiler.PhysicalPath = "Ekom.Manager\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_54263\"
+		Release.AspNetCompiler.VirtualPath = "/localhost_27847"
+		Release.AspNetCompiler.PhysicalPath = "Ekom.Manager.Frontend\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_27847\"
 		Release.AspNetCompiler.Updateable = "true"
 		Release.AspNetCompiler.ForceOverwrite = "true"
 		Release.AspNetCompiler.FixedNames = "false"
 		Release.AspNetCompiler.Debug = "False"
-		VWDPort = "54263"
-		SlnRelativePath = "Ekom.Manager\"
+		VWDPort = "27847"
+		SlnRelativePath = "Ekom.Manager.Frontend\"
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Manager", "Ekom.Manager\Ekom.Manager.csproj", "{F73650A8-CAAC-466D-AC8B-5F9220A237DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,8 +99,13 @@ Global
 		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{344178A3-7FE1-4FEB-9C58-BD1A5C8EB7AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{344178A3-7FE1-4FEB-9C58-BD1A5C8EB7AA}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

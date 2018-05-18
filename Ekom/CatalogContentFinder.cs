@@ -125,6 +125,7 @@ namespace Ekom
 
                 var ekmRequest = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
 
+                ekmRequest.Store = store;
                 ekmRequest.Product = product;
                 ekmRequest.Category = category;
 
