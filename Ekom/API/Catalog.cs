@@ -192,7 +192,15 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetProductsByKeys(IEnumerable<Guid> productKeys, string storeAlias)
         {
-            return _productCache.Cache[storeAlias].Where(x => productKeys.Contains(x.Value.Key)).Select(x => x.Value).OrderBy(x => x.SortOrder);
+            var products = new List<IProduct>();
+            foreach (var id in productKeys)
+            {
+                products.Add(
+                    _productCache.Cache[storeAlias][id]
+                );
+            }
+
+            return products.OrderBy(x => x.SortOrder);
         }
 
         /// <summary>

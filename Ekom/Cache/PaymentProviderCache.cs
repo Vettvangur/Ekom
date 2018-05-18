@@ -6,7 +6,7 @@ namespace Ekom.Cache
 {
     class PaymentProviderCache : PerStoreCache<IPaymentProvider>
     {
-        public override string NodeAlias { get; } = "ekmPaymentProvider";
+        public override string NodeAlias { get; } = "netPaymentProvider";
 
         public PaymentProviderCache(
             ILogFactory logFac,

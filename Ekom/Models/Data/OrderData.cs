@@ -86,7 +86,7 @@ namespace Ekom.Models.Data
         /// <summary>
         /// 
         /// </summary>
-       // [Length(9)] // decimal (9,9) https://stackoverflow.com/questions/19811180/best-data-annotation-for-a-decimal18-2
+        // [Length(9)] // decimal (9,9) https://stackoverflow.com/questions/19811180/best-data-annotation-for-a-decimal18-2
         [NullSetting(NullSetting = NullSettings.Null)]
         public decimal TotalAmount { get; set; }
 
