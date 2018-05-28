@@ -35,15 +35,9 @@ namespace Ekom.Models
         /// Stored VAT value: 0.285<para></para>
         /// Effective VAT value: 28.5%<para></para>
         /// </summary>
-        public virtual decimal Vat
-        {
-            get
-            {
-                return string.IsNullOrEmpty(Properties.GetPropertyValue("vat"))
-                    ? 0
-                    : Convert.ToDecimal(Properties["vat"]) / 100;
-            }
-        }
+        public virtual decimal Vat => string.IsNullOrEmpty(Properties.GetPropertyValue("vat"))
+            ? 0
+            : Convert.ToDecimal(Properties["vat"]) / 100;
 
         /// <summary>
         /// Used by Ekom extensions

@@ -23,32 +23,15 @@ namespace Ekom.Models
     /// </summary>
     public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
-        private IPerStoreCache<ICategory> _categoryCache
-        {
-            get
-            {
-                return Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
-            }
-        }
+        private IPerStoreCache<ICategory> _categoryCache => Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
 
-        private IPerStoreCache<IProduct> _productCache
-        {
-            get
-            {
-                return Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
-            }
-        }
+        private IPerStoreCache<IProduct> _productCache => Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
         /// </summary>
-        public string Slug
-        {
-            get
-            {
-                return Properties.GetPropertyValue("slug", base.Store.Alias);
-            }
-        }
+        public string Slug => Properties.GetPropertyValue("slug", base.Store.Alias);
+
         /// <summary>
         /// Parent umbraco node
         /// </summary>
@@ -193,7 +176,7 @@ namespace Ekom.Models
         {
             var pathField = item.Fields["path"];
 
-            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField).ToList();
 
             ParentId = Convert.ToInt32(item.Fields["parentID"]);
 
@@ -207,7 +190,7 @@ namespace Ekom.Models
         public Category(IContent node, IStore store) : base(node, store)
         {
             var pathField = node.Path;
-            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField);
+            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField).ToList();
 
             ParentId = node.ParentId;
 

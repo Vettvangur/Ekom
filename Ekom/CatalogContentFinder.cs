@@ -62,7 +62,7 @@ namespace Ekom
                     return false;
                 }
 
-                IStore store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
+                var store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
 
                 if (store == null)
                 {
@@ -77,19 +77,12 @@ namespace Ekom
                                                                x.Value.Urls.Contains(path))
                                           .Value;
 
-                int contentId = 0;
+                var contentId = 0;
                 ICategory category;
 
                 if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {
-                    if (virtualContent.InvariantEquals("true"))
-                    {
-                        contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode"));
-                    }
-                    else
-                    {
-                        contentId = product.Id;
-                    }
+                    contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
 
                     var urlArray = path.Split('/');
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
@@ -108,14 +101,7 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        if (virtualContent.InvariantEquals("true"))
-                        {
-                            contentId = int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode"));
-                        }
-                        else
-                        {
-                            contentId = category.Id;
-                        }
+                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
                     }
                     // else Requesting Neither
                 }
@@ -123,11 +109,12 @@ namespace Ekom
 
                 var appCache = umbracoContext.Application.ApplicationCache;
 
-                var ekmRequest = appCache.RequestCache.GetCacheItem("ekmRequest") as ContentRequest;
-
-                ekmRequest.Store = store;
-                ekmRequest.Product = product;
-                ekmRequest.Category = category;
+                if (appCache.RequestCache.GetCacheItem("ekmRequest") is ContentRequest ekmRequest)
+                {
+                    ekmRequest.Store = store;
+                    ekmRequest.Product = product;
+                    ekmRequest.Category = category;
+                }
 
                 // Request for Product or Category
                 if (contentId != 0)
