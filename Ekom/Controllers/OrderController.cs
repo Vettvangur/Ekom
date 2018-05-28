@@ -27,7 +27,7 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
-        /// Add product to order
+        /// Add product to order, also for updating or setting quantity of orderlines
         /// </summary>
         /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
@@ -229,6 +229,7 @@ namespace Ekom.Controllers
         /// <param name="storeAlias"></param>
         /// <param name="quantity"></param>
         /// <returns></returns>
+        [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
         public JsonResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
         {
             try

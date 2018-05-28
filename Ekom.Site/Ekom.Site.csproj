@@ -358,6 +358,12 @@
     <Content Include="Config\UrlRewriting.config" />
     <Content Include="Content\css\app.css" />
     <Content Include="Content\css\app.min.css" />
+    <Content Include="Content\fonts\ekom.svg" />
+    <Content Include="Content\img\1acbe964ca0898b9b9df2f551e42b3cf78c86055.png" />
+    <Content Include="Content\img\5d2f3b4eb0ba8b80f09a29483e93a0dabc818433.png" />
+    <Content Include="Content\img\7fb61e91b1e2f6774432273c21a2919ebfd51240.png" />
+    <Content Include="Content\img\banner.png" />
+    <Content Include="Content\img\product.jpg" />
     <Content Include="Content\js\app.js" />
     <Content Include="Views\Category.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />
@@ -378,7 +384,6 @@
     <Content Include="App_Plugins\Ekom\iconfont\uwebshop.ttf" />
     <Content Include="App_Plugins\Ekom\iconfont\uwebshop.woff" />
     <Content Include="App_Plugins\Ekom\package.manifest" />
-    <Content Include="Views\Cart.cshtml" />
     <Content Include="Views\CheckoutYourInfo.cshtml" />
     <Content Include="Views\CheckoutShippingPayment.cshtml" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
@@ -391,6 +396,9 @@
     <Content Include="App_Plugins\LeBlender\editors\leblendereditor\views\Base.cshtml" />
     <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
     <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.woff" />
+    <Content Include="Content\fonts\ekom.eot" />
+    <Content Include="Content\fonts\ekom.ttf" />
+    <Content Include="Content\fonts\ekom.woff" />
     <None Include="packages.config" />
     <Content Include="Views\Partials\Structure\_Header.cshtml" />
     <Content Include="Views\Partials\Structure\_Footer.cshtml" />
