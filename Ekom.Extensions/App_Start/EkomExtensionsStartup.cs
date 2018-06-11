@@ -26,7 +26,12 @@ namespace Ekom
         {
             var checkoutSvc = Configuration.container.GetInstance<CheckoutService>();
 
-            checkoutSvc.Complete(Guid.Parse(o.Custom));
+            if (Guid.TryParse(o.Custom, out var orderId))
+            {
+                checkoutSvc.Complete(orderId);
+            }
+
+            
         }
     }
 }

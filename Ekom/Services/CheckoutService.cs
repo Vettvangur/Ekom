@@ -32,9 +32,12 @@ namespace Ekom.Services
         {
             OrderData o = null;
             OrderInfo oi = null;
+
             try
             {
                 o = _orderRepo.GetOrder(key);
+
+                if (o == null) return;
 
                 oi = new OrderInfo(o);
 
@@ -79,6 +82,7 @@ namespace Ekom.Services
                         _log.Error(ex);
                     }
                 }
+
             }
             catch (StockException)
             {
