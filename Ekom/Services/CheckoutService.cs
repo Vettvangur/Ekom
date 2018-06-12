@@ -7,6 +7,7 @@ using Ekom.Repository;
 using log4net;
 using System;
 using System.Linq;
+using Ekom.Helpers;
 
 namespace Ekom.Services
 {
@@ -16,15 +17,18 @@ namespace Ekom.Services
         Configuration _config;
         IDiscountStockRepository _discountStockRepo;
         OrderRepository _orderRepo;
+        private OrderService _orderService;
         public CheckoutService(
             ILogFactory logFac,
             Configuration config,
             OrderRepository orderRepo,
+            OrderService orderService,
             IDiscountStockRepository discountStockRepo)
         {
             _log = logFac.GetLogger<CheckoutService>();
             _config = config;
             _orderRepo = orderRepo;
+            _orderService = orderService;
             _discountStockRepo = discountStockRepo;
         }
 
@@ -81,7 +85,10 @@ namespace Ekom.Services
                     {
                         _log.Error(ex);
                     }
+
                 }
+
+                _orderService.ChangeOrderStatus(o.UniqueId, OrderStatus.ReadyForDispatch);
 
             }
             catch (StockException)
