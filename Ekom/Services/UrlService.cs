@@ -33,7 +33,7 @@ namespace Ekom.Services
             {
                 string domainPath = GetDomainPrefix(domain.DomainName);
 
-                StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
+                var builder = new StringBuilder(domainPath.AddTrailing());
 
                 foreach (var examineItem in examineItems)
                 {
@@ -68,7 +68,7 @@ namespace Ekom.Services
                 {
                     string domainPath = GetDomainPrefix(domain.DomainName);
 
-                    StringBuilder builder = new StringBuilder(domainPath.AddTrailing());
+                    var builder = new StringBuilder(domainPath.AddTrailing());
 
                     foreach (var item in hierarchy)
                     {

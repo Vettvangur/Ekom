@@ -24,7 +24,7 @@ namespace Ekom.Interfaces
         /// </value>
         CultureInfo Culture { get; }
         string Alias { get; }
-        IEnumerable<IDomain> Domains { get; }
+        IEnumerable<Models.Domain> Domains { get; }
         string OrderNumberPrefix { get; }
         string OrderNumberTemplate { get; }
         int StoreRootNode { get; }

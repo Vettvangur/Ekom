@@ -1,6 +1,8 @@
-﻿using Examine;
+﻿using System;
+using Examine;
 using System.Diagnostics;
 using System.Linq;
+using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Ekom.Services;
@@ -33,23 +35,26 @@ namespace Ekom.Cache
         {
             var ds = _appCtx.Services.DomainService;
 
-            var domains = ds.GetAll(false);
+            var domains = ds.GetAll(false).ToList();
+
+            var stopwatch = new Stopwatch();
+
+            stopwatch.Start();
+
+            _log.Info("Starting to fill store domain cache...");
 
             if (domains.Any())
             {
-                Stopwatch stopwatch = new Stopwatch();
-
-                stopwatch.Start();
-
-                _log.Info("Starting to fill store domain cache...");
 
                 foreach (var d in domains)
                 {
                     AddOrReplaceFromCache(d.Key, d);
                 }
-
-                _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
+  
             }
+
+            _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
+
         }
     }
 }

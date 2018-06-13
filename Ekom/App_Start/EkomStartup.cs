@@ -228,8 +228,6 @@ namespace Ekom
 
         private void UpdateSlug(IContent content, string alias, PublishEventArgs<IContent> e)
         {
-            var value = content.GetValue<string>("title");
-
             var siblings = content.Parent().Children().Where(x => x.Published && x.Id != content.Id && !x.Trashed);
 
             var stores = API.Store.Instance.GetAllStores();

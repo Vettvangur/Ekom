@@ -24,7 +24,7 @@ namespace Ekom.Models
         /// </summary>
         public virtual string Alias => Properties["nodeName"];
         public virtual int StoreRootNode { get; }
-        public virtual IEnumerable<IDomain> Domains { get; }
+        public virtual IEnumerable<Domain> Domains { get; }
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
@@ -65,8 +65,22 @@ namespace Ekom.Models
             }
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
 
-            Domains = storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
-                                            .Select(x => x.Value);
+            if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))
+            {
+                Domains = storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
+                    .Select(x => new Domain(x.Value));
+            }
+            else
+            {
+                //TODO If not culture/domain is set then add default
+                //if (uCtx.HttpContext != null)
+                //{
+
+                //    Domains = Enumerable.Repeat(new Domain(uCtx.HttpContext.Request.Url?.Host, StoreRootNode), 1);
+                //}
+            }
+
+           
         }
 
         /// <summary>
@@ -88,11 +102,24 @@ namespace Ekom.Models
             }
 
             var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
-            Domains = storeDomainCache.Cache
-                                      .Where(x => x.Value.RootContentId == StoreRootNode)
-                                      .Select(x => x.Value);
-
             var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+
+            if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))
+            {
+                Domains = storeDomainCache.Cache
+                    .Where(x => x.Value.RootContentId == StoreRootNode)
+                    .Select(x => new Domain(x.Value));
+            }
+            else
+            {
+                //TODO If not culture/domain is set then add default
+                //if (uCtx.HttpContext != null)
+                //{
+
+                //    Domains = Enumerable.Repeat(new Domain(uCtx.HttpContext.Request.Url?.Host, StoreRootNode), 1);
+                //}
+            }
+
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
 

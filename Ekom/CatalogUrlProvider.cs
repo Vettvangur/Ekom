@@ -58,7 +58,7 @@ namespace Ekom
 
             var list = new List<string>();
 
-            var stores = API.Store.Instance.GetAllStores();
+            var stores = API.Store.Instance.GetAllStores().ToList();
 
             if (stores.Count() <= 1) return list;
 
@@ -88,8 +88,13 @@ namespace Ekom
 
             }
 
-            return list;
+            return list.Distinct();
 
         }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }
