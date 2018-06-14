@@ -79,7 +79,7 @@ namespace Ekom.Models
         public string Slug => Properties.GetPropertyValue("slug", Store.Alias);
 
         /// <summary>
-        /// 
+        /// Get the current product Stock
         /// </summary>
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 

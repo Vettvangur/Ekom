@@ -43,9 +43,8 @@ namespace Ekom.Extensions.Controllers
         /// Complete payment using the Standard Ekom checkout controller
         /// </summary>
         /// <param name="paymentRequest"></param>
-        /// <param name="form"></param>
         /// <returns></returns>
-        public async Task<ActionResult> Pay(PaymentRequest paymentRequest, FormCollection form)
+        public async Task<ActionResult> Pay(PaymentRequest paymentRequest)
         {
             var hangfireJobs = new List<string>();
 
@@ -70,7 +69,41 @@ namespace Ekom.Extensions.Controllers
             {
                 try
                 {
-                    hangfireJobs.Add(_stock.ReserveStock(line.Key, line.Quantity));
+
+                    if (line.Product.VariantGroups.Any())
+                    {
+                        foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                        {
+                            var variantStock = Stock.Instance.GetStock(variant.Key);
+
+                            _log.Info("Get Variant Stock: " + variantStock + " Line Qty:" + line.Quantity);
+
+                            if (variantStock >= line.Quantity)
+                            {
+                                hangfireJobs.Add(_stock.ReserveStock(variant.Key, line.Quantity));
+                            }
+                            else
+                            {
+                                //return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                            }
+                        }
+                        
+                    }
+                    else
+                    {
+                        var productStock = Stock.Instance.GetStock(line.ProductKey);
+
+                        _log.Info("Get Product Stock: " + productStock + " Line Qty:" + line.Quantity);
+
+                        if (productStock >= line.Quantity)
+                        {
+                            hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, line.Quantity));
+                        }
+                        else
+                        {
+                            //return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                        }
+                    }
 
                     if (line.Discount != null)
                     {
@@ -157,9 +190,11 @@ namespace Ekom.Extensions.Controllers
                 order.ChargedAmount.Value,
                 orderItems,
                 skipReceipt: true,
-                culture: order.StoreInfo.Alias,
+                vortoLanguage: order.StoreInfo.Alias,
+                language: "IS", //TODO needs to come from Store, but we can not use culture
                 member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                orderCustomString: order.UniqueId.ToString()
+                orderCustomString: order.UniqueId.ToString(),
+                paymentProviderId: paymentRequest.PaymentProvider.ToString()
             ));
         }
     }
