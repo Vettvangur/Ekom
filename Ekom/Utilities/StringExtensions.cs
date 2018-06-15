@@ -183,7 +183,7 @@ namespace Ekom.Utilities
 
         public static bool IsBoolean(this string value)
         {
-            if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase))
+            if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }

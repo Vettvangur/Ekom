@@ -104,6 +104,7 @@ namespace Ekom
                 ContentService.UnPublished += ContentService_UnPublished;
                 ContentService.Deleted += ContentService_Deleted;
                 ContentService.Publishing += ContentService_Publishing;
+                ContentService.Moved += ContentService_Moved;
             }
 
             // Hangfire
@@ -189,6 +190,21 @@ namespace Ekom
         {
             foreach (var node in args.PublishedEntities)
             {
+                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+
+                cacheEntry?.AddReplace(node);
+            }
+        }
+        //TODO Needs testing
+        private void ContentService_Moved(
+            IContentService sender,
+            MoveEventArgs<IContent> args
+        )
+        {
+            foreach (var info in args.MoveInfoCollection)
+            {
+                var node = info.Entity;
+
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 cacheEntry?.AddReplace(node);

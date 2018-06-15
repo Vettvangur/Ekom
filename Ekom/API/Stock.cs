@@ -59,7 +59,7 @@ namespace Ekom.API
         /// <returns></returns>
         public int GetStock(Guid key)
         {
-            return GetStockData(key).Stock;
+            return _stockCache.Cache.ContainsKey(key) ? GetStockData(key).Stock : 0;
         }
 
         /// <summary>
@@ -71,7 +71,21 @@ namespace Ekom.API
         /// <returns></returns>
         public int GetStock(Guid key, string storeAlias)
         {
-            return GetStockData(key, storeAlias).Stock;
+            if (!string.IsNullOrEmpty(storeAlias))
+            {
+                if (_stockPerStoreCache.Cache.ContainsKey(storeAlias) && _stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
+                {
+                    return GetStockData(key, storeAlias).Stock;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return GetStock(key);
+            }
         }
 
         /// <summary>
@@ -91,7 +105,7 @@ namespace Ekom.API
             }
             else
             {
-                EnsureStockEntryExists(key);
+                //EnsureStockEntryExists(key);
 
                 return _stockCache.Cache[key];
             }
@@ -106,9 +120,10 @@ namespace Ekom.API
         /// <returns></returns>
         public StockData GetStockData(Guid key, string storeAlias)
         {
-            EnsurePerStoreEntryExists(key, storeAlias);
+            //EnsurePerStoreEntryExists(key, storeAlias);
 
-            return _stockPerStoreCache.Cache[storeAlias][key];
+
+            return _stockPerStoreCache.Cache[storeAlias][key];   
         }
 
         /// <summary>
@@ -119,7 +134,7 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void UpdateStock(Guid key, int value)
+        public void UpdateStock(Guid key, int value, bool increment = true)
         {
             if (_config.PerStoreStock)
             {
@@ -132,12 +147,12 @@ namespace Ekom.API
 
                 var stockData = _stockCache.Cache[key];
 
-                if (stockData.Stock + value < 0)
+                if (increment && stockData.Stock + value < 0)
                 {
                     throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
                 }
 
-                SetStockWithLock(stockData, stockData.Stock + value);
+                SetStockWithLock(stockData, (increment ? stockData.Stock + value : value));
             }
         }
 
@@ -149,18 +164,18 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void UpdateStock(Guid key, string storeAlias, int value)
+        public void UpdateStock(Guid key, string storeAlias, int value, bool increment = true)
         {
             EnsurePerStoreEntryExists(key, storeAlias);
 
             var stockData = _stockPerStoreCache.Cache[storeAlias][key];
 
-            if (stockData.Stock + value < 0)
+            if (increment && stockData.Stock + value < 0)
             {
                 throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
             }
 
-            SetStockWithLock(stockData, stockData.Stock + value);
+            SetStockWithLock(stockData, (increment ? stockData.Stock + value : value));
         }
 
         /// <summary>
@@ -300,7 +315,16 @@ namespace Ekom.API
 
         private void EnsurePerStoreEntryExists(Guid key, string storeAlias)
         {
-            if (!_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
+            if (_stockPerStoreCache.Cache.ContainsKey(storeAlias))
+            {
+                _log.Info("Debug: EnsurePerStoreEntryExists: Store cache found");
+            }
+            else
+            {
+                _log.Info("Debug: EnsurePerStoreEntryExists: Store cache NOT found");
+            }
+
+            if (_stockPerStoreCache.Cache.ContainsKey(storeAlias) && !_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
             {
                 _stockPerStoreCache.Cache[storeAlias][key]
                     = _stockRepo.CreateNewStockRecord($"{storeAlias}_{key}");

@@ -1,7 +1,13 @@
-﻿using Ekom.Domain.Repositories;
+﻿using System;
+using Ekom.Domain.Repositories;
 using Ekom.Interfaces;
 using Ekom.Models;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
+using System.Web.Script.Serialization;
+using Newtonsoft.Json;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
@@ -11,7 +17,7 @@ namespace Ekom.Controllers
     /// Public api, used by property editors
     /// </summary>
     [PluginController("Ekom")]
-    public class ApiController : UmbracoApiController
+    public class ApiController : UmbracoAuthorizedApiController
     {
         ICountriesRepository _countriesRepo;
         /// <summary>
@@ -38,6 +44,60 @@ namespace Ekom.Controllers
         public List<Country> GetCountries()
         {
             return _countriesRepo.GetAllCountries();
+        }
+
+        /// <summary>
+        /// List of all stores
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<IStore> GetAllStores()
+        {
+            return API.Store.Instance.GetAllStores();
+        }
+
+        /// <summary>
+        /// Get Config
+        /// </summary>
+        public object GetConfig()
+        {
+            return Ekom.Configuration.Current;
+        }
+
+        /// <summary>
+        /// Get Stock By Store
+        /// </summary>
+        /// <returns></returns>
+        public int GetStockByStore(Guid id, string storeAlias)
+        {
+            return API.Stock.Instance.GetStock(id, storeAlias);
+        }
+
+        /// <summary>
+        /// Get Stock 
+        /// </summary>
+        /// <returns></returns>
+        public int GetStock(Guid id)
+        {
+            return API.Stock.Instance.GetStock(id);
+        }
+
+        /// <summary>
+        /// Update Stock
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage UpdateStock(Guid id, string storeAlias, int stock)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                API.Stock.Instance.UpdateStock(id, stock, false);
+            }
+            else
+            {
+                API.Stock.Instance.UpdateStock(id, storeAlias, stock, false);
+            }
+            
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
     }
 }

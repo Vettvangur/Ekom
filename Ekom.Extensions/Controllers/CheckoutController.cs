@@ -69,41 +69,40 @@ namespace Ekom.Extensions.Controllers
             {
                 try
                 {
-
-                    if (line.Product.VariantGroups.Any())
+                    if (!line.Product.Backorder)
                     {
-                        foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                        if (line.Product.VariantGroups.Any())
                         {
-                            var variantStock = Stock.Instance.GetStock(variant.Key);
-
-                            _log.Info("Get Variant Stock: " + variantStock + " Line Qty:" + line.Quantity);
-
-                            if (variantStock >= line.Quantity)
+                            foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                             {
-                                hangfireJobs.Add(_stock.ReserveStock(variant.Key, line.Quantity));
-                            }
-                            else
-                            {
-                                //return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
-                            }
-                        }
-                        
-                    }
-                    else
-                    {
-                        var productStock = Stock.Instance.GetStock(line.ProductKey);
+                                var variantStock = Stock.Instance.GetStock(variant.Key);
 
-                        _log.Info("Get Product Stock: " + productStock + " Line Qty:" + line.Quantity);
+                                if (variantStock >= line.Quantity)
+                                {
+                                    hangfireJobs.Add(_stock.ReserveStock(variant.Key, line.Quantity));
+                                }
+                                else
+                                {
+                                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                                }
+                            }
 
-                        if (productStock >= line.Quantity)
-                        {
-                            hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, line.Quantity));
                         }
                         else
                         {
-                            //return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                            var productStock = Stock.Instance.GetStock(line.ProductKey);
+
+                            if (productStock >= line.Quantity)
+                            {
+                                hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, line.Quantity));
+                            }
+                            else
+                            {
+                                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough stock available");
+                            }
                         }
                     }
+
 
                     if (line.Discount != null)
                     {

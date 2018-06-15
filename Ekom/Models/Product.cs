@@ -84,6 +84,21 @@ namespace Ekom.Models
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
+        /// Get the backorder status
+        /// </summary>
+        public virtual bool Backorder
+        {
+            get
+            {
+                //TODO Store default setup!
+
+                var backOrderValue = Properties.GetPropertyValue("enableBackorder", Store.Alias);
+
+                return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
+            }
+        }
+
+        /// <summary>
         /// Product images
         /// </summary>
         public virtual IEnumerable<Image> Images

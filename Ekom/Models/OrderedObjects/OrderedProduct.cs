@@ -82,6 +82,12 @@ namespace Ekom.Models.OrderedObjects
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
+        //TODO Store default setup!
+        public bool Backorder => Properties.GetPropertyValue("enableBackorder").IsBoolean();
+
+        [ScriptIgnore]
+        [JsonIgnore]
+        [XmlIgnore]
         public DateTime CreateDate
         {
             get
