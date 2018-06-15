@@ -40,6 +40,11 @@ namespace Ekom.Interfaces
         /// 
         /// </summary>
         string Description { get; }
+
+        /// <summary>
+        /// Get Backorder status
+        /// </summary>
+        bool Backorder { get; }
         /// <summary>
         /// Product images
         /// </summary>

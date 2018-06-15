@@ -79,7 +79,7 @@ namespace Ekom.Extensions.Controllers
 
                                 if (variantStock >= line.Quantity)
                                 {
-                                    hangfireJobs.Add(_stock.ReserveStock(variant.Key, line.Quantity));
+                                    hangfireJobs.Add(_stock.ReserveStock(variant.Key, (line.Quantity * -1)));
                                 }
                                 else
                                 {
@@ -94,7 +94,7 @@ namespace Ekom.Extensions.Controllers
 
                             if (productStock >= line.Quantity)
                             {
-                                hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, line.Quantity));
+                                hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, (line.Quantity * -1)));
                             }
                             else
                             {
@@ -159,16 +159,18 @@ namespace Ekom.Extensions.Controllers
             if (paymentRequest.ShippingProvider != Guid.Empty)
             {
                 var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
-                var orderItemsList = orderItems.ToList();
-                orderItemsList.Add(new OrderItem
-                {
-                    GrandTotal = ekomSP.Price.Value,
-                    Price = ekomSP.Price.Value,
-                    Title = ekomSP.Title,
-                    Quantity = 1,
-                });
 
-                orderItems = orderItemsList;
+                if (ekomSP.Price.Value > 0)
+                {
+                    orderItems.Add(new OrderItem
+                    {
+                        GrandTotal = ekomSP.Price.Value,
+                        Price = ekomSP.Price.Value,
+                        Title = ekomSP.Title,
+                        Quantity = 1,
+                    });
+                }
+
             }
 
             if (order.Discount != null)
