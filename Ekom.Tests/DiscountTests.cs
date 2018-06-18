@@ -5,6 +5,7 @@ using Ekom.Models.OrderedObjects;
 using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using System;
 using System.Linq;
 
 namespace Ekom.Tests
@@ -41,7 +42,15 @@ namespace Ekom.Tests
 
             Assert.AreEqual(1, orderInfo.OrderLines.Count);
             Assert.AreEqual(500m, orderInfo.OrderLines.First().Discount.Amount.Amount);
-            Assert.AreEqual("38.478 kr", orderInfo.ChargedAmount.CurrencyString);
+
+            try
+            {
+                Assert.AreEqual("38.478 kr", orderInfo.ChargedAmount.CurrencyString);
+            }
+            catch (Exception)
+            {
+                Assert.AreEqual("38.478 ISK", orderInfo.ChargedAmount.CurrencyString);
+            }
         }
 
         [TestMethod]

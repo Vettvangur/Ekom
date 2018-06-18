@@ -3,6 +3,7 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Ekom.Tests
 {
@@ -103,7 +104,15 @@ namespace Ekom.Tests
 
             Assert.AreEqual(1, orderInfo.OrderLines.Count);
             Assert.AreEqual("127.0.0.1", orderInfo.CustomerInformation.CustomerIpAddress);
-            Assert.AreEqual("55.000 kr", orderInfo.ChargedAmount.CurrencyString);
+
+            try
+            {
+                Assert.AreEqual("55.000 kr", orderInfo.ChargedAmount.CurrencyString);
+            }
+            catch (Exception)
+            {
+                Assert.AreEqual("55.000 ISK", orderInfo.ChargedAmount.CurrencyString);
+            }
         }
     }
 }
