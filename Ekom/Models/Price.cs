@@ -355,7 +355,7 @@ namespace Ekom.Models
 )
         {
             Value = price;
-            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(culture));
+            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(culture, false));
         }
 
         /// <summary>

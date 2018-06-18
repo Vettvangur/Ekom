@@ -16,9 +16,10 @@ namespace Ekom.Cache
         readonly StockRepository _stockRepo;
         public StockPerStoreCache(
             ILogFactory logFac,
+            Configuration config,
             StockRepository stockRepo,
             IBaseCache<IStore> storeCache
-        ) : base(null, storeCache, null)
+        ) : base(config, storeCache, null)
         {
             _stockRepo = stockRepo;
 

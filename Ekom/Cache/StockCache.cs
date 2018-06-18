@@ -15,12 +15,11 @@ namespace Ekom.Cache
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="stockRepo"></param>
         public StockCache(
             ILogFactory logFac,
+            Configuration config,
             IStockRepository stockRepo
-        ) : base(null, null)
+        ) : base(config, null)
         {
             _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));

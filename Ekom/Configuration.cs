@@ -30,7 +30,7 @@ namespace Ekom
         /// ekmPerStoreStock
         /// Controls which stock cache to will be used. Per store or per Product/Variant.
         /// </summary>
-        public bool PerStoreStock
+        public virtual bool PerStoreStock
         {
             get
             {

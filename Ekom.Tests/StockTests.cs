@@ -29,6 +29,7 @@ namespace Ekom.Tests
 
             var stockCache = new StockCache(
                 Mock.Of<ILogFactory>(),
+                new Configuration(),
                 stockRepo.Object
             );
             stockCache[newGuid] = new StockData();
@@ -64,6 +65,7 @@ namespace Ekom.Tests
 
             var stockCache = new StockCache(
                 Mock.Of<ILogFactory>(),
+                new Configuration(),
                 stockRepo.Object
             );
             stockCache[guid] = new StockData();
