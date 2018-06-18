@@ -37,7 +37,7 @@ namespace Ekom.Cache
         /// </summary>
         public abstract string NodeAlias { get; }
 
-        public ConcurrentDictionary<Guid, TItem> Cache { get; }
+        public virtual ConcurrentDictionary<Guid, TItem> Cache { get; }
          = new ConcurrentDictionary<Guid, TItem>();
 
         /// <summary>

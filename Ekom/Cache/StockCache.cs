@@ -1,11 +1,11 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
-using Examine;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
-using Umbraco.Core.Models;
 
 namespace Ekom.Cache
 {
@@ -24,6 +24,19 @@ namespace Ekom.Cache
         {
             _stockRepo = stockRepo;
             _log = logFac.GetLogger(typeof(StockCache));
+        }
+
+        public override ConcurrentDictionary<Guid, StockData> Cache
+        {
+            get
+            {
+                if (!_config.PerStoreStock)
+                {
+                    return base.Cache;
+                }
+
+                throw new StockException("PerStoreStock configuration enabled, please disable PerStoreStock before accessing this cache.");
+            }
         }
 
         public override string NodeAlias { get; } = "";

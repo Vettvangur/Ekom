@@ -1,4 +1,5 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Repository;
 using Ekom.Services;
@@ -22,6 +23,19 @@ namespace Ekom.Cache
             _stockRepo = stockRepo;
 
             _log = logFac.GetLogger(typeof(StockPerStoreCache));
+        }
+
+        public override ConcurrentDictionary<string, ConcurrentDictionary<Guid, StockData>> Cache
+        {
+            get
+            {
+                if (_config.PerStoreStock)
+                {
+                    return base.Cache;
+                }
+
+                throw new StockException("PerStoreStock configuration set to disabled, please configure PerStoreStock before accessing the cache.");
+            }
         }
 
         public override string NodeAlias { get; } = "";

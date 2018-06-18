@@ -46,7 +46,7 @@ namespace Ekom.Cache
         /// <summary>
         /// Concurrent dictionaries per store
         /// </summary>
-        public ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
+        public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
          = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
 
         /// <summary>

@@ -1,13 +1,10 @@
-﻿using System;
-using Ekom.Domain.Repositories;
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Models;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Script.Serialization;
-using Newtonsoft.Json;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
@@ -85,17 +82,42 @@ namespace Ekom.Controllers
         /// Update Stock
         /// </summary>
         [HttpPost]
+        public HttpResponseMessage UpdateStock(Guid id, int stock)
+        {
+            API.Stock.Instance.UpdateStock(id, stock);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Update Stock
+        /// </summary>
+        [HttpPost]
         public HttpResponseMessage UpdateStock(Guid id, string storeAlias, int stock)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                API.Stock.Instance.UpdateStock(id, stock, false);
-            }
-            else
-            {
-                API.Stock.Instance.UpdateStock(id, storeAlias, stock, false);
-            }
-            
+            API.Stock.Instance.UpdateStock(id, stock);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Set Stock
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage SetStock(Guid id, int stock)
+        {
+            API.Stock.Instance.SetStock(id, stock);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Set Stock
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage SetStock(Guid id, string storeAlias, int stock)
+        {
+            API.Stock.Instance.SetStock(id, storeAlias, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
