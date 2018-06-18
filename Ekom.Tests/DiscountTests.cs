@@ -41,7 +41,7 @@ namespace Ekom.Tests
 
             Assert.AreEqual(1, orderInfo.OrderLines.Count);
             Assert.AreEqual(500m, orderInfo.OrderLines.First().Discount.Amount.Amount);
-            Assert.AreEqual("38.478 ISK", orderInfo.ChargedAmount.CurrencyString);
+            Assert.AreEqual("38.478 kr", orderInfo.ChargedAmount.CurrencyString);
         }
 
         [TestMethod]

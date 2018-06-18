@@ -12,7 +12,7 @@ namespace Ekom.Cache
 {
     class StockPerStoreCache : PerStoreCache<StockData>
     {
-        StockRepository _stockRepo;
+        readonly StockRepository _stockRepo;
         public StockPerStoreCache(
             ILogFactory logFac,
             StockRepository stockRepo,

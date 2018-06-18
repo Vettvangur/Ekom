@@ -93,5 +93,9 @@ namespace Ekom.Utilities
         /// 
         /// </summary>
         UpdateCustomerInformation,
+        /// <summary>
+        /// 
+        /// </summary>
+        ApplyCouponToOrder,
     }
 }

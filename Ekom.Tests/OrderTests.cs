@@ -103,7 +103,7 @@ namespace Ekom.Tests
 
             Assert.AreEqual(1, orderInfo.OrderLines.Count);
             Assert.AreEqual("127.0.0.1", orderInfo.CustomerInformation.CustomerIpAddress);
-            Assert.AreEqual("55.000 ISK", orderInfo.ChargedAmount.CurrencyString);
+            Assert.AreEqual("55.000 kr", orderInfo.ChargedAmount.CurrencyString);
         }
     }
 }

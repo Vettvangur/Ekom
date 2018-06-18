@@ -77,6 +77,16 @@
                             Total: <strong>@order.ChargedAmount.CurrencyString</strong>
                         </div>
 
+                        @using (Html.BeginEkomForm(FormType.ApplyCouponToOrder))
+                        {
+                            <label for="coupon">
+                                Coupon name
+                                <input type="text" id="coupon" name="coupon" value="" required/>
+                            </label>
+                            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                            <button type="submit" class="button small">Apply</button>
+                        }     
+
                     </div>
 
                 </div>

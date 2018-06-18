@@ -5,7 +5,6 @@ root = true
 
 # Default settings:
 [*]
-charset = utf-8-bom
 end_of_line = crlf
 indent_size = 4
 indent_style = space
@@ -16,3 +15,6 @@ indent_size = 2
 
 [*.{html,config}]
 indent_size = 2
+
+[*.{html,cshtml}]
+charset = utf-8-bom

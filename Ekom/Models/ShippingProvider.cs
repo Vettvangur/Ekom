@@ -9,7 +9,7 @@ namespace Ekom.Models
     /// <summary>
     /// F.x. home delivery or pickup.
     /// </summary>
-    public class ShippingProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IShippingProvider
+    public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
     {
         /// <summary>
         /// Ranges and zones

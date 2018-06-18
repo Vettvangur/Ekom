@@ -10,8 +10,6 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
-using System.Web.Routing;
 using TinyIoC;
 using Umbraco.Core;
 using Umbraco.Core.Events;
@@ -109,6 +107,7 @@ namespace Ekom
 
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(applicationContext.DatabaseContext.ConnectionString);
+            // ReSharper disable once ObjectCreationAsStatement
             new BackgroundJobServer();
 
             _log.Info("Ekom Started");
@@ -195,6 +194,7 @@ namespace Ekom
                 cacheEntry?.AddReplace(node);
             }
         }
+
         //TODO Needs testing
         private void ContentService_Moved(
             IContentService sender,
@@ -207,6 +207,7 @@ namespace Ekom
 
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
+                cacheEntry?.Remove(node.Key);
                 cacheEntry?.AddReplace(node);
             }
         }
