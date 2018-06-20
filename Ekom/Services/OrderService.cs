@@ -626,12 +626,19 @@ namespace Ekom.Services
 
         private void DeleteOrderCookie(string key)
         {
-            HttpCookie cookie = new HttpCookie(key)
-            {
-                Expires = DateTime.Now.AddDays(-1)
-            };
+            var cookie = _httpCtx.Request.Cookies[key];
 
-            _httpCtx.Response.Cookies.Set(cookie);
+            if (cookie != null)
+            {
+                cookie.Expires = DateTime.Now.AddDays(-1);
+                cookie.Value = null;
+
+                _httpCtx.Response.SetCookie(cookie);
+            }
+            else
+            {
+                _log.Warn("Could not delete order cookie. Cookie not found. Key: " + key);
+            }
 
         }
 
