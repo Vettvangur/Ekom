@@ -51,6 +51,11 @@ export default class Orders extends Component {
           {
             Header: 'OrderNumber',
             accessor: 'OrderNumber',
+            Cell: row => (
+              <a href="#">
+                {row.value}
+              </a>
+            )
           },
           {
             Header: 'Status',

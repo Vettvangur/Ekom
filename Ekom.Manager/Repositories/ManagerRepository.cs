@@ -5,6 +5,7 @@ using Ekom.Services;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Umbraco.Core;
 
 namespace Ekom.Repository
@@ -66,26 +67,40 @@ namespace Ekom.Repository
                 return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2)", OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
             }
         }
-        public IEnumerable<OrderData> GetCompletedOrders(DateTime start, DateTime end)
+
+        public IEnumerable<OrderData> GetAllOrders(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2) AND CreateDate >= @3 AND CreateDate < @4",
-                    OrderStatus.ReadyForDispatch,
+                var offlinePayments = db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
                     OrderStatus.OfflinePayment,
+                    startDate,
+                    endDate);
+
+                var readyOrders = db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1) AND (PaidDate >= @2 AND PaidDate <= @3)",
+                    OrderStatus.ReadyForDispatch,
                     OrderStatus.Dispatched,
                     startDate,
                     endDate);
+
+                return offlinePayments.Concat(readyOrders);
             }
         }
-        public IEnumerable<OrderData> GetOrdersByStatus(OrderStatus orderStatus)
+
+        public IEnumerable<OrderData> GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus)
         {
+            var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE OrderStatusCol = @0", orderStatus);
+                return db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
+                    orderStatus,
+                    startDate,
+                    endDate); 
             }
         }
     }
