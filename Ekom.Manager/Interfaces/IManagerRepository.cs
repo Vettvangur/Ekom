@@ -13,5 +13,10 @@ namespace Ekom.Interfaces
         IEnumerable<OrderData> GetOrders();
         void InsertOrder(OrderData orderData);
         void UpdateOrder(OrderData orderData);
+        void UpdateStatus(Guid orderId, OrderStatus status);
+        IEnumerable<IDiscount> GetDiscounts();
+        IEnumerable<IShippingProvider> GetShippingProviders();
+        IEnumerable<IPaymentProvider> GetPaymentProviders();
+        IEnumerable<IStore> GetStores();
     }
 }
