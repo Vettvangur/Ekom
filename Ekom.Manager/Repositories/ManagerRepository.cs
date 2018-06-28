@@ -36,7 +36,7 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderData> GetOrders()
+        public IEnumerable<OrderData> GetOrders(DateTime start, DateTime end)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {

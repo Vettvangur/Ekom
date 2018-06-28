@@ -38,10 +38,6 @@ export default class Orders extends Component {
   }
 
   getOrders() {
-    [
-      "/umbraco/backoffice/ekom/managerapi/getorder?",
-      "/umbraco/backoffice/ekom/managerapi/"
-    ]
     return fetch('/umbraco/backoffice/ekom/managerapi/getorders', {
       credentials: 'include',
     }).then(function (response) {
@@ -112,13 +108,11 @@ export default class Orders extends Component {
       <main>
         <nav className={s.navigation}>
 
-          <div data-query="AllOrders">All</div>
-          <div data-query="ReadyForDispatch">Incomplete</div>
 
           <Link to="#" className={s.brand}>Orders</Link>
           <ul className={s.list}>
-            <li className={s.link}>All</li>
-            <li className={s.link}>test</li>
+            <li className={s.link}>All orders</li>
+            <li className={s.link}>Incomplete</li>
           </ul>
         </nav>
 

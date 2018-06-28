@@ -1,4 +1,5 @@
-﻿using Ekom.Interfaces;
+﻿using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
@@ -27,18 +28,22 @@ namespace Ekom.Controllers
         /// List of orders.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<OrderData> GetOrders()
+        public IEnumerable<OrderData> GetOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
-            return _managerRepository.GetOrdersByStatus(Helpers.OrderStatus.Incomplete);
+            return _managerRepository.GetOrdersByStatus(start, end, Helpers.OrderStatus.Incomplete);
         }
 
         /// <summary>
         /// List of orders.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<OrderData> GetOrders([FromUri] DateTime start, [FromUri] DateTime end)
+        public IEnumerable<OrderData> GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
-            return _managerRepository.GetCompletedOrders(start, end);
+            return _managerRepository.GetAllOrders(start, end);
+        }
+        public IEnumerable<OrderData> GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, OrderStatus orderStatus)
+        {
+            return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
     }
 }

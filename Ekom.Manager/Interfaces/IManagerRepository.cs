@@ -8,10 +8,10 @@ namespace Ekom.Interfaces
     public interface IManagerRepository
     {
         IEnumerable<OrderData> GetCompletedOrders();
-        IEnumerable<OrderData> GetCompletedOrders(DateTime start, DateTime end);
-        IEnumerable<OrderData> GetOrdersByStatus(OrderStatus orderStatus);
+        IEnumerable<OrderData> GetAllOrders(DateTime start, DateTime end);
+        IEnumerable<OrderData> GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus);
         OrderData GetOrder(Guid uniqueId);
-        IEnumerable<OrderData> GetOrders();
+        IEnumerable<OrderData> GetOrders(DateTime start, DateTime en);
         void InsertOrder(OrderData orderData);
         void UpdateOrder(OrderData orderData);
     }
