@@ -36,7 +36,7 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderData> GetOrders(DateTime start, DateTime end)
+        public IEnumerable<OrderData> GetOrders()
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
@@ -57,14 +57,6 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(orderData);
-            }
-        }
-
-        public IEnumerable<OrderData> GetCompletedOrders()
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1 or OrderStatusCol = @2)", OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
             }
         }
 
