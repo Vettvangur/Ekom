@@ -8,7 +8,10 @@ module.exports = isProd => {
     // These are the files wepack imports. The keys are the known as [name] and
     // are the final filenames. The values are the path to each file.
     entry: {
-      site: ['babel-polyfill', 'src/app']
+      site: [
+        'babel-polyfill', 
+        'src/app'
+      ]
     },
 
     module: {

@@ -1,25 +1,35 @@
 ﻿import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
+import _ from "lodash";
 import orderStore from 'stores/orderStore';
 import ReactTable from 'react-table';
 
+import s from './orders.scss';
 export default class Orders extends Component {
 
   constructor(props) {
     super(props);
 
     this.state = {
-      orders: [],
       loading: true,
+      defaultData: [],
+      orders: [],
+      page: 0,
+      pageSize: 10,
+      expanded: {},
+      resized: [],
+      filtered: []
     }
+    this.defaultFilter = this.defaultFilter.bind(this);
   }  
 
   componentDidMount() {
 
     this.getOrders().then((orders) => {
 
-      console.log(orders);
-
+      console.log(orders)
       this.setState({
+        defaultData: orders,
         orders: orders,
         loading: false,
       });
@@ -28,6 +38,10 @@ export default class Orders extends Component {
   }
 
   getOrders() {
+    [
+      "/umbraco/backoffice/ekom/managerapi/getorder?",
+      "/umbraco/backoffice/ekom/managerapi/"
+    ]
     return fetch('/umbraco/backoffice/ekom/managerapi/getorders', {
       credentials: 'include',
     }).then(function (response) {
@@ -37,11 +51,18 @@ export default class Orders extends Component {
     });
   }
 
+
+  defaultFilter(filter, row) {
+    return String(row[filter.id]).includes(filter.value)
+  }
   render() {
 
     const {
       loading,
+      defaultData,
       orders,
+      pages,
+      filtered
     } = this.state;
 
     var columns = [
@@ -49,8 +70,11 @@ export default class Orders extends Component {
         Header: 'Orders',
         columns: [
           {
-            Header: 'OrderNumber',
+            Header: 'Order Number',
             accessor: 'OrderNumber',
+            Cell: row => (
+              <Link to={`/manager/order/${row.value}`}>{row.value}</Link>
+            )
           },
           {
             Header: 'Status',
@@ -86,16 +110,29 @@ export default class Orders extends Component {
 
     return (
       <main>
-        {orders.length
-        ? <ReactTable
-            data={orders}
-            filterable
-            columns={columns}
-            defaultPageSize={40}
-            loading={loading}
-            className="-striped -highlight"
-          />
-        : null}
+        <nav className={s.navigation}>
+
+          <div data-query="AllOrders">All</div>
+          <div data-query="ReadyForDispatch">Incomplete</div>
+
+          <Link to="#" className={s.brand}>Orders</Link>
+          <ul className={s.list}>
+            <li className={s.link}>All</li>
+            <li className={s.link}>test</li>
+          </ul>
+        </nav>
+
+        <div className="page-content">
+          <ReactTable
+              data={orders}
+              filterable
+              defaultFilterMethod={this.defaultFilter}
+              columns={columns}
+              defaultPageSize={2}
+              loading={loading}
+              className="-striped -highlight"
+            />
+        </div>
       </main>
     );
   }

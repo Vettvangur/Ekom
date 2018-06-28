@@ -1,0 +1,28 @@
+@import '~variables';
+@import '~mixins';
+
+
+.navigation {
+  background-color: #fff;
+  width:100%;
+  display:flex;
+}
+
+.list {
+  display: flex;
+  width: 100%;
+  align-items:flex-end;
+}
+
+.brand {
+  display: block;
+  padding: 30px 0;
+  margin-right:24px;
+  margin-left:16px;
+  font-size: em(24);
+}
+
+.link {
+  display: block;
+  font-size: em(16);
+}

@@ -9,7 +9,6 @@ export default class Navigation extends Component {
 
         return (
           <nav className={s.navigation}>
-            <Link to={window.ekom.path + "/manager"} className={s.brand}>E</Link>
             <ul className={s.list}>
               <li><Link to={window.ekom.path + "/manager"} className={classNames(s.link, "icon-home3")} title="Dashboard"></Link></li>
               <li><Link to={window.ekom.path + "/manager/orders"} className={classNames(s.link, "icon-clipboard-text")} title="Orders"></Link></li>

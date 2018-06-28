@@ -16,6 +16,7 @@ window.ekom = {};
 
 window.ekom.path = path;
 
+
 ReactDOM.render( 
     <Fragment>
       <Router>
@@ -24,6 +25,7 @@ ReactDOM.render(
           <Switch>
             <Route exact path={path + "/manager"} component={Dashboard} />
             <Route exact path={path + "/manager/orders"} component={Orders} />
+            <Route exact path={path + "/manager/order/:id"} component={Orders} />
             <Route component={Page404} />
           </Switch>
         </Fragment>
