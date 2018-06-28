@@ -11,6 +11,8 @@ export default class Orders extends Component {
     super(props);
 
     this.state = {
+      start: Date(),
+      end: Date(),
       loading: true,
       defaultData: [],
       orders: [],
@@ -21,20 +23,63 @@ export default class Orders extends Component {
       filtered: []
     }
     this.defaultFilter = this.defaultFilter.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this);
   }  
 
   componentDidMount() {
-
-    this.getOrders().then((orders) => {
+    const now = new Date();
+    const start = now.toISOString().split('T')[0]
+    console.log(start)
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + now.getDate()).toISOString().split('T')[0];
+    this.setState({
+      start: start,
+      end: end
+    });
+    
+    this.getOrders(start, end).then((orders) => {
 
       console.log(orders)
       this.setState({
+        start: start,
+        end: end,
         defaultData: orders,
         orders: orders,
         loading: false,
       });
 
     });
+  }
+  handleInputChange(event) {
+    const target = event.target;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    const name = target.name;
+
+    console.log(target)
+
+    this.setState({
+      [name]: value
+    });
+  }
+
+
+  getAllOrders(start, end) {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${start}&end=${end}`, {
+      credentials: 'include',
+    }).then(function (response) {
+      return response.json();
+    }).then(function (result) {
+      return result;
+    });
+  }
+
+  getIncompleteOrders(start, end) {
+
+  }
+  getAbandonedBaskets(start, end) {
+
+  }
+  getOrdersWaitingForPayment(start, end) {
+
   }
 
   getOrders() {
@@ -54,6 +99,8 @@ export default class Orders extends Component {
   render() {
 
     const {
+      start,
+      end,
       loading,
       defaultData,
       orders,
@@ -117,6 +164,17 @@ export default class Orders extends Component {
         </nav>
 
         <div className="page-content">
+
+        <form>
+          <div className="input">
+            <label htmlFor="startDate">Start date:</label>
+            <input type="date" name="start" value={start} onChange={this.handleInputChange} />
+          </div>
+          <div className="input">
+            <label htmlFor="endDate">Start date:</label>
+            <input type="date" name="end" value={end} onChange={this.handleInputChange} />
+          </div>
+        </form>
           <ReactTable
               data={orders}
               filterable
