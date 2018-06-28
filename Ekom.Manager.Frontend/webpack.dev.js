@@ -16,10 +16,6 @@ module.exports = merge(common(false), {
     path: path.join(__dirname, '../Ekom.Site/App_Plugins/EkomManager'),
   },
 
-  plugins: [
-    new webpack.HotModuleReplacementPlugin()
-  ],
-
   //plugins: [
     // This runs BrowserSync.
     //new BrowserSyncPlugin({
