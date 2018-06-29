@@ -1,7 +1,9 @@
 ﻿using Ekom.Interfaces;
 using Ekom.IoC;
 using Ekom.Repository;
+using System;
 using System.Collections.Generic;
+using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Routing;
 using umbraco;
@@ -17,10 +19,17 @@ namespace Umbraco.Extensions.Events
 
             RouteTable.Routes.MapRoute(
                 name: "EkomManager",
-                url: GlobalSettings.UmbracoMvcArea + "/backoffice/ekom/{action}/{id}",
-                defaults: new { controller = "Ekom", action = "Manager", id = UrlParameter.Optional }
+                url: GlobalSettings.UmbracoMvcArea + "/backoffice/ekom/{action}/{id}/{orderId}",
+                defaults: new { controller = "Ekom", action = "Manager", id = UrlParameter.Optional, orderId = "" }
             );
 
+
+            GlobalConfiguration.Configuration.Formatters.JsonFormatter.MediaTypeMappings
+    .Add(new System.Net.Http.Formatting.RequestHeaderMapping("Accept",
+                  "text/html",
+                  StringComparison.InvariantCultureIgnoreCase,
+                  true,
+                  "application/json"));
             //RouteTable.Routes.RouteExistingFiles = true;
             //RouteTable.Routes.MapPageRoute("ekomManager",
             //    GlobalSettings.UmbracoMvcArea + "/backoffice/ekom/{*pathInfo}", 
