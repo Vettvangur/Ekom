@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
@@ -13,7 +13,7 @@ namespace Ekom.Controllers
     [Umbraco.Web.Mvc.PluginController("Ekom")]
     public class ManagerApiController : UmbracoAuthorizedApiController
     {
-        IManagerRepository _managerRepository;
+        readonly IManagerRepository _managerRepository;
         /// <summary>
         /// ctor
         /// </summary>

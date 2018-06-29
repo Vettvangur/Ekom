@@ -95,3 +95,4 @@ UmbracoTraceLog.txt
 **/Ekom.Site/content/css/*
 **/Ekom.Site/content/js/*
 Ekom.Site/App_Plugins/EkomManager/site.js
+Ekom.Site/App_Plugins/EkomManager/css/site.css
