@@ -1,4 +1,4 @@
-﻿using CommonServiceLocator.TinyIoCAdapter;
+using CommonServiceLocator.TinyIoCAdapter;
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Domain.Repositories;
@@ -120,6 +120,14 @@ namespace Ekom.App_Start
                     c.Resolve<IStoreService>()
                 )
             );
+            container.Register<Discounts>((c, p) =>
+                 new Discounts(
+                    c.Resolve<Configuration>(),
+                    c.Resolve<ILogFactory>(),
+                    c.Resolve<IPerStoreCache<IDiscount>>(),
+                    c.Resolve<IStoreService>()
+                 )
+             );
 
             container.RegisterTypes(containerRegistrations);
 

@@ -1,43 +1,39 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Services;
 using log4net;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ekom.API
 {
     /// <summary>
     /// The Ekom API, grants access to the current discounts 
     /// </summary>
-    public class Discount
+    public class Discounts
     {
         /// <summary>
         /// Discount Instance
         /// </summary>
-        public static Discount Instance => Configuration.container.GetInstance<Discount>();
+        public static Discounts Instance => Configuration.container.GetInstance<Discounts>();
 
-        ILog _log;
-        Configuration _config;
-        IPerStoreCache<IDiscount> _discountCache;
-        IStoreService _storeSvc;
+        readonly ILog _log;
+        readonly Configuration _config;
+        readonly IPerStoreCache<IDiscount> _discountCache;
+        readonly IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
-        internal Discount(
-
+        internal Discounts(
             Configuration config,
             ILogFactory logFac,
             IPerStoreCache<IDiscount> discountCache,
             IStoreService storeService
         )
         {
-            _config = config; 
-            _log = logFac.GetLogger<Catalog>();
+            _config = config;
+            _log = logFac.GetLogger<Discounts>();
             _discountCache = discountCache;
             _storeSvc = storeService;
         }

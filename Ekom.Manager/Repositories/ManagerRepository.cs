@@ -113,7 +113,7 @@ namespace Ekom.Repository
 
         public IEnumerable<IDiscount> GetDiscounts()
         {
-            return API.Discount.Instance.GetDiscounts();
+            return API.Discounts.Instance.GetDiscounts();
         }
 
         public void UpdateStatus(Guid orderId, OrderStatus orderStatus)
