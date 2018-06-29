@@ -1,12 +1,15 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 
@@ -24,6 +27,9 @@ namespace Ekom.Models.Discounts
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
         internal List<IProduct> discountItems = new List<IProduct>();
+        [ScriptIgnore]
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IReadOnlyCollection<IProduct> DiscountItems => discountItems.AsReadOnly();
 
         /// <summary>
