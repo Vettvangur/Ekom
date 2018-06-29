@@ -19,7 +19,7 @@ namespace Ekom.Controllers
         /// </summary>
         public ManagerApiController()
         {
-            //_managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
+            _managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
         }
 
         public string Get()

@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.IoC;
 using Ekom.Repository;
 using System;
@@ -13,9 +13,13 @@ namespace Umbraco.Extensions.Events
 {
     class EkomEvents : ApplicationEventHandler
     {
-        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        protected override void ApplicationStarting(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
         {
             Ekom.EkomStartup.ApplicationStartedCalled += EkomStartup_ApplicationStarted;
+        }
+
+        protected override void ApplicationStarted(UmbracoApplicationBase umbracoApplication, ApplicationContext applicationContext)
+        {
 
             RouteTable.Routes.MapRoute(
                 name: "EkomManager",
@@ -25,11 +29,12 @@ namespace Umbraco.Extensions.Events
 
 
             GlobalConfiguration.Configuration.Formatters.JsonFormatter.MediaTypeMappings
-    .Add(new System.Net.Http.Formatting.RequestHeaderMapping("Accept",
+                .Add(new System.Net.Http.Formatting.RequestHeaderMapping("Accept",
                   "text/html",
                   StringComparison.InvariantCultureIgnoreCase,
                   true,
                   "application/json"));
+
             //RouteTable.Routes.RouteExistingFiles = true;
             //RouteTable.Routes.MapPageRoute("ekomManager",
             //    GlobalSettings.UmbracoMvcArea + "/backoffice/ekom/{*pathInfo}", 
