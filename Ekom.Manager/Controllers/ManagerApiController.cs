@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
@@ -13,13 +13,18 @@ namespace Ekom.Controllers
     [Umbraco.Web.Mvc.PluginController("Ekom")]
     public class ManagerApiController : UmbracoAuthorizedApiController
     {
-        IManagerRepository _managerRepository;
+        readonly IManagerRepository _managerRepository;
         /// <summary>
         /// ctor
         /// </summary>
         public ManagerApiController()
         {
             _managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
+        }
+
+        public string Get()
+        {
+            return "sup";
         }
 
         /// <summary>
@@ -49,19 +54,19 @@ namespace Ekom.Controllers
 
             return new { success = true };
         }
-        public object GetStores()
+        public IEnumerable<IStore> GetStores()
         {
             return _managerRepository.GetStores();
         }
-        public object GetShippingProviders()
+        public IEnumerable<IShippingProvider> GetShippingProviders()
         {
             return _managerRepository.GetShippingProviders();
         }
-        public object GetPaymentProviders()
+        public IEnumerable<IPaymentProvider> GetPaymentProviders()
         {
             return _managerRepository.GetPaymentProviders();
         }
-        public object GetDiscounts()
+        public IEnumerable<IDiscount> GetDiscounts()
         {
             return _managerRepository.GetDiscounts();
         }
