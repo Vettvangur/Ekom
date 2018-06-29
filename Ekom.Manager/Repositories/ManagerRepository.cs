@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
@@ -12,9 +12,9 @@ namespace Ekom.Repository
 {
     class ManagerRepository : IManagerRepository
     {
-        ILog _log;
-        Configuration _config;
-        ApplicationContext _appCtx;
+        readonly ILog _log;
+        readonly Configuration _config;
+        readonly ApplicationContext _appCtx;
         /// <summary>
         /// ctor
         /// </summary>
@@ -25,7 +25,7 @@ namespace Ekom.Repository
         {
             _config = config;
             _appCtx = appCtx;
-            _log = logFac.GetLogger(typeof(OrderRepository));
+            _log = logFac.GetLogger<OrderRepository>();
         }
 
         public OrderData GetOrder(Guid uniqueId)
@@ -92,7 +92,7 @@ namespace Ekom.Repository
                 return db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
                     orderStatus,
                     startDate,
-                    endDate); 
+                    endDate);
             }
         }
 
