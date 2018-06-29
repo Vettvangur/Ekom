@@ -24,6 +24,7 @@ export default class Orders extends Component {
     }
     this.defaultFilter = this.defaultFilter.bind(this);
     this.handleInputChange = this.handleInputChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }  
 
   componentDidMount() {
@@ -59,6 +60,24 @@ export default class Orders extends Component {
     this.setState({
       [name]: value
     });
+  }
+  handleSubmit(event) {
+    event.preventDefault();
+    const { start, end } = this.props;
+    this.setState({loading: true});
+    this.getOrders(start, end).then((orders) => {
+
+      console.log(orders)
+      this.setState({
+        start: start,
+        end: end,
+        defaultData: orders,
+        orders: orders,
+        loading: false,
+      });
+
+    });
+    
   }
 
 
@@ -121,7 +140,48 @@ export default class Orders extends Component {
           },
           {
             Header: 'Status',
-            accessor: 'OrderStatus',
+            id: 'status',
+            accessor: d => {
+              if (d.OrderStatus === 0) {
+                return "Cancelled"
+              } 
+              if (d.OrderStatus === 1) {
+                return "Closed"
+              }
+              if (d.OrderStatus === 2) {
+                return "Payment failed"
+              }
+              if (d.OrderStatus === 3) {
+                return "Incomplete"
+              }
+              if (d.OrderStatus === 4) {
+                return "Offline payment"
+              }
+              if (d.OrderStatus === 5) {
+                return "Pending"
+              }
+              if (d.OrderStatus === 6) {
+                return "Ready for dispatch"
+              }
+              if (d.OrderStatus === 7) {
+                return "Ready for dispatch when in stock"
+              }
+              if (d.OrderStatus === 8) {
+                return "Dispatched"
+              }
+              if (d.OrderStatus === 9) {
+                return "Waiting for payment"
+              }
+              if (d.OrderStatus === 10) {
+                return "Waiting for payment provider"
+              }
+              if (d.OrderStatus === 11) {
+                return "Returned"
+              }
+              if (d.OrderStatus === 12) {
+                return "Wishlist"
+              }
+            },
           },
           {
             Header: 'Email',
@@ -134,6 +194,17 @@ export default class Orders extends Component {
           {
             Header: 'Country',
             accessor: 'CustomerCountry',
+            id: 'country',
+            Filter: ({ filter, onChange }) =>
+              <select
+                onChange={event => onChange(event.target.value)}
+                style={{ width: "100%" }}
+                value={filter ? filter.value : "all"}
+              >
+                <option value="all">Show All countries</option>
+                <option value="true">Iceland</option>
+                <option value="false">Can't Drink</option>
+              </select>
           },
           {
             Header: 'Created',
@@ -165,7 +236,7 @@ export default class Orders extends Component {
 
         <div className="page-content">
 
-        <form>
+        <form onSubmit={this.handleSubmit}>
           <div className="input">
             <label htmlFor="startDate">Start date:</label>
             <input type="date" name="start" value={start} onChange={this.handleInputChange} />
@@ -174,6 +245,7 @@ export default class Orders extends Component {
             <label htmlFor="endDate">Start date:</label>
             <input type="date" name="end" value={end} onChange={this.handleInputChange} />
           </div>
+          <button type="submit">Search</button>
         </form>
           <ReactTable
               data={orders}
