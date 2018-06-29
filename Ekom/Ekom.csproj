@@ -235,6 +235,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Discount.cs" />
     <Compile Include="API\Order.Discounts.cs" />
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />

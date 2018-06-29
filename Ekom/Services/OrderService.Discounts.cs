@@ -307,7 +307,7 @@ namespace Ekom.Services
             var defStore = _storeSvc.GetAllStores().First();
             var discount = _discountCache[defStore.Alias][Key];
 
-            (discount as Discount)?.OnCouponApply();
+            (discount as Models.Discounts.Discount)?.OnCouponApply();
         }
 
         private void ApplyGlobalDiscounts(OrderInfo orderInfo)

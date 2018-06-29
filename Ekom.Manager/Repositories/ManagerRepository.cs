@@ -78,7 +78,7 @@ namespace Ekom.Repository
                     startDate,
                     endDate);
 
-                return offlinePayments.Concat(readyOrders);
+                return offlinePayments.Concat(readyOrders).OrderByDescending(x => x.ReferenceId);
             }
         }
 
@@ -94,6 +94,31 @@ namespace Ekom.Repository
                     startDate,
                     endDate); 
             }
+        }
+
+        public IEnumerable<IStore> GetStores()
+        {
+            return API.Store.Instance.GetAllStores();
+        }
+
+        public IEnumerable<IPaymentProvider> GetPaymentProviders()
+        {
+            return API.Providers.Instance.GetPaymentProviders();
+        }
+
+        public IEnumerable<IShippingProvider> GetShippingProviders()
+        {
+            return API.Providers.Instance.GetShippingProviders();
+        }
+
+        public IEnumerable<IDiscount> GetDiscounts()
+        {
+            return API.Discount.Instance.GetDiscounts();
+        }
+
+        public void UpdateStatus(Guid orderId, OrderStatus orderStatus)
+        {
+            API.Order.Instance.UpdateStatus(orderStatus, orderId);
         }
     }
 }

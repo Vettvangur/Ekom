@@ -43,5 +43,27 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
+        public object UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
+        {
+            _managerRepository.UpdateStatus(orderId, orderStatus);
+
+            return new { success = true };
+        }
+        public object GetStores()
+        {
+            return _managerRepository.GetStores();
+        }
+        public object GetShippingProviders()
+        {
+            return _managerRepository.GetShippingProviders();
+        }
+        public object GetPaymentProviders()
+        {
+            return _managerRepository.GetPaymentProviders();
+        }
+        public object GetDiscounts()
+        {
+            return _managerRepository.GetDiscounts();
+        }
     }
 }

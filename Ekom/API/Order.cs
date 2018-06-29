@@ -78,7 +78,7 @@ namespace Ekom.API
             _orderService.ChangeOrderStatus(order.UniqueId, newStatus);
         }
 
-        public void UpdateStatus(string storeAlias, OrderStatus newStatus, Guid orderId)
+        public void UpdateStatus(OrderStatus newStatus, Guid orderId)
         {
             _orderService.ChangeOrderStatus(orderId, newStatus);
         }
