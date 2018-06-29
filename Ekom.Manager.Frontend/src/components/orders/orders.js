@@ -237,6 +237,61 @@ export default class Orders extends Component {
       filtered
     } = this.state;
 
+    const statusList = [
+      {
+        id: 0,
+        value: "Cancelled"
+      },
+      {
+        id: 1,
+        value: "Closed"
+      },
+      {
+        id: 2,
+        value: "Payment failed"
+      },
+      {
+        id: 3,
+        value: "Incomplete"
+      },
+      {
+        id: 4,
+        value: "Offline payment"
+      },
+      {
+        id: 5,
+        value: "Pending"
+      },
+      {
+        id: 6,
+        value: "Ready for dispatch"
+      },
+      {
+        id: 7,
+        value: "Ready for dispatch when in stock"
+      },
+      {
+        id: 8,
+        value: "Dispatched"
+      },
+      {
+        id: 9,
+        value: "Waiting for payment"
+      },
+      {
+        id: 10,
+        value: "Waiting for payment provider"
+      },
+      {
+        id: 11,
+        value: "Returned"
+      },
+      {
+        id: 12,
+        value: "Wishlist"
+      },
+    ]
+
     var columns = [
       {
         Header: 'Orders',
@@ -251,7 +306,7 @@ export default class Orders extends Component {
           {
             Header: 'Status',
             id: 'status',
-            accessor: d => this.getOrderStatus(d.OrderStatus),
+            accessor: d => d.OrderStatus,
             filterMethod: (filter, row) => {
               if (filter.value === "all") {
                 return true;
@@ -264,12 +319,21 @@ export default class Orders extends Component {
                 value={filter ? filter.value : "all"}
               >
                 <option value="all">Show All</option>
+                {statusList.map(status => {
+                    return <option key={status.id} value={status.id}>{status.value}</option>
+                })}
               </select>,
             Cell: row => (
               <select 
                 onChange={event => this.updateStatus(/* Vantar að setja inn value og líka vöru id til þess að updatea */)}
               >
-                <option value={row.value}>{row.value}</option>
+                {statusList.map(status => {
+                  if (row.value === status.id) {
+                    return <option key={status.id} selected value={status.id}>{status.value}</option>
+                  } else {
+                     return <option key={status.id} value={status.id}>{status.value}</option>
+                  }
+                })}
               </select>
             )
           },
@@ -435,7 +499,7 @@ export default class Orders extends Component {
             <select name="store">
               <option value="all">All stores</option>
               {stores.map(store => {
-                return <option value={store.Id}>{store.Title}</option>
+                return <option key={store.id} value={store.Id}>{store.Title}</option>
               })}
             </select>
           </div>
@@ -444,7 +508,7 @@ export default class Orders extends Component {
             <select name="payment">
               <option value="all">All payment options</option>
               {paymentProviders.map(provider => {
-                return <option value={provider.Id}>{provider.Title}</option>
+                return <option key={provider.id} value={provider.Id}>{provider.Title}</option>
               })}
             </select>
           </div>
@@ -453,7 +517,7 @@ export default class Orders extends Component {
             <select name="shipping">
               <option value="all">All shipping options</option>
               {shippingProviders.map(provider => {
-                return <option value={provider.Id}>{provider.Properties.nodeName}</option>
+                return <option key={provider.id} value={provider.Id}>{provider.Properties.nodeName}</option>
               })}
             </select>
           </div>
