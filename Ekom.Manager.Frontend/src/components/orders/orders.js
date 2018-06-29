@@ -13,6 +13,10 @@ export default class Orders extends Component {
     this.state = {
       start: Date(),
       end: Date(),
+      stores: [],
+      discounts: [],
+      paymentProviders: [],
+      shippingProviders: [],
       loading: true,
       defaultData: [],
       orders: [],
@@ -38,6 +42,20 @@ export default class Orders extends Component {
       start: start,
       end: end
     });
+
+    this.getDiscounts().then((res) => {
+      this.setState({discounts: res})
+    })
+
+    this.getShippingProviders().then((res) => {
+      this.setState({shippingProviders: res})
+    })
+    this.getPaymentProviders().then((res) => {
+      this.setState({paymentProviders: res})
+    })
+    this.getStores().then((res) => {
+      this.setState({stores: res})
+    })
     
     this.getOrders(start, end).then((orders) => {
 
@@ -90,27 +108,36 @@ export default class Orders extends Component {
     })
     .then(response => response.json())
     .then((json) => {
-      console.log(json)
+      return json
     })
   }
 
   getPaymentProviders() {
-    return fetch('/umbraco/backoffice/ekom/managerapi/getstores', {
+    return fetch('/umbraco/backoffice/ekom/managerapi/getpaymentproviders', {
       credentials: 'include',
     })
     .then(response => response.json())
     .then((json) => {
-      console.log(json)
+      return json
+    })
+  }
+  getShippingProviders() {
+    return fetch('/umbraco/backoffice/ekom/managerapi/getshippingproviders', {
+      credentials: 'include',
+    })
+    .then(response => response.json())
+    .then((json) => {
+      return json
     })
   }
 
   getDiscounts() {
-    return fetch('/umbraco/backoffice/ekom/managerapi/getstores', {
+    return fetch('/umbraco/backoffice/ekom/managerapi/getdiscounts', {
       credentials: 'include',
     })
     .then(response => response.json())
     .then((json) => {
-      console.log(json)
+      return json
     })
   }
 
@@ -191,13 +218,18 @@ export default class Orders extends Component {
   }
 
   updateStatus(id, value) {
-
+    console.log("test")
   }
   render() {
+    console.log(this.state)
 
     const {
       start,
       end,
+      shippingProviders,
+      paymentProviders,
+      stores,
+      discounts,
       loading,
       defaultData,
       orders,
@@ -220,6 +252,11 @@ export default class Orders extends Component {
             Header: 'Status',
             id: 'status',
             accessor: d => this.getOrderStatus(d.OrderStatus),
+            filterMethod: (filter, row) => {
+              if (filter.value === "all") {
+                return true;
+              }
+            },
             Filter: ({ filter, onChange }) =>
               <select
                 onChange={event => onChange(event.target.value)}
@@ -397,22 +434,32 @@ export default class Orders extends Component {
             <label htmlFor="store">Store:</label>
             <select name="store">
               <option value="all">All stores</option>
+              {stores.map(store => {
+                return <option value={store.Id}>{store.Title}</option>
+              })}
             </select>
           </div>
           <div className="input">
             <label htmlFor="payment">Payment option:</label>
             <select name="payment">
               <option value="all">All payment options</option>
+              {paymentProviders.map(provider => {
+                return <option value={provider.Id}>{provider.Title}</option>
+              })}
             </select>
           </div>
           <div className="input">
             <label htmlFor="shipping">Shipping option:</label>
             <select name="shipping">
               <option value="all">All shipping options</option>
+              {shippingProviders.map(provider => {
+                return <option value={provider.Id}>{provider.Properties.nodeName}</option>
+              })}
             </select>
           </div>
           <div className="input">
-            <select>
+            <label htmlFor="discounts">Discounts:</label>
+            <select name="discounts">
               <option value="all">All discounts</option>
             </select>
           </div>
@@ -428,7 +475,7 @@ export default class Orders extends Component {
               filterable
               defaultFilterMethod={this.defaultFilter}
               columns={columns}
-              defaultPageSize={2}
+              defaultPageSize={10}
               loading={loading}
               className="-striped -highlight"
             />
