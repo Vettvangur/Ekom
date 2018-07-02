@@ -35,9 +35,9 @@ export default class Orders extends Component {
 
   componentDidMount() {
     const now = new Date();
-    const start = now.toISOString().split('T')[0]
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDate()).toISOString().split('T')[0];
     console.log(start)
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + now.getDate()).toISOString().split('T')[0];
+    const end = now.toISOString().split('T')[0];
     this.setState({
       start: start,
       end: end
@@ -217,8 +217,8 @@ export default class Orders extends Component {
     return String(row[filter.id]).includes(filter.value)
   }
 
-  updateStatus(id, value) {
-    console.log("test")
+  updateStatus(event) {
+    console.log(event)
   }
   render() {
     console.log(this.state)
@@ -325,7 +325,7 @@ export default class Orders extends Component {
               </select>,
             Cell: row => (
               <select 
-                onChange={event => this.updateStatus(/* Vantar að setja inn value og líka vöru id til þess að updatea */)}
+                onChange={event => this.updateStatus(event)}
               >
                 {statusList.map(status => {
                   if (row.value === status.id) {
@@ -525,6 +525,9 @@ export default class Orders extends Component {
             <label htmlFor="discounts">Discounts:</label>
             <select name="discounts">
               <option value="all">All discounts</option>
+              {discounts.map(discount => {
+                return <option key={discount.id} value={discount.Id}>{discount.Properties.nodeName}</option>
+              })}
             </select>
           </div>
           <div className="input">

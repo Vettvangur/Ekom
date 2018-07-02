@@ -8,6 +8,7 @@ import Navigation from 'components/navigation';
 
 import Dashboard from 'components/dashboard';
 import Orders from 'components/orders';
+import Order from 'components/order';
 import Page404 from 'components/page404';
 
 const path = '/umbraco/backoffice/ekom';
@@ -25,7 +26,7 @@ ReactDOM.render(
           <Switch>
             <Route exact path={path + "/manager"} component={Dashboard} />
             <Route exact path={path + "/manager/orders"} component={Orders} />
-            <Route exact path={path + "/manager/order/:id"} component={Orders} />
+            <Route exact path={path + "/manager/order/:id"} component={Order} />
             <Route component={Page404} />
           </Switch>
         </Fragment>

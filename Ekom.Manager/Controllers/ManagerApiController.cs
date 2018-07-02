@@ -26,6 +26,10 @@ namespace Ekom.Controllers
         {
             return "sup";
         }
+        public OrderData GetOrder(Guid uniqueId)
+        {
+            return _managerRepository.GetOrder(uniqueId);
+        }
 
         /// <summary>
         /// List of orders.
