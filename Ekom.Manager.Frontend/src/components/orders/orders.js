@@ -229,9 +229,27 @@ export default class Orders extends Component {
       orderId: UniqueId,
       orderStatus: event.target.value,
     }
+    const xhr = new XMLHttpRequest()
+    xhr.open("post", "/umbraco/backoffice/ekom/managerapi/updatestatus")
+    xhr.onload = () => {
+      const resp = JSON.parse(xhr.response)
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (resp.success) {
+          //
+          console.log("resp")
+        } else {
+          //
+        }
+      } else {
+        
+      }
+    }
+    xhr.send(data);
+    /*
     orderService().updateStatus(data).then((res) => {
       console.log(res);
     })
+    */
   }
   render() {
     console.log(this.state)

@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;

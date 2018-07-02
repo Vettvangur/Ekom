@@ -30,7 +30,7 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetOrder(uniqueId);
         }
-
+        
         /// <summary>
         /// List of orders.
         /// </summary>
@@ -52,11 +52,12 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
-        public object UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
+
+        public bool UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
         {
             _managerRepository.UpdateStatus(orderId, orderStatus);
 
-            return new { success = true };
+            return true;
         }
         public IEnumerable<IStore> GetStores()
         {
