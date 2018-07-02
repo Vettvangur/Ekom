@@ -53,9 +53,12 @@ namespace Ekom.Controllers
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
 
-        public bool UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
+        public bool UpdateStatus([FromUri] Guid orderId, [FromUri] string orderStatus)
         {
-            _managerRepository.UpdateStatus(orderId, orderStatus);
+
+            var status = (OrderStatus)Enum.Parse(typeof(OrderStatus), orderStatus);
+
+            _managerRepository.UpdateStatus(orderId, status);
 
             return true;
         }
