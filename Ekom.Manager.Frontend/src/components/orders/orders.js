@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import _ from "lodash";
 import orderStore from 'stores/orderStore';
 import ReactTable from 'react-table';
+import statusList from '../../utilities/statusList';
+import { orderService } from '../../services';
 
 import s from './orders.scss';
+
+const path = '/umbraco/backoffice/ekom';
 export default class Orders extends Component {
 
   constructor(props) {
@@ -217,8 +221,17 @@ export default class Orders extends Component {
     return String(row[filter.id]).includes(filter.value)
   }
 
-  updateStatus(event) {
-    console.log(event)
+  updateStatus(event, UniqueId) {
+    console.log(event.target.value)
+    console.log(UniqueId)
+
+    const data = {
+      orderId: UniqueId,
+      orderStatus: event.target.value,
+    }
+    orderService().updateStatus(data).then((res) => {
+      console.log(res);
+    })
   }
   render() {
     console.log(this.state)
@@ -237,76 +250,32 @@ export default class Orders extends Component {
       filtered
     } = this.state;
 
-    const statusList = [
-      {
-        id: 0,
-        value: "Cancelled"
-      },
-      {
-        id: 1,
-        value: "Closed"
-      },
-      {
-        id: 2,
-        value: "Payment failed"
-      },
-      {
-        id: 3,
-        value: "Incomplete"
-      },
-      {
-        id: 4,
-        value: "Offline payment"
-      },
-      {
-        id: 5,
-        value: "Pending"
-      },
-      {
-        id: 6,
-        value: "Ready for dispatch"
-      },
-      {
-        id: 7,
-        value: "Ready for dispatch when in stock"
-      },
-      {
-        id: 8,
-        value: "Dispatched"
-      },
-      {
-        id: 9,
-        value: "Waiting for payment"
-      },
-      {
-        id: 10,
-        value: "Waiting for payment provider"
-      },
-      {
-        id: 11,
-        value: "Returned"
-      },
-      {
-        id: 12,
-        value: "Wishlist"
-      },
-    ]
-
     var columns = [
       {
         Header: 'Orders',
         columns: [
           {
             Header: 'Order Number',
-            accessor: 'OrderNumber',
+            id: 'orderNumber',
+            accessor: d => {
+              return {
+                UniqueId: d.UniqueId,
+                OrderNumber: d.OrderNumber,
+              }
+            },
             Cell: row => (
-              <Link to={`/manager/order/${row.value}`}>{row.value}</Link>
+              <Link to={`${path}/manager/order/${row.value.UniqueId}`}>{row.value.OrderNumber}</Link>
             )
           },
           {
             Header: 'Status',
             id: 'status',
-            accessor: d => d.OrderStatus,
+            accessor: d => {
+              return {
+                UniqueId: d.UniqueId,
+                OrderStatus: d.OrderStatus
+              }
+            },
             filterMethod: (filter, row) => {
               if (filter.value === "all") {
                 return true;
@@ -325,10 +294,10 @@ export default class Orders extends Component {
               </select>,
             Cell: row => (
               <select 
-                onChange={event => this.updateStatus(event)}
+                onChange={event => this.updateStatus(event, row.value.UniqueId)}
               >
                 {statusList.map(status => {
-                  if (row.value === status.id) {
+                  if (row.value.OrderStatus === status.id) {
                     return <option key={status.id} selected value={status.id}>{status.value}</option>
                   } else {
                      return <option key={status.id} value={status.id}>{status.value}</option>
