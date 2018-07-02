@@ -1,8 +1,10 @@
 ﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
+using log4net;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Web.Http;
 using Umbraco.Web.WebApi;
 
@@ -54,12 +56,13 @@ namespace Ekom.Controllers
         }
 
         [HttpPost]
-        public bool UpdateStatus(string orderId, string orderStatus)
+        public bool UpdateStatus([FromUri]Guid orderId, [FromUri]int orderStatus)
         {
+            var status = (OrderStatus)orderStatus;
 
-            var status = (OrderStatus)Convert.ToInt32(orderStatus);
+            Log.Info("Debug UpdateStatus: " + orderId + " Status: " + orderStatus + " afterParse: " + status);
 
-            _managerRepository.UpdateStatus(new Guid(orderId) , status);
+            _managerRepository.UpdateStatus(orderId, status);
 
             return true;
         }
@@ -79,5 +82,10 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetDiscounts();
         }
+
+        private static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }
