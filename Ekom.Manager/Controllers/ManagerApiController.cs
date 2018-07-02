@@ -60,8 +60,6 @@ namespace Ekom.Controllers
         {
             var status = (OrderStatus)orderStatus;
 
-            Log.Info("Debug UpdateStatus: " + orderId + " Status: " + orderStatus + " afterParse: " + status);
-
             _managerRepository.UpdateStatus(orderId, status);
 
             return true;
