@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -136,7 +136,11 @@ namespace Ekom.Services
 
                 DeleteOrderCookie(key);
                 _httpCtx.Session.Remove(key);
-                order.PaidDate = DateTime.Now;
+
+                if (status == OrderStatus.ReadyForDispatch) {
+                    order.PaidDate = DateTime.Now;
+                }
+                
             }
 
             _orderRepository.UpdateOrder(order);
