@@ -1,4 +1,4 @@
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
@@ -53,12 +53,13 @@ namespace Ekom.Controllers
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
 
-        public bool UpdateStatus([FromUri] Guid orderId, [FromUri] int orderStatus)
+        [HttpPost]
+        public bool UpdateStatus(string orderId, string orderStatus)
         {
 
-            var status = (OrderStatus)orderStatus;
+            var status = (OrderStatus)Convert.ToInt32(orderStatus);
 
-            _managerRepository.UpdateStatus(orderId, status);
+            _managerRepository.UpdateStatus(new Guid(orderId) , status);
 
             return true;
         }
