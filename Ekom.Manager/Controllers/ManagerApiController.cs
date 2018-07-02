@@ -1,4 +1,4 @@
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
@@ -22,11 +22,6 @@ namespace Ekom.Controllers
             _managerRepository = Ekom.Configuration.container.GetInstance<IManagerRepository>();
         }
 
-        public string Get()
-        {
-            return "sup";
-        }
-
         /// <summary>
         /// List of orders.
         /// </summary>
@@ -48,11 +43,12 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
-        public object UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
+
+        public bool UpdateStatus([FromUri] Guid orderId, [FromUri] OrderStatus orderStatus)
         {
             _managerRepository.UpdateStatus(orderId, orderStatus);
 
-            return new { success = true };
+            return true;
         }
         public IEnumerable<IStore> GetStores()
         {
