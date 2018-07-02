@@ -148,6 +148,18 @@ namespace Ekom.Services
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }
 
+        public void UpdatePaidDate(Guid uniqueId)
+        {
+
+            var order = _orderRepository.GetOrder(uniqueId);
+
+            order.PaidDate = DateTime.Now;
+
+            _orderRepository.UpdateOrder(order);
+
+            _log.Debug("Update Paid Date " + order.OrderNumber);
+        }
+
         /// <summary>
         /// 
         /// </summary>
