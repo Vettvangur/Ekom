@@ -410,7 +410,8 @@ namespace Ekom.Services
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
                 orderData.CustomerName = _ekmRequest.User.Name;
-            } else
+            }
+            else
             {
                 orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
                 orderData.CustomerName = orderInfo.CustomerInformation.Customer.FirstName + " " + orderInfo.CustomerInformation.Customer.LastName;
@@ -499,27 +500,18 @@ namespace Ekom.Services
 
                 var orderInfo = GetOrder(storeAlias);
 
-                var customerProperties = new Dictionary<string, string>();
-
                 foreach (var key in form.Keys.Where(x => x.StartsWith("customer")))
                 {
                     var value = form[key];
-
-                    customerProperties.Add(key, value);
+                    orderInfo.CustomerInformation.Customer.Properties[key] = value;
                 }
-
-                orderInfo.CustomerInformation.Customer.Properties = customerProperties;
-
-                var shippingProperties = new Dictionary<string, string>();
 
                 foreach (var key in form.Keys.Where(x => x.StartsWith("shipping")))
                 {
                     var value = form[key];
 
-                    shippingProperties.Add(key, value);
+                    orderInfo.CustomerInformation.Shipping.Properties[key] = value;
                 }
-
-                orderInfo.CustomerInformation.Shipping.Properties = shippingProperties;
 
                 UpdateOrderAndOrderInfo(orderInfo);
 
@@ -527,8 +519,6 @@ namespace Ekom.Services
             }
 
             return null;
-
-
         }
 
         public OrderInfo UpdateShippingInformation(Guid shippingProviderId, string storeAlias)
