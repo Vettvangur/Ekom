@@ -15,11 +15,10 @@ export default () => {
     },
   });
   return {
-    updateStatus: (data) => client.request({
+    updateStatus: (orderId, orderStatus) => client.request({
       method: 'post',
       responseType: 'json',
-      url: '/umbraco/backoffice/ekom/managerapi/updatestatus',
-      data
+      url: `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}`
     }),
   }
 }

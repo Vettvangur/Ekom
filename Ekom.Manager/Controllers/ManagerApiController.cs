@@ -32,7 +32,10 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetOrder(uniqueId);
         }
-        
+        public IOrderInfo GetOrderInfo(Guid uniqueId)
+        {
+            return API.Order.Instance.GetOrder(uniqueId);
+        }
         /// <summary>
         /// List of orders.
         /// </summary>

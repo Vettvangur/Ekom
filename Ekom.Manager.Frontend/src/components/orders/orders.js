@@ -39,8 +39,7 @@ export default class Orders extends Component {
 
   componentDidMount() {
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDate()).toISOString().split('T')[0];
-    console.log(start)
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).toISOString().split('T')[0];
     const end = now.toISOString().split('T')[0];
     this.setState({
       start: start,
@@ -61,9 +60,7 @@ export default class Orders extends Component {
       this.setState({stores: res})
     })
     
-    this.getOrders(start, end).then((orders) => {
-
-      console.log(orders)
+    this.getAllOrders(start, end).then((orders) => {
       this.setState({
         start: start,
         end: end,
@@ -79,7 +76,6 @@ export default class Orders extends Component {
     const value = target.type === 'checkbox' ? target.checked : target.value;
     const name = target.name;
 
-    console.log(target)
 
     this.setState({
       [name]: value
@@ -87,11 +83,9 @@ export default class Orders extends Component {
   }
   handleSubmit(event) {
     event.preventDefault();
-    const { start, end } = this.props;
+    const { start, end } = this.state
     this.setState({loading: true});
-    this.getOrders(start, end).then((orders) => {
-
-      console.log(orders)
+    this.getAllOrders(start, end).then((orders) => {
       this.setState({
         start: start,
         end: end,
@@ -222,40 +216,16 @@ export default class Orders extends Component {
   }
 
   updateStatus(event, UniqueId) {
-    console.log(UniqueId)
-    
-    const data = {
-      orderId: UniqueId,
-      orderStatus: event.target.value,
-    }
-    const xhr = new XMLHttpRequest()
-    xhr.open("post", `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${UniqueId}&orderStatus=${event.target.value}`)
-    xhr.onload = () => {
-      const resp = JSON.parse(xhr.response)
-      if (xhr.status >= 200 && xhr.status < 300) {
-        console.log(resp)
-        if (resp) {
-          console.log("resp")
-        } else {
-          console.log("ew")
-        }
-      } else {
-        console.log("error")
-        
-      }
-    }
-    xhr.send();
-    /*
-    orderService().updateStatus(data).then((res) => {
+    const orderId = UniqueId;
+    const orderStatus = event.target.value;
+    orderService().updateStatus(orderId, orderStatus).then((res) => {
       console.log(res);
     })
     .catch(err => {
       console.log("error: " + err)
     })
-    */
   }
   render() {
-    console.log(this.state)
 
     const {
       start,
@@ -284,6 +254,16 @@ export default class Orders extends Component {
                 OrderNumber: d.OrderNumber,
               }
             },
+            filterMethod: (filter, row) => {
+              console.log(filter)
+              console.log(row)
+              if (String(row.orderNumber.OrderNumber.toLowerCase()).includes(filter.value.toLowerCase())) {
+                return row
+              }
+              if (String(row.orderNumber.UniqueId.toLowerCase()).includes(filter.value.toLowerCase())) {
+                return row
+              }
+            },
             Cell: row => (
               <Link to={`${path}/manager/order/${row.value.UniqueId}`}>{row.value.OrderNumber}</Link>
             )
@@ -301,6 +281,71 @@ export default class Orders extends Component {
               if (filter.value === "all") {
                 return true;
               }
+              if (filter.value == "0") {
+                if (row.status.OrderStatus == 0) {
+                  return row
+                }
+              }
+              if (filter.value == "1") {
+                if (row.status.OrderStatus == 1) {
+                  return row
+                }
+              }
+              if (filter.value == "2") {
+                if (row.status.OrderStatus == 2) {
+                  return row
+                }
+              }
+              if (filter.value == "3") {
+                if (row.status.OrderStatus == 3) {
+                  return row
+                }
+              }
+              if (filter.value == "4") {
+                if (row.status.OrderStatus == 4) {
+                  return row
+                }
+              }
+              if (filter.value == "5") {
+                if (row.status.OrderStatus == 5) {
+                  return row
+                }
+              }
+              if (filter.value == "6") {
+                if (row.status.OrderStatus == 6) {
+                  return row
+                }
+              }
+              if (filter.value == "7") {
+                if (row.status.OrderStatus == 7) {
+                  return row
+                }
+              }
+              if (filter.value == "8") {
+                if (row.status.OrderStatus == 8) {
+                  return row
+                }
+              }
+              if (filter.value == "9") {
+                if (row.status.OrderStatus == 9) {
+                  return row
+                }
+              }
+              if (filter.value == "10") {
+                if (row.status.OrderStatus == 10) {
+                  return row
+                }
+              }
+              if (filter.value == "11") {
+                if (row.status.OrderStatus == 11) {
+                  return row
+                }
+              }
+              if (filter.value == "12") {
+                if (row.status.OrderStatus == 12) {
+                  return row
+                }
+              }
             },
             Filter: ({ filter, onChange }) =>
               <select
@@ -314,6 +359,7 @@ export default class Orders extends Component {
                 })}
               </select>,
             Cell: row => (
+              <div className="select__wrapper">
               <select 
                 onChange={event => this.updateStatus(event, row.value.UniqueId)}
               >
@@ -325,6 +371,7 @@ export default class Orders extends Component {
                   }
                 })}
               </select>
+              </div>
             )
           },
           {
@@ -348,6 +395,7 @@ export default class Orders extends Component {
               }
             },
             Filter: ({ filter, onChange }) =>
+            <div className="select__wrapper">
               <select
                 onChange={event => onChange(event.target.value)}
                 style={{ width: "100%" }}
@@ -445,6 +493,7 @@ export default class Orders extends Component {
                 <option value="88">Venezuela</option>
                 <option value="89">Viet Nam</option>
               </select>
+            </div>
           },
           {
             Header: 'Created',
@@ -457,6 +506,12 @@ export default class Orders extends Component {
           {
             Header: 'Total',
             accessor: 'TotalAmount',
+            Footer: (
+              <span>
+                <strong>Average:</strong>{" "}
+                {_.round(_.mean(_.map(orders, d=> d.TotalAmount)))}
+              </span>
+            )
           },
         ],
       },
@@ -476,50 +531,65 @@ export default class Orders extends Component {
         <div className="page-content">
 
         <form onSubmit={this.handleSubmit}>
+        
           <div className="input">
             <label htmlFor="startDate">Start date:</label>
             <input type="date" name="start" value={start} onChange={this.handleInputChange} />
           </div>
+
           <div className="input">
             <label htmlFor="endDate">Start date:</label>
             <input type="date" name="end" value={end} onChange={this.handleInputChange} />
           </div>
+
           <div className="input">
             <label htmlFor="store">Store:</label>
-            <select name="store">
-              <option value="all">All stores</option>
-              {stores.map(store => {
-                return <option key={store.id} value={store.Id}>{store.Title}</option>
-              })}
-            </select>
+            <div className="select__wrapper">
+              <select name="store">
+                <option value="all">All stores</option>
+                {stores.map(store => {
+                  return <option key={store.id} value={store.Id}>{store.Title}</option>
+                })}
+              </select>
+            </div>
           </div>
+
           <div className="input">
             <label htmlFor="payment">Payment option:</label>
-            <select name="payment">
-              <option value="all">All payment options</option>
-              {paymentProviders.map(provider => {
-                return <option key={provider.id} value={provider.Id}>{provider.Title}</option>
-              })}
-            </select>
+            <div className="select__wrapper">
+              <select name="payment">
+                <option value="all">All payment options</option>
+                {paymentProviders.map(provider => {
+                  return <option key={provider.id} value={provider.Id}>{provider.Title}</option>
+                })}
+              </select>
+            </div>
           </div>
+
           <div className="input">
             <label htmlFor="shipping">Shipping option:</label>
-            <select name="shipping">
-              <option value="all">All shipping options</option>
-              {shippingProviders.map(provider => {
-                return <option key={provider.id} value={provider.Id}>{provider.Properties.nodeName}</option>
-              })}
-            </select>
+            <div className="select__wrapper">
+              <select name="shipping">
+                <option value="all">All shipping options</option>
+                {shippingProviders.map(provider => {
+                  return <option key={provider.id} value={provider.Id}>{provider.Properties.nodeName}</option>
+                })}
+              </select>
+            </div>
           </div>
+
           <div className="input">
             <label htmlFor="discounts">Discounts:</label>
-            <select name="discounts">
-              <option value="all">All discounts</option>
-              {discounts.map(discount => {
-                return <option key={discount.id} value={discount.Id}>{discount.Properties.nodeName}</option>
-              })}
-            </select>
+            <div className="select__wrapper">
+              <select name="discounts">
+                <option value="all">All discounts</option>
+                {discounts.map(discount => {
+                  return <option key={discount.id} value={discount.Id}>{discount.Properties.nodeName}</option>
+                })}
+              </select>
+            </div>
           </div>
+
           <div className="input">
             <label htmlFor="search">Search:</label>
             <input type="text" id="search" name="search" />
@@ -527,15 +597,16 @@ export default class Orders extends Component {
           
           <button type="submit">Search</button>
         </form>
-          <ReactTable
-              data={orders}
-              filterable
-              defaultFilterMethod={this.defaultFilter}
-              columns={columns}
-              defaultPageSize={10}
-              loading={loading}
-              className="-striped -highlight"
-            />
+
+        <ReactTable
+            data={orders}
+            filterable
+            defaultFilterMethod={this.defaultFilter}
+            columns={columns}
+            defaultPageSize={10}
+            loading={loading}
+            className="-striped -highlight"
+          />
         </div>
       </main>
     );
