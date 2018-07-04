@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -136,12 +136,28 @@ namespace Ekom.Services
 
                 DeleteOrderCookie(key);
                 _httpCtx.Session.Remove(key);
-                order.PaidDate = DateTime.Now;
+
+                if (status == OrderStatus.ReadyForDispatch) {
+                    order.PaidDate = DateTime.Now;
+                }
+                
             }
 
             _orderRepository.UpdateOrder(order);
 
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
+        }
+
+        public void UpdatePaidDate(Guid uniqueId)
+        {
+
+            var order = _orderRepository.GetOrder(uniqueId);
+
+            order.PaidDate = DateTime.Now;
+
+            _orderRepository.UpdateOrder(order);
+
+            _log.Debug("Update Paid Date " + order.OrderNumber);
         }
 
         /// <summary>
