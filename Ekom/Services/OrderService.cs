@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -15,6 +15,9 @@ using System.Linq;
 using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
+using Umbraco.Web;
+using Umbraco.Web.PublishedCache;
+using Umbraco.Web.Security;
 
 namespace Ekom.Services
 {
@@ -77,40 +80,53 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(IStore store)
         {
-            _store = store;
-
-            var key = CreateKey();
-
-            // Get Cart UniqueId from Cookie.
-            var orderUniqueId = GetOrderIdFromCookie(key);
-
-            // If Cookie Exist then return Cart
-            if (orderUniqueId != Guid.Empty)
+            if (Configuration.Current.UserBasket)
             {
-
-                // If the cart is not in the session, fetch order from sql and insert to session
-                if (_httpCtx.Session[key] == null)
+                if (_ekmRequest.User != null)
                 {
-                    _log.Debug("Order is not in the session. Creating from sql");
-
-                    var order = GetOrder(orderUniqueId);
-
-                    _httpCtx.Session[key] = order;
+                    var orderInfo = GetOrder(_ekmRequest.User.OrderId);
+                    if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
+                    && orderInfo?.OrderStatus != OrderStatus.Dispatched)
+                    {
+                        return orderInfo;
+                    }
                 }
-                else
+            } else
+            {
+                _store = store;
+
+                var key = CreateKey();
+                // Get Cart UniqueId from Cookie.
+                var orderUniqueId = GetOrderIdFromCookie(key);
+
+                // If Cookie Exist then return Cart
+                if (orderUniqueId != Guid.Empty)
                 {
-                    _log.Debug("Order Found in Session!");
+
+                    // If the cart is not in the session, fetch order from sql and insert to session
+                    if (_httpCtx.Session[key] == null)
+                    {
+                        _log.Debug("Order is not in the session. Creating from sql");
+
+                        var order = GetOrder(orderUniqueId);
+
+                        _httpCtx.Session[key] = order;
+                    }
+                    else
+                    {
+                        _log.Debug("Order Found in Session!");
+                    }
+
+                    var orderInfo = (OrderInfo)_httpCtx.Session[key];
+
+                    if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
+                    && orderInfo?.OrderStatus != OrderStatus.Dispatched)
+                    {
+                        return orderInfo;
+                    }
                 }
 
-                var orderInfo = (OrderInfo)_httpCtx.Session[key];
-
-                if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                && orderInfo?.OrderStatus != OrderStatus.Dispatched)
-                {
-                    return orderInfo;
-                }
             }
-
             return null;
         }
 
@@ -132,15 +148,27 @@ namespace Ekom.Services
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
             {
-                var key = CreateKey(order.StoreAlias);
-
-                DeleteOrderCookie(key);
-                _httpCtx.Session.Remove(key);
-
                 if (status == OrderStatus.ReadyForDispatch) {
                     order.PaidDate = DateTime.Now;
                 }
-                
+
+                if (Configuration.Current.UserBasket)
+                {
+                    var ms = _appCtx.Services.MemberService;
+
+                    var member = ms.GetByUsername(_httpCtx.User.Identity.Name);
+                    if (member.HasProperty("orderId"))
+                    {
+                        member.SetValue("orderId", "");
+                    }
+                    ms.Save(member);
+                } else
+                {
+                    var key = CreateKey(order.StoreAlias);
+                    DeleteOrderCookie(key);
+                    _httpCtx.Session.Remove(key);
+                }
+
             }
 
             _orderRepository.UpdateOrder(order);
@@ -467,9 +495,25 @@ namespace Ekom.Services
         private OrderInfo CreateEmptyOrder()
         {
             _log.Debug("Add OrderLine ...  Create Empty Order..");
-            var key = CreateKey();
 
-            var orderUniqueId = CreateOrderIdCookie(key);
+            Guid orderUniqueId;
+            if (Configuration.Current.UserBasket)
+            {
+                orderUniqueId = Guid.NewGuid();
+
+                var ms = _appCtx.Services.MemberService;
+
+                var member = ms.GetByUsername(_httpCtx.User.Identity.Name);
+                if (member.HasProperty("orderId"))
+                {
+                    member.SetValue("orderId", orderUniqueId.ToString());
+                }
+                ms.Save(member);
+            } else
+            {
+                var key = CreateKey();
+                orderUniqueId = CreateOrderIdCookie(key);
+            }
 
             var orderdata = SaveOrderData(orderUniqueId);
 

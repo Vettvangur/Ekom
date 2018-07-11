@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using Ekom.Services;
 using log4net;
 using System;
@@ -113,8 +113,16 @@ namespace Ekom
                                     Email = memberContent.Email,
                                     Username = memberContent.UserName,
                                     UserId = memberContent.Id,
-                                    Name = memberContent.Name
+                                    Name = memberContent.Name,
                                 };
+                                if (memberContent.HasProperty("orderId"))
+                                {
+                                    var orderid = memberContent.GetPropertyValue<string>("orderId");
+                                    if (!string.IsNullOrEmpty(orderid))
+                                    {
+                                        ekmRequest.User.OrderId = Guid.Parse(orderid);
+                                    }
+                                }
                             }
                         }
                     }
