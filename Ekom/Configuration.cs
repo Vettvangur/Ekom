@@ -1,4 +1,4 @@
-﻿using CommonServiceLocator;
+using CommonServiceLocator;
 using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
@@ -152,6 +152,19 @@ namespace Ekom
             }
         }
 
+        /// <summary>
+        /// ekmUserBasket
+        /// Single basket per user, not saved in session or cookie, only on the member under "orderId".
+        /// </summary>
+        public virtual bool UserBasket
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["ekmUserBasket"];
+
+                return value.ConvertToBool();
+            }
+        }
 
         /// <summary>
         /// Lists in initialization order all caches and the document type alias of
