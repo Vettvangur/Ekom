@@ -83,9 +83,13 @@ export default class Orders extends Component {
   }
   handleSubmit(event) {
     event.preventDefault();
+    console.log("tt")
     const { start, end } = this.state
+    console.log(start)
+    console.log(end)
     this.setState({loading: true});
     this.getAllOrders(start, end).then((orders) => {
+      console.log(orders)
       this.setState({
         start: start,
         end: end,
@@ -140,6 +144,7 @@ export default class Orders extends Component {
   }
 
   getAllOrders(start, end) {
+    console.log(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${start}&end=${end}`)
     return fetch(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${start}&end=${end}`, {
       credentials: 'include',
     }).then(function (response) {
@@ -509,7 +514,7 @@ export default class Orders extends Component {
             Footer: (
               <span>
                 <strong>Average:</strong>{" "}
-                {_.round(_.mean(_.map(orders, d=> d.TotalAmount)))}
+                {_.round(_.mean(_.map(orders, d => { if(d.TotalAmount != null) { return d.TotalAmount} })))}
               </span>
             )
           },

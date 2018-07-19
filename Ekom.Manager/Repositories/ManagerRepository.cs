@@ -60,6 +60,44 @@ namespace Ekom.Repository
             }
         }
 
+
+        public IEnumerable<OrderData> SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount)
+        {
+
+            var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+            var whereQuery = "WHERE (PaidDate >= @0 AND PaidDate <= @1) ";
+
+            if (store.Length > 0)
+            {
+                whereQuery += "AND (StoreAlias = @2) ";
+            }
+            if (payment.Length > 0)
+            {
+                whereQuery += "AND (PaymentMethod = @3) ";
+            }
+            if (shipping.Length > 0)
+            {
+                whereQuery += "AND (ShippingMethod = @4) ";
+            }
+            if (discount.Length > 0)
+            {
+                whereQuery += "AND (Discount = @5) ";
+            }
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderData>(whereQuery,
+                 startDate,
+                 endDate,
+                 store,
+                 payment,
+                 shipping,
+                 discount);
+            }
+        }
+
+
         public IEnumerable<OrderData> GetAllOrders(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");

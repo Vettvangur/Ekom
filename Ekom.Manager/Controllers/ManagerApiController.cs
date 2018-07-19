@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using log4net;
@@ -52,6 +52,10 @@ namespace Ekom.Controllers
         public IEnumerable<OrderData> GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
             return _managerRepository.GetAllOrders(start, end);
+        }
+        public IEnumerable<OrderData> SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store, [FromUri] string payment, [FromUri] string shipping, [FromUri] string discount)
+        {
+            return _managerRepository.SearchOrders(start, end, store, payment, shipping, discount);
         }
         public IEnumerable<OrderData> GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
