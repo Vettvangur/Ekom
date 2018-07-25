@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -36,6 +36,8 @@ namespace Ekom.Services
         {
             OrderData o = null;
             OrderInfo oi = null;
+
+            _log.Info("Guid key for removing: " + key);
 
             try
             {

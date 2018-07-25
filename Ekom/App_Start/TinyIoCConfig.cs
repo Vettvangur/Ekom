@@ -89,6 +89,7 @@ namespace Ekom.App_Start
                     c.Resolve<ILogFactory>(),
                     c.Resolve<DiscountCache>(),
                     c.Resolve<OrderService>(),
+                    c.Resolve<CheckoutService>(),
                     c.Resolve<IStoreService>()
                 )
             );

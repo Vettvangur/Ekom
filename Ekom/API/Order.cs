@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
@@ -22,6 +22,7 @@ namespace Ekom.API
         Configuration _config;
         DiscountCache _discountCache;
         OrderService _orderService;
+        CheckoutService _checkoutService;
         IStoreService _storeSvc;
 
         /// <summary>
@@ -32,11 +33,13 @@ namespace Ekom.API
             ILogFactory logFac,
             DiscountCache discountCache,
             OrderService orderService,
+            CheckoutService checkoutService,
             IStoreService storeService
         )
         {
             _discountCache = discountCache;
             _orderService = orderService;
+            _checkoutService = checkoutService;
             _storeSvc = storeService;
             _config = config;
             _log = logFac.GetLogger<Order>();
@@ -112,6 +115,11 @@ namespace Ekom.API
         public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
             return _orderService.RemoveOrderLine(lineId, storeAlias);
+        }
+
+        public void CompleteOrder(Guid orderId)
+        {
+            _checkoutService.Complete(orderId);
         }
 
         /// <summary>
