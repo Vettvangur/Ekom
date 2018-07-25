@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -175,7 +175,6 @@ namespace Ekom.Services
                     ms.Save(member);
                 } else
                 {
-                    
                     DeleteOrderCookie(key);
                     ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(key);
                     //_httpCtx.Session.Remove(key);
@@ -225,6 +224,12 @@ namespace Ekom.Services
             if (product == null)
             {
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
+            } else
+            {
+                if (variantKey == null && product.Stock < quantity)
+                {
+                    throw new StockException("Stock not available for product " + variantKey);
+                }
             }
 
             IVariant variant = null;
@@ -235,8 +240,15 @@ namespace Ekom.Services
                 if (variant == null)
                 {
                     throw new VariantNotFoundException("Unable to find variant with key " + variantKey);
+                } else
+                {
+                    if (variant.Stock < quantity)
+                    {
+                        throw new StockException("Stock not available for variant " + variantKey);
+                    }
                 }
             }
+
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -660,6 +672,42 @@ namespace Ekom.Services
             return list;
         }
 
+
+        public bool CheckStockAvailability(IOrderInfo orderInfo)
+        {
+
+            foreach (var line in orderInfo.OrderLines)
+            {
+
+                if (!line.Product.Backorder)
+                {
+                    if (line.Product.VariantGroups.Any())
+                    {
+                        foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                        {
+                            var variantStock = Stock.Instance.GetStock(variant.Key);
+
+                            if (variantStock < line.Quantity)
+                            {
+                                return false;
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        var productStock = Stock.Instance.GetStock(line.ProductKey);
+
+                        if (productStock < line.Quantity)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
 
 
         public Guid GetOrderIdFromCookie(string key)

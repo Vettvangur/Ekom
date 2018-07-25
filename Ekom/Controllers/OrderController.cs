@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -16,6 +16,8 @@ namespace Ekom.Controllers
     public partial class OrderController : SurfaceController
     {
         ILog _log;
+        OrderService _orderService;
+
         /// <summary>
         /// ctor
         /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
@@ -24,6 +26,7 @@ namespace Ekom.Controllers
         {
             var logFac = Configuration.container.GetInstance<ILogFactory>();
             _log = logFac.GetLogger(typeof(OrderController));
+            _orderService = Configuration.container.GetInstance<OrderService>();
         }
 
         /// <summary>
