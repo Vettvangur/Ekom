@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -74,6 +74,16 @@ namespace Ekom.Controllers
         public ActionResult GetOrder()
         {
             var order = Order.Instance.GetOrder();
+
+            return Json(order, JsonRequestBehavior.AllowGet);
+        }
+        /// <summary>
+        /// Get basket
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult GetBasket()
+        {
+            var order = Order.Instance.GetBasket();
 
             return Json(order, JsonRequestBehavior.AllowGet);
         }
