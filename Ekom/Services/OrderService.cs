@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -103,21 +103,21 @@ namespace Ekom.Services
                 if (orderUniqueId != Guid.Empty)
                 {
 
-                    // If the cart is not in the session, fetch order from sql and insert to session
-                    if (_httpCtx.Session[key] == null)
-                    {
-                        _log.Debug("Order is not in the session. Creating from sql");
+                    var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
+                                .GetCacheItem<OrderInfo>(key,
+                                    () => GetOrder(orderUniqueId));
 
-                        var order = GetOrder(orderUniqueId);
+                    //// If the cart is not in the session, fetch order from sql and insert to session
+                    //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
+                    //{
+                    //    _log.Debug("Order is not in the session. Creating from sql");
 
-                        _httpCtx.Session[key] = order;
-                    }
-                    else
-                    {
-                        _log.Debug("Order Found in Session!");
-                    }
+                    //    var order = GetOrder(orderUniqueId);
 
-                    var orderInfo = (OrderInfo)_httpCtx.Session[key];
+                    //    ApplicationContext.Current.ApplicationCache.RuntimeCache.InsertCacheItem<OrderInfo>(key,) = order;
+                    //}
+
+                    //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
                     if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
                     && orderInfo?.OrderStatus != OrderStatus.Dispatched)
@@ -130,12 +130,35 @@ namespace Ekom.Services
             return null;
         }
 
+
         public OrderInfo GetOrder(Guid uniqueId)
+        {
+            var key = uniqueId.ToString();
+
+            var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
+            .GetCacheItem<OrderInfo>(key,
+                () => GetOrderInfo(uniqueId));
+
+            //if (_httpCtx.Session[key] == null)
+            //{
+            //    var orderData = _orderRepository.GetOrder(uniqueId);
+
+            //    return orderData != null ? new OrderInfo(orderData) : null;
+            //}
+
+            //var orderInfo = (OrderInfo)_httpCtx.Session[key];
+
+            return orderInfo;
+
+        }
+
+        public OrderInfo GetOrderInfo(Guid uniqueId)
         {
             var orderData = _orderRepository.GetOrder(uniqueId);
 
             return orderData != null ? new OrderInfo(orderData) : null;
         }
+
 
         public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)
         {
@@ -144,6 +167,8 @@ namespace Ekom.Services
             var order = _orderRepository.GetOrder(uniqueId);
 
             order.OrderStatus = status;
+
+            var key = CreateKey(order.StoreAlias);
 
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
@@ -164,9 +189,10 @@ namespace Ekom.Services
                     ms.Save(member);
                 } else
                 {
-                    var key = CreateKey(order.StoreAlias);
+                    
                     DeleteOrderCookie(key);
-                    _httpCtx.Session.Remove(key);
+                    ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(key);
+                    //_httpCtx.Session.Remove(key);
                 }
 
             }
