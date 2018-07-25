@@ -46,6 +46,20 @@ namespace Ekom.API
         }
 
         /// <summary>
+        /// Get order using cookie data and ekmRequest store that has the status Incomplete.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
+        public IOrderInfo GetBasket()
+        {
+            var store = _storeSvc.GetStoreFromCache();
+
+            var order = GetOrder(store.Alias);
+
+            return order != null && order.OrderStatus == OrderStatus.Incomplete ? order : null;
+        }
+
+        /// <summary>
         /// Get order using cookie data and ekmRequest store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>

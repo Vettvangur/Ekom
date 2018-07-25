@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;

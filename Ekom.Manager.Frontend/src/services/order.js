@@ -9,7 +9,7 @@ const accessKey = ''
 
 export default () => {
   const client = createRestApiClient().withConfig({ 
-    baseURL: '',
+    baseURL: '/umbraco/backoffice/ekom/managerapi',
     headers: {
       'Content-Type': 'application/json'
     },
@@ -18,7 +18,7 @@ export default () => {
     updateStatus: (orderId, orderStatus) => client.request({
       method: 'post',
       responseType: 'json',
-      url: `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}`
+      url: `/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}`
     }),
   }
 }
