@@ -77,16 +77,6 @@ namespace Ekom.Controllers
 
             return Json(order, JsonRequestBehavior.AllowGet);
         }
-        /// <summary>
-        /// Get basket
-        /// </summary>
-        /// <returns></returns>
-        public ActionResult GetBasket()
-        {
-            var order = Order.Instance.GetBasket();
-
-            return Json(order, JsonRequestBehavior.AllowGet);
-        }
 
         ///// <summary>
         ///// Add product with multiple variants to order

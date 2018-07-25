@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -133,23 +133,9 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(Guid uniqueId)
         {
-            var key = uniqueId.ToString();
+            // Chekk for cache ?
 
-            var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
-            .GetCacheItem<OrderInfo>(key,
-                () => GetOrderInfo(uniqueId));
-
-            //if (_httpCtx.Session[key] == null)
-            //{
-            //    var orderData = _orderRepository.GetOrder(uniqueId);
-
-            //    return orderData != null ? new OrderInfo(orderData) : null;
-            //}
-
-            //var orderInfo = (OrderInfo)_httpCtx.Session[key];
-
-            return orderInfo;
-
+            return GetOrderInfo(uniqueId);
         }
 
         public OrderInfo GetOrderInfo(Guid uniqueId)
