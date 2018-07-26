@@ -14,10 +14,19 @@
 				view: "~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.html"
 			},          
 		},
+		{
+		"name": "Ekom Stock Editor",
+		"alias": "ekomStockEditor",
+		"editor": {
+			"valueType": "STRING",
+			"view": "~/App_Plugins/Ekom/Datatypes/EkomStockEditor/ekomStock.html"
+		}
+		}
 	]
 	,        
 	javascript: [
 		'~/App_Plugins/Ekom/DataTypes/Countries/countries.controller.js',
 		'~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.controller.js',
+		"~/App_Plugins/Ekom/DataTypes/EkomStockEditor/ekomStock.controller.js"
 	]
 }

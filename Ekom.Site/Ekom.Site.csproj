@@ -267,14 +267,14 @@
     <Reference Include="Umbraco.ModelsBuilder, Version=3.0.7.99, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.ModelsBuilder.3.0.7\lib\Umbraco.ModelsBuilder.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6645.18970, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.7.2.1\lib\net452\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=2.1.6781.21918, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.7.6.2\lib\net452\Umbraco.NetPayment.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6645.18975, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Borgun.7.2.1\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment.Borgun, Version=2.0.6743.24502, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.Borgun.7.6.0\lib\net452\Umbraco.NetPayment.Borgun.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment.Valitor, Version=2.0.6645.18971, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.Valitor.7.2.1\lib\net452\Umbraco.NetPayment.Valitor.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment.Valitor, Version=2.0.6743.24499, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.Valitor.7.6.0\lib\net452\Umbraco.NetPayment.Valitor.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>
@@ -417,6 +417,7 @@
     <Content Include="Views\Profile.cshtml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <Content Include="Views\EkomManager\Index.cshtml" />
+    <Content Include="Views\Receipt.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -506,7 +507,9 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.3\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.3\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.2.0.1\build\Microsoft.Net.Compilers.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.SlowCheetah.3.0.56\build\Microsoft.VisualStudio.SlowCheetah.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.SlowCheetah.3.0.56\build\Microsoft.VisualStudio.SlowCheetah.targets'))" />
   </Target>
+  <Import Project="..\packages\Microsoft.VisualStudio.SlowCheetah.3.0.56\build\Microsoft.VisualStudio.SlowCheetah.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.SlowCheetah.3.0.56\build\Microsoft.VisualStudio.SlowCheetah.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

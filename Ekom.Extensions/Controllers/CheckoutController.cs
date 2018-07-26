@@ -1,6 +1,7 @@
 ﻿using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models.Data;
+using Ekom.Utilities;
 using log4net;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.NetPayment;
 using Umbraco.NetPayment.API;
+using Umbraco.NetPayment.Helpers;
 using Umbraco.Web.Mvc;
 using ILogFactory = Ekom.Services.ILogFactory;
 
@@ -53,7 +55,9 @@ namespace Ekom.Extensions.Controllers
                 var order = Order.Instance.GetOrder();
                 var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
-                var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
+                var storeAlias = order.StoreInfo.Alias;
+
+                var isOfflinePayment = ekomPP.GetPropertyValue("offlinePayment", storeAlias).IsBoolean();
 
                 if (_config.StoreCustomerData)
                 {
@@ -189,16 +193,44 @@ namespace Ekom.Extensions.Controllers
                 // save job ids to sql for retrieval after checkout completion
                 Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
 
-                return Content(await pp.RequestAsync(
-                    order.ChargedAmount.Value,
-                    orderItems,
-                    skipReceipt: true,
-                    vortoLanguage: order.StoreInfo.Alias,
-                    language: "IS", //TODO needs to come from Store, but we can not use culture
-                    member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                    orderCustomString: order.UniqueId.ToString(),
-                    paymentProviderId: paymentRequest.PaymentProvider.ToString()
-                ));
+                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " +isOfflinePayment );
+
+                if (isOfflinePayment)
+                {
+                    try
+                    {
+                        var successUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("successUrl", storeAlias), Request) + "?orderId=" + order.UniqueId;
+
+                        Order.Instance.UpdateStatus(Helpers.OrderStatus.OfflinePayment, order.UniqueId);
+
+                        return Redirect(successUrl);
+
+                    } catch(Exception ex)
+                    {
+                        _log.Error("Offline Payment Failed. Order: " + order.UniqueId, ex);
+
+                        var errorUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("errorUrl", storeAlias), Request);
+
+                        return Redirect(errorUrl);
+                    }
+
+                } else
+                {
+                    var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
+
+                    return Content(await pp.RequestAsync(
+                        order.ChargedAmount.Value,
+                        orderItems,
+                        skipReceipt: true,
+                        vortoLanguage: order.StoreInfo.Alias,
+                        language: "IS", //TODO needs to come from Store, but we can not use culture
+                        member: Umbraco.MembershipHelper.GetCurrentMemberId(),
+                        orderCustomString: order.UniqueId.ToString()
+                        //paymentProviderId: paymentRequest.PaymentProvider.ToString()
+                    ));
+                }
+
+
             }
             catch (Exception ex)
             {

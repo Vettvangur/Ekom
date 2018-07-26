@@ -104,8 +104,8 @@ namespace Ekom.Services
                 {
 
                     var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
-                                .GetCacheItem<OrderInfo>(key,
-                                    () => GetOrder(orderUniqueId));
+                                .GetCacheItem<OrderInfo>(orderUniqueId.ToString(),
+                                    () => GetOrder(orderUniqueId), TimeSpan.FromDays(1));
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
                     //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
@@ -127,9 +127,57 @@ namespace Ekom.Services
                 }
 
             }
+
             return null;
         }
 
+        public OrderInfo GetCompletedOrder(string storeAlias)
+        {
+            // Add timelimit to get the order ? Maybe 1-2 hours ?
+
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
+            if (Configuration.Current.UserBasket)
+            {
+                if (_ekmRequest.User != null)
+                {
+                    var orderInfo = GetOrder(_ekmRequest.User.OrderId);
+                    if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
+                    || orderInfo?.OrderStatus == OrderStatus.Dispatched
+                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment)
+                    {
+                        return orderInfo;
+                    }
+                }
+            }
+            else
+            {
+                _store = store;
+
+                var key = CreateKey();
+                // Get Cart UniqueId from Cookie.
+                var orderUniqueId = GetOrderIdFromCookie(key);
+
+                // If Cookie Exist then return Cart
+                if (orderUniqueId != Guid.Empty)
+                {
+
+                    var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
+                                .GetCacheItem<OrderInfo>(orderUniqueId.ToString(),
+                                    () => GetOrder(orderUniqueId), TimeSpan.FromDays(1));
+
+                    if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
+                    || orderInfo?.OrderStatus == OrderStatus.Dispatched
+                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment)
+                    {
+                        return orderInfo;
+                    }
+                }
+
+            }
+
+            return null;
+        }
 
         public OrderInfo GetOrder(Guid uniqueId)
         {
@@ -151,6 +199,8 @@ namespace Ekom.Services
             // Add event handler
 
             var order = _orderRepository.GetOrder(uniqueId);
+
+            var oldStatus = order.OrderStatus;
 
             order.OrderStatus = status;
 
@@ -175,14 +225,18 @@ namespace Ekom.Services
                     ms.Save(member);
                 } else
                 {
-                    DeleteOrderCookie(key);
-                    ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(key);
+                    //DeleteOrderCookie(key);
+                    ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(uniqueId.ToString());
                     //_httpCtx.Session.Remove(key);
                 }
 
             }
 
             _orderRepository.UpdateOrder(order);
+
+            ApplicationContext.Current.ApplicationCache.RuntimeCache
+                        .GetCacheItem<OrderInfo>(uniqueId.ToString(),
+                            () => new OrderInfo(order), TimeSpan.FromDays(1));
 
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }
@@ -226,7 +280,7 @@ namespace Ekom.Services
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
             } else
             {
-                if (variantKey == null && product.Stock < quantity)
+                if (variantKey == null && !product.Backorder && product.Stock < quantity)
                 {
                     throw new StockException("Stock not available for product " + variantKey);
                 }
@@ -242,7 +296,7 @@ namespace Ekom.Services
                     throw new VariantNotFoundException("Unable to find variant with key " + variantKey);
                 } else
                 {
-                    if (variant.Stock < quantity)
+                    if (!product.Backorder && variant.Stock < quantity)
                     {
                         throw new StockException("Stock not available for variant " + variantKey);
                     }

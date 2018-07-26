@@ -179,6 +179,7 @@
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.6.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Threading.Tasks.Dataflow.4.7.0\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
     </Reference>
@@ -227,8 +228,8 @@
     <Reference Include="umbraco.MacroEngines, Version=1.0.6396.36635, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.MacroEngines.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=2.1.6739.29969, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.7.5.4\lib\net452\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=2.1.6781.21918, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.7.6.2\lib\net452\Umbraco.NetPayment.dll</HintPath>
     </Reference>
     <Reference Include="umbraco.providers, Version=1.0.6396.36630, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Core.7.6.4\lib\net45\umbraco.providers.dll</HintPath>
@@ -246,6 +247,7 @@
   <ItemGroup>
     <Compile Include="App_Start\EkomExtensionsStartup.cs" />
     <Compile Include="Controllers\CheckoutController.cs" />
+    <Compile Include="LocalCallback.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

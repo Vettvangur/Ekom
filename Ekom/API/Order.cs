@@ -1,4 +1,4 @@
-using Ekom.Cache;
+﻿using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
@@ -73,6 +73,16 @@ namespace Ekom.API
         public IOrderInfo GetOrder(Guid uniqueId)
         {
             return _orderService.GetOrder(uniqueId);
+        }
+
+        /// <summary>
+        /// Get completed order using cookie data and provided store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
+        public IOrderInfo GetCompletedOrder(string storeAlias)
+        {
+            return _orderService.GetCompletedOrder(storeAlias);
         }
 
         public void UpdateStatus(string storeAlias, OrderStatus newStatus)
