@@ -515,29 +515,21 @@ namespace Ekom.Services
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 
-            if (_ekmRequest.User != null)
-            {
-                orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
-                orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
-            }
 
             var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
             var orderData = _orderRepository.GetOrder(orderInfo.UniqueId);
 
-            // Put inside constructor ? 
             if (_ekmRequest.User != null)
             {
-                orderData.CustomerEmail = _ekmRequest.User.Email;
+                orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
+                orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
-                orderData.CustomerName = _ekmRequest.User.Name;
             }
-            else
-            {
-                orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
-                orderData.CustomerName = orderInfo.CustomerInformation.Customer.FirstName + " " + orderInfo.CustomerInformation.Customer.LastName;
-            }
+
+            orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+            orderData.CustomerName = orderInfo.CustomerInformation.Customer.Name;
 
             orderData.ShippingCountry = orderInfo.CustomerInformation.Shipping.Country;
 
@@ -547,18 +539,20 @@ namespace Ekom.Services
             orderData.Currency = orderInfo.StoreInfo.Currency; //FIX - Need to save currency in the orderInfo. Store can have multiple currencies.
 
             _orderRepository.UpdateOrder(orderData);
-            UpdateOrderInfoInSession(orderInfo);
+            UpdateOrderInfoInCache(orderInfo);
         }
 
         /// <summary>
         /// Is this necessary?
         /// </summary>
         /// <param name="orderInfo"></param>
-        private void UpdateOrderInfoInSession(OrderInfo orderInfo)
+        private void UpdateOrderInfoInCache(OrderInfo orderInfo)
         {
             var key = CreateKey(orderInfo.StoreInfo.Alias);
 
-            _httpCtx.Session[key] = orderInfo;
+            ApplicationContext.Current.ApplicationCache.RuntimeCache
+                        .InsertCacheItem<OrderInfo>(orderInfo.UniqueId.ToString(),
+                            () => orderInfo, TimeSpan.FromDays(1));
         }
 
         public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
