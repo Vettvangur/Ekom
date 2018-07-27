@@ -81,6 +81,17 @@ namespace Ekom.Controllers
             return Json(order, JsonRequestBehavior.AllowGet);
         }
 
+        /// <summary>
+        /// Get order by store
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult GetOrder(string storeAlias)
+        {
+            var order = Order.Instance.GetOrder(storeAlias);
+
+            return Json(order, JsonRequestBehavior.AllowGet);
+        }
+
         ///// <summary>
         ///// Add product with multiple variants to order
         ///// </summary>
