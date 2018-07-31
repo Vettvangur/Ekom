@@ -62,7 +62,7 @@ namespace Ekom.Models
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
-            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
+            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture),
                  new StoreInfo(store),
                  discount,
                  quantity,
@@ -94,7 +94,7 @@ namespace Ekom.Models
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
-            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price),
+            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',','.'), NumberStyles.Any, CultureInfo.InvariantCulture),
                  storeInfo,
                  discount,
                  quantity,
@@ -121,7 +121,7 @@ namespace Ekom.Models
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
-            => new CalculatedPrice(price, Store.Culture);
+            => new CalculatedPrice(price, Store.Currency);
 
         /// <summary>
         /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
@@ -351,11 +351,11 @@ namespace Ekom.Models
 
         public CalculatedPrice(
             decimal price,
-            string culture
+            string currencyCulture
 )
         {
             Value = price;
-            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(culture, false));
+            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(currencyCulture, false));
         }
 
         /// <summary>

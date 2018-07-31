@@ -11,6 +11,7 @@ using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using Umbraco.Core;
@@ -98,7 +99,7 @@ namespace Ekom.Services
                 var key = CreateKey();
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
-
+ 
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
@@ -536,7 +537,10 @@ namespace Ekom.Services
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-            orderData.Currency = orderInfo.StoreInfo.Currency; //FIX - Need to save currency in the orderInfo. Store can have multiple currencies.
+
+            var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
+
+            orderData.Currency = ri.ISOCurrencySymbol;
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);
