@@ -21,6 +21,16 @@
 }
 
 
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  i {
+    position:absolute;
+    right:20px;
+  }
+}
 input {
   border: 1px solid rgba(0,0,0,0.1);
   position: relative;
@@ -28,7 +38,10 @@ input {
   width: 100%;
   padding: 10px 15px;
   outline: 0;
-  color: #7b7b7b;
+  font-size: 16px;
+  &::placeholder {
+   color: #7b7b7b;
+  }
 }
 select {
   position: relative;
@@ -39,7 +52,6 @@ select {
   outline: 0;
   border: 1px solid rgba(0,0,0,0.1);
   background: #e6e6e6;
-  color: #7b7b7b;
   -webkit-appearance: none;
   -moz-appearance: none;
 }

@@ -4,12 +4,13 @@ import ReactDOM from 'react-dom'
 import React, { Fragment } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
+
+
 import Navigation from 'components/navigation';
 
-import Dashboard from 'components/dashboard';
-import Orders from 'components/orders';
-import Order from 'components/order';
-import Page404 from 'components/page404';
+
+import { Dashboard, Orders, Order, Page404 } from 'pages'
+
 
 const path = '/umbraco/backoffice/ekom';
 
