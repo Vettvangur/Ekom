@@ -30,18 +30,7 @@ namespace Ekom.Models
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
-        public virtual CultureInfo Currency
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(Properties["currency"]))
-                {
-                    return new CultureInfo(Properties["currency"]);
-                }
-
-                return Culture;
-            }
-        }
+        public virtual CultureInfo Currency => Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? new CultureInfo(Properties["currency"]) : Culture;
         /// <summary>
         /// Umbraco input: 28.5 <para></para>
         /// Stored VAT value: 0.285<para></para>

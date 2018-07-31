@@ -23,7 +23,7 @@ namespace Ekom.Models.OrderedObjects
             decimal vat)
         {
             Key = key;
-            Currency = new CultureInfo(currency);
+            Currency = currency;
             Culture = culture;
             Alias = alias;
             VatIncludedInPrice = vatIncludedInPrice;
@@ -35,7 +35,7 @@ namespace Ekom.Models.OrderedObjects
             if (store != null)
             {
                 Key = store.Key;
-                Currency = store.Currency;
+                Currency = store.Currency.Name;
                 Culture = store.Culture.Name;
                 Alias = store.Alias;
                 VatIncludedInPrice = store.VatIncludedInPrice;
@@ -44,7 +44,7 @@ namespace Ekom.Models.OrderedObjects
         }
 
         public Guid Key { get; }
-        public CultureInfo Currency { get; }
+        public string Currency { get; }
         public string Culture { get; }
         public string Alias { get; }
         public bool VatIncludedInPrice { get; }
