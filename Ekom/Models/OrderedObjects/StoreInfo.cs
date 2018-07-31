@@ -1,6 +1,7 @@
 ﻿using Ekom.Interfaces;
 using Newtonsoft.Json;
 using System;
+using System.Globalization;
 
 namespace Ekom.Models.OrderedObjects
 {
@@ -22,7 +23,7 @@ namespace Ekom.Models.OrderedObjects
             decimal vat)
         {
             Key = key;
-            Currency = currency;
+            Currency = new CultureInfo(currency);
             Culture = culture;
             Alias = alias;
             VatIncludedInPrice = vatIncludedInPrice;
@@ -34,7 +35,7 @@ namespace Ekom.Models.OrderedObjects
             if (store != null)
             {
                 Key = store.Key;
-                Currency = "ISK"; // FIX - need to set up localization. store currency
+                Currency = store.Currency;
                 Culture = store.Culture.Name;
                 Alias = store.Alias;
                 VatIncludedInPrice = store.VatIncludedInPrice;
@@ -43,7 +44,7 @@ namespace Ekom.Models.OrderedObjects
         }
 
         public Guid Key { get; }
-        public string Currency { get; }
+        public CultureInfo Currency { get; }
         public string Culture { get; }
         public string Alias { get; }
         public bool VatIncludedInPrice { get; }

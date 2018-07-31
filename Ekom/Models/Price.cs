@@ -121,7 +121,7 @@ namespace Ekom.Models
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
-            => new CalculatedPrice(price, Store.Culture);
+            => new CalculatedPrice(price, Store.Currency.Name);
 
         /// <summary>
         /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
@@ -351,11 +351,11 @@ namespace Ekom.Models
 
         public CalculatedPrice(
             decimal price,
-            string culture
+            string currencyCulture
 )
         {
             Value = price;
-            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(culture, false));
+            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(currencyCulture, false));
         }
 
         /// <summary>
