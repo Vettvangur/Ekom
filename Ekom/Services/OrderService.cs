@@ -537,7 +537,10 @@ namespace Ekom.Services
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-            orderData.Currency = new CultureInfo(orderInfo.StoreInfo.Currency).NumberFormat.CurrencySymbol;
+
+            var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
+
+            orderData.Currency = ri.ISOCurrencySymbol;
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);
