@@ -1,4 +1,4 @@
-using Ekom.API;
+﻿using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -11,6 +11,7 @@ using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using Umbraco.Core;
@@ -536,7 +537,7 @@ namespace Ekom.Services
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-            orderData.Currency = orderInfo.StoreInfo.Currency;
+            orderData.Currency = new CultureInfo(orderInfo.StoreInfo.Currency).NumberFormat.CurrencySymbol;
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);
