@@ -536,7 +536,7 @@ namespace Ekom.Services
             orderData.OrderInfo = serializedOrderInfo;
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-            orderData.Currency = orderInfo.StoreInfo.Currency; //FIX - Need to save currency in the orderInfo. Store can have multiple currencies.
+            orderData.Currency = orderInfo.StoreInfo.Currency.Name;
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);

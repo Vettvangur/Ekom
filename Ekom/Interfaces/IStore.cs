@@ -23,6 +23,7 @@ namespace Ekom.Interfaces
         /// The culture.
         /// </value>
         CultureInfo Culture { get; }
+        CultureInfo Currency { get; }
         string Alias { get; }
         IEnumerable<Models.Domain> Domains { get; }
         string OrderNumberPrefix { get; }
