@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -98,7 +98,7 @@ namespace Ekom.Services
                 var key = CreateKey();
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
-
+ 
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
