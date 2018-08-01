@@ -1,5 +1,8 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
+using log4net;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,6 +17,16 @@ namespace Ekom.Domain.Repositories
     class CountriesRepository : ICountriesRepository
     {
         private readonly ConcurrentDictionary<string, List<Country>> _cache = new ConcurrentDictionary<string, List<Country>>();
+        private readonly ILog _log;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="logFac"></param>
+        public CountriesRepository(ILogFactory logFac)
+        {
+            _log = logFac.GetLogger<CountriesRepository>();
+        }
 
         protected virtual string BaseXMLFileName
         {
@@ -57,19 +70,19 @@ namespace Ekom.Domain.Repositories
 
             foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
             {
-                if (culture.Name.ToLower() != "pt-cl")
+
+                var region = new RegionInfo(culture.LCID);
+
+                if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
                 {
-                    var region = new RegionInfo(culture.LCID);
-
-                    if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
-                    {
-                        cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
-                    }
+                    cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
                 }
-
             }
 
-            return cultureList.Select(culture => new Country { Name = culture.Value, Code = culture.Key }).Where(country => !string.IsNullOrEmpty(country.Name)).OrderBy(country => country.Name).ToList();
+            return cultureList
+                .Select(culture => new Country { Name = culture.Value, Code = culture.Key })
+                .Where(country => !string.IsNullOrEmpty(country.Name))
+                .OrderBy(country => country.Name).ToList();
         }
     }
 }
