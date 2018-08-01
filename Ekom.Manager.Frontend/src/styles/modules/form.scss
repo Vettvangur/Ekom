@@ -1,3 +1,4 @@
+@import '~variables';
 .select {
   &__wrapper {
     position: relative;
@@ -12,7 +13,7 @@
       pointer-events: none;
       border-style: solid;
       border-width: 8px 5px 0 5px;
-      border-color:#7B7B7B transparent transparent transparent;
+      border-color: $secondary-color transparent transparent transparent;
     }
   }
   &--expanded {
@@ -49,9 +50,11 @@ select {
   width: 100%;
   cursor: pointer;
   padding: 10px 15px;
-  outline: 0;
-  border: 1px solid rgba(0,0,0,0.1);
-  background: #e6e6e6;
+  outline: 0;border: 1px solid #E5E5E5;
+  box-sizing: border-box;
+  box-shadow: 0px -1px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  background: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
 }

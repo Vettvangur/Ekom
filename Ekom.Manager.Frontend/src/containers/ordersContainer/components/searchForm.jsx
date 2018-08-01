@@ -41,7 +41,7 @@ class SearchForm extends Component {
       showDatePicker: false
     })
     
-    if (this.state.startDate !== null && this.state.endDate !== null) {
+    if (this.state.startDate !== null && this.state.endDate !== null && this.state.preset === null) {
       this.props.fetchOrders(this.state.startDate, this.state.endDate);
     }
   }
