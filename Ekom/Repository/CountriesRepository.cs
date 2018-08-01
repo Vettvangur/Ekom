@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -57,12 +57,16 @@ namespace Ekom.Domain.Repositories
 
             foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
             {
-                var region = new RegionInfo(culture.LCID);
-
-                if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
+                if (culture.Name.ToLower() != "pt-cl")
                 {
-                    cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
+                    var region = new RegionInfo(culture.LCID);
+
+                    if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
+                    {
+                        cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
+                    }
                 }
+
             }
 
             return cultureList.Select(culture => new Country { Name = culture.Value, Code = culture.Key }).Where(country => !string.IsNullOrEmpty(country.Name)).OrderBy(country => country.Name).ToList();
