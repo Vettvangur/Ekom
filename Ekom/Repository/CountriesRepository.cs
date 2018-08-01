@@ -1,4 +1,4 @@
-using Ekom.Interfaces;
+﻿using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -70,7 +70,6 @@ namespace Ekom.Domain.Repositories
 
             foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
             {
-
                 var region = new RegionInfo(culture.LCID);
 
                 if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
