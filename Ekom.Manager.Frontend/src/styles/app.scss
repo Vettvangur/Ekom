@@ -11,7 +11,10 @@
     @import 'global/miscellaneous';
     @import 'global/icons';
     @import 'global/flex';
+    @import 'global/helpers';
 
     @import 'components/tables';
-    @import 'modules/form'
+    @import 'components/dateRangePickerWrapper';
+    @import 'components/reactTable';
+    @import 'modules/form';
 }

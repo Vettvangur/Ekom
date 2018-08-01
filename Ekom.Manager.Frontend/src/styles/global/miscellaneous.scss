@@ -8,22 +8,19 @@ body {
   color: $black;
 }
 
-.pageContainer {
-  display: flex;
-  height: 100%;
-}
 
 .page-content {
   padding:40px;
 }
 
 main {
-    margin-left: 100px;
+    margin-top: 48px;
     width: 100%;
 }
 
 a {
-    color: $black;
+    color: $secondary-color;
+    font-weight: 600;
     transition: color .2s ease-in-out;
 
     &:hover {
@@ -36,4 +33,8 @@ ul {
   margin: 0;
   padding: 0;
   list-style-type: none;
+}
+
+input, textarea, select, button {
+  font-family: $font;
 }

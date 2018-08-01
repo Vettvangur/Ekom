@@ -3,22 +3,18 @@
 
 .navigation {
     background-color: #fff;
-    width: 100px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    flex-direction: column;
+    width: 100%;
+    min-height:48px;
     //box-shadow: 2px 5px 10px 0 rgba(69, 73, 91, 0.05);
     z-index: 10;
     position: fixed;
     left: 0;
     top: 0;
-    bottom: 0;
 }
 
 .list {
-    width: 100%;
-    text-align: center;
+    display:flex;
+
 }
 
 .brand {
@@ -35,6 +31,10 @@
 
 .link {
     display: block;
-    font-size: em(24);
-    padding: 30px 0;
+    font-size: em(16);
+    padding: 12px 20px;
+    color: #969B95;
+    &::before {
+        margin-right: 7px;
+    }
 }
