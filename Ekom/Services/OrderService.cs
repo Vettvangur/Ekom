@@ -210,7 +210,7 @@ namespace Ekom.Services
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
             {
-                if (status == OrderStatus.ReadyForDispatch) {
+                if (status == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue) {
                     order.PaidDate = DateTime.Now;
                 }
 
