@@ -1,12 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-export default class DashboardContainer extends Component {
-    render() {
+const DashboardContainer = () => (
+  <div>
+    Main
+  </div>
+);
 
-        return (
-          <main>
-            <h2>Dashboard</h2>
-          </main>
-        );
-    }
-}
+export default DashboardContainer;

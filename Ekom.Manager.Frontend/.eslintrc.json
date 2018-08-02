@@ -1,0 +1,28 @@
+{
+    "parserOptions": {
+        "sourceType": "module",
+        "parser": "babel-eslint"
+    },
+    "env": {
+        "browser": true
+    },
+    "extends": "airbnb",
+    "rules": {
+        "import/no-unresolved": "off",
+        "class-methods-use-this": "off"
+    },
+    
+    "settings": {
+        "import/resolver": {
+            "node": {
+                "extensions": [
+                    ".js",
+                    ".jsx"
+                ]
+            },
+            "webpack": {
+                "config": "webpack.config.resolve.js"
+            }
+        }
+    }
+}
