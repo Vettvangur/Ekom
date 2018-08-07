@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import moment from 'moment';
 
 import DateRangePickerWrapper from './DateRangePickerWrapper';
@@ -44,7 +45,7 @@ class SearchForm extends Component {
   }
 
   closeDatePicker() {
-    const { 
+    const {
       startDate,
       endDate,
       preset,
@@ -71,7 +72,6 @@ class SearchForm extends Component {
     } = this.props;
 
     const today = moment();
-    const tomorrow = moment().add(1, 'day');
     const presets = [{
       text: 'Today',
       start: today,
@@ -161,5 +161,17 @@ class SearchForm extends Component {
     );
   }
 }
+
+
+SearchForm.defaultProps = {
+  fetchOrders: null,
+  handleSubmit: null,
+};
+
+SearchForm.propTypes = {
+  fetchOrders: PropTypes.func,
+  handleSubmit: PropTypes.func,
+};
+
 
 export default SearchForm;

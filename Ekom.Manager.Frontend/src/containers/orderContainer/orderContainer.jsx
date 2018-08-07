@@ -1,7 +1,9 @@
+/* eslint no-console: ["error", { allow: ["warn", "error"] }] */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import moment from 'moment';
 import SavingLoader from 'containers/orderContainer/components/savingLoader';
+import Products from 'containers/orderContainer/components/products';
 import statusList from '../../utilities/statusList';
 import { orderService } from '../../services';
 
@@ -14,7 +16,7 @@ export default class OrderContainer extends Component {
     this.state = {
       order: null,
       status: null,
-      statusUpdateIndicator: true,
+      statusUpdateIndicator: false,
     };
     this.updateStatus = this.updateStatus.bind(this);
     this.handleStatusChange = this.handleStatusChange.bind(this);
@@ -50,18 +52,23 @@ export default class OrderContainer extends Component {
     this.setState({
       statusUpdateIndicator: true,
     });
-    orderService().updateStatus(orderId, orderStatus).then((res) => {
-      console.log(res);
+    orderService().updateStatus(orderId, orderStatus).then(() => {
+      setTimeout(() => {
+        this.setState({
+          statusUpdateIndicator: false,
+        });
+      }, 1500);
     })
       .catch((err) => {
-        console.log(`error: ${err}`);
+        this.setState({
+          statusUpdateIndicator: false,
+        });
+        console.error(`error: ${err}`);
       });
   }
 
   render() {
     const { order, statusUpdateIndicator, status } = this.state;
-
-
     return (
       <div className="content">
         {order != null
@@ -244,37 +251,7 @@ export default class OrderContainer extends Component {
                   </div>
                 </div>
               </div>
-              <div className="table">
-                <div className="table__header">
-                  <div className="table__column" />
-                </div>
-                <div className="table__body">
-                  {order.OrderLines.map(orderline => (
-                    <div className="table__row">
-                      <div className="table__column">
-                        {orderline.Product.Properties.nodeName}
-                      </div>
-                      <div className="table__column">
-                        {orderline.Product.Quantity}
-                      </div>
-                      <div className="table__column">
-                        {orderline.Product.Price.WithVat.CurrencyString}
-                      </div>
-                      <div className="table__column">
-                        {orderline.Amount.WithVat.CurrencyString}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="table__footer">
-                  <div className="table__column">
-                    Total
-                  </div>
-                  <div className="tableFlex__column">
-                    {order.ChargedAmount.CurrencyString}
-                  </div>
-                </div>
-              </div>
+              <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
             </React.Fragment>
           )
           : ''

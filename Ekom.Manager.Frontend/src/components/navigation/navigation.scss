@@ -14,7 +14,10 @@
 
 .list {
     display:flex;
-
+}
+.active {
+    background-color: #EFF4F6;
+    font-weight: 600;
 }
 
 .brand {
