@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Models;
 using Ekom.Models.OrderedObjects;
 using System;
@@ -110,7 +110,7 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Date order was paid
         /// </summary>
-        DateTime PaidDate { get; }
+        DateTime? PaidDate { get; }
 
         /// <summary>
         /// 

@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
@@ -260,7 +260,7 @@ namespace Ekom.Models
         /// <summary>
         /// Date payment was verified.
         /// </summary>
-        public DateTime PaidDate
+        public DateTime? PaidDate
         {
             get
             {

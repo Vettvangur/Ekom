@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
@@ -120,6 +120,6 @@ namespace Ekom.Models.Data
         /// <see cref="DateTime"/> payment was verified.
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
-        public DateTime ?PaidDate { get; set; }
+        public DateTime? PaidDate { get; set; }
     }
 }
