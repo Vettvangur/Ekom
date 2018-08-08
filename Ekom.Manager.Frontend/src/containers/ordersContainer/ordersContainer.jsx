@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
+import classNames from 'classnames';
+import _ from 'lodash';
 import ReactTable from 'react-table';
 import SearchForm from 'containers/ordersContainer/components/searchForm';
 import statusList from '../../utilities/statusList';
@@ -14,6 +16,7 @@ export default class OrdersContainer extends Component {
     this.state = {
       start: Date(),
       end: Date(),
+      currentPage: 0,
       orders: [],
       selected: {},
       selectAll: false,
@@ -27,6 +30,7 @@ export default class OrdersContainer extends Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.toggleRow = this.toggleRow.bind(this);
+    this.updateCurrentPage = this.updateCurrentPage.bind(this);
   }
 
   getAllOrders(start, end) {
@@ -169,11 +173,18 @@ export default class OrdersContainer extends Component {
         console.log(`error: ${err}`);
       });
   }
+  
+  updateCurrentPage(newPage) {
+    this.setState({
+      currentPage: newPage,
+    });
+  }
 
   render() {
     const {
       loading,
       orders,
+      currentPage,
       selected,
       selectAll,
       deleteRows,
@@ -727,12 +738,12 @@ Viet Nam
         />
         <ReactTable
           data={orders}
-
+          page={currentPage}
           defaultFilterMethod={this.defaultFilter}
           columns={columns}
           defaultPageSize={10}
           loading={loading}
-          showPagination
+          showPagination={false}
           className="-highlight bg-white CustomReactTable"
           style={{
             border: 'none',
@@ -796,7 +807,27 @@ Viet Nam
               borderRight: 'none',
             },
           })}
-        />
+        >
+          {(state, makeTable) => (
+            <React.Fragment>
+              {makeTable()}
+              <div className="pagination">
+                {_.times(state.pages, i => (
+                  <button
+                    type="button"
+                    className={classNames({
+                      'pagination--active': i === currentPage,
+                    })}
+                    key={i}
+                    onClick={() => this.updateCurrentPage(i)}
+                  >
+                    {i}
+                  </button>
+                ))}
+              </div>
+            </React.Fragment>
+          )}
+        </ReactTable>
       </div>
     );
   }

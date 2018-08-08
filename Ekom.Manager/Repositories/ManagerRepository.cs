@@ -64,8 +64,8 @@ namespace Ekom.Repository
         public IEnumerable<OrderData> SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount)
         {
 
-            var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var startDate = start.ToString("yyyy-MM-dd 00:00:00");
+            var endDate = end.ToString("yyyy-MM-dd 23:59:59");
 
             var whereQuery = "WHERE (PaidDate >= @0 AND PaidDate <= @1) ";
 
@@ -100,8 +100,8 @@ namespace Ekom.Repository
 
         public IEnumerable<OrderData> GetAllOrders(DateTime start, DateTime end)
         {
-            var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
-            var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            var startDate = start.ToString("yyyy-MM-dd 00:00:00");
+            var endDate = end.ToString("yyyy-MM-dd 23:59:59");
 
             using (var db = _appCtx.DatabaseContext.Database)
             {

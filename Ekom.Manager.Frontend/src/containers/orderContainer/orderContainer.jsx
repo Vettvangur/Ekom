@@ -1,11 +1,9 @@
 /* eslint no-console: ["error", { allow: ["warn", "error"] }] */
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import moment from 'moment';
-import SavingLoader from 'containers/orderContainer/components/savingLoader';
+import OrderHeader from 'containers/orderContainer/components/orderHeader';
 import Products from 'containers/orderContainer/components/products';
-import statusList from '../../utilities/statusList';
-import { orderService } from '../../services';
+import { orderService } from 'services';
 
 import s from './orderContainer.scss';
 
@@ -74,63 +72,10 @@ export default class OrderContainer extends Component {
         {order != null
           ? (
             <React.Fragment>
-              <div className={s.header}>
-                <div className="flex flex__justify--between">
-                  <div className="flex">
-                    <div className={s.column}>
-                      <div>
-                        {order.OrderNumber}
-                      </div>
-                      <div>
-                        Order No.
-                      </div>
-                    </div>
-                    <div className={s.column}>
-                      <div>
-                        {order.PaidDate ? moment(order.PaidDate).format('DD.MM.YYYY') : moment(order.CreateDate).format('DD.MM.YYYY')}
-                      </div>
-                      <div>
-                        Order Date
-                      </div>
-                    </div>
-                    <div className={s.column}>
-                      <div>
-                        {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
-                      </div>
-                      <div>
-                        Order Time
-                      </div>
-                    </div>
-                    <div className={s.column}>
-                      <div>
-                        {order.StoreInfo.Alias}
-                      </div>
-                      <div>
-                        Store
-                      </div>
-                    </div>
-                  </div>
-                  <div className={s.updateStatusForm}>
-                    <form className="flex" onSubmit={e => this.updateStatus(e)}>
-                      <div className="select__wrapper">
-                        <select name="" id="" value={status} onChange={this.handleStatusChange}>
-                          {statusList.map(statusItem => (
-                            <option value={statusItem.id}>
-                              {statusItem.value}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <button type="submit" className="button">
-                        Save
-                      </button>
-                    </form>
-                  </div>
-                </div>
-                {statusUpdateIndicator
-                  && <SavingLoader />
-                }
-              </div>
+              <OrderHeader
+                order={order}
+                originalStatus={status}
+              />
               <div className={s.billing}>
                 <div className="flex flex__justify--between">
                   <div className={s.billingColumn}>
