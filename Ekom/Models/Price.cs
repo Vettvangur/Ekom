@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
@@ -355,6 +355,10 @@ namespace Ekom.Models
 )
         {
             Value = price;
+            if (currencyCulture == "ISK")
+            {
+                currencyCulture = "is";
+            }
             CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(currencyCulture, false));
         }
 
