@@ -1,8 +1,8 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-import styles from './savingLoader.scss';
+import s from './styles.scss';
 
-const cx = classNames.bind(styles);
+const cx = classNames.bind(s);
 
 const SavingLoader = () => (
   <div
@@ -11,9 +11,9 @@ const SavingLoader = () => (
       'load-bar--small': true,
     })}
   >
-    <div className={styles.bar} />
-    <div className={styles.bar} />
-    <div className={styles.bar} />
+    <div className={s.bar} />
+    <div className={s.bar} />
+    <div className={s.bar} />
   </div>
 );
 

@@ -12,7 +12,6 @@ const Navigation = (props) => {
   const {
     location,
   } = props;
-  console.log(props)
   return (
     <nav className={s.navigation}>
       <ul className={s.list}>

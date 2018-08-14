@@ -816,6 +816,7 @@ Viet Nam
                   <button
                     type="button"
                     className={classNames({
+                      pagination__button: true,
                       'pagination--active': i === currentPage,
                     })}
                     key={i}
