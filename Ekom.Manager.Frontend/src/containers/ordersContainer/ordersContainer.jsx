@@ -99,7 +99,7 @@ export default class OrdersContainer extends Component {
     this.setState({ loading: true });
     const startDate = moment(start).format('YYYY-MM-DD');
     const endDate = moment(end).format('YYYY-MM-DD');
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${startDate}&end=${endDate}&query=${query}`, {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/searchorders?start=${startDate}&end=${endDate}&query=${query}`, {
       credentials: 'include',
     }).then(response => response.json()).then((result) => {
       this.setState({
