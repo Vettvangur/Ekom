@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -538,9 +538,17 @@ namespace Ekom.Services
             orderData.UpdateDate = DateTime.Now;
             orderData.TotalAmount = orderInfo.ChargedAmount.Value;
 
-            var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
+            //Backwards compatability for old currency storeinfo 
+            try
+            {
+                var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
+                orderData.Currency = ri.ISOCurrencySymbol;
+            }
+            catch (ArgumentException)
+            {
+                orderData.Currency = orderInfo.StoreInfo.Culture;
+            }
 
-            orderData.Currency = ri.ISOCurrencySymbol;
 
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);

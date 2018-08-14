@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
@@ -195,9 +195,12 @@ namespace Ekom.API
             var products = new List<IProduct>();
             foreach (var id in productKeys)
             {
-                products.Add(
-                    _productCache.Cache[storeAlias][id]
-                );
+                if (_productCache.Cache[storeAlias].ContainsKey(id))
+                {
+                    products.Add(
+                        _productCache.Cache[storeAlias][id]
+                    );
+                }
             }
 
             return products.OrderBy(x => x.SortOrder);
