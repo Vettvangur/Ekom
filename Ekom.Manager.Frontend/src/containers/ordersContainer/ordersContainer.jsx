@@ -31,6 +31,7 @@ export default class OrdersContainer extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.toggleRow = this.toggleRow.bind(this);
     this.updateCurrentPage = this.updateCurrentPage.bind(this);
+    this.searchOrders = this.searchOrders.bind(this);
   }
 
   getAllOrders(start, end) {
@@ -89,6 +90,20 @@ export default class OrdersContainer extends Component {
     this.getAllOrders(startDate, endDate).then((orders) => {
       this.setState({
         orders,
+        loading: false,
+      });
+    });
+  }
+
+  searchOrders(start, end, query) {
+    this.setState({ loading: true });
+    const startDate = moment(start).format('YYYY-MM-DD');
+    const endDate = moment(end).format('YYYY-MM-DD');
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${startDate}&end=${endDate}&query=${query}`, {
+      credentials: 'include',
+    }).then(response => response.json()).then((result) => {
+      this.setState({
+        orders: result,
         loading: false,
       });
     });
@@ -733,6 +748,7 @@ Viet Nam
       <div className="content">
         <SearchForm
           handleSubmit={this.handleSubmit}
+          searchOrders={this.searchOrders}
           handleInputChange={this.handleInputChange}
           fetchOrders={this.fetchOrders}
         />
