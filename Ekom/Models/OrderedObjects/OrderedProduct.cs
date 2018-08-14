@@ -20,9 +20,6 @@ namespace Ekom.Models.OrderedObjects
     {
         private string _productJson;
 
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
         public int Id
         {
             get
@@ -30,9 +27,7 @@ namespace Ekom.Models.OrderedObjects
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
+
         public Guid Key
         {
             get
@@ -49,9 +44,7 @@ namespace Ekom.Models.OrderedObjects
                 return _key;
             }
         }
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
+
         public string SKU
         {
             get
@@ -59,9 +52,7 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
+
         public string Title
         {
             get
