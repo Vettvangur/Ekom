@@ -5,7 +5,7 @@ import OrderHeader from 'containers/orderContainer/components/orderHeader';
 import Products from 'containers/orderContainer/components/products';
 import { orderService } from 'services';
 
-import s from './orderContainer.scss';
+import s from './styles.scss';
 
 
 export default class OrderContainer extends Component {

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+﻿import React, { Component } from 'react';
 import classNames from 'classnames/bind';
 
 import s from './products.scss';
@@ -62,7 +62,7 @@ const OrderContainer = (props) => {
                     productCol: true,
                   })}
                 >
-                  {orderline.Product.Properties.nodeName}
+                  {orderline.Product.Title}
                 </div>
                 <div
                   className={cx({

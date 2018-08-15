@@ -14,20 +14,26 @@ class SearchForm extends Component {
       startDate: null,
       endDate: null,
       showDatePicker: false,
+      searchString: '',
       preset: '',
     };
     this.onDatesChange = this.onDatesChange.bind(this);
     this.closeDatePicker = this.closeDatePicker.bind(this);
+
+    this.handleSearch = this.handleSearch.bind(this);
+    this.handleSearchInput = this.handleSearchInput.bind(this);
+    this.onKeyPressed = this.onKeyPressed.bind(this);
   }
 
   componentDidMount() {
     const { fetchOrders } = this.props;
     const today = moment();
-    fetchOrders(today, today);
+    const lastWeek = moment().subtract(1, 'week');
+    fetchOrders(lastWeek, today);
     this.setState({
-      startDate: today,
+      startDate: lastWeek,
       endDate: today,
-      preset: 'Today',
+      preset: 'Last week',
     });
   }
 
@@ -42,6 +48,36 @@ class SearchForm extends Component {
     if (startDate !== null && endDate !== null && startDate <= endDate) {
       fetchOrders(moment(startDate).format('YYYY-MM-DD'), moment(endDate).format('YYYY-MM-DD'));
     }
+  }
+
+  onKeyPressed(e) {
+    const {
+      startDate,
+      endDate,
+      searchString,
+    } = this.state;
+
+    const {
+      searchOrders,
+    } = this.props;
+
+    if (e.keyCode === 13) {
+      searchOrders(startDate, endDate, searchString);
+    }
+  }
+
+  handleSearch() {
+    const {
+      startDate,
+      endDate,
+      searchString,
+    } = this.state;
+
+    const {
+      searchOrders,
+    } = this.props;
+
+    searchOrders(startDate, endDate, searchString);
   }
 
   closeDatePicker() {
@@ -60,12 +96,19 @@ class SearchForm extends Component {
     }
   }
 
+  handleSearchInput(e) {
+    this.setState({
+      searchString: e.target.value,
+    });
+  }
+
   render() {
     const {
       showDatePicker,
       preset,
       startDate,
       endDate,
+      searchString,
     } = this.state;
     const {
       handleSubmit,
@@ -153,8 +196,11 @@ class SearchForm extends Component {
             <input
               type="text"
               placeholder="Search orders"
+              value={searchString}
+              onChange={(e) => { this.handleSearchInput(e); }}
+              onKeyDown={(e) => { this.onKeyPressed(e); }}
             />
-            <i className="icon-magnifier" />
+            <i role="button" tabIndex={0} type="button" className="icon-magnifier" onKeyPress={() => {}} onClick={(e) => { this.handleSearch(e); }} />
           </div>
         </form>
       </div>
@@ -166,10 +212,12 @@ class SearchForm extends Component {
 SearchForm.defaultProps = {
   fetchOrders: null,
   handleSubmit: null,
+  searchOrders: null,
 };
 
 SearchForm.propTypes = {
   fetchOrders: PropTypes.func,
+  searchOrders: PropTypes.func,
   handleSubmit: PropTypes.func,
 };
 

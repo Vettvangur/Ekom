@@ -6,7 +6,7 @@ import moment from 'moment';
 import SavingLoader from 'containers/orderContainer/components/savingLoader';
 import statusList from 'utilities/statusList';
 import { orderService } from 'services';
-import s from './orderHeader.scss';
+import s from './styles.scss';
 
 class OrderHeader extends Component {
   constructor(props) {

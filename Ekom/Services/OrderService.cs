@@ -550,7 +550,6 @@ namespace Ekom.Services
             catch (ArgumentException)
             {
                 orderData.Currency = orderInfo.StoreInfo.Culture;
-                throw;
             }
 
 

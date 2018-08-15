@@ -91,9 +91,9 @@ namespace Ekom.Models.Data
         public decimal TotalAmount { get; set; }
 
         /// <summary>
-        /// 
+        /// Contains the culture (e: "is-IS" or "is")
         /// </summary>
-        [Length(3)]
+        [Length(5)]
         [NullSetting(NullSetting = NullSettings.Null)]
         public string Currency { get; set; }
 
