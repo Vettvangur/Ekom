@@ -143,9 +143,11 @@ namespace Ekom.Services
                 if (_ekmRequest.User != null)
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
+          
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
                     || orderInfo?.OrderStatus == OrderStatus.Dispatched
-                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment)
+                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
+                    || orderInfo?.OrderStatus == OrderStatus.Pending)
                     {
                         return orderInfo;
                     }
@@ -169,7 +171,8 @@ namespace Ekom.Services
 
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
                     || orderInfo?.OrderStatus == OrderStatus.Dispatched
-                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment)
+                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
+                    || orderInfo?.OrderStatus == OrderStatus.Pending)
                     {
                         return orderInfo;
                     }

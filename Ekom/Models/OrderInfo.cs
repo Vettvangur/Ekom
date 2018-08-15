@@ -233,7 +233,7 @@ namespace Ekom.Models
                     amount += PaymentProvider.Price.Value;
                 }
 
-                return new CalculatedPrice(amount, StoreInfo.Culture);
+                return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
 
