@@ -1,5 +1,6 @@
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using Ekom.Services;
 using log4net;
@@ -36,11 +37,11 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderData> GetOrders()
+        public OrderListData GetOrders()
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("ORDER BY ReferenceId");
+                return new OrderListData(db.Query<OrderData>("ORDER BY ReferenceId"));
             }
         }
 
@@ -61,7 +62,7 @@ namespace Ekom.Repository
         }
 
 
-        public IEnumerable<OrderData> SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount)
+        public OrderListData SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount)
         {
 
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");
@@ -87,18 +88,18 @@ namespace Ekom.Repository
             }
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>(whereQuery,
+                return new OrderListData(db.Query<OrderData>(whereQuery,
                  startDate,
                  endDate,
                  store,
                  payment,
                  shipping,
-                 discount);
+                 discount));
             }
         }
 
 
-        public IEnumerable<OrderData> GetAllOrders(DateTime start, DateTime end)
+        public OrderListData GetAllOrders(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");
             var endDate = end.ToString("yyyy-MM-dd 23:59:59");
@@ -116,21 +117,21 @@ namespace Ekom.Repository
                     startDate,
                     endDate);
                     
-                return offlinePayments.Concat(readyOrders).OrderByDescending(x => x.ReferenceId);
+                return new OrderListData(offlinePayments.Concat(readyOrders).OrderByDescending(x => x.ReferenceId));
             }
         }
 
-        public IEnumerable<OrderData> GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus)
+        public OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus)
         {
             var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
+                return new OrderListData(db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
                     orderStatus,
                     startDate,
-                    endDate);
+                    endDate));
             }
         }
 

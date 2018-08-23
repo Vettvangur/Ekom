@@ -35,5 +35,35 @@
                 }
             ]
         }
+    },
+    {
+        "name": "Test",
+        "alias": "test",
+        "view": "/App_Plugins/LeBlender/editors/leblendereditor/LeBlendereditor.html",
+        "icon": "icon-vcard",
+        "render": "/App_Plugins/LeBlender/editors/leblendereditor/views/Base.cshtml",
+        "config": {
+            "editors": [
+                {
+                    "name": "testing",
+                    "alias": "testing",
+                    "propretyType": {},
+                    "dataType": "75e484b5-66b9-4d86-b651-5ebb7a3c580b"
+                },
+                {
+                    "name": "asdasdasd",
+                    "alias": "asdasdasd",
+                    "propretyType": {},
+                    "dataType": "f5929201-bac5-4046-adde-cc73e717d6f6"
+                },
+                {
+                    "name": "Color",
+                    "alias": "color",
+                    "propretyType": {},
+                    "dataType": "0225af17-b302-49cb-9176-b9f35cab9c17"
+                }
+            ],
+            "frontView": "/views/partials/leblender/FeaturedProducts.cshtml"
+        }
     }
 ]

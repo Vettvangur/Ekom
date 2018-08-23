@@ -1,5 +1,6 @@
-using Ekom.Helpers;
+﻿using Ekom.Helpers;
 using Ekom.Interfaces;
+using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using log4net;
 using System;
@@ -40,7 +41,7 @@ namespace Ekom.Controllers
         /// List of orders.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<OrderData> GetOrders()
+        public OrderListData GetOrders()
         {
             return _managerRepository.GetOrders();
         }
@@ -49,15 +50,15 @@ namespace Ekom.Controllers
         /// List of orders.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<OrderData> GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
+        public OrderListData GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
             return _managerRepository.GetAllOrders(start, end);
         }
-        public IEnumerable<OrderData> SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store, [FromUri] string payment, [FromUri] string shipping, [FromUri] string discount)
+        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store, [FromUri] string payment, [FromUri] string shipping, [FromUri] string discount)
         {
             return _managerRepository.SearchOrders(start, end, store, payment, shipping, discount);
         }
-        public IEnumerable<OrderData> GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
+        public OrderListData GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
             return _managerRepository.GetOrdersByStatus(start, end, orderStatus);
         }
