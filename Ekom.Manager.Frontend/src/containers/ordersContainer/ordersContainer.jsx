@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+﻿import React, { Component } from 'react';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames';
@@ -35,7 +35,7 @@ export default class OrdersContainer extends Component {
   }
 
   getAllOrders(start, end) {
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getallorders?start=${start}&end=${end}`, {
+    return fetch('/umbraco/backoffice/ekom/managerapi/getallorders?start=${start}&end=${end}', {
       credentials: 'include',
     }).then(response => response.json()).then(result => result);
   }
@@ -87,9 +87,9 @@ export default class OrdersContainer extends Component {
     this.setState({ loading: true });
     const startDate = moment(start).format('YYYY-MM-DD');
     const endDate = moment(end).format('YYYY-MM-DD');
-    this.getAllOrders(startDate, endDate).then((orders) => {
+    this.getAllOrders(startDate, endDate).then((result) => {
       this.setState({
-        orders,
+        orders: result.Orders,
         loading: false,
       });
     });
@@ -103,7 +103,7 @@ export default class OrdersContainer extends Component {
       credentials: 'include',
     }).then(response => response.json()).then((result) => {
       this.setState({
-        orders: result,
+        orders: result.Orders,
         loading: false,
       });
     });
@@ -163,11 +163,11 @@ export default class OrdersContainer extends Component {
     event.preventDefault();
     const { start, end } = this.state;
     this.setState({ loading: true });
-    this.getAllOrders(start, end).then((orders) => {
+    this.getAllOrders(start, end).then((result) => {
       this.setState({
         start,
         end,
-        orders,
+        orders: result.Orders,
         loading: false,
       });
     });
