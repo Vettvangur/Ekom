@@ -1,0 +1,24 @@
+﻿@font-face {
+    font-family: "ekommanager";
+    src: url("../assets/fonts/ekommanager.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+
+:global {
+    @import 'base';
+
+    @import 'global/miscellaneous';
+    @import 'global/icons';
+    @import 'global/flex';
+    @import 'global/helpers';
+
+    @import 'components/buttons';
+    @import 'components/tables';
+    @import 'components/dateRangePickerWrapper';
+    @import 'components/loaders';
+    @import 'components/reactTable';
+    @import 'components/pagination';
+    @import 'modules/form';
+    @import 'modules/table';
+}

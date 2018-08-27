@@ -1,7 +1,8 @@
-const autoprefixer = require('autoprefixer');
-
-module.exports = {
+module.exports = () => ({
   plugins: [
-    autoprefixer,
+    require('postcss-cssnext'),
+    require('cssnano')({
+      preset: 'default',
+    }),
   ],
-};
+});
