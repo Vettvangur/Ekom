@@ -1,4 +1,4 @@
-﻿using Ekom.Exceptions;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
@@ -11,8 +11,8 @@ namespace Ekom.Repository
 {
     class DiscountStockRepository : IDiscountStockRepository
     {
-        ILog _log;
-        ApplicationContext _appCtx;
+        readonly ILog _log;
+        readonly ApplicationContext _appCtx;
         /// <summary>
         /// ctor
         /// </summary>

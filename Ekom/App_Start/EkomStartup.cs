@@ -1,4 +1,4 @@
-﻿using Ekom.App_Start;
+using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.IoC;
@@ -145,12 +145,15 @@ namespace Ekom
             }
             if (!dbHelper.TableExist("EkomOrders"))
             {
-                //Create DB table - and set overwrite to false
                 dbHelper.CreateTable<OrderData>(false);
                 using (var db = dbCtx.Database)
                 {
                     db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
                 }
+            }
+            if (!dbHelper.TableExist(Configuration.DiscountStockTableName))
+            {
+                dbHelper.CreateTable<DiscountStockData>(false);
             }
 
             if (_config.StoreCustomerData

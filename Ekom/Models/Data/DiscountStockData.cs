@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
 
@@ -19,7 +19,7 @@ namespace Ekom.Models.Data
         /// <para />
         /// In other cases this is simply a Guid
         /// </summary>
-        [Length(136)]
+        [Length(137)]
         [PrimaryKeyColumn(AutoIncrement = false)]
         public string UniqueId { get; set; }
 
