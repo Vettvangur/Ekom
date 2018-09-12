@@ -519,7 +519,6 @@ namespace Ekom.Services
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 
-
             var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
             var orderData = _orderRepository.GetOrder(orderInfo.UniqueId);
