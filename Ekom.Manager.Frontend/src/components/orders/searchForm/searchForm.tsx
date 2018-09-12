@@ -14,6 +14,7 @@ interface IProps {
 
 class State {
   showDatePicker = false;
+  query: string = "";
 }
 
 @inject('ordersStore')
@@ -23,17 +24,31 @@ export default class SearchForm extends React.Component<IProps, State> {
     super(props);
 
     this.state = new State();
-    this.onDatesChange = this.onDatesChange.bind(this);
   }
 
-  componentDidMount() {
+  onKeyPressed = (e) =>  {
+    if (e.keyCode === 13) {
+      this.handleSubmit(e);
+    }
   }
 
-  onDatesChange(startDate, endDate, preset) {
+  handleInput = (e) => {
+    this.setState({
+      query: e.target.value,
+    });
   }
 
-  handleSubmit() {
+  handleSubmit = (e) => {
+    e.preventDefault();
+    const {
+      ordersStore,
+    } = this.props;
 
+    const {
+      query,
+    } = this.state;
+
+    ordersStore.search(query)
   }
 
   render() {
@@ -41,9 +56,12 @@ export default class SearchForm extends React.Component<IProps, State> {
       ordersStore,
     } = this.props;
 
-    const { preset, startDate, endDate, searchString } = this.props.ordersStore;
+    const { preset, startDate, endDate } = this.props.ordersStore;
 
-    const { showDatePicker } = this.state;
+    const {
+      showDatePicker,
+      query,
+    } = this.state;
 
 
     const today = moment();
@@ -77,13 +95,11 @@ export default class SearchForm extends React.Component<IProps, State> {
       start: moment().subtract(1, 'year'),
       end: today,
     }];
-
-    console.log(ordersStore.startDate)
     return (
       <div className={s.parent}>
         <form
           className={s.form}
-          onSubmit={this.handleSubmit}
+          onSubmit={(e) => {this.handleSubmit(e)}}
         >
           <div className={s.selectDate}>
             <button
@@ -121,7 +137,6 @@ export default class SearchForm extends React.Component<IProps, State> {
               preset={preset}
               ordersStore={ordersStore}
               showDatePicker={showDatePicker}
-              onDatesChange={this.onDatesChange}
               initialStartDate={ordersStore.startDate}
               initialEndDate={ordersStore.endDate}
               closeDatePicker={ordersStore.closeDatePicker}
@@ -131,11 +146,11 @@ export default class SearchForm extends React.Component<IProps, State> {
             <input
               type="text"
               placeholder="Search orders"
-              value={searchString}
-              onChange={(e) => { ordersStore.handleSearchInput(e); }}
-              onKeyDown={(e) => { ordersStore.onKeyPressed(e); }}
+              value={query}
+              onChange={(e) => { this.handleInput(e); }}
+              onKeyDown={(e) => { this.onKeyPressed(e); }}
             />
-            <i role="button" tabIndex={0} className="icon-magnifier" onKeyPress={() => {}} onClick={(e) => { ordersStore.search(); }} />
+            <i role="button" tabIndex={0} className="icon-magnifier" onKeyPress={() => {}} onClick={(e) => { this.handleSubmit(e); }} />
           </div>
         </form>
       </div>

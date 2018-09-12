@@ -4,5 +4,6 @@ export const column: string;
 export const refundForm: string;
 export const updateStatusForm: string;
 export const billing: string;
+export const billingRow: string;
 export const billingColumn: string;
 export const billingIcon: string;

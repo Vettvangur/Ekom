@@ -1,19 +1,39 @@
 import * as moment from 'moment';
 
-import { observable, action, extendObservable } from 'mobx';
+import { observable, action } from 'mobx';
+
+import { Resize, Filter, SortingRule } from 'react-table';
+
+import IOrders from 'models/orders'
 
 export default class OrdersStore {
-  constructor() {}
   id = Math.random();
   @observable loading = true;
   @observable error = null;
   @observable showDatePicker
-  @observable preset = 'Last week';
-  @observable startDate = moment();
-  @observable endDate = moment().subtract(1, 'year');
-  @observable orders;
-
-  @observable searchString = '';
+  @observable preset = 'Last year';
+  @observable startDate: moment.Moment;
+  @observable endDate: moment.Moment;
+  @observable orders: IOrders;
+  @observable grandTotal: string;
+  @observable averageAmount: string;
+  @observable count: number;
+  @observable page: number;
+  @observable sorted: SortingRule[];
+  @observable pageSize: number;
+  @observable expanded: any;
+  @observable resized: Resize[];
+  @observable filtered: Filter[];
+  constructor() {
+    this.startDate = moment().subtract(1, 'year');
+    this.endDate = moment();
+    this.grandTotal = "0";
+    this.averageAmount = "0";
+    this.count = 0;
+    this.page = 0;
+    this.pageSize = 10;
+  }
+  
 
   @action
   setDates(start, end) {
@@ -37,7 +57,10 @@ export default class OrdersStore {
       : Promise.reject(res)
     ).then(
       (res) => {
-        this.orders = res;
+        this.orders = res.Orders;
+        this.grandTotal = res.grandTotal;
+        this.averageAmount = res.AverageAmount;
+        this.count = res.Count;
         this.loading = false;
       },
       err => {
@@ -69,8 +92,34 @@ export default class OrdersStore {
   }
 
   @action
-  search() {
+  search(query) {
+    return fetch(
+      `/umbraco/backoffice/ekom/managerapi/searchorders?start=${moment(this.startDate).format('YYYY-MM-DD')}&end=${moment(this.endDate).format('YYYY-MM-DD')}&query=${query}`, 
+      {
+      credentials: 'include',
+      }
+    )
+    .then(res => res.ok
+      ? res.json()
+      : Promise.reject(res)
+    ).then(
+      (res) => {
+        this.orders = res.Orders;
+        this.grandTotal = res.grandTotal;
+        this.averageAmount = res.AverageAmount;
+        this.count = res.Count;
+        this.loading = false;
+      },
+      err => {
+        if (err.status === 400
+        || err.status === 404) {
+          location.assign('/');
+        }
 
+        this.loading = false;
+        console.error(err);
+      }
+    );
   }
   
   @action
@@ -86,5 +135,31 @@ export default class OrdersStore {
   @action
   onKeyPressed(e) {
 
+  }
+
+  @action
+  onSortedChange(sorted) {
+    this.sorted = sorted;
+  }
+  @action
+  onPageChange(page) {
+    this.page = page;
+  }
+  @action
+  onPageSizeChange(pageSize, page) {
+    this.pageSize = pageSize;
+    this.page = page;
+  }
+  @action
+  onExpandedChange(expanded) {
+    this.expanded = expanded;
+  }
+  @action
+  onResizedChange(resized) {
+    this.resized = resized;
+  }
+  @action
+  onFilteredChange(filtered) {
+    this.filtered = filtered;
   }
 }

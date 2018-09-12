@@ -1,5 +1,5 @@
 ﻿import * as React from 'react';
-import moment from 'moment';
+import * as moment from 'moment';
 import classNames from 'classnames';
 import _ from 'lodash';
 import ReactTable from 'react-table';
@@ -8,7 +8,7 @@ import { observer, inject } from 'mobx-react';
 import { Link } from 'react-router-dom';
 
 import OrdersStore from 'stores/ordersStore';
-import SearchForm from 'components/orders/searchForm/searchForm';
+import OrdersHeader from 'components/orders/ordersHeader';
 import statusList from 'utilities/statusList';
 
 const path = '/umbraco/backoffice/ekom';
@@ -21,6 +21,7 @@ interface IProps {
 class State {
   selected: any;
   selectAll?: boolean = false;
+  statusUpdateIndicator?: boolean = false;
 }
 
 @inject('ordersStore')
@@ -69,11 +70,36 @@ export default class Orders extends React.Component<IProps, State> {
     });
   }
 
+  
+  updateStatus(e, UniqueId) {
+    const {
+      ordersStore,
+    } = this.props;
+    const orderStatus = e.target.value;
+    this.setState({
+      statusUpdateIndicator: true,
+    });
+    ordersStore.updateStatus(UniqueId, orderStatus).then(() => {
+      setTimeout(() => {
+        this.setState({
+          statusUpdateIndicator: false,
+        });
+      }, 1500);
+    })
+      .catch((err) => {
+        this.setState({
+          statusUpdateIndicator: false,
+        });
+        console.error(`error: ${err}`);
+      });
+  }
+
 
   render() {
     const {
       selectAll,
-      selected
+      selected,
+      statusUpdateIndicator,
     } = this.state;
 
     const {ordersStore} = this.props;
@@ -240,7 +266,7 @@ Show All
                 borderRadius: '10px',
                 border: 0,
               }}
-              onChange={event => ordersStore.updateStatus(event, row.value.UniqueId)}
+              onChange={event => this.updateStatus(event, row.value.UniqueId)}
               defaultValue={row.value.OrderStatus}
             >
               {statusList.map((status) => {
@@ -305,6 +331,10 @@ Paid
       {
         Header: 'Email',
         accessor: 'CustomerEmail',
+      },
+      {
+        Header: 'Store',
+        accessor: 'Store',
       },
       {
         Header: 'Country',
@@ -612,21 +642,37 @@ Viet Nam
       {
         Header: 'Created',
         accessor: 'CreateDate',
+        Cell: row => (
+          <span>{moment(row.value.CreateDate).format('DD. MMM YYYY')}</span>
+        )
       },
       {
         Header: 'Total',
         accessor: 'TotalAmount',
       },
     ];
-    console.log(ordersStore.orders[0])
     return (
       <div className="content">
-        <SearchForm />
+        <OrdersHeader />
         <ReactTable
           data={ordersStore.orders}
           defaultFilterMethod={this.defaultFilter}
           columns={columns}
           defaultPageSize={10}
+          
+          sorted={ordersStore.sorted}
+          page={ordersStore.page}
+          pageSize={ordersStore.pageSize}
+          expanded={ordersStore.expanded}
+          resized={ordersStore.resized}
+          filtered={ordersStore.filtered}
+          onSortedChange={sorted => ordersStore.onSortedChange(sorted)}
+          onPageChange={page => ordersStore.onPageChange(page)}
+          onPageSizeChange={(pageSize, page) => ordersStore.onPageSizeChange(pageSize, page)}
+          onExpandedChange={expanded => ordersStore.onExpandedChange(expanded)}
+          onResizedChange={resized => ordersStore.onResizedChange(resized)}
+          onFilteredChange={filtered => ordersStore.onFilteredChange(filtered)}
+          
           loading={ordersStore.loading}
           className="-highlight bg-white CustomReactTable"
           style={{

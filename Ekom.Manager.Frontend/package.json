@@ -21,6 +21,7 @@
         "@types/react": "^16.3.17",
         "@types/react-dom": "^16.0.6",
         "@types/react-router": "^4.0.30",
+        "@types/react-table": "^6.7.12",
         "airbnb-js-shims": "^2.1.0",
         "awesome-typescript-loader": "^5.0.0",
         "babel-core": "^6.26.3",

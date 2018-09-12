@@ -16,9 +16,9 @@ var plugins = [
   new HardSourceWebpackPlugin(),
   new CheckerPlugin(),
   new BrowserSyncPlugin({
-    host: 'adventures-widget.localhost.vettvangur.is',
+    host: 'ekom.localhost.vettvangur.is',
     port: 3012,
-    files: ['../Ekom.Site/Views/**/*.cshtml', 'scss/**/*.scss'],
+    files: ['../Ekom.Site/Views/EkomManager/**/*.cshtml', 'scss/**/*.scss'],
   }),
   new MiniCssExtractPlugin({
     filename: `../css/[name].css`,

@@ -86,8 +86,8 @@ export default class OrderHeader extends React.Component<IProps, State> {
     return (
       <div className={s.header}>
         <div className="flex flex__justify--between">
-          <div className="flex">
-            <div className={s.column}>
+          <div className="statistics">
+            <div className="statistics__column">
               <div>
                 {order.OrderNumber}
               </div>
@@ -95,7 +95,7 @@ export default class OrderHeader extends React.Component<IProps, State> {
                 Order No.
               </div>
             </div>
-            <div className={s.column}>
+            <div className="statistics__column">
               <div>
                 {order.PaidDate && (
                   order.PaidDate === moment().format('YYYY-MM-DD') ? 'Í dag' : moment(order.PaidDate).format('YYYY-MM-DD')
@@ -109,7 +109,7 @@ export default class OrderHeader extends React.Component<IProps, State> {
                 {order.PaidDate === null && ' (Created)'}
               </div>
             </div>
-            <div className={s.column}>
+            <div className="statistics__column">
               <div>
                 {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
               </div>
@@ -118,7 +118,7 @@ export default class OrderHeader extends React.Component<IProps, State> {
                 {order.PaidDate === null && ' (Created)'}
               </div>
             </div>
-            <div className={s.column}>
+            <div className="statistics__column">
               <div>
                 {order.StoreInfo.Alias}
               </div>

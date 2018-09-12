@@ -94,7 +94,7 @@ export default class Order extends React.Component<IProps, State> {
                 originalStatus={status}
               />
               <div className={s.billing}>
-                <div className="flex flex__justify--between">
+                <div className={s.billingRow}>
                   <div className={s.billingColumn}>
                     <div className={s.billingIcon}>
                       <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -176,7 +176,7 @@ export default class Order extends React.Component<IProps, State> {
                     </h3>
                   </div>
                 </div>
-                <div className="flex flex__justify--between">
+                <div className={s.billingRow}>
                   <div className={s.billingColumn}>
                     <h3>
                       Payment
