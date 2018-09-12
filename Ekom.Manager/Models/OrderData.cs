@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,7 +19,12 @@ namespace Ekom.Manager.Models
             var _grandTotal = Orders.Sum(z => z.TotalAmount);
 
             this.GrandTotal = _grandTotal.ToString();
-            this.AverageAmount = (this.Count / _grandTotal).ToString();
+            if (_grandTotal <= 0) {
+                this.AverageAmount = "0";
+            } else
+            {
+                this.AverageAmount = (this.Count / _grandTotal).ToString();
+            }
         }
 
         public IEnumerable<OrderData> Orders { get; set; }

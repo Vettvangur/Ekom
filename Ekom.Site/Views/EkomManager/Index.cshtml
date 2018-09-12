@@ -1,4 +1,9 @@
-﻿<!doctype html>
+﻿@inherits UmbracoTemplatePage
+@{
+    Layout = null;
+
+}
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -22,6 +27,9 @@
     
     <!--<script src="/app_plugins/ekomManager/site.js?v=@DateTime.Now.Ticks"></script>-->
     <script src="/app_plugins/ekomManager/js/app.js?v=@DateTime.Now.Ticks"></script>
-
+    
+    <script id="__bs_script__">//<![CDATA[
+        document.write("<script async src='http://HOST:3012/browser-sync/browser-sync-client.js?v=2.24.6'><\/script>".replace("HOST", location.hostname));
+    //]]></script>
 </body>
 </html>
