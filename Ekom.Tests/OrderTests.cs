@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Tests.MockClasses;
@@ -109,7 +109,7 @@ namespace Ekom.Tests
             {
                 Assert.AreEqual("55.000 kr", orderInfo.ChargedAmount.CurrencyString);
             }
-            catch (Exception)
+            catch (AssertFailedException)
             {
                 Assert.AreEqual("55.000 ISK", orderInfo.ChargedAmount.CurrencyString);
             }
