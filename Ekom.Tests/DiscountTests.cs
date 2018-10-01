@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
@@ -47,7 +47,7 @@ namespace Ekom.Tests
             {
                 Assert.AreEqual("38.478 kr", orderInfo.ChargedAmount.CurrencyString);
             }
-            catch (Exception)
+            catch (AssertFailedException)
             {
                 Assert.AreEqual("38.478 ISK", orderInfo.ChargedAmount.CurrencyString);
             }
