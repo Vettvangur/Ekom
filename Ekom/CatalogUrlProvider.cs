@@ -16,80 +16,110 @@ namespace Ekom
     {
         public string GetUrl(UmbracoContext umbracoContext, int id, Uri current, UrlProviderMode mode)
         {
-            var content = umbracoContext.ContentCache.GetById(id);
-
-            if (content == null ||
-                (content.DocumentTypeAlias != "ekmProduct" && content.DocumentTypeAlias != "ekmCategory")) return null;
-
-            var stores = API.Store.Instance.GetAllStores();
-
-            if (!stores.Any()) return null;
-
-            if (content.DocumentTypeAlias == "ekmProduct")
-            {
-                var product = API.Catalog.Instance.GetProduct(stores.First().Alias, id);
-
-                if (product != null)
+            return UmbracoContext.Current.Application.ApplicationCache.RequestCache.GetCacheItem(
+                "EkomUrlProvider-GetUrl-" + id,
+                () =>
                 {
-                    return product.Url;
-                }
-                        
-            } else
-            {
-                var category = API.Catalog.Instance.GetCategory(stores.First().Alias, id);
+                    try
+                    {
+                        var content = umbracoContext.ContentCache.GetById(id);
 
-                if (category != null)
-                {
-                    return category.Url;
-                }
-                        
-            }
+                        if (content == null ||
+                            (content.DocumentTypeAlias != "ekmProduct" && content.DocumentTypeAlias != "ekmCategory")) return null;
 
-            return null;
+                        var stores = API.Store.Instance.GetAllStores();
+
+                        if (!stores.Any()) return null;
+
+                        if (content.DocumentTypeAlias == "ekmProduct")
+                        {
+                            var product = API.Catalog.Instance.GetProduct(stores.First().Alias, id);
+
+                            if (product != null)
+                            {
+                                return product.Url;
+                            }
+
+                        }
+                        else
+                        {
+                            var category = API.Catalog.Instance.GetCategory(stores.First().Alias, id);
+
+                            if (category != null)
+                            {
+                                return category.Url;
+                            }
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("EkomUrlProvider Get Url Failed", ex);
+                    }
+
+                    return null;
+
+                }) as string;
+
+
         }
 
         public IEnumerable<string> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
         {
-            var content = umbracoContext.ContentCache.GetById(id);
-
-            if (content == null ||
-                (content.DocumentTypeAlias != "ekmProduct" && content.DocumentTypeAlias != "ekmCategory"))
-                return Enumerable.Empty<string>();
-
-            var list = new List<string>();
-
-            var stores = API.Store.Instance.GetAllStores().ToList();
-
-            if (stores.Count() <= 1) return list;
-
-            foreach (var store in stores.Skip(1))
+            return UmbracoContext.Current.Application.ApplicationCache.RequestCache.GetCacheItem(
+            "EkomUrlProvider-GetOtherUrls-" + id,
+            () =>
             {
-
-                if (content.DocumentTypeAlias == "ekmProduct")
+                try
                 {
-                    var product = API.Catalog.Instance.GetProduct(store.Alias, id);
+                    var content = umbracoContext.ContentCache.GetById(id);
 
-                    if (product != null)
+                    if (content == null ||
+                        (content.DocumentTypeAlias != "ekmProduct" && content.DocumentTypeAlias != "ekmCategory"))
+                        return Enumerable.Empty<string>();
+
+                    var list = new List<string>();
+
+                    var stores = API.Store.Instance.GetAllStores().ToList();
+
+                    if (stores.Count() <= 1) return list;
+
+                    foreach (var store in stores.Skip(1))
                     {
-                        list.Add(product.Url);
+
+                        if (content.DocumentTypeAlias == "ekmProduct")
+                        {
+                            var product = API.Catalog.Instance.GetProduct(store.Alias, id);
+
+                            if (product != null)
+                            {
+                                list.Add(product.Url);
+                            }
+
+                        }
+                        else
+                        {
+                            var category = API.Catalog.Instance.GetCategory(store.Alias, id);
+
+                            if (category != null)
+                            {
+                                list.Add(category.Url);
+                            }
+
+                        }
+
                     }
 
-                }
-                else
+                    return list.Distinct();
+
+                } catch(Exception ex)
                 {
-                    var category = API.Catalog.Instance.GetCategory(store.Alias, id);
-
-                    if (category != null)
-                    {
-                        list.Add(category.Url);
-                    }
-
+                    Log.Error("EkomUrlProvider-GetOtherUrls Failed.", ex);
                 }
 
-            }
+                return null;
 
-            return list.Distinct();
-
+            }) as IEnumerable<string>;
         }
 
         private static readonly ILog Log =

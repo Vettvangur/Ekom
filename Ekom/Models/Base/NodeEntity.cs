@@ -139,6 +139,10 @@ namespace Ekom.Models
                     node.Id.ToString()
                 },
                 {
+                    "nodeName",
+                    node.Name
+                },
+                {
                     "key",
                     node.Key.ToString()
                 },

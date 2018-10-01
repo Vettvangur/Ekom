@@ -301,7 +301,6 @@
   <ItemGroup>
     <Content Include="App_Plugins\EkomManager\css\react-table.css" />
     <Content Include="App_Plugins\EkomManager\css\site.css" />
-    <Content Include="App_Plugins\EkomManager\site.js" />
     <Content Include="App_Plugins\EkomManager\views\manager.htm" />
     <Content Include="App_Plugins\InnerContent\css\innercontent.css" />
     <Content Include="App_Plugins\InnerContent\js\innercontent.js" />
