@@ -551,7 +551,6 @@ namespace Ekom.Services
                 orderData.Currency = orderInfo.StoreInfo.Culture;
             }
 
-
             _orderRepository.UpdateOrder(orderData);
             UpdateOrderInfoInCache(orderInfo);
         }
