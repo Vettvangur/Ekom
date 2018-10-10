@@ -55,6 +55,11 @@ namespace Ekom.Extensions.Controllers
                 var order = Order.Instance.GetOrder();
                 var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
+                if (order.PaymentProvider == null)
+                {
+                    Order.Instance.UpdatePaymentInformation(paymentRequest.PaymentProvider, order.StoreInfo.Alias);
+                }
+
                 var storeAlias = order.StoreInfo.Alias;
 
                 var isOfflinePayment = ekomPP.GetPropertyValue("offlinePayment", storeAlias).IsBoolean();
