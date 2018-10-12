@@ -1,4 +1,4 @@
-interface IOrders {
+export interface IOrders {
   UniqueId: string;
   ReferenceId: number;
   OrderInfo: string;
@@ -17,5 +17,3 @@ interface IOrders {
   UpdateDate: string;
   PaidDate: string;
 }
-
-export default IOrders;

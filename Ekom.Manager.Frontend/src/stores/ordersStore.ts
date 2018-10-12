@@ -4,17 +4,17 @@ import { observable, action } from 'mobx';
 
 import { Resize, Filter, SortingRule } from 'react-table';
 
-import IOrders from 'models/orders'
+import {IOrders} from 'models/orders'
 
 export default class OrdersStore {
   id = Math.random();
   @observable loading = true;
   @observable error = null;
   @observable showDatePicker
-  @observable preset = 'Last year';
+  @observable preset = 'Last week';
   @observable startDate: moment.Moment;
   @observable endDate: moment.Moment;
-  @observable orders: IOrders;
+  @observable orders?: IOrders[];
   @observable grandTotal: string;
   @observable averageAmount: string;
   @observable count: number;
@@ -25,7 +25,7 @@ export default class OrdersStore {
   @observable resized: Resize[];
   @observable filtered: Filter[];
   constructor() {
-    this.startDate = moment().subtract(1, 'year');
+    this.startDate = moment().subtract(1, 'week');
     this.endDate = moment();
     this.grandTotal = "0";
     this.averageAmount = "0";
@@ -57,6 +57,7 @@ export default class OrdersStore {
       : Promise.reject(res)
     ).then(
       (res) => {
+        console.log(res)
         this.orders = res.Orders;
         this.grandTotal = res.grandTotal;
         this.averageAmount = res.AverageAmount;

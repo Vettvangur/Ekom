@@ -1,4 +1,7 @@
+// tslint:disable:no-var-requires
+// tslint:disable:no-console
 /// <binding ProjectOpened='Watch - Development' />
+
 const path = require('path');
 const webpack = require('webpack');
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');

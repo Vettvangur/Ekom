@@ -27,7 +27,7 @@ class State {
 @inject('ordersStore')
 @observer
 export default class Orders extends React.Component<IProps, State> {
-  constructor(props) {
+  constructor(props: IProps) {
     super(props);
 
     this.state = new State();
@@ -35,6 +35,7 @@ export default class Orders extends React.Component<IProps, State> {
     this.toggleRow = this.toggleRow.bind(this);
   }
   componentDidMount() {
+    if (this.props.ordersStore.orders)
     this.props.ordersStore.getOrders();
   }
 
@@ -642,20 +643,23 @@ Viet Nam
       {
         Header: 'Created',
         accessor: 'CreateDate',
-        Cell: row => (
-          <span>{moment(row.value.CreateDate).format('DD. MMM YYYY')}</span>
-        )
+        Cell: data => {
+          console.log(data)
+          return (
+          <span>{moment(data.row.CreateDate).format('DD. MMM YYYY')}</span>
+        )}
       },
       {
         Header: 'Total',
         accessor: 'TotalAmount',
       },
     ];
+    const orders = ordersStore.orders;
     return (
       <div className="content">
-        <OrdersHeader />
+        <OrdersHeader statusUpdateIndicator={statusUpdateIndicator} />
         <ReactTable
-          data={ordersStore.orders}
+          data={orders}
           defaultFilterMethod={this.defaultFilter}
           columns={columns}
           defaultPageSize={10}
