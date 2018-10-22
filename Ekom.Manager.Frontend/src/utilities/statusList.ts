@@ -1,4 +1,4 @@
-const statusList = [
+﻿const statusList = [
   {
     id: 0,
     value: "Cancelled"
