@@ -77,22 +77,22 @@ export default class SearchForm extends React.Component<IProps, State> {
     },
     {
       text: 'This month',
-      start: moment().subtract(1, 'month'),
+      start: moment().startOf('month'),
       end: today,
     },
     {
       text: 'Last month',
-      start: moment().subtract(2, 'month'),
-      end: moment().subtract(1, 'month'),
+      start: moment().subtract(1, 'month').startOf('month'),
+      end: moment().subtract(1, 'month').endOf('month'),
     },
     {
       text: 'Last Year',
-      start: moment().subtract(1, 'year'),
-      end: today,
+      start: moment().subtract(1, 'year').startOf('year'),
+      end:  moment().subtract(1, 'year').endOf('year'),
     },
     {
       text: 'This year',
-      start: moment().subtract(1, 'year'),
+      start: moment().startOf('year'),
       end: today,
     }];
     return (

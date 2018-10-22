@@ -33,7 +33,6 @@ export default class OrderHeader extends React.Component<IProps, State> {
   componentDidMount() {
     const {
       originalStatus,
-      ordersStore,
     } = this.props;
 
     this.setState({

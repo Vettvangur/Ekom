@@ -5,7 +5,7 @@ import {
   Route,
   Switch,
 } from 'react-router-dom';
-import { observer, Provider, inject } from 'mobx-react';
+import { observer, Provider } from 'mobx-react';
 import './models/window';
 import 'es6-object-assign';
 

@@ -29,7 +29,7 @@ class State {
 export default class Order extends React.Component<IProps, State> {
   constructor(props) {
     super(props);
-    
+
     this.state = new State();
 
     this.updateStatus = this.updateStatus.bind(this);
@@ -83,7 +83,7 @@ export default class Order extends React.Component<IProps, State> {
   }
 
   render() {
-    const { order, statusUpdateIndicator, status } = this.state;
+    const { order, status } = this.state;
     return (
       <div className="content">
         {order != null
@@ -193,31 +193,33 @@ export default class Order extends React.Component<IProps, State> {
                       {order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'}
                     </p>
                   </div>
-                  <div className={s.billingColumn}>
-                    <h3>
-                      Refund to creditcard
-                    </h3>
-                    {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null
-                      ? (
-                        <div className={s.refundForm}>
-                          <form className="flex">
-                            <input type="text" placeholder="Refund amount" />
-                            <button type="button" className="button">
-                              Refund
+                  {this.props.ordersStore.showRefund && (
+                    <div className={s.billingColumn}>
+                      <h3>
+                        Refund to creditcard
+                      </h3>
+                      {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null
+                        ? (
+                          <div className={s.refundForm}>
+                            <form className="flex">
+                              <input type="text" placeholder="Refund amount" />
+                              <button type="button" className="button">
+                                Refund
                             </button>
-                          </form>
-                        </div>
-                      )
-                      : 'Unavailable'
-                    }
-                  </div>
+                            </form>
+                          </div>
+                        )
+                        : 'Unavailable'
+                      }
+                    </div>
+                  )}
                 </div>
               </div>
               <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
             </React.Fragment>
           )
           : ''
-          }
+        }
 
       </div>
     );

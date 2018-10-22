@@ -24,6 +24,9 @@ export default class OrdersStore {
   @observable expanded: any;
   @observable resized: Resize[];
   @observable filtered: Filter[];
+  
+  @observable showRefund: boolean;
+
   constructor() {
     this.startDate = moment().subtract(1, 'week');
     this.endDate = moment();
@@ -32,6 +35,7 @@ export default class OrdersStore {
     this.count = 0;
     this.page = 0;
     this.pageSize = 10;
+    this.showRefund = false;
   }
   
 
@@ -114,7 +118,7 @@ export default class OrdersStore {
       err => {
         if (err.status === 400
         || err.status === 404) {
-          location.assign('/');
+          location.assign('/umbraco/backoffice/ekom/manager/orders');
         }
 
         this.loading = false;

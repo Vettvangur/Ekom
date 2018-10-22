@@ -1,6 +1,5 @@
 ﻿import * as React from 'react';
 import * as moment from 'moment';
-import classNames from 'classnames';
 import _ from 'lodash';
 import ReactTable from 'react-table';
 
@@ -335,11 +334,11 @@ Paid
       },
       {
         Header: 'Store',
-        accessor: 'Store',
+        accessor: 'StoreAlias',
       },
       {
         Header: 'Country',
-        accessor: 'CustomerCountry',
+        accessor: ('ShippingCountry' || 'CustomerCountry'),
         id: 'country',
         filterMethod: (filter, row) => {
           if (filter.value === 'all') {
@@ -732,8 +731,7 @@ Viet Nam
               borderRight: 'none',
             },
           })}
-        >
-        </ReactTable>
+        />
       </div>
     );
   }

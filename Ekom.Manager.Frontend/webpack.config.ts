@@ -16,7 +16,6 @@ var plugins = [
       callback();
     });
   },
-  new HardSourceWebpackPlugin(),
   new CheckerPlugin(),
   new BrowserSyncPlugin({
     host: 'ekom.localhost.vettvangur.is',
