@@ -58,6 +58,7 @@
     "react-select": "^2.1.1",
     "react-select-fast-filter-options": "^0.2.3",
     "react-table": "^6.8.6",
+    "styled-components": "^4.0.3",
     "whatwg-fetch": "^3.0.0"
   }
 }

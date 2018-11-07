@@ -12,6 +12,7 @@ module.exports = {
     '.js',
     '.jsx',
     '.scss',
+    '.json'
   ],
   alias: PATHS,
 };
