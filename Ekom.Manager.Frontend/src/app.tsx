@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { hot } from 'react-hot-loader'
 
 import {
   BrowserRouter as Router,
@@ -7,7 +8,6 @@ import {
 } from 'react-router-dom';
 import { observer, Provider } from 'mobx-react';
 import './models/window';
-import 'es6-object-assign';
 
 import { NotFound } from './routing';
 
@@ -27,7 +27,7 @@ interface IProps {
 }
 
 @observer
-export default class App extends React.Component<IProps> {
+class App extends React.Component<IProps> {
 
   public static defaultProps: Partial<IProps> = {
     language: 'en',
@@ -93,3 +93,4 @@ export default class App extends React.Component<IProps> {
     );
   }
 }
+export default hot(module)(App)
