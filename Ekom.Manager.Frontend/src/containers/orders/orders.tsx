@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import OrdersStore from 'stores/ordersStore';
 import OrdersHeader from 'components/orders/ordersHeader';
 import statusList from 'utilities/statusList';
+import Total from 'components/shared/total';
 
 const path = '/umbraco/backoffice/ekom';
 
@@ -643,14 +644,19 @@ Viet Nam
         Header: 'Created',
         accessor: 'CreateDate',
         Cell: data => {
-          console.log(data)
           return (
           <span>{moment(data.row.CreateDate).format('DD. MMM YYYY')}</span>
         )}
       },
       {
+        id: 'Total',
         Header: 'Total',
-        accessor: 'TotalAmount',
+        accessor: d => { return { TotalAmount: d.TotalAmount, Currency: d.Currency, StoreAlias: d.StoreAlias}},
+        Cell: data => {
+          console.log(data)
+          return (
+          <Total price={data.value.TotalAmount} currency={data.value.Currency} store={data.value.StoreAlias} />
+        )}
       },
     ];
     const orders = ordersStore.orders;

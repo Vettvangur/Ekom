@@ -1,4 +1,5 @@
 ﻿@inherits UmbracoTemplatePage
+@using Ekom.Site.Helpers
 @{
     Layout = null;
 
@@ -13,9 +14,15 @@
     <title>Ekom - Manager</title>
 
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,600,700" rel="stylesheet">
-
-    <!--<link rel="stylesheet" href="/app_plugins/ekomManager/css/site.css?v=@DateTime.Now.Ticks" />-->
-    <link rel="stylesheet" href="/app_plugins/ekomManager/css/app.css?v=@DateTime.Now.Ticks" />
+    
+    @if (Extensions.IsDebug())
+    {
+        <link rel="stylesheet" type="text/css" href="http://localhost:3777/css/app.styles.css?v=@DateTime.Now.Ticks" />
+    }
+    else
+    {
+        <link rel="stylesheet" type="text/css" href="/app_plugins/ekomManager/css/app.min.css?v=@DateTime.Now.ToString("Mdyyyyhh")" />
+    }
     <link rel="stylesheet" href="/app_plugins/ekomManager/css/react-table.css?v=@DateTime.Now.Ticks" />
 
     <META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
@@ -24,12 +31,14 @@
 <body>
 
     <div id="app" class="pageContainer"></div>
-    
-    <!--<script src="/app_plugins/ekomManager/site.js?v=@DateTime.Now.Ticks"></script>-->
-    <script src="/app_plugins/ekomManager/js/app.js?v=@DateTime.Now.Ticks"></script>
-    
-    <script id="__bs_script__">//<![CDATA[
-        document.write("<script async src='http://HOST:3012/browser-sync/browser-sync-client.js?v=2.24.6'><\/script>".replace("HOST", location.hostname));
-    //]]></script>
+
+    @if (Extensions.IsDebug())
+    {
+        <script src="http://localhost:3777/app.js?v=@DateTime.Now.Ticks"></script>
+    }
+    else
+    {
+        <script src="/app_plugins/ekomManager/js/app.min.js?v=@DateTime.Now.ToString("Mdyyyyhh")"></script>
+    }
 </body>
 </html>
