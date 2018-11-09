@@ -38,6 +38,7 @@ export default class Order extends React.Component<IProps, State> {
   }
 
   componentDidMount() {
+    console.log("test")
     const { match } = this.props;
 
     const orderId = match.params.id;

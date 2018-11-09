@@ -1,10 +1,11 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import App from './app';
+import App from './App';
+
 import 'styles/app.scss';
 
 ReactDOM.render(
-    <App />,
+  <App />,
   document.getElementById('app'),
 );

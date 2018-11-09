@@ -1,5 +1,7 @@
 module.exports = {
   white: '#fff',
-  primaryColor: '#e0eaed',
-  secondaryColor: '#4B8DA6'
+  black: '#414C41',
+  layoutColor: '#F4F4F4',
+  primaryColor: '#4B8DA6',
+  secondaryColor: '#e0eaed'
 };

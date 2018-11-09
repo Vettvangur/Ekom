@@ -1,96 +1,38 @@
 import * as React from 'react';
+
+import createBrowserHistory from 'history/createBrowserHistory';
 import { hot } from 'react-hot-loader'
-
+import { Provider } from 'mobx-react';
+import { RouterStore, syncHistoryWithStore } from 'mobx-react-router';
 import {
-  BrowserRouter as Router,
-  Route,
-  Switch,
-} from 'react-router-dom';
-import { observer, Provider } from 'mobx-react';
-import './models/window';
-
-import { NotFound } from './routing';
-
-import Navigation from 'components/shared/navigation'
-
-import Dashboard from 'components/dashboard/dashboard'
-import Orders from 'containers/orders'
-import Order from 'containers/order'
+  Router,
+} from 'react-router';
+import { renderRoutes } from 'react-router-config';
 
 import OrdersStore from 'stores/ordersStore';
 
-interface IProps {
-  adventuresApi: string;
-  upsellApi: string;
-  language?: string;
-  currency?: string;
+import createRoutes from './routes';
+
+const browserHistory = createBrowserHistory();
+const routingStore = new RouterStore();
+
+const ordersStore = new OrdersStore();
+
+const stores = {
+  routing: routingStore,
+  ordersStore: ordersStore,
 }
 
-@observer
-class App extends React.Component<IProps> {
+export const routes = createRoutes();
 
-  public static defaultProps: Partial<IProps> = {
-    language: 'en',
-    currency: 'ISK',
-  };
+const history = syncHistoryWithStore(browserHistory, routingStore);
 
-  ordersStore: OrdersStore;
+const App = () => (
+  <Provider {...stores}>
+    <Router history={history}>
+      {renderRoutes(routes)}
+    </Router>
+  </Provider>
+)
 
-  constructor(props: IProps) {
-    super(props);
-
-    this.ordersStore = new OrdersStore();
-  }
-
-  componentDidMount() {
-
-    this.ordersStore.getOrders()
-  }
-
-  render() {
-    const { 
-      language,
-    } = this.props;
-    const {
-      loading,
-      error,
-    } = this.ordersStore;
-
-    var match = {
-      url: '/umbraco/backoffice/ekom/manager'
-    };
-    return loading ? 'loading' : error || (
-      /* 
-        We use an always rendering route to extract location from it's render.
-        Location is required by the react-router Switch component.
-       */
-      <Router>
-      <Provider language={language} ordersStore={this.ordersStore}>
-        <React.Fragment>
-          <Navigation path={match.url} />
-          <Switch>
-            <Route
-              exact
-              path={match.url + '/'}
-              component={Dashboard}
-            />
-            <Route
-              exact
-              path={match.url + '/orders'}
-              component={Orders}
-            />
-            <Route
-              exact
-              path={match.url + '/order/:id'}
-              component={Order}
-            />
-
-            <Route component={NotFound} />
-          </Switch>
-        </React.Fragment>
-      </Provider>
-      </Router>
-    );
-  }
-}
 export default hot(module)(App)

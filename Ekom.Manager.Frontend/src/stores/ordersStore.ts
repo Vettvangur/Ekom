@@ -136,6 +136,11 @@ export default class OrdersStore {
   handleSearchInput(e) {
 
   }
+
+  @action
+  handlePageSize(pageSize) {
+    this.pageSize = pageSize;
+  }
   
   @action
   onKeyPressed(e) {
@@ -167,4 +172,6 @@ export default class OrdersStore {
   onFilteredChange(filtered) {
     this.filtered = filtered;
   }
+
+  
 }
