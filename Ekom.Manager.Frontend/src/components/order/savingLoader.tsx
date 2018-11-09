@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as variables from 'styles/variables';
+import * as variables from 'styles/variablesJS';
 import styled, { keyframes } from 'styled-components';
 
 

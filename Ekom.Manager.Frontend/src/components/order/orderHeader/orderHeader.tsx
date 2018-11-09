@@ -1,11 +1,39 @@
 import * as React from 'react';
 import * as moment from 'moment';
+import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 import SavingLoader from 'components/order/savingLoader';
 import statusList from 'utilities/statusList';
 import OrdersStore from 'stores/ordersStore';
 
-import * as s from './orderHeader.scss';
+
+const OrderHeaderWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  background-color: rgba(224, 234, 237, 0.5);
+  width:100%;
+  min-height: 6.25rem;
+  padding:1.625rem 6.25rem;
+  position:relative;
+`;
+
+const OrderHeaderInfoWrapper = styled.div`
+  display:flex;
+`;
+
+const OrderHeaderInfoColumn = styled.div`
+  margin-right: 3.75rem;
+  font-size: 1.5rem;
+  color: rgba(44,56,44,.9);
+`;
+
+const OrderHeaderInfoColumnLabel = styled.div`
+  color: rgba(44,56,44,.5);
+`
+
+const StatusSelectWrapper = styled.div`
+  margin-right: 15px;
+`;
 
 interface IProps {
   ordersStore?: OrdersStore;
@@ -24,7 +52,7 @@ class State {
 export default class OrderHeader extends React.Component<IProps, State> {
   constructor(props) {
     super(props);
-    
+
     this.state = new State();
     this.updateStatus = this.updateStatus.bind(this);
     this.handleStatusChange = this.handleStatusChange.bind(this);
@@ -83,70 +111,56 @@ export default class OrderHeader extends React.Component<IProps, State> {
     } = this.state;
 
     return (
-      <div className={s.header}>
-        <div className="flex flex__justify--between">
-          <div className="statistics">
-            <div className="statistics__column">
-              <div>
-                {order.OrderNumber}
-              </div>
-              <div>
-                Order No.
-              </div>
-            </div>
-            <div className="statistics__column">
-              <div>
-                {order.PaidDate && (
-                  order.PaidDate === moment().format('YYYY-MM-DD') ? 'Í dag' : moment(order.PaidDate).format('YYYY-MM-DD')
-                )}
-                {order.PaidDate === null && (
-                  moment(order.CreateDate).format('YYYY-MM-DD')
-                )}
-              </div>
-              <div>
-                Order Date
+      <OrderHeaderWrapper>
+        <OrderHeaderInfoWrapper>
+          <OrderHeaderInfoColumn>
+            {order.OrderNumber}
+            <OrderHeaderInfoColumnLabel className="fs-14 uppercase">
+              Order No.
+              </OrderHeaderInfoColumnLabel>
+          </OrderHeaderInfoColumn>
+          <OrderHeaderInfoColumn>
+            {order.PaidDate ? (
+              order.PaidDate === moment().format('YYYY-MM-DD') ? 'Í dag' : moment(order.PaidDate).format('YYYY-MM-DD')
+            )
+              : (
+                moment(order.CreateDate).format('YYYY-MM-DD')
+              )}
+            <OrderHeaderInfoColumnLabel className="fs-14 uppercase">
+              Order Date
                 {order.PaidDate === null && ' (Created)'}
-              </div>
-            </div>
-            <div className="statistics__column">
-              <div>
-                {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
-              </div>
-              <div>
-                Order Time
+            </OrderHeaderInfoColumnLabel>
+          </OrderHeaderInfoColumn>
+          <OrderHeaderInfoColumn>
+            {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
+            <OrderHeaderInfoColumnLabel className="fs-14 uppercase">
+              Order Time
                 {order.PaidDate === null && ' (Created)'}
-              </div>
-            </div>
-            <div className="statistics__column">
-              <div>
-                {order.StoreInfo.Alias}
-              </div>
-              <div>
-                Store
-              </div>
-            </div>
-          </div>
-          <div className={s.updateStatusForm}>
-            <form className="flex" onSubmit={e => this.updateStatus(e)}>
-              <div className="select__wrapper">
-                <select name="" id="" defaultValue={originalStatus} onChange={this.handleStatusChange}>
-                  {statusList.map(statusItem => (
-                    <option key={statusItem.id} value={statusItem.id}>
-                      {statusItem.value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="submit" className="button">
-                Save
-              </button>
-            </form>
-          </div>
-        </div>
+            </OrderHeaderInfoColumnLabel>
+          </OrderHeaderInfoColumn>
+          <OrderHeaderInfoColumn>
+            {order.StoreInfo.Alias}
+            <OrderHeaderInfoColumnLabel className="fs-14 uppercase">
+              Store
+              </OrderHeaderInfoColumnLabel>
+          </OrderHeaderInfoColumn>
+        </OrderHeaderInfoWrapper>
+        <form onSubmit={e => this.updateStatus(e)} className="flex">
+          <StatusSelectWrapper className="select__wrapper">
+            <select name="" id="" defaultValue={originalStatus} onChange={this.handleStatusChange}>
+              {statusList.map(statusItem => (
+                <option key={statusItem.id} value={statusItem.id}>
+                  {statusItem.value}
+                </option>
+              ))}
+            </select>
+          </StatusSelectWrapper>
+          <button type="submit" className="button">Save</button>
+        </form>
         {statusUpdateIndicator
           && <SavingLoader />
         }
-      </div>
+      </OrderHeaderWrapper>
     );
   }
 }
