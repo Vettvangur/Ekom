@@ -3,6 +3,8 @@ const CURRENT_WORKING_DIR = process.cwd();
 
 module.exports = {
   app: path.resolve(CURRENT_WORKING_DIR, 'src'),
+  assets: path.resolve(CURRENT_WORKING_DIR, 'assets'),
+  icons: path.resolve(CURRENT_WORKING_DIR, 'assets', 'icons'),
   styles: path.resolve(CURRENT_WORKING_DIR, 'styles'),
   components: path.resolve(CURRENT_WORKING_DIR, 'src/components'),
   containers: path.resolve(CURRENT_WORKING_DIR, 'src/containers'),

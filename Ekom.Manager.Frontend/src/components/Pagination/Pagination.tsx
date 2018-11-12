@@ -3,12 +3,14 @@ import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 import OrdersStore from 'stores/ordersStore';
 
+import Button from 'components/Button';
+import Icon from 'components/Icon';
+
 import * as variables from 'styles/variablesJS';
 
 const PaginationWrapper = styled.div`
   display:flex;
   justify-content: space-between;
-  position: absolute;
   width:100%;
   left:0;
   bottom: 0;
@@ -16,12 +18,9 @@ const PaginationWrapper = styled.div`
 `;
 
 const PaginationColumn = styled.div`
+display:flex;
 `;
 
-const Button = styled.button``;
-
-const PaginationPrev = styled(Button)``;
-const PaginationNext = styled(Button)``;
 
 const PaginationRowSelectWrapper = styled.div`
   display:inline-block;
@@ -39,6 +38,11 @@ const PaginationRowSelect = styled.select`
   border-radius: 3px;
 
 `;
+
+const PaginationCurrentPageWrapper = styled.div`
+  margin: 0 1.25rem;
+`;
+const PaginationCurrentPage = styled.span``;
 
 interface IPaginationProps {
   totalItems: number;
@@ -63,32 +67,57 @@ class Pagination extends React.Component<IPaginationProps> {
   public renderPager = () => {
     return (
       <>
-        {this.props.canPrevious && (
-          <PaginationPrev onClick={() => this.props.ordersStore.onPageChange(this.props.page - 1)}>prev</PaginationPrev>
-        )}
-        {this.props.canNext && (
-          <PaginationNext onClick={() => this.props.ordersStore.onPageChange(this.props.page + 1)}>next</PaginationNext>
-        )}
+        <Button
+          onClick={() => this.props.ordersStore.onPageChange(this.props.page - 1)}
+          disabled={this.props.canPrevious ? false : true}
+          className="fs-12 lh-16"
+          paddingLeft={13}
+          paddingRight={12}
+          paddingTop={9}
+          paddingBottom={9}
+          borderRadius="3px"
+          iconPos="left"
+          center
+        >
+          <Icon name="arrow-left-sm" iconSize={12} marginRight={10} />
+          Fyrri
+        </Button>
+
+        <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{this.props.page + 1}</PaginationCurrentPage> af {this.props.totalPages}</PaginationCurrentPageWrapper>
+        <Button
+          onClick={() => this.props.ordersStore.onPageChange(this.props.page + 1)}
+          disabled={this.props.canNext ? false : true}
+          className="fs-12 lh-16"
+          paddingLeft={13}
+          paddingRight={12}
+          paddingTop={9}
+          paddingBottom={9}
+          borderRadius="3px"
+          iconPos="left"
+          center
+        >
+          Næsta
+          <Icon name="arrow-right-sm" iconSize={12} marginLeft={10} />
+        </Button>
       </>
     )
   }
 
   public render() {
-    console.log(this.props.ordersStore.pageSize)
     return (
       <PaginationWrapper>
         <PaginationColumn>
           <span>Sýna</span>
           <PaginationRowSelectWrapper className="select__wrapper">
             <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.ordersStore.handlePageSize(e.currentTarget.value)}>
-              {this.props.pageSizeOptions.map(ps => (
-                <option value={ps}>{ps}</option>
+              {this.props.pageSizeOptions.map((ps, psIndex) => (
+                <option key={psIndex} value={ps}>{ps}</option>
               ))}
             </PaginationRowSelect>
           </PaginationRowSelectWrapper>
           pantanir af {this.props.totalItems}
         </PaginationColumn>
-        <PaginationColumn>
+        <PaginationColumn className="align-center">
           {this.renderPager()}
         </PaginationColumn>
       </PaginationWrapper>

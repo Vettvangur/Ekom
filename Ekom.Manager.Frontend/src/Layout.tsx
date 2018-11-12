@@ -13,10 +13,14 @@ const LayoutWrapper = styled.div`
   background-color: ${variables.layoutColor};
 `;
 
+/**
+ * width: calc(100vw - 200px); (200px | 12.5rem is the width of the menu.)
+ */
 const LayoutBody = styled.div`
   flex: 1 1 0;
   box-shadow: -2.01285px -2.01285px 15.0964px rgba(0, 0, 0, 0.05);
   background-color: ${variables.white};
+  width: calc(100vw - 12.5rem);
 `;
 
 const Layout = ({ route }) => (

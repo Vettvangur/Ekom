@@ -1,11 +1,14 @@
 import * as React from 'react';
+import styled from 'styled-components';
 
 import SearchForm from 'components/orders/searchForm';
 import OrdersStatistics from 'components/orders/ordersStatistics';
 import SavingLoader from 'components/order/savingLoader';
 
-import * as s from 'components/orders/ordersHeader/ordersHeader.scss';
-
+const SearchWrapper = styled.div`
+  position:relative;
+  margin-bottom: 6.25rem;
+`;
 interface IProps {
   statusUpdateIndicator: boolean;
 }
@@ -24,13 +27,13 @@ export default class OrdersHeader extends React.Component<IProps, State> {
       statusUpdateIndicator
     } = this.props;
     return (
-      <div className={s.host}>
+      <SearchWrapper>
         {statusUpdateIndicator
           && <SavingLoader />
         }
         <SearchForm />
         <OrdersStatistics />
-      </div>
+      </SearchWrapper>
     );
   }
 }

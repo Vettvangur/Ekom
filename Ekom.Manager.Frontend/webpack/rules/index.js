@@ -2,6 +2,7 @@ const typescript = require('./typescript');
 const sass = require('./sass');
 const font = require('./font');
 const svgInReact = require('./svgInReact');
+const svgSpriteLoader = require('./svgSpriteLoader');
 // const css = require('./css');
 
 module.exports = ({
@@ -14,8 +15,8 @@ module.exports = ({
     sass({
       production
     }),
+    svgSpriteLoader(),
     font(),
-    svgInReact(),
     // css({
     //   production
     // }),

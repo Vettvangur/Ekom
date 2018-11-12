@@ -28,6 +28,7 @@ export default class OrdersStore {
   @observable showRefund: boolean;
 
   constructor() {
+    this.orders = [];
     this.startDate = moment().subtract(1, 'week');
     this.endDate = moment();
     this.grandTotal = "0";
@@ -49,6 +50,12 @@ export default class OrdersStore {
   }
 
   @action
+  shouldGetOrders() {
+    if (this.orders.length === 0)
+      this.getOrders();
+    return false;
+  }
+  @action
   getOrders() {
     return fetch(
       `/umbraco/backoffice/ekom/managerapi/getallorders?start=${moment(this.startDate).format('YYYY-MM-DD')}&end=${moment(this.endDate).format('YYYY-MM-DD')}`, 
@@ -61,7 +68,6 @@ export default class OrdersStore {
       : Promise.reject(res)
     ).then(
       (res) => {
-        console.log(res)
         this.orders = res.Orders;
         this.grandTotal = res.grandTotal;
         this.averageAmount = res.AverageAmount;

@@ -74,14 +74,12 @@ class Menu extends React.Component<IMenuProps, State> {
   }
 
   handleTopLevelChange = (routeIndex) => {
-    console.log(routeIndex)
     this.setState((prevState) => ({
       selectedTopLevel: routeIndex
     }))
   }
 
   public render() {
-    console.log(this.props.routing.location)
     return (
       <MenuWrapper>
         <MenuLinks>
