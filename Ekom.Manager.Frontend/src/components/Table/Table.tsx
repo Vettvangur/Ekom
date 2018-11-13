@@ -51,11 +51,11 @@ class Table extends React.Component<ITableProps, State> {
 
   toggleSelectAll = () => {
     const { selectAll } = this.state;
-    const { orders } = this.props.ordersStore;
+    const { Orders } = this.props.ordersStore.ordersData;
     const newSelected = {};
 
     if (selectAll === false) {
-      orders.forEach((x) => {
+      Orders.forEach((x) => {
         newSelected[x.UniqueId] = true;
       });
     }
@@ -660,7 +660,7 @@ class Table extends React.Component<ITableProps, State> {
         }
       },
     ];
-    const orders = ordersStore.orders;
+    const orders = ordersStore.ordersData.Orders;
     return (
       <ReactTable
         data={orders}

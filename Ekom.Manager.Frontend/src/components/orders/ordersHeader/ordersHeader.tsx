@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import SearchForm from 'components/orders/searchForm';
-import OrdersStatistics from 'components/orders/ordersStatistics';
 import SavingLoader from 'components/order/savingLoader';
 
 const SearchWrapper = styled.div`
@@ -32,7 +31,6 @@ export default class OrdersHeader extends React.Component<IProps, State> {
           && <SavingLoader />
         }
         <SearchForm />
-        <OrdersStatistics />
       </SearchWrapper>
     );
   }

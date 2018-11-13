@@ -4,7 +4,7 @@ import { observable, action } from 'mobx';
 
 import { Resize, Filter, SortingRule } from 'react-table';
 
-import {IOrders} from 'models/orders'
+import { IOrdersData } from 'models/orders'
 
 export default class OrdersStore {
   id = Math.random();
@@ -14,10 +14,7 @@ export default class OrdersStore {
   @observable preset = 'Last week';
   @observable startDate: moment.Moment;
   @observable endDate: moment.Moment;
-  @observable orders?: IOrders[];
-  @observable grandTotal: string;
-  @observable averageAmount: string;
-  @observable count: number;
+  @observable ordersData?: IOrdersData;
   @observable page: number;
   @observable sorted: SortingRule[];
   @observable pageSize: number;
@@ -26,14 +23,20 @@ export default class OrdersStore {
   @observable filtered: Filter[];
   
   @observable showRefund: boolean;
+  @observable isFetching = false;
+  @observable isUpdating = false;
+  @observable updateFailed = false;
+  @observable fetchingFailed = false;
 
   constructor() {
-    this.orders = [];
+    this.ordersData = {
+      AverageAmount: "",
+      Count: 0,
+      GrandTotal: "",
+      Orders: []
+    };
     this.startDate = moment().subtract(1, 'week');
     this.endDate = moment();
-    this.grandTotal = "0";
-    this.averageAmount = "0";
-    this.count = 0;
     this.page = 0;
     this.pageSize = 10;
     this.showRefund = false;
@@ -51,8 +54,9 @@ export default class OrdersStore {
 
   @action
   shouldGetOrders() {
-    if (this.orders.length === 0)
+    if (this.ordersData && this.ordersData.Count === 0) {
       this.getOrders();
+    }
     return false;
   }
   @action
@@ -68,10 +72,9 @@ export default class OrdersStore {
       : Promise.reject(res)
     ).then(
       (res) => {
-        this.orders = res.Orders;
-        this.grandTotal = res.grandTotal;
-        this.averageAmount = res.AverageAmount;
-        this.count = res.Count;
+        console.log(res)
+        this.ordersData = res;
+        console.log(this.ordersData)
         this.loading = false;
       },
       err => {
@@ -93,6 +96,7 @@ export default class OrdersStore {
 
   @action
   updateStatus(orderId, orderStatus) {
+    this.isUpdating = true;
     return fetch(
       `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}`, 
       {
@@ -100,6 +104,27 @@ export default class OrdersStore {
         method: 'POST',
       }
     )
+    .then(() => {
+      setTimeout(() => {
+        this.isUpdating = false;
+      }, 150000);
+    },
+    err => {
+      if (err.status === 400
+      || err.status === 404) {
+        location.assign('/');
+      }
+
+      this.isUpdating = false;
+    })
+    .catch(err => {
+      if (err.status === 400
+      || err.status === 404) {
+        location.assign('/');
+      }
+
+      this.isUpdating = false;
+    })
   }
 
   @action
@@ -115,10 +140,7 @@ export default class OrdersStore {
       : Promise.reject(res)
     ).then(
       (res) => {
-        this.orders = res.Orders;
-        this.grandTotal = res.grandTotal;
-        this.averageAmount = res.AverageAmount;
-        this.count = res.Count;
+        this.ordersData = res;
         this.loading = false;
       },
       err => {

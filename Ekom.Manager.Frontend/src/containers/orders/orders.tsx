@@ -5,10 +5,9 @@ import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 import OrdersStore from 'stores/ordersStore';
 
+import SavingLoader from 'components/order/savingLoader';
 import Search from 'components/Search';
 import Table from 'components/Table';
-
-
 
 const OrdersWrapper = styled.div`
   height: 100%;
@@ -57,18 +56,21 @@ export default class Orders extends React.Component<IProps> {
   public render() {
     return (
       <OrdersWrapper>
+        {this.props.ordersStore.isUpdating && (
+          <SavingLoader />
+        )}
         <OrdersHeader>
           <Search />
           <OrdersInformationWrapper>
             <OrdersInformation className="fs-16 lh-16">
               <OrdersInformationColumn>
-                Orders: <b>{this.props.ordersStore.orders ? this.props.ordersStore.orders.length : 0}</b>
+                Orders: <b>{this.props.ordersStore.ordersData.Count ? this.props.ordersStore.ordersData.Count : 0}</b>
               </OrdersInformationColumn>
               <OrdersInformationColumn>
-                Grand total: <b>{this.props.ordersStore.grandTotal ? this.props.ordersStore.grandTotal : 0}</b>
+                Grand total: <b>{this.props.ordersStore.ordersData.GrandTotal ? this.props.ordersStore.ordersData.GrandTotal : 0}</b>
               </OrdersInformationColumn>
               <OrdersInformationColumn>
-                Average amount: <b>{this.props.ordersStore.averageAmount ? this.props.ordersStore.averageAmount : 0}</b>
+                Average amount: <b>{this.props.ordersStore.ordersData.AverageAmount ? this.props.ordersStore.ordersData.AverageAmount : 0}</b>
               </OrdersInformationColumn>
             </OrdersInformation>
             <OrdersCSV className="fs-12" href="#">Export results to CSV</OrdersCSV>
