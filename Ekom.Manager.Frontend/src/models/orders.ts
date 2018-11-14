@@ -1,11 +1,11 @@
-export interface IOrdersData {
+export interface IOrders{
   AverageAmount: string;
   Count: number;
   GrandTotal: string;
-  Orders: IOrder[];
+  Orders: IOrderLine[];
 }
 
-export interface IOrder {
+export interface IOrderLine {
   UniqueId: string;
   ReferenceId: number;
   OrderInfo: string;

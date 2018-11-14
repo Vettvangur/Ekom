@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
-import OrdersStore from 'stores/ordersStore';
+import TableStore from 'stores/tableStore';
 
 import Button from 'components/Button';
 import Icon from 'components/Icon';
@@ -54,10 +54,10 @@ interface IPaginationProps {
   canNext: boolean;
   pageSizeOptions: number[];
   onPageSizeChange: (pageSize: number, page: number) => void;
-  ordersStore?: OrdersStore;
+  tableStore?: TableStore;
 }
 
-@inject('ordersStore')
+@inject('tableStore')
 @observer
 class Pagination extends React.Component<IPaginationProps> {
   public constructor(props: IPaginationProps) {
@@ -68,7 +68,7 @@ class Pagination extends React.Component<IPaginationProps> {
     return (
       <>
         <Button
-          onClick={() => this.props.ordersStore.onPageChange(this.props.page - 1)}
+          onClick={() => this.props.tableStore.onPageChange(this.props.page - 1)}
           disabled={this.props.canPrevious ? false : true}
           className="fs-12 lh-16"
           paddingLeft={13}
@@ -85,7 +85,7 @@ class Pagination extends React.Component<IPaginationProps> {
 
         <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{this.props.page + 1}</PaginationCurrentPage> af {this.props.totalPages}</PaginationCurrentPageWrapper>
         <Button
-          onClick={() => this.props.ordersStore.onPageChange(this.props.page + 1)}
+          onClick={() => this.props.tableStore.onPageChange(this.props.page + 1)}
           disabled={this.props.canNext ? false : true}
           className="fs-12 lh-16"
           paddingLeft={13}
@@ -109,7 +109,7 @@ class Pagination extends React.Component<IPaginationProps> {
         <PaginationColumn>
           <span>Sýna</span>
           <PaginationRowSelectWrapper className="select__wrapper">
-            <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.ordersStore.handlePageSize(e.currentTarget.value)}>
+            <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.tableStore.handlePageSize(e.currentTarget.value)}>
               {this.props.pageSizeOptions.map((ps, psIndex) => (
                 <option key={psIndex} value={ps}>{ps}</option>
               ))}

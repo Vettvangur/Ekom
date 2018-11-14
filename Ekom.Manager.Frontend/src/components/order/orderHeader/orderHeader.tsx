@@ -86,19 +86,7 @@ export default class OrderHeader extends React.Component<IProps, State> {
     this.setState({
       statusUpdateIndicator: true,
     });
-    ordersStore.updateStatus(orderId, orderStatus).then(() => {
-      setTimeout(() => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-      }, 1500);
-    })
-      .catch((err) => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-        console.error(`error: ${err}`);
-      });
+    ordersStore.updateOrderStatus(orderId, orderStatus)
   }
 
   render() {

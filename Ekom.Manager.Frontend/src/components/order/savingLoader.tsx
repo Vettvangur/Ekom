@@ -27,7 +27,7 @@ const SavingBarWrapper = styled.div`
   width: 100%;
   height: 4px;
   background-color: #fff;
-  bottom:0;
+  top:0;
   left:0;
 `;
 
@@ -40,7 +40,7 @@ const Bar = styled.div`
   left: 50%;
   text-align: center;
   &:nth-child(1) {
-    background-color: ${variables.secondaryColor};
+    background-color: ${variables.primaryColor};
     -webkit-animation: ${loading} 3s linear infinite;
     animation: ${loading} 3s linear infinite
   }
@@ -50,7 +50,7 @@ const Bar = styled.div`
     animation: ${loading} 3s linear 1s infinite
   }
   &:nth-child(3) {
-    background-color: ${variables.secondaryColor};
+    background-color: ${variables.primaryColor};
     -webkit-animation: ${loading} 3s linear 2s infinite;
     animation: ${loading} 3s linear 2s infinite
   }

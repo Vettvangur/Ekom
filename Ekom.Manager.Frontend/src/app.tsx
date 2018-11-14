@@ -10,6 +10,8 @@ import {
 import { renderRoutes } from 'react-router-config';
 
 import OrdersStore from 'stores/ordersStore';
+import TableStore from 'stores/tableStore';
+import SearchStore from 'stores/searchStore';
 
 import createRoutes from './routes';
 
@@ -17,10 +19,14 @@ const browserHistory = createBrowserHistory();
 const routingStore = new RouterStore();
 
 const ordersStore = new OrdersStore();
+const searchStore = new SearchStore();
+const tableStore = new TableStore();
 
 const stores = {
   routing: routingStore,
   ordersStore: ordersStore,
+  searchStore: searchStore,
+  tableStore: tableStore,
 }
 
 export const routes = createRoutes();

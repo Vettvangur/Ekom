@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
@@ -54,7 +54,8 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetAllOrders(start, end);
         }
-        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store, [FromUri] string payment, [FromUri] string shipping, [FromUri] string discount)
+        [HttpGet]
+        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
             return _managerRepository.SearchOrders(start, end, store, payment, shipping, discount);
         }

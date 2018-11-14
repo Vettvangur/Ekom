@@ -67,19 +67,7 @@ export default class Order extends React.Component<IProps, State> {
     this.setState({
       statusUpdateIndicator: true,
     });
-    ordersStore.updateStatus(orderId, orderStatus).then(() => {
-      setTimeout(() => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-      }, 1500);
-    })
-      .catch((err) => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-        console.error(`error: ${err}`);
-      });
+    ordersStore.updateOrderStatus(orderId, orderStatus)
   }
 
   render() {
@@ -193,7 +181,7 @@ export default class Order extends React.Component<IProps, State> {
                       {order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'}
                     </p>
                   </div>
-                  {this.props.ordersStore.showRefund && (
+                  {/* {refundable && (
                     <div className={s.billingColumn}>
                       <h3>
                         Refund to creditcard
@@ -212,7 +200,7 @@ export default class Order extends React.Component<IProps, State> {
                         : 'Unavailable'
                       }
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
               <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />

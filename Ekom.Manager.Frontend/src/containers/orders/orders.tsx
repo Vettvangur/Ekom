@@ -3,11 +3,12 @@
 import styled from 'styled-components';
 
 import { observer, inject } from 'mobx-react';
-import OrdersStore from 'stores/ordersStore';
 
 import SavingLoader from 'components/order/savingLoader';
 import Search from 'components/Search';
 import Table from 'components/Table';
+import SearchStore from 'stores/searchStore';
+import OrdersStore from 'stores/ordersStore';
 
 const OrdersWrapper = styled.div`
   height: 100%;
@@ -41,22 +42,23 @@ const OrdersInformationColumn = styled.div`
 const OrdersCSV = styled.a``;
 
 interface IProps {
+  searchStore?: SearchStore;
   ordersStore?: OrdersStore;
 }
 
-@inject('ordersStore')
+@inject('searchStore', 'ordersStore')
 @observer
 export default class Orders extends React.Component<IProps> {
   constructor(props: IProps) {
     super(props);
   }
   componentDidMount() {
-    this.props.ordersStore.shouldGetOrders();
+    this.props.searchStore.search();
   }
   public render() {
     return (
       <OrdersWrapper>
-        {this.props.ordersStore.isUpdating && (
+        {this.props.ordersStore.state === "loading" && (
           <SavingLoader />
         )}
         <OrdersHeader>
@@ -64,13 +66,13 @@ export default class Orders extends React.Component<IProps> {
           <OrdersInformationWrapper>
             <OrdersInformation className="fs-16 lh-16">
               <OrdersInformationColumn>
-                Orders: <b>{this.props.ordersStore.ordersData.Count ? this.props.ordersStore.ordersData.Count : 0}</b>
+                Orders: <b>{this.props.searchStore.orders.Count ? this.props.searchStore.orders.Count : 0}</b>
               </OrdersInformationColumn>
               <OrdersInformationColumn>
-                Grand total: <b>{this.props.ordersStore.ordersData.GrandTotal ? this.props.ordersStore.ordersData.GrandTotal : 0}</b>
+                Grand total: <b>{this.props.searchStore.orders.GrandTotal ? this.props.searchStore.orders.GrandTotal : 0}</b>
               </OrdersInformationColumn>
               <OrdersInformationColumn>
-                Average amount: <b>{this.props.ordersStore.ordersData.AverageAmount ? this.props.ordersStore.ordersData.AverageAmount : 0}</b>
+                Average amount: <b>{this.props.searchStore.orders.AverageAmount ? this.props.searchStore.orders.AverageAmount : 0}</b>
               </OrdersInformationColumn>
             </OrdersInformation>
             <OrdersCSV className="fs-12" href="#">Export results to CSV</OrdersCSV>

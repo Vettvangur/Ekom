@@ -5,11 +5,13 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { observer, inject } from 'mobx-react';
 
-import OrdersStore from 'stores/ordersStore';
 import statusList from 'utilities/statusList';
 import { Checkbox } from 'components/Input';
 import Total from 'components/shared/total';
 import Pagination from 'components/Pagination';
+import TableStore from 'stores/tableStore';
+import SearchStore from 'stores/searchStore';
+import OrdersStore from 'stores/ordersStore';
 
 const path = '/umbraco/backoffice/ekom';
 
@@ -17,13 +19,14 @@ const path = '/umbraco/backoffice/ekom';
 const TableWrapper = styled.div`
   /* height: calc(100vh - 240px); */
   flex: 1 1 0;
-  overflow-y:auto;
   position:relative;
   display:flex;
   flex-direction:column;
 `;
 
 interface ITableProps {
+  searchStore?: SearchStore;
+  tableStore?: TableStore;
   ordersStore?: OrdersStore;
 }
 
@@ -33,7 +36,7 @@ class State {
   statusUpdateIndicator?: boolean = false;
 }
 
-@inject('ordersStore')
+@inject('searchStore', 'tableStore', 'ordersStore')
 @observer
 class Table extends React.Component<ITableProps, State> {
 
@@ -41,8 +44,6 @@ class Table extends React.Component<ITableProps, State> {
     super(props);
 
     this.state = new State();
-
-    this.toggleRow = this.toggleRow.bind(this);
   }
 
   defaultFilter = (filter, row) => {
@@ -51,7 +52,7 @@ class Table extends React.Component<ITableProps, State> {
 
   toggleSelectAll = () => {
     const { selectAll } = this.state;
-    const { Orders } = this.props.ordersStore.ordersData;
+    const { Orders } = this.props.searchStore.orders;
     const newSelected = {};
 
     if (selectAll === false) {
@@ -66,7 +67,7 @@ class Table extends React.Component<ITableProps, State> {
     });
   }
 
-  toggleRow(UniqueId) {
+  toggleRow = (UniqueId) => {
     const { selected } = this.state;
     const newSelected = Object.assign({}, selected);
     newSelected[UniqueId] = !selected[UniqueId];
@@ -82,22 +83,7 @@ class Table extends React.Component<ITableProps, State> {
       ordersStore,
     } = this.props;
     const orderStatus = e.target.value;
-    this.setState({
-      statusUpdateIndicator: true,
-    });
-    ordersStore.updateStatus(UniqueId, orderStatus).then(() => {
-      setTimeout(() => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-      }, 1500);
-    })
-      .catch((err) => {
-        this.setState({
-          statusUpdateIndicator: false,
-        });
-        console.error(`error: ${err}`);
-      });
+    ordersStore.updateOrderStatus(UniqueId, orderStatus)
   }
 
 
@@ -107,7 +93,7 @@ class Table extends React.Component<ITableProps, State> {
       //statusUpdateIndicator,
     } = this.state;
 
-    const { ordersStore } = this.props;
+    const { searchStore, tableStore } = this.props;
 
     const columns = [
       {
@@ -660,7 +646,7 @@ class Table extends React.Component<ITableProps, State> {
         }
       },
     ];
-    const orders = ordersStore.ordersData.Orders;
+    const orders = searchStore.orders.Orders;
     return (
       <ReactTable
         data={orders}
@@ -668,21 +654,21 @@ class Table extends React.Component<ITableProps, State> {
         columns={columns}
         defaultPageSize={10}
 
-        sorted={ordersStore.sorted}
-        page={ordersStore.page}
-        pageSize={ordersStore.pageSize}
-        expanded={ordersStore.expanded}
-        resized={ordersStore.resized}
-        filtered={ordersStore.filtered}
-        onSortedChange={sorted => ordersStore.onSortedChange(sorted)}
-        onPageChange={page => ordersStore.onPageChange(page)}
-        onPageSizeChange={(pageSize, page) => ordersStore.onPageSizeChange(pageSize, page)}
-        onExpandedChange={expanded => ordersStore.onExpandedChange(expanded)}
-        onResizedChange={resized => ordersStore.onResizedChange(resized)}
-        onFilteredChange={filtered => ordersStore.onFilteredChange(filtered)}
+        sorted={tableStore.sorted}
+        page={tableStore.page}
+        pageSize={tableStore.pageSize}
+        expanded={tableStore.expanded}
+        resized={tableStore.resized}
+        filtered={tableStore.filtered}
+        onSortedChange={sorted => tableStore.onSortedChange(sorted)}
+        onPageChange={page => tableStore.onPageChange(page)}
+        onPageSizeChange={(pageSize, page) => tableStore.onPageSizeChange(pageSize, page)}
+        onExpandedChange={expanded => tableStore.onExpandedChange(expanded)}
+        onResizedChange={resized => tableStore.onResizedChange(resized)}
+        onFilteredChange={filtered => tableStore.onFilteredChange(filtered)}
         showPagination={false}
 
-        loading={ordersStore.loading}
+        loading={searchStore.state === "pending"}
         className="-highlight bg-white"
         style={{
           border: 'none',
