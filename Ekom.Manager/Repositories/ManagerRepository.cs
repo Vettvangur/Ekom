@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
@@ -62,7 +62,7 @@ namespace Ekom.Repository
         }
 
 
-        public OrderListData SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount)
+        public OrderListData SearchOrders(DateTime start, DateTime end, string query, string store, string payment, string shipping, string discount)
         {
 
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");
@@ -70,27 +70,33 @@ namespace Ekom.Repository
 
             var whereQuery = "WHERE (PaidDate >= @0 AND PaidDate <= @1) ";
 
+            if (query.Length > 0)
+            {
+                whereQuery += "AND (CustomerName LIKE '%" + query + "%' OR ReferenceId LIKE '%" + query + "%' OR OrderNumber LIKE '%" + query + "%' OR CustomerEmail LIKE '%" + query + "%' OR CustomerId LIKE '%" + query + "%' OR CustomerUsername LIKE '%" + query + "%')";
+            }
+
             if (store.Length > 0)
             {
-                whereQuery += "AND (StoreAlias = @2) ";
+                whereQuery += "AND (StoreAlias = @3) ";
             }
             if (payment.Length > 0)
             {
-                whereQuery += "AND (PaymentMethod = @3) ";
+                whereQuery += "AND (PaymentMethod = @4) ";
             }
             if (shipping.Length > 0)
             {
-                whereQuery += "AND (ShippingMethod = @4) ";
+                whereQuery += "AND (ShippingMethod = @5) ";
             }
             if (discount.Length > 0)
             {
-                whereQuery += "AND (Discount = @5) ";
+                whereQuery += "AND (Discount = @6) ";
             }
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 return new OrderListData(db.Query<OrderData>(whereQuery,
                  startDate,
                  endDate,
+                 query,
                  store,
                  payment,
                  shipping,

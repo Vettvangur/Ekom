@@ -1,15 +1,18 @@
 import * as React from 'react';
-
+import styled from 'styled-components';
 import { withRouter } from 'react-router-dom'
 import { observer, inject } from 'mobx-react';
 import OrderHeader from 'components/order/orderHeader';
 import Products from 'components/order/products';
+import SavingLoader from 'components/order/savingLoader';
 
 import OrdersStore from 'stores/ordersStore';
 
 import * as s from 'containers/order/order.scss';
 
-
+const OrderWrapper = styled.div`
+  position: relative;
+`;
 
 interface IProps {
   ordersStore?: OrdersStore;
@@ -19,8 +22,6 @@ interface IProps {
 class State {
   order: any;
   status: any;
-  statusUpdateIndicator: boolean = false;
-
 }
 
 @inject('ordersStore')
@@ -64,16 +65,17 @@ export default class Order extends React.Component<IProps, State> {
     const { order, status } = this.state;
     const orderId = order.UniqueId;
     const orderStatus = status;
-    this.setState({
-      statusUpdateIndicator: true,
-    });
     ordersStore.updateOrderStatus(orderId, orderStatus)
   }
 
   render() {
     const { order, status } = this.state;
     return (
-      <div className="content">
+      <OrderWrapper>
+      
+        {this.props.ordersStore.state === "loading" && (
+          <SavingLoader />
+        )}
         {order != null
           ? (
             <React.Fragment>
@@ -209,7 +211,7 @@ export default class Order extends React.Component<IProps, State> {
           : ''
         }
 
-      </div>
+      </OrderWrapper>
     );
   }
 }

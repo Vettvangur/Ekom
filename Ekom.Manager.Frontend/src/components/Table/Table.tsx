@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as moment from 'moment';
 import ReactTable from 'react-table';
+// import checkboxHOC from "react-table/lib/hoc/selectTable";
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { observer, inject } from 'mobx-react';
@@ -14,6 +15,8 @@ import SearchStore from 'stores/searchStore';
 import OrdersStore from 'stores/ordersStore';
 
 const path = '/umbraco/backoffice/ekom';
+
+// const CheckBoxTable = checkboxHOC(ReactTable)
 
 
 const TableWrapper = styled.div`
@@ -31,6 +34,8 @@ interface ITableProps {
 }
 
 class State {
+  ref: any;
+  selection = [];
   selected: any;
   selectAll?: boolean = false;
   statusUpdateIndicator?: boolean = false;
@@ -39,6 +44,7 @@ class State {
 @inject('searchStore', 'tableStore', 'ordersStore')
 @observer
 class Table extends React.Component<ITableProps, State> {
+  private reactTable: any;
 
   constructor(props: ITableProps) {
     super(props);
@@ -68,15 +74,75 @@ class Table extends React.Component<ITableProps, State> {
   }
 
   toggleRow = (UniqueId) => {
-    const { selected } = this.state;
-    const newSelected = Object.assign({}, selected);
-    newSelected[UniqueId] = !selected[UniqueId];
-    this.setState({
-      selected: newSelected,
-      selectAll: false,
-    });
+    // const { selected } = this.state;
+    // const newSelected = Object.assign({}, selected);
+    // newSelected[UniqueId] = !selected[UniqueId];
+    // this.setState({
+    //   selected: newSelected,
+    //   selectAll: false,
+    // });
+    if (this.props.tableStore.selectedRows.get(UniqueId) === true)
+      this.props.tableStore.selectedRows.set(UniqueId, false)
+    else 
+      this.props.tableStore.selectedRows.set(UniqueId, true)
   }
+  
+  toggleSelection = (key) => {
+    /*
+      Implementation of how to manage the selection state is up to the developer.
+      This implementation uses an array stored in the component state.
+      Other implementations could use object keys, a Javascript Set, or Redux... etc.
+    */
+    // start off with the existing state
+    let selection = [...this.state.selection];
+    const keyIndex = selection.indexOf(key);
+    // check to see if the key exists
+    if (keyIndex >= 0) {
+      // it does exist so we will remove it using destructing
+      selection = [
+        ...selection.slice(0, keyIndex),
+        ...selection.slice(keyIndex + 1)
+      ];
+    } else {
+      // it does not exist so add it
+      selection.push(key);
+    }
+    // update the state
+    this.setState({ selection, selectAll: false });
+  };
 
+  toggleAll = () => {
+    /*
+      'toggleAll' is a tricky concept with any filterable table
+      do you just select ALL the records that are in your data?
+      OR
+      do you only select ALL the records that are in the current filtered data?
+      
+      The latter makes more sense because 'selection' is a visual thing for the user.
+      This is especially true if you are going to implement a set of external functions
+      that act on the selected information (you would not want to DELETE the wrong thing!).
+      
+      So, to that end, access to the internals of ReactTable are required to get what is
+      currently visible in the table (either on the current page or any other page).
+      
+      The HOC provides a method call 'getWrappedInstance' to get a ref to the wrapped
+      ReactTable and then get the internal state and the 'sortedData'. 
+      That can then be iterrated to get all the currently visible records and set
+      the selection state.
+    */
+    const selectAll = this.state.selectAll ? false : true;
+    const selection = [];
+    if (selectAll) {
+      // we need to get at the internals of ReactTable
+      // the 'sortedData' property contains the currently accessible records based on the filter and sort
+      const currentRecords = this.props.tableStore.pageRows
+      // we just push all the IDs onto the selection array
+      currentRecords.forEach(item => {
+        selection.push(item.checkbox);
+      });
+    }
+    this.setState({ selectAll, selection });
+  };
 
   updateStatus(e, UniqueId) {
     const {
@@ -86,6 +152,14 @@ class Table extends React.Component<ITableProps, State> {
     ordersStore.updateOrderStatus(UniqueId, orderStatus)
   }
 
+  isSelected = key => {
+    /*
+      Instead of passing our external selection state we provide an 'isSelected'
+      callback and detect the selection state ourselves. This allows any implementation
+      for selection (either an array, object keys, or even a Javascript Set object).
+    */
+    return this.state.selection.includes(key);
+  };
 
   render() {
     const {
@@ -98,29 +172,30 @@ class Table extends React.Component<ITableProps, State> {
     const columns = [
       {
         id: 'checkbox',
-        accessor: '',
         maxWidth: 30,
         resizable: false,
-        Cell: () => {
-          //const UniqueId = original.UniqueId
+        accessor: d => d.UniqueId,
+        Cell: row => {
+          const selected = this.isSelected(row.value);
           return (
-            <Checkbox
-            //onChange={() => this.toggleRow(UniqueId)}
-            />
-          )
-        },
+          <Checkbox
+            checked={selected}
+            onChange={() => this.toggleSelection(row.value)}
+          />
+        )},
         Header: () => (
           <Checkbox
             checked={selectAll}
-            onChange={() => this.toggleSelectAll()}
+            onChange={() => this.toggleAll()}
           />
         ),
         sortable: false,
         width: 45,
       },
       {
-        Header: 'Order Number',
+        Header: 'Order no.',
         id: 'orderNumber',
+        width: 100,
         accessor: d => ({
           UniqueId: d.UniqueId,
           OrderNumber: d.OrderNumber,
@@ -649,6 +724,7 @@ class Table extends React.Component<ITableProps, State> {
     const orders = searchStore.orders.Orders;
     return (
       <ReactTable
+        ref={(ref: any) => ref = this.reactTable}
         data={orders}
         defaultFilterMethod={this.defaultFilter}
         columns={columns}
@@ -691,8 +767,15 @@ class Table extends React.Component<ITableProps, State> {
             borderRight: 'none',
           },
         })}
-        getTrProps={() => {
-
+        getTrGroupProps={(state, rowInfo, column) => {
+          return {
+            className: {
+              'rt-tr-group__selected': rowInfo && this.isSelected(rowInfo.original.UniqueId),
+              'rt-tr-group__empty': !rowInfo
+            },
+          }
+        }}
+        getTrProps={(state, rowInfo, column) => {
           return {
             style: {
               alignItems: 'center',
@@ -706,6 +789,8 @@ class Table extends React.Component<ITableProps, State> {
         })}
       >
         {(state, makeTable, instance) => {
+          this.props.tableStore.setPageRows(state.pageRows);
+          console.log(state)
           return (
             <>
               <TableWrapper>
@@ -714,12 +799,13 @@ class Table extends React.Component<ITableProps, State> {
               <Pagination
                 canPrevious={state.canPrevious}
                 canNext={state.canNext}
-                page={state.page}
-                totalPages={state.pages}
-                pageRows={state.pageRows}
-                pageSize={state.pageSize}
+                page={tableStore.page}
+                pages={state.pages}
+                pageRows={tableStore.pageRows}
+                pageSize={tableStore.pageSize}
                 totalItems={state.data.length}
                 pageSizeOptions={state.pageSizeOptions}
+                onPageChange={state.onPageChange}
                 onPageSizeChange={state.onPageSizeChange}
               />
             </>

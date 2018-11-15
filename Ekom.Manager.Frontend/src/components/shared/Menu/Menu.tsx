@@ -6,7 +6,10 @@ import {
   Link,
   withRouter,
 } from 'react-router-dom';
+import classNames from 'classnames';
 
+
+import Icon from 'components/Icon';
 import { routes } from '../../../App';
 
 import * as variables from 'styles/variablesJS';
@@ -16,18 +19,43 @@ import * as variables from 'styles/variablesJS';
 const MenuWrapper = styled.div`
   width: 12.5rem;
   height: 100vh;
+  padding-left: 30px;
+  padding-top: 30px;
+  padding-bottom: 30px;
 `;
 
-// const MenuLogo = styled.a``;
+const MenuLogoWrapper = styled.div`
+  margin-bottom: 80px;
+`;
+
+const MenuLogoLink = styled.a``;
+
 
 const MenuLinks = styled.ul``;
 
 const MenuItem = styled<{ active: boolean }, "li">("li")`
-  background-color: ${(props: any) => props.active && variables.secondaryColor};
   color: ${variables.black};
   opacity: ${(props: any) => props.active ? 1 : .5};
   font-weight: 600;
-  font-size: 1rem;
+
+  :not(:last-child) {
+    margin-bottom: 10px;
+  }
+  
+  &.menu-item-selected {
+    a {
+      display: flex;
+      align-items: center;
+      &::after {
+        content: '';
+        height: 0px;
+        width:100%;
+        border: 1px solid ${variables.red};
+        margin-right: -20px;
+        margin-left: 20px;
+      }
+    }
+  }
   &:hover {
       opacity: ${(props: any) => !props.active && 1};
     a {
@@ -40,7 +68,6 @@ const MenuItem = styled<{ active: boolean }, "li">("li")`
 const MenuItemLink = styled(Link)`
   display:block;
   color: inherit;
-  padding: 12px 20px;
   &::before {
       margin-right: 7px;
   }
@@ -82,12 +109,25 @@ class Menu extends React.Component<IMenuProps, State> {
   public render() {
     return (
       <MenuWrapper>
+        <MenuLogoWrapper>
+          <MenuLogoLink>
+            <Icon name="vv-logo" iconSize={50} color={variables.red} />
+          </MenuLogoLink>
+        </MenuLogoWrapper>
         <MenuLinks>
           {routes.map((mainRoute, mainRouteIndex) => (
             <React.Fragment key={mainRouteIndex}>
               {mainRoute.routes.map((route, routeIndex) => route.showInMenu && (
-                <MenuItem key={routeIndex} active={this.state.selectedTopLevel === routeIndex}>
-                  <MenuItemLink to={route.path} onClick={() => this.handleTopLevelChange(routeIndex)} className="icon-home3" title={route.title}>
+                <MenuItem
+                  key={routeIndex} 
+                  className={classNames({
+                    'fs-16': true,
+                    'lh-21': true,
+                    'menu-item-selected': this.state.selectedTopLevel === routeIndex
+                  })} 
+                  active={this.state.selectedTopLevel === routeIndex}
+                >
+                  <MenuItemLink to={route.path} onClick={() => this.handleTopLevelChange(routeIndex)} title={route.title}>
                     {route.title}
                   </MenuItemLink>
                 </MenuItem>

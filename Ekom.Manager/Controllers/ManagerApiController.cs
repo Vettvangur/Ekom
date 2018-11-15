@@ -55,9 +55,9 @@ namespace Ekom.Controllers
             return _managerRepository.GetAllOrders(start, end);
         }
         [HttpGet]
-        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
+        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
-            return _managerRepository.SearchOrders(start, end, store, payment, shipping, discount);
+            return _managerRepository.SearchOrders(start, end, query, store, payment, shipping, discount);
         }
         public OrderListData GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {

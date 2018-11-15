@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using System;
@@ -9,7 +9,7 @@ namespace Ekom.Interfaces
     public interface IManagerRepository
     {
         OrderListData GetAllOrders(DateTime start, DateTime end);
-        OrderListData SearchOrders(DateTime start, DateTime end, string store, string payment, string shipping, string discount);
+        OrderListData SearchOrders(DateTime start, DateTime end, string query, string store, string payment, string shipping, string discount);
         OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus);
         OrderData GetOrder(Guid uniqueId);
         OrderListData GetOrders();

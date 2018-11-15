@@ -41,7 +41,7 @@ const CheckboxInput = styled.input`
   }
   +span:not(.lever) {
     position: relative;
-    padding-left: 35px;
+    padding-left: 25px;
     cursor: pointer;
     display: inline-block;
     height: 25px;
@@ -92,12 +92,15 @@ class Checkbox extends React.Component<ICheckboxProps> {
     required: false,
   };
   public render() {
-    const { label } = this.props;
+    const { label, checked, required, onChange } = this.props;
     return (
       <CheckboxWrapper>
         <CheckboxLabel>
           <CheckboxInput
             type="checkbox"
+            checked={checked}
+            required={required}
+            onChange={onChange}
           />
           <span>{label}</span>
         </CheckboxLabel>

@@ -2,7 +2,6 @@ import * as React from 'react';
 import * as moment from 'moment';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
-import SavingLoader from 'components/order/savingLoader';
 import statusList from 'utilities/statusList';
 import OrdersStore from 'stores/ordersStore';
 
@@ -43,8 +42,6 @@ interface IProps {
 
 class State {
   status: any;
-  statusUpdateIndicator: boolean = false;
-
 }
 
 @inject('ordersStore')
@@ -83,9 +80,6 @@ export default class OrderHeader extends React.Component<IProps, State> {
     } = this.props;
     const orderId = order.UniqueId;
     const orderStatus = status;
-    this.setState({
-      statusUpdateIndicator: true,
-    });
     ordersStore.updateOrderStatus(orderId, orderStatus)
   }
 
@@ -94,9 +88,6 @@ export default class OrderHeader extends React.Component<IProps, State> {
       order,
       originalStatus,
     } = this.props;
-    const {
-      statusUpdateIndicator,
-    } = this.state;
 
     return (
       <OrderHeaderWrapper>
@@ -145,9 +136,6 @@ export default class OrderHeader extends React.Component<IProps, State> {
           </StatusSelectWrapper>
           <button type="submit" className="button">Save</button>
         </form>
-        {statusUpdateIndicator
-          && <SavingLoader />
-        }
       </OrderHeaderWrapper>
     );
   }

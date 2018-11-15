@@ -1,3 +1,4 @@
+@import '~variables';
 .CustomReactTable {
   padding: 47px 110px;
 }
@@ -27,7 +28,41 @@
 
 .rt-td {
   font-size: 16px;
+  &:first-child {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+.rt-th {
+  &:first-child {
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 .pagination-bottom {
   font-size: 16px;
+}
+
+.rt-tr-group {
+  border-bottom: none;
+}
+.rt-tr-group__empty {
+  display:none!important;
+}
+.rt-tr {
+  border-bottom: solid 1px #E5E5E5;
+}
+
+
+.rt-tr-group__selected {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top:0;
+    left:0;
+    width:3px;
+    height: 100%;
+    background-color: $ekomBlue;
+  }
 }

@@ -7,7 +7,7 @@ export default class SearchStore {
   @observable orders?: IOrders;
   @observable startDate: moment.Moment;
   @observable endDate: moment.Moment;
-  @observable searchString: string;
+  @observable searchString = '';
   @observable storeFilter = '';
   @observable state = "pending"; // "pending" / "done" / "error"
 
@@ -79,6 +79,8 @@ export default class SearchStore {
   @action
   fetchSearchResults() {
     let filters = '';
+    if (this.searchString.length > 0)
+      filters += `&query=${this.searchString}`
     if (this.storeFilter.length > 0)
       filters += `&store=${this.storeFilter}`
     return fetch(
@@ -131,5 +133,9 @@ export default class SearchStore {
       this.storeFilter = store;
     else 
       this.storeFilter = "";
+  }
+  @action
+  setSearchString = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.searchString = e.target.value;
   }
 }

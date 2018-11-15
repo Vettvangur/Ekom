@@ -42,23 +42,9 @@ const SearchInput = styled.input`
   color: ${variables.black};
 `;
 
-const StyledButtonFilterWrapper = styled.div`
+const StyledButtonFilterWrapper = styled<{ active?: boolean }, "div">("div")`
   position: relative;
-`;
-const StyledButtonFilter = styled.button`
-  height: 100%;
-  color: ${variables.primaryColor};
-  min-width: 9.375rem;
-  background-color: ${variables.ekomSecondaryColor};
-  border:0;
-  padding: 0px 30px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  > svg {
-    margin-left: 5px;
-  }
+  background-color: ${(props: any) => props.active ? variables.gray : variables.ekomSecondaryColor};
   &:not(:last-child) {
     &::after {
       content: '';
@@ -69,6 +55,33 @@ const StyledButtonFilter = styled.button`
       position: absolute;
       opacity: .07;
     }
+  }
+  &.active {
+    > button {
+      outline: 0;
+    }
+    &::after {
+      content: null;
+    }
+  }
+`;
+const StyledButtonFilter = styled.button`
+  height: 100%;
+  color: ${variables.primaryColor};
+  background-color: inherit;
+  min-width: 9.375rem;
+  border:0;
+  padding: 0px 30px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index:1;
+  &:focus {
+    outline:none;
+  }
+  > svg {
+    margin-left: 5px;
   }
 `
 
@@ -104,8 +117,9 @@ const StoreFilterDropdownWrapper = styled.div`
   top: 70px;
   left:0;
   width:100%;
-  background-color: ${variables.white};
-  border: 1px solid black;
+  background-color: ${variables.gray};
+  border: 1px solid ${variables.black}16;
+  border-top: none;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -146,7 +160,8 @@ class Search extends React.Component<ISearchProps, State> {
     if (e.keyCode === 13)
       this.props.searchStore.search()
   }
-  public openStoreFilter = () => {
+  public openStoreFilter = (e) => {
+    e.preventDefault();
     this.setState(prevState => ({
       showStoreFilter: !prevState.showStoreFilter
     }))
@@ -181,9 +196,15 @@ class Search extends React.Component<ISearchProps, State> {
             className="fs-20 semi-bold"
             placeholder="Search orders..."
             onKeyDown={this.handleSearch}
+            onChange={this.props.searchStore.setSearchString}
           />
         </StyledSearchInputWrapper>
-        <StyledButtonFilterWrapper>
+        <StyledButtonFilterWrapper 
+          className={classNames({
+            'active': this.state.showStoreFilter
+          })} 
+          active={this.state.showStoreFilter}
+        >
           <StyledButtonFilter onClick={this.openStoreFilter} className="fs-16 semi-bold">
             {this.props.searchStore.storeFilter.length > 0 ? this.props.searchStore.storeFilter : 'All stores'}
             <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
@@ -191,12 +212,13 @@ class Search extends React.Component<ISearchProps, State> {
           {this.state.showStoreFilter && (
             <StoreFilterDropdownWrapper>
               <div
+                style={{cursor: 'pointer'}}
                 onClick={() => this.props.searchStore.setStoreFilter()}
               >
                 All stores
               </div>
               {this.props.searchStore.stores && this.props.searchStore.stores.map((store) => (
-                <div key={store.Id}
+                <div style={{cursor: 'pointer'}} key={store.Id}
                   onClick={() => this.props.searchStore.setStoreFilter(store.Alias)}
                 >
                   {store.Alias}
@@ -206,62 +228,70 @@ class Search extends React.Component<ISearchProps, State> {
           )}
         </StyledButtonFilterWrapper>
         {this.props.searchStore.preset && this.props.searchStore.preset.length > 0 ? (
-          <StyledButtonFilter className="fs-16 semi-bold"
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              if (this.state.showDatePicker) {
-                this.setState({ showDatePicker: false });
-              } else {
-                this.setState({ showDatePicker: true });
-              }
-            }}
-          >
-            {this.props.searchStore.preset}
-            <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
-          </StyledButtonFilter>
+          <StyledButtonFilterWrapper>
+            <StyledButtonFilter className="fs-16 semi-bold"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                if (this.state.showDatePicker) {
+                  this.setState({ showDatePicker: false });
+                } else {
+                  this.setState({ showDatePicker: true });
+                }
+              }}
+            >
+              {this.props.searchStore.preset}
+              <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+            </StyledButtonFilter>
+          </StyledButtonFilterWrapper>
         )
           : (
             <>
               {this.props.searchStore.startDate && (
-                <StyledButtonFilter className="fs-16 semi-bold"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (this.state.showDatePicker) {
-                      this.destroyDatePicker();
-                    } else {
-                      this.setState({ showDatePicker: true });
-                    }
-                  }}
-                >
-                  {this.props.searchStore.startDate.format("DD-MM-YYYY").toString()}
-                  <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
-                </StyledButtonFilter>
+                <StyledButtonFilterWrapper>
+                  <StyledButtonFilter className="fs-16 semi-bold"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (this.state.showDatePicker) {
+                        this.destroyDatePicker();
+                      } else {
+                        this.setState({ showDatePicker: true });
+                      }
+                    }}
+                  >
+                    {this.props.searchStore.startDate.format("DD-MM-YYYY").toString()}
+                    <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+                  </StyledButtonFilter>
+                </StyledButtonFilterWrapper>
               )}
               {this.props.searchStore.endDate && (
-                <StyledButtonFilter className="fs-16 semi-bold"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (this.state.showDatePicker) {
-                      this.destroyDatePicker();
-                    } else {
-                      this.setState({ showDatePicker: true, autoFocusEndDate: true });
-                    }
-                  }}
-                >
-                  {this.props.searchStore.endDate.format("DD-MM-YYYY").toString()}
-                  <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
-                </StyledButtonFilter>
+                <StyledButtonFilterWrapper>
+                  <StyledButtonFilter className="fs-16 semi-bold"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (this.state.showDatePicker) {
+                        this.destroyDatePicker();
+                      } else {
+                        this.setState({ showDatePicker: true, autoFocusEndDate: true });
+                      }
+                    }}
+                  >
+                    {this.props.searchStore.endDate.format("DD-MM-YYYY").toString()}
+                    <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+                  </StyledButtonFilter>
+                </StyledButtonFilterWrapper>
               )}
             </>
           )
         }
-        <StyledButtonFilter className="fs-16 semi-bold">
-          Advanced Filters
-          <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
-        </StyledButtonFilter>
+        <StyledButtonFilterWrapper>
+          <StyledButtonFilter className="fs-16 semi-bold">
+            Advanced Filters
+            <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+          </StyledButtonFilter>
+        </StyledButtonFilterWrapper>
         {this.state.showDatePicker && (
           this.renderMonthFilter()
         )}

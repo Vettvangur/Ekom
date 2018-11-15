@@ -46,14 +46,15 @@ const PaginationCurrentPage = styled.span``;
 
 interface IPaginationProps {
   totalItems: number;
-  totalPages: number;
   page: number;
+  pages: number;
   pageRows: any;
   pageSize: number;
   canPrevious: boolean;
   canNext: boolean;
   pageSizeOptions: number[];
   onPageSizeChange: (pageSize: number, page: number) => void;
+  onPageChange: any;
   tableStore?: TableStore;
 }
 
@@ -64,11 +65,29 @@ class Pagination extends React.Component<IPaginationProps> {
     super(props);
   }
 
+  public changePage(page) {
+    const activePage = this.props.page + 1;
+
+    if (page === activePage) {
+      return;
+    }
+
+    this.props.onPageChange(page - 1);
+  }
+
+  changePageSize() {
+
+  }
+
   public renderPager = () => {
+    const activePage = this.props.page + 1
     return (
       <>
         <Button
-          onClick={() => this.props.tableStore.onPageChange(this.props.page - 1)}
+          onClick={() => { 
+            if (activePage === 1) return;
+            this.changePage(activePage - 1);
+          }}
           disabled={this.props.canPrevious ? false : true}
           className="fs-12 lh-16"
           paddingLeft={13}
@@ -83,9 +102,12 @@ class Pagination extends React.Component<IPaginationProps> {
           Fyrri
         </Button>
 
-        <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{this.props.page + 1}</PaginationCurrentPage> af {this.props.totalPages}</PaginationCurrentPageWrapper>
+        <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{activePage}</PaginationCurrentPage> af {this.props.pages}</PaginationCurrentPageWrapper>
         <Button
-          onClick={() => this.props.tableStore.onPageChange(this.props.page + 1)}
+          onClick={() => {
+            if (activePage === this.props.pages) return;
+            this.changePage(activePage + 1);
+          }}
           disabled={this.props.canNext ? false : true}
           className="fs-12 lh-16"
           paddingLeft={13}
@@ -109,7 +131,7 @@ class Pagination extends React.Component<IPaginationProps> {
         <PaginationColumn>
           <span>Sýna</span>
           <PaginationRowSelectWrapper className="select__wrapper">
-            <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.tableStore.handlePageSize(e.currentTarget.value)}>
+            <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.onPageSizeChange(+e.currentTarget.value, this.props.page)}>
               {this.props.pageSizeOptions.map((ps, psIndex) => (
                 <option key={psIndex} value={ps}>{ps}</option>
               ))}

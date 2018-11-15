@@ -3,16 +3,17 @@ import { observable, action } from 'mobx';
 import { Resize, Filter, SortingRule } from 'react-table';
 
 export default class TableStore {
-  @observable page: number;
-  @observable pageSize: number;
+  @observable page = 0;
+  @observable pageSize = 10;
+  @observable pageRows = [];
   @observable sorted: SortingRule[];
   @observable expanded: any;
   @observable resized: Resize[];
   @observable filtered: Filter[];
 
+  selectedRows = observable.map<string, boolean>();
+
   constructor() {
-    this.page = 0;
-    this.pageSize = 10;
   }
   
   @action
@@ -21,28 +22,32 @@ export default class TableStore {
   }
 
   @action
-  onSortedChange(sorted) {
+  setPageRows(pageRows) {
+    this.pageRows = pageRows;
+  }
+  @action
+  onSortedChange = (sorted) => {
     this.sorted = sorted;
   }
   @action
-  onPageChange(page) {
+  onPageChange = (page) => {
     this.page = page;
   }
   @action
-  onPageSizeChange(pageSize, page) {
+  onPageSizeChange = (pageSize, page) => {
     this.pageSize = pageSize;
     this.page = page;
   }
   @action
-  onExpandedChange(expanded) {
+  onExpandedChange = (expanded) => {
     this.expanded = expanded;
   }
   @action
-  onResizedChange(resized) {
+  onResizedChange = (resized) => {
     this.resized = resized;
   }
   @action
-  onFilteredChange(filtered) {
+  onFilteredChange = (filtered) => {
     this.filtered = filtered;
   }
 
