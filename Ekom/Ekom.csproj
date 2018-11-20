@@ -293,6 +293,7 @@
     <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
     <Compile Include="Models\Data\DiscountStockData.cs" />
+    <Compile Include="Models\Data\OrderActivityLog.cs" />
     <Compile Include="Models\Discounts\Discount.cs" />
     <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
@@ -319,6 +320,7 @@
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
     <Compile Include="Interfaces\IOrderRepository.cs" />
+    <Compile Include="Services\ActivityLog.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />

@@ -16,17 +16,19 @@ namespace Ekom.Repository
         readonly ILog _log;
         readonly Configuration _config;
         readonly ApplicationContext _appCtx;
+        readonly ActivityLogRepository _activityLogRepository;
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac )
         {
             _config = config;
             _appCtx = appCtx;
             _log = logFac.GetLogger<OrderRepository>();
+            _activityLogRepository = Configuration.container.GetInstance<ActivityLogRepository>();
         }
 
         public OrderData GetOrder(Guid uniqueId)
@@ -58,6 +60,14 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(orderData);
+            }
+        }
+
+        public void AddActivityLog(string log)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+
             }
         }
 
@@ -164,6 +174,7 @@ namespace Ekom.Repository
         public void UpdateStatus(Guid orderId, OrderStatus orderStatus)
         {
             API.Order.Instance.UpdateStatus(orderStatus, orderId);
+            _activityLogRepository.CreateActivityLog(orderId, $"updated the order status to {orderStatus.ToString()}");
         }
     }
 }

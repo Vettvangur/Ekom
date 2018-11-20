@@ -253,9 +253,11 @@
     <Compile Include="App_Start\Startup.cs" />
     <Compile Include="Controllers\EkomController.cs" />
     <Compile Include="Controllers\ManagerApiController.cs" />
+    <Compile Include="Interfaces\IActivityLogRepository.cs" />
     <Compile Include="Interfaces\IManagerRepository.cs" />
     <Compile Include="Models\OrderData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\ActivityLogRepository.cs" />
     <Compile Include="Repositories\ManagerRepository.cs" />
   </ItemGroup>
   <ItemGroup />

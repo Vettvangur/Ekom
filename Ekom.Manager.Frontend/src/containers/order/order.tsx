@@ -1,22 +1,55 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { withRouter } from 'react-router-dom'
 import { observer, inject } from 'mobx-react';
+import { RouterStore } from 'mobx-react-router';
+import {
+  Link,
+  withRouter,
+} from 'react-router-dom';
 import OrderHeader from 'components/order/orderHeader';
 import Products from 'components/order/products';
 import SavingLoader from 'components/order/savingLoader';
 
 import OrdersStore from 'stores/ordersStore';
 
+import Icon from 'components/Icon';
+
 import * as s from 'containers/order/order.scss';
+import * as variables from 'styles/variablesJS';
 
 const OrderWrapper = styled.div`
   position: relative;
 `;
 
+const Container = styled.div`
+  padding: 0 30px;
+`;
+
+const GoBack = styled(Link)`
+  display:flex;
+  color: ${variables.primaryColor};
+  background-color: ${variables.ekomSecondaryColor};
+  align-items:center;
+  padding: 10px 20px;
+  svg {
+      margin-right: 6px;
+  }
+`;
+
+const OrderInformation = styled.div`
+  display:flex;
+  justify-content: space-between;
+`;
+
+const OrderNumber = styled.h1`
+  color: ${variables.black};
+`
+
+
 interface IProps {
   ordersStore?: OrdersStore;
   match: any;
+  routing: RouterStore;
 }
 
 class State {
@@ -32,6 +65,7 @@ export default class Order extends React.Component<IProps, State> {
     super(props);
 
     this.state = new State();
+    
 
     this.updateStatus = this.updateStatus.bind(this);
     this.handleStatusChange = this.handleStatusChange.bind(this);
@@ -72,10 +106,21 @@ export default class Order extends React.Component<IProps, State> {
     const { order, status } = this.state;
     return (
       <OrderWrapper>
-      
+
         {this.props.ordersStore.state === "loading" && (
           <SavingLoader />
         )}
+        <Container>
+          <GoBack to="/orders" className="fs-16 lh-21 semi-bold">
+            <Icon name="arrow-left-sm" iconSize={17} color={variables.primaryColor} />
+            Back to search...
+          </GoBack>
+          <OrderInformation>
+            <OrderNumber className="fs-32 lh-42">{order.OrderNumber}</OrderNumber>
+            <span>Order number</span>
+          </OrderInformation>
+        </Container>
+
         {order != null
           ? (
             <React.Fragment>

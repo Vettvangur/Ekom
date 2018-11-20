@@ -143,6 +143,11 @@ namespace Ekom
                 //Create DB table - and set overwrite to false
                 dbHelper.CreateTable<StockData>(false);
             }
+            if (!dbHelper.TableExist("EkomOrdersActivityLog"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<OrderActivityLog>(false);
+            }
             if (!dbHelper.TableExist("EkomOrders"))
             {
                 dbHelper.CreateTable<OrderData>(false);

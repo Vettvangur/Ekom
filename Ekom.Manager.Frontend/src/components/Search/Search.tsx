@@ -8,6 +8,8 @@ import SearchStore from 'stores/searchStore';
 
 import DateRangePickerWrapper from 'components/orders/DateRangePickerWrapper';
 
+import StoreFilterDropdown from './StoreFilterDropdown';
+
 import * as variables from 'styles/variablesJS';
 import Icon from 'components/Icon';
 
@@ -54,11 +56,13 @@ const StyledButtonFilterWrapper = styled<{ active?: boolean }, "div">("div")`
       right:0;
       position: absolute;
       opacity: .07;
+      z-index:1;
     }
   }
   &.active {
     > button {
       outline: 0;
+      color: ${variables.black};
     }
     &::after {
       content: null;
@@ -111,21 +115,6 @@ const StoreFilterDropDownWrapper = styled.div`
     } */
 `;
 
-
-const StoreFilterDropdownWrapper = styled.div`
-  position: absolute;
-  top: 70px;
-  left:0;
-  width:100%;
-  background-color: ${variables.gray};
-  border: 1px solid ${variables.black}16;
-  border-top: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px;
-`;
-
 interface ISearchProps {
   searchStore?: SearchStore;
 }
@@ -154,6 +143,11 @@ class Search extends React.Component<ISearchProps, State> {
       autoFocusEndDate: false,
       showDatePicker: false,
     });
+  }
+  public destoryStoreFilterDropdown = () => {
+    this.setState({
+      showStoreFilter: false
+    })
   }
 
   public handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -207,24 +201,10 @@ class Search extends React.Component<ISearchProps, State> {
         >
           <StyledButtonFilter onClick={this.openStoreFilter} className="fs-16 semi-bold">
             {this.props.searchStore.storeFilter.length > 0 ? this.props.searchStore.storeFilter : 'All stores'}
-            <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+            <Icon name="down-dir" iconSize={8} color={this.state.showStoreFilter ? variables.black : variables.primaryColor} />
           </StyledButtonFilter>
           {this.state.showStoreFilter && (
-            <StoreFilterDropdownWrapper>
-              <div
-                style={{cursor: 'pointer'}}
-                onClick={() => this.props.searchStore.setStoreFilter()}
-              >
-                All stores
-              </div>
-              {this.props.searchStore.stores && this.props.searchStore.stores.map((store) => (
-                <div style={{cursor: 'pointer'}} key={store.Id}
-                  onClick={() => this.props.searchStore.setStoreFilter(store.Alias)}
-                >
-                  {store.Alias}
-                </div>
-              ))}
-            </StoreFilterDropdownWrapper>
+            <StoreFilterDropdown destoryStoreFilterDropdown={this.destoryStoreFilterDropdown} />
           )}
         </StyledButtonFilterWrapper>
         {this.props.searchStore.preset && this.props.searchStore.preset.length > 0 ? (
@@ -241,7 +221,7 @@ class Search extends React.Component<ISearchProps, State> {
               }}
             >
               {this.props.searchStore.preset}
-              <Icon name="down-dir" iconSize={8} color={variables.primaryColor} />
+              <Icon name="down-dir" iconSize={8} color={this.state.showDatePicker ? variables.black : variables.primaryColor} />
             </StyledButtonFilter>
           </StyledButtonFilterWrapper>
         )
