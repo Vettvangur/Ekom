@@ -26,7 +26,7 @@ namespace Ekom.Manager.Models
                 this.AverageAmount = (this.Count / _grandTotal).ToString();
             }
         }
-
+        
         public IEnumerable<OrderData> Orders { get; set; }
         public string GrandTotal { get; set; }
         public string AverageAmount { get; set; }

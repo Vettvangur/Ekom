@@ -7,6 +7,8 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Mvc;
+using Umbraco.Web.Mvc;
 using Umbraco.Core;
 
 namespace Ekom.Repository
@@ -36,6 +38,14 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.FirstOrDefault<OrderData>("WHERE UniqueId = @0", uniqueId);
+            }
+        }
+        public ActivityLogData GetOrderActivityLog(Guid orderId)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return new ActivityLogData(db.Query<OrderActivityLog>("WHERE [Key] = @0",
+                 orderId));
             }
         }
 

@@ -6,15 +6,13 @@ import {
   Link,
   withRouter,
 } from 'react-router-dom';
-import OrderHeader from 'components/order/orderHeader';
+// import OrderHeader from 'components/order/orderHeader';
 import Products from 'components/order/products';
 import SavingLoader from 'components/order/savingLoader';
 
 import OrdersStore from 'stores/ordersStore';
-
+import InformationColumn from './components/InformationColumn';
 import Icon from 'components/Icon';
-
-import * as s from 'containers/order/order.scss';
 import * as variables from 'styles/variablesJS';
 
 const OrderWrapper = styled.div`
@@ -36,13 +34,32 @@ const GoBack = styled(Link)`
   }
 `;
 
-const OrderInformation = styled.div`
+const Divider = styled.div`
+  width:100%;
+  height: 1px;
+  background-color: ${variables.dividerColor};
+`;
+
+const OrderInformationWrapper = styled.div`
+  margin-top: 50px;
   display:flex;
   justify-content: space-between;
 `;
 
+const OrderPaymentWrapper = styled.div`
+  display:flex;
+  justify-content: space-between;
+  margin-top: 50px;
+  margin-bottom: 70px;
+`;
+
+const OrderPaymentColumns = styled.div`
+  display:flex;
+`;
+
 const OrderNumber = styled.h1`
   color: ${variables.black};
+  margin: 0;
 `
 
 
@@ -52,58 +69,31 @@ interface IProps {
   routing: RouterStore;
 }
 
-class State {
-  order: any;
-  status: any;
-}
-
-@inject('ordersStore')
+@inject('routing', 'ordersStore')
 @withRouter
 @observer
-export default class Order extends React.Component<IProps, State> {
+export default class Order extends React.Component<IProps> {
   constructor(props) {
     super(props);
-
-    this.state = new State();
-    
-
-    this.updateStatus = this.updateStatus.bind(this);
-    this.handleStatusChange = this.handleStatusChange.bind(this);
-    this.getOrder = this.getOrder.bind(this);
   }
 
   componentDidMount() {
-    const { match } = this.props;
-
+    const { match, ordersStore } = this.props;
     const orderId = match.params.id;
-    this.getOrder(orderId);
+    ordersStore.shouldFetchOrder(orderId);
   }
 
-  getOrder(id) {
-    fetch(`/umbraco/backoffice/ekom/managerapi/getorderinfo?uniqueId=${id}`, {
-      credentials: 'include',
-    }).then(response => response.json()).then(result => this.setState({
-      order: result,
-      status: result.OrderStatus,
-    }));
-  }
-
-
-  handleStatusChange(event) {
-    this.setState({ status: event.target.value });
-  }
-
-  updateStatus(e) {
+  updateStatus = (e: HTMLFormElement) => {
     e.preventDefault();
-    const { ordersStore } = this.props;
-    const { order, status } = this.state;
+    const { order, updateOrderStatus } = this.props.ordersStore;
     const orderId = order.UniqueId;
-    const orderStatus = status;
-    ordersStore.updateOrderStatus(orderId, orderStatus)
+    const orderStatus = e['orderStatus'].value;
+    const ShouldSendNotification = e['sendNotification'].checked;
+    updateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }
 
   render() {
-    const { order, status } = this.state;
+    const { order } = this.props.ordersStore;
     return (
       <OrderWrapper>
 
@@ -115,78 +105,56 @@ export default class Order extends React.Component<IProps, State> {
             <Icon name="arrow-left-sm" iconSize={17} color={variables.primaryColor} />
             Back to search...
           </GoBack>
-          <OrderInformation>
-            <OrderNumber className="fs-32 lh-42">{order.OrderNumber}</OrderNumber>
-            <span>Order number</span>
-          </OrderInformation>
+          <OrderInformationWrapper>
+            <div>
+              <OrderNumber className="fs-32 lh-42">{order && order.OrderNumber}</OrderNumber>
+              <span>Order number</span>
+            </div>
+          </OrderInformationWrapper>
         </Container>
+        <Divider/>
+        {order != null && (
+          <Container>
+            <OrderPaymentWrapper>
+              <OrderPaymentColumns>
+                {order.CustomerInformation.Customer && (
+                  <InformationColumn heading="Billing" list={[
+                    order.CustomerInformation.Customer.Name,
+                    order.CustomerInformation.Customer.Email,
+                    order.CustomerInformation.Customer.Address,
+                    order.CustomerInformation.Customer.ZipCode,
+                    order.CustomerInformation.Customer.City,
+                    order.CustomerInformation.Customer.Country
+                  ]} />
+                )}
+                {order.CustomerInformation.Shipping && (
+                  <InformationColumn heading="Shipping" list={[
+                    order.CustomerInformation.Shipping.Name,
+                    order.CustomerInformation.Shipping.Address,
+                    order.CustomerInformation.Shipping.ZipCode,
+                    order.CustomerInformation.Shipping.City,
+                    order.CustomerInformation.Shipping.Country
+                  ]} />
+                )}
+                <InformationColumn heading="Payment" list={[
+                  order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered'
+                ]} />
+                <InformationColumn heading="Delivery" list={[
+                  order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'
+                ]} />
+              </OrderPaymentColumns>
+            </OrderPaymentWrapper>
+          </Container>
+        )}
 
         {order != null
           ? (
             <React.Fragment>
-              <OrderHeader
+              {/* <OrderHeader
                 order={order}
                 originalStatus={status}
-              />
-              <div className={s.billing}>
-                <div className={s.billingRow}>
-                  <div className={s.billingColumn}>
-                    <div className={s.billingIcon}>
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="24" cy="24" r="24" fill="#9DDBF2" />
-                        <path d="M23 12C23 13.104 22.104 14 21 14H2C0.896 14 0 13.104 0 12V2C0 0.896 0.896 0 2 0H21C22.104 0 23 0.896 23 2V12Z" transform="translate(12.5 17.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M0 0H23" transform="translate(12.5001 21.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M3 0H0" transform="translate(29.5 24.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M8 0H0" transform="translate(15.5 24.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M3 0H0" transform="translate(15.5 26.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <h3>
-                      Billing
-                    </h3>
-                    <p>
-                      {order.CustomerInformation.Customer.Name}
-                      <br />
-                      {order.CustomerInformation.Customer.Email}
-                      <br />
-                      {order.CustomerInformation.Customer.Address}
-                      <br />
-                      {order.CustomerInformation.Customer.ZipCode}
-                      {' '}
-                      {order.CustomerInformation.Customer.City}
-                      <br />
-                      {order.CustomerInformation.Customer.Country}
-                      <br />
-                    </p>
-                  </div>
-                  <div className={s.billingColumn}>
-                    <div className={s.billingIcon}>
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="24" cy="24" r="24" fill="#9DDBF2" />
-                        <path d="M12 5L0 0V13L12 18V5Z" transform="translate(12.5 17.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M0 5L11 0V13L0 18V5Z" transform="translate(24.5 17.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M0 5L11.5 0L23 5" transform="translate(12.5 12.5)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M0 0L11.1 5.278" transform="translate(19.188 14.595)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinejoin="round" />
-                        <path d="M6 3L0 0V5L6 8V3Z" transform="translate(15.5 22)" stroke="#4B8DA6" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <h3>
-                      Shipping
-                    </h3>
-                    <p>
-                      {order.CustomerInformation.Shipping.Name}
-                      <br />
-                      {order.CustomerInformation.Shipping.Address}
-                      <br />
-                      {order.CustomerInformation.Shipping.ZipCode}
-                      {' '}
-                      {order.CustomerInformation.Shipping.City}
-                      <br />
-                      {order.CustomerInformation.Shipping.Country}
-                      <br />
-                    </p>
-                  </div>
-                  <div className={s.billingColumn}>
+              /> */}
+              {/* <div className={s.billingColumn}>
                     <div className={s.billingIcon}>
                       {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null
                         ? (
@@ -209,26 +177,8 @@ export default class Order extends React.Component<IProps, State> {
                     <h3>
                       {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null ? 'Greidd pöntun' : 'Ógreidd pöntun'}
                     </h3>
-                  </div>
-                </div>
-                <div className={s.billingRow}>
-                  <div className={s.billingColumn}>
-                    <h3>
-                      Payment
-                    </h3>
-                    <p>
-                      {order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered'}
-                    </p>
-                  </div>
-                  <div className={s.billingColumn}>
-                    <h3>
-                      Delivery
-                    </h3>
-                    <p>
-                      {order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'}
-                    </p>
-                  </div>
-                  {/* {refundable && (
+                  </div> */}
+              {/* {refundable && (
                     <div className={s.billingColumn}>
                       <h3>
                         Refund to creditcard
@@ -248,8 +198,6 @@ export default class Order extends React.Component<IProps, State> {
                       }
                     </div>
                   )} */}
-                </div>
-              </div>
               <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
             </React.Fragment>
           )

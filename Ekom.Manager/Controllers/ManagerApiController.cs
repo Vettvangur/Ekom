@@ -29,13 +29,14 @@ namespace Ekom.Controllers
         {
             return "sup";
         }
-        public OrderData GetOrder(Guid uniqueId)
-        {
-            return _managerRepository.GetOrder(uniqueId);
-        }
         public IOrderInfo GetOrderInfo(Guid uniqueId)
         {
             return API.Order.Instance.GetOrder(uniqueId);
+        }
+        public ActivityLogData GetActivityLog([FromUri] Guid orderId)
+        {
+            var activityLog = _managerRepository.GetOrderActivityLog(orderId);
+            return activityLog != null ? activityLog : null;
         }
         /// <summary>
         /// List of orders.
@@ -54,7 +55,6 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetAllOrders(start, end);
         }
-        [HttpGet]
         public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
             return _managerRepository.SearchOrders(start, end, query, store, payment, shipping, discount);

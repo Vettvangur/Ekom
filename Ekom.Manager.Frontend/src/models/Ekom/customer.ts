@@ -1,6 +1,9 @@
+
+import { IShipping } from 'models/Ekom/shipping';
 export interface ICustomerInformation {
   CustomerIpAddress: string;
   Customer: ICustomer;
+  Shipping: IShipping;
 }
 export interface ICustomer {
   Properties: ICustomerProperties;

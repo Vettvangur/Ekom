@@ -12,6 +12,7 @@ namespace Ekom.Interfaces
         OrderListData SearchOrders(DateTime start, DateTime end, string query, string store, string payment, string shipping, string discount);
         OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus);
         OrderData GetOrder(Guid uniqueId);
+        ActivityLogData GetOrderActivityLog(Guid orderId);
         OrderListData GetOrders();
         void InsertOrder(OrderData orderData);
         void UpdateOrder(OrderData orderData);

@@ -1,5 +1,4 @@
 import { ICustomerInformation } from 'models/Ekom/customer';
-import { IShipping } from 'models/Ekom/shipping';
 import { IValueAndCurrency } from 'models/Ekom/valueAndCurrency';
 import { IStore } from 'models/Ekom/store';
 import { IOrderLine } from 'models/Ekom/orderline';
@@ -17,7 +16,6 @@ export interface IOrderModel {
   PaymentProvider: IProvider;
   TotalQuantity: number;
   CustomerInformation: ICustomerInformation;
-  Shipping: IShipping;
   OrderLineTotal: IValueAndCurrency;
   SubTotal: IValueAndCurrency;
   Vat: IValueAndCurrency;
@@ -29,4 +27,14 @@ export interface IOrderModel {
   PaidDate: string;
   OrderStatus: number;
   HangfireJobs: any;
+  ActivityLog?: ActivityLog[];
+}
+
+export interface ActivityLog {
+  UniqueId: string;
+  Key: string;
+  Log: string;
+  UserName: string;
+  CreateDate: any;
+  UpdateDate: any;
 }
