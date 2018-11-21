@@ -12,16 +12,22 @@ import DateRangePickerPhrases from 'react-dates/lib/defaultPhrases';
 import {
   START_DATE, END_DATE, HORIZONTAL_ORIENTATION, ANCHOR_LEFT,
 } from 'react-dates/constants';
-
+import Icon from 'components/Icon';
 import SearchStore from 'stores/searchStore';
 import TableStore from 'stores/tableStore';
 
+
 export function CustomNavBack() {
   return (
-    <i className="icon-fa-solid-900-1 DayPickerNavigation_leftButton__horizontalDefault" />
+    <div className="DayPickerNavigation_leftButton__horizontalDefault">
+      <Icon name="icon-fa-solid-900-1" iconSize={20} color={"#9DDBF2"}></Icon>
+    </div>
   )
 }
-const CustomNavNext = () => <i className="icon-fa-solid-900 DayPickerNavigation_rightButton__horizontalDefault" />;
+const CustomNavNext = () => 
+  <div className="DayPickerNavigation_rightButton__horizontalDefault">
+    <Icon name="icon-fa-solid-900" iconSize={20} color={"#9DDBF2"}></Icon>
+  </div>
 
 type IProps = {
   showDatePicker: boolean
