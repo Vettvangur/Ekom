@@ -93,11 +93,17 @@ export default class Order extends React.Component<IProps> {
   }
 
   render() {
-    const { order } = this.props.ordersStore;
+    const { order, state, orderState } = this.props.ordersStore;
+    console.log(orderState);
+    if (orderState === "pending")
+      return <div></div>
+    if (orderState === "loading")
+      return <div></div>
+    if (orderState === "error")
+      return <div></div>
     return (
       <OrderWrapper>
-
-        {this.props.ordersStore.state === "loading" && (
+        {state === "loading" && (
           <SavingLoader />
         )}
         <Container>
@@ -112,49 +118,45 @@ export default class Order extends React.Component<IProps> {
             </div>
           </OrderInformationWrapper>
         </Container>
-        <Divider/>
-        {order != null && (
-          <Container>
-            <OrderPaymentWrapper>
-              <OrderPaymentColumns>
-                {order.CustomerInformation.Customer && (
-                  <InformationColumn heading="Billing" list={[
-                    order.CustomerInformation.Customer.Name,
-                    order.CustomerInformation.Customer.Email,
-                    order.CustomerInformation.Customer.Address,
-                    order.CustomerInformation.Customer.ZipCode,
-                    order.CustomerInformation.Customer.City,
-                    order.CustomerInformation.Customer.Country
-                  ]} />
-                )}
-                {order.CustomerInformation.Shipping && (
-                  <InformationColumn heading="Shipping" list={[
-                    order.CustomerInformation.Shipping.Name,
-                    order.CustomerInformation.Shipping.Address,
-                    order.CustomerInformation.Shipping.ZipCode,
-                    order.CustomerInformation.Shipping.City,
-                    order.CustomerInformation.Shipping.Country
-                  ]} />
-                )}
-                <InformationColumn heading="Payment" list={[
-                  order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered'
+        <Divider />
+        <Container>
+          <OrderPaymentWrapper>
+            <OrderPaymentColumns>
+              {order.CustomerInformation.Customer && (
+                <InformationColumn heading="Billing" list={[
+                  order.CustomerInformation.Customer.Name,
+                  order.CustomerInformation.Customer.Email,
+                  order.CustomerInformation.Customer.Address,
+                  order.CustomerInformation.Customer.ZipCode,
+                  order.CustomerInformation.Customer.City,
+                  order.CustomerInformation.Customer.Country
                 ]} />
-                <InformationColumn heading="Delivery" list={[
-                  order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'
+              )}
+              {order.CustomerInformation.Shipping && (
+                <InformationColumn heading="Shipping" list={[
+                  order.CustomerInformation.Shipping.Name,
+                  order.CustomerInformation.Shipping.Address,
+                  order.CustomerInformation.Shipping.ZipCode,
+                  order.CustomerInformation.Shipping.City,
+                  order.CustomerInformation.Shipping.Country
                 ]} />
-              </OrderPaymentColumns>
-            </OrderPaymentWrapper>
-          </Container>
-        )}
+              )}
+              <InformationColumn heading="Payment" list={[
+                order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered'
+              ]} />
+              <InformationColumn heading="Delivery" list={[
+                order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'
+              ]} />
+            </OrderPaymentColumns>
+          </OrderPaymentWrapper>
+        </Container>
 
-        {order != null
-          ? (
-            <React.Fragment>
-              {/* <OrderHeader
+        <React.Fragment>
+          {/* <OrderHeader
                 order={order}
                 originalStatus={status}
               /> */}
-              {/* <div className={s.billingColumn}>
+          {/* <div className={s.billingColumn}>
                     <div className={s.billingIcon}>
                       {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null
                         ? (
@@ -178,7 +180,7 @@ export default class Order extends React.Component<IProps> {
                       {order.PaidDate !== '0001-01-01T00:00:00' && order.PaidDate !== null ? 'Greidd pöntun' : 'Ógreidd pöntun'}
                     </h3>
                   </div> */}
-              {/* {refundable && (
+          {/* {refundable && (
                     <div className={s.billingColumn}>
                       <h3>
                         Refund to creditcard
@@ -198,12 +200,8 @@ export default class Order extends React.Component<IProps> {
                       }
                     </div>
                   )} */}
-              <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
-            </React.Fragment>
-          )
-          : ''
-        }
-
+          <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
+        </React.Fragment>
       </OrderWrapper>
     );
   }

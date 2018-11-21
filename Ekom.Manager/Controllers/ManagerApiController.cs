@@ -5,6 +5,8 @@ using Ekom.Models.Data;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
 using Umbraco.Web.WebApi;
@@ -29,19 +31,24 @@ namespace Ekom.Controllers
         {
             return "sup";
         }
+        public IOrderInfo GetOrder([FromUri] Guid uniqueId)
+        {
+            return _managerRepository.GetOrder(uniqueId);
+
+        }
         public IOrderInfo GetOrderInfo(Guid uniqueId)
         {
             return API.Order.Instance.GetOrder(uniqueId);
         }
-        public ActivityLogData GetActivityLog([FromUri] Guid orderId)
+        public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
         {
-            var activityLog = _managerRepository.GetOrderActivityLog(orderId);
-            return activityLog != null ? activityLog : null;
+            return _managerRepository.GetOrderActivityLog(orderId);
         }
         /// <summary>
         /// List of orders.
         /// </summary>
         /// <returns></returns>
+        [HttpGet]
         public OrderListData GetOrders()
         {
             return _managerRepository.GetOrders();
@@ -51,10 +58,12 @@ namespace Ekom.Controllers
         /// List of orders.
         /// </summary>
         /// <returns></returns>
+        [HttpGet]
         public OrderListData GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
             return _managerRepository.GetAllOrders(start, end);
         }
+        [HttpGet]
         public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
             return _managerRepository.SearchOrders(start, end, query, store, payment, shipping, discount);

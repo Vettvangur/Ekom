@@ -124,7 +124,6 @@ export default class SearchStore {
     )
     .then((res) => {
       this.stores = res;
-      console.log(this.stores)
     })
   }
   @action

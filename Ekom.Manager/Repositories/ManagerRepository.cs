@@ -33,19 +33,19 @@ namespace Ekom.Repository
             _activityLogRepository = Configuration.container.GetInstance<ActivityLogRepository>();
         }
 
-        public OrderData GetOrder(Guid uniqueId)
+        public IOrderInfo GetOrder(Guid uniqueId)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.FirstOrDefault<OrderData>("WHERE UniqueId = @0", uniqueId);
+                return db.FirstOrDefault<IOrderInfo>("WHERE UniqueId = @0", uniqueId);
             }
         }
-        public ActivityLogData GetOrderActivityLog(Guid orderId)
+        public IEnumerable<OrderActivityLog> GetOrderActivityLog(Guid orderId)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return new ActivityLogData(db.Query<OrderActivityLog>("WHERE [Key] = @0",
-                 orderId));
+                return db.Query<OrderActivityLog>("WHERE [Key] = @0",
+                 orderId);
             }
         }
 
