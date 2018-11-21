@@ -14,7 +14,11 @@ import { routes } from '../../../App';
 
 import * as variables from 'styles/variablesJS';
 
+// const StyledMenuItem: StyledFunction<IMenuActive | React.HTMLProps<HTMLDivElement>> =
+//   styled.div;
 
+//   const test = styled<IMenuActive, "div">("div")`
+//   `;
 
 const MenuWrapper = styled.div`
   width: 12.5rem;
@@ -33,7 +37,7 @@ const MenuLogoLink = styled.a``;
 
 const MenuLinks = styled.ul``;
 
-const MenuItem = styled<{ active: boolean }, "li">("li")`
+const MenuItem = styled<IMenuActive, "div">("div")`
   color: ${variables.black};
   opacity: ${(props: any) => props.active ? 1 : .5};
   font-weight: 600;
@@ -72,6 +76,10 @@ const MenuItemLink = styled(Link)`
       margin-right: 7px;
   }
 `;
+
+interface IMenuActive {
+  active?: boolean;
+}
 
 interface IMenuProps {
   location: any;

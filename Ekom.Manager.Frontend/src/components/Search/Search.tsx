@@ -44,7 +44,7 @@ const SearchInput = styled.input`
   color: ${variables.black};
 `;
 
-const StyledButtonFilterWrapper = styled<{ active?: boolean }, "div">("div")`
+const StyledButtonFilterWrapper = styled<IActive, "div">("div")`
   position: relative;
   background-color: ${(props: any) => props.active ? variables.gray : variables.ekomSecondaryColor};
   &:not(:last-child) {
@@ -115,6 +115,9 @@ const StoreFilterDropDownWrapper = styled.div`
     } */
 `;
 
+interface IActive {
+  active?: boolean;
+}
 interface ISearchProps {
   searchStore?: SearchStore;
 }
