@@ -1,4 +1,5 @@
-﻿/* stylelint-disable selector-max-type */
+﻿@import '~variables';
+/* stylelint-disable selector-max-type */
 
 * {
     text-rendering: optimizeLegibility;
@@ -12,6 +13,18 @@
 *::before,
 *::after {
     box-sizing: inherit;
+}
+
+*::-webkit-scrollbar {
+    width: 5px;
+}
+ 
+*::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba($secondary-color, .4);
+}
+ 
+*::-webkit-scrollbar-thumb {
+  background-color: $secondary-color;
 }
 
 a {

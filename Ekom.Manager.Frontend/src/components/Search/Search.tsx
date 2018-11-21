@@ -155,7 +155,10 @@ class Search extends React.Component<ISearchProps, State> {
 
   public handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.keyCode === 13)
-      this.props.searchStore.search()
+      this.performSearch()
+  }
+  public performSearch = () => {
+    this.props.searchStore.search()
   }
   public openStoreFilter = (e) => {
     e.preventDefault();
@@ -196,6 +199,11 @@ class Search extends React.Component<ISearchProps, State> {
             onChange={this.props.searchStore.setSearchString}
           />
         </StyledSearchInputWrapper>
+        <StyledButtonFilterWrapper>
+          <StyledButtonFilter className="fs-16 semi-bold" onClick={this.performSearch}>
+            Search
+          </StyledButtonFilter>
+        </StyledButtonFilterWrapper>
         <StyledButtonFilterWrapper 
           className={classNames({
             'active': this.state.showStoreFilter
