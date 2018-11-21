@@ -69,9 +69,13 @@ export default class OrdersStore {
     })
   }
 
+  @action
+  updateOrderStatus = (orderId: string, orderStatus, ShouldSendNotification?: boolean) => {
+    this.doUpdateOrderStatus(orderId, orderStatus)
+  }
 
   @action
-  async updateOrderStatus(orderId: string, orderStatus, ShouldSendNotification?: boolean) {
+  async doUpdateOrderStatus(orderId: string, orderStatus, ShouldSendNotification?: boolean) {
     this.state = "pending";
     try {
       this.state = "loading";

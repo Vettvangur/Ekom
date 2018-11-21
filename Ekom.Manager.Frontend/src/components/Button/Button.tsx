@@ -6,7 +6,7 @@ import * as variables from 'styles/variablesJS';
 const StyledAnchor = styled.a`
   display: inline-flex;
   
-  color: ${(props: IButtonProps) => (props.color ? props.color : props.primary ? variables.secondaryColor : variables.primaryColor)};
+  color: ${(props: IButtonProps) => (props.color ? props.color : props.primary ? variables.white : variables.primaryColor)};
   text-transform: ${(props: IButtonProps) => (props.uppercase ? 'uppercase' : 'none')};
   text-decoration: none;
   align-items: ${({ center }: IButtonProps) => center && 'center'};
@@ -38,6 +38,7 @@ const StyledButton = styled(StyledAnchor)`
 
 interface IButtonProps {
   className?: string;
+  type?: string;
   color?: string;
   href?: string;
   primary?: boolean;

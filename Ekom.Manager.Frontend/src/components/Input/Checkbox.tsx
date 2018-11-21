@@ -76,8 +76,14 @@ const CheckboxInput = styled.input`
     transition: all .2s ease-in-out;
   }
 `;
+
+class State {
+  checked?: boolean;
+}
 interface ICheckboxProps {
   className?: string;
+  id?: string;
+  name?: string;
   label?: string;
   checked?: boolean;
   required?: boolean;
@@ -86,21 +92,30 @@ interface ICheckboxProps {
 
 
 
-class Checkbox extends React.Component<ICheckboxProps> {
+class Checkbox extends React.Component<ICheckboxProps, State> {
   public static defaultProps: Partial<ICheckboxProps> = {
     checked: false,
     required: false,
   };
+  public constructor(props: ICheckboxProps) {
+    super(props);
+    this.state = new State();
+  }
+  public onChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({checked: event.target.checked});
+  }
   public render() {
-    const { label, checked, required, onChange } = this.props;
+    const { id, name, className, label, checked, required, onChange } = this.props;
     return (
       <CheckboxWrapper>
-        <CheckboxLabel>
+        <CheckboxLabel className={className}>
           <CheckboxInput
+            id={id}
+            name={name}
             type="checkbox"
-            checked={checked}
+            checked={checked ? checked : this.state.checked}
             required={required}
-            onChange={onChange}
+            onChange={onChange ? onChange : this.onChange}
           />
           <span>{label}</span>
         </CheckboxLabel>

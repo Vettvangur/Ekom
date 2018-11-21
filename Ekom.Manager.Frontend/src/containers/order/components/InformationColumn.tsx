@@ -3,8 +3,8 @@ import styled from 'styled-components';
 
 
 const InformationColumnWrapper = styled.div`
-
-  min-width: 370px;
+  width: 50%;
+  margin-bottom: 50px;
 `;
 
 const UnorderedList = styled.ul``;
@@ -19,8 +19,8 @@ interface IInformationColumnProps {
 
 const InformationColumn: React.SFC<IInformationColumnProps> = ({ heading, list }) => 
   <InformationColumnWrapper>
-    <h3>{heading}</h3>
-    <UnorderedList>
+    <h3 className="lh-31">{heading}</h3>
+    <UnorderedList className="fs-16 lh-23">
       {list.map(value => 
         <ListItem>{value}</ListItem>
       )}
