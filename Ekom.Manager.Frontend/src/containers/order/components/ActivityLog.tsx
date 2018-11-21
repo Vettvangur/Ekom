@@ -23,7 +23,7 @@ const ActivityLogLabel = styled.div`
 `;
 
 const ActivityLogLabelUser = styled.span`
-  font-weight: 500;
+  font-weight: 600;
 `
 
 const ActivityLogDate = styled.span`
