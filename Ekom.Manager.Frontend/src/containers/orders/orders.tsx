@@ -76,10 +76,13 @@ export default class Orders extends React.Component<IProps> {
               </OrdersInformationColumn>
             </OrdersInformation>
             <OrdersCSV className="fs-12" href="#">Export results to CSV</OrdersCSV>
-            
+
           </OrdersInformationWrapper>
         </OrdersHeader>
-        <Table />
+
+        {this.props.searchStore.orders && this.props.searchStore.orders.Orders && this.props.searchStore.orders.Orders.length > 0 &&
+          <Table />
+        }
       </OrdersWrapper>
     );
   }
