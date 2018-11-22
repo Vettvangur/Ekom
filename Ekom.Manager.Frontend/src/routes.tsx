@@ -1,7 +1,8 @@
 import Layout from './Layout'
 
 
-import Dashboard from 'components/dashboard/dashboard'
+import Dashboard from 'containers/Dashboard'
+import Customers from 'containers/Customers'
 import Orders from 'containers/orders'
 import Order from 'containers/order'
 
@@ -23,6 +24,13 @@ export const routes = [
         exact: true,
         component: Orders,
         title: "Orders",
+        showInMenu: true
+      },
+      {
+        path: `${ekomManager}/customers`,
+        exact: true,
+        component: Customers,
+        title: "Customers",
         showInMenu: true
       },
       { 
