@@ -2,6 +2,8 @@ import { observable, action, runInAction, flow } from 'mobx';
 
 import { IOrderModel } from 'models/Ekom/order';
 
+import { IActivityLog } from 'models/Ekom/activityLog';
+
 
 export default class OrdersStore {
   @observable state = "pending"; // "pending" / "loading" / "done" / "error"
@@ -10,6 +12,9 @@ export default class OrdersStore {
 
   @observable order: IOrderModel;
   @observable orderId: string;
+
+  @observable latestUserActivityLog: IActivityLog[] = [];
+  @observable latestActivityLog: IActivityLog[] = [];
 
 
   getOrder = flow(function * (orderId: string) {
@@ -55,7 +60,7 @@ export default class OrdersStore {
   }
   @action
   fetchActivityLog(orderId: string) {
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getActivityLog?orderid=${orderId}`, {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getActivityLog?orderid=${orderId}&limit=5`, {
       credentials: 'include',
     })
     .then(res => res.ok 
@@ -66,6 +71,37 @@ export default class OrdersStore {
     .catch((err) => {
       console.log(err);
       this.order.ActivityLog = [];
+    })
+  }
+
+  @action('Gets latest activity log that was worked in')
+  fetchLatestActivityLogs = () => {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogs?limit=20`, {
+      credentials: 'include',
+    })
+    .then(res => res.ok 
+      ? Promise.resolve(res.json()) 
+      : Promise.reject(res)
+    )
+    .then(json => this.latestActivityLog = json)
+    .catch((err) => {
+      this.latestActivityLog = []
+      console.log(err);
+    })
+  }
+  @action('Gets latest activity log that was worked on by user')
+  fetchLatestActivityLogByUser(userId: string) {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogsByUser?userid=${userId}&limit=20`, {
+      credentials: 'include',
+    })
+    .then(res => res.ok 
+      ? Promise.resolve(res.json()) 
+      : Promise.reject(res)
+    )
+    .then(json => this.latestUserActivityLog = json)
+    .catch((err) => {
+      this.latestUserActivityLog = []
+      console.log(err);
     })
   }
 

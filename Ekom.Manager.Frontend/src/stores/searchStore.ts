@@ -1,6 +1,6 @@
 import * as moment from 'moment';
 
-import { observable, action, runInAction } from 'mobx';
+import { observable, action, flow } from 'mobx';
 import { IOrders } from 'models/orders'
 
 export default class SearchStore {
@@ -9,16 +9,13 @@ export default class SearchStore {
   @observable endDate: moment.Moment;
   @observable searchString = '';
   @observable storeFilter = '';
-  @observable state = "pending"; // "pending" / "done" / "error"
+  @observable state = "empty"; // "pending" / "done" / "error" / "empty"
 
   @observable preset = 'Last week'
   
   @observable presets = [];
 
-  @observable stores?: any;
-
   constructor() {
-    this.getStores();
     this.orders = {
       AverageAmount: "",
       Count: 0,
@@ -62,37 +59,40 @@ export default class SearchStore {
   }
 
   @action
-  async search() {
+  public search = flow(function * (this: SearchStore) {
     this.state = "pending";
     try {
-      const searchResponse = await this.fetchSearchResults()
-      runInAction(() => {
-        this.state = "done";
-        this.orders = searchResponse;
-      })
+      const json = yield this.fetchSearchResults()
+      if (json.Count <= 0)
+        setTimeout(() => this.state = "empty", 1000)
+      else
+        setTimeout(() => this.state = "done", 1000)
+      this.setOrders(json)
     } catch (error) {
-      runInAction(() => {
-        this.state = "error";
-      })
+      console.log("Failed to search", error)
+      this.state = "error";
     }
-  }
-  @action
-  fetchSearchResults() {
+  })
+  async fetchSearchResults() {
     let filters = '';
     if (this.searchString.length > 0)
       filters += `&query=${this.searchString}`
     if (this.storeFilter.length > 0)
       filters += `&store=${this.storeFilter}`
-    return fetch(
-      `/umbraco/backoffice/ekom/managerapi/searchorders?start=${moment(this.startDate).format('YYYY-MM-DD')}&end=${moment(this.endDate).format('YYYY-MM-DD')}${filters}`, 
-      {
-      credentials: 'include',
-      }
-    )
-    .then(res => res.ok
-      ? res.json()
-      : Promise.reject(res)
-    )
+    const url = `/umbraco/backoffice/ekom/managerapi/searchorders?start=${moment(this.startDate).format('YYYY-MM-DD')}&end=${moment(this.endDate).format('YYYY-MM-DD')}${filters}`
+    return await fetch(url).then(res => res.ok ? res.json() : Promise.reject());
+  }
+
+  @action('Set Orders')
+  setOrders(data) {
+    this.orders = data;
+  }
+  @action('Check if Manager should search for Orders')
+  shouldSearchForOrders = () => {
+    if (this.orders && this.orders.Count > 0) {
+      return;
+    }
+    this.search();
   }
 
   @action
@@ -109,23 +109,6 @@ export default class SearchStore {
     this.preset = preset;
   }
 
-
-  @action
-  getStores() {
-    return fetch(
-      `/umbraco/backoffice/ekom/managerapi/getstores`, 
-      {
-      credentials: 'include',
-      }
-    )
-    .then(res => res.ok
-      ? res.json()
-      : Promise.reject(res)
-    )
-    .then((res) => {
-      this.stores = res;
-    })
-  }
   @action
   setStoreFilter = (store?: string) => {
     if (store)
