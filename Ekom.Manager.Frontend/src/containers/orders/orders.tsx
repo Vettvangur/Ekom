@@ -5,10 +5,15 @@ import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 
 import SavingLoader from 'components/order/savingLoader';
+import Loading from 'components/shared/Loading';
 import Search from 'components/Search';
 import Table from 'components/Table';
 import SearchStore from 'stores/searchStore';
 import OrdersStore from 'stores/ordersStore';
+
+import Icon from 'components/Icon';
+
+import * as variables from 'styles/variablesJS';
 
 const OrdersWrapper = styled.div`
   height: 100%;
@@ -16,8 +21,14 @@ const OrdersWrapper = styled.div`
   flex-direction: column;
 `;
 
+const Container = styled.div`
+  padding: 0 1.875rem;
+`;
+
+
 const OrdersHeader = styled.div`
-  margin: 1.875rem 1.875rem 6.25rem 1.875rem;
+  margin-top: 1.875rem;
+  margin-bottom: 6.25rem;
 `;
 const OrdersInformationWrapper = styled.div`
   border: 1px solid #4B8DA616;
@@ -41,6 +52,14 @@ const OrdersInformationColumn = styled.div`
 `
 const OrdersCSV = styled.a``;
 
+
+const EmptyStateWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+`;
+
+const LoadingStateWrapper = styled.div``;
+
 interface IProps {
   searchStore?: SearchStore;
   ordersStore?: OrdersStore;
@@ -53,34 +72,61 @@ export default class Orders extends React.Component<IProps> {
     super(props);
   }
   componentDidMount() {
-    this.props.searchStore.search();
+    const { shouldSearchForOrders } = this.props.searchStore;
+    shouldSearchForOrders();
+    document.addEventListener('keypress', (e) => this.handleSearchOnEnter(e), false);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('keypress', (e) => this.handleSearchOnEnter(e), false);
+  }
+  public handleSearchOnEnter(e) {
+    if (e.keyCode === 13)
+      this.props.searchStore.search();
+  }
+  renderLoadingState() {
+    return (
+      <LoadingStateWrapper>
+        <Loading />
+      </LoadingStateWrapper>
+    )
+  }
+  renderEmptyState() {
+    return (
+      <EmptyStateWrapper>
+        <Icon name="icon-sleepboldman" iconSize={300} color={variables.black} />
+      </EmptyStateWrapper>
+    )
   }
   public render() {
+    const { searchStore } = this.props;
     return (
       <OrdersWrapper>
         {this.props.ordersStore.state === "loading" && (
           <SavingLoader />
         )}
         <OrdersHeader>
-          <Search />
-          <OrdersInformationWrapper>
-            <OrdersInformation className="fs-16 lh-16">
-              <OrdersInformationColumn>
-                Orders: <b>{this.props.searchStore.orders.Count ? this.props.searchStore.orders.Count : 0}</b>
-              </OrdersInformationColumn>
-              <OrdersInformationColumn>
-                Grand total: <b>{this.props.searchStore.orders.GrandTotal ? this.props.searchStore.orders.GrandTotal : 0}</b>
-              </OrdersInformationColumn>
-              <OrdersInformationColumn>
-                Average amount: <b>{this.props.searchStore.orders.AverageAmount ? this.props.searchStore.orders.AverageAmount : 0}</b>
-              </OrdersInformationColumn>
-            </OrdersInformation>
-            <OrdersCSV className="fs-12" href="#">Export results to CSV</OrdersCSV>
+          <Container>
+            <Search />
+            <OrdersInformationWrapper>
+              <OrdersInformation className="fs-16 lh-16">
+                <OrdersInformationColumn>
+                  Orders: <b>{this.props.searchStore.orders.Count ? this.props.searchStore.orders.Count : 0}</b>
+                </OrdersInformationColumn>
+                <OrdersInformationColumn>
+                  Grand total: <b>{this.props.searchStore.orders.GrandTotal ? this.props.searchStore.orders.GrandTotal : 0}</b>
+                </OrdersInformationColumn>
+                <OrdersInformationColumn>
+                  Average amount: <b>{this.props.searchStore.orders.AverageAmount ? this.props.searchStore.orders.AverageAmount : 0}</b>
+                </OrdersInformationColumn>
+              </OrdersInformation>
+              <OrdersCSV className="fs-12" href="#">Export results to CSV</OrdersCSV>
 
-          </OrdersInformationWrapper>
+            </OrdersInformationWrapper>
+          </Container>
         </OrdersHeader>
-
-        {this.props.searchStore.orders && this.props.searchStore.orders.Orders && this.props.searchStore.orders.Orders.length > 0 &&
+        {searchStore.state === "pending" && this.renderLoadingState()}
+        {searchStore.state === "empty" && this.renderEmptyState()}
+        {searchStore.state === "done" &&
           <Table />
         }
       </OrdersWrapper>
