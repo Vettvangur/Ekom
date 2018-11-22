@@ -13,6 +13,8 @@ namespace Ekom.Interfaces
         OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus);
         IOrderInfo GetOrder(Guid uniqueId);
         IEnumerable<OrderActivityLog> GetOrderActivityLog(Guid orderId);
+        IEnumerable<OrderActivityLog> GetLatestActivityLogs();
+        IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(Guid userId);
         OrderListData GetOrders();
         void InsertOrder(OrderData orderData);
         void UpdateOrder(OrderData orderData);

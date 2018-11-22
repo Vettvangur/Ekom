@@ -48,6 +48,20 @@ namespace Ekom.Repository
                  orderId);
             }
         }
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderActivityLog>("ORDER BY CreateDate DESC");
+            }
+        }
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(Guid userId)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<OrderActivityLog>("WHERE UserId = @0 ORDER BY CreateDate DESC", userId);
+            }
+        }
 
         public OrderListData GetOrders()
         {
