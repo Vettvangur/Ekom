@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
+import RootStore from 'stores/rootStore';
 import SearchStore from 'stores/searchStore';
 import * as variables from 'styles/variablesJS';
 
@@ -17,16 +18,21 @@ const StoreFilterDropdownWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 10px;
+`;
+
+const StoreItem = styled.div`
+  padding: 5px 10px;
+  width:100%;
 `;
 
 interface IStoreFilterDropdownProps {
+  rootStore?: RootStore;
   searchStore?: SearchStore;
   destoryStoreFilterDropdown:() => void;
 }
 
 
-@inject('searchStore')
+@inject('rootStore', 'searchStore')
 @observer
 class StoreFilterDropdown extends React.Component<IStoreFilterDropdownProps> {
   private node: any;
@@ -34,32 +40,36 @@ class StoreFilterDropdown extends React.Component<IStoreFilterDropdownProps> {
     super(props);
   }
   componentDidMount() {
-    document.addEventListener('mousedown', this.handleClick, false);
+    document.addEventListener('mousedown', this.handleClickOutside, false);
   }
   componentWillUnmount() {
-    document.removeEventListener('mousedown', this.handleClick, false);
+    document.removeEventListener('mousedown', this.handleClickOutside, false);
   }
-  handleClick = (e) => {
+  handleClickOutside = (e) => {
     if (this.node.contains(e.target)) {
       return;
     }
     this.props.destoryStoreFilterDropdown();
   }
+  handleClick = (Alias?: string) => {
+    this.props.searchStore.setStoreFilter(Alias)
+    this.props.destoryStoreFilterDropdown();
+  }
   public render() {
     return (
       <StoreFilterDropdownWrapper ref={(ref: any) => this.node = ref}>
-        <div
+        <StoreItem
           style={{ cursor: 'pointer' }}
-          onClick={() => this.props.searchStore.setStoreFilter()}
+          onClick={() => this.handleClick()}
         >
           All stores
-        </div>
-        {this.props.searchStore.stores && this.props.searchStore.stores.map((store) => (
-          <div style={{ cursor: 'pointer' }} key={store.Id}
-            onClick={() => this.props.searchStore.setStoreFilter(store.Alias)}
+        </StoreItem>
+        {this.props.rootStore.stores && this.props.rootStore.stores.map((store) => (
+          <StoreItem style={{ cursor: 'pointer' }} key={store.Id}
+            onClick={() => this.handleClick(store.Alias)}
           >
             {store.Alias}
-          </div>
+          </StoreItem>
         ))}
       </StoreFilterDropdownWrapper>
     )
