@@ -24,7 +24,7 @@ const StyledSearchInputWrapper = styled.div`
   flex: 1 1 0;
   position: relative;
   min-width: 720px;
-  &:not(:last-child) {
+  /* &:not(:last-child) {
     &::after {
       content: '';
       border: 1px solid #414C41;
@@ -34,7 +34,7 @@ const StyledSearchInputWrapper = styled.div`
       position: absolute;
       opacity: .07;
     }
-  }
+  } */
 `;
 
 const SearchInput = styled.input`
@@ -115,11 +115,21 @@ const StoreFilterDropDownWrapper = styled.div`
     } */
 `;
 
+const StyledSearchIconButton = styled.button`
+  background-color: ${variables.ekomSecondaryColor};
+  outline: 0;
+  border: 0;
+  margin-right: 32px;
+  height:100%;
+`;
+
+
 interface IActive {
   active?: boolean;
 }
 interface ISearchProps {
   searchStore?: SearchStore;
+  customers?: boolean;
 }
 
 class State {
@@ -194,20 +204,20 @@ class Search extends React.Component<ISearchProps, State> {
         <StyledSearchInputWrapper>
           <SearchInput
             className="fs-20 semi-bold"
-            placeholder="Search orders..."
+            placeholder={this.props.customers ? "Search customers..." : "Search orders..."}
             onKeyDown={this.handleSearch}
             onChange={this.props.searchStore.setSearchString}
           />
         </StyledSearchInputWrapper>
         <StyledButtonFilterWrapper>
-          <StyledButtonFilter className="fs-16 semi-bold" onClick={this.performSearch}>
-            Search
-          </StyledButtonFilter>
+          <StyledSearchIconButton className="fs-16 semi-bold" onClick={this.performSearch}>
+            <Icon name="search" iconSize={20} color={variables.primaryColor} />
+          </StyledSearchIconButton>
         </StyledButtonFilterWrapper>
-        <StyledButtonFilterWrapper 
+        <StyledButtonFilterWrapper
           className={classNames({
             'active': this.state.showStoreFilter
-          })} 
+          })}
           active={this.state.showStoreFilter}
         >
           <StyledButtonFilter onClick={this.openStoreFilter} className="fs-16 semi-bold">
