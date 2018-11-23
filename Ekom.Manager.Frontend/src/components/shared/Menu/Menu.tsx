@@ -26,6 +26,9 @@ const MenuWrapper = styled.div`
   padding-left: 30px;
   padding-top: 30px;
   padding-bottom: 30px;
+  @media screen and (max-width: 620px) {
+    display:none;
+  }
 `;
 
 const MenuLogoWrapper = styled.div`

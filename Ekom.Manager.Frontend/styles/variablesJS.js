@@ -8,7 +8,6 @@ module.exports = {
   secondaryColor: '#e0eaed',
   ekomSecondaryColor: '#EDF4F6',
   red: '#ED0F0F',
-
   defaultSelect: 'rgba(75, 141, 166, 0.1)',
   
 };

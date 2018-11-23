@@ -16,15 +16,20 @@ import Icon from 'components/Icon';
 const StyledSearch = styled.div`
   display:flex;
   flex-wrap: wrap;
-  height: 70px;
 `;
 
 const StyledSearchInputWrapper = styled.div`
   background-color: ${variables.ekomSecondaryColor};
   flex: 1 1 0;
   position: relative;
-  min-width: 720px;
-  /* &:not(:last-child) {
+  display:flex;
+  min-width: 250px;
+  height:70px;
+  @media screen and (max-width: 860px) {
+    min-width:100%;
+    
+  }
+  @media screen and (min-width: 750px) {
     &::after {
       content: '';
       border: 1px solid #414C41;
@@ -34,7 +39,7 @@ const StyledSearchInputWrapper = styled.div`
       position: absolute;
       opacity: .07;
     }
-  } */
+  }
 `;
 
 const SearchInput = styled.input`
@@ -47,6 +52,15 @@ const SearchInput = styled.input`
 const StyledButtonFilterWrapper = styled<IActive, "div">("div")`
   position: relative;
   background-color: ${(props: any) => props.active ? variables.gray : variables.ekomSecondaryColor};
+  @media screen and (max-width: 1000px) {
+    &:last-child {
+      flex:auto;
+    }
+  }
+  @media screen and (max-width: 860px) {
+    flex:auto;
+  }
+  height:70px;
   &:not(:last-child) {
     &::after {
       content: '';
@@ -73,7 +87,6 @@ const StyledButtonFilter = styled.button`
   height: 100%;
   color: ${variables.primaryColor};
   background-color: inherit;
-  min-width: 9.375rem;
   border:0;
   padding: 0px 30px;
   position: relative;
@@ -208,12 +221,10 @@ class Search extends React.Component<ISearchProps, State> {
             onKeyDown={this.handleSearch}
             onChange={this.props.searchStore.setSearchString}
           />
-        </StyledSearchInputWrapper>
-        <StyledButtonFilterWrapper>
           <StyledSearchIconButton className="fs-16 semi-bold" onClick={this.performSearch}>
             <Icon name="search" iconSize={20} color={variables.primaryColor} />
           </StyledSearchIconButton>
-        </StyledButtonFilterWrapper>
+        </StyledSearchInputWrapper>
         <StyledButtonFilterWrapper
           className={classNames({
             'active': this.state.showStoreFilter

@@ -18,6 +18,7 @@ const StoreFilterDropdownWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  z-index:2;
 `;
 
 const StoreItem = styled.div`
