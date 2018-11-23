@@ -32,14 +32,18 @@
 .rt-td {
   font-size: 16px;
   &:first-child {
+    padding:0!important;
     display: flex;
-    justify-content: flex-end;
+  }
+}
+.rt-th {
+  &:first-child {
+    padding:0!important;
   }
 }
 .rt-th {
   &:first-child {
     display: flex;
-    justify-content: flex-end;
   }
 }
 .pagination-bottom {
@@ -54,6 +58,7 @@
 }
 .rt-tr {
   border-bottom: solid 1px #E5E5E5;
+  padding: 0 30px;
 }
 
 

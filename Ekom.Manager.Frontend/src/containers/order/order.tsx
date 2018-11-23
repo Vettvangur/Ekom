@@ -181,8 +181,8 @@ export default class Order extends React.Component<IProps> {
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
                     {statusList.map(statusItem => (
-                      <option key={statusItem.id} value={statusItem.id}>
-                        {statusItem.value}
+                      <option key={statusItem.value} value={statusItem.value}>
+                        {statusItem.label}
                       </option>
                     ))}
                   </select>

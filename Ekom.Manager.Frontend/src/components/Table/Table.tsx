@@ -13,6 +13,7 @@ import Pagination from 'components/Pagination';
 import TableStore from 'stores/tableStore';
 import SearchStore from 'stores/searchStore';
 import OrdersStore from 'stores/ordersStore';
+import SelectedOrders from 'components/Table/subComponents/SelectedOrders';
 
 const path = '/umbraco/backoffice/ekom';
 
@@ -83,10 +84,10 @@ class Table extends React.Component<ITableProps, State> {
     // });
     if (this.props.tableStore.selectedRows.get(UniqueId) === true)
       this.props.tableStore.selectedRows.set(UniqueId, false)
-    else 
+    else
       this.props.tableStore.selectedRows.set(UniqueId, true)
   }
-  
+
   toggleSelection = (key) => {
     /*
       Implementation of how to manage the selection state is up to the developer.
@@ -163,9 +164,12 @@ class Table extends React.Component<ITableProps, State> {
 
   render() {
     const {
+      selection,
       selectAll,
       //statusUpdateIndicator,
     } = this.state;
+
+    console.log(selection)
 
     const { searchStore, tableStore } = this.props;
 
@@ -178,11 +182,12 @@ class Table extends React.Component<ITableProps, State> {
         Cell: row => {
           const selected = this.isSelected(row.value);
           return (
-          <Checkbox
-            checked={selected}
-            onChange={() => this.toggleSelection(row.value)}
-          />
-        )},
+            <Checkbox
+              checked={selected}
+              onChange={() => this.toggleSelection(row.value)}
+            />
+          )
+        },
         Header: () => (
           <Checkbox
             checked={selectAll}
@@ -312,8 +317,8 @@ class Table extends React.Component<ITableProps, State> {
                   Show All
                 </option>
                 {statusList.map(status => (
-                  <option key={status.id} value={status.id}>
-                    {status.value}
+                  <option key={status.value} value={status.value}>
+                    {status.label}
                   </option>
                 ))}
               </select>
@@ -332,16 +337,16 @@ class Table extends React.Component<ITableProps, State> {
               defaultValue={row.value.OrderStatus}
             >
               {statusList.map((status) => {
-                if (row.value.OrderStatus === status.id) {
+                if (row.value.OrderStatus === status.value) {
                   return (
-                    <option key={status.id} value={status.id}>
-                      {status.value}
+                    <option key={status.value} value={status.value}>
+                      {status.label}
                     </option>
                   );
                 }
                 return (
-                  <option key={status.id} value={status.id}>
-                    {status.value}
+                  <option key={status.value} value={status.value}>
+                    {status.label}
                   </option>
                 );
               })}
@@ -794,6 +799,9 @@ class Table extends React.Component<ITableProps, State> {
           return (
             <>
               <TableWrapper>
+                {this.state.selection.length > 0 && (
+                  <SelectedOrders count={this.state.selection.length} orders={this.state.selection} />
+                )}
                 {makeTable()}
               </TableWrapper>
               <Pagination

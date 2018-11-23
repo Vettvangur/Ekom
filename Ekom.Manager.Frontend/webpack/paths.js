@@ -8,6 +8,7 @@ module.exports = {
   styles: path.resolve(CURRENT_WORKING_DIR, 'styles'),
   components: path.resolve(CURRENT_WORKING_DIR, 'src/components'),
   containers: path.resolve(CURRENT_WORKING_DIR, 'src/containers'),
+  styledComponents: path.resolve(CURRENT_WORKING_DIR, 'src/styledComponents'),
   models: path.resolve(CURRENT_WORKING_DIR, 'src/models'),
   routing: path.resolve(CURRENT_WORKING_DIR, 'src/routing'),
   stores: path.resolve(CURRENT_WORKING_DIR, 'src/stores'),

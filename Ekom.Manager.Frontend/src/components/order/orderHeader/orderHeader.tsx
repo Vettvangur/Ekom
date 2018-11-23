@@ -128,8 +128,8 @@ export default class OrderHeader extends React.Component<IProps, State> {
           <StatusSelectWrapper className="select__wrapper">
             <select name="" id="" defaultValue={originalStatus} onChange={this.handleStatusChange}>
               {statusList.map(statusItem => (
-                <option key={statusItem.id} value={statusItem.id}>
-                  {statusItem.value}
+                <option key={statusItem.value} value={statusItem.value}>
+                  {statusItem.label}
                 </option>
               ))}
             </select>

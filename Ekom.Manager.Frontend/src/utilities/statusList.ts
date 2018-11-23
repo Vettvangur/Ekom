@@ -1,55 +1,55 @@
 ﻿const statusList = [
   {
-    id: 0,
-    value: "Cancelled"
+    value: 0,
+    label: "Cancelled"
   },
   {
-    id: 1,
-    value: "Closed"
+    value: 1,
+    label: "Closed"
   },
   {
-    id: 2,
-    value: "Payment failed"
+    value: 2,
+    label: "Payment failed"
   },
   {
-    id: 3,
-    value: "Incomplete"
+    value: 3,
+    label: "Incomplete"
   },
   {
-    id: 4,
-    value: "Offline payment"
+    value: 4,
+    label: "Offline payment"
   },
   {
-    id: 5,
-    value: "Pending"
+    value: 5,
+    label: "Pending"
   },
   {
-    id: 6,
-    value: "Ready for dispatch"
+    value: 6,
+    label: "Ready for dispatch"
   },
   {
-    id: 7,
-    value: "Ready for dispatch when in stock"
+    value: 7,
+    label: "Ready for dispatch when in stock"
   },
   {
-    id: 8,
-    value: "Dispatched"
+    value: 8,
+    label: "Dispatched"
   },
   {
-    id: 9,
-    value: "Waiting for payment"
+    value: 9,
+    label: "Waiting for payment"
   },
   {
-    id: 10,
-    value: "Waiting for payment provider"
+    value: 10,
+    label: "Waiting for payment provider"
   },
   {
-    id: 11,
-    value: "Returned"
+    value: 11,
+    label: "Returned"
   },
   {
-    id: 12,
-    value: "Wishlist"
+    value: 12,
+    label: "Wishlist"
   },
 ]
 
