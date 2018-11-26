@@ -137,6 +137,11 @@ const StyledSearchIconButton = styled.button`
 `;
 
 
+const DatePicker = styled.div`
+  position:absolute;
+  right:30px;
+`;
+
 interface IActive {
   active?: boolean;
 }
@@ -193,7 +198,7 @@ class Search extends React.Component<ISearchProps, State> {
     const { searchStore } = this.props;
 
     return (
-      <div
+      <DatePicker
         className={classNames({
           'singleDateInputButton': (this.state.showDatePicker && searchStore.endDate === null) || this.state.showDatePicker && searchStore.preset && searchStore.preset.length > 0
         })}
@@ -208,7 +213,7 @@ class Search extends React.Component<ISearchProps, State> {
           initialEndDate={searchStore.endDate}
           closeDatePicker={this.destroyDatePicker}
         />
-      </div>
+      </DatePicker>
     )
   }
   public render() {

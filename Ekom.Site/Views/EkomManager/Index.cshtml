@@ -3,6 +3,7 @@
 @using System.Net;
 @{
     Layout = null;
+    var userId = UmbracoContext.Security.CurrentUser.Id;
 
 }
 <!doctype html>
@@ -32,8 +33,7 @@
 </head>
 
 <body>
-
-    <div id="app" class="pageContainer"></div>
+    <div id="app" data-userId="@userId" class="pageContainer"></div>
 
     @if (Extensions.IsDebug() && hostName == "ekom.localhost.vettvangur.is")
     {

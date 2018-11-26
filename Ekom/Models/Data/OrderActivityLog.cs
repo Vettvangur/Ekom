@@ -19,7 +19,7 @@ namespace Ekom.Models.Data
         /// <summary>
         /// Order ID
         /// </summary>
-        public Guid Key { get; internal set; }
+        public Guid OrderId { get; internal set; }
 
         /// <summary>
         /// 
@@ -30,6 +30,11 @@ namespace Ekom.Models.Data
         /// 
         /// </summary>
         public string UserName { get; internal set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int UserId { get; internal set; }
 
         /// <summary>
         /// 

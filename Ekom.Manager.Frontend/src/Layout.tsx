@@ -21,6 +21,13 @@ const LayoutBody = styled.div`
   box-shadow: -2.01285px -2.01285px 15.0964px rgba(0, 0, 0, 0.05);
   background-color: ${variables.white};
   width: calc(100vw - 12.5rem);
+  overflow: auto;
+  height: 100vh;
+  overflow-x: hidden;
+  @media screen and (max-width: 620px) {
+    margin-top: 60px;
+    padding-bottom:60px;
+  }
 `;
 
 const Layout = ({ route }) => (

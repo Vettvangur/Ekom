@@ -21,10 +21,17 @@ export const routes = [
       },
       {
         path: `${ekomManager}/orders`,
-        exact: true,
         component: Orders,
         title: "Orders",
-        showInMenu: true
+        showInMenu: true,
+        routes: [
+          {
+            path: `${ekomManager}/orders/dispatched`,
+            component: Orders,
+            title: "Dispatched",
+            showInMenu: true
+          },
+        ]
       },
       {
         path: `${ekomManager}/customers`,
