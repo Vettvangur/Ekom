@@ -27,8 +27,9 @@ export default class OrdersStore {
         this.cancel();
       }
       this.order = order;
-      const activityLog = yield this.fetchActivityLog(orderId);
-      this.order.ActivityLog = activityLog;
+      // const activityLog = yield this.fetchActivityLog(orderId);
+      // this.order.ActivityLog = activityLog;
+      this.order.ActivityLog = [];
       this.orderState = "done";
     } catch (error) {
       this.orderState = "error";
