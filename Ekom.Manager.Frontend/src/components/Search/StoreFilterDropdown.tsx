@@ -52,24 +52,18 @@ class StoreFilterDropdown extends React.Component<IStoreFilterDropdownProps> {
     }
     this.props.destoryStoreFilterDropdown();
   }
-  handleClick = (Alias?: string) => {
-    this.props.searchStore.setStoreFilter(Alias)
-    this.props.destoryStoreFilterDropdown();
-  }
   public render() {
     return (
       <StoreFilterDropdownWrapper ref={(ref: any) => this.node = ref}>
         <StoreItem
           style={{ cursor: 'pointer' }}
-          onClick={() => this.handleClick()}
         >
           All stores
         </StoreItem>
         {this.props.rootStore.stores && this.props.rootStore.stores.map((store) => (
-          <StoreItem style={{ cursor: 'pointer' }} key={store.Id}
-            onClick={() => this.handleClick(store.Alias)}
+          <StoreItem style={{ cursor: 'pointer' }} key={store.value}
           >
-            {store.Alias}
+            {store.label}
           </StoreItem>
         ))}
       </StoreFilterDropdownWrapper>

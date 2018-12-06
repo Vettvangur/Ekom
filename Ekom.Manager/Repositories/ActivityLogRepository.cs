@@ -23,7 +23,7 @@ namespace Ekom.Repository
             {
                 CreateDate = DateTime.Now,
                 Log = log,
-                Key = key,
+                OrderId = key,
                 UniqueId = Guid.NewGuid(),
                 UpdateDate = DateTime.Now,
                 UserName = user.Name,

@@ -94,9 +94,9 @@ const MobileMenuHeader = styled.div`
 `;
 
 const FirstLevelMenu = styled.div``;
-const SubMenu = styled.ul`
-  margin-left:10px;
-`;
+// const SubMenu = styled.ul`
+//   margin-left:10px;
+// `;
 
 interface IMenuActive {
   active?: boolean;
@@ -128,12 +128,12 @@ class Menu extends React.Component<IMenuProps, State> {
         if (route.path === this.props.routing.location.pathname) {
           this.handleTopLevelChange(routeIndex);
         }
-        if (route.routes)
-          route.routes.map((subRoute, subIndex) => {
-            if (subRoute.path === this.props.routing.location.pathname) {
-              this.handleSecondLevelChange(subIndex);
-            }
-          });
+        // if (route.routes)
+        //   route.routes.map((subRoute, subIndex) => {
+        //     if (subRoute.path === this.props.routing.location.pathname) {
+        //       this.handleSecondLevelChange(subIndex);
+        //     }
+        //   });
       })
     })
   }
@@ -197,7 +197,7 @@ class Menu extends React.Component<IMenuProps, State> {
                         {route.title}
                       </MenuItemLink>
                     </MenuItem>
-                    <SubMenu>
+                    {/* <SubMenu>
                       {route.routes && route.routes.map((subRoute, subIndex) => subRoute.showInMenu && (
                         <MenuItem
                           key={subIndex}
@@ -214,7 +214,7 @@ class Menu extends React.Component<IMenuProps, State> {
                           </MenuItemLink>
                         </MenuItem>
                       ))}
-                    </SubMenu>
+                    </SubMenu> */}
                   </FirstLevelMenu>
                 ))}
               </React.Fragment>

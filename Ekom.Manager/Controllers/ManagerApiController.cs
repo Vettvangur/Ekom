@@ -40,20 +40,20 @@ namespace Ekom.Controllers
         {
             return API.Order.Instance.GetOrder(uniqueId);
         }
-        public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
-        {
-            return _managerRepository.GetOrderActivityLog(orderId);
-        }
-        [HttpGet]
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
-        {
-            return _managerRepository.GetLatestActivityLogs();
-        }
-        [HttpGet]
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser([FromUri] Guid userId)
-        {
-            return _managerRepository.GetLatestActivityLogsByUser(userId);
-        }
+        //public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
+        //{
+        //    return _managerRepository.GetOrderActivityLog(orderId);
+        //}
+        //[HttpGet]
+        //public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
+        //{
+        //    return _managerRepository.GetLatestActivityLogs();
+        //}
+        //[HttpGet]
+        //public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser([FromUri] Guid userId)
+        //{
+        //    return _managerRepository.GetLatestActivityLogsByUser(userId);
+        //}
         /// <summary>
         /// List of orders.
         /// </summary>
@@ -74,9 +74,9 @@ namespace Ekom.Controllers
             return _managerRepository.GetAllOrders(start, end);
         }
         [HttpGet]
-        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
+        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string orderStatus = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
-            return _managerRepository.SearchOrders(start, end, query, store, payment, shipping, discount);
+            return _managerRepository.SearchOrders(start, end, query, store, orderStatus, payment, shipping, discount);
         }
         public OrderListData GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
@@ -96,6 +96,10 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetStores();
         }
+        public object GetStoreList()
+        {
+            return _managerRepository.GetStoreList();
+        }
         public IEnumerable<IShippingProvider> GetShippingProviders()
         {
             return _managerRepository.GetShippingProviders();
@@ -107,6 +111,11 @@ namespace Ekom.Controllers
         public IEnumerable<IDiscount> GetDiscounts()
         {
             return _managerRepository.GetDiscounts();
+        }
+
+        public object GetStatusList()
+        {
+            return _managerRepository.GetStatusList();
         }
 
         private static readonly ILog Log =

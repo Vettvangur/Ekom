@@ -1,16 +1,34 @@
 import { observable, action } from 'mobx';
 
+
+interface IOption {
+  value: (string | number);
+  label: string;
+}
 class rootStore {
-  @observable stores: any;
+  @observable stores: IOption[] = [
+    {
+      value: 'Default',
+      label: 'All stores'
+    }
+  ];
+  
+  @observable statusList: IOption[] = [
+    {
+      value: 'Default',
+      label: 'Default Status'
+    }
+  ];
   
   constructor() {
     this.getStores();
+    this.getStatusList();
   }
 
   @action
   getStores() {
     return fetch(
-      `/umbraco/backoffice/ekom/managerapi/getstores`, 
+      `/umbraco/backoffice/ekom/managerapi/getstorelist`, 
       {
       credentials: 'include',
       }
@@ -20,7 +38,23 @@ class rootStore {
       : Promise.reject(res)
     )
     .then((res) => {
-      this.stores = res;
+      res.forEach(store => this.stores.push(store))
+    })
+  }
+  @action('Get Status List')
+  getStatusList() {
+    return fetch(
+      `/umbraco/backoffice/ekom/managerapi/getstatuslist`, 
+      {
+      credentials: 'include',
+      }
+    )
+    .then(res => res.ok
+      ? res.json()
+      : Promise.reject(res)
+    )
+    .then((res) => {
+      res.forEach(status => this.statusList.push(status))
     })
   }
 }

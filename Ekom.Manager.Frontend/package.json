@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack --config ./webpack/webpack.config.js",
-    "start": "cross-env NODE_ENV=development webpack-dev-server --config ./webpack/webpack.config.js --inline --progress --hot"
+    "start": "cross-env NODE_ENV=development webpack-dev-server --config ./webpack/webpack.config.js --inline"
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
@@ -62,7 +62,7 @@
     "react-select": "^2.1.1",
     "react-select-fast-filter-options": "^0.2.3",
     "react-table": "^6.8.6",
-    "styled-components": "^4.0.3",
+    "styled-components": "4.1.2",
     "svg-fill-loader": "^0.0.8",
     "svgo-loader": "^2.2.0",
     "whatwg-fetch": "^3.0.0"

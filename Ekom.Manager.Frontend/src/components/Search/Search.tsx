@@ -5,10 +5,12 @@ import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 
 import SearchStore from 'stores/searchStore';
+import RootStore from 'stores/rootStore';
 
 import DateRangePickerWrapper from 'components/orders/DateRangePickerWrapper';
 
-import StoreFilterDropdown from './StoreFilterDropdown';
+import Dropdown from './Dropdown';
+
 
 import * as variables from 'styles/variablesJS';
 import Icon from 'components/Icon';
@@ -24,7 +26,6 @@ const StyledSearchInputWrapper = styled.div`
   position: relative;
   display:flex;
   min-width: 250px;
-  height:70px;
   @media screen and (max-width: 860px) {
     min-width:100%;
     
@@ -60,7 +61,6 @@ const StyledButtonFilterWrapper = styled<IActive, "div">("div")`
   @media screen and (max-width: 860px) {
     flex:auto;
   }
-  height:70px;
   &:not(:last-child) {
     &::after {
       content: '';
@@ -147,6 +147,7 @@ interface IActive {
 }
 interface ISearchProps {
   searchStore?: SearchStore;
+  rootStore?: RootStore;
   customers?: boolean;
 }
 
@@ -156,7 +157,7 @@ class State {
   autoFocusEndDate = false;
 }
 
-@inject('searchStore')
+@inject('searchStore', 'rootStore')
 @observer
 class Search extends React.Component<ISearchProps, State> {
   constructor(props: ISearchProps) {
@@ -230,7 +231,29 @@ class Search extends React.Component<ISearchProps, State> {
             <Icon name="search" iconSize={20} color={variables.primaryColor} />
           </StyledSearchIconButton>
         </StyledSearchInputWrapper>
-        <StyledButtonFilterWrapper
+        <StyledButtonFilterWrapper>
+          <Dropdown
+            minWidth={145}
+            placeholder={this.props.searchStore.StatusFilter.label}
+            type="searchComponentDropdown"
+            defaultValue={this.props.searchStore.StatusFilter}
+
+            onChange={this.props.searchStore.setStatusFilter}
+            options={this.props.rootStore.statusList}
+          />
+        </StyledButtonFilterWrapper>
+        <StyledButtonFilterWrapper>
+          <Dropdown
+            minWidth={145}
+            placeholder={this.props.searchStore.storeFilter.label}
+            type="searchComponentDropdown"
+            defaultValue={this.props.searchStore.storeFilter}
+
+            onChange={this.props.searchStore.setStoreFilter}
+            options={this.props.rootStore.stores}
+          />
+        </StyledButtonFilterWrapper>
+        {/* <StyledButtonFilterWrapper
           className={classNames({
             'active': this.state.showStoreFilter
           })}
@@ -243,7 +266,7 @@ class Search extends React.Component<ISearchProps, State> {
           {this.state.showStoreFilter && (
             <StoreFilterDropdown destoryStoreFilterDropdown={this.destoryStoreFilterDropdown} />
           )}
-        </StyledButtonFilterWrapper>
+        </StyledButtonFilterWrapper> */}
         {this.props.searchStore.preset && this.props.searchStore.preset.length > 0 ? (
           <StyledButtonFilterWrapper>
             <StyledButtonFilter className="fs-16 semi-bold"

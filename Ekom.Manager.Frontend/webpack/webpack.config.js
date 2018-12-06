@@ -10,7 +10,7 @@ module.exports = (env = {}) => {
   const isBrowser = env.browser;
 
   console.log(`Running webpack in ${process.env.NODE_ENV} mode on ${isBrowser ? 'browser': 'server'}`);
-
+  
   const node = {
     __dirname: true,
     __filename: true
@@ -54,7 +54,7 @@ module.exports = (env = {}) => {
       ]
     },
     output: {
-      path: PATHS.assets,
+      path: PATHS.public,
       filename: '[name].js',
       //publicPath: PATHS.public
       publicPath: 'http://localhost:3777/'

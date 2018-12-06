@@ -8,7 +8,7 @@ namespace Ekom.Interfaces
 {
     public interface IActivityLogRepository
     {
-        OrderActivityLog CreateActivityLog(Guid key, string log);
+        //OrderActivityLog CreateActivityLog(Guid key, string log);
 
     }
 }
