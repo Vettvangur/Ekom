@@ -5,13 +5,12 @@ import ReactTable from 'react-table';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { observer, inject } from 'mobx-react';
-
-import statusList from 'utilities/statusList';
 import { Checkbox } from 'components/Input';
 import Total from 'components/shared/total';
 import Pagination from 'components/Pagination';
 import TableStore from 'stores/tableStore';
 import SearchStore from 'stores/searchStore';
+import RootStore from 'stores/rootStore';
 import OrdersStore from 'stores/ordersStore';
 import SelectedOrders from 'components/Table/subComponents/SelectedOrders';
 
@@ -32,6 +31,7 @@ interface ITableProps {
   searchStore?: SearchStore;
   tableStore?: TableStore;
   ordersStore?: OrdersStore;
+  rootStore?: RootStore;
 }
 
 class State {
@@ -42,7 +42,7 @@ class State {
   statusUpdateIndicator?: boolean = false;
 }
 
-@inject('searchStore', 'tableStore', 'ordersStore')
+@inject('searchStore', 'tableStore', 'ordersStore', 'rootStore')
 @observer
 class Table extends React.Component<ITableProps, State> {
   private reactTable: any;
@@ -228,77 +228,6 @@ class Table extends React.Component<ITableProps, State> {
           UniqueId: d.UniqueId,
           OrderStatus: d.OrderStatus,
         }),
-        filterMethod: (filter, row) => {
-          if (filter.value === 'all') {
-            return true;
-          }
-          if (filter.value === '0') {
-            if (row.status.OrderStatus === 0) {
-              return row;
-            }
-          }
-          if (filter.value === '1') {
-            if (row.status.OrderStatus === 1) {
-              return row;
-            }
-          }
-          if (filter.value === '2') {
-            if (row.status.OrderStatus === 2) {
-              return row;
-            }
-          }
-          if (filter.value === '3') {
-            if (row.status.OrderStatus === 3) {
-              return row;
-            }
-          }
-          if (filter.value === '4') {
-            if (row.status.OrderStatus === 4) {
-              return row;
-            }
-          }
-          if (filter.value === '5') {
-            if (row.status.OrderStatus === 5) {
-              return row;
-            }
-          }
-          if (filter.value === '6') {
-            if (row.status.OrderStatus === 6) {
-              return row;
-            }
-          }
-          if (filter.value === '7') {
-            if (row.status.OrderStatus === 7) {
-              return row;
-            }
-          }
-          if (filter.value === '8') {
-            if (row.status.OrderStatus === 8) {
-              return row;
-            }
-          }
-          if (filter.value === '9') {
-            if (row.status.OrderStatus === 9) {
-              return row;
-            }
-          }
-          if (filter.value === '10') {
-            if (row.status.OrderStatus === 10) {
-              return row;
-            }
-          }
-          if (filter.value === '11') {
-            if (row.status.OrderStatus === 11) {
-              return row;
-            }
-          }
-          if (filter.value === '12') {
-            if (row.status.OrderStatus === 12) {
-              return row;
-            }
-          }
-          return row;
-        },
         Filter: ({ filter, onChange }) => (
           <React.Fragment>
             <div className="rt-resizable-header-content" />
@@ -316,7 +245,7 @@ class Table extends React.Component<ITableProps, State> {
                 <option value="all">
                   Show All
                 </option>
-                {statusList.map(status => (
+                {this.props.rootStore.statusList.map(status => (
                   <option key={status.value} value={status.value}>
                     {status.label}
                   </option>
@@ -336,10 +265,10 @@ class Table extends React.Component<ITableProps, State> {
               onChange={event => this.updateStatus(event, row.value.UniqueId)}
               defaultValue={row.value.OrderStatus}
             >
-              {statusList.map((status) => {
+              {this.props.rootStore.statusList.map((status) => {
                 if (row.value.OrderStatus === status.value) {
                   return (
-                    <option key={status.value} value={status.value}>
+                    <option key={status.value} value={status.value} selected>
                       {status.label}
                     </option>
                   );

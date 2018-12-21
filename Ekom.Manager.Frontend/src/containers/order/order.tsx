@@ -10,9 +10,9 @@ import {
 // import OrderHeader from 'components/order/orderHeader';
 import Products from 'components/order/products';
 import SavingLoader from 'components/order/savingLoader';
-import statusList from 'utilities/statusList';
 
 import OrdersStore from 'stores/ordersStore';
+import RootStore from 'stores/rootStore';
 import InformationColumn from './components/InformationColumn';
 import ActivityLog from './components/ActivityLog';
 import Icon from 'components/Icon';
@@ -112,11 +112,12 @@ const PaidIndicatorWrapper = styled.div`
 `;
 interface IProps {
   ordersStore?: OrdersStore;
+  rootStore?: RootStore;
   match: any;
   routing: RouterStore;
 }
 
-@inject('routing', 'ordersStore')
+@inject('routing', 'ordersStore', 'rootStore')
 @withRouter
 @observer
 export default class Order extends React.Component<IProps> {
@@ -192,7 +193,7 @@ export default class Order extends React.Component<IProps> {
               <StatusUpdate>
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
-                    {statusList.map(statusItem => (
+                    {this.props.rootStore.statusList.map(statusItem => (
                       <option key={statusItem.value} value={statusItem.value}>
                         {statusItem.label}
                       </option>
