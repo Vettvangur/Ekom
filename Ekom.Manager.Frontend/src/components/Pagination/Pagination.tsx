@@ -102,7 +102,7 @@ class Pagination extends React.Component<IPaginationProps> {
           Previous
         </Button>
 
-        <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{activePage}</PaginationCurrentPage> af {this.props.pages}</PaginationCurrentPageWrapper>
+        <PaginationCurrentPageWrapper>Page <PaginationCurrentPage>{activePage}</PaginationCurrentPage> of {this.props.pages}</PaginationCurrentPageWrapper>
         <Button
           onClick={() => {
             if (activePage === this.props.pages) return;
