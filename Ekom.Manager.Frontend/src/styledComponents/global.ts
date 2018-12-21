@@ -7,7 +7,7 @@ interface IContainer {
   paddingRight?: number;
 }
 
-export const Container = styled<IContainer, "div">("div")`
+export const Container = styled<any>("div")`
   padding-top: ${(props: IContainer) => props.paddingTop ? `${props.paddingTop}px` : 0};
   padding-left: ${(props: IContainer) => props.paddingLeft ? `${props.paddingLeft}px` : `30px`};
   padding-bottom: ${(props: IContainer) => props.paddingBottom ? `${props.paddingBottom}px` : 0};

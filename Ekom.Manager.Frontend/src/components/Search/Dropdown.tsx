@@ -7,13 +7,13 @@ import { Checkbox } from 'components/Input';
 import Icon from 'components/Icon';
 
 
-const StyledDropdown = styled<any, "div">("div")`
+const StyledDropdown = styled<any>("div")`
   position: relative;
   background-color: ${(props: any) => props.isOpen ? variables.gray : variables.ekomSecondaryColor};
   min-width: ${(props: any) => props.minWidth && `${props.minWidth}px`};
 `;
 
-const StyledDropdownMenu = styled<any, "div">("div")`
+const StyledDropdownMenu = styled<any>("div")`
   position: absolute;
   top:100%;
   min-width:100%;
@@ -27,7 +27,7 @@ const StyledDropdownMenu = styled<any, "div">("div")`
   }
 `;
 
-const DropdownControl = styled<any, "button">("button")`
+const DropdownControl = styled<any>("button")`
   border:0;
   background-color: transparent;
   width:100%;
@@ -43,7 +43,7 @@ const DropdownControl = styled<any, "button">("button")`
 `;
 
 
-const DropdownOption = styled<any, "button">("button")`
+const DropdownOption = styled<any>("button")`
   border:0;
   background-color: ${(props: any) => props.isActive ? variables.primaryColor : variables.transparent};
   color: ${(props: any) => props.isActive ? variables.white : variables.black};
@@ -63,10 +63,10 @@ const DropdownOption = styled<any, "button">("button")`
 
 
 interface IDropdownProps {
-  disabled: boolean;
+  disabled?: boolean;
   options: IDropDownOption[];
-  useCapture: boolean;
-  display: 'block' | 'flex' | 'inline-block';
+  useCapture?: boolean;
+  display?: 'block' | 'flex' | 'inline-block';
   type: 'default' | 'searchComponentDropdown';
   placeholder: string;
   defaultValue?: IDropDownOption;

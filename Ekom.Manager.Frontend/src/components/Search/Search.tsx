@@ -50,7 +50,7 @@ const SearchInput = styled.input`
   color: ${variables.black};
 `;
 
-const StyledButtonFilterWrapper = styled<IActive, "div">("div")`
+const StyledButtonFilterWrapper = styled<any>("div")`
   position: relative;
   background-color: ${(props: any) => props.active ? variables.gray : variables.ekomSecondaryColor};
   @media screen and (max-width: 1000px) {
@@ -142,9 +142,9 @@ const DatePicker = styled.div`
   right:30px;
 `;
 
-interface IActive {
-  active?: boolean;
-}
+// interface IActive {
+//   active?: boolean;
+// }
 interface ISearchProps {
   searchStore?: SearchStore;
   rootStore?: RootStore;
@@ -237,7 +237,6 @@ class Search extends React.Component<ISearchProps, State> {
             placeholder={this.props.searchStore.StatusFilter.label}
             type="searchComponentDropdown"
             defaultValue={this.props.searchStore.StatusFilter}
-
             onChange={this.props.searchStore.setStatusFilter}
             options={this.props.rootStore.statusList}
           />

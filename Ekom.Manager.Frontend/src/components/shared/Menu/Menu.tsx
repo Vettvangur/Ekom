@@ -14,7 +14,7 @@ import { routes } from '../../../App';
 
 import * as variables from 'styles/variablesJS';
 
-const StyledMenuWrapper = styled<IMenuActive, "div">("div")`
+const StyledMenuWrapper = styled<any>("div")`
   width: 12.5rem;
   height: 100vh;
   padding-left: 30px;
@@ -42,7 +42,7 @@ const MenuLogoLink = styled.a``;
 
 const MenuLinks = styled.ul``;
 
-const MenuItem = styled<IMenuActive, "div">("div")`
+const MenuItem = styled<any>("div")`
   color: ${variables.black};
   opacity: ${(props: any) => props.active ? 1 : .5};
   font-weight: 600;
@@ -98,10 +98,10 @@ const FirstLevelMenu = styled.div``;
 //   margin-left:10px;
 // `;
 
-interface IMenuActive {
-  active?: boolean;
-  mobileMenuOpen?: boolean;
-}
+// interface IMenuActive {
+//   active?: boolean;
+//   mobileMenuOpen?: boolean;
+// }
 
 interface IMenuProps {
   location: any;

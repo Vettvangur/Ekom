@@ -9,7 +9,7 @@ const SelectWrapper = styled.div`
    
 `;
 
-export const Select = styled<any, "select">("select")`
+export const Select = styled<any>("select")`
   background-color: ${(props: any) => props.backgroundColor ? props.backgroundColor : variables.defaultSelect};
   color: ${(props: any) => props.color ? props.color : 'rgba(44, 56, 44, 0.9)'};
   position: relative;

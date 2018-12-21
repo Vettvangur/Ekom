@@ -25,10 +25,10 @@ module.exports = (env = {}) => {
     },
     node,
     output: {
-      path: PATHS.public,
+      path: PATHS.build,
       filename: 'js/[name].min.js',
       chunkFilename: '[name].[chunkhash:6].js', // for code splitting. will work without but useful to set
-      publicPath: PATHS.public
+      publicPath: PATHS.build
     },
     module: {
       rules: rules({
