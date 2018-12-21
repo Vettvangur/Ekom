@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+﻿import * as moment from 'moment';
 
 import { observable, action, flow } from 'mobx';
 import { IOrders } from 'models/orders'
@@ -35,7 +35,7 @@ export default class SearchStore {
     }
     this.StatusFilter = {
       value: 'Default',
-      label: 'Default status'
+      label: 'Completed orders'
     };
     this.startDate = moment().subtract(1, 'week');
     this.endDate = moment();

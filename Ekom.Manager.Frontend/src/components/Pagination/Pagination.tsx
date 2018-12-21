@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
 import TableStore from 'stores/tableStore';
@@ -99,7 +99,7 @@ class Pagination extends React.Component<IPaginationProps> {
           center
         >
           <Icon name="arrow-left-sm" iconSize={12} marginRight={10} />
-          Fyrri
+          Previous
         </Button>
 
         <PaginationCurrentPageWrapper>Síða <PaginationCurrentPage>{activePage}</PaginationCurrentPage> af {this.props.pages}</PaginationCurrentPageWrapper>
@@ -118,7 +118,7 @@ class Pagination extends React.Component<IPaginationProps> {
           iconPos="left"
           center
         >
-          Næsta
+          Next
           <Icon name="arrow-right-sm" iconSize={12} marginLeft={10} />
         </Button>
       </>
@@ -129,7 +129,7 @@ class Pagination extends React.Component<IPaginationProps> {
     return (
       <PaginationWrapper>
         <PaginationColumn>
-          <span>Sýna</span>
+          <span>Show</span>
           <PaginationRowSelectWrapper className="select__wrapper">
             <PaginationRowSelect value={this.props.pageSize} onChange={(e) => this.props.onPageSizeChange(+e.currentTarget.value, this.props.page)}>
               {this.props.pageSizeOptions.map((ps, psIndex) => (
@@ -137,7 +137,7 @@ class Pagination extends React.Component<IPaginationProps> {
               ))}
             </PaginationRowSelect>
           </PaginationRowSelectWrapper>
-          pantanir af {this.props.totalItems}
+          orders of {this.props.totalItems}
         </PaginationColumn>
         <PaginationColumn className="align-center">
           {this.renderPager()}

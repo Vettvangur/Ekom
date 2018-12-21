@@ -1,4 +1,4 @@
-import { observable, action } from 'mobx';
+﻿import { observable, action } from 'mobx';
 
 
 interface IOption {
@@ -16,7 +16,7 @@ class rootStore {
   @observable statusList: IOption[] = [
     {
       value: 'Default',
-      label: 'Default Status'
+      label: 'Completed orders'
     }
   ];
   
