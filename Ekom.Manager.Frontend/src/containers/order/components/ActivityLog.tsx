@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import * as moment from 'moment';
 import styled from 'styled-components';
 import Divider from './Divider';
@@ -48,15 +48,17 @@ class ActivityLog extends React.Component<IActivityLogProps> {
     return (
       <ActivityLogsWrapper>
         <h3>Activity log</h3>
-        <UnorderedList>
-          {activityLogs.map((log, index) => 
-            <ActivityLogItemWrapper>
-              <ActivityLogLabel className="fs-14 lh-20"><ActivityLogLabelUser>{log.UserName}: </ActivityLogLabelUser>{log.Log}</ActivityLogLabel>
-              <ActivityLogDate className="fs-12 lh-17">{moment(log.Date).format("hh:mm | DD.MM.YYYY")}</ActivityLogDate>
-              <ActivityLogDivider />
-            </ActivityLogItemWrapper>
-          )}
-        </UnorderedList>
+        {activityLogs && activityLogs.length > 0 && (
+          <UnorderedList>
+            {activityLogs.map((log, index) =>
+              <ActivityLogItemWrapper>
+                <ActivityLogLabel className="fs-14 lh-20"><ActivityLogLabelUser>{log.UserName}: </ActivityLogLabelUser>{log.Log}</ActivityLogLabel>
+                <ActivityLogDate className="fs-12 lh-17">{moment(log.Date).format("hh:mm | DD.MM.YYYY")}</ActivityLogDate>
+                <ActivityLogDivider />
+              </ActivityLogItemWrapper>
+            )}
+          </UnorderedList>
+        )}
       </ActivityLogsWrapper>
     );
   }
