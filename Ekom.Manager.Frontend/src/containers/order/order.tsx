@@ -272,7 +272,6 @@ export default class Order extends React.Component<IProps> {
               </Heading>
               <span className="fs-16 lh-21">
                 Store
-                {order.PaidDate === null && ' (Created)'}
               </span>
 
             </OrderInformationSubColumn>
