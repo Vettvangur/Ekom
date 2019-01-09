@@ -30,7 +30,7 @@ export const routes = [
         exact: true,
         component: Customers,
         title: "Customers",
-        showInMenu: true
+        showInMenu: false
       },
       { 
         path: `${ekomManager}/order/:id`,
