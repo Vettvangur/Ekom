@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { StyledFunction } from 'styled-components';
 
 interface IContainer {
   paddingTop?: number;
@@ -7,7 +7,11 @@ interface IContainer {
   paddingRight?: number;
 }
 
-export const Container = styled<any>("div")`
+
+const styledContainer: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
+
+export const Container = styledContainer`
   padding-top: ${(props: IContainer) => props.paddingTop ? `${props.paddingTop}px` : 0};
   padding-left: ${(props: IContainer) => props.paddingLeft ? `${props.paddingLeft}px` : `30px`};
   padding-bottom: ${(props: IContainer) => props.paddingBottom ? `${props.paddingBottom}px` : 0};

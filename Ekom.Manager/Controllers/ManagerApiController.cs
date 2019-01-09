@@ -40,10 +40,11 @@ namespace Ekom.Controllers
         {
             return API.Order.Instance.GetOrder(uniqueId);
         }
-        //public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
-        //{
-        //    return _managerRepository.GetOrderActivityLog(orderId);
-        //}
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
+        {
+            return _managerRepository.GetLogs(orderId);
+        }
         //[HttpGet]
         //public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
         //{

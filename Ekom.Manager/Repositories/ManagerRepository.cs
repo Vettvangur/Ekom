@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
@@ -58,6 +58,11 @@ namespace Ekom.Repository
         public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(string UserName)
         {
             return _activityLogRepository.GetLatestActivityLogsOrdersByUser(UserName);
+        }
+
+        public IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId)
+        {
+            return _activityLogRepository.GetLogs(uniqueId);
         }
 
         public OrderListData GetOrders()

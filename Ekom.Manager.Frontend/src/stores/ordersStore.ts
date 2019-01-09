@@ -27,14 +27,18 @@ export default class OrdersStore {
         this.cancel();
       }
       this.order = order;
-      // const activityLog = yield this.fetchActivityLog(orderId);
-      // this.order.ActivityLog = activityLog;
-      this.order.ActivityLog = [];
+      const activityLog = yield this.fetchActivityLog(orderId);
+      this.order.ActivityLog = activityLog;
       this.orderState = "done";
     } catch (error) {
       this.orderState = "error";
     }
   })
+  
+
+  getActivityLog(orderId) {
+    this.fetchActivityLog(orderId).then(activityLog => this.order.ActivityLog = activityLog);
+  }
 
   @action 
   shouldFetchOrder(orderId: string) {
@@ -61,7 +65,7 @@ export default class OrdersStore {
   }
   @action
   fetchActivityLog(orderId: string) {
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getActivityLog?orderid=${orderId}&limit=5`, {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getActivityLog?orderid=${orderId}`, {
       credentials: 'include',
     })
     .then(res => res.ok 
@@ -108,7 +112,7 @@ export default class OrdersStore {
 
   @action
   updateOrderStatus = (orderId: string, orderStatus, ShouldSendNotification?: boolean) => {
-    this.doUpdateOrderStatus(orderId, orderStatus)
+    this.doUpdateOrderStatus(orderId, orderStatus,ShouldSendNotification)
   }
 
   @action
@@ -116,10 +120,11 @@ export default class OrdersStore {
     this.state = "pending";
     try {
       this.state = "loading";
-      await this.handleUpdateStatus(orderId, orderStatus)
+      await this.handleUpdateStatus(orderId, orderStatus, ShouldSendNotification)
       runInAction(() => {
         setTimeout(() => {
           this.state = "done";
+          this.getActivityLog(orderId)
         }, 1500);
       })
     } catch (error) {
@@ -129,9 +134,9 @@ export default class OrdersStore {
     }
   }
   @action
-  handleUpdateStatus(orderId, orderStatus) {
+  handleUpdateStatus(orderId, orderStatus, ShouldSendNotification?: boolean) {
     return fetch(
-      `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}`,
+      `/umbraco/backoffice/ekom/managerapi/updatestatus?orderId=${orderId}&orderStatus=${orderStatus}&notification=${ShouldSendNotification ? 'true' : 'false'}`,
       {
         credentials: 'include',
         method: 'POST',

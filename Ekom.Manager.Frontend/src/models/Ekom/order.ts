@@ -35,6 +35,6 @@ export interface ActivityLog {
   Key: string;
   Log: string;
   UserName: string;
-  CreateDate: any;
-  UpdateDate: any;
+  Date: string;
+  OrderNumber: string;
 }

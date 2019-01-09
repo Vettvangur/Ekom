@@ -52,7 +52,7 @@ class ActivityLog extends React.Component<IActivityLogProps> {
           {activityLogs.map((log, index) => 
             <ActivityLogItemWrapper>
               <ActivityLogLabel className="fs-14 lh-20"><ActivityLogLabelUser>{log.UserName}: </ActivityLogLabelUser>{log.Log}</ActivityLogLabel>
-              <ActivityLogDate className="fs-12 lh-17">{moment(log.CreateDate).format("hh:mm | DD.mm.YYYY")}</ActivityLogDate>
+              <ActivityLogDate className="fs-12 lh-17">{moment(log.Date).format("hh:mm | DD.MM.YYYY")}</ActivityLogDate>
               <ActivityLogDivider />
             </ActivityLogItemWrapper>
           )}

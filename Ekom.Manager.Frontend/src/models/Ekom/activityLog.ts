@@ -3,6 +3,6 @@ export interface IActivityLog {
   Key: string;
   Log: string;
   UserName: string;
-  CreateDate: string;
-  UpdateDate: string;
+  Date: string;
+  OrderNumber: string;
 }

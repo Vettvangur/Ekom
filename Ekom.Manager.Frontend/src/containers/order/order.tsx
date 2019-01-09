@@ -136,6 +136,7 @@ export default class Order extends React.Component<IProps> {
     const { order, updateOrderStatus } = this.props.ordersStore;
     const orderId = order.UniqueId;
     const orderStatus = e.currentTarget['orderStatus'].value;
+    console.log(orderStatus)
     const ShouldSendNotification = e.currentTarget['sendNotification'].checked;
     updateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }
@@ -193,6 +194,7 @@ export default class Order extends React.Component<IProps> {
               <StatusUpdate>
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
+                    <option value="default"></option>
                     {this.props.rootStore.statusList.map(statusItem => (
                       <option key={statusItem.value} value={statusItem.value}>
                         {statusItem.label}
@@ -297,7 +299,7 @@ export default class Order extends React.Component<IProps> {
                 }
               </div> */}
             </OrderPaymentColumns>
-            <ActivityLog activityLogs={order.ActivityLog} />
+            <ActivityLog activityLogs={order.ActivityLog.sort((a,b) => { return +new Date(b.Date) - +new Date(a.Date)})} />
           </OrderPaymentWrapper>
         </Container>
         <Divider />

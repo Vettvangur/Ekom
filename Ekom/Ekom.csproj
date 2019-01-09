@@ -273,6 +273,7 @@
     <Compile Include="Factories\StoreFactory.cs" />
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />
+    <Compile Include="Interfaces\IActivityLogRepository.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Interfaces\IPerStoreFactory.cs" />
@@ -315,12 +316,12 @@
     <Compile Include="Models\OrderedObjects\OrderedShippingProvider.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Repository\ActivityLogRepository.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
     <Compile Include="Interfaces\IOrderRepository.cs" />
-    <Compile Include="Services\ActivityLog.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="Services\LogFactory.cs" />
     <Compile Include="API\Providers.cs" />
