@@ -266,18 +266,20 @@ class Table extends React.Component<ITableProps, State> {
               defaultValue={row.value.OrderStatus}
             >
               {this.props.rootStore.statusList.map((status) => {
-                if (row.value.OrderStatus === status.value) {
+                if (status.label !== "Completed orders") {
+                  if (row.value.OrderStatus === status.value) {
+                    return (
+                      <option key={status.value} value={status.value} selected>
+                        {status.label}
+                      </option>
+                    );
+                  }
                   return (
-                    <option key={status.value} value={status.value} selected>
+                    <option key={status.value} value={status.value}>
                       {status.label}
                     </option>
                   );
                 }
-                return (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                );
               })}
             </select>
           </div>

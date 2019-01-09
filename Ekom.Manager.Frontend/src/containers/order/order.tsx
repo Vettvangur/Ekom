@@ -194,7 +194,6 @@ export default class Order extends React.Component<IProps> {
               <StatusUpdate>
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
-                    <option value="default"></option>
                     {this.props.rootStore.statusList.map(statusItem => {
                       if (statusItem.label !== "Completed orders") {
                         return (
