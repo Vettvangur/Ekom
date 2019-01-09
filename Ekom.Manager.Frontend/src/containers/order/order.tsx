@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import * as moment from 'moment';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
@@ -299,7 +299,7 @@ export default class Order extends React.Component<IProps> {
                 }
               </div> */}
             </OrderPaymentColumns>
-            <ActivityLog activityLogs={order.ActivityLog.sort((a,b) => { return +new Date(b.Date) - +new Date(a.Date)})} />
+            <ActivityLog activityLogs={order.ActivityLog} />
           </OrderPaymentWrapper>
         </Container>
         <Divider />
