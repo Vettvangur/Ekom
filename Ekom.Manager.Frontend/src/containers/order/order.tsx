@@ -21,6 +21,7 @@ import Divider from './components/Divider';
 import { Checkbox } from 'components/Input';
 
 import Button from 'components/Button';
+import SearchStore from 'stores/searchStore';
 
 const OrderWrapper = styled.div`
   position: relative;
@@ -113,11 +114,12 @@ const PaidIndicatorWrapper = styled.div`
 interface IProps {
   ordersStore?: OrdersStore;
   rootStore?: RootStore;
+  searchStore?: SearchStore;
   match: any;
   routing: RouterStore;
 }
 
-@inject('routing', 'ordersStore', 'rootStore')
+@inject('routing', 'ordersStore', 'rootStore', 'searchStore')
 @withRouter
 @observer
 export default class Order extends React.Component<IProps> {
@@ -136,7 +138,9 @@ export default class Order extends React.Component<IProps> {
     const { order, updateOrderStatus } = this.props.ordersStore;
     const orderId = order.UniqueId;
     const orderStatus = e.currentTarget['orderStatus'].value;
-    console.log(orderStatus)
+    const mobxOrder = this.props.searchStore.orders.Orders.filter(x => x.UniqueId === order.UniqueId)[0]
+    mobxOrder.OrderStatusCol = orderStatus;
+    mobxOrder.OrderStatus = orderStatus;
     const ShouldSendNotification = e.currentTarget['sendNotification'].checked;
     updateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }

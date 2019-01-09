@@ -150,7 +150,10 @@ class Table extends React.Component<ITableProps, State> {
       ordersStore,
     } = this.props;
     const orderStatus = e.target.value;
-    ordersStore.updateOrderStatus(UniqueId, orderStatus)
+    const mobxOrder = this.props.searchStore.orders.Orders.filter(x => x.UniqueId === UniqueId)[0]
+    mobxOrder.OrderStatusCol = orderStatus;
+    mobxOrder.OrderStatus = orderStatus;
+    ordersStore.updateOrderStatus(UniqueId, orderStatus, true)
   }
 
   isSelected = key => {

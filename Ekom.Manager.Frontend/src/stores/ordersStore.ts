@@ -115,6 +115,7 @@ export default class OrdersStore {
 
   @action
   updateOrderStatus = (orderId: string, orderStatus, ShouldSendNotification?: boolean) => {
+    this.order.OrderStatus = orderStatus;
     this.doUpdateOrderStatus(orderId, orderStatus,ShouldSendNotification)
   }
 
