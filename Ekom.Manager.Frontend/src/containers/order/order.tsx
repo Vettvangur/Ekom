@@ -195,11 +195,15 @@ export default class Order extends React.Component<IProps> {
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
                     <option value="default"></option>
-                    {this.props.rootStore.statusList.map(statusItem => (
+                    {this.props.rootStore.statusList.map(statusItem => {
+                      if (statusItem.label !== "Completed orders") {
+                        return (
                       <option key={statusItem.value} value={statusItem.value}>
                         {statusItem.label}
                       </option>
-                    ))}
+                        )
+                      }
+                    })}
                   </select>
                 </StatusSelectWrapper>
                 <Button className="fs-16 semi-bold" paddingTop={0} paddingBottom={0} primary>Save</Button>

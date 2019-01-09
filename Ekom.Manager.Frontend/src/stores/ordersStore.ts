@@ -81,7 +81,7 @@ export default class OrdersStore {
 
   @action('Gets latest activity log that was worked in')
   fetchLatestActivityLogs = () => {
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogs?limit=20`, {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogs`, {
       credentials: 'include',
     })
     .then(res => res.ok 
@@ -95,15 +95,18 @@ export default class OrdersStore {
     })
   }
   @action('Gets latest activity log that was worked on by user')
-  fetchLatestActivityLogByUser(userId: string) {
-    return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogsByUser?userid=${userId}&limit=20`, {
+  fetchLatestActivityLogByUser = (userName: string) => {
+    return fetch(`/umbraco/backoffice/ekom/managerapi/GetLatestActivityLogsByUser?username=${userName}`, {
       credentials: 'include',
     })
     .then(res => res.ok 
       ? Promise.resolve(res.json()) 
       : Promise.reject(res)
     )
-    .then(json => this.latestUserActivityLog = json)
+    .then(json => {
+      console.log("j", json)
+      this.latestUserActivityLog = json
+    })
     .catch((err) => {
       this.latestUserActivityLog = []
       console.log(err);

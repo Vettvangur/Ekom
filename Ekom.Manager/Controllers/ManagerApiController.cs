@@ -45,16 +45,16 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetLogs(orderId);
         }
-        //[HttpGet]
-        //public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
-        //{
-        //    return _managerRepository.GetLatestActivityLogs();
-        //}
-        //[HttpGet]
-        //public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser([FromUri] Guid userId)
-        //{
-        //    return _managerRepository.GetLatestActivityLogsByUser(userId);
-        //}
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
+        {
+            return _managerRepository.GetLatestActivityLogs();
+        }
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser([FromUri] string userName)
+        {
+            return _managerRepository.GetLatestActivityLogsByUser(userName);
+        }
         /// <summary>
         /// List of orders.
         /// </summary>
