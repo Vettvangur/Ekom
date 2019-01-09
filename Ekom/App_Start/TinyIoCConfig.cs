@@ -1,4 +1,4 @@
-using CommonServiceLocator.TinyIoCAdapter;
+﻿using CommonServiceLocator.TinyIoCAdapter;
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Domain.Repositories;
@@ -63,6 +63,7 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
             container.Register<IOrderRepository, OrderRepository>();
+            container.Register<IActivityLogRepository, ActivityLogRepository>();
 
             container.Register<ILogFactory, LogFactory>();
 

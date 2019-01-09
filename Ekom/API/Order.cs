@@ -91,9 +91,9 @@ namespace Ekom.API
             _orderService.ChangeOrderStatus(order.UniqueId, newStatus);
         }
 
-        public void UpdateStatus(OrderStatus newStatus, Guid orderId)
+        public void UpdateStatus(OrderStatus newStatus, Guid orderId, string userName = null)
         {
-            _orderService.ChangeOrderStatus(orderId, newStatus);
+            _orderService.ChangeOrderStatus(orderId, newStatus, userName);
         }
 
         public IOrderInfo AddOrderLine(
