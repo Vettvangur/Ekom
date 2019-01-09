@@ -215,28 +215,6 @@ export default class Order extends React.Component<IProps> {
             </form>
           </OrderInformationWrapper>
           <OrderInformationSubWrapper>
-            <OrderInformationSubColumn>
-              <Heading
-                as="h3"
-                className="fs-24 lh-31 semi-bold"
-              >
-                {order.CreateDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.CreateDate).format('DD.MM.YYYY')}
-              </Heading>
-              <span className="fs-16 lh-21">
-                Order date
-              </span>
-            </OrderInformationSubColumn>
-            <OrderInformationSubColumn>
-              <Heading
-                as="h3"
-                className="fs-24 lh-31 semi-bold"
-              >
-                {moment(order.CreateDate).format('HH:mm')}
-              </Heading>
-              <span className="fs-16 lh-21">
-                Order time (Created)
-              </span>
-            </OrderInformationSubColumn>
             {order.PaidDate && (
               <>
                 <OrderInformationSubColumn>
@@ -258,11 +236,33 @@ export default class Order extends React.Component<IProps> {
                     {moment(order.PaidDate).format('HH:mm')}
                   </Heading>
                   <span className="fs-16 lh-21">
-                    Order time (Paid)
+                    Paid time
               </span>
                 </OrderInformationSubColumn>
               </>
             )}
+            <OrderInformationSubColumn>
+              <Heading
+                as="h3"
+                className="fs-24 lh-31 semi-bold"
+              >
+                {order.CreateDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.CreateDate).format('DD.MM.YYYY')}
+              </Heading>
+              <span className="fs-16 lh-21">
+                Created date
+              </span>
+            </OrderInformationSubColumn>
+            <OrderInformationSubColumn>
+              <Heading
+                as="h3"
+                className="fs-24 lh-31 semi-bold"
+              >
+                {moment(order.CreateDate).format('HH:mm')}
+              </Heading>
+              <span className="fs-16 lh-21">
+                Created time
+              </span>
+            </OrderInformationSubColumn>
             <OrderInformationSubColumn>
               <Heading
                 as="h3"
