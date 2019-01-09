@@ -201,9 +201,9 @@ export default class Order extends React.Component<IProps> {
                     {this.props.rootStore.statusList.map(statusItem => {
                       if (statusItem.label !== "Completed orders") {
                         return (
-                      <option key={statusItem.value} value={statusItem.value}>
-                        {statusItem.label}
-                      </option>
+                          <option key={statusItem.value} value={statusItem.value}>
+                            {statusItem.label}
+                          </option>
                         )
                       }
                     })}
@@ -220,16 +220,10 @@ export default class Order extends React.Component<IProps> {
                 as="h3"
                 className="fs-24 lh-31 semi-bold"
               >
-                {order.PaidDate && (
-                  order.PaidDate === moment().format('DD.mm.YYYY') ? 'Í dag' : moment(order.PaidDate).format('DD.mm.YYYY')
-                )}
-                {order.PaidDate === null && (
-                  moment(order.CreateDate).format('DD.mm.YYYY')
-                )}
+                {order.CreateDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.CreateDate).format('DD.MM.YYYY')}
               </Heading>
               <span className="fs-16 lh-21">
                 Order date
-                {order.PaidDate === null && ' (Created)'}
               </span>
             </OrderInformationSubColumn>
             <OrderInformationSubColumn>
@@ -237,13 +231,38 @@ export default class Order extends React.Component<IProps> {
                 as="h3"
                 className="fs-24 lh-31 semi-bold"
               >
-                {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
+                {moment(order.CreateDate).format('HH:mm')}
               </Heading>
               <span className="fs-16 lh-21">
-                Order time
-                {order.PaidDate === null && ' (Created)'}
+                Order time (Created)
               </span>
             </OrderInformationSubColumn>
+            {order.PaidDate && (
+              <>
+                <OrderInformationSubColumn>
+                  <Heading
+                    as="h3"
+                    className="fs-24 lh-31 semi-bold"
+                  >
+                    {order.PaidDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.PaidDate).format('DD.MM.YYYY')}
+                  </Heading>
+                  <span className="fs-16 lh-21">
+                    Paid date
+              </span>
+                </OrderInformationSubColumn>
+                <OrderInformationSubColumn>
+                  <Heading
+                    as="h3"
+                    className="fs-24 lh-31 semi-bold"
+                  >
+                    {moment(order.PaidDate).format('HH:mm')}
+                  </Heading>
+                  <span className="fs-16 lh-21">
+                    Order time (Paid)
+              </span>
+                </OrderInformationSubColumn>
+              </>
+            )}
             <OrderInformationSubColumn>
               <Heading
                 as="h3"
