@@ -247,6 +247,7 @@
     <Compile Include="App_Start\TinyIoCActivator.cs" />
     <Compile Include="App_Start\TinyIoCConfig.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
+    <Compile Include="Cache\CouponCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Cache\DiscountCache.cs" />
@@ -274,6 +275,8 @@
     <Compile Include="Factories\VariantGroupFactory.cs" />
     <Compile Include="HttpModule.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
+    <Compile Include="Interfaces\ICoupon.cs" />
+    <Compile Include="Interfaces\ICouponRepository.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Interfaces\IPerStoreFactory.cs" />
     <Compile Include="IoC\ContainerRegistration.cs" />
@@ -291,6 +294,7 @@
     <Compile Include="Models\Base\NodeEntity.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\CustomerInfo.cs" />
+    <Compile Include="Models\Data\CouponData.cs" />
     <Compile Include="Models\Data\CustomerData.cs" />
     <Compile Include="Models\Data\DiscountStockData.cs" />
     <Compile Include="Models\Data\OrderActivityLog.cs" />
@@ -317,6 +321,7 @@
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\CountriesRepository.cs" />
     <Compile Include="Interfaces\ICountriesRepository.cs" />
+    <Compile Include="Repository\CouponRepository.cs" />
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
     <Compile Include="Interfaces\IOrderRepository.cs" />

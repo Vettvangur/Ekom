@@ -50,6 +50,7 @@ namespace Ekom.App_Start
             container.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>().AsSingleton();
             container.Register<IPerStoreCache<ICategory>, CategoryCache>().AsSingleton();
             container.Register<IPerStoreCache<IProduct>, ProductCache>().AsSingleton();
+            container.Register<IBaseCache<CouponData>, CouponCache>().AsSingleton();
             container.Register<IBaseCache<IZone>, ZoneCache>().AsSingleton();
             container.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>().AsSingleton();
             container.Register<IPerStoreCache<IShippingProvider>, ShippingProviderCache>().AsSingleton();
@@ -63,6 +64,7 @@ namespace Ekom.App_Start
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
             container.Register<IOrderRepository, OrderRepository>();
+            container.Register<ICouponRepository, CouponRepository>();
 
             container.Register<ILogFactory, LogFactory>();
 

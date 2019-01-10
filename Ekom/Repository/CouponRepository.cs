@@ -1,15 +1,17 @@
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Umbraco.Core;
 
 namespace Ekom.Repository
 {
-    class OrderRepository : IOrderRepository
+    public class CouponRepository : ICouponRepository
     {
         ILog _log;
         Configuration _config;
@@ -20,22 +22,16 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public OrderRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public CouponRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
         {
             _config = config;
             _appCtx = appCtx;
-            _log = logFac.GetLogger<OrderRepository>();
+            _log = logFac.GetLogger<CouponRepository>();
         }
 
-        public OrderData GetOrder(Guid uniqueId)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.FirstOrDefault<OrderData>("WHERE UniqueId = @0", uniqueId);
-            }
-        }
 
-        public void InsertOrder(OrderData orderData)
+
+        public void InsertCoupon(CouponData orderData)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
@@ -43,7 +39,7 @@ namespace Ekom.Repository
             }
         }
 
-        public void UpdateOrder(OrderData orderData)
+        public void UpdateCoupon(CouponData orderData)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
@@ -51,11 +47,18 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderData> GetCompletedOrdersByCustomerId(int customerId)
+        public IEnumerable<CouponData> GetCoupons()
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                return db.Query<OrderData>("WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)", customerId, OrderStatus.ReadyForDispatch, OrderStatus.OfflinePayment, OrderStatus.Dispatched);
+                return db.Query<CouponData>("");
+            }
+        }
+        public void MarkUsed(Guid CouponKey)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                db.Update("update DBO.EkomCoupon c set c.NumberAvailable = c.NumberAvailable -1 where c.CouponKey = @0", CouponKey);
             }
         }
     }
