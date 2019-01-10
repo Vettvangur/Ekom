@@ -1,15 +1,19 @@
 import * as React from 'react';
 
-import styled from 'styled-components';
+import styled, { StyledFunction } from 'styled-components';
 
 import * as variables from 'styles/variablesJS';
 import Icon from 'components/Icon';
+
+
+const styledSelect: StyledFunction<any | React.HTMLProps<HTMLSelectElement>> =
+  styled.select;
 
 const SelectWrapper = styled.div`
    
 `;
 
-export const Select = styled<any>("select")`
+export const Select = styledSelect`
   background-color: ${(props: any) => props.backgroundColor ? props.backgroundColor : variables.defaultSelect};
   color: ${(props: any) => props.color ? props.color : 'rgba(44, 56, 44, 0.9)'};
   position: relative;

@@ -31,6 +31,7 @@ namespace Ekom.Services
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         DiscountCache _discountCache;
 
+        IActivityLogRepository _activityLogRepository;
         IOrderRepository _orderRepository;
         IStoreService _storeSvc;
         ContentRequest _ekmRequest;
@@ -43,6 +44,7 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
@@ -52,6 +54,7 @@ namespace Ekom.Services
 
             _appCtx = appCtx;
             _orderRepository = orderRepo;
+            _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
         }
@@ -61,12 +64,13 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, logFac, storeService, appCtx, discountCache)
+            : this(orderRepo, activityLogRepository, logFac, storeService, appCtx, discountCache)
         {
             _httpCtx = httpCtx;
             _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
@@ -198,7 +202,7 @@ namespace Ekom.Services
         }
 
 
-        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)
+        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status, string userName = null)
         {
             // Add event handler
 
@@ -229,9 +233,7 @@ namespace Ekom.Services
                     ms.Save(member);
                 } else
                 {
-                    //DeleteOrderCookie(key);
                     ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(uniqueId.ToString());
-                    //_httpCtx.Session.Remove(key);
                 }
 
             }
@@ -241,6 +243,9 @@ namespace Ekom.Services
             ApplicationContext.Current.ApplicationCache.RuntimeCache
                         .GetCacheItem<OrderInfo>(uniqueId.ToString(),
                             () => new OrderInfo(order), TimeSpan.FromDays(1));
+
+
+            _activityLogRepository.Insert(uniqueId, "Order status changed. From: " + oldStatus.ToString() + " To: " + status.ToString(), string.IsNullOrEmpty(userName) ? "Customer" : userName);
 
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }

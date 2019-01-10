@@ -1,19 +1,28 @@
 import * as React from 'react';
 import { observer } from 'mobx-react';
 import classNames from 'classnames';
-import styled from 'styled-components';
+import styled, { StyledFunction } from 'styled-components';
 import * as variables from 'styles/variablesJS';
 import { Checkbox } from 'components/Input';
 import Icon from 'components/Icon';
 
 
-const StyledDropdown = styled<any>("div")`
+const styledDropdown: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
+const styledDropdownMenu: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
+const styledDropdownControl: StyledFunction<any | React.HTMLProps<HTMLButtonElement>> =
+  styled.button;
+  
+const styledDropdownOption: StyledFunction<any | React.HTMLProps<HTMLButtonElement>> =
+  styled.button;
+const StyledDropdown = styledDropdown`
   position: relative;
   background-color: ${(props: any) => props.isOpen ? variables.gray : variables.ekomSecondaryColor};
   min-width: ${(props: any) => props.minWidth && `${props.minWidth}px`};
 `;
 
-const StyledDropdownMenu = styled<any>("div")`
+const StyledDropdownMenu = styledDropdownMenu`
   position: absolute;
   top:100%;
   min-width:100%;
@@ -27,7 +36,7 @@ const StyledDropdownMenu = styled<any>("div")`
   }
 `;
 
-const DropdownControl = styled<any>("button")`
+const DropdownControl = styledDropdownControl`
   border:0;
   background-color: transparent;
   width:100%;
@@ -43,7 +52,7 @@ const DropdownControl = styled<any>("button")`
 `;
 
 
-const DropdownOption = styled<any>("button")`
+const DropdownOption = styledDropdownOption`
   border:0;
   background-color: ${(props: any) => props.isActive ? variables.primaryColor : variables.transparent};
   color: ${(props: any) => props.isActive ? variables.white : variables.black};

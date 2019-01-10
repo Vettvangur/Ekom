@@ -1,4 +1,4 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import * as moment from 'moment';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
@@ -21,6 +21,7 @@ import Divider from './components/Divider';
 import { Checkbox } from 'components/Input';
 
 import Button from 'components/Button';
+import SearchStore from 'stores/searchStore';
 
 const OrderWrapper = styled.div`
   position: relative;
@@ -113,11 +114,12 @@ const PaidIndicatorWrapper = styled.div`
 interface IProps {
   ordersStore?: OrdersStore;
   rootStore?: RootStore;
+  searchStore?: SearchStore;
   match: any;
   routing: RouterStore;
 }
 
-@inject('routing', 'ordersStore', 'rootStore')
+@inject('routing', 'ordersStore', 'rootStore', 'searchStore')
 @withRouter
 @observer
 export default class Order extends React.Component<IProps> {
@@ -136,6 +138,9 @@ export default class Order extends React.Component<IProps> {
     const { order, updateOrderStatus } = this.props.ordersStore;
     const orderId = order.UniqueId;
     const orderStatus = e.currentTarget['orderStatus'].value;
+    const mobxOrder = this.props.searchStore.orders.Orders.filter(x => x.UniqueId === order.UniqueId)[0]
+    mobxOrder.OrderStatusCol = orderStatus;
+    mobxOrder.OrderStatus = orderStatus;
     const ShouldSendNotification = e.currentTarget['sendNotification'].checked;
     updateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }
@@ -193,11 +198,15 @@ export default class Order extends React.Component<IProps> {
               <StatusUpdate>
                 <StatusSelectWrapper className="select__wrapper">
                   <select name="orderStatus" id="orderStatus" defaultValue={order.OrderStatus.toString()}>
-                    {this.props.rootStore.statusList.map(statusItem => (
-                      <option key={statusItem.value} value={statusItem.value}>
-                        {statusItem.label}
-                      </option>
-                    ))}
+                    {this.props.rootStore.statusList.map(statusItem => {
+                      if (statusItem.label !== "Completed orders") {
+                        return (
+                          <option key={statusItem.value} value={statusItem.value}>
+                            {statusItem.label}
+                          </option>
+                        )
+                      }
+                    })}
                   </select>
                 </StatusSelectWrapper>
                 <Button className="fs-16 semi-bold" paddingTop={0} paddingBottom={0} primary>Save</Button>
@@ -206,21 +215,41 @@ export default class Order extends React.Component<IProps> {
             </form>
           </OrderInformationWrapper>
           <OrderInformationSubWrapper>
+            {order.PaidDate && (
+              <>
+                <OrderInformationSubColumn>
+                  <Heading
+                    as="h3"
+                    className="fs-24 lh-31 semi-bold"
+                  >
+                    {order.PaidDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.PaidDate).format('DD.MM.YYYY')}
+                  </Heading>
+                  <span className="fs-16 lh-21">
+                    Paid date
+              </span>
+                </OrderInformationSubColumn>
+                <OrderInformationSubColumn>
+                  <Heading
+                    as="h3"
+                    className="fs-24 lh-31 semi-bold"
+                  >
+                    {moment(order.PaidDate).format('HH:mm')}
+                  </Heading>
+                  <span className="fs-16 lh-21">
+                    Paid time
+              </span>
+                </OrderInformationSubColumn>
+              </>
+            )}
             <OrderInformationSubColumn>
               <Heading
                 as="h3"
                 className="fs-24 lh-31 semi-bold"
               >
-                {order.PaidDate && (
-                  order.PaidDate === moment().format('DD.mm.YYYY') ? 'Í dag' : moment(order.PaidDate).format('DD.mm.YYYY')
-                )}
-                {order.PaidDate === null && (
-                  moment(order.CreateDate).format('DD.mm.YYYY')
-                )}
+                {order.CreateDate === moment().format('DD.MM.YYYY') ? 'Today' : moment(order.CreateDate).format('DD.MM.YYYY')}
               </Heading>
               <span className="fs-16 lh-21">
-                Order date
-                {order.PaidDate === null && ' (Created)'}
+                Created date
               </span>
             </OrderInformationSubColumn>
             <OrderInformationSubColumn>
@@ -228,11 +257,10 @@ export default class Order extends React.Component<IProps> {
                 as="h3"
                 className="fs-24 lh-31 semi-bold"
               >
-                {order.PaidDate ? moment(order.PaidDate).format('HH:mm') : moment(order.CreateDate).format('HH:mm')}
+                {moment(order.CreateDate).format('HH:mm')}
               </Heading>
               <span className="fs-16 lh-21">
-                Order time
-                {order.PaidDate === null && ' (Created)'}
+                Created time
               </span>
             </OrderInformationSubColumn>
             <OrderInformationSubColumn>
@@ -244,7 +272,6 @@ export default class Order extends React.Component<IProps> {
               </Heading>
               <span className="fs-16 lh-21">
                 Store
-                {order.PaidDate === null && ' (Created)'}
               </span>
 
             </OrderInformationSubColumn>

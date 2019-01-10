@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
@@ -15,6 +15,7 @@ namespace Ekom.Tests.MockClasses
         public OrderService orderSvc;
         public DiscountCache discountCache;
         public Mock<IOrderRepository> orderRepo;
+        public Mock<IActivityLogRepository> activityRepo;
         public HttpContextMocks httpCtxMocks;
 
         public OrderServiceMocks()
@@ -24,10 +25,12 @@ namespace Ekom.Tests.MockClasses
             var logFac = Helpers.MockLogFac();
             discountCache = Helpers.MockDiscountCache();
             orderRepo = new Mock<IOrderRepository> { DefaultValue = DefaultValue.Mock };
+            activityRepo = new Mock<IActivityLogRepository> { DefaultValue = DefaultValue.Mock };
 
             httpCtxMocks = new HttpContextMocks();
             orderSvc = new OrderService(
                 orderRepo.Object,
+                activityRepo.Object,
                 Helpers.MockLogFac(),
                 Mock.Of<IStoreService>(),
                 Helpers.GetSetAppCtx(),

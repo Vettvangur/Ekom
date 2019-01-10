@@ -1,5 +1,5 @@
 ﻿import * as React from 'react';
-import styled from 'styled-components';
+import styled, { StyledFunction } from 'styled-components';
 import { inject, observer } from 'mobx-react';
 import { RouterStore } from 'mobx-react-router';
 import {
@@ -14,7 +14,12 @@ import { routes } from '../../../App';
 
 import * as variables from 'styles/variablesJS';
 
-const StyledMenuWrapper = styled<any>("div")`
+const styledMenuWrapper: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
+  
+const styledMenuItem: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
+const StyledMenuWrapper = styledMenuWrapper`
   width: 12.5rem;
   height: 100vh;
   padding-left: 30px;
@@ -42,7 +47,7 @@ const MenuLogoLink = styled.a``;
 
 const MenuLinks = styled.ul``;
 
-const MenuItem = styled<any>("div")`
+const MenuItem = styledMenuItem`
   color: ${variables.black};
   opacity: ${(props: any) => props.active ? 1 : .5};
   font-weight: 600;

@@ -18,6 +18,8 @@ namespace Ekom.Repository
         readonly ILog _log;
         readonly Configuration _config;
         readonly ApplicationContext _appCtx;
+        readonly IActivityLogRepository _activityLogRepository;
+
         //readonly ActivityLogRepository _activityLogRepository;
         /// <summary>
         /// ctor
@@ -25,12 +27,12 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac )
+        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac, IActivityLogRepository activityLogRepository)
         {
             _config = config;
             _appCtx = appCtx;
             _log = logFac.GetLogger<OrderRepository>();
-            //_activityLogRepository = Configuration.container.GetInstance<ActivityLogRepository>();
+            _activityLogRepository = activityLogRepository;
         }
 
         public IOrderInfo GetOrder(Guid uniqueId)
@@ -50,17 +52,17 @@ namespace Ekom.Repository
         }
         public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
         {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderActivityLog>("ORDER BY CreateDate DESC");
-            }
+            return _activityLogRepository.GetLatestActivityLogsOrders();
         }
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(Guid userId)
+
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(string UserName)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                return db.Query<OrderActivityLog>("WHERE UserId = @0 ORDER BY CreateDate DESC", userId);
-            }
+            return _activityLogRepository.GetLatestActivityLogsOrdersByUser(UserName);
+        }
+
+        public IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId)
+        {
+            return _activityLogRepository.GetLogs(uniqueId);
         }
 
         public OrderListData GetOrders()
@@ -103,7 +105,7 @@ namespace Ekom.Repository
             var endDate = end.ToString("yyyy-MM-dd 23:59:59");
             var whereQuery = "WHERE (CreateDate >= @0 AND CreateDate <= @1)";
             OrderStatus result;
-            
+
             if (Enum.TryParse(orderStatus, out result) && result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched)
             {
                 whereQuery = "WHERE (PaidDate >= @0 AND PaidDate <= @1) ";
@@ -116,7 +118,8 @@ namespace Ekom.Repository
             if (orderStatus.Length > 0)
             {
                 whereQuery += "AND (OrderStatusCol = @3)";
-            } else
+            }
+            else
             {
                 whereQuery += "AND (OrderStatusCol = @8 OR OrderStatusCol = @9 OR OrderStatusCol = @10)";
             }
@@ -173,7 +176,7 @@ namespace Ekom.Repository
                     OrderStatus.Dispatched,
                     startDate,
                     endDate);
-                    
+
                 return new OrderListData(offlinePayments.Concat(readyOrders).OrderByDescending(x => x.ReferenceId));
             }
         }
@@ -234,7 +237,6 @@ namespace Ekom.Repository
         public void UpdateStatus(Guid orderId, OrderStatus orderStatus)
         {
             API.Order.Instance.UpdateStatus(orderStatus, orderId);
-            //_activityLogRepository.CreateActivityLog(orderId, $"updated the order status to {orderStatus.ToString()}");
         }
     }
 }

@@ -15,6 +15,9 @@ namespace Ekom.Interfaces
         //IEnumerable<OrderActivityLog> GetOrderActivityLog(Guid orderId);
         //IEnumerable<OrderActivityLog> GetLatestActivityLogs();
         //IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(Guid userId);
+        IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId);
+        IEnumerable<OrderActivityLog> GetLatestActivityLogs();
+        IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(string userName);
         OrderListData GetOrders();
         void InsertOrder(OrderData orderData);
         void UpdateOrder(OrderData orderData);

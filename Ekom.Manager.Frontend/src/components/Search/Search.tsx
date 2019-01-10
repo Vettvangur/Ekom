@@ -1,6 +1,6 @@
 import * as React from 'react';
 import classNames from 'classnames';
-import styled from 'styled-components';
+import styled, { StyledFunction } from 'styled-components';
 
 import { observer, inject } from 'mobx-react';
 
@@ -14,6 +14,10 @@ import Dropdown from './Dropdown';
 
 import * as variables from 'styles/variablesJS';
 import Icon from 'components/Icon';
+
+
+const styledButtonFilterWrapper: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
+  styled.div;
 
 const StyledSearch = styled.div`
   display:flex;
@@ -50,7 +54,7 @@ const SearchInput = styled.input`
   color: ${variables.black};
 `;
 
-const StyledButtonFilterWrapper = styled<any>("div")`
+const StyledButtonFilterWrapper = styledButtonFilterWrapper`
   position: relative;
   background-color: ${(props: any) => props.active ? variables.gray : variables.ekomSecondaryColor};
   @media screen and (max-width: 1000px) {
