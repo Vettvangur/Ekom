@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import Divider from './Divider';
 import { IActivityLog } from 'models/Ekom/activityLog';
 import * as variables from 'styles/variablesJS';
+import Button from 'components/Button';
 
 
 const ActivityLogsWrapper = styled.div`
@@ -35,15 +36,19 @@ const ActivityLogDivider = styled(Divider)`
 `;
 interface IActivityLogProps {
   activityLogs: IActivityLog[];
+  showMore?: boolean;
+  openActivityLogWindow?: any;
 }
 
 class ActivityLog extends React.Component<IActivityLogProps> {
   constructor(props: IActivityLogProps) {
     super(props);
   }
+
   public render() {
     const {
-      activityLogs
+      activityLogs,
+      showMore
     } = this.props;
     return (
       <ActivityLogsWrapper>
@@ -51,13 +56,16 @@ class ActivityLog extends React.Component<IActivityLogProps> {
         {activityLogs && activityLogs.length > 0 && (
           <UnorderedList>
             {activityLogs.map((log, index) =>
-              <ActivityLogItemWrapper>
+              <ActivityLogItemWrapper key={index}>
                 <ActivityLogLabel className="fs-14 lh-20"><ActivityLogLabelUser>{log.UserName}: </ActivityLogLabelUser>{log.Log}</ActivityLogLabel>
                 <ActivityLogDate className="fs-12 lh-17">{moment(log.Date).format("hh:mm | DD.MM.YYYY")}</ActivityLogDate>
                 <ActivityLogDivider />
               </ActivityLogItemWrapper>
             )}
           </UnorderedList>
+        )}
+        {showMore && (
+          <Button type="button" onClick={this.props.openActivityLogWindow}>Show More</Button>
         )}
       </ActivityLogsWrapper>
     );

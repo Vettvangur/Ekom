@@ -144,6 +144,12 @@ export default class Order extends React.Component<IProps> {
     const ShouldSendNotification = e.currentTarget['sendNotification'].checked;
     updateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }
+  public openActivityLogWindow = () => {
+    this.props.rootStore.activityLogWindowType = "CurrentOrder";
+    this.props.rootStore.activityLogWindowData = this.props.ordersStore.order.ActivityLog;
+    this.props.rootStore.showActivityLogWindow = true;
+
+  }
 
   render() {
     const { order, state, orderState } = this.props.ordersStore;
@@ -324,7 +330,7 @@ export default class Order extends React.Component<IProps> {
                 }
               </div> */}
             </OrderPaymentColumns>
-            <ActivityLog activityLogs={order.ActivityLog} />
+            <ActivityLog activityLogs={order.ActivityLog.slice(0, 5)} showMore={order.ActivityLog.length > 5} openActivityLogWindow={this.openActivityLogWindow}/>
           </OrderPaymentWrapper>
         </Container>
         <Divider />

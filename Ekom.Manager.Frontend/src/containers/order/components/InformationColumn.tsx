@@ -17,17 +17,17 @@ interface IInformationColumnProps {
   list: string[];
 }
 
-const InformationColumn: React.SFC<IInformationColumnProps> = ({ heading, list }) => 
+const InformationColumn: React.SFC<IInformationColumnProps> = ({ heading, list }) =>
   <InformationColumnWrapper>
     {list && list.length > 0 && (
       <>
-    <h3 className="lh-31">{heading}</h3>
-    <UnorderedList className="fs-16 lh-23">
-      {list.map(value => 
-        <ListItem>{value}</ListItem>
-      )}
-    </UnorderedList>
-    </>
+        <h3 className="lh-31">{heading}</h3>
+        <UnorderedList className="fs-16 lh-23">
+          {list.map((value, index) =>
+            <ListItem key={index} >{value}</ListItem>
+          )}
+        </UnorderedList>
+      </>
     )}
   </InformationColumnWrapper>
 

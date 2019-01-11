@@ -20,6 +20,10 @@ class rootStore {
     }
   ];
   
+  @observable activityLogWindowType: string;
+  @observable activityLogWindowData?;
+  @observable showActivityLogWindow: boolean;
+  
   constructor() {
     this.getStores();
     this.getStatusList();
