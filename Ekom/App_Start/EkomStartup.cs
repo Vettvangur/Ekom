@@ -87,6 +87,13 @@ namespace Ekom
 
             _config.CacheList.Value.Add(stockCache);
 
+            var couponCache = _config.PerStoreStock
+                ? container.GetInstance<IPerStoreCache<CouponData>>()
+                : container.GetInstance<IBaseCache<CouponData>>()
+                as ICache;
+
+            _config.CacheList.Value.Add(couponCache);
+
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
             {
@@ -154,6 +161,13 @@ namespace Ekom
                 using (var db = dbCtx.Database)
                 {
                     db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
+            }
+            if (!dbHelper.TableExist("EkomCoupon"))
+            {
+                using (var db = dbCtx.Database)
+                {
+                    dbHelper.CreateTable<CouponData>(false);
                 }
             }
             if (!dbHelper.TableExist(Configuration.DiscountStockTableName))
