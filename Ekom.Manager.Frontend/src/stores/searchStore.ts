@@ -139,4 +139,11 @@ export default class SearchStore {
   setSearchString = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.searchString = e.target.value;
   }
+
+  @action
+  updateMobxStatus = (uniqueId, orderStatus) => {
+    const mobxOrder = this.orders.Orders.filter(c => c.UniqueId === uniqueId)[0]
+    mobxOrder.OrderStatusCol = orderStatus;
+    mobxOrder.OrderStatus = orderStatus;
+  }
 }

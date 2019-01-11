@@ -145,14 +145,12 @@ class Table extends React.Component<ITableProps, State> {
     this.setState({ selectAll, selection });
   };
 
-  updateStatus(e, UniqueId) {
+  updateStatus = (e, UniqueId, status?) => {
     const {
       ordersStore,
     } = this.props;
-    const orderStatus = e.target.value;
-    const mobxOrder = this.props.searchStore.orders.Orders.filter(x => x.UniqueId === UniqueId)[0]
-    mobxOrder.OrderStatusCol = orderStatus;
-    mobxOrder.OrderStatus = orderStatus;
+    const orderStatus = status ? status : e.target.value;
+    this.props.searchStore.updateMobxStatus(UniqueId,orderStatus)
     ordersStore.updateOrderStatus(UniqueId, orderStatus, true)
   }
 
@@ -734,7 +732,7 @@ class Table extends React.Component<ITableProps, State> {
             <>
               <TableWrapper>
                 {this.state.selection.length > 0 && (
-                  <SelectedOrders count={this.state.selection.length} orders={this.state.selection} />
+                  <SelectedOrders count={this.state.selection.length} orders={this.state.selection} updateStatus={this.updateStatus} />
                 )}
                 {makeTable()}
               </TableWrapper>

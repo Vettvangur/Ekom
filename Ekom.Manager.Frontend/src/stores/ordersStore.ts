@@ -17,7 +17,7 @@ export default class OrdersStore {
   @observable latestActivityLog: IActivityLog[] = [];
 
 
-  getOrder = flow(function * (orderId: string) {
+  getOrder = flow(function* (orderId: string) {
     this.state = "pending";
     try {
       this.orderState = "loading";
@@ -34,13 +34,13 @@ export default class OrdersStore {
       this.orderState = "error";
     }
   })
-  
+
 
   getActivityLog(orderId) {
     this.fetchActivityLog(orderId).then(activityLog => this.order.ActivityLog = activityLog);
   }
 
-  @action 
+  @action
   shouldFetchOrder(orderId: string) {
     if (this.order && this.order.UniqueId === orderId) {
       return;
@@ -53,30 +53,30 @@ export default class OrdersStore {
     return fetch(`/umbraco/backoffice/ekom/managerapi/getorderinfo?uniqueId=${orderId}`, {
       credentials: 'include',
     })
-    .then(res => res.ok 
-      ? Promise.resolve(res.json()) 
-      : Promise.reject(res)
-    )
-    .then(result => result)
-    .catch(err => {
-      console.log(err);
-      return err.ok;
-    });
+      .then(res => res.ok
+        ? Promise.resolve(res.json())
+        : Promise.reject(res)
+      )
+      .then(result => result)
+      .catch(err => {
+        console.log(err);
+        return err.ok;
+      });
   }
   @action
   fetchActivityLog(orderId: string) {
     return fetch(`/umbraco/backoffice/ekom/managerapi/getActivityLog?orderid=${orderId}`, {
       credentials: 'include',
     })
-    .then(res => res.ok 
-      ? Promise.resolve(res.json()) 
-      : Promise.reject(res)
-    )
-    .then(json => json)
-    .catch((err) => {
-      console.log(err);
-      this.order.ActivityLog = [];
-    })
+      .then(res => res.ok
+        ? Promise.resolve(res.json())
+        : Promise.reject(res)
+      )
+      .then(json => json)
+      .catch((err) => {
+        console.log(err);
+        this.order.ActivityLog = [];
+      })
   }
 
   @action('Gets latest activity log that was worked in')
@@ -84,39 +84,41 @@ export default class OrdersStore {
     return fetch(`/umbraco/backoffice/ekom/managerapi/getLatestActivityLogs`, {
       credentials: 'include',
     })
-    .then(res => res.ok 
-      ? Promise.resolve(res.json()) 
-      : Promise.reject(res)
-    )
-    .then(json => this.latestActivityLog = json)
-    .catch((err) => {
-      this.latestActivityLog = []
-      console.log(err);
-    })
+      .then(res => res.ok
+        ? Promise.resolve(res.json())
+        : Promise.reject(res)
+      )
+      .then(json => this.latestActivityLog = json)
+      .catch((err) => {
+        this.latestActivityLog = []
+        console.log(err);
+      })
   }
   @action('Gets latest activity log that was worked on by user')
   fetchLatestActivityLogByUser = (userName: string) => {
     return fetch(`/umbraco/backoffice/ekom/managerapi/GetLatestActivityLogsByUser?username=${userName}`, {
       credentials: 'include',
     })
-    .then(res => res.ok 
-      ? Promise.resolve(res.json()) 
-      : Promise.reject(res)
-    )
-    .then(json => {
-      console.log("j", json)
-      this.latestUserActivityLog = json
-    })
-    .catch((err) => {
-      this.latestUserActivityLog = []
-      console.log(err);
-    })
+      .then(res => res.ok
+        ? Promise.resolve(res.json())
+        : Promise.reject(res)
+      )
+      .then(json => {
+        console.log("j", json)
+        this.latestUserActivityLog = json
+      })
+      .catch((err) => {
+        this.latestUserActivityLog = []
+        console.log(err);
+      })
   }
 
   @action
   updateOrderStatus = (orderId: string, orderStatus, ShouldSendNotification?: boolean) => {
-    this.order.OrderStatus = orderStatus;
-    this.doUpdateOrderStatus(orderId, orderStatus,ShouldSendNotification)
+    if (this.order && this.order.UniqueId === orderId) {
+      this.order.OrderStatus = orderStatus;
+    }
+    this.doUpdateOrderStatus(orderId, orderStatus, ShouldSendNotification)
   }
 
   @action
@@ -128,7 +130,9 @@ export default class OrdersStore {
       runInAction(() => {
         setTimeout(() => {
           this.state = "done";
-          this.getActivityLog(orderId)
+          if (this.order && this.order.UniqueId === orderId) {
+            this.getActivityLog(orderId)
+          }
         }, 1500);
       })
     } catch (error) {
