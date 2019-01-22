@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
-import Customer from 'components/Customer';
+import CustomerCard from 'components/Cards/CustomerCard';
 import Icon from 'components/Icon';
 import Loading from 'components/shared/Loading';
 import Search from 'components/Search';
@@ -158,7 +158,7 @@ export default class Customers extends React.Component<IProps> {
         </SearchWrapper>
         <Container>
           <CustomersTable>
-            {customersMockUp.map(customer => <Customer {...customer} />)}
+            {customersMockUp.map(customer => <CustomerCard {...customer} />)}
           </CustomersTable>
         </Container>
       </CustomersWrapper>
