@@ -13,6 +13,7 @@ import RootStore from 'stores/rootStore';
 import OrdersStore from 'stores/ordersStore';
 import TableStore from 'stores/tableStore';
 import SearchStore from 'stores/searchStore';
+import NewOrderStore from 'stores/newOrdersStore';
 
 const browserHistory = createBrowserHistory();
 const routingStore = new RouterStore();
@@ -21,6 +22,7 @@ const rootStore = new RootStore();
 const ordersStore = new OrdersStore();
 const searchStore = new SearchStore();
 const tableStore = new TableStore();
+const newOrderStore = new NewOrderStore();
 
 const stores = {
   routing: routingStore,
@@ -28,6 +30,7 @@ const stores = {
   ordersStore: ordersStore,
   searchStore: searchStore,
   tableStore: tableStore,
+  newOrderStore : newOrderStore
 }
 
 const history = syncHistoryWithStore(browserHistory, routingStore);

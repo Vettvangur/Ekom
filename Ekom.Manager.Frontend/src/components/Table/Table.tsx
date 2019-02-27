@@ -264,7 +264,7 @@ class Table extends React.Component<ITableProps, State> {
                 border: 0,
               }}
               onChange={event => this.updateStatus(event, row.value.UniqueId)}
-              defaultValue={row.value.OrderStatus}
+              value={row.value.OrderStatus}
             >
               {this.props.rootStore.statusList.map((status) => {
                 if (status.label !== "Completed orders") {
