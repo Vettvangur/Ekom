@@ -41,9 +41,6 @@
             "utilities/*": [
                 "./src/utilities/*"
             ],
-            "gUtilities/*": [
-                "./src/gUtilities/*"
-            ],
             "reusableComponents/*": [
                 "./src/reusableComponents/*"
             ],

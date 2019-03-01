@@ -187,7 +187,7 @@ class Menu extends React.Component<IMenuProps, State> {
             {routes.map((mainRoute, mainRouteIndex) => (
               <React.Fragment key={mainRouteIndex}>
                 {mainRoute.routes.map((route, routeIndex) => route.showInMenu && (
-                  <FirstLevelMenu>
+                  <FirstLevelMenu key={routeIndex}>
                     <MenuItem
                       key={routeIndex}
                       active={this.state.selectedTopLevel === routeIndex}

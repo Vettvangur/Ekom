@@ -13,7 +13,6 @@ module.exports = {
   routing: path.resolve(CURRENT_WORKING_DIR, 'src/routing'),
   stores: path.resolve(CURRENT_WORKING_DIR, 'src/stores'),
   utilities: path.resolve(CURRENT_WORKING_DIR, 'src/utilities'),
-  gUtilities: path.resolve(CURRENT_WORKING_DIR, 'src/gUtilities'),
   public: path.resolve(CURRENT_WORKING_DIR, 'build'),
   build: path.resolve(CURRENT_WORKING_DIR, '..', 'Ekom.Site', 'App_Plugins', 'EkomManager'),
   modules: path.resolve(CURRENT_WORKING_DIR, 'node_modules')

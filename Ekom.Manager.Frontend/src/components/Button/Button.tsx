@@ -20,7 +20,7 @@ const StyledAnchor = styled.a`
 
 const StyledButton = styled(StyledAnchor)`
   border: 0;
-  border-radius: ${(props: IButtonProps) => props.borderRadius && props.borderRadius};
+  border-radius: ${(props: IButtonProps) => props.borderRadius ? `${props.borderRadius}px` : 0};
   background-color: ${(props: IButtonProps) => {
     if (props.disabled) {
       return `rgba(${variables.secondaryColor}, .5)`

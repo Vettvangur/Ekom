@@ -2,7 +2,8 @@ import * as React from 'react';
 import styled from 'styled-components';
 import * as variables from 'styles/variablesJS';
 
-const CustomerWrapper = styled.div`
+
+const StyledCustomerCard = styled.div`
   position: relative;
   height:100%;
   min-height: 100px;
@@ -35,31 +36,32 @@ const CustomerWrapper = styled.div`
   } */
 `;
 
-const CustomerName = styled.h4`
+const StyledCustomerName = styled.h4`
   margin: 0;
 `;
-const CustomerEmail = styled.div`
+const StyledCustomerEmail = styled.div`
   opacity: .7;
   margin-bottom: 12px;
 `;
 
 const CustomerOrderCount = styled.span``;
 
-interface IProps {
+interface ICustomerCardProps {
   UniqueId: string;
   Username: string;
   Email: string;
   StoreAlias: string;
   OrdersCount: number;
+  UrlToPage?: string;
 }
 
-const Customer: React.SFC<IProps> = (customer) => {
+const Customer: React.SFC<ICustomerCardProps> = (customer) => {
   return (
-    <CustomerWrapper className="col-xs-1 col-sm-2 col-md-3 col-lg-4 col-xl-6">
-      <CustomerName className="fs-16 lh-21 semi-bold">{customer.Username}</CustomerName>
-      <CustomerEmail className="fs-12 lh-16">{customer.Email}</CustomerEmail>
+    <StyledCustomerCard className="col-xs-1 col-sm-2 col-md-3 col-lg-4 col-xl-6">
+      <StyledCustomerName className="fs-16 lh-21 semi-bold">{customer.Username}</StyledCustomerName>
+      <StyledCustomerEmail className="fs-12 lh-16">{customer.Email}</StyledCustomerEmail>
       <CustomerOrderCount className="fs-12 lh-16">{customer.OrdersCount} {customer.OrdersCount > 1 || customer.OrdersCount === 0 ? 'orders' : 'order'}</CustomerOrderCount>
-    </CustomerWrapper>
+    </StyledCustomerCard>
   );
 };
 

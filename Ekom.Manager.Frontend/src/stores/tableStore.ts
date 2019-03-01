@@ -11,7 +11,7 @@ export default class TableStore {
   @observable resized: Resize[];
   @observable filtered: Filter[];
 
-  selectedRows = observable.map<string, boolean>();
+  selectedRows = observable.map<any, boolean>();
 
   constructor() {
   }
