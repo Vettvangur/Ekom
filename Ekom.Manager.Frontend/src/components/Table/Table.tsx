@@ -28,6 +28,7 @@ const TableWrapper = styled.div`
 `;
 
 interface ITableProps {
+  data?: any;
   searchStore?: SearchStore;
   tableStore?: TableStore;
   ordersStore?: OrdersStore;
@@ -658,11 +659,10 @@ class Table extends React.Component<ITableProps, State> {
         }
       },
     ];
-    const orders = searchStore.orders.Orders;
     return (
       <ReactTable
         ref={(ref: any) => ref = this.reactTable}
-        data={orders}
+        data={this.props.data}
         defaultFilterMethod={this.defaultFilter}
         columns={columns}
         defaultPageSize={10}

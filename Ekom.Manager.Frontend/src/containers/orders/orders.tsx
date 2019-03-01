@@ -99,6 +99,7 @@ export default class Orders extends React.Component<IProps> {
   }
   public render() {
     const { searchStore } = this.props;
+    const orders = [...searchStore.orders.Orders];
     return (
       <OrdersWrapper>
         {this.props.ordersStore.state === "loading" && (
@@ -127,7 +128,7 @@ export default class Orders extends React.Component<IProps> {
         {searchStore.state === "pending" && this.renderLoadingState()}
         {searchStore.state === "empty" && this.renderEmptyState()}
         {searchStore.state === "done" &&
-          <Table />
+          <Table data={orders} />
         }
       </OrdersWrapper>
     );
