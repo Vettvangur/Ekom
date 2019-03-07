@@ -28,6 +28,7 @@ const TableWrapper = styled.div`
 `;
 
 interface ITableProps {
+  data?: any;
   searchStore?: SearchStore;
   tableStore?: TableStore;
   ordersStore?: OrdersStore;
@@ -145,14 +146,12 @@ class Table extends React.Component<ITableProps, State> {
     this.setState({ selectAll, selection });
   };
 
-  updateStatus(e, UniqueId) {
+  updateStatus = (e, UniqueId, status?) => {
     const {
       ordersStore,
     } = this.props;
-    const orderStatus = e.target.value;
-    const mobxOrder = this.props.searchStore.orders.Orders.filter(x => x.UniqueId === UniqueId)[0]
-    mobxOrder.OrderStatusCol = orderStatus;
-    mobxOrder.OrderStatus = orderStatus;
+    const orderStatus = status ? status : e.target.value;
+    this.props.searchStore.updateMobxStatus(UniqueId,orderStatus)
     ordersStore.updateOrderStatus(UniqueId, orderStatus, true)
   }
 
@@ -266,7 +265,7 @@ class Table extends React.Component<ITableProps, State> {
                 border: 0,
               }}
               onChange={event => this.updateStatus(event, row.value.UniqueId)}
-              defaultValue={row.value.OrderStatus}
+              value={row.value.OrderStatus}
             >
               {this.props.rootStore.statusList.map((status) => {
                 if (status.label !== "Completed orders") {
@@ -660,11 +659,10 @@ class Table extends React.Component<ITableProps, State> {
         }
       },
     ];
-    const orders = searchStore.orders.Orders;
     return (
       <ReactTable
         ref={(ref: any) => ref = this.reactTable}
-        data={orders}
+        data={this.props.data}
         defaultFilterMethod={this.defaultFilter}
         columns={columns}
         defaultPageSize={10}
@@ -734,7 +732,7 @@ class Table extends React.Component<ITableProps, State> {
             <>
               <TableWrapper>
                 {this.state.selection.length > 0 && (
-                  <SelectedOrders count={this.state.selection.length} orders={this.state.selection} />
+                  <SelectedOrders count={this.state.selection.length} orders={this.state.selection} updateStatus={this.updateStatus} />
                 )}
                 {makeTable()}
               </TableWrapper>

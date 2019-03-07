@@ -1,8 +1,8 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 import classNames from 'classnames/bind';
 
-import * as s from 'components/order/products/products.scss';
+import * as s from './style.scss';
 
 const cx = classNames.bind(s);
 

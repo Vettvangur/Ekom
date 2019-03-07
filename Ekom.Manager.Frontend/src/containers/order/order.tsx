@@ -8,8 +8,8 @@ import {
   withRouter,
 } from 'react-router-dom';
 // import OrderHeader from 'components/order/orderHeader';
-import Products from 'components/order/products';
-import SavingLoader from 'components/order/savingLoader';
+import Products from 'components/sections/Products';
+import SavingLoader from 'components/SavingLoader';
 
 import OrdersStore from 'stores/ordersStore';
 import RootStore from 'stores/rootStore';

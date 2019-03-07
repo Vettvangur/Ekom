@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { observer } from 'mobx-react';
 
 import styled, { StyledFunction } from 'styled-components';
 
@@ -10,6 +11,14 @@ const styledSelect: StyledFunction<any | React.HTMLProps<HTMLSelectElement>> =
   styled.select;
 
 const SelectWrapper = styled.div`
+  position: relative;
+  display:flex;
+  align-items:center;
+  svg {
+    position:absolute;
+    right: 7px;
+    pointer-events: none;
+  }
    
 `;
 
@@ -31,6 +40,14 @@ export const Select = styledSelect`
 `;
 const Option = styled.option``;
 
+
+// const Ellipsis = styled.div`
+//   border-radius: 8px;
+//   width: 8px;
+//   height: 8px;
+//   border-color: ${variables.primaryColor};
+// `;
+
 interface IOption {
   value: (number | string);
   label: string;
@@ -42,7 +59,7 @@ interface ISelectProps {
   backgroundColor?: string;
   color?: string;
   radius?: number;
-  defaultValue?: string;
+  defaultValue?: any;
   value?: string;
   className?: string;
   id?: string;
@@ -53,6 +70,7 @@ interface ISelectProps {
 
 
 
+@observer
 class SelectComponent extends React.Component<ISelectProps> {
   public render() {
     const {
@@ -61,19 +79,28 @@ class SelectComponent extends React.Component<ISelectProps> {
       backgroundColor,
       radius,
       options,
-      ...props 
+      defaultValue,
+      ...props
     } = this.props;
+    console.log(this.props.defaultValue)
     return (
-      <SelectWrapper className="fs-14 lh-18">
-        <Select {...props} backgroundColor={backgroundColor} borderRadius={radius}>
+      <SelectWrapper>
+        <Select className="fs-14 lh-18" {...props} backgroundColor={backgroundColor} borderRadius={radius} >
           <Option value="-1"></Option>
-          {options.map((option, index) => (
-            <Option key={index} value={option.value}>{option.label}</Option>
-          ))}
+          {options.map((option, index) => {
+            if (this.props.defaultValue && option.value === this.props.defaultValue) {
+              return (
+                <Option key={index} value={option.value} selected >{option.label}</Option>
+              )
+            }
+            return (
+              <Option key={index} value={option.value}>{option.label}</Option>
+            )
+          })}
         </Select>
-        { icon && icon.length > 0
+        {icon && icon.length > 0
           ? <Icon name={icon} iconSize={8} color={variables.primaryColor} />
-          : <Icon name="ellipse" iconSize={8} color={variables.primaryColor} />
+          : <Icon name="oli-lokbra" iconSize={8} color={variables.primaryColor} />
         }
       </SelectWrapper>
     )
