@@ -1,10 +1,11 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Abstractions;
 using Examine;
 using Examine.SearchCriteria;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -84,7 +85,7 @@ namespace Ekom.Cache
                 try
                 {
                     ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                    IBooleanOperation query = searchCriteria.NodeTypeAlias(NodeAlias);
+                    IBooleanOperation query = searchCriteria.NodeTypeAlias(NodeAlias); // Gaui
                     ISearchResults results = searcher.Search(query.Compile());
 
                     if (storeParam == null) // Startup initialization

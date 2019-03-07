@@ -1,4 +1,4 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
@@ -22,7 +22,7 @@ namespace Ekom.Models
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
-
+        public IProductDiscount ProductDiscount { get;}
         /// <summary>
         /// 
         /// </summary>
@@ -43,12 +43,13 @@ namespace Ekom.Models
         [JsonConstructor]
         public Price(
             OrderedDiscount discount,
+            ProductDiscount productDiscount,
             StoreInfo store,
             decimal originalValue,
             bool discountAlwaysBeforeVAT,
             int quantity
         )
-            : this(originalValue, store, discount, quantity, discountAlwaysBeforeVAT)
+            : this(originalValue, store, productDiscount, discount, quantity, discountAlwaysBeforeVAT)
         {
         }
 
@@ -58,12 +59,15 @@ namespace Ekom.Models
         public Price(
             string price,
             IStore store,
+            ProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
+            
         )
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture),
                  new StoreInfo(store),
+                 productDiscount,
                  discount,
                  quantity,
                  discountAlwaysBeforeVat)
@@ -76,11 +80,12 @@ namespace Ekom.Models
         public Price(
             decimal price,
             IStore store,
+            ProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
-            : this(price, new StoreInfo(store), discount, quantity, discountAlwaysBeforeVat)
+            : this(price, new StoreInfo(store), productDiscount, discount, quantity, discountAlwaysBeforeVat )
         {
         }
 
@@ -90,15 +95,19 @@ namespace Ekom.Models
         public Price(
             string price,
             StoreInfo storeInfo,
+            ProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
-            int quantity = 1,
+            int quantity = 1, 
             bool discountAlwaysBeforeVat = false
+            
         )
-            : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',','.'), NumberStyles.Any, CultureInfo.InvariantCulture),
-                 storeInfo,
-                 discount,
+            : this(
+                  decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture),
+                  storeInfo,
+                  productDiscount,
+                  discount,
                  quantity,
-                 discountAlwaysBeforeVat)
+                   discountAlwaysBeforeVat)
         {
         }
 
@@ -108,6 +117,7 @@ namespace Ekom.Models
         public Price(
             decimal price,
             StoreInfo storeInfo,
+            ProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -116,12 +126,13 @@ namespace Ekom.Models
             OriginalValue = price;
             Store = storeInfo;
             Discount = discount;
+            ProductDiscount = productDiscount;
             Quantity = quantity;
             DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
-            => new CalculatedPrice(price, Store.Currency);
+            => new CalculatedPrice(price, Store.Currency[0]);
 
         /// <summary>
         /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
@@ -161,31 +172,7 @@ namespace Ekom.Models
                     {
                         if (_afterDiscount == null)
                         {
-                            var price = OriginalValue;
-
-                            if (Discount != null)
-                            {
-                                switch (Discount.Amount.Type)
-                                {
-                                    case Discounts.DiscountType.Fixed:
-
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithoutVat(price, Store.Vat);
-                                        }
-                                        price -= Discount.Amount.Amount;
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithVat(price, Store.Vat);
-                                        }
-                                        break;
-
-                                    case Discounts.DiscountType.Percentage:
-
-                                        price -= price * Discount.Amount.Amount;
-                                        break;
-                                }
-                            }
+                            var price = CalculateDiscount();
 
                             _afterDiscount = CreateSimplePrice(price * Quantity);
                         }
@@ -215,32 +202,8 @@ namespace Ekom.Models
                     {
                         if (_withoutVat == null)
                         {
-                            var price = OriginalValue;
 
-                            if (Discount != null)
-                            {
-                                switch (Discount.Amount.Type)
-                                {
-                                    case Discounts.DiscountType.Fixed:
-
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithoutVat(price, Store.Vat);
-                                        }
-                                        price -= Discount.Amount.Amount;
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithVat(price, Store.Vat);
-                                        }
-                                        break;
-
-                                    case Discounts.DiscountType.Percentage:
-
-                                        price -= price * Discount.Amount.Amount;
-                                        break;
-                                }
-                            }
-
+                            var price = CalculateDiscount();
                             if (Store.VatIncludedInPrice)
                             {
                                 price = VatCalculator.WithoutVat(price, Store.Vat);
@@ -279,32 +242,7 @@ namespace Ekom.Models
                     {
                         if (_withVat == null)
                         {
-                            var price = OriginalValue;
-
-                            if (Discount != null)
-                            {
-                                switch (Discount.Amount.Type)
-                                {
-                                    case Discounts.DiscountType.Fixed:
-
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithoutVat(price, Store.Vat);
-                                        }
-                                        price -= Discount.Amount.Amount;
-                                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
-                                        {
-                                            price = VatCalculator.WithVat(price, Store.Vat);
-                                        }
-                                        break;
-
-                                    case Discounts.DiscountType.Percentage:
-
-                                        price -= price * Discount.Amount.Amount;
-                                        break;
-                                }
-                            }
-
+                            var price = CalculateDiscount();
                             if (!Store.VatIncludedInPrice)
                             {
                                 price = VatCalculator.WithVat(price, Store.Vat);
@@ -314,7 +252,6 @@ namespace Ekom.Models
                         }
                     }
                 }
-
                 return _withVat;
             }
         }
@@ -331,6 +268,67 @@ namespace Ekom.Models
         /// </summary>
         public ICalculatedPrice DiscountAmount
             => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
+        private decimal CalculateDiscount()
+        {
+            var price = OriginalValue;
+
+            if (Discount != null && ProductDiscount == null)
+            {
+                switch (Discount.Amount.Type)
+                {
+                    case Discounts.DiscountType.Fixed:
+
+                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                        {
+                            price = VatCalculator.WithoutVat(price, Store.Vat);
+                        }
+                        price -= Discount.Amount.Amount;
+                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                        {
+                            price = VatCalculator.WithVat(price, Store.Vat);
+                        }
+                        break;
+
+                    case Discounts.DiscountType.Percentage:
+
+                        price -= price * Discount.Amount.Amount;
+                        break;
+                }
+            }
+            else if (Discount == null && ProductDiscount != null)
+            {
+                switch (ProductDiscount.Type)
+                {
+                    case Discounts.DiscountType.Fixed:
+                        // OK trying to figure this out ...
+                        // after this function price is without VAT 
+                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                        {
+                            price = VatCalculator.WithoutVat(price, Store.Vat);
+                        }
+                        if (ProductDiscount.StartOfRange > price)
+                        {
+                            break;
+                        }
+                        if (ProductDiscount.EndOfRange != 0 && ProductDiscount.EndOfRange < price)
+                        {
+                            break;
+                        }
+                        price -= ProductDiscount.Discount;
+                        if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
+                        {
+                            price = VatCalculator.WithVat(price, Store.Vat);
+                        }
+                        break;
+
+                    case Discounts.DiscountType.Percentage:
+
+                        price -= price * ProductDiscount.Discount;
+                        break;
+                }
+            }
+            return price;
+        }
     }
 
     /// <summary>
@@ -351,17 +349,18 @@ namespace Ekom.Models
 
         public CalculatedPrice(
             decimal price,
-            string currencyCulture
+            CurrencyModel currencyCulture
 )
         {
             Value = price;
+            //Backwards compatability
+            // Commented out after changes but kept in as a reminder incase something breaks.
+            //if (currencyCulture == "ISK")
+            //{
+            //    currencyCulture = "is";
+            //}
 
-            if (currencyCulture == "ISK")
-            {
-                currencyCulture = "is";
-            }
-
-            CurrencyString = Value.ToString(Configuration.Current.CurrencyFormat, new CultureInfo(currencyCulture, false));
+            CurrencyString = Value.ToString(currencyCulture.CurrencyFormat, currencyCulture.Currency);
         }
 
         /// <summary>

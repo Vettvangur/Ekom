@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
 using Newtonsoft.Json;
@@ -59,7 +59,7 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Discount, Quantity);
+                return new Price(_price, Product.Price.Store, Product.ProductDiscount as ProductDiscount, Discount, Quantity);
             }
         }
         /// <summary>

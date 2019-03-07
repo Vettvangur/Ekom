@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.Abstractions;
 using Ekom.Utilities;
 using Examine;
@@ -34,8 +34,11 @@ namespace Ekom.Helpers
             foreach (var id in Ids)
             {
                 var examineItem = GetNodeFromExamine(int.Parse(id));
-
-                list.Add(examineItem);
+                if (examineItem != null)
+                {
+                    list.Add(examineItem);
+                }
+                
             }
 
             return list;

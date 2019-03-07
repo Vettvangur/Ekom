@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -548,7 +548,7 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
+                var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().Currency.Name).LCID);
                 orderData.Currency = ri.ISOCurrencySymbol;
             }
             catch (ArgumentException)

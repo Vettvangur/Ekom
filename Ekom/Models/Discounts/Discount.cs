@@ -18,7 +18,7 @@ namespace Ekom.Models.Discounts
     /// <summary>
     /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
+    public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountAmount Amount { get; protected set; }

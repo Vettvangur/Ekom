@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using Ekom.Models.Discounts;
 
 namespace Ekom.Tests.Objects
@@ -14,6 +14,8 @@ namespace Ekom.Tests.Objects
         /// <returns></returns>
         public static Store Get_IS_Store_Vat_NotIncluded() => new CustomStore(Store_IS_Vat_NotIncluded.json, 1059);
         public static Store Get_IS_Store_Vat_Included() => new CustomStore(Store_IS_Vat_Included.json, 1059);
+
+        public static Store Get_DK_Store_Vat_Included() => new CustomStore(Store_DK_Vat_Included.json, 1110);
 
         public static Product Get_Shirt2_Product()
             => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
@@ -34,5 +36,7 @@ namespace Ekom.Tests.Objects
 
         public static Category Get_Category_Women()
             => new Category(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
+        public static ProductDiscount GetProductDiscount()
+            => new ProductDiscount(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
     }
 }

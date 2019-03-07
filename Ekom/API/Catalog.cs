@@ -27,7 +27,7 @@ namespace Ekom.API
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IStoreService _storeSvc;
-
+        IPerStoreCache<IProductDiscount> _ProductDiscountCache; // must be before product cache
         IPerStoreCache<IProduct> _productCache;
         IPerStoreCache<ICategory> _categoryCache;
         IPerStoreCache<IVariant> _variantCache;
@@ -41,6 +41,7 @@ namespace Ekom.API
             ILogFactory logFac,
             IPerStoreCache<IProduct> productCache,
             IPerStoreCache<ICategory> categoryCache,
+            IPerStoreCache<IProductDiscount> productDiscountCache,
             IPerStoreCache<IVariant> variantCache,
             IPerStoreCache<IVariantGroup> variantGroupCache,
             IStoreService storeService
@@ -52,6 +53,7 @@ namespace Ekom.API
             _categoryCache = categoryCache;
             _variantCache = variantCache;
             _variantGroupCache = variantGroupCache;
+            _ProductDiscountCache = productDiscountCache;
             _storeSvc = storeService;
 
             _log = logFac.GetLogger<Catalog>();

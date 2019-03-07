@@ -119,7 +119,7 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
 
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
         }
 
@@ -138,6 +138,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
+                                line.Product.ProductDiscount as ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
@@ -147,7 +148,7 @@ namespace Ekom.Models
                     return line.Amount.AfterDiscount.Value;
                 });
 
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
         }
 
@@ -161,7 +162,7 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
 
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
         }
 
@@ -180,6 +181,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
+                                line.Product.ProductDiscount as ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
@@ -189,7 +191,7 @@ namespace Ekom.Models
                     return line.Amount.Value;
                 });
 
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
         }
 
@@ -197,7 +199,7 @@ namespace Ekom.Models
         /// Total monetary value of discount in order
         /// </summary>
         public ICalculatedPrice DiscountAmount
-            => new CalculatedPrice(OrderLineTotal.Value - SubTotal.Value, StoreInfo.Currency);
+            => new CalculatedPrice(OrderLineTotal.Value - SubTotal.Value, StoreInfo.Currency.FirstOrDefault());
 
         /// <summary>
         /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.
@@ -214,6 +216,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
+                                line.Product.ProductDiscount as ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
@@ -233,7 +236,7 @@ namespace Ekom.Models
                     amount += PaymentProvider.Price.Value;
                 }
 
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
         }
 

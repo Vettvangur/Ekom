@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -52,6 +52,7 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
+        public IProductDiscount ProductDiscount { get; }
 
         public string Title
         {
@@ -138,7 +139,7 @@ namespace Ekom.Models.OrderedObjects
                 product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
             Price = product.Price.Clone() as IPrice;
-
+            ProductDiscount = product.ProductDiscount == null ? null : product.ProductDiscount.Clone() as IProductDiscount;
             if (variant != null)
             {
                 var variantGroups = new List<OrderedVariantGroup>();

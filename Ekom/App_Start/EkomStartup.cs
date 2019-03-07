@@ -87,12 +87,11 @@ namespace Ekom
 
             _config.CacheList.Value.Add(stockCache);
 
-            var couponCache = _config.PerStoreStock
-                ? container.GetInstance<IPerStoreCache<CouponData>>()
-                : container.GetInstance<IBaseCache<CouponData>>()
-                as ICache;
-
-            _config.CacheList.Value.Add(couponCache);
+  //          var couponCache =
+   //              container.GetInstance<IPerStoreCache<CouponData>>()
+  //              as ICache;
+            
+   //         _config.CacheList.Value.Add(couponCache);
 
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)

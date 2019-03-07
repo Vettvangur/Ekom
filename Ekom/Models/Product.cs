@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
@@ -35,6 +35,15 @@ namespace Ekom.Models
         /// <summary>
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
+        
+        public virtual ProductDiscount ProductDiscount
+        {
+            get
+            {
+                return Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["key"]), Store.Alias , Properties.GetPropertyValue("price", Store.Alias));
+            }
+        }
+
         public virtual IDiscount Discount
         {
             get => _discount;
@@ -47,9 +56,9 @@ namespace Ekom.Models
                     _discount = value;
                 }
 
-                var oldPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(_discount));
+                var oldPrice = new Price(Price.OriginalValue, Store,null, new OrderedDiscount(_discount));
 
-                var newPrice = new Price(Price.OriginalValue, Store, new OrderedDiscount(value));
+                var newPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(value));
 
                 if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
                 {
@@ -271,9 +280,9 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount);
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
-
+            
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
                 throw new Exception("No url's or no title present in product");
@@ -289,8 +298,7 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
-
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount);
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -328,6 +336,7 @@ namespace Ekom.Models
                     }
                 }
             }
+            
         }
 
         private void PopulateCategoryAncestors()

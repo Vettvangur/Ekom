@@ -1,4 +1,4 @@
-﻿using Ekom.Models.OrderedObjects;
+using Ekom.Models.OrderedObjects;
 using System;
 
 namespace Ekom.Interfaces

@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using System;
 using System.Collections.Generic;
 
@@ -82,5 +82,9 @@ namespace Ekom.Interfaces
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
         IDiscount Discount { get; }
+        /// <summary>
+        /// A discount specific to this product populated after product discount cache is filled.
+        /// </summary>
+        ProductDiscount ProductDiscount { get; }
     }
 }

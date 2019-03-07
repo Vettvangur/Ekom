@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
 using System;
@@ -49,7 +49,7 @@ namespace Ekom.Utilities
 
         public static void SetVortoValue(this IContent content, string alias, string storeAlias, object value)
         {
-            var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
+            var property = content.Properties.FirstOrDefault(x => x.Alias.ToLower() == alias.ToLower());
 
             if (property != null)
             {
@@ -61,7 +61,7 @@ namespace Ekom.Utilities
                 {
                     foreach (var vvalue in vortoValue.Values)
                     {
-                        var val = vvalue.Key == storeAlias ? value : vvalue.Value;
+                        var val = vvalue.Key.ToLower() == storeAlias.ToLower() ? value : vvalue.Value;
 
                         vortoItems.Add(vvalue.Key, val);
                     }

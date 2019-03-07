@@ -1,4 +1,4 @@
-﻿using CommonServiceLocator;
+using CommonServiceLocator;
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Interfaces;
@@ -45,6 +45,7 @@ namespace Ekom.Tests
                 MockLogFac(),
                 (new Mock<IPerStoreCache<IProduct>> { DefaultValue = DefaultValue.Mock }).Object,
                 Mock.Of<IPerStoreCache<ICategory>>(),
+                Mock.Of<IPerStoreCache<IProductDiscount>>(),
                 Mock.Of<IPerStoreCache<IVariant>>(),
                 Mock.Of<IPerStoreCache<IVariantGroup>>(),
                 Mock.Of<IStoreService>()
@@ -70,6 +71,26 @@ namespace Ekom.Tests
                 Mock.Of<IPerStoreFactory<IDiscount>>()
             );
 
+        public static Mock<IPerStoreCache<IProductDiscount>> initProductDiscountCache()
+        {
+            var mock = new Mock<IPerStoreCache<IProductDiscount>> { DefaultValue = DefaultValue.Mock };
+            //TODO setja inn
+            return mock;
+        }
+
+        public static Mock<IProductDiscountService> initProductDiscountService()
+        {
+            var mock = new Mock<IProductDiscountService> { DefaultValue = DefaultValue.Mock };
+            var pd = new Mock<ProductDiscount>(MockBehavior.Loose,null);
+           // new Mock<IProductDiscount>();
+            pd.SetupGet(x => x.Discount).Returns(0.20m);
+            pd.SetupGet(x => x.Disabled).Returns(false);
+            pd.SetupGet(x => x.Type).Returns(Models.Discounts.DiscountType.Percentage);
+            // mock.Setup(y => y.GetProductDiscount(Guid.NewGuid(), "IS", "1000"));
+            mock.Setup(x => x.GetProductDiscount(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>())).Returns(new ProductDiscount(null));
+            return mock;
+        }
+       
         public static void AddOrderInfoToHttpSession(OrderInfo orderInfo, IStore store, OrderServiceMocks orderSvcMocks)
         {
             // Setup HttpContext Session to return same OrderInfo

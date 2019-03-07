@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using Ekom.Tests.MockClasses;
 using Ekom.Tests.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,6 +15,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void CalculatesPriceCorrectly()
         {
+            Helpers.InitMockContainer();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
@@ -41,7 +42,7 @@ namespace Ekom.Tests
         public void CalculatesVatIncludedStorePrice()
         {
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store);
+            var product = new CustomProduct(Shirt_product_3.json, store ,"");
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
@@ -56,7 +57,7 @@ namespace Ekom.Tests
             Helpers.InitMockContainer();
 
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store);
+            var product = new CustomProduct(Shirt_product_3.json, store, "");
 
             var oi = new OrderInfo(new Models.Data.OrderData(), store);
             var ol = new OrderLine(product, 1, Guid.NewGuid(), oi, null);

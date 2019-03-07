@@ -15,7 +15,7 @@ namespace Ekom.Tests
         {
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
-
+            
             var orderSvc = new OrderServiceMocks().orderSvc;
 
             var oi = orderSvc.AddOrderLine(product, 1, store);
