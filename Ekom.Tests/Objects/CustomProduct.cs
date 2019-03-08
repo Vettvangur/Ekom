@@ -1,5 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.OrderedObjects;
 using Ekom.Services;
 using Ekom.Utilities;
 using Newtonsoft.Json;
@@ -31,7 +32,7 @@ namespace Ekom.Tests.Objects
                 ProductDiscount = new CustomProductDiscount(store,productdisc);
             }
 
-            Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store,ProductDiscount);
+            Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount as ProductDiscount));
             var f = Price.WithVat;
             Urls = urls ?? Enumerable.Empty<string>();
         }

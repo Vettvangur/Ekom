@@ -22,7 +22,7 @@ namespace Ekom.Models
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
-        public IProductDiscount ProductDiscount { get;}
+        public OrderedProductDiscount ProductDiscount { get;}
         /// <summary>
         /// 
         /// </summary>
@@ -43,7 +43,7 @@ namespace Ekom.Models
         [JsonConstructor]
         public Price(
             OrderedDiscount discount,
-            ProductDiscount productDiscount,
+            OrderedProductDiscount productDiscount,
             StoreInfo store,
             decimal originalValue,
             bool discountAlwaysBeforeVAT,
@@ -59,7 +59,7 @@ namespace Ekom.Models
         public Price(
             string price,
             IStore store,
-            ProductDiscount productDiscount = null,
+            OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -80,7 +80,7 @@ namespace Ekom.Models
         public Price(
             decimal price,
             IStore store,
-            ProductDiscount productDiscount = null,
+            OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -95,7 +95,7 @@ namespace Ekom.Models
         public Price(
             string price,
             StoreInfo storeInfo,
-            ProductDiscount productDiscount = null,
+            OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1, 
             bool discountAlwaysBeforeVat = false
@@ -117,7 +117,7 @@ namespace Ekom.Models
         public Price(
             decimal price,
             StoreInfo storeInfo,
-            ProductDiscount productDiscount = null,
+            OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -236,7 +236,7 @@ namespace Ekom.Models
             {
                 // http://csharpindepth.com/Articles/General/Singleton.aspx
                 // Third version - attempted thread-safety using double-check locking
-                if (_withVat == null)
+                    if (_withVat == null)
                 {
                     lock (this)
                     {

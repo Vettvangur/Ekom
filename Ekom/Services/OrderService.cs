@@ -548,7 +548,7 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().Currency.Name).LCID);
+                var ri = new RegionInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().Currency.LCID);
                 orderData.Currency = ri.ISOCurrencySymbol;
             }
             catch (ArgumentException)

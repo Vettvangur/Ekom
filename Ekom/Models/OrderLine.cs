@@ -59,7 +59,7 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Product.ProductDiscount as ProductDiscount, Discount, Quantity);
+                return new Price(_price, Product.Price.Store, Product.ProductDiscount , Discount, Quantity);
             }
         }
         /// <summary>

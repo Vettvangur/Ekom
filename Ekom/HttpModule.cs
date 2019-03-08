@@ -43,6 +43,7 @@ namespace Ekom
         }
 
         private void Application_BeginRequest(Object source, EventArgs e)
+
         {
             try
             {

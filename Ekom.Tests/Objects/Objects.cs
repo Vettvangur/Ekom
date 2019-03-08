@@ -20,8 +20,9 @@ namespace Ekom.Tests.Objects
         public static Product Get_Shirt2_Product()
             => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product()
+            => new CustomProduct(Shirt_product_3.oldjson, Get_IS_Store_Vat_NotIncluded());
+        public static Product Get_Shirt3_Product_ForProductDiscount()
             => new CustomProduct(Shirt_product_3.json, Get_IS_Store_Vat_NotIncluded());
-
         public static Variant Get_shirt2_blue_S_variant()
             => new Variant(new CustomSearchResult(shirt2_blue_S_variant_json), Get_IS_Store_Vat_NotIncluded());
         public static VariantGroup Get_shirt2_blue_variantgroup()

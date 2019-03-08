@@ -1,9 +1,12 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -11,6 +14,7 @@ namespace Ekom.Models
     {
         public string CurrencyFormat { get; set; }
         public string CurrencyValue { get; set; }
+        [JsonIgnore][ScriptIgnore][XmlIgnore]
         public CultureInfo Currency { get; set; }
     }
 }

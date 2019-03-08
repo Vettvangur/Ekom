@@ -41,8 +41,9 @@ namespace Ekom.Tests
         [TestMethod]
         public void CalculatesVatIncludedStorePrice()
         {
+            Helpers.InitMockContainer();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store ,"");
+            var product = new CustomProduct(Shirt_product_3.oldjson, store);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLine(product, 2, store);
@@ -57,7 +58,7 @@ namespace Ekom.Tests
             Helpers.InitMockContainer();
 
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store, "");
+            var product = new CustomProduct(Shirt_product_3.oldjson, store);
 
             var oi = new OrderInfo(new Models.Data.OrderData(), store);
             var ol = new OrderLine(product, 1, Guid.NewGuid(), oi, null);

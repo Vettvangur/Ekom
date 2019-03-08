@@ -2,6 +2,7 @@ using Ekom.Interfaces;
 using Ekom.Models.Discounts;
 using Ekom.Utilities;
 using Examine;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -32,33 +33,15 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public ProductDiscount(SearchResult item, IStore store) : base(item, store)
         {
-            //PopulateCategoryAncestors();
-            //PopulateCategories();
-
-            //Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
-            //Urls = UrlService.BuildProductUrls(Slug, Categories, store);
-
-            //if (!Urls.Any() || string.IsNullOrEmpty(Title))
-            //{
-            //    throw new Exception("No url's or no title present in product");
-            //}
+          
         }
         public ProductDiscount(IContent node, IStore store) : base(node, store)
         {
-            //node.getprop .GetPropertyValue<IEnumerable<IPublishedContent>>("packages");
-            //PopulateCategoryAncestors();
-            //PopulateCategories();
-
-            //Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
-            //Urls = UrlService.BuildProductUrls(Slug, Categories, store);
-
-            //if (!Urls.Any() || string.IsNullOrEmpty(Title))
-            //{
-            //    throw new Exception("No url's or no title present in product");
-            //}
+           
         }
-
-        public virtual DiscountType Type {get
+        public virtual DiscountType Type
+        {
+            get
             {
 
                 var f = Properties.GetPropertyValue("type");
@@ -73,10 +56,11 @@ namespace Ekom.Models
                         return DiscountType.Fixed;
                 }
             }
-            
-            }
+
+        }
         public virtual decimal Discount
         {
+            
             get
             {
                 var discount = Properties.GetPropertyValue("discount", Store.Alias);
@@ -101,36 +85,21 @@ namespace Ekom.Models
                 }
 
             }
-            
-        
+
+
+
         }
-        //public decimal Discount
-        //{
-        //    get
-        //    {
-        //        var discount = Properties.GetPropertyValue("discount");
-        //        if (string.IsNullOrEmpty(discount))
-        //        {
-        //            return 0;
-        //        }
-        //        else
-        //        {
-        //            decimal value;
-        //            Decimal.TryParse(discount.Replace(',', '.'), out value);
-        //            return value;
-        //        }
-        //    }
-        //}
+       
 
         public List<Guid> DiscountItems
         {
             get
             {
                 List<Guid> returnList = new List<Guid>();
-                var nodes =  Properties.GetPropertyValue("discountItems")
+                var nodes = Properties.GetPropertyValue("discountItems")
                     .Split(',')
                     .Select(x => _umbraco.TypedContent(Udi.Parse(x))).ToList();
-                foreach(var node in nodes)
+                foreach (var node in nodes)
                 {
                     if (node.ContentType.Alias == "ekmProduct")
                     {
@@ -138,7 +107,7 @@ namespace Ekom.Models
                     }
                     if (node.ContentType.Alias == "ekmCategory")
                     {
-                        returnList.AddRange(node.Descendants().Where(x=>x.ContentType.Alias == "ekmProduct").Select(x=>x.GetKey()));
+                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct").Select(x => x.GetKey()));
                     }
                 }
                 return returnList;
@@ -150,7 +119,8 @@ namespace Ekom.Models
         /// <returns></returns>
         public object Clone() => MemberwiseClone();
 
-        public virtual decimal StartOfRange {
+        public virtual decimal StartOfRange
+        {
             get
             {
                 var discount = Properties.GetPropertyValue("startOfRange", Store.Alias);
@@ -160,13 +130,13 @@ namespace Ekom.Models
                 }
                 else
                 {
-                    
+
                     decimal value;
                     Decimal.TryParse(discount.Replace(',', '.'), out value);
                     return value;
                 }
             }
-}
+        }
 
         public virtual decimal EndOfRange
         {
@@ -185,8 +155,14 @@ namespace Ekom.Models
                 }
             }
         }
-        public virtual bool Disabled => Properties.GetPropertyValue("disable",Store.Alias) == "1";
-        
+        public virtual bool Disabled
+        {
+            get
+            {
+                return Properties.GetPropertyValue("disable", Store.Alias) == "1";
+            }
+
+        }
     }
     
 }

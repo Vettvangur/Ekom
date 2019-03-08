@@ -247,13 +247,13 @@
     <Compile Include="Objects\ProductDiscount_Fixed.cs" />
     <Compile Include="Objects\ProductDiscount_Percent_10.cs" />
     <Compile Include="Objects\ProductDiscount_Percent_20.cs" />
-    <Compile Include="Objects\Shirt_product_2.cs" />
+    <Compile Include="Objects\Shirt_product_3.cs" />
     <Compile Include="Objects\Discount_fixed_500.cs" />
     <Compile Include="Objects\Shirt_Product_With_Discount.cs" />
     <Compile Include="Objects\Store_DK_Vat_Included.cs" />
     <Compile Include="Objects\Store_IS_Vat_Included .cs" />
     <Compile Include="Objects\Store_IS_Vat_NotIncluded.cs" />
-    <Compile Include="Objects\Shirt_product_3.cs" />
+    <Compile Include="Objects\Shirt_product_2.cs" />
     <Compile Include="ObjectTests.cs" />
     <Compile Include="PriceTests.cs" />
     <Compile Include="OrderTests.cs" />

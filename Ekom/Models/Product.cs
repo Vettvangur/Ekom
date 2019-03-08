@@ -280,7 +280,7 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
             
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -298,7 +298,7 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount);
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
             Urls = UrlService.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

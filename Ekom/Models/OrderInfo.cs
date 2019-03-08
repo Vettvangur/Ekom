@@ -39,7 +39,7 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                StoreInfo = orderInfoJObject["StoreInfo"].ToObject<StoreInfo>();
+                StoreInfo = StoreInfo  ?? orderInfoJObject["StoreInfo"].ToObject<StoreInfo>();
                 orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
@@ -138,7 +138,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
-                                line.Product.ProductDiscount as ProductDiscount,
+                                line.Product.ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
@@ -181,7 +181,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
-                                line.Product.ProductDiscount as ProductDiscount,
+                                line.Product.ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
@@ -216,7 +216,7 @@ namespace Ekom.Models
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
-                                line.Product.ProductDiscount as ProductDiscount,
+                                line.Product.ProductDiscount,
                                 Discount,
                                 line.Quantity
                             );
