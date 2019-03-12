@@ -14,7 +14,5 @@ namespace Ekom.Models
     {
         public string CurrencyFormat { get; set; }
         public string CurrencyValue { get; set; }
-        [JsonIgnore][ScriptIgnore][XmlIgnore]
-        public CultureInfo Currency { get; set; }
     }
 }

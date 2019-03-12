@@ -139,7 +139,7 @@ namespace Ekom.Models
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
                                 line.Product.ProductDiscount,
-                                Discount,
+                                line.Discount,
                                 line.Quantity
                             );
 
@@ -208,16 +208,19 @@ namespace Ekom.Models
         {
             get
             {
+                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
+
                 var amount = OrderLines.Sum(line =>
                 {
-                    if (line.Discount == null)
+                    if (line.Discount != null || line.Product.ProductDiscount != null)
                     {
                         var lineWithOrderDiscount
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
                                 line.Product.ProductDiscount,
-                                Discount,
+                                line.Discount,
+                                SumOriginalPrice,
                                 line.Quantity
                             );
 

@@ -354,7 +354,6 @@ namespace Ekom.Services
             {
                 orderInfo = CreateEmptyOrder();
             }
-
             _log.Debug("ProductId: " + product.Id +
                 " variantId: " + variant?.Key +
                 " qty: " + quantity +
@@ -499,17 +498,33 @@ namespace Ekom.Services
                     orderInfo,
                     variant
                 );
-
-                orderInfo.orderLines.Add(orderLine);
-
-                if (product.Discount != null)
+                if (orderInfo.Discount != null)
                 {
-                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
-
-                    ApplyDiscountToOrderLine(
+                    if (orderInfo.Discount.DiscountItems.Contains(product.Key))
+                    {
+                        ApplyDiscountToOrderLine(
                         orderLine,
                         product.Discount,
                         orderInfo);
+                    }
+                }
+                
+
+
+                orderInfo.orderLines.Add(orderLine);
+                
+                if (product.Discount != null) // product discount is always null because order discount is added to the order not product
+                {
+                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
+                    if (product.Discount.DiscountItems.Contains(product.Key))
+                    {
+                        ApplyDiscountToOrderLine(
+                        orderLine,
+                        product.Discount,
+                        orderInfo);
+                    }
+
+                    
                 }
             }
 
@@ -548,8 +563,11 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var ri = new RegionInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().Currency.LCID);
-                orderData.Currency = ri.ISOCurrencySymbol;
+                var culture = new CultureInfo( orderInfo.StoreInfo.Currency.FirstOrDefault().CurrencyValue);
+                
+                    var ri = new RegionInfo(culture.LCID);
+                    orderData.Currency = ri.ISOCurrencySymbol;
+                
             }
             catch (ArgumentException)
             {

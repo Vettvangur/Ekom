@@ -31,8 +31,8 @@ namespace Ekom.Models.Data
         /// </summary>
         public Guid CouponKey { get; set; }
         /// <summary>
-        /// The node id for the discount 
+        /// The node Key for the discount 
         /// </summary>
-        public int DiscountId { get; set; }
+        public Guid DiscountId { get; set; }
     }
 }

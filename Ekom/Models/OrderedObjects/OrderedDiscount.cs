@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
 using Ekom.Models.Discounts;
 using Newtonsoft.Json;
@@ -18,12 +18,16 @@ namespace Ekom.Models.OrderedObjects
         [JsonConstructor]
         public OrderedDiscount(
             Guid key,
+            bool stackable,
             DiscountAmount amount,
+            List<Guid> discountItems,
             Constraints constraints,
             IReadOnlyCollection<string> coupons,
             bool hasMasterStock)
         {
             Key = key;
+            Stackable = stackable;
+            DiscountItems = discountItems;
             Amount = amount;
             Constraints = constraints;
             Coupons = coupons;
@@ -36,8 +40,9 @@ namespace Ekom.Models.OrderedObjects
         public OrderedDiscount(IDiscount discount)
         {
             discount = discount ?? throw new ArgumentNullException(nameof(discount));
-
+            Stackable = discount.Stackable;
             Key = discount.Key;
+            DiscountItems = discount.DiscountItems;
             Amount = discount.Amount;
             Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
@@ -54,11 +59,15 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public DiscountAmount Amount { get; internal set; }
 
+        public List<Guid> DiscountItems { get; }
         /// <summary>
         /// Ranges
         /// </summary>
         public Constraints Constraints { get; internal set; }
-
+        /// <summary>
+        /// If discount is stackable with productDiscounts
+        /// </summary>
+        public bool Stackable { get; }
         /// <summary>
         /// 
         /// </summary>

@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
@@ -21,6 +21,7 @@ namespace Ekom.API
         ILog _log;
         Configuration _config;
         DiscountCache _discountCache;
+        CouponCache _couponCache;
         OrderService _orderService;
         CheckoutService _checkoutService;
         IStoreService _storeSvc;
@@ -32,6 +33,7 @@ namespace Ekom.API
             Configuration config,
             ILogFactory logFac,
             DiscountCache discountCache,
+            CouponCache couponCache,
             OrderService orderService,
             CheckoutService checkoutService,
             IStoreService storeService
@@ -41,6 +43,7 @@ namespace Ekom.API
             _orderService = orderService;
             _checkoutService = checkoutService;
             _storeSvc = storeService;
+            _couponCache = couponCache;
             _config = config;
             _log = logFac.GetLogger<Order>();
         }

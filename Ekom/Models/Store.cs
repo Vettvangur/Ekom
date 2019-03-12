@@ -42,19 +42,15 @@ namespace Ekom.Models
                     if (getString.Contains("["))
                     {
                         var deserialized = JsonConvert.DeserializeObject<List<CurrencyModel>>(getString);
-                        foreach (var d in deserialized)
-                        {
-                            d.Currency = new CultureInfo(d.CurrencyValue);
-                        }
                         return deserialized;
                     }
                     else
                     {
-                        var c = Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? new CultureInfo(Properties["currency"]) : Culture;
+                        var c = Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? Properties["currency"] : Culture.ToString();
                         var l = new List<CurrencyModel>();
                         l.Add(new CurrencyModel
                         {
-                            Currency = c,
+                            CurrencyValue = c,
                             CurrencyFormat = "C"
                         });
                         return l;
@@ -66,7 +62,7 @@ namespace Ekom.Models
                     var l = new List<CurrencyModel>();
                     l.Add(new CurrencyModel
                     {
-                        Currency = Culture,
+                        CurrencyValue = Culture.ToString(),
                         CurrencyFormat = "C"
                     });
                     return l;

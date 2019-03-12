@@ -1,6 +1,7 @@
 using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.IoC;
 using Ekom.Models.Data;
 using Ekom.Services;
@@ -88,8 +89,7 @@ namespace Ekom
             _config.CacheList.Value.Add(stockCache);
 
             var couponCache =
-                 container.GetInstance<IBaseCache<CouponData>>()
-                as ICache;
+                container.GetInstance<CouponCache>() as ICache;
 
             _config.CacheList.Value.Add(couponCache);
 

@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -44,17 +44,31 @@ namespace Ekom.Services
             if (IsBetterDiscount(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
-                foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
-                {
-                    if (IsBetterDiscount(line, discount))
-                    {
-                        line.Discount = null;
-                        line.Coupon = null;
-                    }
-                }
+                //foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
+                //{
+                //    if (IsBetterDiscount(line, discount))
+                //    {
+                //        line.Discount = null;
+                //        line.Coupon = null;
+                //    }
+                //}
 
                 orderInfo.Discount = new OrderedDiscount(discount);
                 orderInfo.Coupon = coupon;
+                foreach(OrderLine line in orderInfo.OrderLines.Where(line => line.Discount == null))
+                {
+                    if (line.Discount == null)
+                    {
+                        if (discount.DiscountItems.Contains(line.ProductKey))
+                        {
+                            line.Discount = orderInfo.Discount;
+                            line.Coupon = coupon;
+                        }
+                    }
+                }
+                
+
+                
 
                 return true;
             }
@@ -185,34 +199,38 @@ namespace Ekom.Services
 
             if (orderLine.Discount != null)
             {
-                if (IsBetterDiscount(orderLine, discount))
+                if (orderLine.Discount.DiscountItems.Contains(orderLine.ProductKey))
                 {
-                    orderLine.Discount = new OrderedDiscount(discount);
-                    orderLine.Coupon = coupon;
+                    if (IsBetterDiscount(orderLine, discount))
+                    {
+                        orderLine.Discount = new OrderedDiscount(discount);
+                        orderLine.Coupon = coupon;
 
-                    UpdateOrderAndOrderInfo(orderInfo);
+                        UpdateOrderAndOrderInfo(orderInfo);
 
-                    _log.Debug("Successfully applied discount to orderline");
-                    return true;
+                        _log.Debug("Successfully applied discount to orderline");
+                        return true;
+                    }
                 }
+                else
+                {
+                    orderLine.Discount = null;
+                }
+                
             }
             else
             {
-                // Apply cart discount on line for comparison with new discount
-                orderLine.Discount = orderInfo.Discount;
-
-                if (IsBetterDiscount(orderLine, discount))
+                if (orderInfo.Discount != null)
                 {
-                    orderLine.Discount = new OrderedDiscount(discount);
-                    orderLine.Coupon = coupon;
-
-                    UpdateOrderAndOrderInfo(orderInfo);
-
-                    _log.Debug("Successfully applied discount to orderline");
-                    return true;
+                    if (orderInfo.Discount.DiscountItems.Contains(orderLine.ProductKey))
+                    {
+                        // Apply cart discount on line for comparison with new discount
+                        orderLine.Discount = orderInfo.Discount;
+                        orderLine.Coupon = orderInfo.Coupon;
+                        return true;
+                    }
                 }
-
-                orderLine.Discount = null;
+                                  
             }
 
             return false;
@@ -333,26 +351,30 @@ namespace Ekom.Services
                 RemoveDiscountFromOrder(orderInfo);
             }
 
-            var curStoreDiscCache = _discountCache.GlobalDiscounts[storeAlias];
+            //var curStoreDiscCache = _discountCache.GlobalDiscounts[storeAlias];
 
-            var gds = curStoreDiscCache
-                .Where(gd => gd.Value.Constraints.IsValid(storeAlias, total))
-                .Select(gd => gd.Value)
-                .ToList();
+            //var gds = curStoreDiscCache
+            //    .Where(gd => gd.Value.Constraints.IsValid(storeAlias, total))
+            //    .Select(gd => gd.Value)
+            //    .ToList();
 
-            // Try apply global order discounts
-            foreach (var gd in gds)
-            {
-                ApplyDiscountToOrder(gd, orderInfo, coupon: null);
-            }
+            //// Try apply global order discounts
+            //foreach (var gd in gds)
+            //{
+            //    //ApplyDiscountToOrder(gd, orderInfo, coupon: null);
+            //}
 
             // Verify order line discount constraints
             foreach (var line in orderInfo.orderLines)
             {
-                if (line.Discount?.Constraints.IsValid(storeAlias, total) == false)
+                if (line.Discount != null)
                 {
-                    RemoveDiscountFromOrderLine(line);
+                    if (line.Discount?.Constraints.IsValid(storeAlias, total) == false || !line.Discount.DiscountItems.Contains(line.ProductKey))
+                    {
+                        RemoveDiscountFromOrderLine(line);
+                    }
                 }
+                
             }
         }
     }
