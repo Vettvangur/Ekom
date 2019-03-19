@@ -50,7 +50,7 @@ namespace Ekom.Models
             {
 
                 decimal _price = Product.Price.OriginalValue;
-
+                decimal _totalOriginalPrice = Product.Price.OriginalValue * Quantity;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
@@ -59,7 +59,7 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Product.ProductDiscount , Discount, Quantity);
+                return new Price(_price, Product.Price.Store, Product.ProductDiscount , Discount, _totalOriginalPrice, Quantity);
             }
         }
         /// <summary>

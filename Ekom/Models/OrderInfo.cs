@@ -130,22 +130,22 @@ namespace Ekom.Models
         {
             get
             {
+                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                    if (line.Discount == null)
-                    {
-                        var lineWithOrderDiscount
-                            = new Price(
-                                line.Amount.OriginalValue,
-                                line.Amount.Store,
-                                line.Product.ProductDiscount,
-                                line.Discount,
-                                line.Quantity
-                            );
+                    
+                    var price
+                        = new Price(
+                            line.Amount.OriginalValue,
+                            line.Amount.Store,
+                            line.Product.ProductDiscount,
+                            line.Discount,
+                            SumOriginalPrice,
+                            line.Quantity
+                        );
 
-                        return lineWithOrderDiscount.AfterDiscount.Value;
-                    }
-                    return line.Amount.AfterDiscount.Value;
+                    return price.AfterDiscount.Value;
+                   
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -160,7 +160,7 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+                var amount = OrderLines.Sum(line => line.Amount.Vat.Value );
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
@@ -173,22 +173,20 @@ namespace Ekom.Models
         {
             get
             {
+                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                    if (line.Discount == null)
-                    {
-                        var lineWithOrderDiscount
-                            = new Price(
+                     var price = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
                                 line.Product.ProductDiscount,
-                                Discount,
+                                line.Discount,
+                                SumOriginalPrice,
                                 line.Quantity
                             );
 
-                        return lineWithOrderDiscount.Value;
-                    }
-                    return line.Amount.Value;
+                        return price.Value;
+                    
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -212,9 +210,8 @@ namespace Ekom.Models
 
                 var amount = OrderLines.Sum(line =>
                 {
-                    if (line.Discount != null || line.Product.ProductDiscount != null)
-                    {
-                        var lineWithOrderDiscount
+                    
+                        var price
                             = new Price(
                                 line.Amount.OriginalValue,
                                 line.Amount.Store,
@@ -224,9 +221,8 @@ namespace Ekom.Models
                                 line.Quantity
                             );
 
-                        return lineWithOrderDiscount.Value;
-                    }
-                    return line.Amount.Value;
+                        return price.Value;
+                   
                 });
 
                 if (ShippingProvider != null)
