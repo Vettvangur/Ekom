@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -31,6 +31,7 @@ namespace Ekom.Services
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         DiscountCache _discountCache;
 
+        IActivityLogRepository _activityLogRepository;
         IOrderRepository _orderRepository;
         IStoreService _storeSvc;
         ContentRequest _ekmRequest;
@@ -43,6 +44,7 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
@@ -52,6 +54,7 @@ namespace Ekom.Services
 
             _appCtx = appCtx;
             _orderRepository = orderRepo;
+            _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
         }
@@ -61,12 +64,13 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, logFac, storeService, appCtx, discountCache)
+            : this(orderRepo, activityLogRepository, logFac, storeService, appCtx, discountCache)
         {
             _httpCtx = httpCtx;
             _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
@@ -198,7 +202,7 @@ namespace Ekom.Services
         }
 
 
-        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status)
+        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status, string userName = null)
         {
             // Add event handler
 
@@ -229,9 +233,7 @@ namespace Ekom.Services
                     ms.Save(member);
                 } else
                 {
-                    //DeleteOrderCookie(key);
                     ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(uniqueId.ToString());
-                    //_httpCtx.Session.Remove(key);
                 }
 
             }
@@ -241,6 +243,9 @@ namespace Ekom.Services
             ApplicationContext.Current.ApplicationCache.RuntimeCache
                         .GetCacheItem<OrderInfo>(uniqueId.ToString(),
                             () => new OrderInfo(order), TimeSpan.FromDays(1));
+
+
+            _activityLogRepository.Insert(uniqueId, "Order status changed. From: " + oldStatus.ToString() + " To: " + status.ToString(), string.IsNullOrEmpty(userName) ? "Customer" : userName);
 
             _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
         }
@@ -349,7 +354,6 @@ namespace Ekom.Services
             {
                 orderInfo = CreateEmptyOrder();
             }
-
             _log.Debug("ProductId: " + product.Id +
                 " variantId: " + variant?.Key +
                 " qty: " + quantity +
@@ -494,17 +498,33 @@ namespace Ekom.Services
                     orderInfo,
                     variant
                 );
-
-                orderInfo.orderLines.Add(orderLine);
-
-                if (product.Discount != null)
+                if (orderInfo.Discount != null)
                 {
-                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
-
-                    ApplyDiscountToOrderLine(
+                    if (orderInfo.Discount.DiscountItems.Contains(product.Key))
+                    {
+                        ApplyDiscountToOrderLine(
                         orderLine,
                         product.Discount,
                         orderInfo);
+                    }
+                }
+                
+
+
+                orderInfo.orderLines.Add(orderLine);
+                
+                if (product.Discount != null) // product discount is always null because order discount is added to the order not product
+                {
+                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
+                    if (product.Discount.DiscountItems.Contains(product.Key))
+                    {
+                        ApplyDiscountToOrderLine(
+                        orderLine,
+                        product.Discount,
+                        orderInfo);
+                    }
+
+                    
                 }
             }
 
@@ -543,8 +563,11 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var ri = new RegionInfo(new CultureInfo(orderInfo.StoreInfo.Currency).LCID);
-                orderData.Currency = ri.ISOCurrencySymbol;
+                var culture = new CultureInfo( orderInfo.StoreInfo.Currency.FirstOrDefault().CurrencyValue);
+                
+                    var ri = new RegionInfo(culture.LCID);
+                    orderData.Currency = ri.ISOCurrencySymbol;
+                
             }
             catch (ArgumentException)
             {

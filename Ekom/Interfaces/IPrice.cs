@@ -1,4 +1,4 @@
-﻿using Ekom.Models.OrderedObjects;
+using Ekom.Models.OrderedObjects;
 using System;
 
 namespace Ekom.Interfaces
@@ -50,6 +50,14 @@ namespace Ekom.Interfaces
         /// Total monetary value of discount in price
         /// </summary>
         ICalculatedPrice DiscountAmount { get; }
+        /// <summary>
+        /// If the price has a productDiscount active
+        /// </summary>
+        bool HasProductDiscount { get; }
+        /// <summary>
+        /// If this price has a OrderDiscount active
+        /// </summary>
+        bool HasOrderDiscount { get; }
 
         /// <summary>
         /// Value with discount and VAT

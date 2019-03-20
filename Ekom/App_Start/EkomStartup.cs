@@ -1,6 +1,7 @@
 using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Helpers;
+using Ekom.Interfaces;
 using Ekom.IoC;
 using Ekom.Models.Data;
 using Ekom.Services;
@@ -87,6 +88,11 @@ namespace Ekom
 
             _config.CacheList.Value.Add(stockCache);
 
+            var couponCache =
+                container.GetInstance<CouponCache>() as ICache;
+
+            _config.CacheList.Value.Add(couponCache);
+
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
             {
@@ -143,12 +149,24 @@ namespace Ekom
                 //Create DB table - and set overwrite to false
                 dbHelper.CreateTable<StockData>(false);
             }
+            if (!dbHelper.TableExist("EkomOrdersActivityLog"))
+            {
+                //Create DB table - and set overwrite to false
+                dbHelper.CreateTable<OrderActivityLog>(false);
+            }
             if (!dbHelper.TableExist("EkomOrders"))
             {
                 dbHelper.CreateTable<OrderData>(false);
                 using (var db = dbCtx.Database)
                 {
                     db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
+                }
+            }
+            if (!dbHelper.TableExist("EkomCoupon"))
+            {
+                using (var db = dbCtx.Database)
+                {
+                    dbHelper.CreateTable<CouponData>(false);
                 }
             }
             if (!dbHelper.TableExist(Configuration.DiscountStockTableName))

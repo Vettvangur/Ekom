@@ -89,7 +89,7 @@ namespace Ekom.Controllers
         {
             var order = Order.Instance.GetOrder(storeAlias);
 
-            return Json(order == null ? new object() : order, JsonRequestBehavior.AllowGet);
+            return Json(order == null ? new object() : order , JsonRequestBehavior.AllowGet);
         }
 
         ///// <summary>
@@ -280,6 +280,12 @@ namespace Ekom.Controllers
             var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
             return Json(new { orderInfo, date = DateTime.Now });
+        }
+        public ActionResult test()
+        {
+           // ProductDiscountService pd = new ProductDiscountService();
+        //   var f = pd.GetProductDiscount(Guid.Parse("584f7b36-b87d-4605-8169-254da1f66dca"),"IS","100000");
+            return Json("");
         }
     }
 }

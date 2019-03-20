@@ -7,30 +7,30 @@ using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Web;
 
 namespace Ekom.Models.Discounts
 {
     /// <summary>
     /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
+    public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
+        UmbracoHelper _umbraco = Configuration.container.GetInstance<UmbracoHelper>();
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountAmount Amount { get; protected set; }
-
+       
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
-        internal List<IProduct> discountItems = new List<IProduct>();
-        [ScriptIgnore]
-        [JsonIgnore]
-        [XmlIgnore]
-        public virtual IReadOnlyCollection<IProduct> DiscountItems => discountItems.AsReadOnly();
+        internal List<Guid> discountItems = new List<Guid>();
+        public virtual List<Guid> DiscountItems => discountItems;
 
         /// <summary>
         /// Coupon code activations left
@@ -92,31 +92,46 @@ namespace Ekom.Models.Discounts
                 Type = type,
             };
 
-            var discountItemsProp = Properties.GetPropertyValue("discountItems", Store.Alias);
+            var nodes = Properties.GetPropertyValue("discountItems", Store.Alias)
+                .Split(',')
+                .Select(x => _umbraco.TypedContent(Udi.Parse(x))).ToList();
 
-            if (!string.IsNullOrEmpty(discountItemsProp))
+                
+            foreach (var node in nodes)
             {
-                foreach (var discountItem in discountItemsProp.Split(','))
+                if (node.ContentType.Alias == "ekmProduct")
                 {
-                    if (GuidUdi.TryParse(discountItem, out var udi))
-                    {
-                        var product = API.Catalog.Instance.GetProduct(Store.Alias, udi.Guid);
-
-                        if (product != null)
-                        {
-                            discountItems.Add(product);
-
-                            // Link discount to product
-                            // If a previous discount exists on product, it's setter will determine if discount is better than previous one 
-                            if (product is Product productItem)
-                            {
-                                Log.Debug($"Linking product {productItem.Title} with key {productItem.Key} to discount {Title} with key {Key}");
-                                productItem.Discount = this;
-                            }
-                        }
-                    }
+                    discountItems.Add(node.GetKey());
+                }
+                if (node.ContentType.Alias == "ekmCategory")
+                {
+                    discountItems.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct").Select(x => x.GetKey()));
                 }
             }
+            
+            //if (!string.IsNullOrEmpty(discountItemsProp))
+            //{
+            //    foreach (var discountItem in discountItemsProp.Split(','))
+            //    {
+            //        if (GuidUdi.TryParse(discountItem, out var udi))
+            //        {
+            //            var product = API.Catalog.Instance.GetProduct(Store.Alias, udi.Guid);
+
+            //            if (product != null)
+            //            {
+            //                discountItems.Add(product);
+
+            //                // Link discount to product
+            //                // If a previous discount exists on product, it's setter will determine if discount is better than previous one 
+            //                if (product is Product productItem)
+            //                {
+            //                    Log.Debug($"Linking product {productItem.Title} with key {productItem.Key} to discount {Title} with key {Key}");
+            //                    productItem.Discount = this;
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
         }
 
         internal void OnCouponApply() => CouponApplied?.Invoke(this);
@@ -125,7 +140,10 @@ namespace Ekom.Models.Discounts
         /// Called on coupon application
         /// </summary>
         public event CouponEventHandler CouponApplied;
-
+        /// <summary>
+        /// If the discount can be used with productdiscounts
+        /// </summary>
+        public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
         #region Comparisons
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation

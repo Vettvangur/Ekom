@@ -12,19 +12,27 @@ import DateRangePickerPhrases from 'react-dates/lib/defaultPhrases';
 import {
   START_DATE, END_DATE, HORIZONTAL_ORIENTATION, ANCHOR_LEFT,
 } from 'react-dates/constants';
+import Icon from 'components/Icon';
+import SearchStore from 'stores/searchStore';
+import TableStore from 'stores/tableStore';
 
-import OrdersStore from 'stores/ordersStore';
 
 export function CustomNavBack() {
   return (
-    <i className="icon-fa-solid-900-1 DayPickerNavigation_leftButton__horizontalDefault" />
+    <div className="DayPickerNavigation_leftButton__horizontalDefault">
+      <Icon name="icon-fa-solid-900-1" iconSize={20} color={"#9DDBF2"}></Icon>
+    </div>
   )
 }
-const CustomNavNext = () => <i className="icon-fa-solid-900 DayPickerNavigation_rightButton__horizontalDefault" />;
+const CustomNavNext = () => 
+  <div className="DayPickerNavigation_rightButton__horizontalDefault">
+    <Icon name="icon-fa-solid-900" iconSize={20} color={"#9DDBF2"}></Icon>
+  </div>
 
 type IProps = {
   showDatePicker: boolean
-  ordersStore: OrdersStore
+  searchStore?: SearchStore
+  tableStore?: TableStore
   presets: any
   preset: string
   initialStartDate: any
@@ -67,7 +75,7 @@ const defaultProps = {
   withFullScreenPortal: false,
   initialVisibleMonth: null,
   numberOfMonths: 2,
-  keepOpenOnDateSelect: false,
+  keepOpenOnDateSelect: true,
   reopenPickerOnClearDates: true,
   isRTL: false,
 
@@ -100,7 +108,7 @@ class State {
   endDate: any;
 }
 
-@inject('ordersStore')
+@inject('searchStore', 'tableStore')
 @observer
 class DateRangePickerWrapper extends React.Component<IProps, State> {
   static defaultProps = defaultProps
@@ -119,24 +127,26 @@ class DateRangePickerWrapper extends React.Component<IProps, State> {
     this.onFocusChange = this.onFocusChange.bind(this);
     this.renderDatePresets = this.renderDatePresets.bind(this);
   }
-
-  componentDidUpdate(prevProps) {
-    const { showDatePicker } = this.props;
-    if (showDatePicker !== prevProps.showDatePicker) {
-      if (showDatePicker) {
-        this.setState({ focusedInput: START_DATE });
-      }
+  componentDidMount() {
+    if (this.props.autoFocusEndDate) {
+      this.setState({
+        focusedInput: END_DATE
+      })
+    } else {
+      this.setState({ focusedInput: START_DATE });
     }
   }
-
   onDatesChange({ startDate, endDate, preset }) {
-    const { ordersStore } = this.props;
+    const { searchStore } = this.props;
+    searchStore.setDates(startDate, endDate)
+    /*
     ordersStore.setDates(startDate, endDate).then(() => {
       if (startDate !== null && endDate !== null && startDate <= endDate) {
         ordersStore.getOrders();
       }
     });
-    ordersStore.setPreset(preset)
+    */
+   searchStore.setPreset(preset)
   }
 
   onFocusChange(focusedInput) {
@@ -173,15 +183,15 @@ class DateRangePickerWrapper extends React.Component<IProps, State> {
       initialEndDate,
       closeDatePicker,
     } = this.props;
-    // autoFocus, autoFocusEndDate, initialStartDate and initialEndDate are helper props for the
-    // example wrapper but are not props on the SingleDatePicker itself and
-    // thus, have to be omitted.
-    //const props = { autoFocus, autoFocusEndDate, initialStartDate, initialEndDate, stateDateWrapper, presets, ordersStore, closeDatePicker, showDatePicker, preset, ...result } = this.defaultProps;
+    
     const props = omit(this.props, [
       'autoFocus',
       'autoFocusEndDate',
       'initialStartDate',
       'initialEndDate',
+      'className',
+      'searchStore',
+      'tableStore',
       'stateDateWrapper',
       'presets',
       'ordersStore',
@@ -201,6 +211,7 @@ class DateRangePickerWrapper extends React.Component<IProps, State> {
         navNext={<CustomNavNext />}
         startDate={initialStartDate}
         endDate={initialEndDate}
+        keepOpenOnDateSelect={true}
         hideKeyboardShortcutsPanel
         noBorder
         daySize={40}

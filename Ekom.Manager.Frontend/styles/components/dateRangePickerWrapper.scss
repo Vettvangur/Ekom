@@ -614,7 +614,8 @@
   vertical-align: middle;
   &:last-child {
     & > .DateInput_fang {
-      top: -41px !important; 
+      top: -14px!important;
+      left: -233px;
     }
   }
 }
@@ -686,9 +687,14 @@
   position: absolute;
   width: 20px;
   height: 10px;
-  top: 13px !important;
-  left: -22px;
+  top: 40px!important;
+  left: -370px;
   z-index: 2
+}
+.singleDateInputButton {
+  .DateInput_fang {
+    left: -210px;
+  }
 }
 .DateInput_fangShape {
   fill: #fff
@@ -798,8 +804,8 @@
   display: block
 }
 .DateRangePicker_picker {
-  top: 39px !important;
-  left: -50px!important;
+  // top: 39px !important;
+  // left: -50px!important;
   z-index: 1;
   background-color: #fff;
   position: absolute

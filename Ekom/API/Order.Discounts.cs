@@ -1,4 +1,4 @@
-﻿using Ekom.Exceptions;
+using Ekom.Exceptions;
 using System;
 
 namespace Ekom.API
@@ -37,11 +37,20 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
-
-            if (_discountCache.CouponCache[storeAlias].TryGetValue(coupon, out var discount))
+           
+            if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
-                return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
+                if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+                { 
+                    return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
+                }
+                else
+                {
+                    throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+                }
+
             }
+           
             else
             {
                 throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
@@ -109,10 +118,18 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(productKey));
             }
-
-            if (_discountCache.CouponCache[storeAlias].TryGetValue(coupon, out var discount))
+           
+            if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
-                return _orderService.ApplyDiscountToOrderLine(productKey, discount, storeAlias, coupon);
+                if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+                {
+                    return _orderService.ApplyDiscountToOrderLine(productKey, discount, storeAlias, coupon);
+                }
+                else
+                {
+                    throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+                }
+                
             }
             else
             {

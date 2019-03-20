@@ -1,8 +1,9 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
 using log4net;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -30,7 +31,46 @@ namespace Ekom.Models
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
-        public virtual CultureInfo Currency => Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? new CultureInfo(Properties["currency"]) : Culture;
+        public virtual string Currency => Properties.GetPropertyValue("currency");
+        public virtual List<CurrencyModel> CurrencyModel
+        {
+            get
+            {
+                try
+                {
+                    var getString = Properties.GetPropertyValue("currency");
+                    if (getString.Contains("["))
+                    {
+                        var deserialized = JsonConvert.DeserializeObject<List<CurrencyModel>>(getString);
+                        return deserialized;
+                    }
+                    else
+                    {
+                        var c = Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? Properties["currency"] : Culture.ToString();
+                        var l = new List<CurrencyModel>();
+                        l.Add(new CurrencyModel
+                        {
+                            CurrencyValue = c,
+                            CurrencyFormat = "C"
+                        });
+                        return l;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Unable to parse currency object from store", ex);
+                    var l = new List<CurrencyModel>();
+                    l.Add(new CurrencyModel
+                    {
+                        CurrencyValue = Culture.ToString(),
+                        CurrencyFormat = "C"
+                    });
+                    return l;
+                }
+            }
+
+
+        }
         /// <summary>
         /// Umbraco input: 28.5 <para></para>
         /// Stored VAT value: 0.285<para></para>
@@ -81,7 +121,7 @@ namespace Ekom.Models
                 //}
             }
 
-           
+
         }
 
         /// <summary>

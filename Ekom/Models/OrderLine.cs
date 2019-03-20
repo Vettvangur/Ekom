@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
 using Newtonsoft.Json;
@@ -32,7 +32,10 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public int Quantity { get; internal set; }
-
+        /// <summary>
+        /// Optional Information Attached To Order
+        /// </summary>
+        public OrderLineInfo OrderLineInfo { get; } = new OrderLineInfo();
         /// <summary>
         /// </summary>
         public OrderedDiscount Discount { get; internal set; }
@@ -50,7 +53,7 @@ namespace Ekom.Models
             {
 
                 decimal _price = Product.Price.OriginalValue;
-
+                decimal _totalOriginalPrice = Product.Price.OriginalValue * Quantity;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
@@ -59,7 +62,7 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Discount, Quantity);
+                return new Price(_price, Product.Price.Store, Product.ProductDiscount , Discount, _totalOriginalPrice, Quantity);
             }
         }
         /// <summary>
@@ -70,11 +73,13 @@ namespace Ekom.Models
             int quantity,
             string productJson,
             OrderInfo orderInfo,
+            OrderLineInfo orderLineInfo,
             OrderedDiscount discount)
         {
             Key = lineId;
             Quantity = quantity;
             OrderInfo = orderInfo;
+            OrderLineInfo = orderLineInfo;
             Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
             Discount = discount;
         }

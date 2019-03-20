@@ -1,7 +1,9 @@
 ﻿@inherits UmbracoTemplatePage
 @using Ekom.Site.Helpers
+@using System.Net;
 @{
     Layout = null;
+    var userName = UmbracoContext.Security.CurrentUser.Name;
 
 }
 <!doctype html>
@@ -14,8 +16,10 @@
     <title>Ekom - Manager</title>
 
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,600,700" rel="stylesheet">
-    
-    @if (Extensions.IsDebug())
+    @{ 
+        string hostName = Request.Url.Host.ToString();
+    }
+    @if (Extensions.IsDebug() && hostName == "ekom.localhost.vettvangur.is")
     {
         <link rel="stylesheet" type="text/css" href="http://localhost:3777/css/app.styles.css?v=@DateTime.Now.Ticks" />
     }
@@ -29,10 +33,9 @@
 </head>
 
 <body>
+    <div id="app" data-userName="@userName" class="pageContainer"></div>
 
-    <div id="app" class="pageContainer"></div>
-
-    @if (Extensions.IsDebug())
+    @if (Extensions.IsDebug() && hostName == "ekom.localhost.vettvangur.is")
     {
         <script src="http://localhost:3777/app.js?v=@DateTime.Now.Ticks"></script>
     }

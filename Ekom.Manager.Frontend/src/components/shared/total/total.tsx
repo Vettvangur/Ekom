@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 const format = (price, currency, locale = '', store = '') => {
-  if (currency.toLowerCase() === "isk")
+  if (currency && currency.toLowerCase() === "isk")
     return (
       <>{price.toLocaleString('is-IS')} kr.</>
     )

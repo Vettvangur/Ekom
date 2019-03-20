@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using Ekom.Models;
+using System.Collections.Generic;
 using System.Globalization;
 using Umbraco.Core.Models;
 
@@ -23,7 +24,8 @@ namespace Ekom.Interfaces
         /// The culture.
         /// </value>
         CultureInfo Culture { get; }
-        CultureInfo Currency { get; }
+        string Currency { get; }
+        List<CurrencyModel> CurrencyModel { get; }
         string Alias { get; }
         IEnumerable<Models.Domain> Domains { get; }
         string OrderNumberPrefix { get; }

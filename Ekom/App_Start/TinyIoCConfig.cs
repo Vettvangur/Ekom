@@ -49,7 +49,10 @@ namespace Ekom.App_Start
             container.Register<IPerStoreCache<IVariant>, VariantCache>().AsSingleton();
             container.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>().AsSingleton();
             container.Register<IPerStoreCache<ICategory>, CategoryCache>().AsSingleton();
+            container.Register<IPerStoreCache<IProductDiscount>, ProductDiscountCache>().AsSingleton();
+           // container.Register<IProductDiscountService, ProductDiscountService>().AsMultiInstance();
             container.Register<IPerStoreCache<IProduct>, ProductCache>().AsSingleton();
+            container.Register<CouponCache, CouponCache>().AsSingleton(); 
             container.Register<IBaseCache<IZone>, ZoneCache>().AsSingleton();
             container.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>().AsSingleton();
             container.Register<IPerStoreCache<IShippingProvider>, ShippingProviderCache>().AsSingleton();
@@ -62,7 +65,10 @@ namespace Ekom.App_Start
             container.Register<ICountriesRepository, CountriesRepository>().AsMultiInstance();
             container.Register<IStockRepository, StockRepository>().AsMultiInstance();
             container.Register<IDiscountStockRepository, DiscountStockRepository>().AsMultiInstance();
+            
             container.Register<IOrderRepository, OrderRepository>();
+            container.Register<ICouponRepository, CouponRepository>();
+            container.Register<IActivityLogRepository, ActivityLogRepository>();
 
             container.Register<ILogFactory, LogFactory>();
 
@@ -78,16 +84,21 @@ namespace Ekom.App_Start
                     c.Resolve<ILogFactory>(),
                     c.Resolve<IPerStoreCache<IProduct>>(),
                     c.Resolve<IPerStoreCache<ICategory>>(),
+                    c.Resolve<IPerStoreCache<IProductDiscount>>(),
                     c.Resolve<IPerStoreCache<IVariant>>(),
                     c.Resolve<IPerStoreCache<IVariantGroup>>(),
                     c.Resolve<IStoreService>()
                 )
             );
+            container.Register<IProductDiscountService>((c, p) =>
+            new ProductDiscountService(c.Resolve <IPerStoreCache<IProductDiscount>>()));
+
             container.Register<Order>((c, p) =>
                 new Order(
                     c.Resolve<Configuration>(),
                     c.Resolve<ILogFactory>(),
                     c.Resolve<DiscountCache>(),
+                    c.Resolve<CouponCache>(),
                     c.Resolve<OrderService>(),
                     c.Resolve<CheckoutService>(),
                     c.Resolve<IStoreService>()
@@ -136,6 +147,7 @@ namespace Ekom.App_Start
             var discountCache = container.Resolve<DiscountCache>();
             container.Register<IPerStoreCache<IDiscount>, DiscountCache>(discountCache);
             container.Register<DiscountCache>(discountCache);
+            container.Register<IPerStoreCache<IProductDiscount>, ProductDiscountCache>().AsSingleton();
         }
 
         public static void RegisterTypes(
@@ -196,6 +208,7 @@ namespace Ekom.App_Start
             new ContainerRegistration<IPerStoreFactory<IPaymentProvider>>(Lifetime.Transient, c => c.GetInstance<PaymentProviderFactory>()),
             new ContainerRegistration<IPerStoreFactory<IShippingProvider>>(Lifetime.Transient, c => c.GetInstance<ShippingProviderFactory>()),
             new ContainerRegistration<IPerStoreFactory<IProduct>>(Lifetime.Transient, c => c.GetInstance<ProductFactory>()),
+            new ContainerRegistration<IPerStoreFactory<IProductDiscount>>(Lifetime.Transient, c => c.GetInstance<ProductDiscountFactory>()),
             new ContainerRegistration<IPerStoreFactory<IVariant>>(Lifetime.Transient, c => c.GetInstance<VariantFactory>()),
             new ContainerRegistration<IPerStoreFactory<IVariantGroup>>(Lifetime.Transient, c => c.GetInstance<VariantGroupFactory>()),
         };

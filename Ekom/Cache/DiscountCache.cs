@@ -1,4 +1,4 @@
-﻿using Ekom.Exceptions;
+using Ekom.Exceptions;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Discounts;
@@ -34,7 +34,7 @@ namespace Ekom.Cache
         public GlobalDiscountCache GlobalDiscounts { get; }
             = new GlobalDiscountCache();
 
-        public override string NodeAlias { get; } = "ekmDiscount";
+        public override string NodeAlias { get; } = "ekmOrderDiscount";
         public virtual string CouponNodeAlias { get; } = "ekmCoupon";
 
         /// <summary>

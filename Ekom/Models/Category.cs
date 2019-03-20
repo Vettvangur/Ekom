@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
@@ -24,7 +24,6 @@ namespace Ekom.Models
     public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
         private IPerStoreCache<ICategory> _categoryCache => Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
-
         private IPerStoreCache<IProduct> _productCache => Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
 
         /// <summary>

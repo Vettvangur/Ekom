@@ -23,6 +23,9 @@
             "utilites/*": [
                 "./src/utilites/*"
             ],
+            "styledComponents/*": [
+                "./src/styledComponents/*"
+            ],
             "stores/*": [
                 "./src/stores/*"
             ],
@@ -37,9 +40,6 @@
             ],
             "utilities/*": [
                 "./src/utilities/*"
-            ],
-            "gUtilities/*": [
-                "./src/gUtilities/*"
             ],
             "reusableComponents/*": [
                 "./src/reusableComponents/*"

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,16 +18,11 @@ namespace Ekom.Manager.Models
             this.Count = Orders.Count();
 
             var _grandTotal = Orders.Sum(z => z.TotalAmount);
-
-            this.GrandTotal = _grandTotal.ToString();
-            if (_grandTotal <= 0) {
-                this.AverageAmount = "0";
-            } else
-            {
-                this.AverageAmount = (this.Count / _grandTotal).ToString();
-            }
+            var _averageAmount = Orders.Average(a => a.TotalAmount);
+            this.GrandTotal = string.Format(new CultureInfo("is-IS"), "{0:C}", _grandTotal) + "";
+            this.AverageAmount = string.Format(new CultureInfo("is-IS"), "{0:C}", _averageAmount) + "";
         }
-
+        
         public IEnumerable<OrderData> Orders { get; set; }
         public string GrandTotal { get; set; }
         public string AverageAmount { get; set; }

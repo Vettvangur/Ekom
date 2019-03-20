@@ -10,7 +10,7 @@ module.exports = (env = {}) => {
   const isBrowser = env.browser;
 
   console.log(`Running webpack in ${process.env.NODE_ENV} mode on ${isBrowser ? 'browser': 'server'}`);
-
+  
   const node = {
     __dirname: true,
     __filename: true
@@ -25,10 +25,10 @@ module.exports = (env = {}) => {
     },
     node,
     output: {
-      path: PATHS.public,
+      path: PATHS.build,
       filename: 'js/[name].min.js',
       chunkFilename: '[name].[chunkhash:6].js', // for code splitting. will work without but useful to set
-      publicPath: PATHS.public
+      publicPath: PATHS.build
     },
     module: {
       rules: rules({
@@ -54,7 +54,7 @@ module.exports = (env = {}) => {
       ]
     },
     output: {
-      path: PATHS.assets,
+      path: PATHS.public,
       filename: '[name].js',
       //publicPath: PATHS.public
       publicPath: 'http://localhost:3777/'

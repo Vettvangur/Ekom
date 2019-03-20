@@ -1,10 +1,12 @@
-﻿using Ekom.Helpers;
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using log4net;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Web.Http;
 using Umbraco.Web.WebApi;
@@ -29,18 +31,35 @@ namespace Ekom.Controllers
         {
             return "sup";
         }
-        public OrderData GetOrder(Guid uniqueId)
+        public IOrderInfo GetOrder([FromUri] Guid uniqueId)
         {
             return _managerRepository.GetOrder(uniqueId);
+
         }
         public IOrderInfo GetOrderInfo(Guid uniqueId)
         {
             return API.Order.Instance.GetOrder(uniqueId);
         }
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetActivityLog([FromUri] Guid orderId)
+        {
+            return _managerRepository.GetLogs(orderId);
+        }
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
+        {
+            return _managerRepository.GetLatestActivityLogs();
+        }
+        [HttpGet]
+        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser([FromUri] string userName)
+        {
+            return _managerRepository.GetLatestActivityLogsByUser(userName);
+        }
         /// <summary>
         /// List of orders.
         /// </summary>
         /// <returns></returns>
+        [HttpGet]
         public OrderListData GetOrders()
         {
             return _managerRepository.GetOrders();
@@ -50,13 +69,15 @@ namespace Ekom.Controllers
         /// List of orders.
         /// </summary>
         /// <returns></returns>
+        [HttpGet]
         public OrderListData GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
             return _managerRepository.GetAllOrders(start, end);
         }
-        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string store, [FromUri] string payment, [FromUri] string shipping, [FromUri] string discount)
+        [HttpGet]
+        public OrderListData SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string orderStatus = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
-            return _managerRepository.SearchOrders(start, end, store, payment, shipping, discount);
+            return _managerRepository.SearchOrders(start, end, query, store, orderStatus, payment, shipping, discount);
         }
         public OrderListData GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
@@ -76,6 +97,10 @@ namespace Ekom.Controllers
         {
             return _managerRepository.GetStores();
         }
+        public object GetStoreList()
+        {
+            return _managerRepository.GetStoreList();
+        }
         public IEnumerable<IShippingProvider> GetShippingProviders()
         {
             return _managerRepository.GetShippingProviders();
@@ -87,6 +112,11 @@ namespace Ekom.Controllers
         public IEnumerable<IDiscount> GetDiscounts()
         {
             return _managerRepository.GetDiscounts();
+        }
+
+        public object GetStatusList()
+        {
+            return _managerRepository.GetStatusList();
         }
 
         private static readonly ILog Log =
