@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -89,7 +89,7 @@ namespace Ekom.Controllers
         {
             var order = Order.Instance.GetOrder(storeAlias);
 
-            return Json(order, JsonRequestBehavior.AllowGet);
+            return Json(order == null ? new object() : order, JsonRequestBehavior.AllowGet);
         }
 
         ///// <summary>
