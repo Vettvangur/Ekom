@@ -32,7 +32,10 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public int Quantity { get; internal set; }
-
+        /// <summary>
+        /// Optional Information Attached To Order
+        /// </summary>
+        public OrderLineInfo OrderLineInfo { get; } = new OrderLineInfo();
         /// <summary>
         /// </summary>
         public OrderedDiscount Discount { get; internal set; }
@@ -70,11 +73,13 @@ namespace Ekom.Models
             int quantity,
             string productJson,
             OrderInfo orderInfo,
+            OrderLineInfo orderLineInfo,
             OrderedDiscount discount)
         {
             Key = lineId;
             Quantity = quantity;
             OrderInfo = orderInfo;
+            OrderLineInfo = orderLineInfo;
             Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
             Discount = discount;
         }

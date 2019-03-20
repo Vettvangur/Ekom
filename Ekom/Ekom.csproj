@@ -319,6 +319,7 @@
     <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
     <Compile Include="Models\OrderedObjects\OrderedProductDiscount.cs" />
+    <Compile Include="Models\OrderLineInfo.cs" />
     <Compile Include="Models\OrderRequest.cs" />
     <Compile Include="Interfaces\IOrderService.cs" />
     <Compile Include="Interfaces\IStoreService.cs" />

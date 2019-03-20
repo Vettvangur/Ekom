@@ -44,7 +44,6 @@ namespace Ekom.Models
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
-
                 Discount = orderInfoJObject["Discount"]?.ToObject<OrderedDiscount>();
             }
         }
@@ -296,8 +295,8 @@ namespace Ekom.Models
                 var quantity = (int)line["Quantity"];
                 var productJson = line["Product"].ToString();
                 var discount = line["Discount"]?.ToObject<OrderedDiscount>();
-
-                var orderLine = new OrderLine(lineId, quantity, productJson, this, discount);
+                var orderLineInfo = line["OrderLineInfo"]?.ToObject<OrderLineInfo>();
+                var orderLine = new OrderLine(lineId, quantity, productJson, this, orderLineInfo, discount);
 
                 orderLines.Add(orderLine);
             }
@@ -365,6 +364,23 @@ namespace Ekom.Models
 
             return null;
         }
+
+        //private OrderLineInfo CreateOrderLineInformationFromJson(JObject orderInfoJObject)
+        //{
+        //    if (orderInfoJObject["OrderLineInfo"] != null)
+        //    {
+        //        var orderLineInfoJson = orderInfoJObject["OrderLineInfo"].ToString();
+
+        //        if (!string.IsNullOrEmpty(orderLineInfoJson))
+        //        {
+        //            var orderLineInfo = JsonConvert.DeserializeObject<OrderLineInfo>(orderLineInfoJson);
+
+        //            return orderLineInfo;
+        //        }
+        //    }
+
+        //    return null;
+        //}
 
         #endregion
 
