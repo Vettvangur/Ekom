@@ -31,29 +31,75 @@ namespace Ekom.Repository
 
 
 
-        public void InsertCoupon(CouponData orderData)
+        public void InsertCoupon(CouponData couponData)
+        {
+            if (!DiscountHasCoupon(couponData.DiscountId,couponData.CouponCode))
+            {
+                using (var db = _appCtx.DatabaseContext.Database)
+                {
+                    db.Insert(couponData);
+                }
+            }
+
+            throw new ArgumentException("Duplicate coupon");
+
+        }
+
+        public void UpdateCoupon(CouponData couponData)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                db.Insert(orderData);
+                db.Update(couponData);
             }
         }
 
-        public void UpdateCoupon(CouponData orderData)
+        public void RemoveCoupon(Guid discountId, string couponCode)
+        {
+            var coupon = GetCoupon(discountId, couponCode);
+
+            if (coupon != null)
+            {
+                using (var db = _appCtx.DatabaseContext.Database)
+                {
+                    db.Delete(coupon);
+                }
+            }
+
+            throw new ArgumentException(nameof(coupon));
+        }
+
+        public CouponData GetCoupon(Guid discountId, string couponCode)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                db.Update(orderData);
+                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode);
             }
         }
 
-        public IEnumerable<CouponData> GetCoupons()
+        public IEnumerable<CouponData> GetAllCoupons()
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.Query<CouponData>("");
             }
         }
+
+        public IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0", discountId);
+            }
+        }
+
+        public bool DiscountHasCoupon(Guid discountId, string couponCode)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode).Any();
+            }
+        }
+
         public void MarkUsed(Guid CouponKey)
         {
             using (var db = _appCtx.DatabaseContext.Database)

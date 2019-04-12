@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using System;
 using System.Collections.Generic;
@@ -120,6 +120,39 @@ namespace Ekom.Controllers
             API.Stock.Instance.SetStock(id, storeAlias, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Insert Coupon
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
+        {
+            API.Order.Instance.InsertCouponCode(couponCode, numberAvailable, discountId);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Remove Coupon
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage RemoveCoupon(string couponCode, Guid discountId)
+        {
+            API.Order.Instance.RemoveCouponCode(couponCode, discountId);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        /// <summary>
+        /// Get Coupons for Discount
+        /// </summary>
+        [HttpPost]
+        public HttpResponseMessage GetCouponsForDiscount(Guid discountId)
+        {
+            var items = API.Order.Instance.GetCouponsForDiscount(discountId);
+
+            return Request.CreateResponse(HttpStatusCode.OK, items);
         }
     }
 }

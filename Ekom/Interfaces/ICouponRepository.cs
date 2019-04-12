@@ -9,8 +9,12 @@ namespace Ekom.Interfaces
 {
     public interface ICouponRepository
     {
-        void InsertCoupon(CouponData orderData);
-        void UpdateCoupon(CouponData orderData);
-        IEnumerable<CouponData> GetCoupons();
+        void InsertCoupon(CouponData couponData);
+        void UpdateCoupon(CouponData couponData);
+        void RemoveCoupon(Guid discountId, string couponCode);
+        CouponData GetCoupon(Guid discountId, string couponCode);
+        IEnumerable<CouponData> GetAllCoupons();
+        bool DiscountHasCoupon(Guid discountId, string couponCode);
+        IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId);
     }
 }

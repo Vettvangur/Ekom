@@ -2,15 +2,18 @@ using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Ekom.Services
 {
     partial class OrderService // : IOrderService
     {
+
         /// <summary>
         /// 
         /// </summary>
@@ -55,7 +58,7 @@ namespace Ekom.Services
 
                 orderInfo.Discount = new OrderedDiscount(discount);
                 orderInfo.Coupon = coupon;
-                foreach(OrderLine line in orderInfo.OrderLines.Where(line => line.Discount == null))
+                foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount == null))
                 {
                     if (line.Discount == null)
                     {
@@ -66,9 +69,9 @@ namespace Ekom.Services
                         }
                     }
                 }
-                
 
-                
+
+
 
                 return true;
             }
@@ -216,7 +219,7 @@ namespace Ekom.Services
                 {
                     orderLine.Discount = null;
                 }
-                
+
             }
             else
             {
@@ -230,7 +233,7 @@ namespace Ekom.Services
                         return true;
                     }
                 }
-                                  
+
             }
 
             return false;
@@ -374,8 +377,56 @@ namespace Ekom.Services
                         RemoveDiscountFromOrderLine(line);
                     }
                 }
-                
+
             }
         }
+
+        public void InsertCouponCode(string couponCode, int numberAvailable, Guid discountId)
+        {
+            if (string.IsNullOrEmpty(couponCode))
+            {
+                throw new ArgumentException(nameof(couponCode));
+            }
+
+            if (discountId == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(discountId));
+            }
+
+            _couponRepository.InsertCoupon(new CouponData()
+            {
+                CouponCode = couponCode,
+                CouponKey = Guid.NewGuid(),
+                DiscountId = discountId,
+                NumberAvailable = numberAvailable
+            });
+        }
+
+        public void RemoveCouponCode(string couponCode, Guid discountId)
+        {
+            if (string.IsNullOrEmpty(couponCode))
+            {
+                throw new ArgumentException(nameof(couponCode));
+            }
+
+            if (discountId == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(discountId));
+            }
+
+            _couponRepository.RemoveCoupon(discountId, couponCode);
+        }
+
+        public IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId)
+        {
+            if (discountId == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(discountId));
+            }
+
+            return _couponRepository.GetCouponsForDiscount(discountId);
+        }
+
+
     }
 }

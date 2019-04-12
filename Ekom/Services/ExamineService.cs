@@ -1,4 +1,4 @@
-﻿using Ekom.Models.Abstractions;
+using Ekom.Models.Abstractions;
 using Examine;
 using Examine.SearchCriteria;
 using System;

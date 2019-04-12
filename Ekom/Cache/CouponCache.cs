@@ -39,7 +39,7 @@ namespace Ekom.Cache
             stopwatch.Start();
             _log.Info("Starting to fill...");
 
-            var allCoupons = _couponRepo.GetCoupons();
+            var allCoupons = _couponRepo.GetAllCoupons();
             foreach (var coupon in allCoupons)
             {
                 Cache[coupon.CouponCode] = coupon;

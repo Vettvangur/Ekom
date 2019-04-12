@@ -1,5 +1,7 @@
 using Ekom.Exceptions;
+using Ekom.Models.Data;
 using System;
+using System.Collections.Generic;
 
 namespace Ekom.API
 {
@@ -168,6 +170,21 @@ namespace Ekom.API
             }
 
             _orderService.RemoveDiscountFromOrderLine(productKey, storeAlias);
+        }
+
+        public void InsertCouponCode(string couponCode, int numberAvailable, Guid discountId)
+        {
+            _orderService.InsertCouponCode(couponCode, numberAvailable, discountId);
+        }
+
+        public void RemoveCouponCode(string couponCode, Guid discountId)
+        {
+            _orderService.RemoveCouponCode(couponCode, discountId);
+        }
+
+        public IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId)
+        {
+            return _orderService.GetCouponsForDiscount(discountId);
         }
     }
 }

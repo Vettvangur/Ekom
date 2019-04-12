@@ -33,6 +33,7 @@ namespace Ekom.Services
 
         IActivityLogRepository _activityLogRepository;
         IOrderRepository _orderRepository;
+        ICouponRepository _couponRepository;
         IStoreService _storeSvc;
         ContentRequest _ekmRequest;
 
@@ -44,6 +45,7 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            ICouponRepository couponRepository,
             IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
@@ -54,6 +56,7 @@ namespace Ekom.Services
 
             _appCtx = appCtx;
             _orderRepository = orderRepo;
+            _couponRepository = couponRepository;
             _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
@@ -64,13 +67,14 @@ namespace Ekom.Services
         /// </summary>
         public OrderService(
             IOrderRepository orderRepo,
+            ICouponRepository couponRepository,
             IActivityLogRepository activityLogRepository,
             ILogFactory logFac,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, activityLogRepository, logFac, storeService, appCtx, discountCache)
+            : this(orderRepo, couponRepository, activityLogRepository, logFac, storeService, appCtx, discountCache)
         {
             _httpCtx = httpCtx;
             _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
