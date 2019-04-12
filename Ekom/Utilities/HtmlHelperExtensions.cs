@@ -1,4 +1,4 @@
-﻿using Ekom.Controllers;
+using Ekom.Controllers;
 using System.Web.Mvc;
 using System.Web.Mvc.Html;
 using Umbraco.Web;
@@ -55,6 +55,10 @@ namespace Ekom.Utilities
                 case FormType.UpdateCustomerInformation:
 
                     defaultClassName = "cart__quantity-form";
+                    break;
+                case FormType.ApplyCouponToOrder:
+
+                    defaultClassName = "cart__coupon-form";
                     break;
             }
 

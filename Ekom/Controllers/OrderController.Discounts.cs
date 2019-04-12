@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Exceptions;
 using System;
 using System.Net;
@@ -36,6 +36,7 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
+
                 if (ex is DiscountNotFoundException
                 || ex is ArgumentException)
                 {
