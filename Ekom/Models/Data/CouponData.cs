@@ -11,7 +11,7 @@ namespace Ekom.Models.Data
     /// Current stock of a given item
     /// </summary>
     [TableName("EkomCoupon")]
-    [PrimaryKey("Id", autoIncrement = false)]
+    [PrimaryKey("Id", autoIncrement = true)]
     public class CouponData
     {
         /// <summary>

@@ -39,9 +39,10 @@ namespace Ekom.Repository
                 {
                     db.Insert(couponData);
                 }
+            } else
+            {
+                throw new ArgumentException("Duplicate coupon");
             }
-
-            throw new ArgumentException("Duplicate coupon");
 
         }
 
@@ -63,9 +64,11 @@ namespace Ekom.Repository
                 {
                     db.Delete(coupon);
                 }
+            } else
+            {
+                throw new ArgumentException(nameof(coupon));
             }
 
-            throw new ArgumentException(nameof(coupon));
         }
 
         public CouponData GetCoupon(Guid discountId, string couponCode)
