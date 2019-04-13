@@ -272,9 +272,15 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
+
             if (orderInfo.Discount == null)
             {
                 return true;
+            }
+
+            if (orderInfo.Discount.Key == discount.Key)
+            {
+                throw new DiscountNotFoundException($"Can't add the same discount to order twice.");
             }
 
             if (orderInfo.Discount.Amount.Type == discount.Amount.Type)
@@ -328,7 +334,7 @@ namespace Ekom.Services
             var defStore = _storeSvc.GetAllStores().First();
             var discount = _discountCache[defStore.Alias][Key];
 
-            (discount as Models.Discounts.Discount)?.OnCouponApply();
+            (discount as Discount)?.OnCouponApply();
         }
 
         private void ApplyGlobalDiscounts(OrderInfo orderInfo)
@@ -395,7 +401,7 @@ namespace Ekom.Services
 
             _couponRepository.InsertCoupon(new CouponData()
             {
-                CouponCode = couponCode,
+                CouponCode = couponCode.ToLowerInvariant(),
                 CouponKey = Guid.NewGuid(),
                 DiscountId = discountId,
                 NumberAvailable = numberAvailable

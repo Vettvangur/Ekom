@@ -42,7 +42,7 @@ namespace Ekom.Cache
             var allCoupons = _couponRepo.GetAllCoupons();
             foreach (var coupon in allCoupons)
             {
-                Cache[coupon.CouponCode] = coupon;
+                Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
             }
 
             stopwatch.Stop();

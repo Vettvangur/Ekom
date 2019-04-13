@@ -25,8 +25,15 @@ namespace Ekom.Controllers
         {
             try
             {
+                if (string.IsNullOrEmpty(coupon))
+                {
+                    return new HttpStatusCodeResult(400, "Coupon code can not be empty");
+                }
+
                 if (Order.Instance.ApplyCouponToOrder(coupon, storeAlias))
                 {
+                    var order = Order.Instance.GetOrder(storeAlias);
+
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
                 else

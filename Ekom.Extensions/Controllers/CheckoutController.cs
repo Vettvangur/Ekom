@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models.Data;
 using Ekom.Utilities;
@@ -114,16 +114,16 @@ namespace Ekom.Extensions.Controllers
                             }
                         }
 
+                        // How does this work ? we dont have a coupon per orderline!
+                        //if (line.Discount != null)
+                        //{
+                        //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
 
-                        if (line.Discount != null)
-                        {
-                            hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
-
-                            if (line.Discount.HasMasterStock)
-                            {
-                                hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-                            }
-                        }
+                        //    if (line.Discount.HasMasterStock)
+                        //    {
+                        //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                        //    }
+                        //}
                     }
                     catch (StockException)
                     {
@@ -132,40 +132,30 @@ namespace Ekom.Extensions.Controllers
 
                     orderItems.Add(new OrderItem
                     {
-                        GrandTotal = line.Amount.Value,
-                        Price = line.Product.VariantGroups.Any() && line.Product.VariantGroups.Any(x => x.Variants.Any()) ? line.Product.VariantGroups.First().Variants.First().Price.BeforeDiscount.Value : line.Product.Price.BeforeDiscount.Value,
+                        GrandTotal = line.Amount.BeforeDiscount.Value,
+                        Price = line.Product.Price.WithVat.Value,
                         Title = line.Product.Title,
                         Quantity = line.Quantity,
                     });
-
-                    if (line.Discount != null)
-                    {
-                        orderItems.Add(new OrderItem
-                        {
-                            Title = "Line discount " + line.Discount.Amount.Type,
-                            Price = -line.Discount.Amount.Amount,
-                            Quantity = 1,
-                            GrandTotal = -line.Discount.Amount.Amount,
-                        });
-                    }
                 }
 
-                if (order.Discount != null)
-                {
-                    try
-                    {
-                        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1, order.Coupon));
+                // Does not work with Coupon codes
+                //if (order.Discount != null)
+                //{
+                //    try
+                //    {
+                //        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1, order.Coupon));
 
-                        if (order.Discount.HasMasterStock)
-                        {
-                            hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, 1));
-                        }
-                    }
-                    catch (StockException)
-                    {
-                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
-                    }
-                }
+                //        if (order.Discount.HasMasterStock)
+                //        {
+                //            hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1));
+                //        }
+                //    }
+                //    catch (StockException)
+                //    {
+                //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
+                //    }
+                //}
 
                 if (paymentRequest.ShippingProvider != Guid.Empty)
                 {
@@ -188,17 +178,17 @@ namespace Ekom.Extensions.Controllers
                 {
                     orderItems.Add(new OrderItem
                     {
-                        Title = "Order discount " + order.Discount.Amount.Type,
+                        Title = "Afsláttur",
                         Quantity = 1,
-                        Price = order.Discount.Amount.Amount,
-                        GrandTotal = order.Discount.Amount.Amount,
+                        Price = order.DiscountAmount.Value * -1,
+                        GrandTotal = order.DiscountAmount.Value * -1,
                     });
                 }
 
                 // save job ids to sql for retrieval after checkout completion
                 Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
 
-                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " +isOfflinePayment );
+                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " +isOfflinePayment);
 
                 if (isOfflinePayment)
                 {

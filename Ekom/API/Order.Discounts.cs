@@ -39,7 +39,8 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
-           
+            coupon = coupon.ToLowerInvariant();
+
             if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
                 if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
@@ -50,12 +51,11 @@ namespace Ekom.API
                 {
                     throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
                 }
-
             }
            
             else
             {
-                throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+                throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
             }
         }
 
@@ -120,7 +120,9 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(productKey));
             }
-           
+
+            coupon = coupon.ToLowerInvariant();
+
             if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
                 if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))

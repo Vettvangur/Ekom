@@ -45,6 +45,7 @@ namespace Ekom.Models
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
                 Discount = orderInfoJObject["Discount"]?.ToObject<OrderedDiscount>();
+                Coupon = orderInfoJObject["Coupon"].ToObject<string>();
             }
         }
 
