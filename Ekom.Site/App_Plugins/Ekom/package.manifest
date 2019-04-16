@@ -1,5 +1,13 @@
 ﻿{      
 	propertyEditors: [
+        {
+            "name": "Ekom Coupon Editor",
+            "alias": "ekomCouponEditor",
+            "editor": {
+                "valueType": "STRING",
+                "view": "~/App_Plugins/Ekom/Datatypes/EkomCouponEditor/ekomCoupon.html"
+            }
+        },
 		{          
 			alias: "Ekom.Countries",           
 			name: "Ekom Countries",         
@@ -27,6 +35,7 @@
 	javascript: [
 		'~/App_Plugins/Ekom/DataTypes/Countries/countries.controller.js',
 		'~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.controller.js',
-		"~/App_Plugins/Ekom/DataTypes/EkomStockEditor/ekomStock.controller.js"
+		"~/App_Plugins/Ekom/DataTypes/EkomStockEditor/ekomStock.controller.js",
+        "~/App_Plugins/Ekom/Datatypes/EkomCouponEditor/ekomCoupon.controller.js"
 	]
 }
