@@ -140,6 +140,7 @@ namespace Ekom.Models
                             line.Amount.Store,
                             line.Product.ProductDiscount,
                             line.Discount,
+                            true,
                             SumOriginalPrice,
                             line.Quantity
                         );
@@ -181,6 +182,7 @@ namespace Ekom.Models
                                 line.Amount.Store,
                                 line.Product.ProductDiscount,
                                 line.Discount,
+                                true,
                                 SumOriginalPrice,
                                 line.Quantity
                             );
@@ -217,6 +219,7 @@ namespace Ekom.Models
                                 line.Amount.Store,
                                 line.Product.ProductDiscount,
                                 line.Discount,
+                                true,
                                 SumOriginalPrice,
                                 line.Quantity
                             );

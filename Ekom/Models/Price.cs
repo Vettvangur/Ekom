@@ -24,10 +24,11 @@ namespace Ekom.Models
             LogManager.GetLogger(
                 MethodBase.GetCurrentMethod().DeclaringType
             );
-        public OrderedProductDiscount ProductDiscount { get;}
+        public OrderedProductDiscount ProductDiscount { get; }
         /// <summary>
         /// 
         /// </summary>
+        public bool UseOrderDiscount { get; }
         public OrderedDiscount Discount { get; }
         /// <summary>
         /// 
@@ -47,13 +48,14 @@ namespace Ekom.Models
         public Price(
             OrderedDiscount discount,
             OrderedProductDiscount productDiscount,
+            bool useOrderDiscount,
             decimal? totalOrderPrice ,
             StoreInfo store,
             decimal originalValue,
             bool discountAlwaysBeforeVAT,
             int quantity
         )
-            : this(originalValue, store, productDiscount, discount, totalOrderPrice, quantity, discountAlwaysBeforeVAT)
+            : this(originalValue, store, productDiscount, discount, useOrderDiscount , totalOrderPrice, quantity, discountAlwaysBeforeVAT)
         {
         }
 
@@ -65,6 +67,7 @@ namespace Ekom.Models
             IStore store,
             OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
+            bool useOrderDiscount = true,
             decimal? TotalOrderAmount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -74,6 +77,7 @@ namespace Ekom.Models
                  new StoreInfo(store),
                  productDiscount,
                  discount,
+                 useOrderDiscount,
                  TotalOrderAmount,
                  quantity,
                  discountAlwaysBeforeVat)
@@ -88,11 +92,12 @@ namespace Ekom.Models
             IStore store,
             OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
+            bool useOrderDiscount = true,
             decimal? TotalOrderAmount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
-            : this(price, new StoreInfo(store), productDiscount, discount,TotalOrderAmount ,quantity, discountAlwaysBeforeVat )
+            : this(price, new StoreInfo(store), productDiscount, discount, useOrderDiscount, TotalOrderAmount, quantity, discountAlwaysBeforeVat )
         {
         }
 
@@ -104,6 +109,7 @@ namespace Ekom.Models
             StoreInfo storeInfo,
             OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
+            bool useOrderDiscount = true,
             decimal? TotalOrderAmount = null,
             int quantity = 1, 
             bool discountAlwaysBeforeVat = false
@@ -114,6 +120,7 @@ namespace Ekom.Models
                   storeInfo,
                   productDiscount,
                   discount,
+                  useOrderDiscount,
                   TotalOrderAmount,
                  quantity,
                    discountAlwaysBeforeVat)
@@ -128,6 +135,7 @@ namespace Ekom.Models
             StoreInfo storeInfo,
             OrderedProductDiscount productDiscount = null,
             OrderedDiscount discount = null,
+            bool useOrderDiscount = true,
             decimal? TotalOrderAmount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
@@ -137,6 +145,7 @@ namespace Ekom.Models
             Store = storeInfo;
             Discount = discount;
             ProductDiscount = productDiscount;
+            UseOrderDiscount = useOrderDiscount;
             Quantity = quantity;
             DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
         }
@@ -286,7 +295,7 @@ namespace Ekom.Models
             }
             var price = OriginalValue;
 
-            if (Discount != null && ProductDiscount == null)
+            if (Discount != null && UseOrderDiscount  && ProductDiscount == null)
             {
                 price = CalculateOrderDiscount(price);
             }
@@ -297,21 +306,29 @@ namespace Ekom.Models
             else
             {
                 var productDiscountPrice = CalcualteProductDiscount(price);
-                if (Discount.Stackable)
+                if (UseOrderDiscount)
                 {
-                    return CalculateOrderDiscount(productDiscountPrice);
-                }
-                var OrderDiscountPrice = CalculateOrderDiscount(price);
-                if (productDiscountPrice > OrderDiscountPrice)
-                {
-                    _hasProductDiscount = false;
-                    return OrderDiscountPrice;
+                    if (Discount.Stackable)
+                    {
+                        return CalculateOrderDiscount(productDiscountPrice);
+                    }
+                    var OrderDiscountPrice = CalculateOrderDiscount(price);
+                    if (productDiscountPrice > OrderDiscountPrice)
+                    {
+                        _hasProductDiscount = false;
+                        return OrderDiscountPrice;
+                    }
+                    else
+                    {
+                        _hasOrderDiscount = false;
+                        return productDiscountPrice;
+                    }
                 }
                 else
                 {
-                    _hasOrderDiscount = false;
                     return productDiscountPrice;
                 }
+                
             }
             return price;
         }
@@ -413,7 +430,10 @@ namespace Ekom.Models
             //{
             //    currencyCulture = "is";
             //}
-
+            if (currencyCulture.CurrencyValue == null)
+            {
+                currencyCulture.CurrencyValue = "is";
+            }
             CurrencyString = Value.ToString(currencyCulture.CurrencyFormat, new CultureInfo(currencyCulture.CurrencyValue));
         }
 
