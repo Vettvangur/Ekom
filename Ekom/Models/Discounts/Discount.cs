@@ -72,9 +72,18 @@ namespace Ekom.Models.Discounts
 
             var discountAmount = Convert.ToDecimal(Properties.GetPropertyValue("discount"));
 
+            var typeValue = Properties.GetPropertyValue("type");
+
+            if (int.TryParse(typeValue, out int typeValueInt))
+            {
+                var helper = new UmbracoHelper(UmbracoContext.Current);
+
+                typeValue = helper.GetPreValueAsString(typeValueInt);
+            }
+
             DiscountType type = DiscountType.Fixed;
 
-            switch (Properties.GetPropertyValue("type"))
+            switch (typeValue)
             {
                 case "Fixed":
                     break;

@@ -48,6 +48,8 @@ namespace Ekom.API
                 {
                     if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                     {
+                        _log.Info("ApplyCouponToOrder: " + discount.Key + " Type: " + discount.Amount.Type);
+
                         return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
                     }
                     else

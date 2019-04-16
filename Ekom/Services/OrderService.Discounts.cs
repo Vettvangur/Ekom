@@ -30,6 +30,7 @@ namespace Ekom.Services
             if (ApplyDiscountToOrder(discount, orderInfo, coupon))
             {
                 UpdateOrderAndOrderInfo(orderInfo);
+
                 return true;
             }
             return false;
@@ -69,9 +70,6 @@ namespace Ekom.Services
                         }
                     }
                 }
-
-
-
 
                 return true;
             }
