@@ -5,8 +5,6 @@ using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core;
 
 namespace Ekom.Repository
@@ -33,11 +31,13 @@ namespace Ekom.Repository
 
         public void InsertCoupon(CouponData couponData)
         {
-            if (!DiscountHasCoupon(couponData.DiscountId,couponData.CouponCode))
+            if (!CouponCodeExist(couponData.CouponCode))
             {
                 using (var db = _appCtx.DatabaseContext.Database)
                 {
                     db.Insert(couponData);
+
+                    RefreshCache(couponData);
                 }
             } else
             {
@@ -51,6 +51,8 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(couponData);
+
+                RefreshCache(couponData);
             }
         }
 
@@ -63,6 +65,8 @@ namespace Ekom.Repository
                 using (var db = _appCtx.DatabaseContext.Database)
                 {
                     db.Delete(coupon);
+
+                    RemoveCache(coupon);
                 }
             } else
             {
@@ -76,6 +80,22 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode);
+            }
+        }
+
+        public CouponData GetCouponByKey(Guid key)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where CouponKey = @0", key);
+            }
+        }
+
+        public CouponData GetCouponByCode(string couponCode)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode);
             }
         }
 
@@ -103,11 +123,66 @@ namespace Ekom.Repository
             }
         }
 
-        public void MarkUsed(Guid CouponKey)
+        public bool CouponCodeExist(string couponCode)
         {
             using (var db = _appCtx.DatabaseContext.Database)
             {
-                db.Update("update DBO.EkomCoupon c set c.NumberAvailable = c.NumberAvailable -1 where c.CouponKey = @0", CouponKey);
+                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode).Any();
+            }
+        }
+
+        public void MarkUsed(string couponCode)
+        {
+            using (var db = _appCtx.DatabaseContext.Database)
+            {
+                var coupon = GetCouponByCode(couponCode);
+
+                if (coupon != null)
+                {
+                    coupon.NumberAvailable--;
+                }
+
+                db.Update(coupon);
+
+                RefreshCache(coupon);
+            }
+
+        }
+
+        public void RefreshCache(CouponData coupon)
+        {
+            var couponCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "couponCache");
+
+            if (couponCache != null)
+            {
+                couponCache.AddReplace(coupon);
+            }
+
+            RefreshDiscountCache(coupon);
+        }
+
+        public void RemoveCache(CouponData coupon)
+        {
+            var couponCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "couponCache");
+
+            if (couponCache != null)
+            {
+                couponCache.Remove(coupon);
+            }
+
+            RefreshDiscountCache(coupon);
+        }
+
+        public void RefreshDiscountCache(CouponData coupon)
+        {
+            var orderDiscountCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmOrderDiscount");
+
+            if (orderDiscountCache != null)
+            {
+                var cs = ApplicationContext.Current.Services.ContentService;
+                var discountNode = cs.GetById(coupon.DiscountId);
+
+                orderDiscountCache.AddReplace(discountNode);
             }
         }
     }

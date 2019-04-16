@@ -39,18 +39,26 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
+
             coupon = coupon.ToLowerInvariant();
 
             if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
-                if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
-                { 
-                    return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
-                }
-                else
+                if (couponData.NumberAvailable > 0)
                 {
-                    throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+                    if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+                    {
+                        return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
+                    }
+                    else
+                    {
+                        throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+                    }
+                } else
+                {
+                    throw new DiscountNotFoundException($"Coupon has no usage.");
                 }
+
             }
            
             else

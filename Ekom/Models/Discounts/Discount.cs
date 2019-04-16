@@ -85,7 +85,6 @@ namespace Ekom.Models.Discounts
                     break;
             }
 
-
             Amount = new DiscountAmount
             {
                 Amount = discountAmount,

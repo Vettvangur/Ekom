@@ -2,6 +2,7 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Abstractions;
+using Ekom.Models.Data;
 using Examine;
 using Examine.SearchCriteria;
 using log4net;
@@ -189,10 +190,12 @@ namespace Ekom.Cache
             }
         }
 
-        /// <summary>
-        /// Removes an item from all store caches
-        /// </summary>
-        public void RemoveItemFromAllCaches(Guid id)
+
+
+            /// <summary>
+            /// Removes an item from all store caches
+            /// </summary>
+            public void RemoveItemFromAllCaches(Guid id)
         {
             TItem i = default(TItem);
 
@@ -210,6 +213,14 @@ namespace Ekom.Cache
         {
             AddOrReplaceFromAllCaches(node);
         }
+
+        public virtual void AddReplace(CouponData coupon)
+        {
+        }
+        public virtual void Remove(CouponData coupon)
+        {
+        }
+
 
         /// <summary>
         /// <see cref="ICache"/> implementation,

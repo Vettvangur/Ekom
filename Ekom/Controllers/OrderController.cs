@@ -55,7 +55,7 @@ namespace Ekom.Controllers
                 return Json(new
                 {
                     success = true,
-                    orderInfo = orderInfo
+                    orderInfo
                 });
             }
             catch (Exception ex)

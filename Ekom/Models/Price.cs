@@ -375,7 +375,7 @@ namespace Ekom.Models
                     break;
 
                 case Discounts.DiscountType.Percentage:
-
+                    
                     price -= price * Discount.Amount.Amount;
                     _hasOrderDiscount = true;
                     break;

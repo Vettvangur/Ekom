@@ -32,8 +32,6 @@ namespace Ekom.Controllers
 
                 if (Order.Instance.ApplyCouponToOrder(coupon, storeAlias))
                 {
-                    var order = Order.Instance.GetOrder(storeAlias);
-
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
                 else

@@ -18,7 +18,7 @@ namespace Ekom.Cache
 {
     public class CouponCache : ICache
     {
-        public string NodeAlias { get; } = "NotUsed";
+        public string NodeAlias { get; } = "couponCache";
         protected ILog _log;
         ICouponRepository _couponRepo;
         public ConcurrentDictionary<string, CouponData> Cache;
@@ -37,9 +37,10 @@ namespace Ekom.Cache
             Cache = new GlobalCouponCache();
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            _log.Info("Starting to fill...");
+            _log.Info("Starting to fill coupon cache...");
 
             var allCoupons = _couponRepo.GetAllCoupons();
+
             foreach (var coupon in allCoupons)
             {
                 Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
@@ -48,13 +49,26 @@ namespace Ekom.Cache
             stopwatch.Stop();
             _log.Info("Finished filling Coupon cache with " + allCoupons.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
         }
-        public void AddReplace(IContent content)
+
+        public void AddReplace(CouponData coupon)
+        {
+            Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
+        }
+
+        public void AddReplace(IContent node)
         {
 
         }
-        public void Remove(Guid Key)
-        {
 
+        public void Remove(Guid key)
+        {
+        }
+
+        public void Remove(CouponData coupon)
+        {
+            CouponData i = null;
+
+            Cache.TryRemove(coupon.CouponCode.ToLowerInvariant(), out i);
         }
 
     }

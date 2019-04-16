@@ -1,4 +1,5 @@
-﻿using System;
+using Ekom.Models.Data;
+using System;
 using Umbraco.Core.Models;
 
 namespace Ekom.Cache
@@ -20,9 +21,20 @@ namespace Ekom.Cache
         void AddReplace(IContent node);
 
         /// <summary>
+        /// Handles addition of nodes when umbraco events fire
+        /// </summary>
+        void AddReplace(CouponData coupon);
+
+        /// <summary>
         /// Handles removal of nodes when umbraco events fire
         /// </summary>
         void Remove(Guid id);
+
+
+        /// <summary>
+        /// Handles removal of nodes when umbraco events fire
+        /// </summary>
+        void Remove(CouponData coupon);
 
         /// <summary>
         /// Handles initial population of cache data

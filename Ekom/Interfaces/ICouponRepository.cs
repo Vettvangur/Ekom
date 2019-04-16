@@ -16,5 +16,5 @@ namespace Ekom.Interfaces
         IEnumerable<CouponData> GetAllCoupons();
         bool DiscountHasCoupon(Guid discountId, string couponCode);
         IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId);
-    }
-}
+        void MarkUsed(string couponCode);
+    }}

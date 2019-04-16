@@ -17,17 +17,20 @@ namespace Ekom.Services
         Configuration _config;
         IDiscountStockRepository _discountStockRepo;
         OrderRepository _orderRepo;
+        ICouponRepository _couponRepo;
         private OrderService _orderService;
         public CheckoutService(
             ILogFactory logFac,
             Configuration config,
             OrderRepository orderRepo,
+            ICouponRepository couponRepo,
             OrderService orderService,
             IDiscountStockRepository discountStockRepo)
         {
             _log = logFac.GetLogger<CheckoutService>();
             _config = config;
             _orderRepo = orderRepo;
+            _couponRepo = couponRepo;
             _orderService = orderService;
             _discountStockRepo = discountStockRepo;
         }
@@ -56,6 +59,11 @@ namespace Ekom.Services
                     {
                         //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
                         //oi.Discount?.OnCouponApply();
+
+                        if (!string.IsNullOrEmpty(oi.Coupon))
+                        {
+                            _couponRepo.MarkUsed(oi.Coupon);
+                        }
                     }
                     catch (Exception ex) // Swallow all event subscriber exceptions
                     {

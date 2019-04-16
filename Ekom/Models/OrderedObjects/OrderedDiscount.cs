@@ -1,9 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
 using Ekom.Models.Discounts;
+using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace Ekom.Models.OrderedObjects
 {
@@ -95,5 +98,10 @@ namespace Ekom.Models.OrderedObjects
             else
                 return -1;
         }
+
+        protected static readonly ILog Log =
+            LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType
+            );
     }
 }

@@ -1,6 +1,7 @@
 using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Abstractions;
+using Ekom.Models.Data;
 using Examine.SearchCriteria;
 using log4net;
 using System;
@@ -137,6 +138,13 @@ namespace Ekom.Cache
         public virtual void Remove(Guid id)
         {
             RemoveItemFromCache(id);
+        }
+
+        public virtual void AddReplace(CouponData coupon)
+        {
+        }
+        public virtual void Remove(CouponData coupon)
+        {
         }
     }
 }
