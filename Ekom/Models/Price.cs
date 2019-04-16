@@ -299,6 +299,10 @@ namespace Ekom.Models
             {
                 price = CalculateOrderDiscount(price);
             }
+            else if (Discount != null && !UseOrderDiscount && ProductDiscount == null)
+            {
+                return price;
+            }
             else if (Discount == null && ProductDiscount != null)
             {
                 price = CalcualteProductDiscount(price);
