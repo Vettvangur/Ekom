@@ -45,7 +45,7 @@ namespace Ekom.Services
             string coupon = null
         )
         {
-            if (IsBetterDiscount(orderInfo, discount))
+            if (IsBetterDiscount(orderInfo, discount) && IsDiscountApplicatable(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
                 //foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
@@ -383,6 +383,16 @@ namespace Ekom.Services
                 }
 
             }
+        }
+
+        public bool IsDiscountApplicatable(OrderInfo orderInfo, IDiscount discount)
+        {
+            if (orderInfo.OrderLines.Any(x => discount.DiscountItems.Any(z => z == x.ProductKey)))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public void InsertCouponCode(string couponCode, int numberAvailable, Guid discountId)

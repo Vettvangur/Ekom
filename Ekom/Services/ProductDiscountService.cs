@@ -25,7 +25,9 @@ namespace Ekom.Services
         public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias , string inputPrice )
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
-            List<ProductDiscount> applicableDiscounts = new List<ProductDiscount>();
+
+            var applicableDiscounts = new List<ProductDiscount>();
+
             foreach(var discount in _productDiscountCache.Cache[storeAlias])
             {
                 var f = JsonConvert.SerializeObject(discount.Value);

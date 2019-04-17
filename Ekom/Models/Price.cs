@@ -293,6 +293,7 @@ namespace Ekom.Models
             {
                 return OriginalValue;
             }
+
             var price = OriginalValue;
 
             if (Discount != null && UseOrderDiscount  && ProductDiscount == null)
@@ -310,13 +311,16 @@ namespace Ekom.Models
             else
             {
                 var productDiscountPrice = CalcualteProductDiscount(price);
+
                 if (UseOrderDiscount)
                 {
                     if (Discount.Stackable)
                     {
                         return CalculateOrderDiscount(productDiscountPrice);
                     }
+
                     var OrderDiscountPrice = CalculateOrderDiscount(price);
+
                     if (productDiscountPrice > OrderDiscountPrice)
                     {
                         _hasProductDiscount = false;
@@ -335,7 +339,9 @@ namespace Ekom.Models
                 
             }
             return price;
+
         }
+
         private decimal CalcualteProductDiscount(decimal price)
         {
             switch (ProductDiscount.Type)
@@ -369,6 +375,7 @@ namespace Ekom.Models
             }
             return price;
         }
+
         private decimal CalculateOrderDiscount(decimal price)
         {
             switch (Discount.Amount.Type)
@@ -403,6 +410,7 @@ namespace Ekom.Models
             }
             return price;
         }
+
 
     }
 

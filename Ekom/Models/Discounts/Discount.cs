@@ -54,7 +54,7 @@ namespace Ekom.Models.Discounts
         }
 
         /// <summary>
-        /// Construct ShippingProvider from umbraco publish event
+        /// Construct Discount from umbraco publish event
         /// </summary>
         public Discount(IContent node, IStore store) : base(node, store)
         {
