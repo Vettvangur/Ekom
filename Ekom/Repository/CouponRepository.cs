@@ -183,6 +183,7 @@ namespace Ekom.Repository
                 var discountNode = cs.GetById(coupon.DiscountId);
 
                 orderDiscountCache.AddReplace(discountNode);
+
             }
         }
     }

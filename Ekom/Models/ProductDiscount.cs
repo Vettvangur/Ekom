@@ -43,9 +43,16 @@ namespace Ekom.Models
         {
             get
             {
+                var typeValue = Properties.GetPropertyValue("type");
 
-                var f = Properties.GetPropertyValue("type");
-                switch (Properties.GetPropertyValue("type"))
+                if (int.TryParse(typeValue, out int typeValueInt))
+                {
+                    var helper = new UmbracoHelper(UmbracoContext.Current);
+
+                    typeValue = helper.GetPreValueAsString(typeValueInt);
+                }
+
+                switch (typeValue)
                 {
                     case "Fixed":
                         return DiscountType.Fixed;
@@ -74,6 +81,7 @@ namespace Ekom.Models
                     {
 
                     }
+
                     decimal value;
                     Decimal.TryParse(discount.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out value);
                     value = value * 0.01M;
@@ -85,8 +93,6 @@ namespace Ekom.Models
                 }
 
             }
-
-
 
         }
        

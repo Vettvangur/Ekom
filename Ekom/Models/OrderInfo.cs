@@ -117,7 +117,7 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
+                var amount = OrderLines.Sum(line => line.Amount.Value);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }

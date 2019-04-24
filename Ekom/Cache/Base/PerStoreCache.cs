@@ -190,8 +190,6 @@ namespace Ekom.Cache
             }
         }
 
-
-
             /// <summary>
             /// Removes an item from all store caches
             /// </summary>
