@@ -1,6 +1,7 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Interfaces;
+using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
 using log4net;
@@ -200,7 +201,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store);
+            Price = new Price(variantPrice, Store , Product.ProductDiscount == null ? null : new OrderedProductDiscount(Product.ProductDiscount));
         }
 
         /// <summary>
@@ -217,7 +218,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store);
+            Price = new Price(variantPrice, Store, Product.ProductDiscount == null ? null : new OrderedProductDiscount(Product.ProductDiscount));
         }
 
         private static readonly ILog Log =
