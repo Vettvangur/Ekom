@@ -188,7 +188,7 @@ namespace Ekom.Extensions.Controllers
                 // save job ids to sql for retrieval after checkout completion
                 Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
 
-                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " +isOfflinePayment);
+                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " + isOfflinePayment);
 
                 if (isOfflinePayment)
                 {

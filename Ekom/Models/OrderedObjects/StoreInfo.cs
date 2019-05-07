@@ -1,5 +1,6 @@
 using Ekom.Interfaces;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -24,11 +25,58 @@ namespace Ekom.Models.OrderedObjects
             decimal vat)
         {
             Key = key;
-            Currency = currency;
             Culture = culture;
             Alias = alias;
             VatIncludedInPrice = vatIncludedInPrice;
             Vat = vat;
+
+            try
+            {
+                Currency = currency;
+            } catch {
+                
+                //fallback for is-IS
+
+                var list = new List<CurrencyModel>();
+
+                list.Add(new CurrencyModel() {
+                     CurrencyFormat = "C",
+                      CurrencyValue = "is-IS"
+                });
+
+                currency = list;
+            }
+            
+
+        }
+
+        public StoreInfo(JObject storeInfoObject)
+        {
+
+            
+
+            try
+            {
+                Currency = storeInfoObject["Currency"]?.ToObject<List<CurrencyModel>>();
+            } catch
+            {
+                var list = new List<CurrencyModel>();
+
+                list.Add(new CurrencyModel()
+                {
+                    CurrencyFormat = "C",
+                    CurrencyValue = "is-IS"
+                });
+
+                Currency = list;
+            }
+
+            Key = Guid.Parse(storeInfoObject["Key"].Value<string>());
+            Culture = storeInfoObject["Culture"].Value<string>();
+            Alias = storeInfoObject["Alias"].Value<string>();
+            VatIncludedInPrice = storeInfoObject["VatIncludedInPrice"].Value<bool>();
+            Vat = storeInfoObject["Vat"].Value<int>();
+
         }
 
         public StoreInfo(IStore store)
