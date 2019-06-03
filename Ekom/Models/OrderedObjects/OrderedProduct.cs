@@ -168,7 +168,7 @@ namespace Ekom.Models.OrderedObjects
             Log.Debug("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
-            ProductDiscount = productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer);
+            ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
             Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);

@@ -39,13 +39,13 @@ namespace Ekom.Models
             {
                 var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
-                StoreInfo = StoreInfo  ?? orderInfoJObject["StoreInfo"].ToObject<StoreInfo>();
+                StoreInfo = CreateStoreInfoFromJson(orderInfoJObject);
                 orderLines = CreateOrderLinesFromJson(orderInfoJObject);
                 ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
                 PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
                 Discount = orderInfoJObject["Discount"]?.ToObject<OrderedDiscount>();
-                Coupon = orderInfoJObject["Coupon"].ToObject<string>();
+                Coupon = orderInfoJObject["Coupon"]?.ToObject<string>();
             }
         }
 
@@ -345,6 +345,28 @@ namespace Ekom.Models
                         var p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
 
                         return p;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
+        {
+            if (orderInfoJObject["StoreInfo"] != null)
+            {
+                var storeInfoJson = orderInfoJObject["StoreInfo"].ToString();
+
+                if (!string.IsNullOrEmpty(storeInfoJson))
+                {
+                    var storeInfoObject = JObject.Parse(storeInfoJson);
+
+                    if (storeInfoObject != null)
+                    {
+                        var s = new StoreInfo(storeInfoObject);
+
+                        return s;
                     }
                 }
             }
