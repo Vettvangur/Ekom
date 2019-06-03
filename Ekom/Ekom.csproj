@@ -239,7 +239,6 @@
     <Compile Include="API\Order.Discounts.cs" />
     <Compile Include="API\Order.cs" />
     <Compile Include="API\Catalog.cs" />
-    <Compile Include="API\ProductDiscounts.cs" />
     <Compile Include="API\Stock.Discounts.cs" />
     <Compile Include="API\Stock.cs" />
     <Compile Include="API\Store.cs" />

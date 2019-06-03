@@ -107,13 +107,17 @@ namespace Ekom.Models
                     .Select(x => _umbraco.TypedContent(Udi.Parse(x))).ToList();
                 foreach (var node in nodes)
                 {
-                    if (node.ContentType.Alias == "ekmProduct")
+                    if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Count() == 0)
                     {
                         returnList.Add(node.GetKey());
                     }
-                    if (node.ContentType.Alias == "ekmCategory")
+                    else if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Any())
                     {
-                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct").Select(x => x.GetKey()));
+                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProductVariant").Select(x => x.GetKey()));
+                    }
+                    else if (node.ContentType.Alias == "ekmCategory")
+                    {
+                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct" || x.ContentType.Alias == "ekmProductVariant").Select(x => x.GetKey()));
                     }
                 }
                 return returnList;

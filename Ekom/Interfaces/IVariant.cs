@@ -1,4 +1,5 @@
-﻿using System;
+using Ekom.Models;
+using System;
 using System.Collections.Generic;
 
 namespace Ekom.Interfaces
@@ -32,6 +33,8 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
+        /// 
+        ProductDiscount ProductDiscount { get; }
         string SKU { get; }
         /// <summary>
         /// Gets the stock.

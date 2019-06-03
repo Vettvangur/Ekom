@@ -83,7 +83,16 @@ namespace Ekom.Models
                 return Product.Key;
             }
         }
-
+        /// <summary>
+        /// Gets the productDiscount for the specific Variant
+        /// </summary>
+        public ProductDiscount ProductDiscount
+        {
+            get
+            {
+                return Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["key"]), Store.Alias, Properties.GetPropertyValue("price", Store.Alias));
+            }
+        }
         // Waiting for variants to be composed with their parent product
         ///// <summary>
         ///// Get the Product Key
@@ -201,7 +210,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store , Product.ProductDiscount == null ? null : new OrderedProductDiscount(Product.ProductDiscount));
+            Price = new Price(variantPrice, Store ,ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
         }
 
         /// <summary>
@@ -218,7 +227,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store, Product.ProductDiscount == null ? null : new OrderedProductDiscount(Product.ProductDiscount));
+            Price = new Price(variantPrice, Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
         }
 
         private static readonly ILog Log =
