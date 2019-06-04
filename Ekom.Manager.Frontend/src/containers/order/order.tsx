@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import * as moment from 'moment';
 import styled from 'styled-components';
 import { observer, inject } from 'mobx-react';
@@ -385,7 +385,7 @@ export default class Order extends React.Component<IProps> {
                     </div>
                   )} */}
           <Container>
-            <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} />
+            <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} orderDiscountAmount={order.Discounts.length > 0 ? order.DiscountAmount : undefined} />
           </Container>
         </React.Fragment>
       </OrderWrapper>

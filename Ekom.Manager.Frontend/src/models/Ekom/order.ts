@@ -3,10 +3,11 @@ import { IValueAndCurrency } from 'models/Ekom/valueAndCurrency';
 import { IStore } from 'models/Ekom/store';
 import { IOrderLine } from 'models/Ekom/orderline';
 import { IProvider } from 'models/Ekom/provider';
+import { IDiscount } from 'models/Ekom/discount';
 
 export interface IOrderModel {
   StoreInfo: IStore;
-  Discount: any;
+  Discounts: IDiscount[];
   Coupon: any;
   UniqueId: string;
   ReferenceId: number;

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import classNames from 'classnames/bind';
 
 import * as s from './style.scss';
+import { IValueAndCurrency } from 'models/Ekom/valueAndCurrency';
 
 const cx = classNames.bind(s);
 
@@ -12,6 +13,7 @@ const ProductsWrapper = styled.div``;
 interface IProps {
   orderlines: any;
   orderTotal: any;
+  orderDiscountAmount?: IValueAndCurrency;
 }
 
 export default class OrderContainer extends React.Component<IProps> {
@@ -22,6 +24,7 @@ export default class OrderContainer extends React.Component<IProps> {
     const {
       orderlines,
       orderTotal,
+      orderDiscountAmount
     } = this.props;
 
     const columns = [
@@ -101,6 +104,36 @@ export default class OrderContainer extends React.Component<IProps> {
               </div>
             ))}
           </div>
+          {orderDiscountAmount && (
+            <div className={s.tfooter}>
+              <div
+                className={cx({
+                  column: true,
+                  productCol: true,
+                })}
+              />
+              <div
+                className={cx({
+                  column: true,
+                })}
+              />
+              <div
+                className={cx({
+                  column: true,
+                  productCol: true,
+                })}
+              >
+                Discount
+            </div>
+              <div
+                className={cx({
+                  column: true,
+                })}
+              >
+                -{orderDiscountAmount.CurrencyString}
+              </div>
+            </div>
+          )}
           <div className={s.tfooter}>
             <div
               className={cx({
