@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +13,7 @@ namespace Ekom.Models
 
             get
             {
-                return Properties.GetPropertyValue("customerName");
+                return string.IsNullOrEmpty(Properties.GetPropertyValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetPropertyValue("customerName"); 
             }
         }
         public string FirstName

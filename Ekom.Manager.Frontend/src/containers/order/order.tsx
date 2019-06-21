@@ -385,7 +385,7 @@ export default class Order extends React.Component<IProps> {
                     </div>
                   )} */}
           <Container>
-            <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} orderDiscountAmount={order.Discounts.length > 0 ? order.DiscountAmount : undefined} />
+            <Products orderlines={order.OrderLines} orderTotal={order.ChargedAmount.CurrencyString} orderDiscountAmount={order.Discounts && order.Discounts.length > 0 ? order.DiscountAmount : undefined} />
           </Container>
         </React.Fragment>
       </OrderWrapper>
