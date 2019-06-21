@@ -48,6 +48,9 @@ namespace Ekom.Repository
             using (var db = _appCtx.DatabaseContext.Database)
             {
                 db.Update(orderData);
+                //Clear cache after update.
+                _appCtx.ApplicationCache.RuntimeCache.ClearCacheItem($"EkomOrder-{orderData.UniqueId}");
+
             }
         }
 

@@ -191,6 +191,20 @@ namespace Ekom
             }
         );
 
+        /// <summary>
+        /// ekmUserBasket
+        /// Single basket per user, not saved in session or cookie, only on the member under "orderId".
+        /// </summary>
+        public virtual bool DisableCartImages
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["ekmDisableCartImages"];
+
+                return value.ConvertToBool();
+            }
+        }
+
         /// <summary> 
         /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 
         /// </summary> 

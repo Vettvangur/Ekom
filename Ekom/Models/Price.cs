@@ -3,6 +3,7 @@ using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using log4net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
 using System.Reflection;
@@ -44,21 +45,65 @@ namespace Ekom.Models
         /// <summary>
         /// Json constructor
         /// </summary>
+        /// The order of the properties is to remove ambiguity
         [JsonConstructor]
         public Price(
-            OrderedDiscount discount,
-            OrderedProductDiscount productDiscount,
-            bool useOrderDiscount,
-            decimal? totalOrderPrice ,
             StoreInfo store,
             decimal originalValue,
-            bool discountAlwaysBeforeVAT,
-            int quantity
+            OrderedDiscount discount = null,
+            OrderedProductDiscount productDiscount = null,
+            bool useOrderDiscount = false,
+            decimal? totalOrderPrice = null,
+            bool discountAlwaysBeforeVAT = false,
+            int quantity = 1
         )
-            : this(originalValue, store, productDiscount, discount, useOrderDiscount , totalOrderPrice, quantity, discountAlwaysBeforeVAT)
+            : this(originalValue, store, productDiscount, discount, useOrderDiscount, totalOrderPrice, quantity, discountAlwaysBeforeVAT)
         {
         }
+        /// <summary>
+        /// ctor from JObject
+        /// </summary>
+        public Price(
+            JToken jObject
+        )
+        {
+            var currency = jObject["Store"]?["Currency"];
+            if(currency != null && currency.Type == JTokenType.String)
+            {
+                var list = new System.Collections.Generic.List<CurrencyModel>();
 
+                list.Add(new CurrencyModel()
+                {
+                    CurrencyFormat = "C",
+                    CurrencyValue = currency.Value<string>()
+                });
+                var store = jObject["Store"];
+                var key = new Guid(store["Key"].Value<string>());
+                var culture = store["Culture"].Value<string>();
+                var alias = store["Alias"].Value<string>();
+                var vatincluded = store["VatIncludedInPrice"].Value<bool>();
+                var vat = store["Vat"].Value<decimal>();
+                Store = new StoreInfo(
+                    key:key,
+                    currency: list,
+                    culture:culture,
+                    alias:alias,
+                    vatIncludedInPrice:vatincluded,
+                    vat:vat
+                );
+            }
+            else
+            {
+                Store = jObject["Store"]?.ToObject<StoreInfo>();
+            }
+
+            OriginalValue = jObject["OriginalValue"].Value<decimal>();
+            Discount = jObject["Discount"]?.ToObject<OrderedDiscount>();
+            ProductDiscount = jObject["ProductDiscount"]?.ToObject<OrderedProductDiscount>();
+            UseOrderDiscount = jObject["UseOrderDiscount"] != null ? jObject["UseOrderDiscount"].Value<bool>() : false;
+            Quantity = jObject["Quantity"] != null ? jObject["Quantity"].Value<int>() : 1;
+            DiscountAlwaysBeforeVAT = jObject["DiscountAlwaysBeforeVAT"] != null ? jObject["DiscountAlwaysBeforeVAT"].Value<bool>() : false;
+        }
         /// <summary>
         /// ctor
         /// </summary>

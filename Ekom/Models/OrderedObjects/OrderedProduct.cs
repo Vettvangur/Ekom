@@ -117,8 +117,12 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                var umbHelper = Configuration.container.GetInstance<UmbracoHelper>();
-                return ImageIds.Select(id => umbHelper.TypedMedia(id)?.Url);
+                if (!Configuration.Current.DisableCartImages)
+                {
+                    var umbHelper = Configuration.container.GetInstance<UmbracoHelper>();
+                    return ImageIds.Select(id => umbHelper.TypedMedia(id)?.Url);
+                }
+                return null;
             }
         }
 
@@ -171,7 +175,15 @@ namespace Ekom.Models.OrderedObjects
             ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
+            Log.Debug("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
+            try
+            {
+                Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
+            } catch (Exception e)
+            {
+                // failed due to old order, try to fix by splitting the constructor up.
+                Price = new Price(productPropertiesObject["Price"]);
+            }
 
             ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
 

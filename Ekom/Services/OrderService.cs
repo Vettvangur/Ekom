@@ -194,7 +194,14 @@ namespace Ekom.Services
         public OrderInfo GetOrder(Guid uniqueId)
         {
             // Chekk for cache ?
+            return ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem($"EkomOrder-{uniqueId}", () => {
+                return GetOrderInfo(uniqueId);
+            }, TimeSpan.FromMinutes(5)) as OrderInfo;
+        }
 
+        // fills cache for GetOrder
+        public OrderInfo GetOrderUpdateCache(Guid uniqueId)
+        {
             return GetOrderInfo(uniqueId);
         }
 
