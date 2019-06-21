@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using log4net;
@@ -70,12 +70,20 @@ namespace Ekom.Domain.Repositories
 
             foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
             {
-                var region = new RegionInfo(culture.LCID);
-
-                if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
+                try
                 {
-                    cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
+                    var region = new RegionInfo(culture.LCID);
+
+                    if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
+                    {
+                        cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
+                    }
                 }
+                catch
+                {
+                    // Culture ID 4096 (0x1000) is a neutral culture; a region cannot be created from it.  Error sometimes on some machines
+                }
+
             }
 
             return cultureList
