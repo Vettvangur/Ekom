@@ -2,7 +2,6 @@ using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models.Data;
 using Ekom.Utilities;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +11,6 @@ using System.Web.Mvc;
 using Umbraco.NetPayment;
 using Umbraco.NetPayment.API;
 using Umbraco.NetPayment.Helpers;
-using Umbraco.Web.Mvc;
 using ILogFactory = Ekom.Services.ILogFactory;
 
 namespace Ekom.Extensions.Controllers
