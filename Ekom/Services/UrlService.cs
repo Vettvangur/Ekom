@@ -25,7 +25,7 @@ namespace Ekom.Services
         /// <param name="examineItems">All categories in hierarchy inclusive</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
-        public static IEnumerable<string> BuildCategoryUrls(List<SearchResult> examineItems, IStore store)
+        public static IEnumerable<string> BuildCategoryUrls(List<ISearchResult> examineItems, IStore store)
         {
             var urls = new HashSet<string>();
 

@@ -40,7 +40,11 @@ namespace Ekom.Models
         {
             get
             {
-                return Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["key"]), Store.Alias , Properties.GetPropertyValue("price", Store.Alias));
+                return Current.Factory.GetInstance<IProductDiscountService>()
+                    .GetProductDiscount(
+                    Guid.Parse(this.Properties["key"]),
+                    Store.Alias,
+                    Properties.GetPropertyValue("price", Store.Alias));
             }
         }
 
@@ -275,7 +279,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Product(SearchResult item, IStore store) : base(item, store)
+        public Product(ISearchResult item, IStore store) : base(item, store)
         {
             PopulateCategoryAncestors();
             PopulateCategories();

@@ -1,4 +1,4 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Helpers;
@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core.Models;
+using Umbraco.Web.Composing;
 
 namespace Ekom.Models
 {
@@ -87,7 +88,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public VariantGroup(SearchResult item, IStore store) : base(item, store)
+        public VariantGroup(ISearchResult item, IStore store) : base(item, store)
         {
             var parentProductExamine = NodeHelper.GetFirstParentWithDocType(item, "ekmProduct");
             var parentProduct = Catalog.Instance.GetProduct(parentProductExamine.Id);
@@ -106,8 +107,9 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public VariantGroup(IContent node, IStore store) : base(node, store)
         {
-            var parentProductExamine = NodeHelper.GetFirstParentWithDocType(node, "ekmProduct");
-            var parentProduct = Catalog.Instance.GetProduct(parentProductExamine.Id);
+            var publishedContent = Current.UmbracoHelper.Content(node.Id);
+            var publishedParentProduct = NodeHelper.GetFirstParentWithDocType(publishedContent, "ekmProduct");
+            var parentProduct = Catalog.Instance.GetProduct(publishedParentProduct.Id);
 
             if (parentProduct == null)
             {

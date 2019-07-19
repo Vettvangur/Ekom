@@ -3,7 +3,6 @@ using Ekom.Models.Behaviors;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
+using Umbraco.Web.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -22,7 +22,7 @@ namespace Ekom.Models.Discounts
     /// </summary>
     public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
-        UmbracoHelper _umbraco = Configuration.container.GetInstance<UmbracoHelper>();
+        protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountAmount Amount { get; protected set; }
        
@@ -76,9 +76,7 @@ namespace Ekom.Models.Discounts
 
             if (int.TryParse(typeValue, out int typeValueInt))
             {
-                var helper = new UmbracoHelper(UmbracoContext.Current);
-
-                typeValue = helper.GetPreValueAsString(typeValueInt);
+                typeValue = UmbHelper.GetPreValueAsString(typeValueInt);
             }
 
             DiscountType type = DiscountType.Fixed;
@@ -102,18 +100,21 @@ namespace Ekom.Models.Discounts
 
             var nodes = Properties.GetPropertyValue("discountItems", Store.Alias)
                 .Split(',')
-                .Select(x => _umbraco.TypedContent(Udi.Parse(x))).ToList();
+                .Select(x => UmbHelper.Content(Udi.Parse(x))).ToList();
 
                 
             foreach (var node in nodes)
             {
                 if (node.ContentType.Alias == "ekmProduct")
                 {
-                    discountItems.Add(node.GetKey());
+                    discountItems.Add(node.Key);
                 }
                 if (node.ContentType.Alias == "ekmCategory")
                 {
-                    discountItems.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct").Select(x => x.GetKey()));
+                    discountItems.AddRange(
+                        node.Descendants()
+                            .Where(x => x.ContentType.Alias == "ekmProduct")
+                            .Select(x => x.Key));
                 }
             }
             
@@ -216,11 +217,6 @@ namespace Ekom.Models.Discounts
             return d1.CompareTo(d2) > 0;
         }
         #endregion
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 
     /// <summary>

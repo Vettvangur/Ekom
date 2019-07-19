@@ -24,7 +24,7 @@ namespace Ekom.Services
             _examineMgr = examineMgr;
         }
 
-        public SearchResult GetExamineNode(int Id)
+        public ISearchResult GetExamineNode(int Id)
         {
             var searcher = _examineMgr.SearchProviderCollection[_config.ExamineSearcher];
 

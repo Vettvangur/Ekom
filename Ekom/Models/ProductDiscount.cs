@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -18,7 +19,7 @@ namespace Ekom.Models
     public class ProductDiscount : PerStoreNodeEntity, IProductDiscount
     {
 
-        UmbracoHelper _umbraco = Configuration.container.GetInstance<UmbracoHelper>();
+        UmbracoHelper _umbHelper = Current.Factory.GetInstance<UmbracoHelper>();
         IContent node;
         /// <summary>
         /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
@@ -31,7 +32,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public ProductDiscount(SearchResult item, IStore store) : base(item, store)
+        public ProductDiscount(ISearchResult item, IStore store) : base(item, store)
         {
           
         }
@@ -104,7 +105,7 @@ namespace Ekom.Models
                 List<Guid> returnList = new List<Guid>();
                 var nodes = Properties.GetPropertyValue("discountItems")
                     .Split(',')
-                    .Select(x => _umbraco.TypedContent(Udi.Parse(x))).ToList();
+                    .Select(x => _umbHelper.TypedContent(Udi.Parse(x))).ToList();
                 foreach (var node in nodes)
                 {
                     if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Count() == 0)

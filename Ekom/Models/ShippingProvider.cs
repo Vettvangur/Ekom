@@ -32,7 +32,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public ShippingProvider(SearchResult item, IStore store) : base(item, store)
+        public ShippingProvider(ISearchResult item, IStore store) : base(item, store)
         {
             Constraints = new Constraints(this);
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);

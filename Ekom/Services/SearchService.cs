@@ -1,4 +1,4 @@
-﻿using Ekom.Models.Abstractions;
+using Ekom.Models.Abstractions;
 using Examine;
 using log4net;
 using Lucene.Net.QueryParsers;
@@ -70,26 +70,26 @@ namespace Ekom.Services
                     }
                 }
 
-                ISearchResults searchResults;
+                ISearchResults ISearchResults;
 
                 // If no filters were selected search for nodes with ID 0 that will return no results.
                 if (luceneQuery.Length > 0)
                 {
                     var rawQuery = searcher.CreateSearchCriteria().RawQuery(luceneQuery.ToString());
-                    searchResults = searcher.Search(rawQuery);
+                    ISearchResults = searcher.Search(rawQuery);
                 }
                 else
                 {
-                    searchResults = searcher.Search(searcher.CreateSearchCriteria().Id(0).Compile());
+                    ISearchResults = searcher.Search(searcher.CreateSearchCriteria().Id(0).Compile());
                 }
 
-                total = searchResults.TotalItemCount;
+                total = ISearchResults.TotalItemCount;
 
-                return searchResults;
+                return ISearchResults;
             }
             catch (Exception ex)
             {
-                Log.Error("SearchResult Error!", ex);
+                Log.Error("ISearchResult Error!", ex);
 
                 return null;
             }

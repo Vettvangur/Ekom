@@ -171,7 +171,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Category(SearchResult item, IStore store) : base(item, store)
+        public Category(ISearchResult item, IStore store) : base(item, store)
         {
             var pathField = item.Fields["path"];
 

@@ -2,7 +2,6 @@ using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Services;
 using Ekom.Utilities;
-using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -12,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Web;
 
 namespace Ekom.Models.OrderedObjects
@@ -119,8 +120,8 @@ namespace Ekom.Models.OrderedObjects
             {
                 if (!Configuration.Current.DisableCartImages)
                 {
-                    var umbHelper = Configuration.container.GetInstance<UmbracoHelper>();
-                    return ImageIds.Select(id => umbHelper.TypedMedia(id)?.Url);
+                    var umbHelper = Current.Factory.GetInstance<UmbracoHelper>();
+                    return ImageIds.Select(id => umbHelper.Media(id)?.Url);
                 }
                 return null;
             }
@@ -169,13 +170,14 @@ namespace Ekom.Models.OrderedObjects
             _productJson = productJson;
             StoreInfo = storeInfo;
 
-            Log.Debug("Created OrderedProduct from json");
+            var logger = Current.Factory.GetInstance<ILogger>();
+            logger.Debug("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
             ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            Log.Debug("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
+            logger.Debug("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
             try
             {
                 Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
@@ -195,13 +197,13 @@ namespace Ekom.Models.OrderedObjects
 
             if (variantGroups != null && !string.IsNullOrEmpty(variantGroups.ToString()))
             {
-                Log.Debug("OrderedProduct: Variant Groups found in Json");
+                logger.Debug("OrderedProduct: Variant Groups found in Json");
 
                 var variantGroupsArray = (JArray)variantGroups;
 
                 if (variantGroupsArray != null && variantGroupsArray.Any())
                 {
-                    Log.Debug("OrderedProduct: Variant Groups items found in array json");
+                    logger.Debug("OrderedProduct: Variant Groups items found in array json");
 
                     foreach (var variantGroupObject in variantGroupsArray)
                     {
@@ -221,13 +223,5 @@ namespace Ekom.Models.OrderedObjects
                 VariantGroups = Enumerable.Empty<OrderedVariantGroup>();
             }
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

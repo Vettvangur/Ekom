@@ -201,7 +201,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public Variant(SearchResult item, IStore store) : base(item, store)
+        public Variant(ISearchResult item, IStore store) : base(item, store)
         {
             var variantPrice = Properties.GetPropertyValue("price", Store.Alias);
 

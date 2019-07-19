@@ -37,7 +37,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public PaymentProvider(SearchResult item, IStore store) : base(item, store)
+        public PaymentProvider(ISearchResult item, IStore store) : base(item, store)
         {
             Constraints = new Constraints(this);
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
