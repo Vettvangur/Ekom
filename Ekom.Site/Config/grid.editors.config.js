@@ -6,64 +6,41 @@
         "icon": "icon-article"
     },
     {
+        "name": "Image",
+        "alias": "media",
+        "view": "media",
+        "icon": "icon-picture"
+    },
+    {
         "name": "Macro",
         "alias": "macro",
         "view": "macro",
         "icon": "icon-settings-alt"
     },
     {
-        "name": "Featured Products",
-        "alias": "featuredProducts",
-        "view": "/App_Plugins/LeBlender/editors/leblendereditor/LeBlendereditor.html",
-        "icon": "icon-thumbnail-list",
-        "render": "/App_Plugins/LeBlender/editors/leblendereditor/views/Base.cshtml",
+        "name": "Embed",
+        "alias": "embed",
+        "view": "embed",
+        "icon": "icon-movie-alt"
+    },
+    {
+        "name": "Headline",
+        "alias": "headline",
+        "view": "textstring",
+        "icon": "icon-coin",
         "config": {
-            "renderInGrid": "1",
-            "frontView": "/views/partials/leblender/FeaturedProducts.cshtml",
-            "editors": [
-                {
-                    "name": "Caption",
-                    "alias": "caption",
-                    "propretyType": {},
-                    "dataType": "0cc0eba1-9960-42c9-bf9b-60e150b429ae"
-                },
-                {
-                    "name": "Products",
-                    "alias": "products",
-                    "propretyType": {},
-                    "dataType": "cab8c907-f3cb-442c-af42-754469d269b1"
-                }
-            ]
+            "style": "font-size: 36px; line-height: 45px; font-weight: bold",
+            "markup": "<h1>#value#</h1>"
         }
     },
     {
-        "name": "Test",
-        "alias": "test",
-        "view": "/App_Plugins/LeBlender/editors/leblendereditor/LeBlendereditor.html",
-        "icon": "icon-vcard",
-        "render": "/App_Plugins/LeBlender/editors/leblendereditor/views/Base.cshtml",
+        "name": "Quote",
+        "alias": "quote",
+        "view": "textstring",
+        "icon": "icon-quote",
         "config": {
-            "editors": [
-                {
-                    "name": "testing",
-                    "alias": "testing",
-                    "propretyType": {},
-                    "dataType": "75e484b5-66b9-4d86-b651-5ebb7a3c580b"
-                },
-                {
-                    "name": "asdasdasd",
-                    "alias": "asdasdasd",
-                    "propretyType": {},
-                    "dataType": "f5929201-bac5-4046-adde-cc73e717d6f6"
-                },
-                {
-                    "name": "Color",
-                    "alias": "color",
-                    "propretyType": {},
-                    "dataType": "0225af17-b302-49cb-9176-b9f35cab9c17"
-                }
-            ],
-            "frontView": "/views/partials/leblender/FeaturedProducts.cshtml"
+            "style": "border-left: 3px solid #ccc; padding: 10px; color: #ccc; font-family: serif; font-style: italic; font-size: 18px",
+            "markup": "<blockquote>#value#</blockquote>"
         }
     }
 ]

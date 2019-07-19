@@ -2,12 +2,13 @@ using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -22,23 +23,22 @@ namespace Ekom.API
         /// </summary>
         public static Catalog Instance => Configuration.container.GetInstance<Catalog>();
 
-        ILog _log;
-        Configuration _config;
-        ApplicationContext _appCtx;
-        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
-        IStoreService _storeSvc;
-        IPerStoreCache<IProductDiscount> _ProductDiscountCache; // must be before product cache
-        IPerStoreCache<IProduct> _productCache;
-        IPerStoreCache<ICategory> _categoryCache;
-        IPerStoreCache<IVariant> _variantCache;
-        IPerStoreCache<IVariantGroup> _variantGroupCache;
+        readonly Configuration _config;
+        readonly ILogger _log;
+        readonly AppCaches _appCaches;
+        readonly IStoreService _storeSvc;
+        readonly IPerStoreCache<IProductDiscount> _productDiscountCache; // must be before product cache
+        readonly IPerStoreCache<IProduct> _productCache;
+        readonly IPerStoreCache<ICategory> _categoryCache;
+        readonly IPerStoreCache<IVariant> _variantCache;
+        readonly IPerStoreCache<IVariantGroup> _variantGroupCache;
         /// <summary>
         /// ctor
         /// </summary>
         internal Catalog(
-            ApplicationContext appCtx,
+            ILogger logger,
+            AppCaches appCaches,
             Configuration config,
-            ILogFactory logFac,
             IPerStoreCache<IProduct> productCache,
             IPerStoreCache<ICategory> categoryCache,
             IPerStoreCache<IProductDiscount> productDiscountCache,
@@ -47,16 +47,15 @@ namespace Ekom.API
             IStoreService storeService
         )
         {
-            _appCtx = appCtx;
             _config = config;
+            _log = logger;
+            _appCaches = appCaches;
             _productCache = productCache;
             _categoryCache = categoryCache;
             _variantCache = variantCache;
             _variantGroupCache = variantGroupCache;
-            _ProductDiscountCache = productDiscountCache;
+            _productDiscountCache = productDiscountCache;
             _storeSvc = storeService;
-
-            _log = logFac.GetLogger<Catalog>();
         }
 
         /// <summary>
@@ -65,8 +64,8 @@ namespace Ekom.API
         /// <returns></returns>
         public IProduct GetProduct()
         {
-            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
-
+            var r = _appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest");
+            
             return r?.Product;
         }
 
@@ -214,7 +213,7 @@ namespace Ekom.API
         /// <returns></returns>
         public ICategory GetCategory()
         {
-            if (_reqCache.GetCacheItem("ekmRequest") is ContentRequest r)
+            if (_appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest") is ContentRequest r)
             {
                 return r?.Category;
             }

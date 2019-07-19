@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{486CD777-F50E-4422-9058-A981A489D843}"
 	ProjectSection(SolutionItems) = preProject
@@ -39,11 +39,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom", "Ekom\Ekom.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Extensions", "Ekom.Extensions\Ekom.Extensions.csproj", "{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site", "Ekom.Site\Ekom.Site.csproj", "{ABE32170-D950-408F-A6FE-A6A843183D57}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Tests", "Ekom.Tests\Ekom.Tests.csproj", "{18843487-DA0C-466B-9805-629DEB243421}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site.Extensions", "Ekom.Site.Extensions\Ekom.Site.Extensions.csproj", "{C8D798CD-9D24-444E-A7FC-9CDB0816669F}"
 EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ekom.Manager.Frontend\", "{A8E76D41-1323-4B00-A441-8422D89AEF21}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -68,11 +64,9 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ek
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Manager", "Ekom.Manager\Ekom.Manager.csproj", "{F73650A8-CAAC-466D-AC8B-5F9220A237DD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "V8", "V8", "{65DB80DB-9291-4248-9753-3EE42BA4ABE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site", "Ekom.V8.Site\Ekom.Site.csproj", "{5D2C9436-E0DC-426E-A628-057D404540D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.V8", "Ekom.V8\Ekom.V8.csproj", "{804368E5-C7C0-457B-9197-1BD25D1839B4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.V8.Site", "Ekom.V8.Site\Ekom.V8.Site.csproj", "{5D2C9436-E0DC-426E-A628-057D404540D1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site.Extensions", "Ekom.Site.Extensions\Ekom.Site.Extensions.csproj", "{C8D798CD-9D24-444E-A7FC-9CDB0816669F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,39 +87,27 @@ Global
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ABE32170-D950-408F-A6FE-A6A843183D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ABE32170-D950-408F-A6FE-A6A843183D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ABE32170-D950-408F-A6FE-A6A843183D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ABE32170-D950-408F-A6FE-A6A843183D57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18843487-DA0C-466B-9805-629DEB243421}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18843487-DA0C-466B-9805-629DEB243421}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18843487-DA0C-466B-9805-629DEB243421}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18843487-DA0C-466B-9805-629DEB243421}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F73650A8-CAAC-466D-AC8B-5F9220A237DD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{804368E5-C7C0-457B-9197-1BD25D1839B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{804368E5-C7C0-457B-9197-1BD25D1839B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{804368E5-C7C0-457B-9197-1BD25D1839B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{804368E5-C7C0-457B-9197-1BD25D1839B4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5D2C9436-E0DC-426E-A628-057D404540D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5D2C9436-E0DC-426E-A628-057D404540D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D2C9436-E0DC-426E-A628-057D404540D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D2C9436-E0DC-426E-A628-057D404540D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{804368E5-C7C0-457B-9197-1BD25D1839B4} = {65DB80DB-9291-4248-9753-3EE42BA4ABE0}
-		{5D2C9436-E0DC-426E-A628-057D404540D1} = {65DB80DB-9291-4248-9753-3EE42BA4ABE0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}

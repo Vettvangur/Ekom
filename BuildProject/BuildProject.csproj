@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BuildProject</RootNamespace>
     <AssemblyName>BuildProject</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -57,10 +57,6 @@
     <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
       <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
       <Name>Ekom.Extensions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Ekom.Site\Ekom.Site.csproj">
-      <Project>{abe32170-d950-408f-a6fe-a6a843183d57}</Project>
-      <Name>Ekom.Site</Name>
     </ProjectReference>
     <ProjectReference Include="..\Ekom\Ekom.csproj">
       <Project>{3db90c8f-dc87-4020-bc97-4a8e85ab89a0}</Project>
