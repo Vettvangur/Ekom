@@ -48,7 +48,7 @@ namespace Ekom.Models.Discounts
         /// <summary>
         /// Construct ShippingProvider from Examine item
         /// </summary>
-        public Discount(SearchResult item, IStore store) : base(item, store)
+        public Discount(ISearchResult item, IStore store) : base(item, store)
         {
             Construct();
         }

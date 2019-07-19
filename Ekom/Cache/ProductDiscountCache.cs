@@ -1,16 +1,17 @@
 using Ekom.Exceptions;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
 using Ekom.Services;
+using Ekom.Utilities;
 using Examine;
 using Examine.Providers;
-using Examine.SearchCriteria;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 
 
@@ -21,13 +22,13 @@ namespace Ekom.Cache
         public override string NodeAlias { get; } = "ekmProductDiscount";
 
         public ProductDiscountCache(
-            ILogFactory logFac,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IProductDiscount> perStoreFactory
-        ) : base(config, storeCache, perStoreFactory)
+        ) : base(config, logger, factory, storeCache, perStoreFactory)
         {
-            _log = logFac.GetLogger(typeof(ProductDiscountCache));
         }
 
         public override void AddReplace(IContent node)
@@ -55,11 +56,14 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Error on Add/Replacing item with id: " + node.Id + " in store: " + store.Value.Alias, ex);
+                    _logger.Error<ProductDiscountCache>(
+                        ex, 
+                        $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
+                    );
                 }
             }
 
-            RefreshProdutCache(tempItem);
+            RefreshProductCache(tempItem);
 
 
         }
@@ -71,7 +75,7 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _log.Debug($"Attempting to remove product discount with key {key}");
+            _logger.Debug<ProductDiscountCache>($"Attempting to remove product discount with key {key}");
             IProductDiscount i = null;
 
             foreach (var store in _storeCache.Cache)
@@ -79,10 +83,10 @@ namespace Ekom.Cache
                 Cache[store.Value.Alias].TryRemove(key, out i);
             }
 
-            RefreshProdutCache(i);
+            RefreshProductCache(i);
         }
 
-        private void RefreshProdutCache(IProductDiscount discountItem)
+        private void RefreshProductCache(IProductDiscount discountItem)
         {
             if (discountItem != null)
             {

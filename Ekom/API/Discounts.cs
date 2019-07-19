@@ -1,9 +1,11 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Services;
-using log4net;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -15,9 +17,9 @@ namespace Ekom.API
         /// <summary>
         /// Discount Instance
         /// </summary>
-        public static Discounts Instance => Configuration.container.GetInstance<Discounts>();
+        public static Discounts Instance => Current.Factory.GetInstance<Discounts>();
 
-        readonly ILog _log;
+        readonly ILogger _logger;
         readonly Configuration _config;
         readonly IPerStoreCache<IDiscount> _discountCache;
         readonly IStoreService _storeSvc;
@@ -27,13 +29,13 @@ namespace Ekom.API
         /// </summary>
         internal Discounts(
             Configuration config,
-            ILogFactory logFac,
+            ILogger logger,
             IPerStoreCache<IDiscount> discountCache,
             IStoreService storeService
         )
         {
             _config = config;
-            _log = logFac.GetLogger<Discounts>();
+            _logger = logger;
             _discountCache = discountCache;
             _storeSvc = storeService;
         }

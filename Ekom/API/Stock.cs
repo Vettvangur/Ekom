@@ -1,11 +1,13 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
 using Hangfire.States;
-using log4net;
 using System;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -17,22 +19,22 @@ namespace Ekom.API
         /// <summary>
         /// Stock Instance
         /// </summary>
-        public static Stock Instance => Configuration.container.GetInstance<Stock>();
+        public static Stock Instance => Current.Factory.GetInstance<Stock>();
 
-        ILog _log;
-        Configuration _config;
-        IStockRepository _stockRepo;
-        IDiscountStockRepository _discountStockRepo;
-        IStoreService _storeSvc;
-        IBaseCache<StockData> _stockCache;
-        IPerStoreCache<StockData> _stockPerStoreCache;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly IStockRepository _stockRepo;
+        readonly IDiscountStockRepository _discountStockRepo;
+        readonly IStoreService _storeSvc;
+        readonly IBaseCache<StockData> _stockCache;
+        readonly IPerStoreCache<StockData> _stockPerStoreCache;
 
         /// <summary>
         /// ctor
         /// </summary>
         internal Stock(
             Configuration config,
-            ILogFactory logFac,
+            ILogger logger,
             IBaseCache<StockData> stockCache,
             IStockRepository stockRepo,
             IDiscountStockRepository discountStockRepo,
@@ -47,7 +49,7 @@ namespace Ekom.API
             _storeSvc = storeService;
             _stockPerStoreCache = stockPerStoreCache;
 
-            _log = logFac.GetLogger<Stock>();
+            _logger = logger;
         }
 
         /// <summary>

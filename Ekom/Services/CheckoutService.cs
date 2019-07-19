@@ -13,21 +13,21 @@ namespace Ekom.Services
 {
     class CheckoutService
     {
-        ILog _log;
+        ILogger _logger;
         Configuration _config;
         IDiscountStockRepository _discountStockRepo;
         OrderRepository _orderRepo;
         ICouponRepository _couponRepo;
         private OrderService _orderService;
         public CheckoutService(
-            ILogFactory logFac,
+            ILogger logger,
             Configuration config,
             OrderRepository orderRepo,
             ICouponRepository couponRepo,
             OrderService orderService,
             IDiscountStockRepository discountStockRepo)
         {
-            _log = logFac.GetLogger<CheckoutService>();
+            _logger = logger;
             _config = config;
             _orderRepo = orderRepo;
             _couponRepo = couponRepo;

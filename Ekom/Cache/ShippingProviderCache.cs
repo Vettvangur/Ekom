@@ -1,6 +1,7 @@
-﻿using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
+using Ekom.Interfaces;
 using Ekom.Services;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Cache
 {
@@ -10,12 +11,12 @@ namespace Ekom.Cache
 
         public ShippingProviderCache(
             Configuration config,
-            ILogFactory logFac,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IShippingProvider> perStoreFactory
-        ) : base(config, storeCache, perStoreFactory)
+        ) : base(config, logger, factory, storeCache, perStoreFactory)
         {
-            _log = logFac.GetLogger(typeof(ShippingProviderCache));
         }
     }
 }

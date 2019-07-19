@@ -7,11 +7,11 @@ namespace Ekom.Models
 {
     class ContentRequest
     {
-        private ILog _log;
+        private ILogger _logger;
         private HttpContextBase _httpCtx;
-        public ContentRequest(HttpContextBase httpContext, ILogFactory logFac)
+        public ContentRequest(HttpContextBase httpContext, ILogger log)
         {
-            _log = logFac.GetLogger(typeof(ContentRequest));
+            _logger = logger;
             _httpCtx = httpContext;
         }
 

@@ -15,7 +15,7 @@ namespace Ekom.Controllers
     [PluginController("Ekom")]
     public partial class OrderController : SurfaceController
     {
-        ILog _log;
+        ILogger _logger;
         OrderService _orderService;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Ekom.Controllers
         public OrderController()
         {
             var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(OrderController));
+            _logger = logger;
             _orderService = Configuration.container.GetInstance<OrderService>();
         }
 

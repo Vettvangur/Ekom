@@ -1,3 +1,4 @@
+using NPoco;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Ekom.Models.Data
     /// Current stock of a given item
     /// </summary>
     [TableName("EkomCoupon")]
-    [PrimaryKey("Id", autoIncrement = true)]
+    [PrimaryKey("Id", AutoIncrement = true)]
     public class CouponData
     {
         /// <summary>

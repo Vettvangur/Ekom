@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
@@ -108,7 +108,7 @@ namespace Ekom.Models
         /// Construct Node from Examine item
         /// </summary>
         /// <param name="item"></param>
-        public NodeEntity(SearchResult item)
+        public NodeEntity(ISearchResult item)
         {
             foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
             {

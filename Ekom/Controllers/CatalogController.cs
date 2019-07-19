@@ -14,7 +14,7 @@ namespace Ekom.Controllers
     [PluginController("Ekom")]
     public class CatalogController : UmbracoApiController
     {
-        ILog _log;
+        ILogger _logger;
 
         /// <summary>
         /// ctor
@@ -22,7 +22,7 @@ namespace Ekom.Controllers
         public CatalogController()
         {
             var logFac = Ekom.Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(CatalogController));
+            _logger = logger;
         }
 
         /// <summary>

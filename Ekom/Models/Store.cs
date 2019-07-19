@@ -2,7 +2,6 @@ using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -58,7 +58,7 @@ namespace Ekom.Models
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Unable to parse currency object from store", ex);
+                    Current.Logger.Error<Store>("Unable to parse currency object from store", ex);
                     var l = new List<CurrencyModel>();
                     l.Add(new CurrencyModel
                     {
@@ -68,8 +68,6 @@ namespace Ekom.Models
                     return l;
                 }
             }
-
-
         }
         /// <summary>
         /// Umbraco input: 28.5 <para></para>
@@ -88,7 +86,7 @@ namespace Ekom.Models
         /// Construct Store from Examine item
         /// </summary>
         /// <param name="item"></param>
-        public Store(SearchResult item) : base(item)
+        public Store(ISearchResult item) : base(item)
         {
             var uCtx = Configuration.container.GetInstance<UmbracoContext>();
             var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
@@ -120,8 +118,6 @@ namespace Ekom.Models
                 //    Domains = Enumerable.Repeat(new Domain(uCtx.HttpContext.Request.Url?.Host, StoreRootNode), 1);
                 //}
             }
-
-
         }
 
         /// <summary>
@@ -137,13 +133,13 @@ namespace Ekom.Models
             else
             {
                 var srn = Udi.Parse(item.GetValue<string>("storeRootNode"));
-                var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-                var rootNode = umbracoHelper.TypedContent(srn);
+                var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+                var rootNode = umbracoHelper.Content(srn);
                 StoreRootNode = rootNode.Id;
             }
 
             var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
-            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
+            var uCtx = Current.Factory.GetInstance<UmbracoContext>();
 
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))
             {
@@ -163,10 +159,5 @@ namespace Ekom.Models
 
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

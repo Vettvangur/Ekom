@@ -17,15 +17,15 @@ namespace Ekom.Domain.Repositories
     class CountriesRepository : ICountriesRepository
     {
         private readonly ConcurrentDictionary<string, List<Country>> _cache = new ConcurrentDictionary<string, List<Country>>();
-        private readonly ILog _log;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="logFac"></param>
-        public CountriesRepository(ILogFactory logFac)
+        public CountriesRepository(ILogger log)
         {
-            _log = logFac.GetLogger<CountriesRepository>();
+            _logger = logger;
         }
 
         protected virtual string BaseXMLFileName

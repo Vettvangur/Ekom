@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
@@ -49,7 +49,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public PerStoreNodeEntity(SearchResult item, IStore store) : base(item)
+        public PerStoreNodeEntity(ISearchResult item, IStore store) : base(item)
         {
             Store = store;
         }

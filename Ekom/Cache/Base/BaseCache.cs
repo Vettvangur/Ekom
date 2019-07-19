@@ -1,13 +1,15 @@
-using Ekom.Helpers;
 using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
 using Ekom.Models.Data;
-using Examine.SearchCriteria;
-using log4net;
+using Ekom.Utilities;
+using Examine;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Examine;
 
 namespace Ekom.Cache
 {
@@ -19,17 +21,25 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ILog _log;
+        protected ILogger _logger;
         protected IObjectFactory<TItem> _objFac;
+        protected IFactory _factory;
 
-        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
+        /// <summary>
+        /// This is important since Caches are persistant objects while the ExamineManager should be per request scoped.
+        /// </summary>
+        protected IExamineManager ExamineManager => _factory.GetInstance<IExamineManager>();
 
         public BaseCache(
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IObjectFactory<TItem> objectFactory
         )
         {
             _config = config;
+            _logger = logger;
+            _factory = factory;
             _objFac = objectFactory;
         }
 
@@ -67,21 +77,21 @@ namespace Ekom.Cache
         /// </summary>
         public virtual void FillCache()
         {
-            var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
-
-            if (searcher != null && !string.IsNullOrEmpty(NodeAlias))
+            if (!string.IsNullOrEmpty(NodeAlias) 
+            && ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
             {
+#if DEBUG
                 Stopwatch stopwatch = new Stopwatch();
 
                 stopwatch.Start();
-
-                _log.Debug("Starting to fill...");
+#endif
+                _logger.Debug<BaseCache<TItem>>("Starting to fill...");
 
                 var count = 0;
 
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query = searchCriteria.NodeTypeAlias(NodeAlias);
-                var results = searcher.Search(query.Compile());
+                var results = searcher.CreateQuery("content")
+                    .NodeTypeAlias(NodeAlias)
+                    .Execute();
 
                 foreach (var r in results)
                 {
@@ -96,24 +106,30 @@ namespace Ekom.Cache
                             {
                                 count++;
 
-                                var itemKey = Guid.Parse(r.Fields["key"]);
+                                var itemKey = Guid.Parse(r.Key());
                                 AddOrReplaceFromCache(itemKey, item);
                             }
                         }
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _log.Warn("Failed to map to store. Id: " + r.Id, ex);
+                        _logger.Warn<BaseCache<TItem>>("Failed to map to store. Id: " + r.Id, ex);
                     }
                 }
 
+#if DEBUG
                 stopwatch.Stop();
-
-                _log.Debug("Finished filling base cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _logger.Debug<BaseCache<TItem>>(
+                    $"Finished filling base cache with {count} items. Time it took to fill: {stopwatch.Elapsed}");
+#endif
+#if !DEBUG
+                _logger.Debug(typeof(BaseCache<TItem>), "Finished filling base cache with " + count + " items);
+#endif
             }
             else
             {
-                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill category cache.");
+                _logger.Error<BaseCache<TItem>>(
+                    $"No examine search found with the name {_config.ExamineSearcher}, Can not fill cache.");
             }
         }
 
@@ -138,13 +154,6 @@ namespace Ekom.Cache
         public virtual void Remove(Guid id)
         {
             RemoveItemFromCache(id);
-        }
-
-        public virtual void AddReplace(CouponData coupon)
-        {
-        }
-        public virtual void Remove(CouponData coupon)
-        {
         }
     }
 }

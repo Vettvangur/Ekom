@@ -16,7 +16,7 @@ namespace Ekom
 {
     class CatalogContentFinder : IContentFinder
     {
-        ILog _log;
+        ILogger _logger;
         Configuration _config;
         StoreService _storeSvc;
         IPerStoreCache<ICategory> _categoryCache;
@@ -32,7 +32,7 @@ namespace Ekom
             _productCache = container.GetInstance<IPerStoreCache<IProduct>>();
 
             var logFac = container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(CatalogContentFinder));
+            _logger = logger;
         }
 
         /// <summary>

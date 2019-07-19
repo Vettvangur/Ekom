@@ -1,11 +1,13 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -17,32 +19,34 @@ namespace Ekom.API
         /// <summary>
         /// Providers Instance
         /// </summary>
-        public static Providers Instance => Configuration.container.GetInstance<Providers>();
+        public static Providers Instance => Current.Factory.GetInstance<Providers>();
 
-        ILog _log;
-        IPerStoreCache<IShippingProvider> _shippingProviderCache;
-        IPerStoreCache<IPaymentProvider> _paymentProviderCache;
+        readonly Configuration _config;
+        readonly ILogger _logger;
+        readonly IPerStoreCache<IShippingProvider> _shippingProviderCache;
+        readonly IPerStoreCache<IPaymentProvider> _paymentProviderCache;
 
-        IStoreService _storeSvc;
-        ICountriesRepository _countryRepo;
+        readonly IStoreService _storeSvc;
+        readonly ICountriesRepository _countryRepo;
 
         /// <summary>
         /// ctor
         /// </summary>
         internal Providers(
             Configuration config,
-            ILogFactory logFac,
+            ILogger logger,
             IPerStoreCache<IShippingProvider> shippingProviderCache,
             IPerStoreCache<IPaymentProvider> paymentProviderCache,
             IStoreService storeService,
             ICountriesRepository countryRepo
         )
         {
+            _config = config;
             _shippingProviderCache = shippingProviderCache;
             _paymentProviderCache = paymentProviderCache;
             _storeSvc = storeService;
             _countryRepo = countryRepo;
-            _log = logFac.GetLogger<Providers>();
+            _logger = logger;
         }
 
         /// <summary>

@@ -1,17 +1,18 @@
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Abstractions;
 using Ekom.Models.Data;
+using Ekom.Utilities;
 using Examine;
-using Examine.SearchCriteria;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Examine;
 
 namespace Ekom.Cache
 {
@@ -23,19 +24,27 @@ namespace Ekom.Cache
         where TItem : class
     {
         protected Configuration _config;
-        protected ILog _log;
+        protected ILogger _logger;
         protected IBaseCache<IStore> _storeCache;
         protected IPerStoreFactory<TItem> _objFac;
+        protected IFactory _factory;
 
-        protected ExamineManagerBase _examineManager => Configuration.container.GetInstance<ExamineManagerBase>();
+        /// <summary>
+        /// This is important since Caches are persistant objects while the ExamineManager should be per request scoped.
+        /// </summary>
+        protected IExamineManager ExamineManager => _factory.GetInstance<IExamineManager>();
 
         public PerStoreCache(
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<TItem> objFac
         )
         {
             _config = config;
+            _logger = logger;
+            _factory = factory;
             _storeCache = storeCache;
             _objFac = objFac;
         }
@@ -49,7 +58,7 @@ namespace Ekom.Cache
         /// Concurrent dictionaries per store
         /// </summary>
         public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
-         = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
+            = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
 
         /// <summary>
         /// Class indexer
@@ -72,22 +81,24 @@ namespace Ekom.Cache
         /// </param>
         public virtual void FillCache(IStore storeParam = null)
         {
-            var searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
-
-            if (searcher != null && !string.IsNullOrEmpty(NodeAlias))
+            if (!string.IsNullOrEmpty(NodeAlias)
+            && ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
             {
-                var stopwatch = new Stopwatch();
+#if DEBUG
+                Stopwatch stopwatch = new Stopwatch();
 
                 stopwatch.Start();
+#endif
 
-                _log.Debug("Starting to fill...");
+                _logger.Debug<PerStoreCache<TItem>>("Starting to fill...");
                 int count = 0;
 
                 try
                 {
-                    ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                    IBooleanOperation query = searchCriteria.NodeTypeAlias(NodeAlias); // Gaui
-                    ISearchResults results = searcher.Search(query.Compile());
+
+                    var results = searcher.CreateQuery("content")
+                        .NodeTypeAlias(NodeAlias)
+                        .Execute();
 
                     if (storeParam == null) // Startup initialization
                     {
@@ -103,16 +114,24 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Filling per store cache Failed!", ex);
+                    _logger.Error<PerStoreCache<TItem>>(ex, "Filling per store cache Failed!");
                 }
 
+#if DEBUG
                 stopwatch.Stop();
-
-                _log.Debug("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _logger.Debug<PerStoreCache<TItem>>(
+                    $"Finished filling per store cache with {count} items. Time it took to fill: {stopwatch.Elapsed}"
+                );
+#endif
+#if !DEBUG
+                _logger.Debug(typeof(PerStoreCache<>), "Finished filling per store cache with " + count + " items);
+#endif
             }
             else
             {
-                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill category cache.");
+                _logger.Error<PerStoreCache<TItem>>(
+                    $"No examine search found with the name {_config.ExamineSearcher}, Can not fill cache."
+                );
             }
         }
 
@@ -142,14 +161,17 @@ namespace Ekom.Cache
                         {
                             count++;
 
-                            var itemKey = Guid.Parse(r.Fields["key"]);
+                            var itemKey = Guid.Parse(r.Key());
                             curStoreCache[itemKey] = item;
                         }
                     }
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _log.Error("Error on adding item with id: " + r.Id + " from Examine in Store: " + store.Alias, ex);
+                    _logger.Error<PerStoreCache<TItem>>(
+                        ex,
+                        $"Error on adding item with id: {r.Id} from Examine in Store: {store.Alias}"
+                    );
                 }
             }
 
@@ -185,21 +207,22 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _log.Error("Error on Add/Replacing item with id: " + node.Id + " in store: " + store.Value.Alias, ex);
+                    _logger.Error<PerStoreCache<TItem>>(
+                        ex,
+                        $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
+                    );
                 }
             }
         }
 
-            /// <summary>
-            /// Removes an item from all store caches
-            /// </summary>
-            public void RemoveItemFromAllCaches(Guid id)
+        /// <summary>
+        /// Removes an item from all store caches
+        /// </summary>
+        public void RemoveItemFromAllCaches(Guid id)
         {
-            TItem i = default(TItem);
-
             foreach (var store in _storeCache.Cache)
             {
-                Cache[store.Value.Alias].TryRemove(id, out i);
+                Cache[store.Value.Alias].TryRemove(id, out _);
             }
         }
 
@@ -211,14 +234,6 @@ namespace Ekom.Cache
         {
             AddOrReplaceFromAllCaches(node);
         }
-
-        public virtual void AddReplace(CouponData coupon)
-        {
-        }
-        public virtual void Remove(CouponData coupon)
-        {
-        }
-
 
         /// <summary>
         /// <see cref="ICache"/> implementation,

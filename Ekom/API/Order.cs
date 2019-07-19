@@ -1,10 +1,12 @@
 using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
-using log4net;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -16,22 +18,22 @@ namespace Ekom.API
         /// <summary>
         /// Order Instance
         /// </summary>
-        public static Order Instance => Configuration.container.GetInstance<Order>();
+        public static Order Instance => Current.Factory.GetInstance<Order>();
 
-        ILog _log;
-        Configuration _config;
-        DiscountCache _discountCache;
-        CouponCache _couponCache;
-        OrderService _orderService;
-        CheckoutService _checkoutService;
-        IStoreService _storeSvc;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly DiscountCache _discountCache;
+        readonly CouponCache _couponCache;
+        readonly OrderService _orderService;
+        readonly CheckoutService _checkoutService;
+        readonly IStoreService _storeSvc;
 
         /// <summary>
         /// ctor
         /// </summary>
         internal Order(
             Configuration config,
-            ILogFactory logFac,
+            ILogger logger,
             DiscountCache discountCache,
             CouponCache couponCache,
             OrderService orderService,
@@ -45,7 +47,7 @@ namespace Ekom.API
             _storeSvc = storeService;
             _couponCache = couponCache;
             _config = config;
-            _log = logFac.GetLogger<Order>();
+            _logger = logger;
         }
 
         /// <summary>

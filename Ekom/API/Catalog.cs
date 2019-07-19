@@ -21,10 +21,10 @@ namespace Ekom.API
         /// <summary>
         /// Catalog Instance
         /// </summary>
-        public static Catalog Instance => Configuration.container.GetInstance<Catalog>();
+        public static Catalog Instance => Current.Factory.GetInstance<Catalog>();
 
         readonly Configuration _config;
-        readonly ILogger _log;
+        readonly ILogger _logger;
         readonly AppCaches _appCaches;
         readonly IStoreService _storeSvc;
         readonly IPerStoreCache<IProductDiscount> _productDiscountCache; // must be before product cache
@@ -48,7 +48,7 @@ namespace Ekom.API
         )
         {
             _config = config;
-            _log = logger;
+            _logger = logger;
             _appCaches = appCaches;
             _productCache = productCache;
             _categoryCache = categoryCache;

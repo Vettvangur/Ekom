@@ -15,6 +15,7 @@ using System.Globalization;
 using System.Linq;
 using System.Web;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Cache;
 using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
@@ -24,7 +25,7 @@ namespace Ekom.Services
 {
     partial class OrderService
     {
-        ILog _log;
+        ILogger _logger;
 
         HttpContextBase _httpCtx;
         ApplicationContext _appCtx;
@@ -47,12 +48,12 @@ namespace Ekom.Services
             IOrderRepository orderRepo,
             ICouponRepository couponRepository,
             IActivityLogRepository activityLogRepository,
-            ILogFactory logFac,
+            ILogger logger,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache)
         {
-            _log = logFac.GetLogger<OrderService>();
+            _logger = logger;
 
             _appCtx = appCtx;
             _orderRepository = orderRepo;
@@ -69,7 +70,7 @@ namespace Ekom.Services
             IOrderRepository orderRepo,
             ICouponRepository couponRepository,
             IActivityLogRepository activityLogRepository,
-            ILogFactory logFac,
+            ILogger logger,
             IStoreService storeService,
             ApplicationContext appCtx,
             DiscountCache discountCache,

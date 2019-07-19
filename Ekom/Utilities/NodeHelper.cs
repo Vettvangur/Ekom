@@ -2,27 +2,22 @@ using Ekom.Interfaces;
 using Ekom.Models.Abstractions;
 using Ekom.Utilities;
 using Examine;
-using Examine.SearchCriteria;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 
-namespace Ekom.Helpers
+namespace Ekom.Utilities
 {
     public static class NodeHelper
     {
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-        );
-
         public static IEnumerable<SearchResult> GetAllCatalogItemsFromPath(string path)
         {
             var list = new List<SearchResult>();
@@ -70,17 +65,17 @@ namespace Ekom.Helpers
         /// <summary>
         /// Recursively gets first <see cref="SearchResult"/> item with matching doc type, null otherwise
         /// </summary>
-        public static SearchResult GetFirstParentWithDocType(SearchResult item, string docTypeAlias)
+        public static SearchResult GetFirstParentWithDocType(ISearchResult item, string docTypeAlias)
         {
             if (item == null) return item;
 
-            else if (item.Fields["nodeTypeAlias"] == docTypeAlias)
+            else if (item.Values["__NodeTypeAlias"] == docTypeAlias)
             {
                 return item;
             }
             else
             {
-                var parentId = Convert.ToInt32(item.Fields["parentID"]);
+                var parentId = Convert.ToInt32(item.Values["parentID"]);
                 var parent = GetNodeFromExamine(parentId);
                 return GetFirstParentWithDocType(parent, docTypeAlias);
             }
@@ -103,25 +98,25 @@ namespace Ekom.Helpers
             }
         }
 
-        public static SearchResult GetNodeFromExamine(int id)
+        public static ISearchResult GetNodeFromExamine(int id)
         {
-            var examineMgr = Configuration.container.GetInstance<ExamineManagerBase>();
-            var searcher = examineMgr.SearchProviderCollection["ExternalSearcher"];
-
-            if (searcher != null)
+            var examineMgr = Current.Factory.GetInstance<IExamineManager>();
+            var config = Current.Factory.GetInstance<Configuration>();
+            if (examineMgr.TryGetSearcher(config.ExamineSearcher, out ISearcher searcher))
             {
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
+                var result = searcher.CreateQuery("content")
+                    .Id(id.ToString())
+                    .Execute()
+                    .FirstOrDefault();
 
-                var query = searchCriteria.Id(id);
-                var result = searcher.Search(query.Compile());
-
-                if (result.Any())
+                if (result != null)
                 {
-                    return result.FirstOrDefault();
+                    return result;
                 }
                 else
                 {
-                    Log.Info("GetNodeFromExamine Failed. Node with Id " + id + " not found.");
+                    Current.Factory.GetInstance<ILogger>()
+                        .Warn(typeof(NodeHelper), "GetNodeFromExamine Failed. Node with Id " + id + " not found.");
                 }
             }
 
@@ -133,13 +128,13 @@ namespace Ekom.Helpers
         /// Traverses up content tree, checking all parents
         /// </summary>
         /// <returns>True if disabled</returns>
-        public static bool IsItemUnpublished(this SearchResult searchResult)
+        public static bool IsItemUnpublished(this ISearchResult searchResult)
         {
-            string path = searchResult.Fields["path"];
+            string path = searchResult.Values["__Path"];
 
             foreach (var item in GetAllCatalogItemsFromPath(path))
             {
-                // Unpublished items can't be found in the examine index
+                // Unpublished items can't be found in the external examine index
                 if (item == null)
                 {
                     return true;
@@ -180,7 +175,7 @@ namespace Ekom.Helpers
         /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(
-            this SearchResult searchResult,
+            this ISearchResult searchResult,
             IStore store,
             string path = "",
             IEnumerable<SearchResult> allCatalogItems = null)
@@ -261,16 +256,16 @@ namespace Ekom.Helpers
         /// <param name="field">Umbraco Alias</param>
         /// <param name="storeAlias"></param>
         /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this SearchResult item, string field, string storeAlias)
+        public static string GetStoreProperty(this ISearchResult item, string field, string storeAlias)
         {
             try
             {
-                var fieldExist = item.Fields.Any(x => x.Key == field);
+                var fieldExist = item.Values.Any(x => x.Key == field);
 
                 if (fieldExist)
                 {
 
-                    var value = item.Fields[field];
+                    var value = item.Values[field];
 
                     return value.GetVortoValue(storeAlias);
                 }
@@ -445,5 +440,7 @@ namespace Ekom.Helpers
 
             return null;
         }
+
+        public static string Key(this ISearchResult searchResult) => searchResult.Values["__Key"];
     }
 }

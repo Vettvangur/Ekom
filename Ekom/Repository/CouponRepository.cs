@@ -11,7 +11,7 @@ namespace Ekom.Repository
 {
     public class CouponRepository : ICouponRepository
     {
-        ILog _log;
+        ILogger _logger;
         Configuration _config;
         ApplicationContext _appCtx;
         /// <summary>
@@ -20,11 +20,11 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public CouponRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public CouponRepository(Configuration config, ApplicationContext appCtx, ILogger log)
         {
             _config = config;
             _appCtx = appCtx;
-            _log = logFac.GetLogger<CouponRepository>();
+            _logger = logger;
         }
 
 

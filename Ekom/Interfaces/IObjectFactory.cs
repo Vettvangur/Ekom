@@ -1,4 +1,4 @@
-﻿using Examine;
+using Examine;
 using Umbraco.Core.Models;
 
 namespace Ekom.Interfaces
@@ -14,7 +14,7 @@ namespace Ekom.Interfaces
         /// </summary>
         /// <param name="item">Examine item</param>
         /// <returns></returns>
-        T Create(SearchResult item);
+        T Create(ISearchResult item);
 
         /// <summary>
         /// Create object from Umbraco event with explicit store

@@ -1,9 +1,10 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Services;
-using log4net;
 using System.Collections.Generic;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
@@ -15,25 +16,24 @@ namespace Ekom.API
         /// <summary>
         /// Store Instance
         /// </summary>
-        public static Store Instance => Configuration.container.GetInstance<Store>();
+        public static Store Instance => Current.Factory.GetInstance<Store>();
 
-        ILog _log;
-        ApplicationContext _appCtx;
-        IStoreService _storeSvc;
-        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+        readonly ILogger _logger;
+        readonly IStoreService _storeSvc;
+        readonly IAppCache _reqCache;
 
         /// <summary>
         /// ctor
         /// </summary>
         internal Store(
-            ApplicationContext appCtx,
-            ILogFactory logFac,
+            AppCaches appCaches,
+            ILogger logger,
             IStoreService storeService
         )
         {
-            _appCtx = appCtx;
+            _reqCache = appCaches.RequestCache;
             _storeSvc = storeService;
-            _log = logFac.GetLogger(typeof(Store));
+            _logger = logger;
         }
 
         /// <summary>

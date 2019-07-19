@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Ekom.Helpers
+namespace Ekom.Utilities
 {
     static class VatCalculator
     {

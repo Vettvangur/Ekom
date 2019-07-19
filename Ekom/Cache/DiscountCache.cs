@@ -1,14 +1,15 @@
 using Ekom.Exceptions;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Discounts;
 using Ekom.Services;
+using Ekom.Utilities;
 using Examine;
 using Examine.Providers;
-using Examine.SearchCriteria;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using GlobalDiscountCache
     = System.Collections.Concurrent.ConcurrentDictionary<string,
@@ -22,11 +23,6 @@ namespace Ekom.Cache
     class DiscountCache : PerStoreCache<IDiscount>
     {
         /// <summary>
-        /// Map coupon strings back to their parent <see cref="IDiscount"/>
-        /// </summary>
-        public PerStoreCouponCache CouponCache { get; }
-            = new PerStoreCouponCache();
-        /// <summary>
         /// All order <see cref="IDiscount"/>'s containing no coupon
         /// </summary>
         public GlobalDiscountCache GlobalDiscounts { get; }
@@ -38,14 +34,14 @@ namespace Ekom.Cache
         /// ctor
         /// </summary>
         public DiscountCache(
-            ILogFactory logFac,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IDiscount> perStoreFactory
         )
-            : base(config, storeCache, perStoreFactory)
+            : base(config, logger, factory, storeCache, perStoreFactory)
         {
-            _log = logFac.GetLogger<DiscountCache>();
         }
 
         /// <summary>
@@ -60,8 +56,6 @@ namespace Ekom.Cache
 
             var curStoreCache
                 = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
-            var curStoreCouponCache
-                = CouponCache[store.Alias] = new ConcurrentDictionary<string, IDiscount>();
             var curStoreGlobalDiscountCache
                 = GlobalDiscounts[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
 
@@ -80,15 +74,17 @@ namespace Ekom.Cache
 
                             curStoreGlobalDiscountCache[item.Key] = item;
     
-                            var itemKey = Guid.Parse(r.Fields["key"]);
+                            var itemKey = Guid.Parse(r.Key());
                             curStoreCache[itemKey] = item;
                         }
-                        
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Error on adding item with id: " + r.Id + " from Examine in Store: " + store.Alias, ex);
+                    _logger.Error<DiscountCache>(
+                        ex, 
+                        $"Error on adding item with id: {r.Id} from Examine in Store: {store.Alias}"
+                    );
                 }
             }
 
@@ -113,16 +109,19 @@ namespace Ekom.Cache
                         if (item != null)
                         {
                             GlobalDiscounts[store.Value.Alias][item.Key] = item;
-                                
+
                             Cache[store.Value.Alias][node.Key] = item;
 
                         }
-                        
+
                     }
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _log.Error("Error on Add/Replacing item with id: " + node.Id + " in store: " + store.Value.Alias, ex);
+                    _logger.Error<DiscountCache>(
+                        ex,
+                        $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
+                    );
                 }
             }
         }
@@ -133,14 +132,13 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _log.Debug($"Attempting to remove discount with key {key}");
-            IDiscount i = null;
-
+            _logger.Debug<DiscountCache>($"Attempting to remove discount with key {key}");
             foreach (var store in _storeCache.Cache)
             {
-                Cache[store.Value.Alias].TryRemove(key, out i);
 
-                GlobalDiscounts[store.Value.Alias].TryRemove(key, out i);
+                Cache[store.Value.Alias].TryRemove(key, out _);
+
+                GlobalDiscounts[store.Value.Alias].TryRemove(key, out _);
             }
         }
     }

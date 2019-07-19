@@ -20,12 +20,12 @@ namespace Ekom.Cache
         /// </summary>
         public StoreDomainCache(
             ApplicationContext appCtx,
-            ILogFactory logFac,
+            ILogger logger,
             Configuration config
         ) : base(config, null)
         {
             _appCtx = appCtx;
-            _log = logFac.GetLogger(typeof(StoreDomainCache));
+            _logger = logger;
         }
 
         /// <summary>

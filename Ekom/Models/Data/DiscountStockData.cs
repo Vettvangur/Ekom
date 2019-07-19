@@ -1,3 +1,4 @@
+using NPoco;
 using System;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
@@ -8,7 +9,7 @@ namespace Ekom.Models.Data
     /// Current stock of a given item
     /// </summary>
     [TableName(Configuration.DiscountStockTableName)]
-    [PrimaryKey("UniqueId", autoIncrement = false)]
+    [PrimaryKey("UniqueId", AutoIncrement = false)]
     public class DiscountStockData
     {
         /// <summary>

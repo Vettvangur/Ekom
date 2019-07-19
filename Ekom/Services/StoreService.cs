@@ -14,7 +14,7 @@ namespace Ekom.Services
 {
     class StoreService : IStoreService
     {
-        ILog _log;
+        ILogger _logger;
         ApplicationContext _appCtx;
         ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
         IBaseCache<IDomain> _domainCache;
@@ -28,13 +28,13 @@ namespace Ekom.Services
         /// <param name="storeCache"></param>
         /// <param name="appCtx"></param>
         public StoreService(
-            ILogFactory logFac,
+            ILogger logger,
             IBaseCache<IDomain> domainCache,
             IBaseCache<IStore> storeCache,
             ApplicationContext appCtx
         )
         {
-            _log = logFac.GetLogger(typeof(StoreService));
+            _logger = logger;
             _appCtx = appCtx;
             _domainCache = domainCache;
             _storeCache = storeCache;

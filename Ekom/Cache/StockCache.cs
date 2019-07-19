@@ -1,4 +1,4 @@
-﻿using Ekom.Exceptions;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
@@ -6,23 +6,23 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Cache
 {
     class StockCache : BaseCache<StockData>
     {
-        IStockRepository _stockRepo;
+        readonly IStockRepository _stockRepo;
         /// <summary>
         /// ctor
         /// </summary>
         public StockCache(
-            ILogFactory logFac,
             Configuration config,
+            ILogger logger,
             IStockRepository stockRepo
-        ) : base(config, null)
+        ) : base(config, logger, null, null)
         {
             _stockRepo = stockRepo;
-            _log = logFac.GetLogger(typeof(StockCache));
         }
 
         public override ConcurrentDictionary<Guid, StockData> Cache
@@ -44,7 +44,7 @@ namespace Ekom.Cache
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            _log.Info("Starting to fill...");
+            _logger.Info<StockCache>("Starting to fill...");
 
             var allStock = _stockRepo.GetAllStock();
             foreach (var stock in allStock.Where(stock => stock.UniqueId.Length == 36))
@@ -55,7 +55,7 @@ namespace Ekom.Cache
             }
 
             stopwatch.Stop();
-            _log.Info("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
+            _logger.Info<StockCache>("Finished filling cache with " + allStock.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
         }
     }
 }

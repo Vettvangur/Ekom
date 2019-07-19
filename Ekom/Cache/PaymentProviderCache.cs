@@ -1,7 +1,7 @@
-﻿using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
+using Ekom.Interfaces;
 using Ekom.Services;
-
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 namespace Ekom.Cache
 {
     class PaymentProviderCache : PerStoreCache<IPaymentProvider>
@@ -9,13 +9,13 @@ namespace Ekom.Cache
         public override string NodeAlias { get; } = "netPaymentProvider";
 
         public PaymentProviderCache(
-            ILogFactory logFac,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IPaymentProvider> perStoreFactory
-        ) : base(config, storeCache, perStoreFactory)
+        ) : base(config, logger, factory, storeCache, perStoreFactory)
         {
-            _log = logFac.GetLogger(typeof(PaymentProviderCache));
         }
     }
 }

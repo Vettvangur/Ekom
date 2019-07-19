@@ -1,7 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
 using Ekom.Models.Discounts;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

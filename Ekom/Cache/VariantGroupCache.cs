@@ -9,13 +9,13 @@ namespace Ekom.Cache
         public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
         public VariantGroupCache(
-            ILogFactory logFac,
+            ILogger logger,
             Configuration config,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IVariantGroup> perStoreCache
         ) : base(config, storeCache, perStoreCache)
         {
-            _log = logFac.GetLogger<VariantGroupCache>();
+            _logger = logger;
         }
     }
 }

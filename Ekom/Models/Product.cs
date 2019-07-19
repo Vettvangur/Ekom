@@ -1,11 +1,9 @@
 using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -14,6 +12,8 @@ using System.Reflection;
 using System.Web;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -25,11 +25,11 @@ namespace Ekom.Models
     {
         private IPerStoreCache<IVariant> __variantCache;
         private IPerStoreCache<IVariant> _variantCache =>
-            __variantCache ?? (__variantCache = Configuration.container.GetInstance<IPerStoreCache<IVariant>>());
+            __variantCache ?? (__variantCache = Current.Factory.GetInstance<IPerStoreCache<IVariant>>());
 
         private IPerStoreCache<IVariantGroup> __variantGroupCache;
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
+            __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
 
         private IDiscount _discount;
         /// <summary>
@@ -336,7 +336,6 @@ namespace Ekom.Models
                     }
                 }
             }
-            
         }
 
         private void PopulateCategoryAncestors()

@@ -1,14 +1,16 @@
-﻿using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Abstractions;
 using Ekom.Services;
+using Ekom.Utilities;
+using Examine;
 using Examine.Providers;
-using Examine.SearchCriteria;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Examine;
 
 namespace Ekom.Cache
 {
@@ -20,12 +22,12 @@ namespace Ekom.Cache
         /// ctor
         /// </summary>
         public StoreCache(
-            ILogFactory logFac,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IObjectFactory<IStore> objectFactory
-        ) : base(config, objectFactory)
+        ) : base(config, logger, factory, objectFactory)
         {
-            _log = logFac.GetLogger<StoreCache>();
         }
 
         /// <summary>
@@ -33,10 +35,46 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            BaseSearchProvider searcher = null;
             try
             {
-                searcher = _examineManager.SearchProviderCollection[_config.ExamineSearcher];
+                if (ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
+                {
+                    Stopwatch stopwatch = new Stopwatch();
+
+                    stopwatch.Start();
+
+                    _logger.Info<StoreCache>("Starting to fill store cache...");
+                    int count = 0;
+
+                    var results = searcher.CreateQuery("content")
+                        .NodeTypeAlias(NodeAlias)
+                        .Execute();
+
+                    foreach (var r in results)
+                    {
+                        try
+                        {
+                            var item = new Store(r);
+
+                            count++;
+
+                            var itemKey = Guid.Parse(r.Key());
+                            AddOrReplaceFromCache(itemKey, item);
+                        }
+                        catch (Exception ex) // Skip on fail
+                        {
+                            _log.Warn("Failed to map to store. Id: " + r.Id, ex);
+                        }
+                    }
+
+                    stopwatch.Stop();
+
+                    _log.Info("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                }
+                else
+                {
+                    _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
+                }
             }
             catch // Restart Application if Examine just initialized
             {
@@ -45,44 +83,6 @@ namespace Ekom.Cache
                 Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
             }
 
-            if (searcher != null)
-            {
-                Stopwatch stopwatch = new Stopwatch();
-
-                stopwatch.Start();
-
-                _log.Info("Starting to fill store cache...");
-                int count = 0;
-
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query = searchCriteria.NodeTypeAlias(NodeAlias);
-                var results = searcher.Search(query.Compile());
-
-                foreach (var r in results)
-                {
-                    try
-                    {
-                        var item = new Store(r);
-
-                        count++;
-
-                        var itemKey = Guid.Parse(r.Fields["key"]);
-                        AddOrReplaceFromCache(itemKey, item);
-                    }
-                    catch (Exception ex) // Skip on fail
-                    {
-                        _log.Warn("Failed to map to store. Id: " + r.Id, ex);
-                    }
-                }
-
-                stopwatch.Stop();
-
-                _log.Info("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
-            }
-            else
-            {
-                _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
-            }
         }
 
         /// <summary>

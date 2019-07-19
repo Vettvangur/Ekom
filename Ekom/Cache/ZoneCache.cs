@@ -11,12 +11,12 @@ namespace Ekom.Cache
         /// ctor
         /// </summary>
         public ZoneCache(
-            ILogFactory logFac,
+            ILogger logger,
             Configuration config,
             IObjectFactory<IZone> objectFactory
         ) : base(config, objectFactory)
         {
-            _log = logFac.GetLogger<ZoneCache>();
+            _logger = logger;
         }
     }
 }

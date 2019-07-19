@@ -1,13 +1,15 @@
 using CommonServiceLocator;
 using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Composing;
+using UmbracoCurrent = Umbraco.Core.Composing.Current;
 
 namespace Ekom
 {
@@ -19,12 +21,7 @@ namespace Ekom
         /// <summary>
         /// Configuration Singleton
         /// </summary>
-        public static Configuration Current => container.GetInstance<Configuration>();
-
-        /// <summary>
-        /// Current dependency resolver instance
-        /// </summary>
-        internal static IServiceLocator container;
+        public static Configuration Current => UmbracoCurrent.Factory.GetInstance<Configuration>();
 
         /// <summary>
         /// ekmPerStoreStock
@@ -171,23 +168,23 @@ namespace Ekom
         /// the object they cache.
         /// This object is lazy initialized to make sure that all types have been registered with IoC container
         /// before we attempt to resolve.
+        /// 
+        /// The order in this list is important as addition and removal from caches triggers updates on succeeding caches.
         /// </summary>
         internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() 
             => new List<ICache>
             {
-                { container.GetInstance<IBaseCache<IDomain>>() },
-                { container.GetInstance<IBaseCache<IStore>>() },
-                { container.GetInstance<IPerStoreCache<ICategory>>() },
-                { container.GetInstance<IPerStoreCache<IProductDiscount>>() },
-                { container.GetInstance<IPerStoreCache<IProduct>>() },
-                { container.GetInstance<IPerStoreCache<IVariant>>() },
-                { container.GetInstance<IPerStoreCache<IVariantGroup>>() },
-                { container.GetInstance<IBaseCache<IZone>>() },
-                { container.GetInstance<IPerStoreCache<IPaymentProvider>>() },
-                { container.GetInstance<IPerStoreCache<IShippingProvider>>() },
-                { container.GetInstance<IPerStoreCache<IDiscount>>() }
-                //{ container.GetInstance<IPerStoreCache<ICoupon>>() },
-                
+                { UmbracoCurrent.Factory.GetInstance<IBaseCache<IDomain>>() },
+                { UmbracoCurrent.Factory.GetInstance<IBaseCache<IStore>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<ICategory>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IProductDiscount>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IProduct>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IVariant>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IVariantGroup>>() },
+                { UmbracoCurrent.Factory.GetInstance<IBaseCache<IZone>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IPaymentProvider>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IShippingProvider>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IDiscount>>() },              
             }
         );
 

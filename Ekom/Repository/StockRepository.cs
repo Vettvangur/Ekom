@@ -14,7 +14,7 @@ namespace Ekom.Repository
     /// </summary>
     class StockRepository : IStockRepository
     {
-        readonly ILog _log;
+        readonly ILogger _logger;
         readonly ApplicationContext _appCtx;
         /// <summary>
         /// ctor
@@ -22,10 +22,10 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public StockRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public StockRepository(Configuration config, ApplicationContext appCtx, ILogger log)
         {
             _appCtx = appCtx;
-            _log = logFac.GetLogger(typeof(StockRepository));
+            _logger = logger;
         }
 
         /// <summary>

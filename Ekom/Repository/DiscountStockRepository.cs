@@ -11,7 +11,7 @@ namespace Ekom.Repository
 {
     class DiscountStockRepository : IDiscountStockRepository
     {
-        readonly ILog _log;
+        readonly ILogger _logger;
         readonly ApplicationContext _appCtx;
         /// <summary>
         /// ctor
@@ -19,10 +19,10 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public DiscountStockRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac)
+        public DiscountStockRepository(Configuration config, ApplicationContext appCtx, ILogger log)
         {
             _appCtx = appCtx;
-            _log = logFac.GetLogger(typeof(DiscountStockRepository));
+            _logger = logger;
         }
 
         /// <summary>

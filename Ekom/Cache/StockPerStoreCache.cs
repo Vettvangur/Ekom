@@ -1,4 +1,4 @@
-﻿using Ekom.Exceptions;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Repository;
@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Cache
 {
@@ -15,15 +16,15 @@ namespace Ekom.Cache
     {
         readonly StockRepository _stockRepo;
         public StockPerStoreCache(
-            ILogFactory logFac,
+            ILogger logger,
             Configuration config,
             StockRepository stockRepo,
             IBaseCache<IStore> storeCache
-        ) : base(config, storeCache, null)
+        ) : base(config, logger, null, storeCache, null)
         {
             _stockRepo = stockRepo;
 
-            _log = logFac.GetLogger(typeof(StockPerStoreCache));
+            _logger = logger;
         }
 
         public override ConcurrentDictionary<string, ConcurrentDictionary<Guid, StockData>> Cache
@@ -35,7 +36,9 @@ namespace Ekom.Cache
                     return base.Cache;
                 }
 
-                throw new StockException("PerStoreStock configuration set to disabled, please configure PerStoreStock before accessing the cache.");
+                throw new StockException(
+                    "PerStoreStock configuration set to disabled, please configure PerStoreStock before accessing the cache."
+                );
             }
         }
 
@@ -45,7 +48,7 @@ namespace Ekom.Cache
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            _log.Info("Starting to fill...");
+            _logger.Info<StockPerStoreCache>("Starting to fill...");
 
             int count = 0;
 
@@ -58,7 +61,9 @@ namespace Ekom.Cache
             }
 
             stopwatch.Stop();
-            _log.Info("Finished filling cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+            _logger.Info<StockPerStoreCache>(
+                $"Finished filling cache with {count} items. Time it took to fill: {stopwatch.Elapsed}"
+            );
         }
 
         private int FillStoreCache(IStore store, IEnumerable<StockData> stockData)

@@ -1,4 +1,3 @@
-using log4net;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
 using System;
@@ -15,11 +14,6 @@ namespace Ekom.Utilities
 {
     public static class ContentExtensions
     {
-        private static readonly ILog Log =
-                LogManager.GetLogger(
-                    MethodBase.GetCurrentMethod().DeclaringType
-                );
-
         public static void SetVortoValue(this IContent content, string alias, Dictionary<string,object> items)
         {
             var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
@@ -41,9 +35,7 @@ namespace Ekom.Utilities
                     var json = JsonConvert.SerializeObject(vortoValue);
 
                     content.SetValue(alias, json);
-
                 }
-
             }
         }
 
@@ -71,7 +63,6 @@ namespace Ekom.Utilities
                 }
 
                 SetVortoValue(content, alias, vortoItems);
-
             }
         }
 
