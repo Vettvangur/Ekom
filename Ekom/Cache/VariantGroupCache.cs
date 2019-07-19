@@ -1,6 +1,7 @@
-﻿using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
+using Ekom.Interfaces;
 using Ekom.Services;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Cache
 {
@@ -9,13 +10,13 @@ namespace Ekom.Cache
         public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
         public VariantGroupCache(
-            ILogger logger,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IBaseCache<IStore> storeCache,
             IPerStoreFactory<IVariantGroup> perStoreCache
-        ) : base(config, storeCache, perStoreCache)
+        ) : base(config, logger, factory, storeCache, perStoreCache)
         {
-            _logger = logger;
         }
     }
 }

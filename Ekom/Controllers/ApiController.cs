@@ -17,13 +17,6 @@ namespace Ekom.Controllers
     public class ApiController : UmbracoAuthorizedApiController
     {
         ICountriesRepository _countriesRepo;
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public ApiController()
-        {
-            _countriesRepo = Ekom.Configuration.container.GetInstance<ICountriesRepository>();
-        }
 
         /// <summary>
         /// ctor

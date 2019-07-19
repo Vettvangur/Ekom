@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Examine;
 using Umbraco.Core.Models;
@@ -7,7 +7,7 @@ namespace Ekom.Factories
 {
     class ZoneFactory : IObjectFactory<IZone>
     {
-        public IZone Create(SearchResult item)
+        public IZone Create(ISearchResult item)
         {
             return new Zone(item);
         }

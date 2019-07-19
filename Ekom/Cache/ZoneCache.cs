@@ -1,5 +1,7 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Services;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Cache
 {
@@ -11,12 +13,12 @@ namespace Ekom.Cache
         /// ctor
         /// </summary>
         public ZoneCache(
-            ILogger logger,
             Configuration config,
+            ILogger logger,
+            IFactory factory,
             IObjectFactory<IZone> objectFactory
-        ) : base(config, objectFactory)
+        ) : base(config, logger, factory, objectFactory)
         {
-            _logger = logger;
         }
     }
 }

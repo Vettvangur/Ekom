@@ -12,7 +12,7 @@ namespace Ekom.Factories
 {
     public class ProductDiscountFactory : IPerStoreFactory<IProductDiscount>
     {
-        public IProductDiscount Create(SearchResult item, IStore store)
+        public IProductDiscount Create(ISearchResult item, IStore store)
         {
             return new ProductDiscount(item, store);
         }

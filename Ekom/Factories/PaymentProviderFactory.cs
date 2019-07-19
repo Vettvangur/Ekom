@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Examine;
 using Umbraco.Core.Models;
@@ -7,7 +7,7 @@ namespace Ekom.Factories
 {
     class PaymentProviderFactory : IPerStoreFactory<IPaymentProvider>
     {
-        public IPaymentProvider Create(SearchResult item, IStore store)
+        public IPaymentProvider Create(ISearchResult item, IStore store)
         {
             return new PaymentProvider(item, store);
         }

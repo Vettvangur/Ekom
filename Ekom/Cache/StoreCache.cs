@@ -35,54 +35,44 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            try
+            if (ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
             {
-                if (ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
+                Stopwatch stopwatch = new Stopwatch();
+
+                stopwatch.Start();
+
+                _logger.Info<StoreCache>("Starting to fill store cache...");
+                int count = 0;
+
+                var results = searcher.CreateQuery("content")
+                    .NodeTypeAlias(NodeAlias)
+                    .Execute();
+
+                foreach (var r in results)
                 {
-                    Stopwatch stopwatch = new Stopwatch();
-
-                    stopwatch.Start();
-
-                    _logger.Info<StoreCache>("Starting to fill store cache...");
-                    int count = 0;
-
-                    var results = searcher.CreateQuery("content")
-                        .NodeTypeAlias(NodeAlias)
-                        .Execute();
-
-                    foreach (var r in results)
+                    try
                     {
-                        try
-                        {
-                            var item = new Store(r);
+                        var item = new Store(r);
 
-                            count++;
+                        count++;
 
-                            var itemKey = Guid.Parse(r.Key());
-                            AddOrReplaceFromCache(itemKey, item);
-                        }
-                        catch (Exception ex) // Skip on fail
-                        {
-                            _log.Warn("Failed to map to store. Id: " + r.Id, ex);
-                        }
+                        var itemKey = Guid.Parse(r.Key());
+                        AddOrReplaceFromCache(itemKey, item);
                     }
-
-                    stopwatch.Stop();
-
-                    _log.Info("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                    catch (Exception ex) // Skip on fail
+                    {
+                        _logger.Warn<StoreCache>(ex, "Failed to map to store. Id: " + r.Id);
+                    }
                 }
-                else
-                {
-                    _log.Error($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
-                }
+
+                stopwatch.Stop();
+
+                _logger.Info<StoreCache>("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
             }
-            catch // Restart Application if Examine just initialized
+            else
             {
-                // I have no idea if this does any good
-                _log.Warn("Unloading Application Domain");
-                Umbraco.Core.UmbracoApplicationBase.ApplicationStarted += (s, e) => System.Web.HttpRuntime.UnloadAppDomain();
+                _logger.Error<StoreCache>($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
             }
-
         }
 
         /// <summary>

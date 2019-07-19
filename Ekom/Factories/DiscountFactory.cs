@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.Discounts;
 using Examine;
 using Umbraco.Core.Models;
@@ -7,7 +7,7 @@ namespace Ekom.Factories
 {
     class DiscountFactory : IPerStoreFactory<IDiscount>
     {
-        public IDiscount Create(SearchResult item, IStore store)
+        public IDiscount Create(ISearchResult item, IStore store)
         {
             return new Discount(item, store);
         }

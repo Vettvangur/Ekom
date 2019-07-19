@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Examine;
 using Umbraco.Core.Models;
@@ -7,7 +7,7 @@ namespace Ekom.Factories
 {
     class ShippingProviderFactory : IPerStoreFactory<IShippingProvider>
     {
-        public IShippingProvider Create(SearchResult item, IStore store)
+        public IShippingProvider Create(ISearchResult item, IStore store)
         {
             return new ShippingProvider(item, store);
         }

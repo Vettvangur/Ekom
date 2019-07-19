@@ -1,13 +1,11 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -20,6 +18,7 @@ using Umbraco.Core.Cache;
 using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Security;
+using Ekom.Utilities;
 
 namespace Ekom.Services
 {

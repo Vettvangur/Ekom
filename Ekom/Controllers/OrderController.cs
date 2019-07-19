@@ -1,10 +1,10 @@
 using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Linq;
 using System.Web.Mvc;
+using Umbraco.Core.Logging;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Controllers
@@ -15,18 +15,13 @@ namespace Ekom.Controllers
     [PluginController("Ekom")]
     public partial class OrderController : SurfaceController
     {
-        ILogger _logger;
-        OrderService _orderService;
-
+        readonly ILogger _logger;
         /// <summary>
         /// ctor
-        /// We can't hook into the MVC DI resolver since that would override consumer resolvers.
         /// </summary>
-        public OrderController()
+        public OrderController(ILogger logger)
         {
-            var logFac = Configuration.container.GetInstance<ILogFactory>();
             _logger = logger;
-            _orderService = Configuration.container.GetInstance<OrderService>();
         }
 
         /// <summary>
@@ -60,7 +55,7 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-                _log.Error("Failed to add to order!", ex);
+                _logger.Error<OrderController>(ex, "Failed to add to order!");
 
                 return Json(new
                 {
@@ -70,10 +65,10 @@ namespace Ekom.Controllers
             }
         }
 
-        /// <summary>
-        /// Get order
-        /// </summary>
-        /// <returns></returns>
+        ///// <summary>
+        ///// Get order
+        ///// </summary>
+        ///// <returns></returns>
         //public ActionResult GetOrder()
         //{
         //    var order = Order.Instance.GetOrder();
@@ -89,7 +84,7 @@ namespace Ekom.Controllers
         {
             var order = Order.Instance.GetOrder(storeAlias);
 
-            return Json(order == null ? new object() : order , JsonRequestBehavior.AllowGet);
+            return Json(order ?? new object(), JsonRequestBehavior.AllowGet);
         }
 
         ///// <summary>
@@ -280,12 +275,6 @@ namespace Ekom.Controllers
             var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
             return Json(new { orderInfo, date = DateTime.Now });
-        }
-        public ActionResult test()
-        {
-           // ProductDiscountService pd = new ProductDiscountService();
-        //   var f = pd.GetProductDiscount(Guid.Parse("584f7b36-b87d-4605-8169-254da1f66dca"),"IS","100000");
-            return Json("");
         }
     }
 }

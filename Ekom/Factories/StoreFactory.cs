@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Examine;
 using Umbraco.Core.Models;
@@ -7,7 +7,7 @@ namespace Ekom.Factories
 {
     class StoreFactory : IObjectFactory<IStore>
     {
-        public IStore Create(SearchResult item)
+        public IStore Create(ISearchResult item)
         {
             return new Store(item);
         }

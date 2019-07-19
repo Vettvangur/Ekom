@@ -1,7 +1,6 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
@@ -14,15 +13,11 @@ namespace Ekom.Controllers
     [PluginController("Ekom")]
     public class CatalogController : UmbracoApiController
     {
-        ILogger _logger;
-
         /// <summary>
         /// ctor
         /// </summary>
         public CatalogController()
         {
-            var logFac = Ekom.Configuration.container.GetInstance<ILogFactory>();
-            _logger = logger;
         }
 
         /// <summary>

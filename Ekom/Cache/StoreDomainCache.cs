@@ -1,12 +1,14 @@
-﻿using System;
+using System;
 using Examine;
 using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Ekom.Services;
-using Ekom.Models.Abstractions;
+using Umbraco.Core.Services;
+using Umbraco.Core.Composing;
 
 namespace Ekom.Cache
 {
@@ -14,18 +16,18 @@ namespace Ekom.Cache
     {
         public override string NodeAlias { get; } = "";
 
-        ApplicationContext _appCtx;
+        IDomainService _domainService;
         /// <summary>
         /// ctor
         /// </summary>
         public StoreDomainCache(
-            ApplicationContext appCtx,
+            Configuration config,
             ILogger logger,
-            Configuration config
-        ) : base(config, null)
+            IFactory factory,
+            IDomainService domainService
+        ) : base(config, logger, factory, null)
         {
-            _appCtx = appCtx;
-            _logger = logger;
+            _domainService = domainService;
         }
 
         /// <summary>
@@ -33,28 +35,25 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            var ds = _appCtx.Services.DomainService;
-
-            var domains = ds.GetAll(false).ToList();
+            var domains = _domainService.GetAll(false).ToList();
 
             var stopwatch = new Stopwatch();
 
             stopwatch.Start();
 
-            _log.Info("Starting to fill store domain cache...");
+            _logger.Info<StoreDomainCache>("Starting to fill store domain cache...");
 
             if (domains.Any())
             {
-
                 foreach (var d in domains)
                 {
                     AddOrReplaceFromCache(d.Key, d);
                 }
-  
             }
 
-            _log.Info("Finished filling store domain cache with " + domains.Count() + " domain items. Time it took to fill: " + stopwatch.Elapsed);
-
+            _logger.Info<StoreDomainCache>(
+                $"Finished filling store domain cache with {domains.Count()} domain items. Time it took to fill: {stopwatch.Elapsed}"
+            );
         }
     }
 }
