@@ -1,7 +1,7 @@
-﻿using log4net;
 using System.Web;
 using Ekom.Services;
 using Ekom.Interfaces;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Models
 {
@@ -9,7 +9,7 @@ namespace Ekom.Models
     {
         private ILogger _logger;
         private HttpContextBase _httpCtx;
-        public ContentRequest(HttpContextBase httpContext, ILogger log)
+        public ContentRequest(HttpContextBase httpContext, ILogger logger)
         {
             _logger = logger;
             _httpCtx = httpContext;

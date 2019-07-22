@@ -19,7 +19,7 @@ namespace Ekom.Models
     public class ProductDiscount : PerStoreNodeEntity, IProductDiscount
     {
 
-        UmbracoHelper _umbHelper = Current.Factory.GetInstance<UmbracoHelper>();
+        UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
         IContent node;
         /// <summary>
         /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
@@ -48,9 +48,8 @@ namespace Ekom.Models
 
                 if (int.TryParse(typeValue, out int typeValueInt))
                 {
-                    var helper = new UmbracoHelper(UmbracoContext.Current);
 
-                    typeValue = helper.GetPreValueAsString(typeValueInt);
+                    typeValue = UmbHelper.GetPreValueAsString(typeValueInt);
                 }
 
                 switch (typeValue)
@@ -105,7 +104,7 @@ namespace Ekom.Models
                 List<Guid> returnList = new List<Guid>();
                 var nodes = Properties.GetPropertyValue("discountItems")
                     .Split(',')
-                    .Select(x => _umbHelper.TypedContent(Udi.Parse(x))).ToList();
+                    .Select(x => UmbHelper.Content(Udi.Parse(x))).ToList();
                 foreach (var node in nodes)
                 {
                     if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Count() == 0)

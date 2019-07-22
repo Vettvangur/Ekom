@@ -1,5 +1,4 @@
 using Ekom.Models.Discounts;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -41,10 +40,5 @@ namespace Ekom.Models.OrderedObjects
         public decimal StartOfRange { get; }
         public decimal EndOfRange { get; }
         public bool Disabled { get; }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

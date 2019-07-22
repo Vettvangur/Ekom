@@ -1,5 +1,4 @@
-﻿using Ekom.Models;
-using log4net;
+using Ekom.Models;
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
 using System;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.Utilities
 {
@@ -144,7 +144,7 @@ namespace Ekom.Utilities
 
                 foreach (var imgId in imageIds)
                 {
-                    var node = Helpers.NodeHelper.GetMediaNode(imgId);
+                    var node = NodeHelper.GetMediaNode(imgId);
 
                     if (node != null)
                     {
@@ -167,7 +167,7 @@ namespace Ekom.Utilities
 
                 foreach (var imgId in imageIds)
                 {
-                    var node = Helpers.NodeHelper.GetMediaNode(imgId);
+                    var node = NodeHelper.GetMediaNode(imgId);
 
                     if (node != null)
                     {
@@ -192,10 +192,5 @@ namespace Ekom.Utilities
                 return false;
             }
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

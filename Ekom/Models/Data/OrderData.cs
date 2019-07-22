@@ -1,4 +1,5 @@
-using Ekom.Helpers;
+using Ekom.Utilities;
+using NPoco;
 using System;
 using System.ComponentModel.DataAnnotations;
 using Umbraco.Core.Persistence;
@@ -10,7 +11,7 @@ namespace Ekom.Models.Data
     /// SQL Representation of <see cref="OrderInfo"/>
     /// </summary>
     [TableName("EkomOrders")]
-    [PrimaryKey("ReferenceId", autoIncrement = true)]
+    [PrimaryKey("ReferenceId", AutoIncrement = true)]
     public class OrderData
     {
         /// <summary>

@@ -1,5 +1,4 @@
 using Ekom.Interfaces;
-using Ekom.Models.Abstractions;
 using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
@@ -18,9 +17,9 @@ namespace Ekom.Utilities
 {
     public static class NodeHelper
     {
-        public static IEnumerable<SearchResult> GetAllCatalogItemsFromPath(string path)
+        public static IEnumerable<ISearchResult> GetAllCatalogItemsFromPath(string path)
         {
-            var list = new List<SearchResult>();
+            var list = new List<ISearchResult>();
 
             var pathArray = path.Split(',');
 
@@ -44,9 +43,9 @@ namespace Ekom.Utilities
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static IEnumerable<SearchResult> GetParents(string path)
+        public static IEnumerable<ISearchResult> GetParents(string path)
         {
-            var list = new List<SearchResult>();
+            var list = new List<ISearchResult>();
 
             var pathArray = path.Split(',');
 
@@ -63,9 +62,9 @@ namespace Ekom.Utilities
         }
 
         /// <summary>
-        /// Recursively gets first <see cref="SearchResult"/> item with matching doc type, null otherwise
+        /// Recursively gets first <see cref="ISearchResult"/> item with matching doc type, null otherwise
         /// </summary>
-        public static SearchResult GetFirstParentWithDocType(ISearchResult item, string docTypeAlias)
+        public static ISearchResult GetFirstParentWithDocType(ISearchResult item, string docTypeAlias)
         {
             if (item == null) return item;
 
@@ -81,9 +80,9 @@ namespace Ekom.Utilities
             }
         }
         /// <summary>
-        /// Recursively gets first <see cref="IContent"/> item with matching doc type, null otherwise
+        /// Recursively gets first <see cref="IPublishedContent"/> item with matching doc type, null otherwise
         /// </summary>
-        public static IContent GetFirstParentWithDocType(IContent node, string docTypeAlias)
+        public static IPublishedContent GetFirstParentWithDocType(IPublishedContent node, string docTypeAlias)
         {
             if (node == null) return node;
 
@@ -93,8 +92,7 @@ namespace Ekom.Utilities
             }
             else
             {
-
-                return GetFirstParentWithDocType(node.Parent(), docTypeAlias);
+                return GetFirstParentWithDocType(node, docTypeAlias);
             }
         }
 
@@ -123,14 +121,134 @@ namespace Ekom.Utilities
             return null;
         }
 
+
+
+        /// <summary>
+        /// Get <see cref="IPublishedContent"/> media node
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetMediaNode(string id)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                if (int.TryParse(id, out int mediaId))
+                {
+                    var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+
+                    var node = umbracoHelper.Media(mediaId);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+                else if (Guid.TryParse(id, out Guid mediaGuid))
+                {
+                    var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+
+                    var node = umbracoHelper.Media(mediaGuid);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+                return GetMediaByUdi(id);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get <see cref="IPublishedContent"/> media node
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Property Value</returns>
+        public static IEnumerable<IPublishedContent> GetMediaNodesByGuid(Guid[] ids)
+        {
+            var list = new List<IPublishedContent>();
+
+            if (ids.Any())
+            {
+                foreach (var id in ids)
+                {
+                    var node = GetMediaNode(id.ToString());
+
+                    if (node != null)
+                    {
+                        list.Add(node);
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Get <see cref="IPublishedContent"/> node by Udi
+        /// </summary>
+        /// <param name="udi"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetNodeByUdi(string udi)
+        {
+            if (!string.IsNullOrEmpty(udi))
+            {
+
+                if (Udi.TryParse(udi, out Udi id))
+                {
+                    var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+
+                    var node = umbracoHelper.Content(id);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Get <see cref="IPublishedContent"/> node by Udi
+        /// </summary>
+        /// <param name="udi"></param>
+        /// <returns>Property Value</returns>
+        public static IPublishedContent GetMediaByUdi(string udi)
+        {
+            if (!string.IsNullOrEmpty(udi))
+            {
+
+                if (Udi.TryParse(udi, out Udi id))
+                {
+                    var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+
+                    var node = umbracoHelper.Media(id);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
+
+            }
+
+            return null;
+        }
+
+        #region Extension Methods
+
         /// <summary>
         /// Determine if an examine item is unpublished <para />
         /// Traverses up content tree, checking all parents
         /// </summary>
         /// <returns>True if disabled</returns>
-        public static bool IsItemUnpublished(this ISearchResult searchResult)
+        public static bool IsItemUnpublished(this ISearchResult ISearchResult)
         {
-            string path = searchResult.Values["__Path"];
+            string path = ISearchResult.Values["__Path"];
 
             foreach (var item in GetAllCatalogItemsFromPath(path))
             {
@@ -169,18 +287,18 @@ namespace Ekom.Utilities
         /// Determine if an examine item is disabled/unpublished <para />
         /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
-        /// <param name="searchResult"></param>
+        /// <param name="ISearchResult"></param>
         /// <param name="store">Used to look for umbraco properties matching stores country code </param>
         /// <param name="path"></param>
         /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(
-            this ISearchResult searchResult,
+            this ISearchResult ISearchResult,
             IStore store,
             string path = "",
-            IEnumerable<SearchResult> allCatalogItems = null)
+            IEnumerable<ISearchResult> allCatalogItems = null)
         {
-            path = string.IsNullOrEmpty(path) ? searchResult.Fields["path"] : path;
+            path = string.IsNullOrEmpty(path) ? ISearchResult.Values["path"] : path;
 
             allCatalogItems = allCatalogItems == null ? GetAllCatalogItemsFromPath(path) :
                                                         allCatalogItems;
@@ -218,7 +336,7 @@ namespace Ekom.Utilities
             this IContent node,
             IStore store,
             string path = "",
-            IEnumerable<SearchResult> allCatalogItems = null)
+            IEnumerable<ISearchResult> allCatalogItems = null)
         {
             path = string.IsNullOrEmpty(path) ? node.Path : path;
 
@@ -276,7 +394,11 @@ namespace Ekom.Utilities
             catch (Exception ex)
             {
                 var json = JsonConvert.SerializeObject(item);
-                Log.Error("Failed to get StoreProperty. Item : " + json + " field: " + field + " store: " + storeAlias, ex);
+                Current.Logger.Error(
+                    typeof(NodeHelper),
+                    ex,
+                    $"Failed to get StoreProperty. Item : {json} field: {field} store: {storeAlias}"
+                );
                 throw;
             }
         }
@@ -316,7 +438,7 @@ namespace Ekom.Utilities
 
             if (item.HasProperty(field))
             {
-                var fieldValue = item.GetPropertyValue<string>(field);
+                var fieldValue = item.Value<string>(field);
 
                 return fieldValue.GetVortoValue(storeAlias);
             }
@@ -324,123 +446,8 @@ namespace Ekom.Utilities
             return string.Empty;
         }
 
+        public static string Key(this ISearchResult ISearchResult) => ISearchResult.Values["__Key"];
 
-        /// <summary>
-        /// Get <see cref="IPublishedContent"/> media node
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns>Property Value</returns>
-        public static IPublishedContent GetMediaNode(string id)
-        {
-            if (!string.IsNullOrEmpty(id))
-            {
-                if (int.TryParse(id, out int mediaId))
-                {
-                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-
-                    var node = umbracoHelper.TypedMedia(mediaId);
-
-                    if (node != null)
-                    {
-                        return node;
-                    }
-                }
-                else if (Guid.TryParse(id, out Guid mediaGuid))
-                {
-                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-
-                    var node = umbracoHelper.TypedMedia(mediaGuid);
-
-                    if (node != null)
-                    {
-                        return node;
-                    }
-                }
-
-                return GetMediaByUdi(id);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Get <see cref="IPublishedContent"/> media node
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns>Property Value</returns>
-        public static IEnumerable<IPublishedContent> GetMediaNodesByGuid(Guid[] ids)
-        {
-            var list = new List<IPublishedContent>();
-
-            if (ids.Any())
-            {
-                foreach (var id in ids)
-                {
-                    var node = GetMediaNode(id.ToString());
-
-                    if (node != null)
-                    {
-                        list.Add(node);
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
-        /// Get <see cref="IPublishedContent"/> node by Udi
-        /// </summary>
-        /// <param name="udi"></param>
-        /// <returns>Property Value</returns>
-        public static IPublishedContent GetNodeByUdi(string udi)
-        {
-            if (!string.IsNullOrEmpty(udi))
-            {
-
-                if (Udi.TryParse(udi, out Udi id))
-                {
-                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-
-                    var node = umbracoHelper.TypedContent(id);
-
-                    if (node != null)
-                    {
-                        return node;
-                    }
-                }
-
-            }
-
-            return null;
-        }
-        /// <summary>
-        /// Get <see cref="IPublishedContent"/> node by Udi
-        /// </summary>
-        /// <param name="udi"></param>
-        /// <returns>Property Value</returns>
-        public static IPublishedContent GetMediaByUdi(string udi)
-        {
-            if (!string.IsNullOrEmpty(udi))
-            {
-
-                if (Udi.TryParse(udi, out Udi id))
-                {
-                    var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-
-                    var node = umbracoHelper.TypedMedia(id);
-
-                    if (node != null)
-                    {
-                        return node;
-                    }
-                }
-
-            }
-
-            return null;
-        }
-
-        public static string Key(this ISearchResult searchResult) => searchResult.Values["__Key"];
+        #endregion
     }
 }

@@ -89,18 +89,18 @@ namespace Ekom.Models
         /// <param name="item"></param>
         public Store(ISearchResult item) : base(item)
         {
-            var uCtx = Configuration.container.GetInstance<UmbracoContext>();
-            var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
+            var uCtx = Current.Factory.GetInstance<UmbracoContext>();
+            var storeDomainCache = Current.Factory.GetInstance<IBaseCache<IDomain>>();
 
-            if (int.TryParse(item.Fields["storeRootNode"], out int tempStoreRootNode))
+            if (int.TryParse(item.Values["storeRootNode"], out int tempStoreRootNode))
             {
                 StoreRootNode = tempStoreRootNode;
             }
             else
             {
-                var srn = Udi.Parse(item.Fields["storeRootNode"]);
-                var umbracoHelper = Configuration.container.GetInstance<UmbracoHelper>();
-                var rootNode = umbracoHelper.TypedContent(srn);
+                var srn = Udi.Parse(item.Values["storeRootNode"]);
+                var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+                var rootNode = umbracoHelper.Content(srn);
                 StoreRootNode = rootNode.Id;
             }
             Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
@@ -139,7 +139,7 @@ namespace Ekom.Models
                 StoreRootNode = rootNode.Id;
             }
 
-            var storeDomainCache = Configuration.container.GetInstance<IBaseCache<IDomain>>();
+            var storeDomainCache = Current.Factory.GetInstance<IBaseCache<IDomain>>();
             var uCtx = Current.Factory.GetInstance<UmbracoContext>();
 
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))

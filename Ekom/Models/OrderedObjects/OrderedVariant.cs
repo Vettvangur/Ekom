@@ -1,8 +1,7 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Services;
 using Ekom.Utilities;
-using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -135,11 +134,5 @@ namespace Ekom.Models.OrderedObjects
             Properties = new ReadOnlyDictionary<string, string>(
                 variantObject["Properties"].ToObject<Dictionary<string, string>>());
         }
-
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
-
     }
 }

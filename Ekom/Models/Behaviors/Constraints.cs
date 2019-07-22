@@ -1,4 +1,4 @@
-﻿using Ekom.Cache;
+using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Newtonsoft.Json;
@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 
 namespace Ekom.Models.Behaviors
 {
@@ -77,7 +78,7 @@ namespace Ekom.Models.Behaviors
                 zoneKey = guidUdi.Guid;
             }
 
-            var zoneCache = Configuration.container.GetInstance<IBaseCache<IZone>>();
+            var zoneCache = Current.Factory.GetInstance<IBaseCache<IZone>>();
             if (zoneKey != Guid.Empty
             && zoneCache.Cache.ContainsKey(zoneKey))
             {

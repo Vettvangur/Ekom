@@ -13,6 +13,7 @@ using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Web;
 
 namespace Ekom.Models.OrderedObjects
@@ -171,13 +172,13 @@ namespace Ekom.Models.OrderedObjects
             StoreInfo = storeInfo;
 
             var logger = Current.Factory.GetInstance<ILogger>();
-            logger.Debug("Created OrderedProduct from json");
+            logger.Debug<OrderedProduct>("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
             ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            logger.Debug("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
+            logger.Debug<OrderedProduct>("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
             try
             {
                 Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
@@ -197,13 +198,13 @@ namespace Ekom.Models.OrderedObjects
 
             if (variantGroups != null && !string.IsNullOrEmpty(variantGroups.ToString()))
             {
-                logger.Debug("OrderedProduct: Variant Groups found in Json");
+                logger.Debug<OrderedProduct>("OrderedProduct: Variant Groups found in Json");
 
                 var variantGroupsArray = (JArray)variantGroups;
 
                 if (variantGroupsArray != null && variantGroupsArray.Any())
                 {
-                    logger.Debug("OrderedProduct: Variant Groups items found in array json");
+                    logger.Debug<OrderedProduct>("OrderedProduct: Variant Groups items found in array json");
 
                     foreach (var variantGroupObject in variantGroupsArray)
                     {

@@ -1,7 +1,6 @@
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
-using log4net;
+using Ekom.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -18,13 +17,6 @@ namespace Ekom.Models
     {
         private bool _hasProductDiscount { get; set; }
         private bool _hasOrderDiscount { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
         public OrderedProductDiscount ProductDiscount { get; }
         /// <summary>
         /// 

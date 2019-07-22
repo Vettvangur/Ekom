@@ -42,9 +42,10 @@ namespace Ekom.Models
             {
                 return Current.Factory.GetInstance<IProductDiscountService>()
                     .GetProductDiscount(
-                    Guid.Parse(this.Properties["key"]),
-                    Store.Alias,
-                    Properties.GetPropertyValue("price", Store.Alias));
+                        Key,
+                        Store.Alias,
+                        Properties.GetPropertyValue("price", Store.Alias)
+                    );
             }
         }
 
@@ -196,7 +197,7 @@ namespace Ekom.Models
         {
             get
             {
-                var httpCtx = Configuration.container.GetInstance<HttpContextBase>();
+                var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
                 var path = httpCtx.Request.Url.AbsolutePath;
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
@@ -348,7 +349,7 @@ namespace Ekom.Models
 
             foreach (var item in examineItemsFromPath)
             {
-                var alias = item.Fields.GetPropertyValue("nodeTypeAlias");
+                var alias = item.Values["__NodeTypeAlias"];
 
                 if (alias == "ekmCategory")
                 {
@@ -361,10 +362,5 @@ namespace Ekom.Models
                 }
             }
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

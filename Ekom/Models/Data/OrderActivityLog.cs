@@ -1,4 +1,5 @@
-﻿using System;
+using NPoco;
+using System;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
 
@@ -8,7 +9,7 @@ namespace Ekom.Models.Data
     /// Activity log of order
     /// </summary>
     [TableName("EkomOrdersActivityLog")]
-    [PrimaryKey("UniqueId", autoIncrement = false)]
+    [PrimaryKey("UniqueId", AutoIncrement = false)]
     public class OrderActivityLog
     {
         public Guid UniqueID { get; set; }

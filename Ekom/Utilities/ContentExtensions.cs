@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 using static Ekom.EkomStartup;
 
@@ -20,9 +21,9 @@ namespace Ekom.Utilities
 
             if (property != null)
             {
-                var dts = ApplicationContext.Current.Services.DataTypeService;
+                var dts = Current.Services.DataTypeService;
 
-                var dt = dts.GetDataTypeDefinitionByPropertyEditorAlias(property.PropertyType.PropertyEditorAlias);
+                var dt = dts.GetByEditorAlias(property.PropertyType.PropertyEditorAlias);
 
                 if (dt.Any())
                 {
@@ -70,9 +71,9 @@ namespace Ekom.Utilities
         {
             var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
 
-            if (property != null && property.Value != null)
+            if (property?.GetValue() != null)
             {
-                return JsonConvert.DeserializeObject<VortoValue>(property.Value.ToString());
+                return JsonConvert.DeserializeObject<VortoValue>(property.GetValue().ToString());
             }
 
             return null;

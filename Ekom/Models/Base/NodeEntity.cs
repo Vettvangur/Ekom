@@ -87,7 +87,7 @@ namespace Ekom.Models
         /// <summary>
         /// Possibly unneeded
         /// </summary>
-        public virtual string ContentTypeAlias => Properties.GetPropertyValue("nodeTypeAlias");
+        public virtual string ContentTypeAlias => Properties.GetPropertyValue("__NodeTypeAlias");
 
         /// <summary>
         /// Read only dictionary of all umbraco base and custom properties for this item
@@ -110,7 +110,7 @@ namespace Ekom.Models
         /// <param name="item"></param>
         public NodeEntity(ISearchResult item)
         {
-            foreach (var field in item.Fields.Where(x => !x.Key.StartsWith("__")))
+            foreach (var field in item.Values)
             {
                 _properties.Add(field.Key, field.Value);
             }
@@ -126,7 +126,7 @@ namespace Ekom.Models
 
             foreach (var prop in node.Properties)
             {
-                _properties.Add(prop.Alias, prop.Value?.ToString());
+                _properties.Add(prop.Alias, prop.GetValue()?.ToString());
             }
         }
 
@@ -143,7 +143,7 @@ namespace Ekom.Models
                     node.Name
                 },
                 {
-                    "key",
+                    "__Key",
                     node.Key.ToString()
                 },
                 {
@@ -171,7 +171,7 @@ namespace Ekom.Models
                     node.CreatorId.ToString()
                 },
                 {
-                    "nodeTypeAlias",
+                    "__NodeTypeAlias",
                     node.ContentType.Alias
                 },
                 {

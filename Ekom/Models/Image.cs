@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 
 namespace Ekom.Models
@@ -26,7 +27,7 @@ namespace Ekom.Models
         public Guid Key {
             get
             {
-                return node.GetKey();
+                return node.Key;
             }
         }
         public string Url {
@@ -44,7 +45,7 @@ namespace Ekom.Models
         public string Description {
             get
             {
-                return node.HasProperty("description") && node.HasValue("description") ? node.GetPropertyValue<string>("description") : "";
+                return node.HasProperty("description") && node.HasValue("description") ? node.Value<string>("description") : "";
             }
         }
     }

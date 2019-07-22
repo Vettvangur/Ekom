@@ -1,11 +1,13 @@
-﻿using Ekom.Interfaces;
-using log4net;
+using Ekom.Interfaces;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Web;
 
 namespace Ekom.Models.OrderedObjects
@@ -38,7 +40,9 @@ namespace Ekom.Models.OrderedObjects
             Id = variantGroup.Id;
             Key = variantGroup.Key;
             Title = variantGroup.Title;
-            ImageIds = variantGroup.Images.Any() ? variantGroup.Images.Select(x => x.GetKey()).ToArray() : new Guid[] { };
+            ImageIds = variantGroup.Images.Any() 
+                ? variantGroup.Images.Select(x => x.Key).ToArray() 
+                : new Guid[] { };
 
             var variants = new List<OrderedVariant>
             {
@@ -53,7 +57,8 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
         {
-            Log.Info("Creating OrderedVariantGroup from Json");
+            var logger = Current.Factory.GetInstance<ILogger>();
+            logger.Debug<OrderedVariantGroup>("Creating OrderedVariantGroup from Json");
 
             this.storeInfo = storeInfo;
 
@@ -94,13 +99,5 @@ namespace Ekom.Models.OrderedObjects
                 Variants = Enumerable.Empty<OrderedVariant>();
             }
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

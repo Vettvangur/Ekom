@@ -1,50 +1,52 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Persistence;
+using Umbraco.Core.Scoping;
 
 namespace Ekom.Repository
 {
     public class ActivityLogRepository : IActivityLogRepository
     {
-        ApplicationContext _appCtx;
+        readonly IScopeProvider _scopeProvider;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="appCtx "></param>
-        public ActivityLogRepository(ApplicationContext appCtx)
+        public ActivityLogRepository(IScopeProvider scopeProvider)
         {
-            _appCtx = appCtx;
+            _scopeProvider = scopeProvider;
         }
 
-        public void Insert(Guid Key, string Log, string UserName)
+        public async Task InsertAsync(Guid Key, string Log, string UserName)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                db.Insert(new OrderActivityLog()
+                await db.Database.InsertAsync(new OrderActivityLog
                 {
                     UniqueID = Guid.NewGuid(),
                     Key = Key,
                     Log = Log,
                     UserName = UserName,
-                    Date = DateTime.Now
-                });
+                    Date = DateTime.Now,
+                }).ConfigureAwait(false);
 
+                db.Complete();
             }
         }
 
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogsOrdersByUser(string userName)
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
         {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                return db.Query<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
+                var queryResult = await db.Database.QueryAsync<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
@@ -53,32 +55,40 @@ namespace Ekom.Repository
               FROM [EkomOrdersActivityLog] a
               left join EkomOrders b on b.UniqueId = a.[Key]
               WHERE a.[UserName] = @0
-              order by Date desc", userName).DistinctBy(x => x.OrderNumber);
+              order by Date desc", userName)
+                    .ConfigureAwait(false);
+
+
+                return queryResult.DistinctBy(x => x.OrderNumber);
             }
         }
 
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogsOrders()
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersAsync()
         {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                return db.Query<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
-                  ,a.[Key]
-                  ,a.[Log]
-                  ,a.[UserName]
-                  ,a.[DATE],
-	              b.orderNumber as OrderNumber
-              FROM [EkomOrdersActivityLog] a
-              left join EkomOrders b on b.UniqueId = a.[Key]
-              WHERE UserName != 'Customer' AND UserName != ''
-              order by Date desc").DistinctBy(x => x.OrderNumber);
+                var queryResult = await db.Database.QueryAsync<OrderActivityLog>(
+                    @"SELECT TOP 100 a.[UniqueId]
+                      ,a.[Key]
+                      ,a.[Log]
+                      ,a.[UserName]
+                      ,a.[DATE],
+	                  b.orderNumber as OrderNumber
+                  FROM [EkomOrdersActivityLog] a
+                  left join EkomOrders b on b.UniqueId = a.[Key]
+                  WHERE UserName != 'Customer' AND UserName != ''
+                  order by Date desc")
+                    .ConfigureAwait(false);
+
+                return queryResult.DistinctBy(x => x.OrderNumber);
             }
         }
 
-        public IEnumerable<OrderActivityLog> GetLogs(string OrderNumber)
+        public async Task<IEnumerable<OrderActivityLog>> GetLogsAsync(string OrderNumber)
         {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                return db.Query<OrderActivityLog>(@"SELECT a.[UniqueId]
+                return await db.Database.QueryAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
@@ -91,11 +101,11 @@ namespace Ekom.Repository
             }
         }
 
-        public IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId)
+        public async Task<IEnumerable<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
         {
-            using (var db = ApplicationContext.Current.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                return db.Query<OrderActivityLog>(@"SELECT a.[UniqueId]
+                return await db.Database.QueryAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]

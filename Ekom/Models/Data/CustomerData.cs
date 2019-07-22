@@ -1,4 +1,5 @@
-﻿using Umbraco.Core.Persistence;
+using NPoco;
+using Umbraco.Core.Persistence;
 
 namespace Ekom.Models.Data
 {
@@ -6,7 +7,7 @@ namespace Ekom.Models.Data
     /// Unfinished
     /// </summary>
     [TableName("EkomCustomerData")]
-    [PrimaryKey("UniqueId", autoIncrement = false)]
+    [PrimaryKey("UniqueId", AutoIncrement = false)]
     public class CustomerData
     {
 

@@ -1,4 +1,4 @@
-﻿using Ekom.Models;
+using Ekom.Models;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
@@ -10,11 +10,10 @@ namespace Ekom.Interfaces
 {
     public interface IActivityLogRepository
     {
-        void Insert(Guid Key, string Log, string UserName);
-        IEnumerable<OrderActivityLog> GetLatestActivityLogsOrdersByUser(string userName);
-        IEnumerable<OrderActivityLog> GetLatestActivityLogsOrders();
-        IEnumerable<OrderActivityLog> GetLogs(string OrderNumber);
-        IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId);
-
+        Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersAsync();
+        Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName);
+        Task<IEnumerable<OrderActivityLog>> GetLogsAsync(Guid uniqueId);
+        Task<IEnumerable<OrderActivityLog>> GetLogsAsync(string OrderNumber);
+        Task InsertAsync(Guid Key, string Log, string UserName);
     }
 }

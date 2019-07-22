@@ -1,6 +1,5 @@
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -99,13 +98,5 @@ namespace Ekom.Models
             Key = lineId;
             Product = new OrderedProduct(product, variant, orderInfo.StoreInfo);
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

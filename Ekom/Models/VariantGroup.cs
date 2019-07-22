@@ -1,18 +1,19 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Exceptions;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
+using Umbraco.Core;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 using Umbraco.Web.Composing;
 
 namespace Ekom.Models
@@ -91,7 +92,7 @@ namespace Ekom.Models
         public VariantGroup(ISearchResult item, IStore store) : base(item, store)
         {
             var parentProductExamine = NodeHelper.GetFirstParentWithDocType(item, "ekmProduct");
-            var parentProduct = Catalog.Instance.GetProduct(parentProductExamine.Id);
+            var parentProduct = Catalog.Instance.GetProduct(int.Parse(parentProductExamine.Id));
 
             if (parentProduct == null)
             {
@@ -107,7 +108,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public VariantGroup(IContent node, IStore store) : base(node, store)
         {
-            var publishedContent = Current.UmbracoHelper.Content(node.Id);
+            var publishedContent = Current.Factory.GetInstance<UmbracoHelper>().Content(node.Id);
             var publishedParentProduct = NodeHelper.GetFirstParentWithDocType(publishedContent, "ekmProduct");
             var parentProduct = Catalog.Instance.GetProduct(publishedParentProduct.Id);
 
@@ -118,10 +119,5 @@ namespace Ekom.Models
 
             Product = parentProduct;
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

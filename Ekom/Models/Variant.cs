@@ -4,7 +4,6 @@ using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -25,7 +26,7 @@ namespace Ekom.Models
     {
         private IPerStoreCache<IVariantGroup> __variantGroupCache;
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Configuration.container.GetInstance<IPerStoreCache<IVariantGroup>>());
+            __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
 
         /// <summary>
         /// Stock Keeping Unit, identifier
@@ -90,7 +91,12 @@ namespace Ekom.Models
         {
             get
             {
-                return Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["key"]), Store.Alias, Properties.GetPropertyValue("price", Store.Alias));
+                return Current.Factory.GetInstance<IProductDiscountService>()
+                    .GetProductDiscount(
+                        Guid.Parse(Properties["key"]),
+                        Store.Alias,
+                        Properties.GetPropertyValue("price", Store.Alias)
+                    );
             }
         }
         // Waiting for variants to be composed with their parent product
@@ -178,7 +184,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = API.Catalog.Instance.GetCategory(Store.Alias, intCatId);
+                        = Catalog.Instance.GetCategory(Store.Alias, intCatId);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
@@ -229,10 +235,5 @@ namespace Ekom.Models
 
             Price = new Price(variantPrice, Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }

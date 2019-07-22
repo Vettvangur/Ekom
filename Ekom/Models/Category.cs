@@ -1,10 +1,8 @@
 using Ekom.Cache;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
-using log4net;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -13,6 +11,8 @@ using System.Reflection;
 using System.Web;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -23,8 +23,8 @@ namespace Ekom.Models
     /// </summary>
     public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
     {
-        private IPerStoreCache<ICategory> _categoryCache => Configuration.container.GetInstance<IPerStoreCache<ICategory>>();
-        private IPerStoreCache<IProduct> _productCache => Configuration.container.GetInstance<IPerStoreCache<IProduct>>();
+        private IPerStoreCache<ICategory> _categoryCache => Current.Factory.GetInstance<IPerStoreCache<ICategory>>();
+        private IPerStoreCache<IProduct> _productCache => Current.Factory.GetInstance<IPerStoreCache<IProduct>>();
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
@@ -62,7 +62,7 @@ namespace Ekom.Models
 
                 //var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(r.DomainPrefix));
 
-                var req = Configuration.container.GetInstance<HttpRequestBase>();
+                var req = Current.Factory.GetInstance<HttpContextBase>().Request;
                 var path = req.Url.AbsolutePath;
                 var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
 
@@ -173,11 +173,11 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Category(ISearchResult item, IStore store) : base(item, store)
         {
-            var pathField = item.Fields["path"];
+            var pathField = item.Values["path"];
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField).ToList();
 
-            ParentId = Convert.ToInt32(item.Fields["parentID"]);
+            ParentId = Convert.ToInt32(item.Values["parentID"]);
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
@@ -195,10 +195,5 @@ namespace Ekom.Models
 
             Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
         }
-
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
     }
 }
