@@ -12,7 +12,7 @@ using Umbraco.Core.Scoping;
 
 namespace Ekom.Repository
 {
-    public class ActivityLogRepository : IActivityLogRepository
+    class ActivityLogRepository : IActivityLogRepository
     {
         readonly IScopeProvider _scopeProvider;
 
@@ -42,7 +42,7 @@ namespace Ekom.Repository
             }
         }
 
-        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
+        public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
         {
             using (var db = _scopeProvider.CreateScope())
             {
@@ -59,11 +59,11 @@ namespace Ekom.Repository
                     .ConfigureAwait(false);
 
 
-                return queryResult.DistinctBy(x => x.OrderNumber);
+                return queryResult.DistinctBy(x => x.OrderNumber).ToList();
             }
         }
 
-        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsOrdersAsync()
+        public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersAsync()
         {
             using (var db = _scopeProvider.CreateScope())
             {
@@ -80,41 +80,41 @@ namespace Ekom.Repository
                   order by Date desc")
                     .ConfigureAwait(false);
 
-                return queryResult.DistinctBy(x => x.OrderNumber);
+                return queryResult.DistinctBy(x => x.OrderNumber).ToList();
             }
         }
 
-        public async Task<IEnumerable<OrderActivityLog>> GetLogsAsync(string OrderNumber)
+        public async Task<List<OrderActivityLog>> GetLogsAsync(string OrderNumber)
         {
             using (var db = _scopeProvider.CreateScope())
             {
-                return await db.Database.QueryAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
-                  ,a.[Key]
-                  ,a.[Log]
-                  ,a.[UserName]
-                  ,a.[DATE],
-	              b.orderNumber as OrderNumber
-              FROM [EkomOrdersActivityLog] a
-              left join EkomOrders b on b.UniqueId = a.[Key]
-              WHERE OrderNumber = @0
-              order by Date desc", OrderNumber);
+                return await db.Database.FetchAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
+                      ,a.[Key]
+                      ,a.[Log]
+                      ,a.[UserName]
+                      ,a.[DATE],
+	                  b.orderNumber as OrderNumber
+                  FROM [EkomOrdersActivityLog] a
+                  left join EkomOrders b on b.UniqueId = a.[Key]
+                  WHERE OrderNumber = @0
+                  order by Date desc", OrderNumber);
             }
         }
 
-        public async Task<IEnumerable<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
+        public async Task<List<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
         {
             using (var db = _scopeProvider.CreateScope())
             {
-                return await db.Database.QueryAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
-                  ,a.[Key]
-                  ,a.[Log]
-                  ,a.[UserName]
-                  ,a.[DATE],
-	              b.orderNumber as OrderNumber
-              FROM [EkomOrdersActivityLog] a
-              left join EkomOrders b on b.UniqueId = a.[Key]
-              WHERE a.[Key] = @0
-              order by Date desc", uniqueId);
+                return await db.Database.FetchAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
+                      ,a.[Key]
+                      ,a.[Log]
+                      ,a.[UserName]
+                      ,a.[DATE],
+	                  b.orderNumber as OrderNumber
+                  FROM [EkomOrdersActivityLog] a
+                  left join EkomOrders b on b.UniqueId = a.[Key]
+                  WHERE a.[Key] = @0
+                  order by Date desc", uniqueId);
             }
         }
     }

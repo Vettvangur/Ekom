@@ -1,174 +1,195 @@
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Scoping;
+using Umbraco.Core.Services;
 
 namespace Ekom.Repository
 {
-    public class CouponRepository : ICouponRepository
+    class CouponRepository : ICouponRepository
     {
         ILogger _logger;
         Configuration _config;
-        ApplicationContext _appCtx;
+        IAppCache _requestCache;
+        IScopeProvider _scopeProvider;
+        ICouponCache _couponCache;
+        IContentService _contentService;
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="config"></param>
-        /// <param name="appCtx "></param>
-        /// <param name="logFac"></param>
-        public CouponRepository(Configuration config, ApplicationContext appCtx, ILogger log)
+        public CouponRepository(
+            Configuration config,
+            AppCaches appCaches,
+            ILogger logger,
+            IScopeProvider scopeProvider,
+            ICouponCache couponCache,
+            IContentService contentService)
         {
             _config = config;
-            _appCtx = appCtx;
+            _requestCache = appCaches.RequestCache;
             _logger = logger;
+            _scopeProvider = scopeProvider;
+            _couponCache = couponCache;
+            _contentService = contentService;
         }
 
 
 
-        public void InsertCoupon(CouponData couponData)
+        public async Task InsertCouponAsync(CouponData couponData)
         {
-            if (!CouponCodeExist(couponData.CouponCode))
+            if (!await CouponCodeExistAsync(couponData.CouponCode))
             {
-                using (var db = _appCtx.DatabaseContext.Database)
+                using (var db = _scopeProvider.CreateScope())
                 {
-                    db.Insert(couponData);
+                    await db.Database.InsertAsync(couponData)
+                        .ConfigureAwait(false);
 
                     RefreshCache(couponData);
                 }
-            } else
+            }
+            else
             {
                 throw new ArgumentException("Duplicate coupon");
             }
 
         }
 
-        public void UpdateCoupon(CouponData couponData)
+        public async Task UpdateCouponAsync(CouponData couponData)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                db.Update(couponData);
+                await db.UpdateAsync(couponData)
+                        .ConfigureAwait(false);
 
                 RefreshCache(couponData);
             }
         }
 
-        public void RemoveCoupon(Guid discountId, string couponCode)
+        public async Task RemoveCouponAsync(Guid discountId, string couponCode)
         {
-            var coupon = GetCoupon(discountId, couponCode);
+            var coupon = await GetCouponAsync(discountId, couponCode)
+                    .ConfigureAwait(false);
 
             if (coupon != null)
             {
-                using (var db = _appCtx.DatabaseContext.Database)
+                using (var db = _scopeProvider.CreateScope().Database)
                 {
-                    db.Delete(coupon);
+                    await db.DeleteAsync(coupon)
+                        .ConfigureAwait(false);
 
                     RemoveCache(coupon);
                 }
-            } else
+            }
+            else
             {
                 throw new ArgumentException(nameof(coupon));
             }
 
         }
 
-        public CouponData GetCoupon(Guid discountId, string couponCode)
+        public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode);
+                return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode)
+                        .ConfigureAwait(false);
             }
         }
 
-        public CouponData GetCouponByKey(Guid key)
+        public async Task<CouponData> GetCouponByKeyAsync(Guid key)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where CouponKey = @0", key);
+                return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponKey = @0", key)
+                        .ConfigureAwait(false);
             }
         }
 
-        public CouponData GetCouponByCode(string couponCode)
+        public async Task<CouponData> GetCouponByCodeAsync(string couponCode)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.FirstOrDefault<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode);
+                return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode)
+                        .ConfigureAwait(false);
             }
         }
 
-        public IEnumerable<CouponData> GetAllCoupons()
+        public async Task<List<CouponData>> GetAllCouponsAsync()
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<CouponData>("");
+                return await db.FetchAsync<CouponData>()
+                    .ConfigureAwait(false);
             }
         }
 
-        public IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId)
+        public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0", discountId);
+                return await db.FetchAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0", discountId)
+                    .ConfigureAwait(false);
             }
         }
 
-        public bool DiscountHasCoupon(Guid discountId, string couponCode)
+        public async Task<bool> DiscountHasCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode).Any();
+                var query = await db.QueryAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode)
+                    .ConfigureAwait(false);
+
+                return query.Any();
             }
         }
 
-        public bool CouponCodeExist(string couponCode)
+        public async Task<bool> CouponCodeExistAsync(string couponCode)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode).Any();
+                var query = await db.QueryAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode)
+                        .ConfigureAwait(false);
+
+                return query.Any();
             }
         }
 
-        public void MarkUsed(string couponCode)
+        public async Task MarkUsedAsync(string couponCode)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                var coupon = GetCouponByCode(couponCode);
+                var coupon = await GetCouponByCodeAsync(couponCode)
+                    .ConfigureAwait(false);
 
                 if (coupon != null)
                 {
                     coupon.NumberAvailable--;
                 }
 
-                db.Update(coupon);
+                await db.UpdateAsync(coupon)
+                    .ConfigureAwait(false);
 
                 RefreshCache(coupon);
             }
-
         }
 
         public void RefreshCache(CouponData coupon)
         {
-            var couponCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "couponCache");
-
-            if (couponCache != null)
-            {
-                couponCache.AddReplace(coupon);
-            }
+            _couponCache.AddReplace(coupon);
 
             RefreshDiscountCache(coupon);
         }
 
         public void RemoveCache(CouponData coupon)
         {
-            var couponCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "couponCache");
-
-            if (couponCache != null)
-            {
-                couponCache.Remove(coupon);
-            }
+            _couponCache.Remove(coupon);
 
             RefreshDiscountCache(coupon);
         }
@@ -179,7 +200,7 @@ namespace Ekom.Repository
 
             if (orderDiscountCache != null)
             {
-                var cs = ApplicationContext.Current.Services.ContentService;
+                var cs = _contentService;
                 var discountNode = cs.GetById(coupon.DiscountId);
 
                 orderDiscountCache.AddReplace(discountNode);

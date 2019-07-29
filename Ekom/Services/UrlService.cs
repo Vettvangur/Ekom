@@ -1,11 +1,9 @@
-﻿using Examine;
-using log4net;
+using Examine;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Umbraco.Core;
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
@@ -14,11 +12,6 @@ namespace Ekom.Services
 {
     static class UrlService
     {
-        private static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
-
         /// <summary>
         /// Build URLs for category
         /// </summary>

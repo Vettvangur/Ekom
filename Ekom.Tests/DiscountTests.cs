@@ -63,7 +63,7 @@ namespace Ekom.Tests
             var discount = Objects.Objects.Get_Discount_fixed_500();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
 
@@ -80,7 +80,7 @@ namespace Ekom.Tests
             var discount = Objects.Objects.Get_Discount_percentage_50();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
 
@@ -97,7 +97,7 @@ namespace Ekom.Tests
             product.Discount = discount;
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.IsNotNull(oi.orderLines.First().Discount);
             Assert.AreEqual(1500, oi.SubTotal.Value);
@@ -114,7 +114,7 @@ namespace Ekom.Tests
             var discountPerc50 = Objects.Objects.Get_Discount_percentage_50();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrder(
                 discountFixed500,
@@ -144,9 +144,9 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLine(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLine(product3, 1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
                 product3,
@@ -171,7 +171,7 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLine(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
@@ -182,7 +182,7 @@ namespace Ekom.Tests
                 oi
             ));
 
-            oi = orderSvc.AddOrderLine(product3, 1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store);
 
 
             Assert.AreEqual(4990, oi.SubTotal.Value);
@@ -216,7 +216,7 @@ namespace Ekom.Tests
             orderSvcMocks.discountCache.GlobalDiscounts[store.Alias][discountPerc50.Key] = discountPerc50;
             var orderSvc = orderSvcMocks.orderSvc;
 
-            var oi = orderSvc.AddOrderLine(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
             Assert.AreEqual(1995, oi.SubTotal.Value);
         }
 
@@ -230,7 +230,7 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLine(product3, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product3, 2, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrder(
                 discount_fixed_1000_Min_2000,
@@ -242,7 +242,7 @@ namespace Ekom.Tests
             Assert.AreEqual(1000, oi.SubTotal.Value);
 
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLine(product3, -1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, -1, store);
 
             Assert.AreEqual(1500, oi.SubTotal.Value);
         }
@@ -258,7 +258,7 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLine(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
 
             Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
                 product2,
@@ -282,7 +282,7 @@ namespace Ekom.Tests
             var discount = Objects.Objects.Get_Discount_fixed_500();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi);
 

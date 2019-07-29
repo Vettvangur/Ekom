@@ -20,7 +20,7 @@ namespace Ekom.Tests
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.AreEqual(3000m, oi.OrderLineTotal.Value);
         }
@@ -32,7 +32,7 @@ namespace Ekom.Tests
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.AreEqual(300m, oi.Vat.Value);
             Assert.AreEqual(3300m, oi.ChargedAmount.Value);
@@ -46,7 +46,7 @@ namespace Ekom.Tests
             var product = new CustomProduct(Shirt_product_3.oldjson, store);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLine(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
 
             Assert.AreEqual(500m, oi.Vat.Value);
             Assert.AreEqual(3000m, oi.ChargedAmount.Value);

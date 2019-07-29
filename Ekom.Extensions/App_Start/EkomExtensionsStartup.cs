@@ -1,6 +1,7 @@
-﻿using Ekom.Services;
+using Ekom.Services;
 using System;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.NetPayment;
 
 namespace Ekom
@@ -24,7 +25,7 @@ namespace Ekom
 
         private void CompleteCheckout(OrderStatus o)
         {
-            var checkoutSvc = Configuration.container.GetInstance<CheckoutService>();
+            var checkoutSvc = Current.Factory.GetInstance<CheckoutService>();
 
             if (Guid.TryParse(o.Custom, out var orderId))
             {

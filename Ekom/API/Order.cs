@@ -4,6 +4,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
@@ -85,23 +87,26 @@ namespace Ekom.API
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public IOrderInfo GetCompletedOrder(string storeAlias)
+        public async Task<IOrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
-            return _orderService.GetCompletedOrder(storeAlias);
+            return await _orderService.GetCompletedOrderAsync(storeAlias)
+                .ConfigureAwait(false);
         }
 
-        public void UpdateStatus(string storeAlias, OrderStatus newStatus)
+        public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus)
         {
             var order = _orderService.GetOrder(storeAlias);
-            _orderService.ChangeOrderStatus(order.UniqueId, newStatus);
+            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus)
+                .ConfigureAwait(false);
         }
 
-        public void UpdateStatus(OrderStatus newStatus, Guid orderId, string userName = null)
+        public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null)
         {
-            _orderService.ChangeOrderStatus(orderId, newStatus, userName);
+            await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName)
+                .ConfigureAwait(false);
         }
 
-        public IOrderInfo AddOrderLine(
+        public async Task<IOrderInfo> AddOrderLineAsync(
             Guid productId,
             int quantity,
             string storeAlias,
@@ -109,22 +114,26 @@ namespace Ekom.API
             Guid? variantId = null
         )
         {
-            return _orderService.AddOrderLine(productId, quantity, storeAlias, action, variantId);
+            return await _orderService.AddOrderLineAsync(productId, quantity, storeAlias, action, variantId)
+                .ConfigureAwait(false);
         }
 
-        public IOrderInfo UpdateCustomerInformation(Dictionary<string, string> form)
+        public async Task<IOrderInfo> UpdateCustomerInformationAsync(Dictionary<string, string> form)
         {
-            return _orderService.UpdateCustomerInformation(form);
+            return await _orderService.UpdateCustomerInformationAsync(form)
+                .ConfigureAwait(false);
         }
 
-        public IOrderInfo UpdateShippingInformation(Guid ShippingProvider, string storeAlias)
+        public async Task<IOrderInfo> UpdateShippingInformationAsync(Guid ShippingProvider, string storeAlias)
         {
-            return _orderService.UpdateShippingInformation(ShippingProvider, storeAlias);
+            return await _orderService.UpdateShippingInformationAsync(ShippingProvider, storeAlias)
+                .ConfigureAwait(false);
         }
 
-        public IOrderInfo UpdatePaymentInformation(Guid PaymentProvider, string storeAlias)
+        public async Task<IOrderInfo> UpdatePaymentInformationAsync(Guid PaymentProvider, string storeAlias)
         {
-            return _orderService.UpdatePaymentInformation(PaymentProvider, storeAlias);
+            return await _orderService.UpdatePaymentInformationAsync(PaymentProvider, storeAlias)
+                .ConfigureAwait(false);
         }
 
         public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
@@ -132,9 +141,10 @@ namespace Ekom.API
             return _orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
-        public void CompleteOrder(Guid orderId)
+        public async Task CompleteOrderAsync(Guid orderId)
         {
-            _checkoutService.Complete(orderId);
+            await _checkoutService.CompleteAsync(orderId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -142,29 +152,32 @@ namespace Ekom.API
         /// </summary>
         /// <param name="customerId"></param>
         /// <returns></returns>
-        public IEnumerable<IOrderInfo> GetCompleteCustomerOrders(int customerId)
+        public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
         {
-            return _orderService.GetCompleteCustomerOrders(customerId);
+            return await _orderService.GetCompleteCustomerOrdersAsync(customerId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
         /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
         /// </summary>
         /// <param name="hangfireJobs">Job IDs to add</param>
-        public void AddHangfireJobsToOrder(IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrder(IEnumerable<string> hangfireJobs)
         {
             var store = _storeSvc.GetStoreFromCache();
-            AddHangfireJobsToOrder(store.Alias, hangfireJobs);
+            await AddHangfireJobsToOrderAsync(store.Alias, hangfireJobs)
+                .ConfigureAwait(false);
         }
         /// <summary>
         /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
         /// </summary>
         /// <param name="storeAlias"></param>
         /// <param name="hangfireJobs">Job IDs to add</param>
-        public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
         {
             var store = _storeSvc.GetStoreFromCache();
-            _orderService.AddHangfireJobsToOrder(store.Alias, hangfireJobs);
+            await _orderService.AddHangfireJobsToOrderAsync(store.Alias, hangfireJobs)
+                .ConfigureAwait(false);
         }
     }
 }

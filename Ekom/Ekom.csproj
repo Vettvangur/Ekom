@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props" Condition="Exists('..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props')" />
   <Import Project="..\packages\Microsoft.Net.Compilers.3.1.1\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.3.1.1\build\Microsoft.Net.Compilers.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -25,6 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Ekom.xml</DocumentationFile>
+    <CodeAnalysisRuleSet>Ekom.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,6 +36,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\Ekom.xml</DocumentationFile>
+    <CodeAnalysisRuleSet>Ekom.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ClientDependency.Core, Version=1.9.7.0, Culture=neutral, processorArchitecture=MSIL">
@@ -307,7 +310,6 @@
     <Compile Include="Interfaces\IActivityLogRepository.cs" />
     <Compile Include="Interfaces\IConstrained.cs" />
     <Compile Include="Interfaces\ICoupon.cs" />
-    <Compile Include="Interfaces\ICouponRepository.cs" />
     <Compile Include="Interfaces\IObjectFactory.cs" />
     <Compile Include="Interfaces\IPerStoreFactory.cs" />
     <Compile Include="Interfaces\IProductDiscount.cs" />
@@ -355,6 +357,7 @@
     <Compile Include="Repository\DiscountStockRepository.cs" />
     <Compile Include="Interfaces\IDiscountStockRepository.cs" />
     <Compile Include="Interfaces\IOrderRepository.cs" />
+    <Compile Include="Interfaces\ICouponRepository.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="API\Providers.cs" />
     <Compile Include="Services\OrderService.Discounts.cs" />
@@ -427,11 +430,17 @@
     <None Include="app.config" />
     <Compile Include="JsonDotNet\JsonDotNet.cs" />
     <Content Include="Views\EkomManager\Index.cshtml" />
+    <None Include="Ekom.ruleset" />
     <None Include="packages.config" />
     <None Include="Views\web.config.transform" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Attributes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\analyzers\dotnet\cs\Humanizer.dll" />
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\analyzers\dotnet\cs\Microsoft.CodeQuality.Analyzers.dll" />
+    <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\analyzers\dotnet\cs\Microsoft.CodeQuality.CSharp.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -440,6 +449,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.3.1.1\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.3.1.1\build\Microsoft.Net.Compilers.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\build\Microsoft.CodeQuality.Analyzers.props'))" />
   </Target>
   <Import Project="..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets" Condition="Exists('..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

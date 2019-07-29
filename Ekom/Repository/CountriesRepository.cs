@@ -1,7 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml.Linq;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Domain.Repositories
 {
@@ -23,7 +23,7 @@ namespace Ekom.Domain.Repositories
         /// ctor
         /// </summary>
         /// <param name="logFac"></param>
-        public CountriesRepository(ILogger log)
+        public CountriesRepository(ILogger logger)
         {
             _logger = logger;
         }

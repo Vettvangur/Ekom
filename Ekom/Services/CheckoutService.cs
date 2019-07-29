@@ -3,11 +3,11 @@ using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
-using Ekom.Repository;
-using log4net;
 using System;
 using System.Linq;
-using Ekom.Helpers;
+using Ekom.Utilities;
+using Umbraco.Core.Logging;
+using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
@@ -16,13 +16,13 @@ namespace Ekom.Services
         ILogger _logger;
         Configuration _config;
         IDiscountStockRepository _discountStockRepo;
-        OrderRepository _orderRepo;
+        IOrderRepository _orderRepo;
         ICouponRepository _couponRepo;
         private OrderService _orderService;
         public CheckoutService(
             ILogger logger,
             Configuration config,
-            OrderRepository orderRepo,
+            IOrderRepository orderRepo,
             ICouponRepository couponRepo,
             OrderService orderService,
             IDiscountStockRepository discountStockRepo)
@@ -35,14 +35,14 @@ namespace Ekom.Services
             _discountStockRepo = discountStockRepo;
         }
 
-        public void Complete(Guid key)
+        public async Task CompleteAsync(Guid key)
         {
             OrderData o = null;
             OrderInfo oi = null;
 
             try
             {
-                o = _orderRepo.GetOrder(key);
+                o = await _orderRepo.GetOrderAsync(key).ConfigureAwait(false);
 
                 if (o == null) return;
 
@@ -62,12 +62,15 @@ namespace Ekom.Services
 
                         if (!string.IsNullOrEmpty(oi.Coupon))
                         {
-                            _couponRepo.MarkUsed(oi.Coupon);
+                            await _couponRepo.MarkUsedAsync(oi.Coupon)
+                                .ConfigureAwait(false);
                         }
                     }
+#pragma warning disable CA1031 // Do not catch general exception types
                     catch (Exception ex) // Swallow all event subscriber exceptions
+#pragma warning restore CA1031 // Do not catch general exception types
                     {
-                        _log.Error(ex);
+                        _logger.Error<CheckoutService>(ex);
                     }
                 }
 
@@ -76,12 +79,14 @@ namespace Ekom.Services
                     if (!string.IsNullOrEmpty(line.Coupon))
                     {
                         var id = $"{line.Discount.Key}_{line.Coupon}";
-                        _discountStockRepo.Update(id, -1);
+                        await _discountStockRepo.UpdateAsync(id, -1)
+                            .ConfigureAwait(false);
                     }
 
                     if (line.Discount.HasMasterStock)
                     {
-                        _discountStockRepo.Update(line.Discount.Key.ToString(), -1);
+                        await _discountStockRepo.UpdateAsync(line.Discount.Key.ToString(), -1)
+                            .ConfigureAwait(false);
                     }
 
                     try
@@ -89,25 +94,28 @@ namespace Ekom.Services
                         //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
                         //line.Discount?.OnCouponApply();
                     }
+#pragma warning disable CA1031 // Do not catch general exception types
                     catch (Exception ex) // Swallow all event subscriber exceptions
+#pragma warning restore CA1031 // Do not catch general exception types
                     {
-                        _log.Error(ex);
+                        _logger.Error<CheckoutService>(ex);
                     }
 
                 }
 
-                _orderService.ChangeOrderStatus(o.UniqueId, OrderStatus.ReadyForDispatch);
+                await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
+                    .ConfigureAwait(false);
 
             }
             catch (StockException)
             {
-                _log.Info($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                _logger.Info<CheckoutService>($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                     + $"Order id: {oi?.UniqueId}");
                 throw;
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _logger.Error<CheckoutService>(ex);
                 throw;
             }
         }

@@ -1,5 +1,6 @@
 using Ekom.Models.Data;
 using System;
+using System.Threading.Tasks;
 
 namespace Ekom.API
 {
@@ -14,9 +15,12 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="coupon">Leave empty to get discount master stock</param>
         /// <returns></returns>
-        public int GetDiscountStock(Guid key, string coupon = null)
+        public async Task<int> GetDiscountStockAsync(Guid key, string coupon = null)
         {
-            return GetDiscountStockData(key, coupon).Stock;
+            var stockData = await GetDiscountStockDataAsync(key, coupon)
+                .ConfigureAwait(false);
+
+            return stockData.Stock;
         }
 
         /// <summary>
@@ -25,11 +29,11 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="coupon">Leave empty to get discount master stock</param>
         /// <returns></returns>
-        public DiscountStockData GetDiscountStockData(Guid key, string coupon = null)
+        public async Task<DiscountStockData> GetDiscountStockDataAsync(Guid key, string coupon = null)
         {
             var id = coupon == null ? key.ToString() : $"{key}_{coupon}";
 
-            return GetDiscountStockData(id);
+            return await GetDiscountStockDataAsync(id).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -37,8 +41,9 @@ namespace Ekom.API
         /// </summary>
         /// <param name="uniqueId"></param>
         /// <returns></returns>
-        public DiscountStockData GetDiscountStockData(string uniqueId)
-            => _discountStockRepo.GetStockByUniqueId(uniqueId);
+        public async Task<DiscountStockData> GetDiscountStockDataAsync(string uniqueId)
+            => await _discountStockRepo.GetStockByUniqueIdAsync(uniqueId)
+                .ConfigureAwait(false);
 
         /// <summary>
         /// Updates stock count of discount. 
@@ -50,11 +55,11 @@ namespace Ekom.API
         /// Throws an exception when value == 0
         /// </exception>
         /// <returns></returns>
-        public void UpdateDiscountStock(Guid key, int value, string coupon = null)
+        public async Task UpdateDiscountStockAsync(Guid key, int value, string coupon = null)
         {
             var id = coupon == null ? key.ToString() : $"{key}_{coupon}";
 
-            UpdateDiscountStock(id, value);
+            await UpdateDiscountStockAsync(id, value).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -66,7 +71,7 @@ namespace Ekom.API
         /// Throws an exception when value == 0
         /// </exception>
         /// <returns></returns>
-        public void UpdateDiscountStock(string uniqueId, int value)
+        public async Task UpdateDiscountStockAsync(string uniqueId, int value)
         {
             if (string.IsNullOrEmpty(uniqueId))
             {
@@ -77,7 +82,8 @@ namespace Ekom.API
                 throw new ArgumentException($"Check update value, 0 triggers no change.", nameof(value));
             }
 
-            _discountStockRepo.Update(uniqueId, value);
+            await _discountStockRepo.UpdateAsync(uniqueId, value)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -89,7 +95,7 @@ namespace Ekom.API
         /// <param name="coupon">Leave empty to update discount master stock</param>
         /// <param name="timeSpan">How long to reserve, if unspecified, uses appSettings or Ekom default</param>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveDiscountStock(Guid key, int value, string coupon = null, TimeSpan timeSpan = default(TimeSpan))
+        public async Task<string> ReserveDiscountStockAsync(Guid key, int value, string coupon = null, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
             if (timeSpan == default(TimeSpan))
@@ -97,7 +103,8 @@ namespace Ekom.API
                 timeSpan = _config.ReservationTimeout;
             }
 
-            UpdateDiscountStock(key, value, coupon);
+            await UpdateDiscountStockAsync(key, value, coupon)
+                .ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
                 UpdateDiscountStockHangfire(key, -value),
@@ -114,7 +121,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateDiscountStockHangfire(Guid key, int value)
         {
-            Instance.UpdateDiscountStock(key, value);
+            Instance.UpdateDiscountStockAsync(key, value).Wait();
         }
     }
 }

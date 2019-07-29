@@ -1,5 +1,6 @@
-﻿using Ekom.Models.Data;
+using Ekom.Models.Data;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Ekom.Interfaces
 {
@@ -17,12 +18,12 @@ namespace Ekom.Interfaces
         /// Discount Guid otherwise
         /// </param>
         /// <returns></returns>
-        DiscountStockData CreateNewStockRecord(string uniqueId);
+        Task<DiscountStockData> CreateNewStockRecordAsync(string uniqueId);
         /// <summary>
         /// Yes, all records in db
         /// </summary>
         /// <returns></returns>
-        IEnumerable<DiscountStockData> GetAllStock();
+        Task<IEnumerable<DiscountStockData>> GetAllStockAsync();
         /// <summary>
         /// 
         /// </summary>
@@ -32,7 +33,7 @@ namespace Ekom.Interfaces
         /// Discount Guid otherwise
         /// </param>
         /// <returns></returns>
-        DiscountStockData GetStockByUniqueId(string uniqueId);
+        Task<DiscountStockData> GetStockByUniqueIdAsync(string uniqueId);
         /// <summary>
         /// 
         /// </summary>
@@ -45,6 +46,6 @@ namespace Ekom.Interfaces
         /// Value will be added to current stock, negative numbers to decrement
         /// </param>
         /// <returns></returns>
-        void Update(string uniqueId, int value);
+        Task UpdateAsync(string uniqueId, int value);
     }
 }

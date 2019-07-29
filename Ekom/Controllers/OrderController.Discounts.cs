@@ -30,7 +30,7 @@ namespace Ekom.Controllers
                     return new HttpStatusCodeResult(400, "Coupon code can not be empty");
                 }
 
-                if (Order.Instance.ApplyCouponToOrder(coupon, storeAlias))
+                if (Order.Instance.ApplyCouponToOrderAsync(coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -60,7 +60,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                Order.Instance.RemoveCouponFromOrder(storeAlias);
+                Order.Instance.RemoveCouponFromOrderAsync(storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (ArgumentException)
@@ -77,7 +77,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                if (Order.Instance.ApplyCouponToOrderLine(productKey, coupon, storeAlias))
+                if (Order.Instance.ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -108,7 +108,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                Order.Instance.RemoveCouponFromOrderLine(productKey, storeAlias);
+                Order.Instance.RemoveCouponFromOrderLineAsync(productKey, storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (Exception ex)

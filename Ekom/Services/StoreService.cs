@@ -2,11 +2,11 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
-using log4net;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -15,27 +15,22 @@ namespace Ekom.Services
     class StoreService : IStoreService
     {
         ILogger _logger;
-        ApplicationContext _appCtx;
-        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+        IAppCache _reqCache;
         IBaseCache<IDomain> _domainCache;
         IBaseCache<IStore> _storeCache;
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="logFac"></param>
-        /// <param name="domainCache"></param>
-        /// <param name="storeCache"></param>
-        /// <param name="appCtx"></param>
         public StoreService(
             ILogger logger,
             IBaseCache<IDomain> domainCache,
             IBaseCache<IStore> storeCache,
-            ApplicationContext appCtx
+            AppCaches appCaches
         )
         {
             _logger = logger;
-            _appCtx = appCtx;
+            _reqCache = appCaches.RequestCache;
             _domainCache = domainCache;
             _storeCache = storeCache;
         }
@@ -104,7 +99,7 @@ namespace Ekom.Services
 
         public IStore GetStoreFromCache()
         {
-            var r = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
+            var r = _reqCache.GetCacheItem<ContentRequest>("ekmRequest") ;
 
             return r?.Store ?? GetAllStores().FirstOrDefault();
         }

@@ -5,6 +5,7 @@ using Ekom.Models.Data;
 using Ekom.Services;
 using Hangfire.States;
 using System;
+using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
@@ -138,16 +139,17 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void UpdateStock(Guid key, int value)
+        public async Task UpdateStockAsync(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
                 var store = _storeSvc.GetStoreFromCache();
-                UpdateStock(key, store.Alias, value);
+                await UpdateStockAsync(key, store.Alias, value)
+                    .ConfigureAwait(false);
             }
             else
             {
-                EnsureStockEntryExists(key);
+                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
 
                 var stockData = _stockCache.Cache[key];
 
@@ -168,9 +170,10 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public void UpdateStock(Guid key, string storeAlias, int value)
+        public async Task UpdateStockAsync(Guid key, string storeAlias, int value)
         {
-            EnsurePerStoreEntryExists(key, storeAlias);
+            await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                .ConfigureAwait(false);
 
             var stockData = _stockPerStoreCache.Cache[storeAlias][key];
 
@@ -190,16 +193,16 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool SetStock(Guid key, int value)
+        public async Task<bool> SetStockAsync(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
                 var store = _storeSvc.GetStoreFromCache();
-                return SetStock(key, store.Alias, value);
+                return await SetStockAsync(key, store.Alias, value).ConfigureAwait(false);
             }
             else
             {
-                EnsureStockEntryExists(key);
+                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
 
                 var stockData = _stockCache.Cache[key];
 
@@ -215,9 +218,9 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public bool SetStock(Guid key, string storeAlias, int value)
+        public async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
         {
-            EnsurePerStoreEntryExists(key, storeAlias);
+            await EnsurePerStoreEntryExistsAsync(key, storeAlias).ConfigureAwait(false);
 
             var stockData = _stockPerStoreCache.Cache[storeAlias][key];
 
@@ -233,7 +236,7 @@ namespace Ekom.API
         /// <param name="timeSpan">How long to reserve</param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
+        public async Task<string> ReserveStockAsync(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
             if (timeSpan == default(TimeSpan))
@@ -241,7 +244,7 @@ namespace Ekom.API
                 timeSpan = _config.ReservationTimeout;
             }
 
-            UpdateStock(key, value);
+            await UpdateStockAsync(key, value).ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
                 UpdateStockHangfire(key, -value),
@@ -261,15 +264,16 @@ namespace Ekom.API
         /// <param name="timeSpan">How long to reserve</param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public string ReserveStock(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
+        public async Task<string> ReserveStockAsync(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
         {
             if (value >= 0) throw new ArgumentOutOfRangeException();
-            if (timeSpan == default(TimeSpan))
+            if (timeSpan == default)
             {
                 timeSpan = _config.ReservationTimeout;
             }
 
-            UpdateStock(key, storeAlias, value);
+            await UpdateStockAsync(key, storeAlias, value)
+                .ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
                 UpdateStockHangfire(key, storeAlias, -value),
@@ -308,21 +312,23 @@ namespace Ekom.API
             );
         }
 
-        private void EnsureStockEntryExists(Guid key)
+        private async Task EnsureStockEntryExistsAsync(Guid key)
         {
             if (!_stockCache.Cache.ContainsKey(key))
             {
                 _stockCache.Cache[key]
-                    = _stockRepo.CreateNewStockRecord(key.ToString());
+                    = await _stockRepo.CreateNewStockRecordAsync(key.ToString())
+                    .ConfigureAwait(false);
             }
         }
 
-        private void EnsurePerStoreEntryExists(Guid key, string storeAlias)
+        private async Task EnsurePerStoreEntryExistsAsync(Guid key, string storeAlias)
         {
             if (!_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
             {
                 _stockPerStoreCache.Cache[storeAlias][key]
-                    = _stockRepo.CreateNewStockRecord($"{storeAlias}_{key}");
+                    = await _stockRepo.CreateNewStockRecordAsync($"{storeAlias}_{key}")
+                    .ConfigureAwait(false);
             }
         }
 
@@ -356,7 +362,7 @@ namespace Ekom.API
                 var oldValue = stockData.Stock;
                 stockData.Stock = value;
 
-                _stockRepo.Set(stockData.UniqueId, value, oldValue);
+                _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).Wait();
 
                 return true;
             }
@@ -369,7 +375,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, int value)
         {
-            Instance.UpdateStock(key, value);
+            Instance.UpdateStockAsync(key, value).Wait();
         }
 
         /// <summary>
@@ -380,7 +386,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
         {
-            Instance.UpdateStock(key, storeAlias, value);
+            Instance.UpdateStockAsync(key, storeAlias, value).Wait();
         }
     }
 }

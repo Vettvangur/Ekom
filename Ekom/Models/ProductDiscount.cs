@@ -82,8 +82,7 @@ namespace Ekom.Models
 
                     }
 
-                    decimal value;
-                    Decimal.TryParse(discount.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+                    decimal.TryParse(discount.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal value);
                     value = value * 0.01M;
                     if (value > 1)
                     {
@@ -109,15 +108,22 @@ namespace Ekom.Models
                 {
                     if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Count() == 0)
                     {
-                        returnList.Add(node.GetKey());
+                        returnList.Add(node.Key);
                     }
                     else if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Any())
                     {
-                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProductVariant").Select(x => x.GetKey()));
+                        returnList.AddRange(
+                            node.Descendants()
+                                .Where(x => x.ContentType.Alias == "ekmProductVariant")
+                                .Select(x => x.Key));
                     }
                     else if (node.ContentType.Alias == "ekmCategory")
                     {
-                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct" || x.ContentType.Alias == "ekmProductVariant").Select(x => x.GetKey()));
+                        returnList.AddRange(
+                            node.Descendants()
+                                .Where(x => x.ContentType.Alias == "ekmProduct" 
+                                    || x.ContentType.Alias == "ekmProductVariant")
+                                .Select(x => x.Key));
                     }
                 }
                 return returnList;
@@ -141,8 +147,7 @@ namespace Ekom.Models
                 else
                 {
 
-                    decimal value;
-                    Decimal.TryParse(discount.Replace(',', '.'), out value);
+                    decimal.TryParse(discount.Replace(',', '.'), out decimal value);
                     return value;
                 }
             }
@@ -159,8 +164,7 @@ namespace Ekom.Models
                 }
                 else
                 {
-                    decimal value;
-                    Decimal.TryParse(discount.Replace(',', '.'), out value);
+                    decimal.TryParse(discount.Replace(',', '.'), out decimal value);
                     return value;
                 }
             }

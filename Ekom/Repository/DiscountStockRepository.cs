@@ -2,26 +2,28 @@ using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Scoping;
 
 namespace Ekom.Repository
 {
     class DiscountStockRepository : IDiscountStockRepository
     {
         readonly ILogger _logger;
-        readonly ApplicationContext _appCtx;
+        readonly IScopeProvider _scopeProvider;
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="config"></param>
-        /// <param name="appCtx "></param>
-        /// <param name="logFac"></param>
-        public DiscountStockRepository(Configuration config, ApplicationContext appCtx, ILogger log)
+        public DiscountStockRepository(
+            Configuration config, 
+            IScopeProvider scopeProvider, 
+            ILogger logger)
         {
-            _appCtx = appCtx;
+            _scopeProvider = scopeProvider;
             _logger = logger;
         }
 
@@ -34,17 +36,18 @@ namespace Ekom.Repository
         /// Discount Guid otherwise
         /// </param>
         /// <returns></returns>
-        public DiscountStockData GetStockByUniqueId(string uniqueId)
+        public async Task<DiscountStockData> GetStockByUniqueIdAsync(string uniqueId)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                var stockData = db.FirstOrDefault<DiscountStockData>("WHERE UniqueId = @0", uniqueId);
+                var stockData = await db.FirstOrDefaultAsync<DiscountStockData>("WHERE UniqueId = @0", uniqueId)
+                    .ConfigureAwait(false);
 
-                return stockData ?? CreateNewStockRecord(uniqueId);
+                return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
             }
         }
 
-        public DiscountStockData CreateNewStockRecord(string uniqueId)
+        public async Task<DiscountStockData> CreateNewStockRecordAsync(string uniqueId)
         {
             var dateNow = DateTime.Now;
             var stockData = new DiscountStockData
@@ -55,9 +58,9 @@ namespace Ekom.Repository
             };
 
             // Run synchronously to ensure that callers can expect a db record present after method runs
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                db.Insert(stockData);
+                await db.InsertAsync(stockData).ConfigureAwait(false);
             }
 
             return stockData;
@@ -67,11 +70,12 @@ namespace Ekom.Repository
         /// 
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DiscountStockData> GetAllStock()
+        public async Task<IEnumerable<DiscountStockData>> GetAllStockAsync()
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<DiscountStockData>("");
+                return await db.FetchAsync<DiscountStockData>()
+                    .ConfigureAwait(false);
             }
         }
 
@@ -84,11 +88,11 @@ namespace Ekom.Repository
         /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
         /// </exception>
         /// <returns></returns>
-        public void Update(string uniqueId, int value)
+        public async Task UpdateAsync(string uniqueId, int value)
         {
             // We start pessimistic, checking before attempting update.
             // This also takes care of ensuring a DiscountStockData record exists.
-            var stockDataFromRepo = GetStockByUniqueId(uniqueId);
+            var stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
 
             if (stockDataFromRepo.Stock + value < 0)
             {
@@ -102,7 +106,7 @@ namespace Ekom.Repository
             stockDataFromRepo.UpdateDate = DateTime.Now;
 
             // Update stock with locking
-            var sql = Umbraco.Core.Persistence.Sql.Builder.Append("BEGIN")
+            var sql = _scopeProvider.CreateScope().SqlContext.Sql().Append("BEGIN")
                 .Append("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
                 .Append("SET DEADLOCK_PRIORITY LOW;")
                 .Append("DECLARE @status int = 0;")
@@ -125,9 +129,9 @@ namespace Ekom.Repository
             ;
 
             // Called synchronously and hopefully contained by a locking construct
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                var result = db.Single<int>(sql);
+                var result = await db.SingleAsync<int>(sql).ConfigureAwait(false);
 
                 if (result != 0)
                 {

@@ -77,7 +77,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage UpdateStock(Guid id, int stock)
         {
-            API.Stock.Instance.UpdateStock(id, stock);
+            API.Stock.Instance.UpdateStockAsync(id, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -88,7 +88,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage UpdateStock(Guid id, string storeAlias, int stock)
         {
-            API.Stock.Instance.UpdateStock(id, stock);
+            API.Stock.Instance.UpdateStockAsync(id, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -99,7 +99,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage SetStock(Guid id, int stock)
         {
-            API.Stock.Instance.SetStock(id, stock);
+            API.Stock.Instance.SetStockAsync(id, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -110,7 +110,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage SetStock(Guid id, string storeAlias, int stock)
         {
-            API.Stock.Instance.SetStock(id, storeAlias, stock);
+            API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -121,7 +121,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
         {
-            API.Order.Instance.InsertCouponCode(couponCode, numberAvailable, discountId);
+            API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -132,7 +132,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage RemoveCoupon(string couponCode, Guid discountId)
         {
-            API.Order.Instance.RemoveCouponCode(couponCode, discountId);
+            API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -143,7 +143,7 @@ namespace Ekom.Controllers
         [HttpPost]
         public HttpResponseMessage GetCouponsForDiscount(Guid discountId)
         {
-            var items = API.Order.Instance.GetCouponsForDiscount(discountId);
+            var items = API.Order.Instance.GetCouponsForDiscountAsync(discountId);
 
             return Request.CreateResponse(HttpStatusCode.OK, items);
         }

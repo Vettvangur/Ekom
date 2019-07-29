@@ -40,7 +40,7 @@ namespace Ekom.Controllers
                 //    variantIds.Add(request.variantId.Value);
                 //}
 
-                var orderInfo = Order.Instance.AddOrderLine(
+                var orderInfo = Order.Instance.AddOrderLineAsync(
                     request.productId,
                     request.quantity,
                     request.storeAlias,
@@ -158,7 +158,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Instance.UpdateCustomerInformation(form.AllKeys.ToDictionary(k => k, v => form[v]));
+                var orderInfo = Order.Instance.UpdateCustomerInformationAsync(form.AllKeys.ToDictionary(k => k, v => form[v]));
 
                 return Json(new
                 {
@@ -185,7 +185,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Instance.UpdateShippingInformation(ShippingProvider, storeAlias);
+                var orderInfo = Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
 
                 return Json(new
                 {
@@ -212,7 +212,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Instance.UpdatePaymentInformation(PaymentProvider, storeAlias);
+                var orderInfo = Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
 
                 return Json(new
                 {
@@ -243,7 +243,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = Order.Instance.AddOrderLine(
+                var orderInfo = Order.Instance.AddOrderLineAsync(
                     lineId,
                     quantity,
                     storeAlias);

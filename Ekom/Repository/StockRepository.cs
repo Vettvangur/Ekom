@@ -2,10 +2,12 @@ using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Scoping;
 
 namespace Ekom.Repository
 {
@@ -15,16 +17,13 @@ namespace Ekom.Repository
     class StockRepository : IStockRepository
     {
         readonly ILogger _logger;
-        readonly ApplicationContext _appCtx;
+        readonly IScopeProvider _scopeProvider;
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="config"></param>
-        /// <param name="appCtx "></param>
-        /// <param name="logFac"></param>
-        public StockRepository(Configuration config, ApplicationContext appCtx, ILogger log)
+        public StockRepository(Configuration config, IScopeProvider scopeProvider, ILogger logger)
         {
-            _appCtx = appCtx;
+            _scopeProvider = scopeProvider;
             _logger = logger;
         }
 
@@ -37,17 +36,18 @@ namespace Ekom.Repository
         /// Guid otherwise
         /// </param>
         /// <returns></returns>
-        public StockData GetStockByUniqueId(string uniqueId)
+        public async Task<StockData> GetStockByUniqueIdAsync(string uniqueId)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                var stockData = db.FirstOrDefault<StockData>("WHERE UniqueId = @0", uniqueId);
+                var stockData = await db.FirstOrDefaultAsync<StockData>("WHERE UniqueId = @0", uniqueId)
+                    .ConfigureAwait(false);
 
-                return stockData ?? CreateNewStockRecord(uniqueId);
+                return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
             }
         }
 
-        public StockData CreateNewStockRecord(string uniqueId)
+        public async Task<StockData> CreateNewStockRecordAsync(string uniqueId)
         {
             var dateNow = DateTime.Now;
             var stockData = new StockData
@@ -58,9 +58,9 @@ namespace Ekom.Repository
             };
 
             // Run synchronously to ensure that callers can expect a db record present after method runs
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                db.Insert(stockData);
+                await db.InsertAsync(stockData).ConfigureAwait(false);
             }
 
             return stockData;
@@ -70,11 +70,11 @@ namespace Ekom.Repository
         /// 
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<StockData> GetAllStock()
+        public async Task<List<StockData>> GetAllStockAsync()
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<StockData>("");
+                return await db.FetchAsync<StockData>().ConfigureAwait(false);
             }
         }
 
@@ -88,9 +88,9 @@ namespace Ekom.Repository
         /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
         /// </exception>
         /// <returns></returns>
-        public int Set(string uniqueId, int value, int oldValue)
+        public async Task<int> SetAsync(string uniqueId, int value, int oldValue)
         {
-            var stockDataFromRepo = GetStockByUniqueId(uniqueId);
+            var stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
 
             if (stockDataFromRepo.Stock != oldValue)
             {
@@ -104,9 +104,9 @@ namespace Ekom.Repository
             stockDataFromRepo.UpdateDate = DateTime.Now;
 
             // Called synchronously and hopefully contained by a locking construct
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                db.Update(stockDataFromRepo);
+                await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
                 return stockDataFromRepo.Stock;
             }
         }

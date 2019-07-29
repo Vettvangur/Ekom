@@ -1,6 +1,5 @@
-using Ekom.Models.Abstractions;
 using Examine;
-using Examine.SearchCriteria;
+using Umbraco.Examine;
 using System;
 using System.Linq;
 
@@ -17,8 +16,8 @@ namespace Ekom.Services
         }
 
         Configuration _config;
-        ExamineManagerBase _examineMgr;
-        public ExamineService(Configuration config, ExamineManagerBase examineMgr)
+        IExamineManager _examineMgr;
+        public ExamineService(Configuration config, IExamineManager examineMgr)
         {
             _config = config;
             _examineMgr = examineMgr;
@@ -26,15 +25,14 @@ namespace Ekom.Services
 
         public ISearchResult GetExamineNode(int Id)
         {
-            var searcher = _examineMgr.SearchProviderCollection[_config.ExamineSearcher];
-
-            if (searcher != null)
+            if (_examineMgr.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
             {
-                ISearchCriteria searchCriteria = searcher.CreateSearchCriteria();
-                var query = searchCriteria.Id(Id);
-                var results = searcher.Search(query.Compile());
+                var results = searcher.CreateQuery("content")
+                    .Id(Id)
+                    .Execute()
+                    ;
 
-                return results.First();
+                return results.FirstOrDefault();
             }
 
             return null;

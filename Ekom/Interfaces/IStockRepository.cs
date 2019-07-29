@@ -1,5 +1,6 @@
-﻿using Ekom.Models.Data;
+using Ekom.Models.Data;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Ekom.Interfaces
 {
@@ -12,7 +13,7 @@ namespace Ekom.Interfaces
         /// 
         /// </summary>
         /// <returns></returns>
-        IEnumerable<StockData> GetAllStock();
+        Task<List<StockData>> GetAllStockAsync();
 
         /// <summary>
         /// 
@@ -23,7 +24,7 @@ namespace Ekom.Interfaces
         /// Guid otherwise
         /// </param>
         /// <returns></returns>
-        StockData GetStockByUniqueId(string uniqueId);
+        Task<StockData> GetStockByUniqueIdAsync(string uniqueId);
 
         /// <summary>
         /// 
@@ -34,7 +35,7 @@ namespace Ekom.Interfaces
         /// Guid otherwise
         /// </param>
         /// <returns></returns>
-        StockData CreateNewStockRecord(string uniqueId);
+        Task<StockData> CreateNewStockRecordAsync(string uniqueId);
 
         /// <summary>
         /// Increment or decrement stock by the supplied value
@@ -47,6 +48,6 @@ namespace Ekom.Interfaces
         /// <param name="modifyAmount">This value can be negative or positive depending on whether the indended action is to increment or decrement stock</param>
         /// <param name="oldValue">Old stock value</param>
         /// <returns></returns>
-        int Set(string uniqueId, int modifyAmount, int oldValue);
+        Task<int> SetAsync(string uniqueId, int modifyAmount, int oldValue);
     }
 }

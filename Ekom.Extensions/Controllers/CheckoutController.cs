@@ -55,7 +55,7 @@ namespace Ekom.Extensions.Controllers
 
                 if (order.PaymentProvider == null)
                 {
-                    Order.Instance.UpdatePaymentInformation(paymentRequest.PaymentProvider, order.StoreInfo.Alias);
+                    Order.Instance.UpdatePaymentInformationAsync(paymentRequest.PaymentProvider, order.StoreInfo.Alias);
                 }
 
                 var storeAlias = order.StoreInfo.Alias;
@@ -88,7 +88,7 @@ namespace Ekom.Extensions.Controllers
 
                                     if (variantStock >= line.Quantity)
                                     {
-                                        hangfireJobs.Add(_stock.ReserveStock(variant.Key, (line.Quantity * -1)));
+                                        hangfireJobs.Add(_stock.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
                                     }
                                     else
                                     {
@@ -103,7 +103,7 @@ namespace Ekom.Extensions.Controllers
 
                                 if (productStock >= line.Quantity)
                                 {
-                                    hangfireJobs.Add(_stock.ReserveStock(line.ProductKey, (line.Quantity * -1)));
+                                    hangfireJobs.Add(_stock.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                                 }
                                 else
                                 {

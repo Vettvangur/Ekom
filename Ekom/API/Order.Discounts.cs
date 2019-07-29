@@ -2,6 +2,7 @@ using Ekom.Exceptions;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Ekom.API
 {
@@ -16,11 +17,12 @@ namespace Ekom.API
         /// <exception cref="DiscountNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public bool ApplyCouponToOrder(string coupon)
+        public async Task<bool> ApplyCouponToOrderAsync(string coupon)
         {
             var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
-            return ApplyCouponToOrder(coupon, storeAlias);
+            return await ApplyCouponToOrderAsync(coupon, storeAlias)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -29,7 +31,7 @@ namespace Ekom.API
         /// <exception cref="DiscountNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public bool ApplyCouponToOrder(string coupon, string storeAlias)
+        public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias)
         {
             if (string.IsNullOrEmpty(coupon))
             {
@@ -48,7 +50,8 @@ namespace Ekom.API
                 {
                     if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                     {
-                        return _orderService.ApplyDiscountToOrder(discount, storeAlias, coupon);
+                        return await _orderService.ApplyDiscountToOrderAsync(discount, storeAlias, coupon)
+                            .ConfigureAwait(false);
                     }
                     else
                     {
@@ -71,11 +74,11 @@ namespace Ekom.API
         /// 
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        public void RemoveCouponFromOrder()
+        public async Task RemoveCouponFromOrderAsync()
         {
             var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
-            RemoveCouponFromOrder(storeAlias);
+            await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -83,14 +86,15 @@ namespace Ekom.API
         /// </summary>
         /// <param name="storeAlias"></param>
         /// <exception cref="ArgumentException"></exception>
-        public void RemoveCouponFromOrder(string storeAlias)
+        public async Task RemoveCouponFromOrderAsync(string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            _orderService.RemoveDiscountFromOrder(storeAlias);
+            await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -100,11 +104,12 @@ namespace Ekom.API
         /// <exception cref="DiscountNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public bool ApplyCouponToOrderLine(Guid productKey, string coupon)
+        public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon)
         {
             var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
-            return ApplyCouponToOrderLine(productKey, coupon, storeAlias);
+            return await ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -114,7 +119,7 @@ namespace Ekom.API
         /// <exception cref="DiscountNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
         /// <returns></returns>
-        public bool ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
+        public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon, string storeAlias)
         {
             if (string.IsNullOrEmpty(coupon))
             {
@@ -135,7 +140,12 @@ namespace Ekom.API
             {
                 if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                 {
-                    return _orderService.ApplyDiscountToOrderLine(productKey, discount, storeAlias, coupon);
+                    return await _orderService.ApplyDiscountToOrderLineAsync(
+                        productKey,
+                        discount,
+                        storeAlias,
+                        coupon)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
@@ -154,11 +164,12 @@ namespace Ekom.API
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderLineNotFoundException"></exception>
-        public void RemoveCouponFromOrderLine(Guid productKey)
+        public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
         {
             var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
-            RemoveCouponFromOrderLine(productKey, storeAlias);
+            await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -168,7 +179,7 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderLineNotFoundException"></exception>
-        public void RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
+        public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -179,22 +190,26 @@ namespace Ekom.API
                 throw new ArgumentException(nameof(productKey));
             }
 
-            _orderService.RemoveDiscountFromOrderLine(productKey, storeAlias);
+            await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
+                .ConfigureAwait(false);
         }
 
-        public void InsertCouponCode(string couponCode, int numberAvailable, Guid discountId)
+        public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
         {
-            _orderService.InsertCouponCode(couponCode, numberAvailable, discountId);
+            await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId)
+                .ConfigureAwait(false);
         }
 
-        public void RemoveCouponCode(string couponCode, Guid discountId)
+        public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
         {
-            _orderService.RemoveCouponCode(couponCode, discountId);
+            await _orderService.RemoveCouponCodeAsync(couponCode, discountId)
+                .ConfigureAwait(false);
         }
 
-        public IEnumerable<CouponData> GetCouponsForDiscount(Guid discountId)
+        public async Task<IEnumerable<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
         {
-            return _orderService.GetCouponsForDiscount(discountId);
+            return await _orderService.GetCouponsForDiscountAsync(discountId)
+                .ConfigureAwait(false);
         }
     }
 }

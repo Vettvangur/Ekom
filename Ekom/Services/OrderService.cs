@@ -19,6 +19,8 @@ using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Security;
 using Ekom.Utilities;
+using Umbraco.Core.Services;
+using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
@@ -27,8 +29,9 @@ namespace Ekom.Services
         ILogger _logger;
 
         HttpContextBase _httpCtx;
-        ApplicationContext _appCtx;
-        ICacheProvider _reqCache => _appCtx.ApplicationCache.RequestCache;
+        IAppCache _reqCache;
+        IAppPolicyCache _runtimeCache;
+        IMemberService _memberService;
         DiscountCache _discountCache;
 
         IActivityLogRepository _activityLogRepository;
@@ -49,17 +52,20 @@ namespace Ekom.Services
             IActivityLogRepository activityLogRepository,
             ILogger logger,
             IStoreService storeService,
-            ApplicationContext appCtx,
+            AppCaches appCaches,
+            IMemberService memberService,
             DiscountCache discountCache)
         {
             _logger = logger;
 
-            _appCtx = appCtx;
             _orderRepository = orderRepo;
             _couponRepository = couponRepository;
             _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
+            _reqCache = appCaches.RequestCache;
+            _runtimeCache = appCaches.RuntimeCache;
+            _memberService = memberService;
         }
 
         /// <summary>
@@ -71,13 +77,14 @@ namespace Ekom.Services
             IActivityLogRepository activityLogRepository,
             ILogger logger,
             IStoreService storeService,
-            ApplicationContext appCtx,
+            AppCaches appCaches,
+            IMemberService memberService,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, couponRepository, activityLogRepository, logFac, storeService, appCtx, discountCache)
+            : this(orderRepo, couponRepository, activityLogRepository, logger, storeService, appCaches, memberService, discountCache)
         {
             _httpCtx = httpCtx;
-            _ekmRequest = _reqCache.GetCacheItem("ekmRequest") as ContentRequest;
+            _ekmRequest = _reqCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
         public OrderInfo GetOrder(string storeAlias)
@@ -112,9 +119,10 @@ namespace Ekom.Services
                 if (orderUniqueId != Guid.Empty)
                 {
 
-                    var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
-                                .GetCacheItem<OrderInfo>(orderUniqueId.ToString(),
-                                    () => GetOrder(orderUniqueId), TimeSpan.FromDays(1));
+                    var orderInfo = _runtimeCache.GetCacheItem(
+                        orderUniqueId.ToString(),
+                        () => GetOrder(orderUniqueId), 
+                        TimeSpan.FromDays(1));
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
                     //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
@@ -140,7 +148,7 @@ namespace Ekom.Services
             return null;
         }
 
-        public OrderInfo GetCompletedOrder(string storeAlias)
+        public async Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
             // Add timelimit to get the order ? Maybe 1-2 hours ?
 
@@ -173,9 +181,10 @@ namespace Ekom.Services
                 if (orderUniqueId != Guid.Empty)
                 {
 
-                    var orderInfo = ApplicationContext.Current.ApplicationCache.RuntimeCache
-                                .GetCacheItem<OrderInfo>(orderUniqueId.ToString(),
-                                    () => GetOrder(orderUniqueId), TimeSpan.FromDays(1));
+                    var orderInfo = _runtimeCache.GetCacheItem(
+                        orderUniqueId.ToString(),
+                        () => GetOrder(orderUniqueId), 
+                        TimeSpan.FromDays(1));
 
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
                     || orderInfo?.OrderStatus == OrderStatus.Dispatched
@@ -185,7 +194,6 @@ namespace Ekom.Services
                         return orderInfo;
                     }
                 }
-
             }
 
             return null;
@@ -194,30 +202,33 @@ namespace Ekom.Services
         public OrderInfo GetOrder(Guid uniqueId)
         {
             // Chekk for cache ?
-            return ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem($"EkomOrder-{uniqueId}", () => {
-                return GetOrderInfo(uniqueId);
-            }, TimeSpan.FromMinutes(5)) as OrderInfo;
+            return _runtimeCache.GetCacheItem<OrderInfo>(
+                $"EkomOrder-{uniqueId}", 
+                () => GetOrderInfoAsync(uniqueId).Result
+            , TimeSpan.FromMinutes(5));
         }
 
         // fills cache for GetOrder
-        public OrderInfo GetOrderUpdateCache(Guid uniqueId)
+        public async Task<OrderInfo> GetOrderUpdateCacheAsync(Guid uniqueId)
         {
-            return GetOrderInfo(uniqueId);
+            return await GetOrderInfoAsync(uniqueId).ConfigureAwait(false);
         }
 
-        public OrderInfo GetOrderInfo(Guid uniqueId)
+        public async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId)
         {
-            var orderData = _orderRepository.GetOrder(uniqueId);
+            var orderData = await _orderRepository.GetOrderAsync(uniqueId)
+                .ConfigureAwait(false);
 
             return orderData != null ? new OrderInfo(orderData) : null;
         }
 
 
-        public void ChangeOrderStatus(Guid uniqueId, OrderStatus status, string userName = null)
+        public async Task ChangeOrderStatusAsync(Guid uniqueId, OrderStatus status, string userName = null)
         {
             // Add event handler
 
-            var order = _orderRepository.GetOrder(uniqueId);
+            var order = await _orderRepository.GetOrderAsync(uniqueId)
+                .ConfigureAwait(false);
 
             var oldStatus = order.OrderStatus;
 
@@ -234,43 +245,50 @@ namespace Ekom.Services
 
                 if (Configuration.Current.UserBasket)
                 {
-                    var ms = _appCtx.Services.MemberService;
-
-                    var member = ms.GetByUsername(_httpCtx.User.Identity.Name);
+                    var member = _memberService.GetByUsername(_httpCtx.User.Identity.Name);
                     if (member.HasProperty("orderId"))
                     {
                         member.SetValue("orderId", "");
                     }
-                    ms.Save(member);
+                    _memberService.Save(member);
                 } else
                 {
-                    ApplicationContext.Current.ApplicationCache.RuntimeCache.ClearCacheItem(uniqueId.ToString());
+                    _runtimeCache.ClearByKey(uniqueId.ToString());
                 }
-
             }
 
-            _orderRepository.UpdateOrder(order);
+            await _orderRepository.UpdateOrderAsync(order)
+                .ConfigureAwait(false);
 
-            ApplicationContext.Current.ApplicationCache.RuntimeCache
-                        .GetCacheItem<OrderInfo>(uniqueId.ToString(),
-                            () => new OrderInfo(order), TimeSpan.FromDays(1));
+            _runtimeCache.GetCacheItem<OrderInfo>(
+                uniqueId.ToString(),
+                () => new OrderInfo(order), 
+                TimeSpan.FromDays(1));
 
 
-            _activityLogRepository.Insert(uniqueId, "Order status changed. From: " + oldStatus.ToString() + " To: " + status.ToString(), string.IsNullOrEmpty(userName) ? "Customer" : userName);
+            await _activityLogRepository.InsertAsync(
+                uniqueId,
+                $"Order status changed. From: {oldStatus.ToString()} To: {status.ToString()}",
+                string.IsNullOrEmpty(userName) 
+                    ? "Customer" 
+                    : userName)
+                .ConfigureAwait(false);
 
-            _log.Debug("Change Order " + order.OrderNumber + " status to " + status.ToString());
+            _logger.Debug<OrderService>($"Change Order {order.OrderNumber} status to {status.ToString()}");
         }
 
-        public void UpdatePaidDate(Guid uniqueId)
+        public async Task UpdatePaidDate(Guid uniqueId)
         {
 
-            var order = _orderRepository.GetOrder(uniqueId);
+            var order = await _orderRepository.GetOrderAsync(uniqueId)
+                .ConfigureAwait(false);
 
             order.PaidDate = DateTime.Now;
 
-            _orderRepository.UpdateOrder(order);
+            await _orderRepository.UpdateOrderAsync(order)
+                .ConfigureAwait(false);
 
-            _log.Debug("Update Paid Date " + order.OrderNumber);
+            _logger.Debug<OrderService>("Update Paid Date " + order.OrderNumber);
         }
 
         /// <summary>
@@ -280,7 +298,7 @@ namespace Ekom.Services
         /// <exception cref="OrderException"></exception>
         /// <exception cref="ProductNotFoundException"></exception>
         /// <exception cref="VariantNotFoundException"></exception>
-        public OrderInfo AddOrderLine(
+        public async Task<OrderInfo> AddOrderLineAsync(
             Guid productKey,
             int quantity,
             string storeAlias,
@@ -326,13 +344,13 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            return AddOrderLine(
+            return await AddOrderLineAsync(
                 product,
                 quantity,
                 store,
                 action,
                 variant
-            );
+            ).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -340,7 +358,7 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderException"></exception>
-        public OrderInfo AddOrderLine(
+        public async Task<OrderInfo> AddOrderLineAsync(
             IProduct product,
             int quantity,
             IStore store,
@@ -363,9 +381,9 @@ namespace Ekom.Services
 
             if (orderInfo == null)
             {
-                orderInfo = CreateEmptyOrder();
+                orderInfo = await CreateEmptyOrderAsync().ConfigureAwait(false);
             }
-            _log.Debug("ProductId: " + product.Id +
+            _logger.Debug<OrderService>("ProductId: " + product.Id +
                 " variantId: " + variant?.Key +
                 " qty: " + quantity +
                 " Action: " + action +
@@ -374,19 +392,19 @@ namespace Ekom.Services
                 " Cart action " + cartAction
             );
 
-            AddOrderLineToOrderInfo(
+            await AddOrderLineToOrderInfoAsync(
                 orderInfo,
                 product,
                 quantity,
                 cartAction,
-                variant);
+                variant).ConfigureAwait(false);
 
             return orderInfo;
         }
 
         public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
-            _log.Debug("Remove OrderLine... LineId: " + lineId);
+            _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -403,7 +421,7 @@ namespace Ekom.Services
                 throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
-            UpdateOrderAndOrderInfo(orderInfo);
+            UpdateOrderAndOrderInfoAsync(orderInfo);
 
             return orderInfo;
         }
@@ -418,7 +436,7 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderException"></exception>
-        private void AddOrderLineToOrderInfo(
+        private async Task AddOrderLineToOrderInfoAsync(
             OrderInfo orderInfo,
             IProduct product,
             int quantity,
@@ -438,11 +456,8 @@ namespace Ekom.Services
 
             var lineId = Guid.NewGuid();
 
-            _log.Debug(
-                "Order: " + orderInfo.OrderNumber +
-                " Product Key: " + product.Key +
-                " Variant: " + variant?.Key +
-                " Action: " + action);
+            _logger.Debug<OrderService>(
+                $"Order: {orderInfo.OrderNumber} Product Key: {product.Key} Variant: {variant?.Key} Action: {action}");
 
             OrderLine existingOrderLine = null;
 
@@ -468,7 +483,7 @@ namespace Ekom.Services
 
             if (existingOrderLine != null)
             {
-                _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Found");
+                _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
 
                 // Update orderline quantity with value
                 if (action == OrderAction.Set)
@@ -500,7 +515,7 @@ namespace Ekom.Services
 
                 // Update orderline when adding product to orderline
 
-                _log.Debug("AddOrderLineToOrderInfo: existingOrderLine Not Found");
+                _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Not Found");
 
                 var orderLine = new OrderLine(
                     product,
@@ -513,38 +528,35 @@ namespace Ekom.Services
                 {
                     if (orderInfo.Discount.DiscountItems.Contains(product.Key))
                     {
-                        ApplyDiscountToOrderLine(
+                        ApplyDiscountToOrderLineAsync(
                         orderLine,
                         product.Discount,
                         orderInfo);
                     }
                 }
                 
-
-
                 orderInfo.orderLines.Add(orderLine);
                 
                 if (product.Discount != null) // product discount is always null because order discount is added to the order not product
                 {
-                    _log.Debug($"Discount {product.Discount.Key} found on product, applying to OrderLine");
+                    _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
                     if (product.Discount.DiscountItems.Contains(product.Key))
                     {
-                        ApplyDiscountToOrderLine(
+                        ApplyDiscountToOrderLineAsync(
                         orderLine,
                         product.Discount,
                         orderInfo);
                     }
-
-                    
                 }
             }
 
-            UpdateOrderAndOrderInfo(orderInfo);
+            await UpdateOrderAndOrderInfoAsync(orderInfo)
+                .ConfigureAwait(false);
         }
 
-        private void UpdateOrderAndOrderInfo(OrderInfo orderInfo)
+        private async Task UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo)
         {
-            _log.Debug("Update Order with new OrderInfo");
+            _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
             VerifyDiscounts(orderInfo);
 
@@ -552,7 +564,8 @@ namespace Ekom.Services
 
             var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
-            var orderData = _orderRepository.GetOrder(orderInfo.UniqueId);
+            var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
+                .ConfigureAwait(false);
 
             if (_ekmRequest.User != null)
             {
@@ -585,7 +598,8 @@ namespace Ekom.Services
                 orderData.Currency = orderInfo.StoreInfo.Culture;
             }
 
-            _orderRepository.UpdateOrder(orderData);
+            await _orderRepository.UpdateOrderAsync(orderData)
+                .ConfigureAwait(false);
             UpdateOrderInfoInCache(orderInfo);
         }
 
@@ -597,51 +611,50 @@ namespace Ekom.Services
         {
             var key = CreateKey(orderInfo.StoreInfo.Alias);
 
-            ApplicationContext.Current.ApplicationCache.RuntimeCache
-                        .InsertCacheItem<OrderInfo>(orderInfo.UniqueId.ToString(),
-                            () => orderInfo, TimeSpan.FromDays(1));
+            _runtimeCache.InsertCacheItem<OrderInfo>(
+                orderInfo.UniqueId.ToString(),
+                () => orderInfo,
+                TimeSpan.FromDays(1));
         }
 
-        public void AddHangfireJobsToOrder(string storeAlias, IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
         {
             var o = GetOrder(storeAlias);
 
             o._hangfireJobs.AddRange(hangfireJobs);
 
-            UpdateOrderAndOrderInfo(o);
+            await UpdateOrderAndOrderInfoAsync(o)
+                .ConfigureAwait(false);
         }
 
-        private OrderInfo CreateEmptyOrder()
+        private async Task<OrderInfo> CreateEmptyOrderAsync()
         {
-            _log.Debug("Add OrderLine ...  Create Empty Order..");
+            _logger.Debug<OrderService>("Add OrderLine ...  Create Empty Order..");
 
             Guid orderUniqueId;
             if (Configuration.Current.UserBasket)
             {
                 orderUniqueId = Guid.NewGuid();
 
-                var ms = _appCtx.Services.MemberService;
-
-                var member = ms.GetByUsername(_httpCtx.User.Identity.Name);
+                var member = _memberService.GetByUsername(_httpCtx.User.Identity.Name);
                 if (member.HasProperty("orderId"))
                 {
                     member.SetValue("orderId", orderUniqueId.ToString());
                 }
-                ms.Save(member);
-            } else
-            {
+                _memberService.Save(member);
+            } else {
                 var key = CreateKey();
                 orderUniqueId = CreateOrderIdCookie(key);
             }
 
-            var orderdata = SaveOrderData(orderUniqueId);
+            var orderdata = await SaveOrderDataAsync(orderUniqueId)
+                .ConfigureAwait(false);
 
             return new OrderInfo(orderdata, _store);
         }
-
-        private OrderData SaveOrderData(Guid uniqueId)
+        private async Task<OrderData> SaveOrderDataAsync(Guid uniqueId)
         {
-            _log.Debug("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
+            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
 
             var orderData = new OrderData
             {
@@ -659,16 +672,18 @@ namespace Ekom.Services
                 orderData.CustomerName = _ekmRequest.User.Name;
             }
 
-            _orderRepository.InsertOrder(orderData);
+            await _orderRepository.InsertOrderAsync(orderData)
+                .ConfigureAwait(false);
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
-            _orderRepository.UpdateOrder(orderData);
+            await _orderRepository.UpdateOrderAsync(orderData)
+                .ConfigureAwait(false);
 
             return orderData;
         }
 
-        public OrderInfo UpdateCustomerInformation(Dictionary<string, string> form)
+        public async Task<OrderInfo> UpdateCustomerInformationAsync(Dictionary<string, string> form)
         {
-            _log.Debug("UpdateCustomerInformation...");
+            _logger.Debug<OrderService>("UpdateCustomerInformation...");
 
             if (form.Keys.Any(x => x == "storeAlias"))
             {
@@ -692,7 +707,8 @@ namespace Ekom.Services
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
                 }
 
-                UpdateOrderAndOrderInfo(orderInfo);
+                await UpdateOrderAndOrderInfoAsync(orderInfo)
+                    .ConfigureAwait(false);
 
                 return orderInfo;
             }
@@ -700,9 +716,9 @@ namespace Ekom.Services
             return null;
         }
 
-        public OrderInfo UpdateShippingInformation(Guid shippingProviderId, string storeAlias)
+        public async Task<OrderInfo> UpdateShippingInformationAsync(Guid shippingProviderId, string storeAlias)
         {
-            _log.Debug("UpdateShippingInformation...");
+            _logger.Debug<OrderService>("UpdateShippingInformation...");
 
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
             _date = DateTime.Now;
@@ -719,7 +735,8 @@ namespace Ekom.Services
 
                     orderInfo.ShippingProvider = orderedShippingProvider;
 
-                    UpdateOrderAndOrderInfo(orderInfo);
+                    await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        .ConfigureAwait(false);
                 }
 
             }
@@ -727,9 +744,9 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        public OrderInfo UpdatePaymentInformation(Guid paymentProviderId, string storeAlias)
+        public async Task<OrderInfo> UpdatePaymentInformationAsync(Guid paymentProviderId, string storeAlias)
         {
-            _log.Debug("UpdatePaymentInformation...");
+            _logger.Debug<OrderService>("UpdatePaymentInformation...");
 
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
             _date = DateTime.Now;
@@ -746,27 +763,21 @@ namespace Ekom.Services
 
                     orderInfo.PaymentProvider = orderedPaymentProvider;
 
-                    UpdateOrderAndOrderInfo(orderInfo);
+                    await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        .ConfigureAwait(false);
                 }
             }
 
             return orderInfo;
         }
 
-        public IEnumerable<OrderInfo> GetCompleteCustomerOrders(int customerId)
+        public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
         {
-            var list = new List<OrderInfo>();
+            var orders = await _orderRepository.GetCompletedOrdersByCustomerIdAsync(customerId)
+                .ConfigureAwait(false);
 
-            var orders = _orderRepository.GetCompletedOrdersByCustomerId(customerId);
-
-            foreach (var o in orders)
-            {
-                list.Add(new OrderInfo(o));
-            }
-
-            return list;
+            return orders.Select(x => new OrderInfo(x)).ToList();
         }
-
 
         public bool CheckStockAvailability(IOrderInfo orderInfo)
         {
@@ -842,7 +853,7 @@ namespace Ekom.Services
             }
             else
             {
-                _log.Warn("Could not delete order cookie. Cookie not found. Key: " + key);
+                _logger.Warn<OrderService>("Could not delete order cookie. Cookie not found. Key: " + key);
             }
 
         }
