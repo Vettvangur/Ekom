@@ -24,6 +24,19 @@ namespace Ekom.App_Start
         readonly Configuration _config;
         readonly UmbracoHelper _umbHelper;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="config">The configuration.</param>
+        /// <param name="umbHelper">The umb helper.</param>
+        public UmbracoEventListeners(ILogger logger, Configuration config, UmbracoHelper umbHelper)
+        {
+            _logger = logger;
+            _config = config;
+            _umbHelper = umbHelper;
+        }
+
         public void ContentService_Publishing(
             IContentService cs,
             PublishEventArgs<IContent> e)

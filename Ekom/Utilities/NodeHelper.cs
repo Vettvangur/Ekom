@@ -15,7 +15,7 @@ using Umbraco.Web;
 
 namespace Ekom.Utilities
 {
-    public static class NodeHelper
+    static class NodeHelper
     {
         public static IEnumerable<ISearchResult> GetAllCatalogItemsFromPath(string path)
         {
@@ -164,7 +164,7 @@ namespace Ekom.Utilities
         /// <summary>
         /// Get <see cref="IPublishedContent"/> media node
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="ids"></param>
         /// <returns>Property Value</returns>
         public static IEnumerable<IPublishedContent> GetMediaNodesByGuid(Guid[] ids)
         {

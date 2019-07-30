@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using TinyIoC;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Events;
@@ -18,12 +17,7 @@ using Umbraco.Core.Models;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
-using Umbraco.Core;
 using Umbraco.Web;
-using Umbraco.Core.Composing;
-using Umbraco.Core.Events;
-using Umbraco.Core.Models;
-using Umbraco.Core.Services;
 using Umbraco.Core.Services.Implement;
 
 namespace Ekom
@@ -49,17 +43,36 @@ namespace Ekom
         }
     }
 
-    /// <summary>
-    /// Here we hook into the umbraco lifecycle methods to configure Ekom.
-    /// We use ApplicationEventHandler so that these lifecycle methods are only run
-    /// when umbraco is in a stable condition.
-    /// </summary>
+#pragma warning disable CA1001 // Types that own disposable fields should be disposable
+                              /// <summary>
+                              /// Here we hook into the umbraco lifecycle methods to configure Ekom.
+                              /// We use ApplicationEventHandler so that these lifecycle methods are only run
+                              /// when umbraco is in a stable condition.
+                              /// </summary>
     class EkomStartup : IComponent
+#pragma warning restore CA1001 // Types that own disposable fields should be disposable
     {
         readonly Configuration _config;
         readonly ILogger _logger;
         readonly IFactory _factory;
         readonly IUmbracoDatabase _umbracoDb;
+
+        BackgroundJobServer _hangfireServer;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="logger"></param>
+        /// <param name="factory"></param>
+        /// <param name="umbracoDb"></param>
+        public EkomStartup(Configuration config, ILogger logger, IFactory factory, IUmbracoDatabase umbracoDb)
+        {
+            _config = config;
+            _logger = logger;
+            _factory = factory;
+            _umbracoDb = umbracoDb;
+        }
 
         /// <summary>
         /// Umbraco startup lifecycle method
@@ -107,11 +120,14 @@ namespace Ekom
             // Hangfire
             GlobalConfiguration.Configuration.UseSqlServerStorage(_umbracoDb.ConnectionString);
             // ReSharper disable once ObjectCreationAsStatement
-            new BackgroundJobServer();
+            _hangfireServer = new BackgroundJobServer();
 
             _logger.Info<EkomStartup>("Ekom Started");
         }
 
-        public void Terminate() { }
+        public void Terminate()
+        {
+            _hangfireServer.Dispose();
+        }
     }
 }

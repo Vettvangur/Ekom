@@ -52,7 +52,7 @@ namespace Ekom.Cache
 
             int count = 0;
 
-            var allStock = _stockRepo.GetAllStock();
+            var allStock = _stockRepo.GetAllStockAsync().Result;
             var filteredStock = allStock.Where(stock => stock.UniqueId.Length == 39);
 
             foreach (var store in _storeCache.Cache.Select(x => x.Value))

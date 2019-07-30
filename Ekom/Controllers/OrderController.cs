@@ -3,6 +3,7 @@ using Ekom.Models;
 using Ekom.Services;
 using System;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 using Umbraco.Core.Logging;
 using Umbraco.Web.Mvc;
@@ -29,8 +30,13 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
-        public JsonResult AddToOrder(OrderRequest request)
+        public ActionResult AddToOrder(OrderRequest request)
         {
+            if (request == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
             try
             {
                 //var variantIds = new List<Guid>();
@@ -82,6 +88,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public ActionResult GetOrder(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
             var order = Order.Instance.GetOrder(storeAlias);
 
             return Json(order ?? new object(), JsonRequestBehavior.AllowGet);
@@ -239,8 +250,17 @@ namespace Ekom.Controllers
         /// <param name="quantity"></param>
         /// <returns></returns>
         [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
-        public JsonResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
+        public ActionResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            if (quantity == 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
             try
             {
                 var orderInfo = Order.Instance.AddOrderLineAsync(
@@ -272,6 +292,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public ActionResult RemoveOrderLine(Guid lineId, string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
             var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
 
             return Json(new { orderInfo, date = DateTime.Now });

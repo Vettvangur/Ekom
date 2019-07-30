@@ -1,6 +1,8 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
+using Umbraco.Web.Composing;
 
 namespace Ekom.Site.Extensions.Services
 {
@@ -10,31 +12,24 @@ namespace Ekom.Site.Extensions.Services
         {
             // Add Cache
 
-            var root = currentNode.Site();
+            var root = currentNode.Ancestor(1);
 
-            if (root.DocumentTypeAlias == "ekom")
+            if (root.ContentType.Alias == "ekom")
             {
                 var local = Store.Instance.GetStore();
 
                 if (local != null)
                 {
-                    var helper = new UmbracoHelper(UmbracoContext.Current);
-
-                    var storeNode = helper.TypedContent(local.StoreRootNode);
+                    var storeNode = Current.UmbracoHelper.Content(local.StoreRootNode);
 
                     if (storeNode != null)
                     {
-
                         return storeNode;
-
                     }
-
                 }
-
             }
 
             return root;
-
         }
     }
 }

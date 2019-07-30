@@ -41,7 +41,7 @@ namespace Ekom.Cache
             stopwatch.Start();
             _logger.Info<CouponCache>("Starting to fill coupon cache...");
 
-            var allCoupons = _couponRepo.GetAllCoupons();
+            var allCoupons = _couponRepo.GetAllCouponsAsync().Result;
 
             foreach (var coupon in allCoupons)
             {

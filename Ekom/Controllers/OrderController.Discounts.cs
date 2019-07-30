@@ -2,11 +2,13 @@ using Ekom.API;
 using Ekom.Exceptions;
 using System;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Controllers
 {
+    #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
@@ -21,7 +23,7 @@ namespace Ekom.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public ActionResult ApplyCouponToOrder(string coupon, string storeAlias)
+        public async Task<ActionResult> ApplyCouponToOrder(string coupon, string storeAlias)
         {
             try
             {
@@ -30,7 +32,7 @@ namespace Ekom.Controllers
                     return new HttpStatusCodeResult(400, "Coupon code can not be empty");
                 }
 
-                if (Order.Instance.ApplyCouponToOrderAsync(coupon, storeAlias))
+                if (await Order.Instance.ApplyCouponToOrderAsync(coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -56,11 +58,11 @@ namespace Ekom.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public ActionResult RemoveCouponFromOrder(string storeAlias)
+        public async Task<ActionResult> RemoveCouponFromOrder(string storeAlias)
         {
             try
             {
-                Order.Instance.RemoveCouponFromOrderAsync(storeAlias);
+                await Order.Instance.RemoveCouponFromOrderAsync(storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (ArgumentException)
@@ -73,11 +75,11 @@ namespace Ekom.Controllers
         /// 
         /// </summary>
         /// <returns></returns>
-        public ActionResult ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
+        public async Task<ActionResult> ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
         {
             try
             {
-                if (Order.Instance.ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias))
+                if (await Order.Instance.ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.OK);
                 }
@@ -104,11 +106,11 @@ namespace Ekom.Controllers
         /// </summary>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public ActionResult RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
+        public async Task<ActionResult> RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
         {
             try
             {
-                Order.Instance.RemoveCouponFromOrderLineAsync(productKey, storeAlias);
+                await Order.Instance.RemoveCouponFromOrderLineAsync(productKey, storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
             catch (Exception ex)
@@ -123,4 +125,5 @@ namespace Ekom.Controllers
             }
         }
     }
+    #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 }

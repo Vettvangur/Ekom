@@ -92,6 +92,11 @@ namespace Ekom.API
         /// </summary>
         public IProduct GetProduct(string storeAlias, Guid Id)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             _productCache.Cache[storeAlias].TryGetValue(Id, out var prod);
             return prod;
         }
@@ -118,6 +123,11 @@ namespace Ekom.API
         /// </summary>
         public IProduct GetProduct(string storeAlias, int Id)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
@@ -143,6 +153,11 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetAllProducts(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
@@ -151,6 +166,11 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetProductsByIds(IEnumerable<int> productIds)
         {
+            if (productIds == null)
+            {
+                throw new ArgumentNullException(nameof(productIds));
+            }
+
             var store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
@@ -168,6 +188,15 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetProductsByIds(IEnumerable<int> productIds, string storeAlias)
         {
+            if (productIds == null)
+            {
+                throw new ArgumentNullException(nameof(productIds));
+            }
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _productCache.Cache[storeAlias].Where(x => productIds.Contains(x.Value.Id)).Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
@@ -176,6 +205,11 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetProductsByKeys(IEnumerable<Guid> productKeys)
         {
+            if (productKeys == null)
+            {
+                throw new ArgumentNullException(nameof(productKeys));
+            }
+
             var store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
@@ -193,6 +227,15 @@ namespace Ekom.API
         /// </summary>
         public IEnumerable<IProduct> GetProductsByKeys(IEnumerable<Guid> productKeys, string storeAlias)
         {
+            if (productKeys == null)
+            {
+                throw new ArgumentNullException(nameof(productKeys));
+            }
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             var products = new List<IProduct>();
             foreach (var id in productKeys)
             {
@@ -243,6 +286,11 @@ namespace Ekom.API
         /// </summary>
         public ICategory GetCategory(string Id)
         {
+            if (Id == null)
+            {
+                throw new ArgumentNullException(nameof(Id));
+            }
+
             var store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
@@ -256,11 +304,24 @@ namespace Ekom.API
 
         public ICategory GetCategory(string storeAlias, int Id)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
         public ICategory GetCategory(string storeAlias, string Id)
         {
+            if (Id == null)
+            {
+                throw new ArgumentNullException(nameof(Id));
+            }
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
 
             if (GuidUdi.TryParse(Id, out GuidUdi udi))
             {
@@ -272,7 +333,6 @@ namespace Ekom.API
             }
 
             return null;
-
         }
 
         public IEnumerable<ICategory> GetRootCategories()
@@ -291,6 +351,11 @@ namespace Ekom.API
 
         public IEnumerable<ICategory> GetRootCategories(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _categoryCache.Cache[storeAlias]
                 .Where(x => x.Value.Level == _config.CategoryRootLevel)
                 .Select(x => x.Value)
@@ -313,6 +378,11 @@ namespace Ekom.API
 
         public IEnumerable<ICategory> GetAllCategories(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _categoryCache.Cache[storeAlias]
                                 .Select(x => x.Value)
                                 .OrderBy(x => x.SortOrder);
@@ -334,6 +404,11 @@ namespace Ekom.API
 
         public IVariant GetVariant(string storeAlias, Guid Key)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             if (_variantCache.Cache[storeAlias].TryGetValue(Key, out var val))
             {
                 return val;
@@ -344,6 +419,11 @@ namespace Ekom.API
 
         public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, int Id)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _variantCache.Cache[storeAlias]
                                    .Where(x => x.Value.VariantGroup.Id == Id)
                                    .Select(x => x.Value);
@@ -351,6 +431,11 @@ namespace Ekom.API
 
         public IVariantGroup GetVariantGroup(string storeAlias, int Id)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _variantGroupCache.Cache[storeAlias]
                                    .FirstOrDefault(x => x.Value.Id == Id).Value;
         }

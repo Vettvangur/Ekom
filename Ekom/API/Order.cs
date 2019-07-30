@@ -70,6 +70,11 @@ namespace Ekom.API
         /// <returns></returns>
         public IOrderInfo GetOrder(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _orderService.GetOrder(storeAlias);
         }
 
@@ -89,12 +94,22 @@ namespace Ekom.API
         /// <returns></returns>
         public async Task<IOrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return await _orderService.GetCompletedOrderAsync(storeAlias)
                 .ConfigureAwait(false);
         }
 
         public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             var order = _orderService.GetOrder(storeAlias);
             await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus)
                 .ConfigureAwait(false);
@@ -114,30 +129,55 @@ namespace Ekom.API
             Guid? variantId = null
         )
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return await _orderService.AddOrderLineAsync(productId, quantity, storeAlias, action, variantId)
                 .ConfigureAwait(false);
         }
 
         public async Task<IOrderInfo> UpdateCustomerInformationAsync(Dictionary<string, string> form)
         {
+            if (form == null)
+            {
+                throw new ArgumentNullException(nameof(form));
+            }
+
             return await _orderService.UpdateCustomerInformationAsync(form)
                 .ConfigureAwait(false);
         }
 
         public async Task<IOrderInfo> UpdateShippingInformationAsync(Guid ShippingProvider, string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return await _orderService.UpdateShippingInformationAsync(ShippingProvider, storeAlias)
                 .ConfigureAwait(false);
         }
 
         public async Task<IOrderInfo> UpdatePaymentInformationAsync(Guid PaymentProvider, string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return await _orderService.UpdatePaymentInformationAsync(PaymentProvider, storeAlias)
                 .ConfigureAwait(false);
         }
 
         public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
             return _orderService.RemoveOrderLine(lineId, storeAlias);
         }
 
@@ -162,8 +202,13 @@ namespace Ekom.API
         /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
         /// </summary>
         /// <param name="hangfireJobs">Job IDs to add</param>
-        public async Task AddHangfireJobsToOrder(IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs)
         {
+            if (hangfireJobs == null)
+            {
+                throw new ArgumentNullException(nameof(hangfireJobs));
+            }
+
             var store = _storeSvc.GetStoreFromCache();
             await AddHangfireJobsToOrderAsync(store.Alias, hangfireJobs)
                 .ConfigureAwait(false);
@@ -175,8 +220,16 @@ namespace Ekom.API
         /// <param name="hangfireJobs">Job IDs to add</param>
         public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
         {
-            var store = _storeSvc.GetStoreFromCache();
-            await _orderService.AddHangfireJobsToOrderAsync(store.Alias, hangfireJobs)
+            if (hangfireJobs == null)
+            {
+                throw new ArgumentNullException(nameof(hangfireJobs));
+            }
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
+            await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)
                 .ConfigureAwait(false);
         }
     }

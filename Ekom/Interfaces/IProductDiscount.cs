@@ -11,7 +11,6 @@ namespace Ekom.Interfaces
 {
     public interface IProductDiscount : IPerStoreNodeEntity , ICloneable
     {
-        string Title { get; }
         DiscountType Type { get;  }
         decimal Discount { get; }
         List<Guid> DiscountItems { get; }

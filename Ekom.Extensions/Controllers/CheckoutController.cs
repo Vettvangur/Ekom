@@ -8,35 +8,35 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Scoping;
 using Umbraco.NetPayment;
 using Umbraco.NetPayment.API;
 using Umbraco.NetPayment.Helpers;
-using ILogFactory = Ekom.Services.ILogFactory;
+using Umbraco.Web.Mvc;
 
 namespace Ekom.Extensions.Controllers
 {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
     /// <summary>
     /// Offers a default way to complete checkout using Ekom
     /// </summary>
     [PluginController("Ekom")]
     public class CheckoutController : SurfaceController
     {
-        ILog _log;
+        ILogger _logger;
         Configuration _config;
-        Stock _stock = Stock.Instance;
-
-        //IDatabaseFactory _dbFac;
+        IScopeProvider _scopeProvider;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public CheckoutController()
+        public CheckoutController(ILogger logger, Configuration config, IScopeProvider scopeProvider)
         {
-            var logFac = Configuration.container.GetInstance<ILogFactory>();
-            _log = logFac.GetLogger(typeof(CheckoutController));
-
-            _config = Configuration.container.GetInstance<Configuration>();
-            //_dbFac = Configuration.container.GetInstance<IDatabaseFactory>();
+            _logger = logger;
+            _config = config;
+            _scopeProvider = scopeProvider;
         }
 
         /// <summary>
@@ -46,6 +46,11 @@ namespace Ekom.Extensions.Controllers
         /// <returns></returns>
         public async Task<ActionResult> Pay(PaymentRequest paymentRequest)
         {
+            if (paymentRequest == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
             try
             {
                 var hangfireJobs = new List<string>();
@@ -55,7 +60,9 @@ namespace Ekom.Extensions.Controllers
 
                 if (order.PaymentProvider == null)
                 {
-                    Order.Instance.UpdatePaymentInformationAsync(paymentRequest.PaymentProvider, order.StoreInfo.Alias);
+                    await Order.Instance.UpdatePaymentInformationAsync(
+                        paymentRequest.PaymentProvider, 
+                        order.StoreInfo.Alias);
                 }
 
                 var storeAlias = order.StoreInfo.Alias;
@@ -64,9 +71,9 @@ namespace Ekom.Extensions.Controllers
 
                 if (_config.StoreCustomerData)
                 {
-                    using (var db = DatabaseContext.Database)
+                    using (var db = _scopeProvider.CreateScope().Database)
                     {
-                        db.Insert(new CustomerData
+                        await db.InsertAsync(new CustomerData
                         {
                             // Unfinished
                         });
@@ -88,7 +95,7 @@ namespace Ekom.Extensions.Controllers
 
                                     if (variantStock >= line.Quantity)
                                     {
-                                        hangfireJobs.Add(_stock.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
                                     }
                                     else
                                     {
@@ -103,7 +110,7 @@ namespace Ekom.Extensions.Controllers
 
                                 if (productStock >= line.Quantity)
                                 {
-                                    hangfireJobs.Add(_stock.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                                 }
                                 else
                                 {
@@ -184,9 +191,9 @@ namespace Ekom.Extensions.Controllers
                 }
 
                 // save job ids to sql for retrieval after checkout completion
-                Order.Instance.AddHangfireJobsToOrder(hangfireJobs);
+                await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs);
 
-                _log.Info("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " + isOfflinePayment);
+                _logger.Info<CheckoutController>("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " + isOfflinePayment);
 
                 if (isOfflinePayment)
                 {
@@ -194,13 +201,15 @@ namespace Ekom.Extensions.Controllers
                     {
                         var successUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("successUrl", storeAlias), Request) + "?orderId=" + order.UniqueId;
 
-                        Order.Instance.UpdateStatus(Helpers.OrderStatus.OfflinePayment, order.UniqueId);
+                        await Order.Instance.UpdateStatusAsync(
+                            Utilities.OrderStatus.OfflinePayment,
+                            order.UniqueId);
 
                         return Redirect(successUrl);
 
                     } catch(Exception ex)
                     {
-                        _log.Error("Offline Payment Failed. Order: " + order.UniqueId, ex);
+                        _logger.Error<CheckoutController>(ex, "Offline Payment Failed. Order: " + order.UniqueId);
 
                         var errorUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("errorUrl", storeAlias), Request);
 
@@ -222,15 +231,12 @@ namespace Ekom.Extensions.Controllers
                         //paymentProviderId: paymentRequest.PaymentProvider.ToString()
                     ));
                 }
-
-
             }
             catch (Exception ex)
             {
-                _log.Error("Checkout payment failed!",ex);
+                _logger.Error<CheckoutController>(ex, "Checkout payment failed!");
                 return RedirectToCurrentUmbracoPage("?errorStatus=serverError");
             }
-
         }
     }
 
@@ -243,4 +249,5 @@ namespace Ekom.Extensions.Controllers
 
         public Guid ShippingProvider { get; set; }
     }
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 }

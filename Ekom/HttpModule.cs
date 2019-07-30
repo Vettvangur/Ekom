@@ -1,10 +1,13 @@
 using Ekom.Models;
 using Ekom.Services;
-using log4net;
 using System;
 using System.Reflection;
 using System.Web;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Security;
@@ -19,15 +22,10 @@ namespace Ekom
     /// </summary>
     class HttpModule : IHttpModule
     {
-        protected static readonly ILog Log =
-            LogManager.GetLogger(
-                MethodBase.GetCurrentMethod().DeclaringType
-            );
-
         /// <summary>
         /// ModuleName
         /// </summary>
-        public String ModuleName
+        public string ModuleName
         {
             get { return "Ekom HttpModule"; }
         }
@@ -42,15 +40,17 @@ namespace Ekom
             context.AuthenticateRequest += new EventHandler(Application_AuthenticateRequest);
         }
 
-        private void Application_BeginRequest(Object source, EventArgs e)
+        private void Application_BeginRequest(object source, EventArgs e)
 
         {
+            var logger = Current.Factory.GetInstance<ILogger>();
+
             try
             {
                 HttpApplication application = (HttpApplication)source;
                 HttpContext httpCtx = application.Context;
 
-                var umbCtx = Configuration.container.GetInstance<UmbracoContext>();
+                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
 
                 // No umbraco context exists for static file requests
                 if (umbCtx != null)
@@ -65,12 +65,10 @@ namespace Ekom
 
                     #endregion
 
-                    var appCtx = Configuration.container.GetInstance<ApplicationContext>();
-                    var logFac = Configuration.container.GetInstance<ILogFactory>();
+                    var appCaches = Current.Factory.GetInstance<AppCaches>();
 
-                    var appCache = appCtx.ApplicationCache;
-                    appCache.RequestCache.GetCacheItem("ekmRequest", () =>
-                        new ContentRequest(new HttpContextWrapper(httpCtx), logFac)
+                    appCaches.RequestCache.GetCacheItem("ekmRequest", () => 
+                        new ContentRequest(new HttpContextWrapper(httpCtx), logger)
                         {
                             Currency = Currency,
                             User = new User()
@@ -80,11 +78,11 @@ namespace Ekom
             }
             catch (Exception ex)
             {
-                Log.Error("Http module Begin Request failed", ex);
+                logger.Error<HttpModule>(ex, "Http module Begin Request failed");
             }
         }
 
-        private void Application_AuthenticateRequest(Object source, EventArgs e)
+        private void Application_AuthenticateRequest(object source, EventArgs e)
         {
             try
             {
@@ -93,37 +91,28 @@ namespace Ekom
 
                 if (httpCtx.User?.Identity.IsAuthenticated == true)
                 {
-                    var appCtx = Configuration.container.GetInstance<ApplicationContext>();
+                    var appCaches = Current.Factory.GetInstance<AppCaches>();
 
-                    var appCache = appCtx.ApplicationCache;
-
-                    if (appCache.RequestCache.GetCacheItem("ekmRequest") is ContentRequest ekmRequest)
+                    if (appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest") is ContentRequest ekmRequest)
                     {
                         // This is always firing!, ekmRequest.User.Username is always empty
                         if (ekmRequest.User.Username != httpCtx.User.Identity.Name)
                         {
-                            var umbracoContext = UmbracoContext.Current;
-                            var memberShipHelper = new MembershipHelper(umbracoContext);
+                            var memberShipHelper = Current.Factory.GetInstance<MembershipHelper>();
 
                             var member = memberShipHelper.GetByUsername(httpCtx.User.Identity.Name);
 
-                            if (member is MemberPublishedContent memberContent)
+                            ekmRequest.User = new User
                             {
-                                ekmRequest.User = new User
-                                {
-                                    Email = memberContent.Email,
-                                    Username = memberContent.UserName,
-                                    UserId = memberContent.Id,
-                                    Name = memberContent.Name,
-                                };
-                                if (memberContent.HasProperty("orderId"))
-                                {
-                                    var orderid = memberContent.GetPropertyValue<string>("orderId");
-                                    if (!string.IsNullOrEmpty(orderid))
-                                    {
-                                        ekmRequest.User.OrderId = Guid.Parse(orderid);
-                                    }
-                                }
+                                Email = member.Value<string>("Email"),
+                                Username = member.Value<string>("UserName"),
+                                UserId = member.Id,
+                                Name = member.Name,
+                            };
+                            var orderid = member.Value<string>("orderId", fallback: Fallback.ToDefaultValue);
+                            if (!string.IsNullOrEmpty(orderid))
+                            {
+                                ekmRequest.User.OrderId = Guid.Parse(orderid);
                             }
                         }
                     }
@@ -132,7 +121,9 @@ namespace Ekom
             }
             catch (Exception ex)
             {
-                Log.Error("AuthenticateRequest Failed", ex);
+                var logger = Current.Factory.GetInstance<ILogger>();
+
+                logger.Error<HttpModule>(ex, "AuthenticateRequest Failed");
             }
         }
 

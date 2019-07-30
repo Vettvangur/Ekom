@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 
 namespace Ekom.Cache
@@ -14,11 +14,13 @@ namespace Ekom.Cache
         /// </summary>
         ConcurrentDictionary<Guid, T> Cache { get; }
 
-        /// <summary>
-        /// Class indexer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+#pragma warning disable CA1043 // Use Integral Or String Argument For Indexers
+                              /// <summary>
+                              /// Class indexer
+                              /// </summary>
+                              /// <param name="index"></param>
+                              /// <returns></returns>
         T this[Guid index] { get; set; }
+#pragma warning restore CA1043 // Use Integral Or String Argument For Indexers
     }
 }

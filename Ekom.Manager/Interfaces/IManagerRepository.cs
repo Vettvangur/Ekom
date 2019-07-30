@@ -1,32 +1,33 @@
-using Ekom.Helpers;
-using Ekom.Manager.Models;
-using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Ekom.Interfaces;
+using Ekom.Manager.Models;
+using Ekom.Models.Data;
+using Ekom.Utilities;
 
 namespace Ekom.Interfaces
 {
     public interface IManagerRepository
     {
-        OrderListData GetAllOrders(DateTime start, DateTime end);
-        OrderListData SearchOrders(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount);
-        OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus);
-        IOrderInfo GetOrder(Guid uniqueId);
-        //IEnumerable<OrderActivityLog> GetOrderActivityLog(Guid orderId);
-        //IEnumerable<OrderActivityLog> GetLatestActivityLogs();
-        //IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(Guid userId);
-        IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId);
-        IEnumerable<OrderActivityLog> GetLatestActivityLogs();
-        IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(string userName);
-        OrderListData GetOrders();
-        void InsertOrder(OrderData orderData);
-        void UpdateOrder(OrderData orderData);
-        void UpdateStatus(Guid orderId, OrderStatus status);
+        Task AddActivityLogAsync(string log);
+        Task<OrderListData> GetAllOrdersAsync(DateTime start, DateTime end);
         IEnumerable<IDiscount> GetDiscounts();
-        IEnumerable<IShippingProvider> GetShippingProviders();
+        Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsAsync();
+        Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsByUserAsync(string UserName);
+        Task<IEnumerable<OrderActivityLog>> GetLogsAsync(Guid uniqueId);
+        Task<IEnumerable<OrderActivityLog>> GetOrderActivityLogAsync(Guid orderId);
+        Task<IOrderInfo> GetOrderAsync(Guid uniqueId);
+        Task<OrderListData> GetOrdersAsync();
+        Task<OrderListData> GetOrdersByStatusAsync(DateTime start, DateTime end, OrderStatus orderStatus);
         IEnumerable<IPaymentProvider> GetPaymentProviders();
-        IEnumerable<IStore> GetStores();
-        object GetStoreList();
+        IEnumerable<IShippingProvider> GetShippingProviders();
         object GetStatusList();
+        object GetStoreList();
+        IEnumerable<IStore> GetStores();
+        Task InsertOrderAsync(OrderData orderData);
+        Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount);
+        Task UpdateOrderAsync(OrderData orderData);
+        Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus);
     }
 }

@@ -4,12 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
 {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
     /// <summary>
     /// Public api, used by property editors
     /// </summary>
@@ -75,9 +77,9 @@ namespace Ekom.Controllers
         /// Update Stock
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage UpdateStock(Guid id, int stock)
+        public async Task<HttpResponseMessage> UpdateStock(Guid id, int stock)
         {
-            API.Stock.Instance.UpdateStockAsync(id, stock);
+            await API.Stock.Instance.UpdateStockAsync(id, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -86,9 +88,9 @@ namespace Ekom.Controllers
         /// Update Stock
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage UpdateStock(Guid id, string storeAlias, int stock)
+        public async Task<HttpResponseMessage> UpdateStock(Guid id, string storeAlias, int stock)
         {
-            API.Stock.Instance.UpdateStockAsync(id, stock);
+            await API.Stock.Instance.UpdateStockAsync(id, storeAlias, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -97,9 +99,9 @@ namespace Ekom.Controllers
         /// Set Stock
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage SetStock(Guid id, int stock)
+        public async Task<HttpResponseMessage> SetStock(Guid id, int stock)
         {
-            API.Stock.Instance.SetStockAsync(id, stock);
+            await API.Stock.Instance.SetStockAsync(id, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -108,9 +110,9 @@ namespace Ekom.Controllers
         /// Set Stock
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage SetStock(Guid id, string storeAlias, int stock)
+        public async Task<HttpResponseMessage> SetStock(Guid id, string storeAlias, int stock)
         {
-            API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
+            await API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -119,9 +121,9 @@ namespace Ekom.Controllers
         /// Insert Coupon
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
+        public async Task<HttpResponseMessage> InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
         {
-            API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
+            await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -130,9 +132,9 @@ namespace Ekom.Controllers
         /// Remove Coupon
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage RemoveCoupon(string couponCode, Guid discountId)
+        public async Task<HttpResponseMessage> RemoveCoupon(string couponCode, Guid discountId)
         {
-            API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
+            await API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -141,11 +143,12 @@ namespace Ekom.Controllers
         /// Get Coupons for Discount
         /// </summary>
         [HttpPost]
-        public HttpResponseMessage GetCouponsForDiscount(Guid discountId)
+        public async Task<HttpResponseMessage> GetCouponsForDiscount(Guid discountId)
         {
-            var items = API.Order.Instance.GetCouponsForDiscountAsync(discountId);
+            var items = await API.Order.Instance.GetCouponsForDiscountAsync(discountId);
 
             return Request.CreateResponse(HttpStatusCode.OK, items);
         }
     }
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 }

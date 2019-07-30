@@ -69,7 +69,6 @@
     <Rule Id="CA2242" Action="Warning" />
   </Rules>
   <Rules AnalyzerId="Microsoft.CodeQuality.Analyzers" RuleNamespace="Microsoft.CodeQuality.Analyzers">
-    <Rule Id="CA1822" Action="Info" />
     <Rule Id="CA1031" Action="Info" />
   </Rules>
 </RuleSet>

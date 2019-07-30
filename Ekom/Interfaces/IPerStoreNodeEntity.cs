@@ -1,4 +1,4 @@
-﻿namespace Ekom.Interfaces
+namespace Ekom.Interfaces
 {
     /// <summary>
     /// Base Per Store Umbraco node entity
@@ -16,6 +16,6 @@
         /// <value>
         /// The path.
         /// </value>
-        string GetPropertyValue(string alias, string storeAlias);
+        string GetPropertyValue(string propAlias, string storeAlias);
     }
 }

@@ -3,11 +3,13 @@ using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
-using log4net;
 using System;
 using System.Configuration;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
@@ -21,18 +23,25 @@ namespace Ekom
         StoreService _storeSvc;
         IPerStoreCache<ICategory> _categoryCache;
         IPerStoreCache<IProduct> _productCache;
+        AppCaches _appCaches;
+        UmbracoHelper _umbHelper;
 
-        public CatalogContentFinder()
+        public CatalogContentFinder(
+            ILogger logger,
+            Configuration config,
+            StoreService storeSvc,
+            IPerStoreCache<ICategory> categoryCache,
+            IPerStoreCache<IProduct> productCache,
+            AppCaches appCaches,
+            UmbracoHelper umbHelper)
         {
-            var container = Configuration.container;
-
-            _config = container.GetInstance<Configuration>();
-            _storeSvc = container.GetInstance<StoreService>();
-            _categoryCache = container.GetInstance<IPerStoreCache<ICategory>>();
-            _productCache = container.GetInstance<IPerStoreCache<IProduct>>();
-
-            var logFac = container.GetInstance<ILogFactory>();
             _logger = logger;
+            _config = config;
+            _storeSvc = storeSvc;
+            _categoryCache = categoryCache;
+            _productCache = productCache;
+            _appCaches = appCaches;
+            _umbHelper = umbHelper;
         }
 
         /// <summary>
@@ -40,13 +49,12 @@ namespace Ekom
         /// Performs various request related processing
         /// F.x. determining the Store/Currency first from Cookie, then domain and then default
         /// </summary>
-        public bool TryFindContent(PublishedContentRequest contentRequest)
+        public bool TryFindContent(PublishedRequest contentRequest)
         {
             try
             {
-                var umbracoContext = contentRequest.RoutingContext.UmbracoContext;
+                var umbracoContext = contentRequest.UmbracoContext;
                 var httpContext = umbracoContext.HttpContext;
-                var umbracoHelper = new UmbracoHelper(umbracoContext);
 
                 // Allows for configuration of content nodes to use for matching all requests
                 // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
@@ -62,7 +70,7 @@ namespace Ekom
                     return false;
                 }
 
-                var store = _storeSvc.GetStoreByDomain(contentRequest.UmbracoDomain.DomainName);
+                var store = _storeSvc.GetStoreByDomain(contentRequest.Domain.Name);
 
                 if (store == null)
                 {
@@ -82,7 +90,7 @@ namespace Ekom
 
                 if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {
-                    contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbracoHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
+                    contentId = virtualContent.InvariantEquals("true") ? int.Parse(_umbHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
 
                     var urlArray = path.Split('/');
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
@@ -101,15 +109,13 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbracoHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
+                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(_umbHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
                     }
                     // else Requesting Neither
                 }
                 #endregion
 
-                var appCache = umbracoContext.Application.ApplicationCache;
-
-                if (appCache.RequestCache.GetCacheItem("ekmRequest") is ContentRequest ekmRequest)
+                if (_appCaches.RequestCache.Get("ekmRequest") is ContentRequest ekmRequest)
                 {
                     ekmRequest.Store = store;
                     ekmRequest.Product = product;
@@ -119,7 +125,7 @@ namespace Ekom
                 // Request for Product or Category
                 if (contentId != 0)
                 {
-                    var contentCache = umbracoContext.ContentCache;
+                    var contentCache = umbracoContext.Content;
 
                     var content = contentCache.GetById(contentId);
 
@@ -133,7 +139,7 @@ namespace Ekom
             }
             catch (Exception ex)
             {
-                _log.Error("Error trying to find matching content for request", ex);
+                _logger.Error<CatalogContentFinder>(ex, "Error trying to find matching content for request");
             }
 
             return false;

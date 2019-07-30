@@ -1,23 +1,25 @@
-using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using Ekom.Services;
-using log4net;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 using Umbraco.Core;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Scoping;
+using System.Threading.Tasks;
 
 namespace Ekom.Repository
 {
     class ManagerRepository : IManagerRepository
     {
-        readonly ILog _log;
+        readonly ILogger _logger;
         readonly Configuration _config;
-        readonly ApplicationContext _appCtx;
+        readonly IScopeProvider _scopeProvider;
         readonly IActivityLogRepository _activityLogRepository;
 
         //readonly ActivityLogRepository _activityLogRepository;
@@ -27,78 +29,93 @@ namespace Ekom.Repository
         /// <param name="config"></param>
         /// <param name="appCtx "></param>
         /// <param name="logFac"></param>
-        public ManagerRepository(Configuration config, ApplicationContext appCtx, ILogFactory logFac, IActivityLogRepository activityLogRepository)
+        public ManagerRepository(
+            Configuration config,
+            IScopeProvider scopeProvider,
+            ILogger logger,
+            IActivityLogRepository activityLogRepository)
         {
             _config = config;
-            _appCtx = appCtx;
-            _log = logFac.GetLogger<OrderRepository>();
+            _scopeProvider = scopeProvider;
+            _logger = logger;
             _activityLogRepository = activityLogRepository;
         }
 
-        public IOrderInfo GetOrder(Guid uniqueId)
+        public async Task<IOrderInfo> GetOrderAsync(Guid uniqueId)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.FirstOrDefault<IOrderInfo>("WHERE UniqueId = @0", uniqueId);
+                return await db.FirstOrDefaultAsync<IOrderInfo>("WHERE UniqueId = @0", uniqueId)
+                    .ConfigureAwait(false);
             }
         }
-        public IEnumerable<OrderActivityLog> GetOrderActivityLog(Guid orderId)
+        public async Task<IEnumerable<OrderActivityLog>> GetOrderActivityLogAsync(Guid orderId)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return db.Query<OrderActivityLog>("WHERE [Key] = @0",
-                 orderId);
+                return await db.FetchAsync<OrderActivityLog>("WHERE [Key] = @0", orderId)
+                    .ConfigureAwait(false);
             }
         }
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogs()
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsAsync()
         {
-            return _activityLogRepository.GetLatestActivityLogsOrders();
+            return await _activityLogRepository.GetLatestActivityLogsOrdersAsync()
+                .ConfigureAwait(false);
         }
 
-        public IEnumerable<OrderActivityLog> GetLatestActivityLogsByUser(string UserName)
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsByUserAsync(string UserName)
         {
-            return _activityLogRepository.GetLatestActivityLogsOrdersByUser(UserName);
+            return await _activityLogRepository.GetLatestActivityLogsOrdersByUserAsync(UserName)
+                .ConfigureAwait(false);
         }
 
-        public IEnumerable<OrderActivityLog> GetLogs(Guid uniqueId)
+        public async Task<IEnumerable<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
         {
-            return _activityLogRepository.GetLogs(uniqueId);
+            return await _activityLogRepository.GetLogsAsync(uniqueId)
+                .ConfigureAwait(false);
         }
 
-        public OrderListData GetOrders()
+        public async Task<OrderListData> GetOrdersAsync()
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return new OrderListData(db.Query<OrderData>("ORDER BY ReferenceId"));
-            }
-        }
+                var orders = await db.FetchAsync<OrderData>("ORDER BY ReferenceId")
+                    .ConfigureAwait(false);
 
-        public void InsertOrder(OrderData orderData)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                db.Insert(orderData);
-            }
-        }
-
-        public void UpdateOrder(OrderData orderData)
-        {
-            using (var db = _appCtx.DatabaseContext.Database)
-            {
-                db.Update(orderData);
+                return new OrderListData(orders);
             }
         }
 
-        public void AddActivityLog(string log)
+        public async Task InsertOrderAsync(OrderData orderData)
         {
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
+            {
+                await db.InsertAsync(orderData)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        public async Task UpdateOrderAsync(OrderData orderData)
+        {
+            using (var db = _scopeProvider.CreateScope().Database)
+            {
+                await db.UpdateAsync(orderData)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        public async Task AddActivityLogAsync(string log)
+        {
+            throw new NotImplementedException();
+
+            using (var db = _scopeProvider.CreateScope().Database)
             {
 
             }
         }
 
 
-        public OrderListData SearchOrders(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount)
+        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount)
         {
 
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");
@@ -140,10 +157,9 @@ namespace Ekom.Repository
             {
                 whereQuery += "AND (Discount = @7) ";
             }
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-
-                return new OrderListData(db.Query<OrderData>(whereQuery,
+                var orders = await db.FetchAsync<OrderData>(whereQuery,
                  startDate,
                  endDate,
                  query,
@@ -154,44 +170,54 @@ namespace Ekom.Repository
                  discount,
                  OrderStatus.OfflinePayment,
                  OrderStatus.ReadyForDispatch,
-                 OrderStatus.Dispatched));
+                 OrderStatus.Dispatched)
+                    .ConfigureAwait(false);
+
+                return new OrderListData(orders);
             }
         }
 
 
-        public OrderListData GetAllOrders(DateTime start, DateTime end)
+        public async Task<OrderListData> GetAllOrdersAsync(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");
             var endDate = end.ToString("yyyy-MM-dd 23:59:59");
 
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                var offlinePayments = db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
+                var offlinePayments = await db.FetchAsync<OrderData>(
+                    "WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
                     OrderStatus.OfflinePayment,
                     startDate,
-                    endDate);
+                    endDate)
+                    .ConfigureAwait(false);
 
-                var readyOrders = db.Query<OrderData>("WHERE (OrderStatusCol = @0 or OrderStatusCol = @1) AND (PaidDate >= @2 AND PaidDate <= @3)",
+                var readyOrders = await db.FetchAsync<OrderData>(
+                    "WHERE (OrderStatusCol = @0 or OrderStatusCol = @1) AND (PaidDate >= @2 AND PaidDate <= @3)",
                     OrderStatus.ReadyForDispatch,
                     OrderStatus.Dispatched,
                     startDate,
-                    endDate);
+                    endDate)
+                    .ConfigureAwait(false);
 
                 return new OrderListData(offlinePayments.Concat(readyOrders).OrderByDescending(x => x.ReferenceId));
             }
         }
 
-        public OrderListData GetOrdersByStatus(DateTime start, DateTime end, OrderStatus orderStatus)
+        public async Task<OrderListData> GetOrdersByStatusAsync(DateTime start, DateTime end, OrderStatus orderStatus)
         {
             var startDate = start.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var endDate = end.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-            using (var db = _appCtx.DatabaseContext.Database)
+            using (var db = _scopeProvider.CreateScope().Database)
             {
-                return new OrderListData(db.Query<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
+                var orders = await db.FetchAsync<OrderData>("WHERE (OrderStatusCol = @0) AND (UpdateDate >= @1 AND UpdateDate <= @2)",
                     orderStatus,
                     startDate,
-                    endDate));
+                    endDate)
+                    .ConfigureAwait(false);
+
+                return new OrderListData(orders);
             }
         }
 
@@ -234,9 +260,10 @@ namespace Ekom.Repository
             });
         }
 
-        public void UpdateStatus(Guid orderId, OrderStatus orderStatus)
+        public async Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus)
         {
-            API.Order.Instance.UpdateStatus(orderStatus, orderId);
+            await API.Order.Instance.UpdateStatusAsync(orderStatus, orderId)
+                .ConfigureAwait(false);
         }
     }
 }

@@ -13,7 +13,7 @@ using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-
+using Umbraco.Core.Services;
 
 namespace Ekom.Cache
 {
@@ -21,14 +21,17 @@ namespace Ekom.Cache
     {
         public override string NodeAlias { get; } = "ekmProductDiscount";
 
+        readonly IContentService _contentService;
         public ProductDiscountCache(
             Configuration config,
             ILogger logger,
             IFactory factory,
             IBaseCache<IStore> storeCache,
-            IPerStoreFactory<IProductDiscount> perStoreFactory
+            IPerStoreFactory<IProductDiscount> perStoreFactory,
+            IContentService contentService
         ) : base(config, logger, factory, storeCache, perStoreFactory)
         {
+            _contentService = contentService;
         }
 
         public override void AddReplace(IContent node)
@@ -92,12 +95,11 @@ namespace Ekom.Cache
             {
                 // Refresh Product items cache
                 var productCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmProduct");
-                var cs = ApplicationContext.Current.Services.ContentService;
 
                 foreach (var productId in discountItem.DiscountItems)
                 {
                     //TODO We need to use something else then the IContent here. This will be very slow with many products
-                    var productNode = cs.GetById(productId);
+                    var productNode = _contentService.GetById(productId);
 
                     if (productNode != null)
                     {
@@ -108,6 +110,5 @@ namespace Ekom.Cache
             }
 
         }
-
     }
 }

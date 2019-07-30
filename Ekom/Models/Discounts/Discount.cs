@@ -14,6 +14,7 @@ using Umbraco.Core;
 using Umbraco.Web.Composing;
 using Umbraco.Core.Models;
 using Umbraco.Web;
+using Umbraco.Core.Services;
 
 namespace Ekom.Models.Discounts
 {
@@ -23,6 +24,7 @@ namespace Ekom.Models.Discounts
     public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
         protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
+        protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountAmount Amount { get; protected set; }
        
@@ -76,7 +78,10 @@ namespace Ekom.Models.Discounts
 
             if (int.TryParse(typeValue, out int typeValueInt))
             {
-                typeValue = UmbHelper.GetPreValueAsString(typeValueInt);
+                var dt = DataTypeService.GetDataType(typeValueInt);
+                
+                // FIX: verify
+                typeValue = dt.ConfigurationAs<string>();
             }
 
             DiscountType type = DiscountType.Fixed;

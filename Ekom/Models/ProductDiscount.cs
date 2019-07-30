@@ -12,15 +12,15 @@ using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 using Umbraco.Web;
 
 namespace Ekom.Models
 {
     public class ProductDiscount : PerStoreNodeEntity, IProductDiscount
     {
-
-        UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
-        IContent node;
+        protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
+        protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
         /// <summary>
         /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
         /// </summary>
@@ -48,8 +48,10 @@ namespace Ekom.Models
 
                 if (int.TryParse(typeValue, out int typeValueInt))
                 {
+                    var dt = DataTypeService.GetDataType(typeValueInt);
 
-                    typeValue = UmbHelper.GetPreValueAsString(typeValueInt);
+                    // FIX: verify
+                    typeValue = dt.ConfigurationAs<string>();
                 }
 
                 switch (typeValue)
@@ -147,7 +149,7 @@ namespace Ekom.Models
                 else
                 {
 
-                    decimal.TryParse(discount.Replace(',', '.'), out decimal value);
+                    _ = decimal.TryParse(discount.Replace(',', '.'), out decimal value);
                     return value;
                 }
             }
@@ -164,7 +166,7 @@ namespace Ekom.Models
                 }
                 else
                 {
-                    decimal.TryParse(discount.Replace(',', '.'), out decimal value);
+                    _ = decimal.TryParse(discount.Replace(',', '.'), out decimal value);
                     return value;
                 }
             }

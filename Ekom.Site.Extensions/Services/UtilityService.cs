@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Core.Models;
+using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
+using Umbraco.Web.Composing;
 
 namespace Ekom.Site.Extensions.Services
 {
@@ -12,7 +14,7 @@ namespace Ekom.Site.Extensions.Services
     {
         public static string GetTitle(IPublishedContent node)
         {
-            var title = node.HasValue("pageTitle") ? node.GetPropertyValue<string>("pageTitle") : node.Name;
+            var title = node.HasValue("pageTitle") ? node.Value<string>("pageTitle") : node.Name;
 
             return title;
         }
@@ -24,14 +26,13 @@ namespace Ekom.Site.Extensions.Services
             if (!string.IsNullOrEmpty(id))
             {
 
-                int preId = 0;
-                var parse = Int32.TryParse(id, out preId);
+                var parse = int.TryParse(id, out int preId);
 
                 if (parse)
                 {
-                    var helper = new UmbracoHelper(UmbracoContext.Current);
+                    var dt = Current.Services.DataTypeService.GetDataType(preId);
 
-                    value = helper.GetPreValueAsString(preId);
+                    value = dt.ConfigurationAs<string>();
                 }
 
             }

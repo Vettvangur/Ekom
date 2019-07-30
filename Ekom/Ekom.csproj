@@ -363,9 +363,6 @@
     <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\ProductDiscountService.cs" />
     <Compile Include="Services\SearchService.cs" />
-    <Compile Include="TinyIoC\TinyIoC.cs" />
-    <Compile Include="TinyIoC\TinyIoCAspNetExtensions.cs" />
-    <Compile Include="TinyIoC\TinyIoCServiceLocator.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />

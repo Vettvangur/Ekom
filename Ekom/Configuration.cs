@@ -1,4 +1,3 @@
-using CommonServiceLocator;
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Utilities;

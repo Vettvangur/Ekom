@@ -1,4 +1,4 @@
-using Ekom.Helpers;
+using Ekom.Utilities;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Tests.MockClasses;
@@ -18,7 +18,7 @@ namespace Ekom.Tests
             
             var orderSvc = new OrderServiceMocks().orderSvc;
 
-            var oi = orderSvc.AddOrderLineAsync(product, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
 
             Assert.AreEqual(1, oi.OrderLines.Count);
         }
@@ -32,9 +32,9 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLineAsync(product3, 1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
 
             Assert.AreEqual(2, oi.OrderLines.Count);
         }
@@ -47,9 +47,9 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
 
             Assert.AreEqual(4, oi.TotalQuantity);
@@ -63,9 +63,9 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 3, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 3, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLineAsync(product, -1, store);
+            oi = orderSvc.AddOrderLineAsync(product, -1, store).Result;
 
 
             Assert.AreEqual(2, oi.TotalQuantity);
@@ -79,9 +79,9 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLine(product, 3, store, OrderAction.Set);
+            oi = orderSvc.AddOrderLineAsync(product, 3, store, OrderAction.Set).Result;
 
 
             Assert.AreEqual(3, oi.TotalQuantity);
