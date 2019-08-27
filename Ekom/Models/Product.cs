@@ -59,6 +59,7 @@ namespace Ekom.Models
                 && value.CompareTo(_discount) > 0))
                 {
                     _discount = value;
+                    return;
                 }
 
                 var oldPrice = new Price(Price.OriginalValue, Store,null, new OrderedDiscount(_discount));

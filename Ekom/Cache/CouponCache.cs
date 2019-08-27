@@ -63,6 +63,5 @@ namespace Ekom.Cache
         {
             Cache.TryRemove(coupon.CouponCode.ToLowerInvariant(), out _);
         }
-
     }
 }
