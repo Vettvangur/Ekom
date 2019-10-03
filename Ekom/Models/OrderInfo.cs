@@ -16,7 +16,7 @@ namespace Ekom.Models
     class OrderInfo : IOrderInfo
     {
         public StoreInfo StoreInfo { get; }
-        private OrderData _orderData;
+        private readonly OrderData _orderData;
 
         /// <summary>
         /// 
@@ -131,7 +131,7 @@ namespace Ekom.Models
                 var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                    
+
                     var price
                         = new Price(
                             line.Amount.OriginalValue,
@@ -144,7 +144,7 @@ namespace Ekom.Models
                         );
 
                     return price.AfterDiscount.Value;
-                   
+
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -159,7 +159,7 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.Vat.Value );
+                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
             }
@@ -175,18 +175,18 @@ namespace Ekom.Models
                 var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                     var price = new Price(
-                                line.Amount.OriginalValue,
-                                line.Amount.Store,
-                                line.Product.ProductDiscount,
-                                line.Discount,
-                                true,
-                                SumOriginalPrice,
-                                line.Quantity
-                            );
+                    var price = new Price(
+                               line.Amount.OriginalValue,
+                               line.Amount.Store,
+                               line.Product.ProductDiscount,
+                               line.Discount,
+                               true,
+                               SumOriginalPrice,
+                               line.Quantity
+                           );
 
-                        return price.Value;
-                    
+                    return price.Value;
+
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -210,20 +210,20 @@ namespace Ekom.Models
 
                 var amount = OrderLines.Sum(line =>
                 {
-                    
-                        var price
-                            = new Price(
-                                line.Amount.OriginalValue,
-                                line.Amount.Store,
-                                line.Product.ProductDiscount,
-                                line.Discount,
-                                true,
-                                SumOriginalPrice,
-                                line.Quantity
-                            );
 
-                        return price.Value;
-                   
+                    var price
+                        = new Price(
+                            line.Amount.OriginalValue,
+                            line.Amount.Store,
+                            line.Product.ProductDiscount,
+                            line.Discount,
+                            true,
+                            SumOriginalPrice,
+                            line.Quantity
+                        );
+
+                    return price.Value;
+
                 });
 
                 if (ShippingProvider != null)

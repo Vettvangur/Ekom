@@ -1,16 +1,10 @@
-using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Logging;
-using Umbraco.Core.Models;
 using Umbraco.Core.Scoping;
 using GlobalCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Models.Data.CouponData>;

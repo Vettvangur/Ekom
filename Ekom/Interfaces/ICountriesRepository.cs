@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Ekom.Models;
+﻿using Ekom.Models;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {

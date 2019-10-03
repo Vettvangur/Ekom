@@ -4,9 +4,7 @@ using Our.Umbraco.Vorto.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.Utilities

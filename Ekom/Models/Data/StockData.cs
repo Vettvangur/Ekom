@@ -1,6 +1,5 @@
 using NPoco;
 using System;
-using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
 
 namespace Ekom.Models.Data

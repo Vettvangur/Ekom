@@ -2,35 +2,32 @@ using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
     public class ProductDiscountService : IProductDiscountService
     {
-        IPerStoreCache<IProductDiscount> _productDiscountCache;
+        readonly IPerStoreCache<IProductDiscount> _productDiscountCache;
 
         internal ProductDiscountService(IPerStoreCache<IProductDiscount> productDiscountCache)
         {
             _productDiscountCache = productDiscountCache;
         }
 
-        
-        public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias , string inputPrice )
+
+        public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
             var applicableDiscounts = new List<ProductDiscount>();
 
-            foreach(var discount in _productDiscountCache.Cache[storeAlias])
+            foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
-                if (discount.Value.Disabled) 
+                if (discount.Value.Disabled)
                 {
                     continue;
                 }
@@ -52,11 +49,11 @@ namespace Ekom.Services
             {
                 return applicableDiscounts.First();
             }
-            foreach(var usableDiscount in applicableDiscounts)
+            foreach (var usableDiscount in applicableDiscounts)
             {
                 if (usableDiscount.Type == DiscountType.Fixed)
                 {
-                    if (usableDiscount.StartOfRange > 0 &&  usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
+                    if (usableDiscount.StartOfRange > 0 && usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
                     {
                         if (usableDiscount.Discount > bestFixedDiscountValue)
                         {
@@ -64,7 +61,7 @@ namespace Ekom.Services
                             bestFixedId = usableDiscount.Id;
                         }
                     }
-                    
+
                 }
                 if (usableDiscount.Type == DiscountType.Percentage)
                 {
@@ -79,14 +76,14 @@ namespace Ekom.Services
             {
                 return applicableDiscounts.SingleOrDefault(x => x.Id == bestPercentageDiscount);
             }
-            else if(bestPercentageDiscount == 0)
+            else if (bestPercentageDiscount == 0)
             {
                 return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
             }
             else
             {
                 var eef = Math.Abs(bestFixedDiscountValue / price) * 100;
-                if (Math.Abs(((bestFixedDiscountValue/price)*100)) > bestPercentageDiscount)
+                if (Math.Abs(((bestFixedDiscountValue / price) * 100)) > bestPercentageDiscount)
                 {
                     return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
                 }

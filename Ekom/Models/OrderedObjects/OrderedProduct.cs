@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
@@ -20,7 +19,7 @@ namespace Ekom.Models.OrderedObjects
 {
     public class OrderedProduct
     {
-        private string _productJson;
+        private readonly string _productJson;
 
         public int Id
         {
@@ -182,7 +181,8 @@ namespace Ekom.Models.OrderedObjects
             try
             {
                 Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
-            } catch (Exception e)
+            }
+            catch (Exception)
             {
                 // failed due to old order, try to fix by splitting the constructor up.
                 Price = new Price(productPropertiesObject["Price"]);

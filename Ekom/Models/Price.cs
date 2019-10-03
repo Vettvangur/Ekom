@@ -5,7 +5,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
-using System.Reflection;
 
 namespace Ekom.Models
 {
@@ -60,7 +59,7 @@ namespace Ekom.Models
         )
         {
             var currency = jObject["Store"]?["Currency"];
-            if(currency != null && currency.Type == JTokenType.String)
+            if (currency != null && currency.Type == JTokenType.String)
             {
                 var list = new System.Collections.Generic.List<CurrencyModel>();
 
@@ -76,12 +75,12 @@ namespace Ekom.Models
                 var vatincluded = store["VatIncludedInPrice"].Value<bool>();
                 var vat = store["Vat"].Value<decimal>();
                 Store = new StoreInfo(
-                    key:key,
+                    key: key,
                     currency: list,
-                    culture:culture,
-                    alias:alias,
-                    vatIncludedInPrice:vatincluded,
-                    vat:vat
+                    culture: culture,
+                    alias: alias,
+                    vatIncludedInPrice: vatincluded,
+                    vat: vat
                 );
             }
             else
@@ -108,7 +107,7 @@ namespace Ekom.Models
             decimal? TotalOrderAmount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
-            
+
         )
             : this(decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture),
                  new StoreInfo(store),
@@ -134,7 +133,7 @@ namespace Ekom.Models
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
-            : this(price, new StoreInfo(store), productDiscount, discount, useOrderDiscount, TotalOrderAmount, quantity, discountAlwaysBeforeVat )
+            : this(price, new StoreInfo(store), productDiscount, discount, useOrderDiscount, TotalOrderAmount, quantity, discountAlwaysBeforeVat)
         {
         }
 
@@ -148,9 +147,9 @@ namespace Ekom.Models
             OrderedDiscount discount = null,
             bool useOrderDiscount = true,
             decimal? TotalOrderAmount = null,
-            int quantity = 1, 
+            int quantity = 1,
             bool discountAlwaysBeforeVat = false
-            
+
         )
             : this(
                   decimal.Parse(string.IsNullOrEmpty(price) ? "0" : price.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture),
@@ -205,7 +204,7 @@ namespace Ekom.Models
         /// </summary>
         public int Quantity { get; }
 
-        private ICalculatedPrice _beforeDiscount;
+        private readonly ICalculatedPrice _beforeDiscount;
         /// <summary>
         /// Price before discount with VAT left as-is
         /// </summary>
@@ -292,7 +291,7 @@ namespace Ekom.Models
             {
                 // http://csharpindepth.com/Articles/General/Singleton.aspx
                 // Third version - attempted thread-safety using double-check locking
-                    if (_withVat == null)
+                if (_withVat == null)
                 {
                     lock (this)
                     {
@@ -312,7 +311,7 @@ namespace Ekom.Models
             }
         }
 
-        private ICalculatedPrice _vat;
+        private readonly ICalculatedPrice _vat;
         /// <summary>
         /// VAT included or to be included in price with discount
         /// </summary>
@@ -333,7 +332,7 @@ namespace Ekom.Models
 
             var price = OriginalValue;
 
-            if (Discount != null && UseOrderDiscount  && ProductDiscount == null)
+            if (Discount != null && UseOrderDiscount && ProductDiscount == null)
             {
                 price = CalculateOrderDiscount(price);
             }
@@ -373,7 +372,7 @@ namespace Ekom.Models
                 {
                     return productDiscountPrice;
                 }
-                
+
             }
             return price;
 
@@ -392,7 +391,7 @@ namespace Ekom.Models
                     {
                         break;
                     }
-                    if (ProductDiscount.EndOfRange != 0 && ProductDiscount.EndOfRange < price )
+                    if (ProductDiscount.EndOfRange != 0 && ProductDiscount.EndOfRange < price)
                     {
                         break;
                     }
@@ -427,7 +426,7 @@ namespace Ekom.Models
                     {
                         break;
                     }
-                    if (Discount.Constraints.EndRange != 0 && Discount.Constraints.EndRange < price )
+                    if (Discount.Constraints.EndRange != 0 && Discount.Constraints.EndRange < price)
                     {
                         break;
                     }
@@ -440,7 +439,7 @@ namespace Ekom.Models
                     break;
 
                 case Discounts.DiscountType.Percentage:
-                    
+
                     price -= price * Discount.Amount.Amount;
                     _hasOrderDiscount = true;
                     break;

@@ -1,5 +1,4 @@
 using Ekom.Models;
-using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
 using System;
 
@@ -22,7 +21,7 @@ namespace Ekom.Interfaces
         /// Current discount
         /// </summary>
         OrderedDiscount Discount { get; }
-        
+
         OrderLineInfo OrderLineInfo { get; }
 
         /// <summary>

@@ -5,15 +5,13 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ekom.Tests.Objects
 {
     public class CustomProductDiscount : ProductDiscount
     {
-        public override decimal Discount {
+        public override decimal Discount
+        {
             get
             {
                 var discount = GetPropertyValue("discount", Store.Alias);
@@ -43,7 +41,10 @@ namespace Ekom.Tests.Objects
 
             }
         }
-        public override DiscountType Type { get{
+        public override DiscountType Type
+        {
+            get
+            {
                 var f = GetPropertyValue("type");
                 switch (GetPropertyValue("type"))
                 {
@@ -57,7 +58,8 @@ namespace Ekom.Tests.Objects
                 }
             }
         }
-        public override decimal StartOfRange {
+        public override decimal StartOfRange
+        {
             get
             {
                 var discount = GetPropertyValue("startOfRange", Store.Alias);
@@ -74,7 +76,8 @@ namespace Ekom.Tests.Objects
                 }
             }
         }
-        public override decimal EndOfRange {
+        public override decimal EndOfRange
+        {
             get
             {
                 var discount = GetPropertyValue("endOfRange", Store.Alias);
@@ -92,7 +95,7 @@ namespace Ekom.Tests.Objects
         }
         public override bool Disabled => GetPropertyValue("disable", Store.Alias) == "1";
 
-        public CustomProductDiscount (IStore store, string json) : base(store)
+        public CustomProductDiscount(IStore store, string json) : base(store)
         {
             //var f = JsonConvert.DeserializeObject<CustomProductDiscount>(json);
             _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);

@@ -15,11 +15,11 @@ namespace Ekom.Cache
         ConcurrentDictionary<Guid, T> Cache { get; }
 
 #pragma warning disable CA1043 // Use Integral Or String Argument For Indexers
-                              /// <summary>
-                              /// Class indexer
-                              /// </summary>
-                              /// <param name="index"></param>
-                              /// <returns></returns>
+        /// <summary>
+        /// Class indexer
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         T this[Guid index] { get; set; }
 #pragma warning restore CA1043 // Use Integral Or String Argument For Indexers
     }

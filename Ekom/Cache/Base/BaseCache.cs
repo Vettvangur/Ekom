@@ -1,5 +1,4 @@
 using Ekom.Interfaces;
-using Ekom.Models.Data;
 using Ekom.Utilities;
 using Examine;
 using System;
@@ -77,7 +76,7 @@ namespace Ekom.Cache
         /// </summary>
         public virtual void FillCache()
         {
-            if (!string.IsNullOrEmpty(NodeAlias) 
+            if (!string.IsNullOrEmpty(NodeAlias)
             && ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
             {
 #if DEBUG

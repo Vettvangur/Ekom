@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
 using Umbraco.NetPayment;
@@ -25,9 +24,9 @@ namespace Ekom.Extensions.Controllers
     [PluginController("Ekom")]
     public class CheckoutController : SurfaceController
     {
-        ILogger _logger;
-        Configuration _config;
-        IScopeProvider _scopeProvider;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly IScopeProvider _scopeProvider;
 
         /// <summary>
         /// ctor
@@ -61,7 +60,7 @@ namespace Ekom.Extensions.Controllers
                 if (order.PaymentProvider == null)
                 {
                     await Order.Instance.UpdatePaymentInformationAsync(
-                        paymentRequest.PaymentProvider, 
+                        paymentRequest.PaymentProvider,
                         order.StoreInfo.Alias);
                 }
 
@@ -207,7 +206,8 @@ namespace Ekom.Extensions.Controllers
 
                         return Redirect(successUrl);
 
-                    } catch(Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         _logger.Error<CheckoutController>(ex, "Offline Payment Failed. Order: " + order.UniqueId);
 
@@ -216,7 +216,8 @@ namespace Ekom.Extensions.Controllers
                         return Redirect(errorUrl);
                     }
 
-                } else
+                }
+                else
                 {
                     var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
@@ -228,7 +229,7 @@ namespace Ekom.Extensions.Controllers
                         language: "IS", //TODO needs to come from Store, but we can not use culture
                         member: Umbraco.MembershipHelper.GetCurrentMemberId(),
                         orderCustomString: order.UniqueId.ToString()
-                        //paymentProviderId: paymentRequest.PaymentProvider.ToString()
+                    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
                     ));
                 }
             }

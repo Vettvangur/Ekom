@@ -1,10 +1,5 @@
 using Ekom.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Composing;
 
 namespace Ekom.Tests
@@ -22,7 +17,7 @@ namespace Ekom.Tests
         public void CategoriesCanCallGetPropertyValueWithStoreAlias()
         {
             Helpers.RegisterAll();
-            
+
             ICategory cat = Objects.Objects.Get_Category_Women();
             Assert.AreEqual("Konur", cat.GetPropertyValue("title", "IS"));
         }

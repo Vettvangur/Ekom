@@ -1,7 +1,6 @@
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;

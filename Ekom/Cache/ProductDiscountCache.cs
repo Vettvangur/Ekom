@@ -1,15 +1,8 @@
-using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Discounts;
-using Ekom.Services;
 using Ekom.Utilities;
-using Examine;
-using Examine.Providers;
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
-using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -43,24 +36,25 @@ namespace Ekom.Cache
             {
                 try
                 {
-   
+
                     if (!node.IsItemDisabled(store.Value))
                     {
                         var item = _objFac?.Create(node, store.Value)
                             ?? (ProductDiscount)Activator.CreateInstance(typeof(ProductDiscount), node, store.Value);
 
-                        if (item != null) {
+                        if (item != null)
+                        {
 
                             tempItem = item;
 
                             Cache[store.Value.Alias][node.Key] = item;
-                        } 
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.Error<ProductDiscountCache>(
-                        ex, 
+                        ex,
                         $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
                     );
                 }

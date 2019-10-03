@@ -1,14 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Mvc;
-using System.Web.Security;
-using Umbraco.Web.Mvc;
-using Umbraco.Web;
-
 namespace Ekom.Site.Extensions.Controllers
 {
     //public class AuthController : SurfaceController

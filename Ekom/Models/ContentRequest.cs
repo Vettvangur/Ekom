@@ -1,14 +1,13 @@
-using System.Web;
-using Ekom.Services;
 using Ekom.Interfaces;
+using System.Web;
 using Umbraco.Core.Logging;
 
 namespace Ekom.Models
 {
     class ContentRequest
     {
-        private ILogger _logger;
-        private HttpContextBase _httpCtx;
+        private readonly ILogger _logger;
+        private readonly HttpContextBase _httpCtx;
         public ContentRequest(HttpContextBase httpContext, ILogger logger)
         {
             _logger = logger;

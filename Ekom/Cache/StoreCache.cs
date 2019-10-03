@@ -1,9 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
-using Examine.Providers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

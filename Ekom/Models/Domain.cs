@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core.Models;
+﻿using Umbraco.Core.Models;
 
 namespace Ekom.Models
 {
     public class Domain
     {
-        private IDomain value;
+        private readonly IDomain value;
 
         public Domain(IDomain value)
         {

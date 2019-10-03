@@ -3,18 +3,14 @@ using Ekom.Models.Behaviors;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Web.Script.Serialization;
-using System.Xml.Serialization;
 using Umbraco.Core;
-using Umbraco.Web.Composing;
 using Umbraco.Core.Models;
-using Umbraco.Web;
 using Umbraco.Core.Services;
+using Umbraco.Web;
+using Umbraco.Web.Composing;
 
 namespace Ekom.Models.Discounts
 {
@@ -27,7 +23,7 @@ namespace Ekom.Models.Discounts
         protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountAmount Amount { get; protected set; }
-       
+
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
@@ -79,7 +75,7 @@ namespace Ekom.Models.Discounts
             if (int.TryParse(typeValue, out int typeValueInt))
             {
                 var dt = DataTypeService.GetDataType(typeValueInt);
-                
+
                 // FIX: verify
                 typeValue = dt.ConfigurationAs<string>();
             }
@@ -107,7 +103,7 @@ namespace Ekom.Models.Discounts
                 .Split(',')
                 .Select(x => UmbHelper.Content(Udi.Parse(x))).ToList();
 
-                
+
             foreach (var node in nodes)
             {
                 if (node.ContentType.Alias == "ekmProduct")
@@ -122,7 +118,7 @@ namespace Ekom.Models.Discounts
                             .Select(x => x.Key));
                 }
             }
-            
+
             //if (!string.IsNullOrEmpty(discountItemsProp))
             //{
             //    foreach (var discountItem in discountItemsProp.Split(','))

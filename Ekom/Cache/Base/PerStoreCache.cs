@@ -1,9 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Models.Data;
 using Ekom.Utilities;
 using Examine;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;

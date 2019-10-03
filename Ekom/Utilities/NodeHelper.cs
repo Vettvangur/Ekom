@@ -1,11 +1,9 @@
 using Ekom.Interfaces;
-using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
@@ -32,7 +30,7 @@ namespace Ekom.Utilities
                 {
                     list.Add(examineItem);
                 }
-                
+
             }
 
             return list;

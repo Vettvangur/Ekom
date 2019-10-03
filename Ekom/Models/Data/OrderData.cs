@@ -2,7 +2,6 @@ using Ekom.Utilities;
 using NPoco;
 using System;
 using System.ComponentModel.DataAnnotations;
-using Umbraco.Core.Persistence;
 using Umbraco.Core.Persistence.DatabaseAnnotations;
 
 namespace Ekom.Models.Data

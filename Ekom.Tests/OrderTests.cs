@@ -1,9 +1,6 @@
-using Ekom.Utilities;
-using Ekom.Models;
-using Ekom.Models.Data;
 using Ekom.Tests.MockClasses;
+using Ekom.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 
 namespace Ekom.Tests
 {
@@ -15,7 +12,7 @@ namespace Ekom.Tests
         {
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
-            
+
             var orderSvc = new OrderServiceMocks().orderSvc;
 
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;

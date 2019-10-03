@@ -1,10 +1,8 @@
 using Ekom.API;
-using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;

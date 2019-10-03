@@ -1,5 +1,4 @@
 using Ekom.API;
-using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 using Umbraco.Web.Composing;

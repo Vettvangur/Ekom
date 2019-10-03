@@ -9,8 +9,8 @@ namespace Ekom.Models.OrderedObjects
     /// </summary>
     public class OrderedPaymentProvider
     {
-        private IPaymentProvider _provider;
-        private JObject paymentProviderObject;
+        private readonly IPaymentProvider _provider;
+        private readonly JObject paymentProviderObject;
 
         public OrderedPaymentProvider(IPaymentProvider provider)
         {

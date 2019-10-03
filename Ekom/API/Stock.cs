@@ -2,7 +2,6 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
 using Hangfire.States;
 using System;
 using System.Threading.Tasks;
@@ -120,8 +119,8 @@ namespace Ekom.API
         /// <returns></returns>
         public StockData GetStockData(Guid key, string storeAlias)
         {
-            return _stockPerStoreCache.Cache[storeAlias].ContainsKey(key) 
-            ? _stockPerStoreCache.Cache[storeAlias][key] 
+            return _stockPerStoreCache.Cache[storeAlias].ContainsKey(key)
+            ? _stockPerStoreCache.Cache[storeAlias][key]
             : new StockData
             {
                 CreateDate = DateTime.Now,

@@ -1,5 +1,4 @@
 using Ekom.Interfaces;
-using Ekom.Services;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 

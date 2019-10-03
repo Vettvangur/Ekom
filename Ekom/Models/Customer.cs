@@ -1,19 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Ekom.Utilities;
+using System.Collections.Generic;
 
 namespace Ekom.Models
 {
     public class Customer
     {
-        public string Name {
+        public string Name
+        {
 
             get
             {
-                return string.IsNullOrEmpty(Properties.GetPropertyValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetPropertyValue("customerName"); 
+                return string.IsNullOrEmpty(Properties.GetPropertyValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetPropertyValue("customerName");
             }
         }
         public string FirstName
@@ -32,19 +29,22 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("customerLastName");
             }
         }
-        public string Email {
+        public string Email
+        {
             get
             {
                 return Properties.GetPropertyValue("customerEmail");
             }
         }
-        public string Address {
+        public string Address
+        {
             get
             {
                 return Properties.GetPropertyValue("customerAddress");
             }
         }
-        public string City {
+        public string City
+        {
             get
             {
                 return Properties.GetPropertyValue("customerCity");
@@ -57,19 +57,22 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("customerApartment");
             }
         }
-        public string Country {
+        public string Country
+        {
             get
             {
                 return Properties.GetPropertyValue("customerCountry");
             }
         }
-        public string ZipCode {
+        public string ZipCode
+        {
             get
             {
                 return Properties.GetPropertyValue("customerZipCode");
             }
         }
-        public string Phone {
+        public string Phone
+        {
             get
             {
                 return Properties.GetPropertyValue("customerPhone");

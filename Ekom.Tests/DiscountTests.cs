@@ -5,7 +5,6 @@ using Ekom.Models.OrderedObjects;
 using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using System;
 using System.Linq;
 
 namespace Ekom.Tests
@@ -36,7 +35,7 @@ namespace Ekom.Tests
             {
                 OrderInfo = OrderInfoWithLineDiscount,
             };
-            
+
             var orderInfo = new OrderInfo(orderData);
 
             Assert.AreEqual(1, orderInfo.OrderLines.Count);

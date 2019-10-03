@@ -1,22 +1,15 @@
+using Ekom.Cache;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core;
-using Umbraco.Core.Composing;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Services;
-using Umbraco.Web.Routing;
 using Umbraco.Web;
-using Umbraco.Web.Composing;
-using Umbraco.Core.Services.Implement;
-using Ekom.Cache;
-using Ekom.Utilities;
-using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.App_Start
 {
@@ -158,9 +151,9 @@ namespace Ekom.App_Start
                     }
 
                     // Update Slug if Slug Exists on same Level and is Published
-                    if (!string.IsNullOrEmpty(slug) 
+                    if (!string.IsNullOrEmpty(slug)
                     && siblings.Any(
-                        x => NodeHelper.GetStoreProperty(x, "slug", store.Alias) 
+                        x => NodeHelper.GetStoreProperty(x, "slug", store.Alias)
                         == slug.ToLowerInvariant())
                     )
                     {
@@ -174,8 +167,8 @@ namespace Ekom.App_Start
 
                         e.Messages.Add(
                             new EventMessage(
-                                "Duplicate Slug Found.", 
-                                "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias, 
+                                "Duplicate Slug Found.",
+                                "Sorry but this slug is already in use, we updated it for you. Store: " + store.Alias,
                                 EventMessageType.Warning
                             )
                         );

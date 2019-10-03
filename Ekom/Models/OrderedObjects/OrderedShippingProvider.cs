@@ -6,8 +6,8 @@ namespace Ekom.Models.OrderedObjects
 {
     public class OrderedShippingProvider
     {
-        private IShippingProvider _provider;
-        private JObject shippingProviderObject;
+        private readonly IShippingProvider _provider;
+        private readonly JObject shippingProviderObject;
 
         public OrderedShippingProvider(IShippingProvider provider)
         {

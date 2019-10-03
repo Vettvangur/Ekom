@@ -6,15 +6,11 @@ using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Repository;
 using Ekom.Services;
-using Examine;
-using System.Collections.Generic;
-using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-using Umbraco.Web;
 using Catalog = Ekom.API.Catalog;
 
 namespace Ekom.App_Start
@@ -43,7 +39,7 @@ namespace Ekom.App_Start
             composition.Register<IPerStoreCache<StockData>, StockPerStoreCache>(Lifetime.Singleton);
 
             // The following database based caches are not strictly related to the preceding ones
-            composition.Register<ICouponCache, CouponCache>(Lifetime.Singleton); 
+            composition.Register<ICouponCache, CouponCache>(Lifetime.Singleton);
             composition.Register<DiscountCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IDiscount>>(f => f.GetInstance<DiscountCache>()); // Lifetime based on preceding line
 
@@ -53,7 +49,7 @@ namespace Ekom.App_Start
             composition.Register<ICountriesRepository, CountriesRepository>(Lifetime.Transient);
             composition.Register<IStockRepository, StockRepository>(Lifetime.Transient);
             composition.Register<IDiscountStockRepository, DiscountStockRepository>(Lifetime.Transient);
-            
+
             composition.Register<IOrderRepository, OrderRepository>(Lifetime.Transient);
             composition.Register<ICouponRepository, CouponRepository>(Lifetime.Transient);
             composition.Register<IActivityLogRepository, ActivityLogRepository>(Lifetime.Transient);

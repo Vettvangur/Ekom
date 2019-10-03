@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 
@@ -11,38 +6,43 @@ namespace Ekom.Models
 {
     public class Image
     {
-        private IPublishedContent node;
+        private readonly IPublishedContent node;
 
         public Image(IPublishedContent node)
         {
             this.node = node;
         }
 
-        public int Id {
+        public int Id
+        {
             get
             {
                 return node.Id;
             }
         }
-        public Guid Key {
+        public Guid Key
+        {
             get
             {
                 return node.Key;
             }
         }
-        public string Url {
+        public string Url
+        {
             get
             {
                 return node.Url();
             }
         }
-        public string Name {
+        public string Name
+        {
             get
             {
                 return node.Name;
             }
         }
-        public string Description {
+        public string Description
+        {
             get
             {
                 return node.HasProperty("description") && node.HasValue("description") ? node.Value<string>("description") : "";

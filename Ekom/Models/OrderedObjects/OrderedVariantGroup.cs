@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
@@ -14,8 +13,8 @@ namespace Ekom.Models.OrderedObjects
 {
     public class OrderedVariantGroup
     {
-        private IVariant variant;
-        private StoreInfo storeInfo;
+        private readonly IVariant variant;
+        private readonly StoreInfo storeInfo;
 
         public int Id { get; set; }
         public Guid Key { get; set; }
@@ -40,8 +39,8 @@ namespace Ekom.Models.OrderedObjects
             Id = variantGroup.Id;
             Key = variantGroup.Key;
             Title = variantGroup.Title;
-            ImageIds = variantGroup.Images.Any() 
-                ? variantGroup.Images.Select(x => x.Key).ToArray() 
+            ImageIds = variantGroup.Images.Any()
+                ? variantGroup.Images.Select(x => x.Key).ToArray()
                 : new Guid[] { };
 
             var variants = new List<OrderedVariant>

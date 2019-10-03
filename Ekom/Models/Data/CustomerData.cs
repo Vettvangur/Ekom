@@ -1,5 +1,4 @@
 using NPoco;
-using Umbraco.Core.Persistence;
 
 namespace Ekom.Models.Data
 {

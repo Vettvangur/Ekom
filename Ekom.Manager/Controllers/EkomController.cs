@@ -1,6 +1,5 @@
 using System;
 using System.Web.Mvc;
-using System.Web.Security;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Controllers
@@ -21,6 +20,6 @@ namespace Ekom.Controllers
         {
             return View("~/Views/EkomManager/Index.cshtml");
         }
-         
+
     }
 }

@@ -1,11 +1,5 @@
-using Ekom.Interfaces;
 using Ekom.Tests.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core.Composing;
 
 namespace Ekom.Tests
@@ -20,15 +14,15 @@ namespace Ekom.Tests
         }
 
 
-        [TestCategory( "Calculate ProductDiscount" )]
+        [TestCategory("Calculate ProductDiscount")]
         [TestMethod]
         public void TestProductDiscountPercentagesNoRange_IS()
         {
             Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store,ProductDiscount_Percent_20.json2);
+            var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Percent_20.json2);
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
-            
+
         }
         [TestMethod]
         public void TestProductDiscountFixedWithinRangeShouldGiveDiscount_IS()

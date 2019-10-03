@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Web;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
@@ -34,7 +33,7 @@ namespace Ekom.Models
         /// <summary>
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
-        
+
         public virtual ProductDiscount ProductDiscount
         {
             get
@@ -61,7 +60,7 @@ namespace Ekom.Models
                     return;
                 }
 
-                var oldPrice = new Price(Price.OriginalValue, Store,null, new OrderedDiscount(_discount));
+                var oldPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(_discount));
 
                 var newPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(value));
 
@@ -285,9 +284,9 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
-            
+
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
                 throw new Exception("No url's or no title present in product");
@@ -303,7 +302,7 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

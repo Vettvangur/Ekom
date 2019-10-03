@@ -3,7 +3,6 @@ using Ekom.Models.OrderedObjects;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 
@@ -61,7 +60,7 @@ namespace Ekom.Models
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Product.ProductDiscount , Discount,false , _totalOriginalPrice, Quantity);
+                return new Price(_price, Product.Price.Store, Product.ProductDiscount, Discount, false, _totalOriginalPrice, Quantity);
             }
         }
         /// <summary>

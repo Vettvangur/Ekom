@@ -1,7 +1,7 @@
 using Examine;
-using Umbraco.Examine;
 using System;
 using System.Linq;
+using Umbraco.Examine;
 
 namespace Ekom.Services
 {
@@ -15,8 +15,8 @@ namespace Ekom.Services
             return DateTime.ParseExact(value, "yyyyMMddHHmmssfff", System.Globalization.CultureInfo.InvariantCulture);
         }
 
-        Configuration _config;
-        IExamineManager _examineMgr;
+        readonly Configuration _config;
+        readonly IExamineManager _examineMgr;
         public ExamineService(Configuration config, IExamineManager examineMgr)
         {
             _config = config;

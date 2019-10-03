@@ -1,5 +1,4 @@
 using Ekom.Interfaces;
-using Ekom.Services;
 using System.Collections.Generic;
 using Umbraco.Core;
 using Umbraco.Core.Cache;

@@ -1,7 +1,6 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

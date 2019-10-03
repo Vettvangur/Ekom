@@ -1,7 +1,6 @@
 using Ekom.Interfaces;
 using Examine;
 using System.Collections.Generic;
-using System.Reflection;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models

@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace Ekom.Models.OrderedObjects
 {
@@ -33,32 +32,36 @@ namespace Ekom.Models.OrderedObjects
             try
             {
                 Currency = currency;
-            } catch {
-                
+            }
+            catch
+            {
+
                 //fallback for is-IS
 
                 var list = new List<CurrencyModel>();
 
-                list.Add(new CurrencyModel() {
-                     CurrencyFormat = "C",
-                      CurrencyValue = "is-IS"
+                list.Add(new CurrencyModel()
+                {
+                    CurrencyFormat = "C",
+                    CurrencyValue = "is-IS"
                 });
 
                 currency = list;
             }
-            
+
 
         }
 
         public StoreInfo(JObject storeInfoObject)
         {
 
-            
+
 
             try
             {
                 Currency = storeInfoObject["Currency"]?.ToObject<List<CurrencyModel>>();
-            } catch
+            }
+            catch
             {
                 var list = new List<CurrencyModel>();
 

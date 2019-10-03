@@ -1,14 +1,8 @@
-using Ekom.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using Umbraco.Core;
 using Umbraco.Core.Cache;
-using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
-using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 using Umbraco.Web.Routing;
@@ -17,8 +11,8 @@ namespace Ekom
 {
     class CatalogUrlProvider : IUrlProvider
     {
-        ILogger _logger;
-        IAppCache _reqCache;
+        readonly ILogger _logger;
+        readonly IAppCache _reqCache;
 
         public CatalogUrlProvider(ILogger logger, AppCaches appCaches)
         {
@@ -127,7 +121,8 @@ namespace Ekom
 
                     return list.Distinct();
 
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     _logger.Error<CatalogUrlProvider>(ex, "EkomUrlProvider-GetOtherUrls Failed.");
                 }

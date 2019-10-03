@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using Ekom.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Ekom.Interfaces
 {

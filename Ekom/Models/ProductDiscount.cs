@@ -2,13 +2,10 @@ using Ekom.Interfaces;
 using Ekom.Models.Discounts;
 using Ekom.Utilities;
 using Examine;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
@@ -34,11 +31,11 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public ProductDiscount(ISearchResult item, IStore store) : base(item, store)
         {
-          
+
         }
         public ProductDiscount(IContent node, IStore store) : base(node, store)
         {
-           
+
         }
         public virtual DiscountType Type
         {
@@ -69,7 +66,7 @@ namespace Ekom.Models
         }
         public virtual decimal Discount
         {
-            
+
             get
             {
                 var discount = Properties.GetPropertyValue("discount", Store.Alias);
@@ -96,7 +93,7 @@ namespace Ekom.Models
             }
 
         }
-       
+
 
         public List<Guid> DiscountItems
         {
@@ -123,7 +120,7 @@ namespace Ekom.Models
                     {
                         returnList.AddRange(
                             node.Descendants()
-                                .Where(x => x.ContentType.Alias == "ekmProduct" 
+                                .Where(x => x.ContentType.Alias == "ekmProduct"
                                     || x.ContentType.Alias == "ekmProductVariant")
                                 .Select(x => x.Key));
                     }
@@ -180,5 +177,5 @@ namespace Ekom.Models
 
         }
     }
-    
+
 }

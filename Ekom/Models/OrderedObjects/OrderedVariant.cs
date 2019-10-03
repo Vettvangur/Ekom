@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 
@@ -16,7 +15,7 @@ namespace Ekom.Models.OrderedObjects
 {
     public class OrderedVariant
     {
-        private JToken variantObject;
+        private readonly JToken variantObject;
 
         [ScriptIgnore]
         [JsonIgnore]

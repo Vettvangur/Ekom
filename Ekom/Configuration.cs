@@ -7,7 +7,6 @@ using System.Configuration;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Models;
-using Umbraco.Core.Composing;
 using UmbracoCurrent = Umbraco.Core.Composing.Current;
 
 namespace Ekom
@@ -170,7 +169,7 @@ namespace Ekom
         /// 
         /// The order in this list is important as addition and removal from caches triggers updates on succeeding caches.
         /// </summary>
-        internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(() 
+        internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(()
             => new List<ICache>
             {
                 { UmbracoCurrent.Factory.GetInstance<IBaseCache<IDomain>>() },
@@ -183,7 +182,7 @@ namespace Ekom
                 { UmbracoCurrent.Factory.GetInstance<IBaseCache<IZone>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IPaymentProvider>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IShippingProvider>>() },
-                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IDiscount>>() },              
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IDiscount>>() },
             }
         );
 

@@ -1,7 +1,5 @@
 using Ekom.Models;
-using Ekom.Services;
 using System;
-using System.Reflection;
 using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
@@ -9,7 +7,6 @@ using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
-using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Security;
 
 namespace Ekom
@@ -67,7 +64,7 @@ namespace Ekom
 
                     var appCaches = Current.Factory.GetInstance<AppCaches>();
 
-                    appCaches.RequestCache.GetCacheItem("ekmRequest", () => 
+                    appCaches.RequestCache.GetCacheItem("ekmRequest", () =>
                         new ContentRequest(new HttpContextWrapper(httpCtx), logger)
                         {
                             Currency = Currency,

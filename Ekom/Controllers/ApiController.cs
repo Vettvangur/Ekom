@@ -18,7 +18,7 @@ namespace Ekom.Controllers
     [PluginController("Ekom")]
     public class ApiController : UmbracoAuthorizedApiController
     {
-        ICountriesRepository _countriesRepo;
+        readonly ICountriesRepository _countriesRepo;
 
         /// <summary>
         /// ctor

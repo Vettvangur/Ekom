@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
@@ -141,7 +140,7 @@ namespace Ekom.Models
 
                 if (int.TryParse(parentId, out int _parentId))
                 {
-                    return Catalog.Instance.GetVariantGroup(Store.Alias, _parentId); 
+                    return Catalog.Instance.GetVariantGroup(Store.Alias, _parentId);
                 }
 
                 return null;
@@ -216,7 +215,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store ,ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(variantPrice, Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
         }
 
         /// <summary>

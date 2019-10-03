@@ -1,11 +1,9 @@
+using Ekom.Interfaces;
 using Examine;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using Umbraco.Core;
-using Ekom.Interfaces;
-using Ekom.Models;
 
 namespace Ekom.Utilities
 {

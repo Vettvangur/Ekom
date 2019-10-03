@@ -1,11 +1,9 @@
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Umbraco.Core;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
 
@@ -19,8 +17,8 @@ namespace Ekom.Repository
         /// ctor
         /// </summary>
         public DiscountStockRepository(
-            Configuration config, 
-            IScopeProvider scopeProvider, 
+            Configuration config,
+            IScopeProvider scopeProvider,
             ILogger logger)
         {
             _scopeProvider = scopeProvider;

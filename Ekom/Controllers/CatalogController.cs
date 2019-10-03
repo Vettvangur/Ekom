@@ -1,6 +1,4 @@
 using Ekom.Interfaces;
-using Ekom.Models;
-using Ekom.Services;
 using System;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;

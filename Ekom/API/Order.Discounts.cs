@@ -57,13 +57,14 @@ namespace Ekom.API
                     {
                         throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
                     }
-                } else
+                }
+                else
                 {
                     throw new DiscountNotFoundException($"Coupon has no usage.");
                 }
 
             }
-           
+
             else
             {
                 throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
@@ -151,7 +152,7 @@ namespace Ekom.API
                 {
                     throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
                 }
-                
+
             }
             else
             {

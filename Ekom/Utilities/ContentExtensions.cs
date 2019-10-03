@@ -1,21 +1,15 @@
 using Newtonsoft.Json;
 using Our.Umbraco.Vorto.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
-using static Ekom.EkomStartup;
 
 namespace Ekom.Utilities
 {
     public static class ContentExtensions
     {
-        public static void SetVortoValue(this IContent content, string alias, Dictionary<string,object> items)
+        public static void SetVortoValue(this IContent content, string alias, Dictionary<string, object> items)
         {
             var property = content.Properties.FirstOrDefault(x => x.Alias == alias);
 
@@ -58,7 +52,8 @@ namespace Ekom.Utilities
 
                         vortoItems.Add(vvalue.Key, val);
                     }
-                } else
+                }
+                else
                 {
                     vortoItems.Add(storeAlias, value);
                 }

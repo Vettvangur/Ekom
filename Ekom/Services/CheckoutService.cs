@@ -3,22 +3,22 @@ using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
+using Ekom.Utilities;
 using System;
 using System.Linq;
-using Ekom.Utilities;
-using Umbraco.Core.Logging;
 using System.Threading.Tasks;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Services
 {
     class CheckoutService
     {
-        ILogger _logger;
-        Configuration _config;
-        IDiscountStockRepository _discountStockRepo;
-        IOrderRepository _orderRepo;
-        ICouponRepository _couponRepo;
-        private OrderService _orderService;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly IDiscountStockRepository _discountStockRepo;
+        readonly IOrderRepository _orderRepo;
+        readonly ICouponRepository _couponRepo;
+        private readonly OrderService _orderService;
         public CheckoutService(
             ILogger logger,
             Configuration config,

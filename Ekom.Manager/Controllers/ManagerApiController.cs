@@ -1,16 +1,11 @@
-using Ekom.Utilities;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Web.Http;
-using Umbraco.Core;
-using Umbraco.Core.Composing;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers

@@ -1,4 +1,3 @@
-using Ekom.Models.Data;
 using System;
 using Umbraco.Core.Models;
 

@@ -1,11 +1,9 @@
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;

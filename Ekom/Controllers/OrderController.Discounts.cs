@@ -8,7 +8,7 @@ using Umbraco.Web.Mvc;
 
 namespace Ekom.Controllers
 {
-    #pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
@@ -125,5 +125,5 @@ namespace Ekom.Controllers
             }
         }
     }
-    #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 }

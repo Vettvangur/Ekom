@@ -2,12 +2,10 @@ using Examine;
 using Lucene.Net.QueryParsers;
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
-using Umbraco.Examine;
 
 namespace Ekom.Services
 {
@@ -21,8 +19,8 @@ namespace Ekom.Services
         /// </summary>
         public static SearchService Instance => Current.Factory.GetInstance<SearchService>();
 
-        ILogger _logger;
-        IExamineManager _examineManager;
+        readonly ILogger _logger;
+        readonly IExamineManager _examineManager;
         /// <summary>
         /// ctor
         /// </summary>

@@ -8,16 +8,15 @@ using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-using Umbraco.Web;
 
 namespace Ekom.Services
 {
     class StoreService : IStoreService
     {
-        ILogger _logger;
-        IAppCache _reqCache;
-        IBaseCache<IDomain> _domainCache;
-        IBaseCache<IStore> _storeCache;
+        readonly ILogger _logger;
+        readonly IAppCache _reqCache;
+        readonly IBaseCache<IDomain> _domainCache;
+        readonly IBaseCache<IStore> _storeCache;
 
         /// <summary>
         /// ctor
@@ -99,7 +98,7 @@ namespace Ekom.Services
 
         public IStore GetStoreFromCache()
         {
-            var r = _reqCache.GetCacheItem<ContentRequest>("ekmRequest") ;
+            var r = _reqCache.GetCacheItem<ContentRequest>("ekmRequest");
 
             return r?.Store ?? GetAllStores().FirstOrDefault();
         }

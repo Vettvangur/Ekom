@@ -6,39 +6,33 @@ using Ekom.JsonDotNet;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
+using Ekom.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Web;
-using Umbraco.Core;
-using Umbraco.Core.Logging;
-using Umbraco.Core.Cache;
-using Umbraco.Web;
-using Umbraco.Web.PublishedCache;
-using Umbraco.Web.Security;
-using Ekom.Utilities;
-using Umbraco.Core.Services;
 using System.Threading.Tasks;
+using System.Web;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Services;
 
 namespace Ekom.Services
 {
     partial class OrderService
     {
-        ILogger _logger;
-
-        HttpContextBase _httpCtx;
-        IAppCache _reqCache;
-        IAppPolicyCache _runtimeCache;
-        IMemberService _memberService;
-        DiscountCache _discountCache;
-
-        IActivityLogRepository _activityLogRepository;
-        IOrderRepository _orderRepository;
-        ICouponRepository _couponRepository;
-        IStoreService _storeSvc;
-        ContentRequest _ekmRequest;
+        readonly ILogger _logger;
+        readonly HttpContextBase _httpCtx;
+        readonly IAppCache _reqCache;
+        readonly IAppPolicyCache _runtimeCache;
+        readonly IMemberService _memberService;
+        readonly DiscountCache _discountCache;
+        readonly IActivityLogRepository _activityLogRepository;
+        readonly IOrderRepository _orderRepository;
+        readonly ICouponRepository _couponRepository;
+        readonly IStoreService _storeSvc;
+        readonly ContentRequest _ekmRequest;
 
         IStore _store;
         DateTime _date;
@@ -107,21 +101,22 @@ namespace Ekom.Services
                         return orderInfo;
                     }
                 }
-            } else
+            }
+            else
             {
                 _store = store;
 
                 var key = CreateKey();
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
- 
+
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
 
                     var orderInfo = _runtimeCache.GetCacheItem(
                         orderUniqueId.ToString(),
-                        () => GetOrder(orderUniqueId), 
+                        () => GetOrder(orderUniqueId),
                         TimeSpan.FromDays(1));
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
@@ -159,7 +154,7 @@ namespace Ekom.Services
                 if (_ekmRequest.User != null)
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
-          
+
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
                     || orderInfo?.OrderStatus == OrderStatus.Dispatched
                     || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
@@ -183,7 +178,7 @@ namespace Ekom.Services
 
                     var orderInfo = _runtimeCache.GetCacheItem(
                         orderUniqueId.ToString(),
-                        () => GetOrder(orderUniqueId), 
+                        () => GetOrder(orderUniqueId),
                         TimeSpan.FromDays(1));
 
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
@@ -203,7 +198,7 @@ namespace Ekom.Services
         {
             // Chekk for cache ?
             return _runtimeCache.GetCacheItem<OrderInfo>(
-                $"EkomOrder-{uniqueId}", 
+                $"EkomOrder-{uniqueId}",
                 () => GetOrderInfoAsync(uniqueId).Result
             , TimeSpan.FromMinutes(5));
         }
@@ -239,7 +234,8 @@ namespace Ekom.Services
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
             {
-                if (status == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue) {
+                if (status == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue)
+                {
                     order.PaidDate = DateTime.Now;
                 }
 
@@ -251,7 +247,8 @@ namespace Ekom.Services
                         member.SetValue("orderId", "");
                     }
                     _memberService.Save(member);
-                } else
+                }
+                else
                 {
                     _runtimeCache.ClearByKey(uniqueId.ToString());
                 }
@@ -262,15 +259,15 @@ namespace Ekom.Services
 
             _runtimeCache.GetCacheItem<OrderInfo>(
                 uniqueId.ToString(),
-                () => new OrderInfo(order), 
+                () => new OrderInfo(order),
                 TimeSpan.FromDays(1));
 
 
             await _activityLogRepository.InsertAsync(
                 uniqueId,
                 $"Order status changed. From: {oldStatus.ToString()} To: {status.ToString()}",
-                string.IsNullOrEmpty(userName) 
-                    ? "Customer" 
+                string.IsNullOrEmpty(userName)
+                    ? "Customer"
                     : userName)
                 .ConfigureAwait(false);
 
@@ -316,7 +313,8 @@ namespace Ekom.Services
             if (product == null)
             {
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
-            } else
+            }
+            else
             {
                 if (variantKey == null && !product.Backorder && product.Stock < quantity)
                 {
@@ -332,7 +330,8 @@ namespace Ekom.Services
                 if (variant == null)
                 {
                     throw new VariantNotFoundException("Unable to find variant with key " + variantKey);
-                } else
+                }
+                else
                 {
                     if (!product.Backorder && variant.Stock < quantity)
                     {
@@ -534,9 +533,9 @@ namespace Ekom.Services
                         orderInfo);
                     }
                 }
-                
+
                 orderInfo.orderLines.Add(orderLine);
-                
+
                 if (product.Discount != null) // product discount is always null because order discount is added to the order not product
                 {
                     _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
@@ -587,11 +586,11 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var culture = new CultureInfo( orderInfo.StoreInfo.Currency.FirstOrDefault().CurrencyValue);
-                
-                    var ri = new RegionInfo(culture.LCID);
-                    orderData.Currency = ri.ISOCurrencySymbol;
-                
+                var culture = new CultureInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().CurrencyValue);
+
+                var ri = new RegionInfo(culture.LCID);
+                orderData.Currency = ri.ISOCurrencySymbol;
+
             }
             catch (ArgumentException)
             {
@@ -642,7 +641,9 @@ namespace Ekom.Services
                     member.SetValue("orderId", orderUniqueId.ToString());
                 }
                 _memberService.Save(member);
-            } else {
+            }
+            else
+            {
                 var key = CreateKey();
                 orderUniqueId = CreateOrderIdCookie(key);
             }

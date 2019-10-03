@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ekom.Tests.Objects
+﻿namespace Ekom.Tests.Objects
 {
     static class Category_Women
     {

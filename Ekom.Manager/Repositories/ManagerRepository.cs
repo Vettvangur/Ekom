@@ -1,17 +1,13 @@
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
-using Ekom.Services;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
-using Umbraco.Web.Mvc;
-using Umbraco.Core;
+using System.Threading.Tasks;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
-using System.Threading.Tasks;
 
 namespace Ekom.Repository
 {

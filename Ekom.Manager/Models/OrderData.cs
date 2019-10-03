@@ -1,10 +1,7 @@
-using System;
+using Ekom.Models.Data;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Ekom.Models.Data;
 
 namespace Ekom.Manager.Models
 {
@@ -24,9 +21,9 @@ namespace Ekom.Manager.Models
                 this.GrandTotal = string.Format(new CultureInfo("is-IS"), "{0:C}", _grandTotal) + "";
                 this.AverageAmount = string.Format(new CultureInfo("is-IS"), "{0:C}", _averageAmount) + "";
             }
-            
+
         }
-        
+
         public IEnumerable<OrderData> Orders { get; set; }
         public string GrandTotal { get; set; }
         public string AverageAmount { get; set; }

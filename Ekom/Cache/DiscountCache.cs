@@ -1,22 +1,15 @@
-using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Discounts;
-using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
-using Examine.Providers;
 using System;
 using System.Collections.Concurrent;
-using System.Linq;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using GlobalDiscountCache
     = System.Collections.Concurrent.ConcurrentDictionary<string,
         System.Collections.Concurrent.ConcurrentDictionary<System.Guid, Ekom.Interfaces.IDiscount>>;
-using PerStoreCouponCache
-    = System.Collections.Concurrent.ConcurrentDictionary<string,
-        System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Interfaces.IDiscount>>;
 
 namespace Ekom.Cache
 {
@@ -73,7 +66,7 @@ namespace Ekom.Cache
                             count++;
 
                             curStoreGlobalDiscountCache[item.Key] = item;
-    
+
                             var itemKey = Guid.Parse(r.Key());
                             curStoreCache[itemKey] = item;
                         }
@@ -82,7 +75,7 @@ namespace Ekom.Cache
                 catch (Exception ex)
                 {
                     _logger.Error<DiscountCache>(
-                        ex, 
+                        ex,
                         $"Error on adding item with id: {r.Id} from Examine in Store: {store.Alias}"
                     );
                 }

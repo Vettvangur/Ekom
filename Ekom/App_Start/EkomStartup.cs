@@ -2,24 +2,14 @@ using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
-using Ekom.Services;
-using Ekom.Utilities;
 using Hangfire;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
-using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
-using Umbraco.Core.Models;
 using Umbraco.Core.Persistence;
-using Umbraco.Core.Services;
-using Umbraco.Web.Routing;
-using Umbraco.Web;
 using Umbraco.Core.Services.Implement;
-using Umbraco.Core.Scoping;
+using Umbraco.Web;
+using Umbraco.Web.Routing;
 
 namespace Ekom
 {
@@ -48,11 +38,11 @@ namespace Ekom
     }
 
 #pragma warning disable CA1001 // Types that own disposable fields should be disposable
-                              /// <summary>
-                              /// Here we hook into the umbraco lifecycle methods to configure Ekom.
-                              /// We use ApplicationEventHandler so that these lifecycle methods are only run
-                              /// when umbraco is in a stable condition.
-                              /// </summary>
+    /// <summary>
+    /// Here we hook into the umbraco lifecycle methods to configure Ekom.
+    /// We use ApplicationEventHandler so that these lifecycle methods are only run
+    /// when umbraco is in a stable condition.
+    /// </summary>
     class EkomStartup : IComponent
 #pragma warning restore CA1001 // Types that own disposable fields should be disposable
     {

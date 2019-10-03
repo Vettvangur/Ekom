@@ -1,7 +1,6 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
 using Ekom.Utilities;
 using System;
 using System.Configuration;
@@ -9,10 +8,8 @@ using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
-using Umbraco.Web;
 using Umbraco.Web.Composing;
 using Umbraco.Web.Routing;
-using Umbraco.Web.Security;
 
 namespace Ekom
 {

@@ -1,14 +1,9 @@
-using System;
-using Examine;
 using System.Diagnostics;
 using System.Linq;
-using System.Web;
-using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-using Ekom.Services;
 using Umbraco.Core.Services;
-using Umbraco.Core.Composing;
 
 namespace Ekom.Cache
 {
@@ -16,7 +11,7 @@ namespace Ekom.Cache
     {
         public override string NodeAlias { get; } = "";
 
-        IDomainService _domainService;
+        readonly IDomainService _domainService;
         /// <summary>
         /// ctor
         /// </summary>

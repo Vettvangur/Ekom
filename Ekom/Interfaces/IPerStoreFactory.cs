@@ -1,6 +1,5 @@
 using Examine;
 using Umbraco.Core.Models;
-using Ekom.Models;
 
 namespace Ekom.Interfaces
 {

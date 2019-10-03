@@ -2,17 +2,11 @@ using Ekom.Models.Data;
 using NPoco;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Migrations;
-using Umbraco.Core.Migrations.Upgrade;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Scoping;
-using Umbraco.Core.Services;
 
 namespace Ekom.App_Start
 {
@@ -73,7 +67,7 @@ namespace Ekom.App_Start
         }
     }
 
-    class EkomMigrationContext: IMigrationContext
+    class EkomMigrationContext : IMigrationContext
     {
         public EkomMigrationContext(IUmbracoDatabase database, ILogger logger)
         {
