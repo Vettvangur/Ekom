@@ -1,7 +1,6 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
-using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
@@ -287,7 +286,7 @@ namespace Ekom.Models
             PopulateCategories();
 
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
-            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+            Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
             
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
@@ -305,7 +304,7 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
             Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store , ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
-            Urls = UrlService.BuildProductUrls(Slug, Categories, store);
+            Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {

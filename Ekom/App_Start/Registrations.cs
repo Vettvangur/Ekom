@@ -22,10 +22,10 @@ namespace Ekom.App_Start
     /// <summary>
     /// Registers the Ekom type mappings with Umbraco IoC.
     /// </summary>
-    class Registrations : IUserComposer
+    static class Registrations
     {
         /// <summary>Registers the Ekom type mappings with Umbraco IoC.</summary>
-        public void Compose(Composition composition)
+        public static void Register(Composition composition)
         {
             composition.Register<Configuration>(Lifetime.Singleton);
 

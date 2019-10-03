@@ -15,12 +15,12 @@ namespace Ekom.Repository
 {
     class CouponRepository : ICouponRepository
     {
-        ILogger _logger;
-        Configuration _config;
-        IAppCache _requestCache;
-        IScopeProvider _scopeProvider;
-        ICouponCache _couponCache;
-        IContentService _contentService;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly IAppCache _requestCache;
+        readonly IScopeProvider _scopeProvider;
+        readonly ICouponCache _couponCache;
+        readonly IContentService _contentService;
         /// <summary>
         /// ctor
         /// </summary>
@@ -40,15 +40,14 @@ namespace Ekom.Repository
             _contentService = contentService;
         }
 
-
-
         public async Task InsertCouponAsync(CouponData couponData)
         {
-            if (!await CouponCodeExistAsync(couponData.CouponCode))
+            if (!await CouponCodeExistAsync(couponData.CouponCode)
+                .ConfigureAwait(false))
             {
-                using (var db = _scopeProvider.CreateScope())
+                using (var db = _scopeProvider.CreateScope().Database)
                 {
-                    await db.Database.InsertAsync(couponData)
+                    await db.InsertAsync(couponData)
                         .ConfigureAwait(false);
 
                     RefreshCache(couponData);
@@ -58,7 +57,6 @@ namespace Ekom.Repository
             {
                 throw new ArgumentException("Duplicate coupon");
             }
-
         }
 
         public async Task UpdateCouponAsync(CouponData couponData)
@@ -118,15 +116,6 @@ namespace Ekom.Repository
             {
                 return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode)
                         .ConfigureAwait(false);
-            }
-        }
-
-        public async Task<List<CouponData>> GetAllCouponsAsync()
-        {
-            using (var db = _scopeProvider.CreateScope().Database)
-            {
-                return await db.FetchAsync<CouponData>()
-                    .ConfigureAwait(false);
             }
         }
 

@@ -1,13 +1,16 @@
 using Ekom.Models.Data;
+using NPoco;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Migrations;
 using Umbraco.Core.Migrations.Upgrade;
+using Umbraco.Core.Persistence;
 using Umbraco.Core.Scoping;
 using Umbraco.Core.Services;
 
@@ -29,57 +32,79 @@ namespace Ekom.App_Start
 
         public override void Migrate()
         {
-            if (!TableExists("EkomStock"))
+            if (!TableExists(TableInfo.FromPoco(typeof(StockData)).TableName))
             {
-                _logger.Debug<MigrationCreateTables>("Creating EkomStock table");
+                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(StockData)).TableName} table");
 
                 Create.Table<StockData>().Do();
             }
-            if (!TableExists("EkomOrdersActivityLog"))
+            if (!TableExists(TableInfo.FromPoco(typeof(OrderActivityLog)).TableName))
             {
-                _logger.Debug<MigrationCreateTables>("Creating EkomOrdersActivityLog table");
+                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(OrderActivityLog)).TableName} table");
 
                 Create.Table<OrderActivityLog>().Do();
             }
-            if (!TableExists("EkomOrders"))
+            if (!TableExists(TableInfo.FromPoco(typeof(OrderData)).TableName))
             {
-                _logger.Debug<MigrationCreateTables>("Creating EkomOrders table");
+                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(OrderData)).TableName} table");
 
                 Create.Table<OrderData>().Do();
-                using (var db = Context.Database)
-                {
-                    db.Execute("ALTER TABLE EkomOrders ALTER COLUMN OrderInfo NVARCHAR(MAX)");
-                }
+                Execute.Sql($"ALTER TABLE {TableInfo.FromPoco(typeof(OrderData)).TableName} ALTER COLUMN OrderInfo NVARCHAR(MAX)").Do();
             }
-            if (!TableExists("EkomCoupon"))
+            if (!TableExists(TableInfo.FromPoco(typeof(CouponData)).TableName))
             {
-                _logger.Debug<MigrationCreateTables>("Creating EkomCoupon table");
+                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(CouponData)).TableName} table");
 
                 Create.Table<CouponData>().Do();
             }
             if (!TableExists(Configuration.DiscountStockTableName))
             {
-                _logger.Debug<MigrationCreateTables>($"Creating {Configuration.DiscountStockTableName} table");
+                _logger.Info<MigrationCreateTables>($"Creating {Configuration.DiscountStockTableName} table");
 
                 Create.Table<DiscountStockData>().Do();
             }
             if (_config.StoreCustomerData
-            && !TableExists("EkomCustomerData"))
+            && !TableExists(TableInfo.FromPoco(typeof(CustomerData)).TableName))
             {
-                _logger.Debug<MigrationCreateTables>("Creating EkomCustomerData table");
+                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(CustomerData)).TableName} table");
 
                 Create.Table<CustomerData>().Do();
             }
         }
     }
 
-    class TranslationMigrationPlan : MigrationPlan
+    class EkomMigrationContext: IMigrationContext
     {
-        public TranslationMigrationPlan()
-            : base("MyApplicationName")
+        public EkomMigrationContext(IUmbracoDatabase database, ILogger logger)
         {
-            From(string.Empty)
-                .To<MigrationCreateTables>("first-migration");
+            Database = database;
+            Logger = logger;
+        }
+
+        /// <inheritdoc />
+        public ILogger Logger { get; }
+
+        /// <inheritdoc />
+        public IUmbracoDatabase Database { get; }
+
+        /// <inheritdoc />
+        public ISqlContext SqlContext => Database.SqlContext;
+
+        /// <inheritdoc />
+        public int Index { get; set; }
+
+        /// <inheritdoc />
+        public bool BuildingExpression { get; set; }
+
+        // this is only internally exposed
+        public List<Type> PostMigrations { get; } = new List<Type>();
+
+        /// <inheritdoc />
+        public void AddPostMigration<TMigration>()
+            where TMigration : IMigration
+        {
+            // just adding - will be de-duplicated when executing
+            PostMigrations.Add(typeof(TMigration));
         }
     }
 
@@ -87,18 +112,15 @@ namespace Ekom.App_Start
     {
         private readonly IScopeProvider scopeProvider;
         private readonly IMigrationBuilder migrationBuilder;
-        private readonly IKeyValueService keyValueService;
         private readonly ILogger logger;
 
         public EnsureTablesExist(
             IScopeProvider scopeProvider,
             IMigrationBuilder migrationBuilder,
-            IKeyValueService keyValueService,
             ILogger logger)
         {
             this.scopeProvider = scopeProvider;
             this.migrationBuilder = migrationBuilder;
-            this.keyValueService = keyValueService;
             this.logger = logger;
         }
 
@@ -107,8 +129,18 @@ namespace Ekom.App_Start
             logger.Debug<EnsureTablesExist>("Ensuring Ekom db tables exist");
 
             // perform any upgrades (as needed)
-            var upgrader = new Upgrader(new TranslationMigrationPlan());
-            upgrader.Execute(scopeProvider, migrationBuilder, keyValueService, logger);
+
+            // We hack the 'migration' execution together manually to ensure it runs on each startup
+            // If we would like to use migrations at a later date we can refactor easily
+            using (var scope = scopeProvider.CreateScope())
+            {
+                var context = new EkomMigrationContext(scope.Database, logger);
+                var migration = migrationBuilder.Build(typeof(MigrationCreateTables), context);
+                migration.Migrate();
+
+                scope.Complete();
+            }
+
             logger.Debug<EnsureTablesExist>("Done");
         }
 

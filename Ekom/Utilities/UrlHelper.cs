@@ -6,11 +6,10 @@ using System.Text;
 using Umbraco.Core;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Utilities;
 
-namespace Ekom.Services
+namespace Ekom.Utilities
 {
-    static class UrlService
+    static class UrlHelper
     {
         /// <summary>
         /// Build URLs for category

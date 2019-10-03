@@ -8,9 +8,9 @@ using System.Configuration;
 using System.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
-using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Web;
+using Umbraco.Web.Composing;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
 
@@ -18,22 +18,20 @@ namespace Ekom
 {
     class CatalogContentFinder : IContentFinder
     {
-        ILogger _logger;
-        Configuration _config;
-        StoreService _storeSvc;
-        IPerStoreCache<ICategory> _categoryCache;
-        IPerStoreCache<IProduct> _productCache;
-        AppCaches _appCaches;
-        UmbracoHelper _umbHelper;
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        readonly IStoreService _storeSvc;
+        readonly IPerStoreCache<ICategory> _categoryCache;
+        readonly IPerStoreCache<IProduct> _productCache;
+        readonly AppCaches _appCaches;
 
         public CatalogContentFinder(
             ILogger logger,
             Configuration config,
-            StoreService storeSvc,
+            IStoreService storeSvc,
             IPerStoreCache<ICategory> categoryCache,
             IPerStoreCache<IProduct> productCache,
-            AppCaches appCaches,
-            UmbracoHelper umbHelper)
+            AppCaches appCaches)
         {
             _logger = logger;
             _config = config;
@@ -41,7 +39,6 @@ namespace Ekom
             _categoryCache = categoryCache;
             _productCache = productCache;
             _appCaches = appCaches;
-            _umbHelper = umbHelper;
         }
 
         /// <summary>
@@ -55,6 +52,7 @@ namespace Ekom
             {
                 var umbracoContext = contentRequest.UmbracoContext;
                 var httpContext = umbracoContext.HttpContext;
+                var umbHelper = Current.UmbracoHelper;
 
                 // Allows for configuration of content nodes to use for matching all requests
                 // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
@@ -90,7 +88,7 @@ namespace Ekom
 
                 if (product != null && !string.IsNullOrEmpty(product.Slug))
                 {
-                    contentId = virtualContent.InvariantEquals("true") ? int.Parse(_umbHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
+                    contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
 
                     var urlArray = path.Split('/');
                     var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
@@ -109,7 +107,7 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(_umbHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
+                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
                     }
                     // else Requesting Neither
                 }

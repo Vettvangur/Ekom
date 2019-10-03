@@ -19,6 +19,7 @@ using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
 using Umbraco.Web;
 using Umbraco.Core.Services.Implement;
+using Umbraco.Core.Scoping;
 
 namespace Ekom
 {
@@ -32,12 +33,15 @@ namespace Ekom
         /// </summary>
         public void Compose(Composition composition)
         {
+            Registrations.Register(composition);
+
             composition.ContentFinders()
                 .InsertBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             composition.UrlProviders()
                 .InsertBefore<DefaultUrlProvider, CatalogUrlProvider>();
             composition.Components()
                 .Append<EnsureTablesExist>()
+                .Append<EnsureNodesExist>()
                 .Append<EkomStartup>()
                 ;
         }
@@ -55,23 +59,23 @@ namespace Ekom
         readonly Configuration _config;
         readonly ILogger _logger;
         readonly IFactory _factory;
-        readonly IUmbracoDatabase _umbracoDb;
+        readonly IUmbracoDatabaseFactory _databaseFactory;
 
         BackgroundJobServer _hangfireServer;
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="config"></param>
-        /// <param name="logger"></param>
-        /// <param name="factory"></param>
-        /// <param name="umbracoDb"></param>
-        public EkomStartup(Configuration config, ILogger logger, IFactory factory, IUmbracoDatabase umbracoDb)
+        public EkomStartup(
+            Configuration config,
+            ILogger logger,
+            IFactory factory,
+            IUmbracoDatabaseFactory databaseFactory)
         {
             _config = config;
             _logger = logger;
             _factory = factory;
-            _umbracoDb = umbracoDb;
+            _databaseFactory = databaseFactory;
         }
 
         /// <summary>
@@ -88,13 +92,13 @@ namespace Ekom
 
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
-                ? _factory.CreateInstance<IPerStoreCache<StockData>>()
-                : _factory.CreateInstance<IBaseCache<StockData>>()
+                ? _factory.GetInstance<IPerStoreCache<StockData>>()
+                : _factory.GetInstance<IBaseCache<StockData>>()
                 as ICache;
 
             stockCache.FillCache();
 
-            _factory.CreateInstance<ICouponCache>()
+            _factory.GetInstance<ICouponCache>()
                 .FillCache();
 
             // Fill Caches
@@ -118,7 +122,7 @@ namespace Ekom
             }
 
             // Hangfire
-            GlobalConfiguration.Configuration.UseSqlServerStorage(_umbracoDb.ConnectionString);
+            GlobalConfiguration.Configuration.UseSqlServerStorage(_databaseFactory.ConnectionString);
             // ReSharper disable once ObjectCreationAsStatement
             _hangfireServer = new BackgroundJobServer();
 

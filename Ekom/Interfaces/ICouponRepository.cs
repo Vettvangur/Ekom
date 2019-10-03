@@ -9,7 +9,6 @@ namespace Ekom.Interfaces
     {
         Task<bool> CouponCodeExistAsync(string couponCode);
         Task<bool> DiscountHasCouponAsync(Guid discountId, string couponCode);
-        Task<List<CouponData>> GetAllCouponsAsync();
         Task<CouponData> GetCouponAsync(Guid discountId, string couponCode);
         Task<CouponData> GetCouponByCodeAsync(string couponCode);
         Task<CouponData> GetCouponByKeyAsync(Guid key);

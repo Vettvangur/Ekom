@@ -1,6 +1,5 @@
 using Ekom.Cache;
 using Ekom.Interfaces;
-using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
@@ -179,7 +178,7 @@ namespace Ekom.Models
 
             ParentId = Convert.ToInt32(item.Values["parentID"]);
 
-            Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
+            Urls = UrlHelper.BuildCategoryUrls(examineItemsFromPath, store);
         }
         /// <summary>
         /// Construct Category from umbraco publish event
@@ -193,7 +192,7 @@ namespace Ekom.Models
 
             ParentId = node.ParentId;
 
-            Urls = UrlService.BuildCategoryUrls(examineItemsFromPath, store);
+            Urls = UrlHelper.BuildCategoryUrls(examineItemsFromPath, store);
         }
     }
 }

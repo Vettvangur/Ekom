@@ -12,29 +12,30 @@ using Umbraco.Core.Persistence;
 using Umbraco.Core.Services;
 using Umbraco.Web.Routing;
 using Umbraco.Web;
+using Umbraco.Web.Composing;
 using Umbraco.Core.Services.Implement;
 using Ekom.Cache;
 using Ekom.Utilities;
+using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.App_Start
 {
     class UmbracoEventListeners
     {
+        UmbracoHelper UmbHelper => Umbraco.Web.Composing.Current.UmbracoHelper;
+
         readonly ILogger _logger;
         readonly Configuration _config;
-        readonly UmbracoHelper _umbHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
         /// <param name="config">The configuration.</param>
-        /// <param name="umbHelper">The umb helper.</param>
-        public UmbracoEventListeners(ILogger logger, Configuration config, UmbracoHelper umbHelper)
+        public UmbracoEventListeners(ILogger logger, Configuration config)
         {
             _logger = logger;
             _config = config;
-            _umbHelper = umbHelper;
         }
 
         public void ContentService_Publishing(
@@ -125,9 +126,9 @@ namespace Ekom.App_Start
             IContent content,
             string alias,
             PublishEventArgs<IContent> e,
-            IContentService cs)
+            IContentService _cs)
         {
-            var parent = _umbHelper.Content(content.ParentId);
+            var parent = UmbHelper.Content(content.ParentId);
             var siblings = parent.Children().Where(x => x.Id != content.Id && !x.IsPublished());
 
             var stores = API.Store.Instance.GetAllStores();
