@@ -102,17 +102,20 @@ namespace Ekom
 
                             var member = memberShipHelper.GetByUsername(httpCtx.User.Identity.Name);
 
-                            ekmRequest.User = new User
+                            if (member != null)
                             {
-                                Email = member.Value<string>("Email"),
-                                Username = member.Value<string>("UserName"),
-                                UserId = member.Id,
-                                Name = member.Name,
-                            };
-                            var orderid = member.Value<string>("orderId", fallback: Fallback.ToDefaultValue);
-                            if (!string.IsNullOrEmpty(orderid))
-                            {
-                                ekmRequest.User.OrderId = Guid.Parse(orderid);
+                                ekmRequest.User = new User
+                                {
+                                    Email = member.Value<string>("Email"),
+                                    Username = member.Value<string>("UserName"),
+                                    UserId = member.Id,
+                                    Name = member.Name,
+                                };
+                                var orderid = member.Value<string>("orderId", fallback: Fallback.ToDefaultValue);
+                                if (!string.IsNullOrEmpty(orderid))
+                                {
+                                    ekmRequest.User.OrderId = Guid.Parse(orderid);
+                                }
                             }
                         }
                     }
