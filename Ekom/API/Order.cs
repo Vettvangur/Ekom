@@ -91,6 +91,21 @@ namespace Ekom.API
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
+        public IOrderInfo GetCompletedOrder(string storeAlias)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
+            return GetCompletedOrderAsync(storeAlias).Result;
+        }
+
+        /// <summary>
+        /// Get completed order using cookie data and provided store.
+        /// Retrieves from session if possible, otherwise from SQL.
+        /// </summary>
+        /// <returns></returns>
         public async Task<IOrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))

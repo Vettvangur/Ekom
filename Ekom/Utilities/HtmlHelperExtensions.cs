@@ -18,6 +18,13 @@ namespace Ekom.Utilities
         /// <param name="formType"></param>
         /// <param name="className">Override the default Ekom classnames</param>
         /// <returns></returns>
+        /// <example>
+        /// using (Html.BeginEkomForm(FormType.UpdatePaymentProvider)) 
+        /// {
+        ///     <input type="hidden" name="input" value="value" />
+        ///     <button type = "submit" class="button">Submit</button>            
+        /// }
+        /// </example>
         public static MvcForm BeginEkomForm(this HtmlHelper htmlHelper, FormType formType, string className = null)
         {
             var actionName = formType.ToString();

@@ -39,13 +39,13 @@ namespace Ekom
         /// ekmExamineSearcher
         /// Overrides the default of ExternalSearcher
         /// </summary>
-        public virtual string ExamineSearcher
+        public virtual string ExamineIndex
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmExamineSearcher"];
+                var value = ConfigurationManager.AppSettings["ekmExamineIndex"];
 
-                return value ?? "ExternalSearcher";
+                return value ?? "ExternalIndex";
             }
         }
 

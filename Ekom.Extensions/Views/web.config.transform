@@ -2,8 +2,7 @@
 	<system.web.webPages.razor>
 		<pages>
 			<namespaces>
-                <add namespace="Ekom.API" />
-                <add namespace="Ekom.Utilities" />
+                <add namespace="Ekom.Extensions.Utilities" />
             </namespaces>
 		</pages>
 	</system.web.webPages.razor>

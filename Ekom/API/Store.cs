@@ -4,6 +4,8 @@ using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 
 namespace Ekom.API
 {
@@ -12,6 +14,7 @@ namespace Ekom.API
     /// </summary>
     public class Store
     {
+        private UmbracoHelper umbHelper => Current.Factory.GetInstance<UmbracoHelper>();
         /// <summary>
         /// Store Instance
         /// </summary>
@@ -61,6 +64,30 @@ namespace Ekom.API
         public IEnumerable<IStore> GetAllStores()
         {
             return _storeSvc.GetAllStores();
+        }
+
+        public IPublishedContent GetRootNode(IPublishedContent currentNode)
+        {
+            // Add Cache
+
+            var root = currentNode.Ancestor(1);
+
+            if (root.ContentType.Alias == "ekom")
+            {
+                var local = GetStore();
+
+                if (local != null)
+                {
+                    var storeNode = umbHelper.Content(local.StoreRootNode);
+
+                    if (storeNode != null)
+                    {
+                        return storeNode;
+                    }
+                }
+            }
+
+            return root;
         }
     }
 }

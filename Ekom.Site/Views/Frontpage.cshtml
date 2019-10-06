@@ -1,0 +1,11 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@{
+	Layout = "Masterpage.cshtml";
+}
+
+@section Main {
+
+	@Html.Partial("Structure/_Banner")
+
+	@Html.GetGridHtml(Model, "grid", "Foundation")
+}

@@ -201,7 +201,7 @@ namespace Ekom.Extensions.Controllers
                         var successUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("successUrl", storeAlias), Request) + "?orderId=" + order.UniqueId;
 
                         await Order.Instance.UpdateStatusAsync(
-                            Utilities.OrderStatus.OfflinePayment,
+                            Ekom.Utilities.OrderStatus.OfflinePayment,
                             order.UniqueId);
 
                         return Redirect(successUrl);

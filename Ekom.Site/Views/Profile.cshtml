@@ -1,0 +1,17 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@{
+	Layout = "Masterpage.cshtml";
+}
+
+
+@section Main {
+    
+    <div class="grid-container">
+
+        @using (Html.BeginUmbracoForm("Logout", "Auth", null, new { @Class = "form" }))
+        {
+            <button type="submit" class="button">Logout</button>
+        }
+        
+    </div>
+}

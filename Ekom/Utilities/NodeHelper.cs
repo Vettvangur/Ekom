@@ -98,7 +98,7 @@ namespace Ekom.Utilities
         {
             var examineMgr = Current.Factory.GetInstance<IExamineManager>();
             var config = Current.Factory.GetInstance<Configuration>();
-            if (examineMgr.TryGetSearcher(config.ExamineSearcher, out ISearcher searcher))
+            if (examineMgr.TryGetSearcher(config.ExamineIndex, out ISearcher searcher))
             {
                 var result = searcher.CreateQuery("content")
                     .Id(id.ToString())
@@ -365,8 +365,6 @@ namespace Ekom.Utilities
 
         /// <summary>
         /// Retrieve a store specific property <para/>
-        /// alias name = field + "_" + storeAlias <para/>
-        /// f.x. disabled_IS
         /// </summary>
         /// <param name="item"></param>
         /// <param name="field">Umbraco Alias</param>
@@ -403,8 +401,6 @@ namespace Ekom.Utilities
 
         /// <summary>
         /// Retrieve a store specific property <para/>
-        /// alias name = field + "_" + storeAlias <para/>
-        /// f.x. disabled_IS
         /// </summary>
         /// <param name="item"></param>
         /// <param name="field">Umbraco Alias</param>
@@ -415,28 +411,6 @@ namespace Ekom.Utilities
             if (item.HasProperty(field))
             {
                 var fieldValue = item.GetValue<string>(field);
-
-                return fieldValue.GetVortoValue(storeAlias);
-            }
-
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// Retrieve a store specific property <para/>
-        /// alias name = field + "_" + storeAlias <para/>
-        /// f.x. disabled_IS
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="field">Umbraco Alias</param>
-        /// <param name="storeAlias"></param>
-        /// <returns>Property Value</returns>
-        public static string GetStoreProperty(this IPublishedContent item, string field, string storeAlias)
-        {
-
-            if (item.HasProperty(field))
-            {
-                var fieldValue = item.Value<string>(field);
 
                 return fieldValue.GetVortoValue(storeAlias);
             }
