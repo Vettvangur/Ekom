@@ -25,7 +25,7 @@ namespace Ekom.App_Start
         {
             composition.Register<Configuration>(Lifetime.Singleton);
 
-            composition.Register<IBaseCache<IDomain>, StoreDomainCache>(Lifetime.Singleton);
+            composition.Register<IStoreDomainCache, StoreDomainCache>(Lifetime.Singleton);
             composition.Register<IBaseCache<IStore>, StoreCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IVariant>, VariantCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>(Lifetime.Singleton);
@@ -45,6 +45,8 @@ namespace Ekom.App_Start
 
             composition.Register<IStoreService, StoreService>(Lifetime.Transient);
             composition.Register<OrderService>(Lifetime.Transient);
+            composition.Register<ExamineService>(Lifetime.Transient);
+            composition.Register<CheckoutService>(Lifetime.Transient);
 
             composition.Register<ICountriesRepository, CountriesRepository>(Lifetime.Transient);
             composition.Register<IStockRepository, StockRepository>(Lifetime.Transient);
@@ -82,7 +84,7 @@ namespace Ekom.App_Start
                     f.GetInstance<Configuration>(),
                     f.GetInstance<ILogger>(),
                     f.GetInstance<DiscountCache>(),
-                    f.GetInstance<CouponCache>(),
+                    f.GetInstance<ICouponCache>(),
                     f.GetInstance<OrderService>(),
                     f.GetInstance<CheckoutService>(),
                     f.GetInstance<IStoreService>()

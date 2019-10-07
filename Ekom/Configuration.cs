@@ -172,7 +172,7 @@ namespace Ekom
         internal virtual Lazy<List<ICache>> CacheList { get; } = new Lazy<List<ICache>>(()
             => new List<ICache>
             {
-                { UmbracoCurrent.Factory.GetInstance<IBaseCache<IDomain>>() },
+                { UmbracoCurrent.Factory.GetInstance<IStoreDomainCache>() },
                 { UmbracoCurrent.Factory.GetInstance<IBaseCache<IStore>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<ICategory>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IProductDiscount>>() },

@@ -1,5 +1,7 @@
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
+using Ekom.Services;
 using Ekom.Utilities;
 using Examine;
 using Newtonsoft.Json;
@@ -11,6 +13,7 @@ using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
+using Umbraco.Core.Services;
 using Umbraco.Web;
 
 namespace Ekom.Models
@@ -25,7 +28,7 @@ namespace Ekom.Models
         /// </summary>
         public virtual string Alias => Properties["nodeName"];
         public virtual int StoreRootNode { get; }
-        public virtual IEnumerable<Domain> Domains { get; }
+        public virtual IEnumerable<IDomain> Domains { get; }
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
@@ -88,33 +91,44 @@ namespace Ekom.Models
         /// <param name="item"></param>
         public Store(ISearchResult item) : base(item)
         {
-            var uCtx = Current.Factory.GetInstance<UmbracoContext>();
-            var storeDomainCache = Current.Factory.GetInstance<IBaseCache<IDomain>>();
-
             if (int.TryParse(item.Values["storeRootNode"], out int tempStoreRootNode))
             {
                 StoreRootNode = tempStoreRootNode;
             }
             else
             {
-                var srn = Udi.Parse(item.Values["storeRootNode"]);
-                var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
-                var rootNode = umbracoHelper.Content(srn);
-                StoreRootNode = rootNode.Id;
+                var srn = GuidUdi.Parse(item.Values["storeRootNode"]);
+                var rootNode = ExamineService.Instance.GetExamineNode(srn.Guid.ToString());
+                if (rootNode != null
+                && int.TryParse(rootNode.Id, out var id))
+                {
+                    StoreRootNode = id;
+                }
+                else
+                {
+                    throw new StoreConstructorException("Error creating store, Unable to get store root node");
+                }
             }
-            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
 
+            var contextFactory = Current.Factory.GetInstance<IUmbracoContextFactory>();
+            using (var uCtx = contextFactory.EnsureUmbracoContext())
+            {
+                Url = uCtx.UmbracoContext.UrlProvider.GetUrl(StoreRootNode);
+            }
+
+            var storeDomainCache = Current.Factory.GetInstance<IStoreDomainCache>();
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))
             {
-                Domains = storeDomainCache.Cache.Where(x => x.Value.RootContentId == StoreRootNode)
-                    .Select(x => new Domain(x.Value));
+                Domains = storeDomainCache.Cache
+                    .Where(x => x.Value.RootContentId == StoreRootNode)
+                    .Select(x => x.Value)
+                    .ToList();
             }
             else
             {
                 //TODO If not culture/domain is set then add default
                 //if (uCtx.HttpContext != null)
                 //{
-
                 //    Domains = Enumerable.Repeat(new Domain(uCtx.HttpContext.Request.Url?.Host, StoreRootNode), 1);
                 //}
             }
@@ -138,26 +152,25 @@ namespace Ekom.Models
                 StoreRootNode = rootNode.Id;
             }
 
-            var storeDomainCache = Current.Factory.GetInstance<IBaseCache<IDomain>>();
             var uCtx = Current.Factory.GetInstance<UmbracoContext>();
+            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
 
+            var storeDomainCache = Current.Factory.GetInstance<IStoreDomainCache>();
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNode))
             {
                 Domains = storeDomainCache.Cache
                     .Where(x => x.Value.RootContentId == StoreRootNode)
-                    .Select(x => new Domain(x.Value));
+                    .Select(x => x.Value)
+                    .ToList();
             }
             else
             {
                 //TODO If not culture/domain is set then add default
                 //if (uCtx.HttpContext != null)
                 //{
-
                 //    Domains = Enumerable.Repeat(new Domain(uCtx.HttpContext.Request.Url?.Host, StoreRootNode), 1);
                 //}
             }
-
-            Url = uCtx.UrlProvider.GetUrl(StoreRootNode);
         }
     }
 }

@@ -279,7 +279,10 @@
     <Compile Include="App_Start\UmbracoEventListeners.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\CouponCache.cs" />
+    <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
+    <Compile Include="Exceptions\UmbracoEventException.cs" />
+    <Compile Include="Exceptions\StoreConstructorException.cs" />
     <Compile Include="Exceptions\EnsureNodesException.cs" />
     <Compile Include="Interfaces\ICouponCache.cs" />
     <Compile Include="Cache\ProductDiscountCache.cs" />
@@ -334,7 +337,6 @@
     <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
-    <Compile Include="Models\Domain.cs" />
     <Compile Include="Models\Image.cs" />
     <Compile Include="Interfaces\IOrderLine.cs" />
     <Compile Include="Interfaces\IVariantGroup.cs" />
@@ -365,7 +367,6 @@
     <Compile Include="API\Providers.cs" />
     <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\ProductDiscountService.cs" />
-    <Compile Include="Services\SearchService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />

@@ -1,11 +1,11 @@
-﻿using Ekom.API;
+using Ekom.API;
 using Our.Umbraco.Vorto.Models;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Ekom.Vorto
 {
-    public class LanguageRetriever : ILanguageRetriever
+    class LanguageRetriever : ILanguageRetriever
     {
         public IEnumerable<Language> GetLanguages()
         {

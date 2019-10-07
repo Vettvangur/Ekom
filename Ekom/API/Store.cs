@@ -70,7 +70,7 @@ namespace Ekom.API
         {
             // Add Cache
 
-            var root = currentNode.Ancestor(1);
+            var root = currentNode.AncestorOrSelf(1);
 
             if (root.ContentType.Alias == "ekom")
             {

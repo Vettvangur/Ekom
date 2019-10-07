@@ -18,7 +18,7 @@ namespace Ekom.Services
         readonly IDiscountStockRepository _discountStockRepo;
         readonly IOrderRepository _orderRepo;
         readonly ICouponRepository _couponRepo;
-        private readonly OrderService _orderService;
+        readonly OrderService _orderService;
         public CheckoutService(
             ILogger logger,
             Configuration config,

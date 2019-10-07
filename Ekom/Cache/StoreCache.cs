@@ -33,16 +33,21 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            if (ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
+            if (ExamineManager.TryGetIndex(_config.ExamineIndex, out IIndex index))
             {
+                var searcher = index.GetSearcher();
+
+#if DEBUG
+
                 Stopwatch stopwatch = new Stopwatch();
 
                 stopwatch.Start();
+#endif
 
-                _logger.Info<StoreCache>("Starting to fill store cache...");
+                _logger.Debug<StoreCache>("Starting to fill store cache...");
                 int count = 0;
 
-                var results = searcher.CreateQuery("content")
+                var results = searcher.CreateQuery()
                     .NodeTypeAlias(NodeAlias)
                     .Execute();
 
@@ -50,12 +55,15 @@ namespace Ekom.Cache
                 {
                     try
                     {
-                        var item = new Store(r);
+                        var item = _objFac?.Create(r) ?? new Store(r);
 
-                        count++;
+                        if (item != null)
+                        {
+                            count++;
 
-                        var itemKey = Guid.Parse(r.Key());
-                        AddOrReplaceFromCache(itemKey, item);
+                            var itemKey = Guid.Parse(r.Key());
+                            AddOrReplaceFromCache(itemKey, item);
+                        }
                     }
                     catch (Exception ex) // Skip on fail
                     {
@@ -63,13 +71,19 @@ namespace Ekom.Cache
                     }
                 }
 
+#if DEBUG
                 stopwatch.Stop();
 
-                _logger.Info<StoreCache>("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _logger.Debug<StoreCache>("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+#endif
+#if !DEBUG
+                _logger.Debug<StoreCache>("Finished filling per store cache with " + count + " items");
+#endif
+
             }
             else
             {
-                _logger.Error<StoreCache>($"No examine search found with the name {_config.ExamineSearcher}, Can not fill store cache.");
+                _logger.Error<StoreCache>($"No examine index found with the name {_config.ExamineIndex}, Can not fill store cache.");
             }
         }
 

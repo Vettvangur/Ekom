@@ -24,7 +24,7 @@ namespace Ekom.API
         readonly ILogger _logger;
         readonly Configuration _config;
         readonly DiscountCache _discountCache;
-        readonly CouponCache _couponCache;
+        readonly ICouponCache _couponCache;
         readonly OrderService _orderService;
         readonly CheckoutService _checkoutService;
         readonly IStoreService _storeSvc;
@@ -36,7 +36,7 @@ namespace Ekom.API
             Configuration config,
             ILogger logger,
             DiscountCache discountCache,
-            CouponCache couponCache,
+            ICouponCache couponCache,
             OrderService orderService,
             CheckoutService checkoutService,
             IStoreService storeService

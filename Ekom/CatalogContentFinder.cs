@@ -65,7 +65,7 @@ namespace Ekom
                     return false;
                 }
 
-                var store = _storeSvc.GetStoreByDomain(contentRequest.Domain.Name);
+                var store = _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name);
 
                 if (store == null)
                 {

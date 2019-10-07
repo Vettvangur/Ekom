@@ -1,3 +1,4 @@
+using Ekom.Interfaces;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Composing;
@@ -7,7 +8,7 @@ using Umbraco.Core.Services;
 
 namespace Ekom.Cache
 {
-    class StoreDomainCache : BaseCache<IDomain>
+    class StoreDomainCache : BaseCache<IDomain>, IStoreDomainCache
     {
         public override string NodeAlias { get; } = "";
 
@@ -49,6 +50,12 @@ namespace Ekom.Cache
             _logger.Info<StoreDomainCache>(
                 $"Finished filling store domain cache with {domains.Count()} domain items. Time it took to fill: {stopwatch.Elapsed}"
             );
+        }
+
+        /// <inheritdoc />
+        public void AddReplace(IDomain domain)
+        {
+            Cache[domain.Key] = domain;
         }
     }
 }

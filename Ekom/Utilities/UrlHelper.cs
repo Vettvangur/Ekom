@@ -19,17 +19,37 @@ namespace Ekom.Utilities
         {
             var urls = new HashSet<string>();
 
-            foreach (var domain in store.Domains)
+            if (store.Domains != null)
             {
-                string domainPath = GetDomainPrefix(domain.DomainName);
+                foreach (var domain in store.Domains)
+                {
+                    string domainPath = GetDomainPrefix(domain.DomainName);
 
-                var builder = new StringBuilder(domainPath.AddTrailing());
+                    var builder = new StringBuilder(domainPath.AddTrailing());
+
+                    foreach (var examineItem in examineItems)
+                    {
+                        var categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
+                        if (!string.IsNullOrWhiteSpace(categorySlug))
+                            builder.Append(categorySlug.ToUrlSegment().AddTrailing());
+                    }
+
+                    var url = builder.ToString().AddTrailing().ToLower();
+
+                    urls.Add(url);
+                }
+            }
+            else
+            {
+                var builder = new StringBuilder("/");
 
                 foreach (var examineItem in examineItems)
                 {
                     var categorySlug = examineItem.GetStoreProperty("slug", store.Alias);
                     if (!string.IsNullOrWhiteSpace(categorySlug))
+                    {
                         builder.Append(categorySlug.ToUrlSegment().AddTrailing());
+                    }
                 }
 
                 var url = builder.ToString().AddTrailing().ToLower();

@@ -1,4 +1,5 @@
 using Ekom.Interfaces;
+using Ekom.Services;
 using Examine;
 using Newtonsoft.Json;
 using System;
@@ -25,12 +26,11 @@ namespace Ekom.Utilities
 
             foreach (var id in Ids)
             {
-                var examineItem = GetNodeFromExamine(int.Parse(id));
+                var examineItem = ExamineService.Instance.GetExamineNode(int.Parse(id));
                 if (examineItem != null)
                 {
                     list.Add(examineItem);
                 }
-
             }
 
             return list;
@@ -51,7 +51,7 @@ namespace Ekom.Utilities
 
             foreach (var id in Ids)
             {
-                var examineItem = GetNodeFromExamine(int.Parse(id));
+                var examineItem = ExamineService.Instance.GetExamineNode(int.Parse(id));
 
                 list.Add(examineItem);
             }
@@ -73,7 +73,7 @@ namespace Ekom.Utilities
             else
             {
                 var parentId = Convert.ToInt32(item.Values["parentID"]);
-                var parent = GetNodeFromExamine(parentId);
+                var parent = ExamineService.Instance.GetExamineNode(parentId);
                 return GetFirstParentWithDocType(parent, docTypeAlias);
             }
         }
@@ -93,33 +93,6 @@ namespace Ekom.Utilities
                 return GetFirstParentWithDocType(node, docTypeAlias);
             }
         }
-
-        public static ISearchResult GetNodeFromExamine(int id)
-        {
-            var examineMgr = Current.Factory.GetInstance<IExamineManager>();
-            var config = Current.Factory.GetInstance<Configuration>();
-            if (examineMgr.TryGetSearcher(config.ExamineIndex, out ISearcher searcher))
-            {
-                var result = searcher.CreateQuery("content")
-                    .Id(id.ToString())
-                    .Execute()
-                    .FirstOrDefault();
-
-                if (result != null)
-                {
-                    return result;
-                }
-                else
-                {
-                    Current.Factory.GetInstance<ILogger>()
-                        .Warn(typeof(NodeHelper), "GetNodeFromExamine Failed. Node with Id " + id + " not found.");
-                }
-            }
-
-            return null;
-        }
-
-
 
         /// <summary>
         /// Get <see cref="IPublishedContent"/> media node
@@ -205,7 +178,6 @@ namespace Ekom.Utilities
                         return node;
                     }
                 }
-
             }
 
             return null;
@@ -231,7 +203,6 @@ namespace Ekom.Utilities
                         return node;
                     }
                 }
-
             }
 
             return null;
@@ -244,9 +215,9 @@ namespace Ekom.Utilities
         /// Traverses up content tree, checking all parents
         /// </summary>
         /// <returns>True if disabled</returns>
-        public static bool IsItemUnpublished(this ISearchResult ISearchResult)
+        public static bool IsItemUnpublished(this ISearchResult searchResult)
         {
-            string path = ISearchResult.Values["__Path"];
+            string path = searchResult.Values["__Path"];
 
             foreach (var item in GetAllCatalogItemsFromPath(path))
             {
@@ -285,18 +256,18 @@ namespace Ekom.Utilities
         /// Determine if an examine item is disabled/unpublished <para />
         /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
-        /// <param name="ISearchResult"></param>
+        /// <param name="searchResult"></param>
         /// <param name="store">Used to look for umbraco properties matching stores country code </param>
         /// <param name="path"></param>
         /// <param name="allCatalogItems"></param>
         /// <returns>True if disabled</returns>
         public static bool IsItemDisabled(
-            this ISearchResult ISearchResult,
+            this ISearchResult searchResult,
             IStore store,
             string path = "",
             IEnumerable<ISearchResult> allCatalogItems = null)
         {
-            path = string.IsNullOrEmpty(path) ? ISearchResult.Values["path"] : path;
+            path = string.IsNullOrEmpty(path) ? searchResult.Values["__Path"] : path;
 
             allCatalogItems = allCatalogItems == null ? GetAllCatalogItemsFromPath(path) :
                                                         allCatalogItems;
@@ -418,7 +389,7 @@ namespace Ekom.Utilities
             return string.Empty;
         }
 
-        public static string Key(this ISearchResult ISearchResult) => ISearchResult.Values["__Key"];
+        public static string Key(this ISearchResult searchResult) => searchResult.Values["__Key"];
 
         #endregion
     }

@@ -1,5 +1,9 @@
 using Ekom.Cache;
+using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Utilities;
+using Newtonsoft.Json;
+using Our.Umbraco.Vorto.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,16 +23,30 @@ namespace Ekom.App_Start
 
         readonly ILogger _logger;
         readonly Configuration _config;
+        readonly IBaseCache<IStore> _storeCache;
+        readonly IStoreDomainCache _storeDomainCache;
+        readonly IContentService _cs;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
         /// <param name="config">The configuration.</param>
-        public UmbracoEventListeners(ILogger logger, Configuration config)
+        /// <param name="storeCache">The store cache.</param>
+        /// <param name="storeDomainCache">The store domain cache.</param>
+        /// <param name="cs">The cs.</param>
+        public UmbracoEventListeners(
+            ILogger logger,
+            Configuration config,
+            IBaseCache<IStore> storeCache,
+            IStoreDomainCache storeDomainCache,
+            IContentService cs)
         {
             _logger = logger;
             _config = config;
+            _storeCache = storeCache;
+            _storeDomainCache = storeDomainCache;
+            _cs = cs;
         }
 
         public void ContentService_Publishing(
@@ -153,8 +171,7 @@ namespace Ekom.App_Start
                     // Update Slug if Slug Exists on same Level and is Published
                     if (!string.IsNullOrEmpty(slug)
                     && siblings.Any(
-                        x => NodeHelper.GetStoreProperty(x, "slug", store.Alias)
-                        == slug.ToLowerInvariant())
+                        x => x.GetVortoValue<string>("slug", store.Alias) == slug.ToLowerInvariant())
                     )
                     {
                         // Random not a nice solution
@@ -186,6 +203,86 @@ namespace Ekom.App_Start
             if (titleItems.Any())
             {
                 content.SetVortoValue("title", titleItems);
+            }
+        }
+
+        public void DomainSaved(IDomainService _ds, SaveEventArgs<IDomain> saveEventArgs)
+        {
+            foreach (var d in saveEventArgs.SavedEntities)
+            {
+                _storeDomainCache.AddReplace(d);
+            }
+
+            var domain = saveEventArgs.SavedEntities.FirstOrDefault();
+
+            if (domain != null)
+            {
+                if (domain.RootContentId != null)
+                {
+                    var rootContent = _cs.GetById(domain.RootContentId.Value);
+                    IContent ekmStoreContent;
+                    if (int.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out int storeId))
+                    {
+                        ekmStoreContent = _cs.GetById(storeId);
+                    }
+                    else
+                    {
+                        var srn = GuidUdi.Parse(rootContent.GetValue<string>("ekmStorePicker"));
+                        ekmStoreContent = _cs.GetById(srn.Guid);
+                    }
+                    
+                    if (ekmStoreContent?.ContentType?.Alias != "ekmStore")
+                    {
+                        throw new EventException(
+                            "Error updating store! " +
+                            $"Erronous ekom store picked for root content {domain.RootContentId.Value} domain {domain.DomainName}. " +
+                            "Please ensure you have correctly selected a ekmStore node using the ekmStorePicker on this root content node."
+                        );
+                    }
+
+                    // Update cached IStore
+                    _storeCache.AddReplace(ekmStoreContent);
+                }
+            }
+        }
+
+        public void DomainDeleted(IDomainService _ds, DeleteEventArgs<IDomain> saveEventArgs)
+        {
+            foreach (var d in saveEventArgs.DeletedEntities)
+            {
+                _storeDomainCache.Remove(d.Key);
+            }
+
+            var domain = saveEventArgs.DeletedEntities.FirstOrDefault();
+
+            if (domain != null)
+            {
+                if (domain.RootContentId != null)
+                {
+                    var rootContent = _cs.GetById(domain.RootContentId.Value);
+                    IContent ekmStoreContent;
+                    if (int.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out int storeId))
+                    {
+                        ekmStoreContent = _cs.GetById(storeId);
+                    }
+                    else
+                    {
+                        var srn = GuidUdi.Parse(rootContent.GetValue<string>("ekmStorePicker"));
+                        ekmStoreContent = _cs.GetById(srn.Guid);
+                    }
+
+                    if (ekmStoreContent?.ContentType?.Alias != "ekmStore")
+                    {
+                        throw new EventException(
+                            "Error updating store! " +
+                            $"Erronous ekom store picked for root content {domain.RootContentId.Value} domain {domain.DomainName}. " +
+                            "Please ensure you have correctly selected a ekmStore node using the ekmStorePicker on this root content node."
+                        );
+                    }
+
+                    // Update cached IStore
+                    _storeCache.AddReplace(ekmStoreContent);
+                }
             }
         }
     }

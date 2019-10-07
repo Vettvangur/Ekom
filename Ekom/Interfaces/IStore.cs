@@ -1,6 +1,7 @@
 using Ekom.Models;
 using System.Collections.Generic;
 using System.Globalization;
+using Umbraco.Core.Models;
 
 namespace Ekom.Interfaces
 {
@@ -26,7 +27,7 @@ namespace Ekom.Interfaces
         string Currency { get; }
         List<CurrencyModel> CurrencyModel { get; }
         string Alias { get; }
-        IEnumerable<Models.Domain> Domains { get; }
+        IEnumerable<IDomain> Domains { get; }
         string OrderNumberPrefix { get; }
         string OrderNumberTemplate { get; }
         int StoreRootNode { get; }

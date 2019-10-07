@@ -171,7 +171,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Category(ISearchResult item, IStore store) : base(item, store)
         {
-            var pathField = item.Values["path"];
+            var pathField = item.Values["__Path"];
 
             var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField).ToList();
 

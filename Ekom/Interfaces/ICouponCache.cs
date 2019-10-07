@@ -1,5 +1,6 @@
 using Ekom.Cache;
 using Ekom.Models.Data;
+using System.Collections.Concurrent;
 
 namespace Ekom.Interfaces
 {
@@ -9,6 +10,14 @@ namespace Ekom.Interfaces
     /// </summary>
     public interface ICouponCache
     {
+        /// <summary>
+        /// Gets the cache.
+        /// </summary>
+        /// <value>
+        /// The cache.
+        /// </value>
+        ConcurrentDictionary<string, CouponData> Cache { get; }
+
         /// <summary>
         /// This method only serves to conform with the other caches
         /// </summary>

@@ -17,7 +17,7 @@ namespace Ekom.Cache
         readonly ILogger _logger;
         readonly IScopeProvider _scopeProvider;
 
-        public ConcurrentDictionary<string, CouponData> Cache
+        public ConcurrentDictionary<string, CouponData> Cache { get; }
             = new GlobalCouponCache();
 
         public CouponCache(

@@ -5,6 +5,7 @@ using Our.Umbraco.Vorto.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -31,7 +32,8 @@ namespace Ekom.App_Start
             IContentTypeService contentTypeService,
             IDataTypeService dataTypeService,
             PropertyEditorCollection propertyEditorCollection,
-            Configuration configuration)
+            Configuration configuration,
+            IUmbracoContextFactory contextFactory)
         {
             _logger = logger;
             _contentService = contentService;
@@ -39,257 +41,265 @@ namespace Ekom.App_Start
             _dataTypeService = dataTypeService;
             _propertyEditorCollection = propertyEditorCollection;
             _configuration = configuration;
+            _contextFactory = contextFactory;
         }
 
         public void Initialize()
         {
             _logger.Debug<EnsureNodesExist>("Ensuring Umbraco nodes exist");
 
-            #region Property Editors
-
-            if (!_propertyEditorCollection.TryGet("Ekom.Stock", out IDataEditor stockEditor))
-            {
-                // Should never happen
-                throw new EnsureNodesException(
-                    "Unable to find Ekom Stock property editor, failed creating Ekom nodes.");
-            }
-            if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor multiNodeEditor))
-            {
-                // Should never happen
-                throw new EnsureNodesException(
-                    "Unable to find Umbraco.MultiNodeTreePicker property editor, failed creating Ekom nodes.");
-            }
-            if (!_propertyEditorCollection.TryGet("Umbraco.Grid", out IDataEditor gridEditor))
-            {
-                // Should never happen
-                throw new EnsureNodesException(
-                    "Unable to find Umbraco.Grid property editor, failed creating Ekom nodes.");
-            }
-            if (!_propertyEditorCollection.TryGet("Our.Umbraco.Vorto", out IDataEditor editor))
-            {
-                throw new EnsureNodesException(
-                    "Unable to find Our.Umbraco.Vorto property editor, failed creating Ekom nodes. Ensure GMO.Vorto.Web is installed.");
-            }
-
-            #endregion
-
-            #region Data Types
-
-            var ekmDtContainer = EnsureDataTypeContainerExists();
-
-            var booleanDt = _dataTypeService.GetDataType(new Guid("92897bc6-a5f3-4ffe-ae27-f2e7e33dda49"));
-            var textstringDt = _dataTypeService.GetDataType(new Guid("0cc0eba1-9960-42c9-bf9b-60e150b429ae"));
-            var numericDt = _dataTypeService.GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
-            var contentPickerDt = _dataTypeService.GetDataType(new Guid("fd1e0da5-5606-4862-b679-5d0cf3a52a59"));
-            var mediaPickerDt = _dataTypeService.GetDataType(new Guid("135d60e0-64d9-49ed-ab08-893c9ba44ae5"));
-            var multipleMediaPickerDt = _dataTypeService.GetDataType(new Guid("9dbbcbbb-2327-434a-b355-af1b84e5010a"));
-            var tagsDt = _dataTypeService.GetDataType(new Guid("b6b73142-b9c1-4bf8-a16d-e1c23320b549"));
-
-            var perStoreTextDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Textstring - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = textstringDt.Key,
-                        Name = textstringDt.Name,
-                        PropertyEditorAlias = textstringDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-            var perStoreBoolDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Boolean - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = booleanDt.Key,
-                        Name = booleanDt.Name,
-                        PropertyEditorAlias = booleanDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-            var perStoreIntDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Numeric - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = numericDt.Key,
-                        Name = numericDt.Name,
-                        PropertyEditorAlias = numericDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-            var perStoreMediaPickerDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Media Picker - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = mediaPickerDt.Key,
-                        Name = mediaPickerDt.Name,
-                        PropertyEditorAlias = mediaPickerDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-            var stockDt = EnsureDataTypeExists(new DataType(stockEditor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Stock",
-            });
-            var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Stock - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = stockDt.Key,
-                        Name = stockDt.Name,
-                        PropertyEditorAlias = stockDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-            var multinodeProductsDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Products - Multinode Tree Picker",
-                Configuration = new MultiNodePickerConfiguration
-                {
-                }
-            });
-            #region Grid Configuration
-            var productsGridDt = EnsureDataTypeExists(new DataType(gridEditor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Products Grid Editor",
-                Configuration = new GridConfiguration
-                {
-                    Items = new JObject
-                    {
-                        { "columns", 12 },
-                        { "templates", new JArray
-                            {
-                               new JObject {
-                                   { "name", "Content" },
-                                   { "sections", new JArray
-                                       {
-                                            new JObject
-                                            {
-                                                { "grid", 12 },
-                                            }
-                                       }
-                                   }
-                                },
-                            }
-                        },
-                        { "layouts", new JArray
-                            {
-                                new JObject
-                                {
-                                    { "name", "Expanded" },
-                                    { "areas", new JArray
-                                        {
-                                            new JObject
-                                            {
-                                                { "grid", 12 }
-                                            }
-                                        }
-                                    },
-                                    { "label", "Expanded" },
-                                },
-                                new JObject
-                                {
-                                    { "name", "Container" },
-                                    { "areas", new JArray
-                                        {
-                                            new JObject
-                                            {
-                                                { "grid", 12 }
-                                            }
-                                        }
-                                    },
-                                    { "label", "Container" },
-                                },
-                                new JObject
-                                {
-                                    { "name", "8-Columns" },
-                                    { "areas", new JArray
-                                        {
-                                            new JObject
-                                            {
-                                                { "grid", 8 }
-                                            }
-                                        }
-                                    },
-                                },
-                                new JObject
-                                {
-                                    { "name", "6+6 Columns" },
-                                    { "areas", new JArray
-                                        {
-                                            new JObject
-                                            {
-                                                { "grid", 6 },
-                                            },
-                                            new JObject
-                                            {
-                                                { "grid", 6 },
-                                            },
-                                        }
-                                    },
-                                },
-                            }
-                        }
-                    },
-                    Rte = new JObject
-                    {
-                        { "toolbar", new JArray
-                            {
-                                "code", "styleselect", "bold", "italic", "alignleft", "aligncenter", "alignright", "bullist", "numlist", "outdent", "indent", "link", "umbmediapicker", "umbmacro", "umbembeddialog",
-                            }
-                        },
-                        { "stylesheets", new JArray
-                            {
-                                "umbraco", "Rte",
-                            }
-                        },
-                        { "dimensions", new JObject
-                            {
-                                { "height", 500 }
-                            }
-                        },
-                        { "maxImageSize", 500 },
-                    },
-                }
-            });
-            #endregion
-            var perStoreProductGridDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-            {
-                Name = "Ekom - Products Grid Editor - Per Store",
-                Configuration = new VortoConfiguration
-                {
-                    DataType = new DataTypeInfo
-                    {
-                        Guid = productsGridDt.Key,
-                        Name = productsGridDt.Name,
-                        PropertyEditorAlias = productsGridDt.EditorAlias,
-                    },
-                    MandatoryBehaviour = "primary",
-                },
-            });
-
-            #endregion
             // Test for existence of Ekom root node
             if (!_contentService.GetRootContent().Any(x => x.ContentType.Alias == "ekom"))
             {
+                #region Property Editors
+
+                if (!_propertyEditorCollection.TryGet("Ekom.Stock", out IDataEditor stockEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Stock property editor, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor multiNodeEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.MultiNodeTreePicker property editor, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Umbraco.Grid", out IDataEditor gridEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.Grid property editor, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Our.Umbraco.Vorto", out IDataEditor editor))
+                {
+                    throw new EnsureNodesException(
+                        "Unable to find Our.Umbraco.Vorto property editor, failed creating Ekom nodes. Ensure GMO.Vorto.Web is installed.");
+                }
+
+                #endregion
+
+                #region Data Types
+
+                var ekmDtContainer = EnsureDataTypeContainerExists();
+
+                var booleanDt = _dataTypeService.GetDataType(new Guid("92897bc6-a5f3-4ffe-ae27-f2e7e33dda49"));
+                var textstringDt = _dataTypeService.GetDataType(new Guid("0cc0eba1-9960-42c9-bf9b-60e150b429ae"));
+                var numericDt = _dataTypeService.GetDataType(new Guid("2e6d3631-066e-44b8-aec4-96f09099b2b5"));
+                var contentPickerDt = _dataTypeService.GetDataType(new Guid("fd1e0da5-5606-4862-b679-5d0cf3a52a59"));
+                var mediaPickerDt = _dataTypeService.GetDataType(new Guid("135d60e0-64d9-49ed-ab08-893c9ba44ae5"));
+                var multipleMediaPickerDt = _dataTypeService.GetDataType(new Guid("9dbbcbbb-2327-434a-b355-af1b84e5010a"));
+                var tagsDt = _dataTypeService.GetDataType(new Guid("b6b73142-b9c1-4bf8-a16d-e1c23320b549"));
+
+                var perStoreTextDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Textstring - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = textstringDt.Key,
+                            Name = textstringDt.Name,
+                            PropertyEditorAlias = textstringDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var perStoreBoolDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Boolean - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = booleanDt.Key,
+                            Name = booleanDt.Name,
+                            PropertyEditorAlias = booleanDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var perStoreIntDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Numeric - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = numericDt.Key,
+                            Name = numericDt.Name,
+                            PropertyEditorAlias = numericDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var perStoreMediaPickerDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Media Picker - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = mediaPickerDt.Key,
+                            Name = mediaPickerDt.Name,
+                            PropertyEditorAlias = mediaPickerDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var stockDt = EnsureDataTypeExists(new DataType(stockEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Stock",
+                });
+                var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Stock - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = stockDt.Key,
+                            Name = stockDt.Name,
+                            PropertyEditorAlias = stockDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var multinodeProductsDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Products - Multinode Tree Picker",
+                    Configuration = new MultiNodePickerConfiguration
+                    {
+                    }
+                });
+                #region Grid Configuration
+                var productsGridDt = EnsureDataTypeExists(new DataType(gridEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Products Grid Editor",
+                    Configuration = new GridConfiguration
+                    {
+                        Items = new JObject
+                        {
+                            { "columns", 12 },
+                            { "templates", new JArray
+                                {
+                                   new JObject {
+                                       { "name", "Content" },
+                                       { "sections", new JArray
+                                           {
+                                                new JObject
+                                                {
+                                                    { "grid", 12 },
+                                                }
+                                           }
+                                       }
+                                    },
+                                }
+                            },
+                            { "layouts", new JArray
+                                {
+                                    new JObject
+                                    {
+                                        { "name", "Expanded" },
+                                        { "areas", new JArray
+                                            {
+                                                new JObject
+                                                {
+                                                    { "grid", 12 }
+                                                }
+                                            }
+                                        },
+                                        { "label", "Expanded" },
+                                    },
+                                    new JObject
+                                    {
+                                        { "name", "Container" },
+                                        { "areas", new JArray
+                                            {
+                                                new JObject
+                                                {
+                                                    { "grid", 12 }
+                                                }
+                                            }
+                                        },
+                                        { "label", "Container" },
+                                    },
+                                    new JObject
+                                    {
+                                        { "name", "8-Columns" },
+                                        { "areas", new JArray
+                                            {
+                                                new JObject
+                                                {
+                                                    { "grid", 8 }
+                                                }
+                                            }
+                                        },
+                                    },
+                                    new JObject
+                                    {
+                                        { "name", "6+6 Columns" },
+                                        { "areas", new JArray
+                                            {
+                                                new JObject
+                                                {
+                                                    { "grid", 6 },
+                                                },
+                                                new JObject
+                                                {
+                                                    { "grid", 6 },
+                                                },
+                                            }
+                                        },
+                                    },
+                                }
+                            }
+                        },
+                        Rte = new JObject
+                        {
+                            { "toolbar", new JArray
+                                {
+                                    "code", "styleselect", "bold", "italic", "alignleft", "aligncenter", "alignright", "bullist", "numlist", "outdent", "indent", "link", "umbmediapicker", "umbmacro", "umbembeddialog",
+                                }
+                            },
+                            { "stylesheets", new JArray
+                                {
+                                    "umbraco", "Rte",
+                                }
+                            },
+                            { "dimensions", new JObject
+                                {
+                                    { "height", 500 }
+                                }
+                            },
+                            { "maxImageSize", 500 },
+                        },
+                    }
+                });
+                #endregion
+                var perStoreProductGridDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Products Grid Editor - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = productsGridDt.Key,
+                            Name = productsGridDt.Name,
+                            PropertyEditorAlias = productsGridDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+
+                #endregion
+
                 var ekmDocTypeContainer = EnsureContainerExists("Ekom");
                 var catalogContainer = EnsureContainerExists("Catalog", 2, ekmDocTypeContainer.Id);
                 var compositionsContainer = EnsureContainerExists("Compositions", 2, ekmDocTypeContainer.Id);
@@ -615,8 +625,14 @@ namespace Ekom.App_Start
                                 },
                             }),
                 });
-                categoryCt.AllowedContentTypes.Append(new ContentTypeSort(categoryCt.Id, 1));
-                categoryCt.AllowedContentTypes.Append(new ContentTypeSort(productCt.Id, 2));
+                categoryCt.AllowedContentTypes 
+                    = categoryCt.AllowedContentTypes.Append(
+                        new ContentTypeSort(categoryCt.Id, 1)
+                    );
+                categoryCt.AllowedContentTypes 
+                    = categoryCt.AllowedContentTypes.Append(
+                        new ContentTypeSort(productCt.Id, 2)
+                    );
                 _contentTypeService.Save(categoryCt);
 
                 var catalogCt = EnsureContentTypeExists(new ContentType(catalogContainer.Id)
@@ -814,6 +830,7 @@ namespace Ekom.App_Start
                                     new PropertyType(contentPickerDt, "storeRootNode")
                                     {
                                         Name = "Store Root Node",
+                                        Mandatory = true,
                                     },
                                     new PropertyType(numericDt, "vat")
                                     {
@@ -919,25 +936,33 @@ namespace Ekom.App_Start
                     },
                     Icon = "icon-box color-green",
                 });
+
+                #region Content Nodes
+
+                // Content creation disabled until Umbraco patch
+                // https://github.com/umbraco/Umbraco-CMS/issues/5281
+
+                //var ekom = EnsureContentExists("Ekom", "ekom");
+                //var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
+                //EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
+                //EnsureContentExists("Payment Providers", "netPaymentProviders", ekom.Id);
+                //EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
+                //EnsureContentExists("Stores", "ekmStores", ekom.Id);
+                //EnsureContentExists("Zones", "ekmZones", ekom.Id);
+
+                //var multiNodeProductsPickerConfiguration = (multinodeProductsDt.Configuration as MultiNodePickerConfiguration);
+                //if (multiNodeProductsPickerConfiguration.TreeSource?.StartNodeId == null)
+                //{
+                //    multiNodeProductsPickerConfiguration.TreeSource = new MultiNodePickerConfigurationTreeSource
+                //    {
+                //        ObjectType = "content",
+                //        StartNodeId = new GuidUdi("document", catalog.Key),
+                //    };
+                //    _dataTypeService.Save(multinodeProductsDt);
+                //}
+
+                #endregion
             }
-
-            #region Content Nodes
-
-            // Content creation disabled until Umbraco patch
-            // https://github.com/umbraco/Umbraco-CMS/issues/5281
-
-            #endregion
-
-            //var multiNodeProductsPickerConfiguration = (multinodeProductsDt.Configuration as MultiNodePickerConfiguration);
-            //if (multiNodeProductsPickerConfiguration.TreeSource?.StartNodeId == null)
-            //{
-            //    multiNodeProductsPickerConfiguration.TreeSource = new MultiNodePickerConfigurationTreeSource
-            //    {
-            //        ObjectType = "content",
-            //        StartNodeId = new GuidUdi("document", ),
-            //    };
-            //    _dataTypeService.Save(multinodeProductsDt);
-            //}
 
             _logger.Debug<EnsureNodesExist>("Done");
         }

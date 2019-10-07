@@ -80,13 +80,14 @@ namespace Ekom.Cache
         public virtual void FillCache(IStore storeParam = null)
         {
             if (!string.IsNullOrEmpty(NodeAlias)
-            && ExamineManager.TryGetSearcher(_config.ExamineSearcher, out ISearcher searcher))
+            && ExamineManager.TryGetIndex(_config.ExamineIndex, out IIndex index))
             {
 #if DEBUG
                 Stopwatch stopwatch = new Stopwatch();
 
                 stopwatch.Start();
 #endif
+                var searcher = index.GetSearcher();
 
                 _logger.Debug<PerStoreCache<TItem>>("Starting to fill...");
                 int count = 0;
@@ -122,13 +123,13 @@ namespace Ekom.Cache
                 );
 #endif
 #if !DEBUG
-                _logger.Debug(typeof(PerStoreCache<>), "Finished filling per store cache with " + count + " items);
+                _logger.Debug(typeof(PerStoreCache<>), "Finished filling per store cache with " + count + " items");
 #endif
             }
             else
             {
                 _logger.Error<PerStoreCache<TItem>>(
-                    $"No examine search found with the name {_config.ExamineSearcher}, Can not fill cache."
+                    $"No examine search found with the name {_config.ExamineIndex}, Can not fill cache."
                 );
             }
         }

@@ -109,6 +109,8 @@ namespace Ekom
                 ContentService.Deleted += umbEvListeners.ContentService_Deleted;
                 ContentService.Publishing += umbEvListeners.ContentService_Publishing;
                 ContentService.Moved += umbEvListeners.ContentService_Moved;
+                DomainService.Saved += umbEvListeners.DomainSaved;
+                DomainService.Deleted += umbEvListeners.DomainDeleted;
             }
 
             // Hangfire

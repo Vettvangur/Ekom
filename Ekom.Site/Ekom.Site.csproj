@@ -483,6 +483,7 @@
     <Content Include="Views\Partials\Store\Checkout\_Shipping.cshtml" />
     <Content Include="Views\Partials\Store\_CategoryBar.cshtml" />
     <Content Include="Views\Partials\Store\_ProductItem.cshtml" />
+    <Content Include="Views\Partials\Grid\Foundation.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
