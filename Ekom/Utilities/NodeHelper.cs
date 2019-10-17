@@ -90,7 +90,7 @@ namespace Ekom.Utilities
             }
             else
             {
-                return GetFirstParentWithDocType(node, docTypeAlias);
+                return GetFirstParentWithDocType(node.Parent, docTypeAlias);
             }
         }
 

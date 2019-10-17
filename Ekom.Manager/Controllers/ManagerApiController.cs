@@ -27,26 +27,66 @@ namespace Ekom.Controllers
 
         public async Task<IOrderInfo> GetOrderAsync([FromUri] Guid uniqueId)
         {
-            return await _managerRepository.GetOrderAsync(uniqueId);
+            try
+            {
+                return await _managerRepository.GetOrderAsync(uniqueId);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         public IOrderInfo GetOrderInfo(Guid uniqueId)
         {
-            return API.Order.Instance.GetOrder(uniqueId);
+            try
+            {
+                return API.Order.Instance.GetOrder(uniqueId);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         [HttpGet]
         public async Task<IEnumerable<OrderActivityLog>> GetActivityLogAsync([FromUri] Guid orderId)
         {
-            return await _managerRepository.GetLogsAsync(orderId);
+            try
+            {
+                return await _managerRepository.GetLogsAsync(orderId);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         [HttpGet]
         public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsAsync()
         {
-            return await _managerRepository.GetLatestActivityLogsAsync();
+            try
+            {
+                return await _managerRepository.GetLatestActivityLogsAsync();
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         [HttpGet]
         public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsByUserAsync([FromUri] string userName)
         {
-            return await _managerRepository.GetLatestActivityLogsByUserAsync(userName);
+            try
+            {
+                return await _managerRepository.GetLatestActivityLogsByUserAsync(userName);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         /// <summary>
         /// List of orders.
@@ -55,7 +95,15 @@ namespace Ekom.Controllers
         [HttpGet]
         public async Task<OrderListData> GetOrdersAsync()
         {
-            return await _managerRepository.GetOrdersAsync();
+            try
+            {
+                return await _managerRepository.GetOrdersAsync();
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
 
         /// <summary>
@@ -65,26 +113,58 @@ namespace Ekom.Controllers
         [HttpGet]
         public async Task<OrderListData> GetAllOrdersAsync([FromUri] DateTime start, [FromUri] DateTime end)
         {
-            return await _managerRepository.GetAllOrdersAsync(start, end);
+            try
+            {
+                return await _managerRepository.GetAllOrdersAsync(start, end);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         [HttpGet]
         public async Task<OrderListData> SearchOrdersAsync([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string orderStatus = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
-            return await _managerRepository.SearchOrdersAsync(start, end, query, store, orderStatus, payment, shipping, discount);
+            try
+            {
+                return await _managerRepository.SearchOrdersAsync(start, end, query, store, orderStatus, payment, shipping, discount);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         public async Task<OrderListData> GetOrdersByStatusAsync([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
-            return await _managerRepository.GetOrdersByStatusAsync(start, end, orderStatus);
+            try
+            {
+                return await _managerRepository.GetOrdersByStatusAsync(start, end, orderStatus);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
 
         [HttpPost]
         public async Task<bool> UpdateStatusAsync([FromUri]Guid orderId, [FromUri]int orderStatus)
         {
-            var status = (OrderStatus)orderStatus;
+            try
+            {
+                var status = (OrderStatus)orderStatus;
 
-            await _managerRepository.UpdateStatusAsync(orderId, status);
+                await _managerRepository.UpdateStatusAsync(orderId, status);
 
-            return true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
         public IEnumerable<IStore> GetStores()
         {

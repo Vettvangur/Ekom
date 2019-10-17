@@ -1,25 +1,30 @@
 {
-  "name": "sgsthing",
-  "version": "1.0.0",
-  "description": "Frontend for SGS - Þing",
-  "main": "js/app.ts",
-  "author": "Vettvangur",
-  "private": true,
-  "dependencies": {
-    "@types/node": "^8.0.28",
-    "awesome-typescript-loader": "^3.2.3",
-    "babel-core": "^6.26.0",
-    "blazy": "^1.8.2",
-    "foundation-sites": "^6.4.2",
-    "gulp": "^3.9.1",
-    "gulp-autoprefixer": "^4.0.0",
-    "gulp-cssnano": "^2.1.2",
-    "gulp-header": "^1.8.9",
-    "gulp-rename": "^1.2.2",
-    "gulp-sass": "^3.1.0",
-    "ts-node": "^3.3.0",
-    "typescript": "^2.5.2",
-    "webpack": "^3.3.0"
-  },
-  "devDependencies": {}
+    "name": "sgsthing",
+    "version": "1.0.0",
+    "description": "Frontend for SGS - Þing",
+    "main": "js/app.ts",
+    "author": "Vettvangur",
+    "private": true,
+    "dependencies": {
+        "@types/node": "^8.0.28",
+        "awesome-typescript-loader": "^3.2.3",
+        "babel-core": "^6.26.0",
+        "blazy": "^1.8.2",
+        "foundation-sites": "^6.4.2",
+        "gulp": "^3.9.1",
+        "gulp-autoprefixer": "^4.0.0",
+        "gulp-cssnano": "^2.1.2",
+        "gulp-header": "^1.8.9",
+        "gulp-rename": "^1.2.2",
+        "gulp-sass": "^3.1.0",
+        "ts-node": "^3.3.0",
+        "typescript": "^2.5.2",
+        "webpack": "^3.3.0"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "build": "npx gulp sass && npx webpack --env.prod",
+        "dev": "npx gulp sass && npx webpack"
+    },
+    "-vs-binding": { "ProjectOpened": [ "dev" ] }
 }

@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -135,6 +136,20 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Add order line to cart asynchronously.
+        /// </summary>
+        /// <param name="productId">The product identifier.</param>
+        /// <param name="quantity">The quantity.</param>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <param name="action">Default is AddOrUpdate, we also allow to set quantity to fixed amount.</param>
+        /// <param name="variantId">The variant identifier.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">storeAlias</exception>
+        /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
+        /// <exception cref="ProductNotFoundException"></exception>
+        /// <exception cref="VariantNotFoundException"></exception>
+        /// <exception cref="NotEnoughStockException"></exception>
         public async Task<IOrderInfo> AddOrderLineAsync(
             Guid productId,
             int quantity,
@@ -185,14 +200,15 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public IOrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        public async Task<IOrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            return _orderService.RemoveOrderLine(lineId, storeAlias);
+            return await _orderService.RemoveOrderLineAsync(lineId, storeAlias)
+                .ConfigureAwait(false);
         }
 
         public async Task CompleteOrderAsync(Guid orderId)

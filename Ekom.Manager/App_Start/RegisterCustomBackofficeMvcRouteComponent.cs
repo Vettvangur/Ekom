@@ -16,8 +16,8 @@ namespace Umbraco.Extensions.Events
         {
             RouteTable.Routes.MapRoute(
                 name: "EkomManager",
-                url: _globalSettings.GetUmbracoMvcArea() + "/backoffice/ekom/{action}/{id}/{orderId}",
-                defaults: new { controller = "Ekom", action = "Manager", id = UrlParameter.Optional, orderId = "" }
+                url: _globalSettings.GetUmbracoMvcArea() + "/backoffice/ekom/manager/{id}/{orderId}",
+                defaults: new { controller = "Ekom", id = UrlParameter.Optional, orderId = "" }
             );
 
             // Is this really needed?

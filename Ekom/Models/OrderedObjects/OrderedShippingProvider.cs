@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Newtonsoft.Json.Linq;
 using System;
 
@@ -23,10 +23,10 @@ namespace Ekom.Models.OrderedObjects
         {
             this.shippingProviderObject = shippingProviderObject;
 
-            Id = shippingProviderObject["Id"].Value<int>();
-            Key = Guid.Parse(shippingProviderObject.GetValue("Key").ToString());
-            Title = shippingProviderObject["Title"].Value<string>();
-            var orgPrice = shippingProviderObject["Price"]["Value"].Value<decimal>();
+            Id = shippingProviderObject[nameof(Id)].Value<int>();
+            Key = Guid.Parse(shippingProviderObject.GetValue(nameof(Key)).ToString());
+            Title = shippingProviderObject[nameof(Title)].Value<string>();
+            var orgPrice = shippingProviderObject[nameof(Price)][nameof(Price.Value)].Value<decimal>();
             var price = new Price(orgPrice, store);
             Price = price;
         }

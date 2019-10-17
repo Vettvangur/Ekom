@@ -16,7 +16,7 @@ namespace Ekom.Repository
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="appCtx "></param>
+        /// <param name="scopeProvider"></param>
         public ActivityLogRepository(IScopeProvider scopeProvider)
         {
             _scopeProvider = scopeProvider;

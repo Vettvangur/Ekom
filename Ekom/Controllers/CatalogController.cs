@@ -1,5 +1,7 @@
 using Ekom.Interfaces;
+using Ekom.Utilities;
 using System;
+using System.Web.Http;
 using Umbraco.Web.Mvc;
 using Umbraco.Web.WebApi;
 
@@ -25,7 +27,15 @@ namespace Ekom.Controllers
         /// <returns></returns>
         public IProduct GetProduct(Guid Id)
         {
-            return API.Catalog.Instance.GetProduct(Id);
+            try
+            {
+                return API.Catalog.Instance.GetProduct(Id);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
         }
     }
 }

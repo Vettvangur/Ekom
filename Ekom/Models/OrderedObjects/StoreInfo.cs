@@ -59,7 +59,7 @@ namespace Ekom.Models.OrderedObjects
 
             try
             {
-                Currency = storeInfoObject["Currency"]?.ToObject<List<CurrencyModel>>();
+                Currency = storeInfoObject[nameof(Currency)]?.ToObject<List<CurrencyModel>>();
             }
             catch
             {
@@ -74,11 +74,11 @@ namespace Ekom.Models.OrderedObjects
                 Currency = list;
             }
 
-            Key = Guid.Parse(storeInfoObject["Key"].Value<string>());
-            Culture = storeInfoObject["Culture"].Value<string>();
-            Alias = storeInfoObject["Alias"].Value<string>();
-            VatIncludedInPrice = storeInfoObject["VatIncludedInPrice"].Value<bool>();
-            Vat = storeInfoObject["Vat"].Value<int>();
+            Key = Guid.Parse(storeInfoObject[nameof(Key)].Value<string>());
+            Culture = storeInfoObject[nameof(Culture)].Value<string>();
+            Alias = storeInfoObject[nameof(Alias)].Value<string>();
+            VatIncludedInPrice = storeInfoObject[nameof(VatIncludedInPrice)].Value<bool>();
+            Vat = storeInfoObject[nameof(Vat)].Value<int>();
 
         }
 

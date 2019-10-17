@@ -25,7 +25,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
             }
         }
 
@@ -33,7 +33,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                var key = Properties.GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("__Key");
 
                 var _key = new Guid();
 
@@ -69,7 +69,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Properties.GetPropertyValue("path");
+                return Properties.GetPropertyValue("__Path");
             }
         }
         [ScriptIgnore]
@@ -174,25 +174,25 @@ namespace Ekom.Models.OrderedObjects
             logger.Debug<OrderedProduct>("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
-            ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
+            ProductDiscount = productPropertiesObject[nameof(ProductDiscount)] != null ? productPropertiesObject[nameof(ProductDiscount)].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
             Properties = new ReadOnlyDictionary<string, string>(
-                productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
-            logger.Debug<OrderedProduct>("OrderedProductPriceJson: " + productPropertiesObject["Price"]);
+                productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+            logger.Debug<OrderedProduct>("OrderedProductPriceJson: " + productPropertiesObject[nameof(Price)]);
             try
             {
-                Price = productPropertiesObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
+                Price = productPropertiesObject[nameof(Price)].ToObject<Price>(EkomJsonDotNet.serializer);
             }
             catch (Exception)
             {
                 // failed due to old order, try to fix by splitting the constructor up.
-                Price = new Price(productPropertiesObject["Price"]);
+                Price = new Price(productPropertiesObject[nameof(Price)]);
             }
 
-            ImageIds = productPropertiesObject["ImageIds"].ToObject<Guid[]>();
+            ImageIds = productPropertiesObject[nameof(ImageIds)].ToObject<Guid[]>();
 
             // Add Variant Group
 
-            var variantGroups = productPropertiesObject["VariantGroups"];
+            var variantGroups = productPropertiesObject[nameof(VariantGroups)];
 
             var variantsGroupList = new List<OrderedVariantGroup>();
 

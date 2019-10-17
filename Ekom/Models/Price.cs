@@ -58,7 +58,7 @@ namespace Ekom.Models
             JToken jObject
         )
         {
-            var currency = jObject["Store"]?["Currency"];
+            var currency = jObject[nameof(Store)]?[nameof(Store.Currency)];
             if (currency != null && currency.Type == JTokenType.String)
             {
                 var list = new System.Collections.Generic.List<CurrencyModel>();
@@ -68,12 +68,12 @@ namespace Ekom.Models
                     CurrencyFormat = "C",
                     CurrencyValue = currency.Value<string>()
                 });
-                var store = jObject["Store"];
-                var key = new Guid(store["Key"].Value<string>());
-                var culture = store["Culture"].Value<string>();
-                var alias = store["Alias"].Value<string>();
-                var vatincluded = store["VatIncludedInPrice"].Value<bool>();
-                var vat = store["Vat"].Value<decimal>();
+                var store = jObject[nameof(Store)];
+                var key = new Guid(store[nameof(Store.Key)].Value<string>());
+                var culture = store[nameof(Store.Culture)].Value<string>();
+                var alias = store[nameof(Store.Alias)].Value<string>();
+                var vatincluded = store[nameof(Store.VatIncludedInPrice)].Value<bool>();
+                var vat = store[nameof(Store.Vat)].Value<decimal>();
                 Store = new StoreInfo(
                     key: key,
                     currency: list,
@@ -85,15 +85,15 @@ namespace Ekom.Models
             }
             else
             {
-                Store = jObject["Store"]?.ToObject<StoreInfo>();
+                Store = jObject[nameof(Store)]?.ToObject<StoreInfo>();
             }
 
-            OriginalValue = jObject["OriginalValue"].Value<decimal>();
-            Discount = jObject["Discount"]?.ToObject<OrderedDiscount>();
-            ProductDiscount = jObject["ProductDiscount"]?.ToObject<OrderedProductDiscount>();
-            UseOrderDiscount = jObject["UseOrderDiscount"] != null ? jObject["UseOrderDiscount"].Value<bool>() : false;
-            Quantity = jObject["Quantity"] != null ? jObject["Quantity"].Value<int>() : 1;
-            DiscountAlwaysBeforeVAT = jObject["DiscountAlwaysBeforeVAT"] != null ? jObject["DiscountAlwaysBeforeVAT"].Value<bool>() : false;
+            OriginalValue = jObject[nameof(OriginalValue)].Value<decimal>();
+            Discount = jObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
+            ProductDiscount = jObject[nameof(ProductDiscount)]?.ToObject<OrderedProductDiscount>();
+            UseOrderDiscount = jObject[nameof(UseOrderDiscount)] != null ? jObject[nameof(UseOrderDiscount)].Value<bool>() : false;
+            Quantity = jObject[nameof(Quantity)] != null ? jObject[nameof(Quantity)].Value<int>() : 1;
+            DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)] != null ? jObject[nameof(DiscountAlwaysBeforeVAT)].Value<bool>() : false;
         }
         /// <summary>
         /// ctor

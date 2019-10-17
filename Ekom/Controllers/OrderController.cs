@@ -1,14 +1,19 @@
 using Ekom.API;
+using Ekom.Exceptions;
 using Ekom.Models;
+using Ekom.Utilities;
 using System;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Core.Logging;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Controllers
 {
+#pragma warning disable CA2007 // Consider calling ConfigureAwait on the awaited task
+
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
@@ -29,7 +34,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="request">Guid Key of product</param>
         /// <returns></returns>
-        public ActionResult AddToOrder(OrderRequest request)
+        public async Task<ActionResult> AddToOrder(OrderRequest request)
         {
             if (request == null)
             {
@@ -45,7 +50,7 @@ namespace Ekom.Controllers
                 //    variantIds.Add(request.variantId.Value);
                 //}
 
-                var orderInfo = Order.Instance.AddOrderLineAsync(
+                var orderInfo = await Order.Instance.AddOrderLineAsync(
                     request.productId,
                     request.quantity,
                     request.storeAlias,
@@ -60,13 +65,13 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-                _logger.Error<OrderController>(ex, "Failed to add to order!");
-
-                return Json(new
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    success = false,
-                    error = ex.Message
-                });
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -92,9 +97,27 @@ namespace Ekom.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            var order = Order.Instance.GetOrder(storeAlias);
+            try
+            {
+                var order = Order.Instance.GetOrder(storeAlias);
 
-            return Json(order ?? new object(), JsonRequestBehavior.AllowGet);
+                if (order == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound);
+                }
+
+                return Json(order ?? new object(), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
+                {
+                    return r;
+                }
+
+                throw;
+            }
         }
 
         ///// <summary>
@@ -164,11 +187,13 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="form">FormData</param>
         /// <returns></returns>
-        public JsonResult UpdateCustomerInformation(FormCollection form)
+        public async Task<ActionResult> UpdateCustomerInformation(FormCollection form)
         {
             try
             {
-                var orderInfo = Order.Instance.UpdateCustomerInformationAsync(form.AllKeys.ToDictionary(k => k, v => form[v]));
+                var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
+                    form.AllKeys.ToDictionary(k => k, v => form[v])
+                );
 
                 return Json(new
                 {
@@ -178,12 +203,13 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-
-                return Json(new
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    success = false,
-                    error = ex.Message
-                });
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -191,11 +217,11 @@ namespace Ekom.Controllers
         /// Update Shipping Information
         /// </summary>
         /// <returns></returns>
-        public JsonResult UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
+        public async Task<ActionResult> UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
+                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
 
                 return Json(new
                 {
@@ -205,12 +231,13 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-
-                return Json(new
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    success = false,
-                    error = ex.Message
-                });
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -218,11 +245,11 @@ namespace Ekom.Controllers
         /// Update Payment Information
         /// </summary>
         /// <returns></returns>
-        public JsonResult UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
+        public async Task<ActionResult> UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
         {
             try
             {
-                var orderInfo = Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
+                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
 
                 return Json(new
                 {
@@ -232,12 +259,13 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-
-                return Json(new
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    success = false,
-                    error = ex.Message
-                });
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -249,7 +277,7 @@ namespace Ekom.Controllers
         /// <param name="quantity"></param>
         /// <returns></returns>
         [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
-        public ActionResult UpdateOrder(Guid lineId, string storeAlias, int quantity)
+        public async Task<ActionResult> UpdateOrder(Guid lineId, string storeAlias, int quantity)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -262,7 +290,7 @@ namespace Ekom.Controllers
 
             try
             {
-                var orderInfo = Order.Instance.AddOrderLineAsync(
+                var orderInfo = await Order.Instance.AddOrderLineAsync(
                     lineId,
                     quantity,
                     storeAlias);
@@ -275,11 +303,13 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    success = false,
-                    error = ex.Message
-                });
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -289,16 +319,30 @@ namespace Ekom.Controllers
         /// <param name="lineId">Guid Key of product/line</param>
         /// <param name="storeAlias"></param>
         /// <returns></returns>
-        public ActionResult RemoveOrderLine(Guid lineId, string storeAlias)
+        public async Task<ActionResult> RemoveOrderLine(Guid lineId, string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
-            var orderInfo = Order.Instance.RemoveOrderLine(lineId, storeAlias);
+            try
+            {
+                var orderInfo = await Order.Instance.RemoveOrderLineAsync(lineId, storeAlias);
 
-            return Json(new { orderInfo, date = DateTime.Now });
+                return Json(new { orderInfo, date = DateTime.Now });
+            }
+            catch (Exception ex)
+            {
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
+                {
+                    return r;
+                }
+
+                throw;
+            }
         }
     }
+#pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task
 }

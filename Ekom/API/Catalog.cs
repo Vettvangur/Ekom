@@ -301,6 +301,13 @@ namespace Ekom.API
             return null;
         }
 
+        /// <summary>
+        /// Gets the category by id.
+        /// </summary>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <param name="Id">The identifier.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">storeAlias</exception>
         public ICategory GetCategory(string storeAlias, int Id)
         {
             if (string.IsNullOrEmpty(storeAlias))
@@ -311,6 +318,14 @@ namespace Ekom.API
             return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
+        /// <summary>
+        /// Gets the category by key or id.
+        /// </summary>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <param name="Id">The identifier.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">Id</exception>
+        /// <exception cref="ArgumentException">storeAlias</exception>
         public ICategory GetCategory(string storeAlias, string Id)
         {
             if (Id == null)

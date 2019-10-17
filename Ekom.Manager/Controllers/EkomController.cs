@@ -2,7 +2,7 @@ using System;
 using System.Web.Mvc;
 using Umbraco.Web.Mvc;
 
-namespace Ekom.Controllers
+namespace Ekom.Manager.Controllers
 {
     public class EkomController : UmbracoAuthorizedController
     {
@@ -20,6 +20,5 @@ namespace Ekom.Controllers
         {
             return View("~/Views/EkomManager/Index.cshtml");
         }
-
     }
 }

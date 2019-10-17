@@ -131,54 +131,57 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Updates stock count of item. 
+        /// Increment stock count of item. 
         /// If PerStoreStock is configured, gets store from cache and updates relevant item.
-        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task UpdateStockAsync(Guid key, int value)
+        public async Task IncrementStockAsync(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
                 var store = _storeSvc.GetStoreFromCache();
-                await UpdateStockAsync(key, store.Alias, value)
+                await IncrementStockAsync(key, store.Alias, value)
                     .ConfigureAwait(false);
             }
             else
             {
-                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
-
-                var stockData = _stockCache.Cache[key];
-
-                if (stockData.Stock + value < 0)
-                {
-                    throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
-                }
-
-                SetStockWithLock(stockData, stockData.Stock + value);
+                await IncrementStockAsync(key, null, value)
+                    .ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// Updates stock count of store item. 
-        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// Increment stock count of store item. 
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task UpdateStockAsync(Guid key, string storeAlias, int value)
+        /// <exception cref="NotEnoughStockException"></exception>
+        public async Task IncrementStockAsync(Guid key, string storeAlias, int value)
         {
-            await EnsurePerStoreEntryExistsAsync(key, storeAlias)
-                .ConfigureAwait(false);
+            StockData stockData;
+            if (_config.PerStoreStock)
+            {
+                await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                    .ConfigureAwait(false);
 
-            var stockData = _stockPerStoreCache.Cache[storeAlias][key];
+                stockData = _stockPerStoreCache.Cache[storeAlias][key];
+            }
+            else
+            {
+                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
+
+                stockData = _stockCache.Cache[key];
+            }
 
             if (stockData.Stock + value < 0)
             {
-                throw new StockException($"Not enough stock available for {stockData.UniqueId}.");
+                throw new NotEnoughStockException($"Not enough stock available for {stockData.UniqueId}.");
             }
 
             SetStockWithLock(stockData, stockData.Stock + value);
@@ -187,7 +190,7 @@ namespace Ekom.API
         /// <summary>
         /// Sets stock count of item. 
         /// If PerStoreStock is configured, gets store from cache and updates relevant item.
-        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
@@ -201,17 +204,13 @@ namespace Ekom.API
             }
             else
             {
-                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
-
-                var stockData = _stockCache.Cache[key];
-
-                return SetStockWithLock(stockData, value);
+                return await SetStockAsync(key, null, value).ConfigureAwait(false);
             }
         }
 
         /// <summary>
         /// Sets stock count of store item. 
-        /// If no stock entry exists, creates a new one, the attempts to update.
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="storeAlias"></param>
@@ -219,9 +218,22 @@ namespace Ekom.API
         /// <returns></returns>
         public async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
         {
-            await EnsurePerStoreEntryExistsAsync(key, storeAlias).ConfigureAwait(false);
+            StockData stockData;
 
-            var stockData = _stockPerStoreCache.Cache[storeAlias][key];
+            if (_config.PerStoreStock)
+            {
+                await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                    .ConfigureAwait(false);
+
+                stockData = _stockPerStoreCache.Cache[storeAlias][key];
+            }
+            else
+            {
+                await EnsureStockEntryExistsAsync(key)
+                    .ConfigureAwait(false);
+
+                stockData = _stockCache.Cache[key];
+            }
 
             return SetStockWithLock(stockData, value);
         }
@@ -243,7 +255,7 @@ namespace Ekom.API
                 timeSpan = _config.ReservationTimeout;
             }
 
-            await UpdateStockAsync(key, value).ConfigureAwait(false);
+            await IncrementStockAsync(key, value).ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
                 UpdateStockHangfire(key, -value),
@@ -271,7 +283,7 @@ namespace Ekom.API
                 timeSpan = _config.ReservationTimeout;
             }
 
-            await UpdateStockAsync(key, storeAlias, value)
+            await IncrementStockAsync(key, storeAlias, value)
                 .ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
@@ -374,7 +386,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, int value)
         {
-            Instance.UpdateStockAsync(key, value).Wait();
+            Instance.IncrementStockAsync(key, value).Wait();
         }
 
         /// <summary>
@@ -385,7 +397,7 @@ namespace Ekom.API
         /// <param name="value"></param>
         public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
         {
-            Instance.UpdateStockAsync(key, storeAlias, value).Wait();
+            Instance.IncrementStockAsync(key, storeAlias, value).Wait();
         }
     }
 }

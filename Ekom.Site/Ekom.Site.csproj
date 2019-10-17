@@ -400,6 +400,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Plugins\EkomStockEditor\ekomStock.controller.js" />
+    <Content Include="App_Plugins\EkomStockEditor\ekomStock.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.controller.js" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.resource.js" />
@@ -461,6 +463,7 @@
     <Content Include="Views\Partials\Grid\Bootstrap3.cshtml" />
     <Content Include="Views\Partials\Grid\Bootstrap3-Fluid.cshtml" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
+    <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
     <None Include="packages.config" />
     <Content Include="Views\Masterpage.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />

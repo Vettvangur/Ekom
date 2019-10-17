@@ -24,7 +24,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
             }
         }
         [ScriptIgnore]
@@ -34,7 +34,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                var key = Properties.GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("__Key");
 
                 var _key = new Guid();
 
@@ -73,7 +73,7 @@ namespace Ekom.Models.OrderedObjects
         {
             get
             {
-                return Properties.GetPropertyValue("path");
+                return Properties.GetPropertyValue("__Path");
             }
         }
         [ScriptIgnore]
@@ -128,10 +128,10 @@ namespace Ekom.Models.OrderedObjects
         {
             this.variantObject = variantObject;
             StoreInfo = storeInfo;
-            Price = variantObject["Price"].ToObject<Price>(EkomJsonDotNet.serializer);
+            Price = variantObject[nameof(Price)].ToObject<Price>(EkomJsonDotNet.serializer);
 
             Properties = new ReadOnlyDictionary<string, string>(
-                variantObject["Properties"].ToObject<Dictionary<string, string>>());
+                variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
         }
     }
 }

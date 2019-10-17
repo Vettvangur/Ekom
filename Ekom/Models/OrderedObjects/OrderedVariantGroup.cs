@@ -62,14 +62,14 @@ namespace Ekom.Models.OrderedObjects
             this.storeInfo = storeInfo;
 
             Properties = new ReadOnlyDictionary<string, string>(
-                variantGroupObject["Properties"].ToObject<Dictionary<string, string>>());
+                variantGroupObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
 
-            Id = (int)variantGroupObject["Id"];
-            Key = (Guid)variantGroupObject["Key"];
-            Title = (string)variantGroupObject["Title"];
-            ImageIds = variantGroupObject["ImageIds"].ToObject<Guid[]>();
+            Id = (int)variantGroupObject[nameof(Id)];
+            Key = (Guid)variantGroupObject[nameof(Key)];
+            Title = (string)variantGroupObject[nameof(Title)];
+            ImageIds = variantGroupObject[nameof(ImageIds)].ToObject<Guid[]>();
 
-            var variants = variantGroupObject["Variants"];
+            var variants = variantGroupObject[nameof(Variants)];
 
             var variantsList = new List<OrderedVariant>();
 

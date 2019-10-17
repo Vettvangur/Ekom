@@ -129,7 +129,7 @@ namespace Ekom.Extensions.Controllers
                         //    }
                         //}
                     }
-                    catch (StockException)
+                    catch (NotEnoughStockException)
                     {
                         return RedirectToCurrentUmbracoPage("?errorStatus=stockError");
                     }

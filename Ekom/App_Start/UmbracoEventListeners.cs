@@ -61,7 +61,7 @@ namespace Ekom.App_Start
                 {
                     if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant")
                     {
-                        UpdateSlug(content, alias, e, cs);
+                        UpdateSlug(content, alias, e);
                     }
                 }
                 catch (Exception ex)
@@ -136,8 +136,7 @@ namespace Ekom.App_Start
         private void UpdateSlug(
             IContent content,
             string alias,
-            PublishEventArgs<IContent> e,
-            IContentService _cs)
+            PublishEventArgs<IContent> e)
         {
             var parent = UmbHelper.Content(content.ParentId);
             var siblings = parent.Children().Where(x => x.Id != content.Id && !x.IsPublished());

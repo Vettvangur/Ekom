@@ -6,7 +6,7 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
   $scope.config = null;
   $scope.perStoreStock = false;
 
-  $scope.GetStores = function() {
+  $scope.GetStores = function () {
     $http.get('/umbraco/backoffice/ekom/api/getAllStores').then(function (results) {
 
       $scope.storeList = results.data;
@@ -23,7 +23,7 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
 
     if (storeAlias !== '') {
       $http.get('/umbraco/backoffice/ekom/api/GetStockByStore?id=' + $scope.content.key + "&storeAlias=" + storeAlias)
-        .then(function(result) {
+        .then(function (result) {
 
           $scope.stockValue = parseInt(result.data);
 
@@ -37,14 +37,13 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
     }
   };
 
-  $scope.UpdateStock = function () {
+  $scope.SetStock = function () {
 
-    $http.post('/umbraco/backoffice/ekom/api/updateStock?id=' + $scope.content.key + "&stock=" + $scope.stockValue + "&storeAlias=" + $scope.storeSelected)
-      .success(function () {
-        notificationsService.success("Success", "Stock has been updated");
-      })
-      .error(function () {
-        notificationsService.error("Update Failed.", "Stock update failed");
+    $http.post('/umbraco/backoffice/ekom/api/setStock?id=' + $scope.content.key + "&stock=" + $scope.stockValue + "&storeAlias=" + $scope.storeSelected)
+      .then(function () {
+        notificationsService.success("Success", "Stock has been set");
+      }, function () {
+        notificationsService.error("Set Failed.", "Stock set failed");
       });
   };
 
@@ -74,7 +73,6 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
           }
 
         });
-
-      }); 
+      });
   }
 });

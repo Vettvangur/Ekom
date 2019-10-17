@@ -82,7 +82,7 @@ namespace Ekom.Repository
         /// </summary>
         /// <param name="uniqueId"></param>
         /// <param name="value">Increment or decrement stock by this value</param>
-        /// <exception cref="StockException">
+        /// <exception cref="NotEnoughStockException">
         /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
         /// </exception>
         /// <returns></returns>
@@ -94,7 +94,7 @@ namespace Ekom.Repository
 
             if (stockDataFromRepo.Stock + value < 0)
             {
-                throw new StockException($"Not enough stock available for {uniqueId}.")
+                throw new NotEnoughStockException($"Not enough stock available for {uniqueId}.")
                 {
                     RepoValue = stockDataFromRepo.Stock,
                 };
@@ -133,7 +133,7 @@ namespace Ekom.Repository
 
                 if (result != 0)
                 {
-                    throw new StockException($"Not enough stock available for {uniqueId}.");
+                    throw new NotEnoughStockException($"Not enough stock available for {uniqueId}.");
                 }
             }
         }

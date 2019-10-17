@@ -13,11 +13,11 @@ namespace Ekom.Cache
 {
     class StockPerStoreCache : PerStoreCache<StockData>
     {
-        readonly StockRepository _stockRepo;
+        readonly IStockRepository _stockRepo;
         public StockPerStoreCache(
             ILogger logger,
             Configuration config,
-            StockRepository stockRepo,
+            IStockRepository stockRepo,
             IBaseCache<IStore> storeCache
         ) : base(config, logger, null, storeCache, null)
         {

@@ -37,14 +37,13 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
     }
   };
 
-  $scope.UpdateStock = function () {
+  $scope.SetStock = function () {
 
-    $http.post('/umbraco/backoffice/ekom/api/updateStock?id=' + $scope.content.key + "&stock=" + $scope.stockValue + "&storeAlias=" + $scope.storeSelected)
-      .success(function () {
-        notificationsService.success("Success", "Stock has been updated");
-      })
-      .error(function () {
-        notificationsService.error("Update Failed.", "Stock update failed");
+    $http.post('/umbraco/backoffice/ekom/api/setStock?id=' + $scope.content.key + "&stock=" + $scope.stockValue + "&storeAlias=" + $scope.storeSelected)
+      .then(function () {
+        notificationsService.success("Success", "Stock has been set");
+      }, function () {
+        notificationsService.error("Set Failed.", "Stock set failed");
       });
   };
 
@@ -74,7 +73,6 @@ angular.module('umbraco').controller('Ekom.StockEditor', function ($scope, $rout
           }
 
         });
-
       }); 
   }
 });

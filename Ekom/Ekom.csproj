@@ -279,6 +279,12 @@
     <Compile Include="App_Start\UmbracoEventListeners.cs" />
     <Compile Include="Cache\Base\IBaseCache.cs" />
     <Compile Include="Cache\CouponCache.cs" />
+    <Compile Include="Controllers\ApiController.cs" />
+    <Compile Include="Controllers\CatalogController.cs" />
+    <Compile Include="Controllers\OrderController.cs" />
+    <Compile Include="Controllers\OrderController.Discounts.cs" />
+    <Compile Include="Exceptions\NodeEntityException.cs" />
+    <Compile Include="Exceptions\NotEnoughStockException.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
     <Compile Include="Exceptions\UmbracoEventException.cs" />
@@ -289,10 +295,6 @@
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Cache\DiscountCache.cs" />
-    <Compile Include="Controllers\ApiController.cs" />
-    <Compile Include="Controllers\CatalogController.cs" />
-    <Compile Include="Controllers\OrderController.Discounts.cs" />
-    <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Exceptions\CouponDuplicateException.cs" />
     <Compile Include="Exceptions\DiscountNotFoundException.cs" />
     <Compile Include="Exceptions\VariantNotFoundException.cs" />
@@ -388,6 +390,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="Utilities\Enums.cs" />
     <Compile Include="Services\ExamineService.cs" />
+    <Compile Include="Utilities\ExceptionHandler.cs" />
     <Compile Include="Utilities\NodeHelper.cs" />
     <Compile Include="Utilities\VatCalculator.cs" />
     <Compile Include="Interfaces\ICategory.cs" />

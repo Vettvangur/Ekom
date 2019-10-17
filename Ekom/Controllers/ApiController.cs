@@ -1,5 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -74,47 +75,81 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
-        /// Update Stock
+        /// Increment stock count of item. 
+        /// If PerStoreStock is configured, gets store from cache and updates relevant item.
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         [HttpPost]
-        public async Task<HttpResponseMessage> UpdateStock(Guid id, int stock)
+        public async Task<HttpResponseMessage> IncrementStock(Guid id, int stock)
         {
-            await API.Stock.Instance.UpdateStockAsync(id, stock);
+            try
+            {
+                await API.Stock.Instance.IncrementStockAsync(id, stock);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
-        /// Update Stock
+        /// Increment stock count of store item. 
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         [HttpPost]
-        public async Task<HttpResponseMessage> UpdateStock(Guid id, string storeAlias, int stock)
+        public async Task<HttpResponseMessage> IncrementStock(Guid id, string storeAlias, int stock)
         {
-            await API.Stock.Instance.UpdateStockAsync(id, storeAlias, stock);
+            try
+            {
+                await API.Stock.Instance.IncrementStockAsync(id, storeAlias, stock);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
-        /// Set Stock
+        /// Sets stock count of item. 
+        /// If PerStoreStock is configured, gets store from cache and updates relevant item.
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         [HttpPost]
         public async Task<HttpResponseMessage> SetStock(Guid id, int stock)
         {
-            await API.Stock.Instance.SetStockAsync(id, stock);
+            try
+            {
+                await API.Stock.Instance.SetStockAsync(id, stock);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
-        /// Set Stock
+        /// Sets stock count of store item. 
+        /// If no stock entry exists, creates a new one, then attempts to update.
         /// </summary>
         [HttpPost]
         public async Task<HttpResponseMessage> SetStock(Guid id, string storeAlias, int stock)
         {
-            await API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
+            try
+            {
+                await API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
@@ -123,9 +158,16 @@ namespace Ekom.Controllers
         [HttpPost]
         public async Task<HttpResponseMessage> InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
         {
-            await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
+            try
+            {
+                await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
@@ -134,9 +176,16 @@ namespace Ekom.Controllers
         [HttpPost]
         public async Task<HttpResponseMessage> RemoveCoupon(string couponCode, Guid discountId)
         {
-            await API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
+            try
+            {
+                await API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
 
         /// <summary>
@@ -145,9 +194,16 @@ namespace Ekom.Controllers
         [HttpPost]
         public async Task<HttpResponseMessage> GetCouponsForDiscount(Guid discountId)
         {
-            var items = await API.Order.Instance.GetCouponsForDiscountAsync(discountId);
+            try
+            {
+                var items = await API.Order.Instance.GetCouponsForDiscountAsync(discountId);
 
-            return Request.CreateResponse(HttpStatusCode.OK, items);
+                return Request.CreateResponse(HttpStatusCode.OK, items);
+            }
+            catch (Exception ex)
+            {
+                return ExceptionHandler.Handle<HttpResponseMessage>(ex);
+            }
         }
     }
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task

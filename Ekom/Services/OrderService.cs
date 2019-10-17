@@ -113,7 +113,6 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-
                     var orderInfo = _runtimeCache.GetCacheItem(
                         orderUniqueId.ToString(),
                         () => GetOrder(orderUniqueId),
@@ -137,7 +136,6 @@ namespace Ekom.Services
                         return orderInfo;
                     }
                 }
-
             }
 
             return null;
@@ -289,12 +287,13 @@ namespace Ekom.Services
         }
 
         /// <summary>
-        /// 
+        /// Add order line to cart asynchronously.
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OrderException"></exception>
+        /// <exception cref="ArgumentException">productKey</exception>
+        /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
         /// <exception cref="ProductNotFoundException"></exception>
         /// <exception cref="VariantNotFoundException"></exception>
+        /// <exception cref="NotEnoughStockException"></exception>
         public async Task<OrderInfo> AddOrderLineAsync(
             Guid productKey,
             int quantity,
@@ -318,7 +317,7 @@ namespace Ekom.Services
             {
                 if (variantKey == null && !product.Backorder && product.Stock < quantity)
                 {
-                    throw new StockException("Stock not available for product " + variantKey);
+                    throw new NotEnoughStockException("Stock not available for product " + variantKey);
                 }
             }
 
@@ -335,7 +334,7 @@ namespace Ekom.Services
                 {
                     if (!product.Backorder && variant.Stock < quantity)
                     {
-                        throw new StockException("Stock not available for variant " + variantKey);
+                        throw new NotEnoughStockException("Stock not available for variant " + variantKey);
                     }
                 }
             }
@@ -356,7 +355,7 @@ namespace Ekom.Services
         /// 
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OrderException"></exception>
+        /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
         public async Task<OrderInfo> AddOrderLineAsync(
             IProduct product,
             int quantity,
@@ -401,7 +400,7 @@ namespace Ekom.Services
             return orderInfo;
         }
 
-        public OrderInfo RemoveOrderLine(Guid lineId, string storeAlias)
+        public async Task<OrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
         {
             _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
@@ -420,7 +419,8 @@ namespace Ekom.Services
                 throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
-            UpdateOrderAndOrderInfoAsync(orderInfo);
+            await UpdateOrderAndOrderInfoAsync(orderInfo)
+                .ConfigureAwait(false);
 
             return orderInfo;
         }
@@ -434,7 +434,7 @@ namespace Ekom.Services
         /// 
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OrderException"></exception>
+        /// <exception cref="OrderLineNegativeException"></exception>
         private async Task AddOrderLineToOrderInfoAsync(
             OrderInfo orderInfo,
             IProduct product,
@@ -493,7 +493,7 @@ namespace Ekom.Services
                 {
                     if (existingOrderLine.Quantity + quantity < 0)
                     {
-                        throw new OrderException("OrderLines cannot be updated to negative quantity");
+                        throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
                     }
 
                     existingOrderLine.Quantity += quantity;
@@ -509,7 +509,7 @@ namespace Ekom.Services
             {
                 if (quantity < 0)
                 {
-                    throw new OrderException("OrderLines cannot be created with negative quantity");
+                    throw new OrderLineNegativeException("OrderLines cannot be created with negative quantity");
                 }
 
                 // Update orderline when adding product to orderline
@@ -527,10 +527,11 @@ namespace Ekom.Services
                 {
                     if (orderInfo.Discount.DiscountItems.Contains(product.Key))
                     {
-                        ApplyDiscountToOrderLineAsync(
-                        orderLine,
-                        product.Discount,
-                        orderInfo);
+                        await ApplyDiscountToOrderLineAsync(
+                            orderLine,
+                            product.Discount,
+                            orderInfo
+                        ).ConfigureAwait(false);
                     }
                 }
 
@@ -541,10 +542,11 @@ namespace Ekom.Services
                     _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
                     if (product.Discount.DiscountItems.Contains(product.Key))
                     {
-                        ApplyDiscountToOrderLineAsync(
-                        orderLine,
-                        product.Discount,
-                        orderInfo);
+                        await ApplyDiscountToOrderLineAsync(
+                            orderLine,
+                            product.Discount,
+                            orderInfo
+                        ).ConfigureAwait(false);
                     }
                 }
             }

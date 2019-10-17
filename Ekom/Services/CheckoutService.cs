@@ -107,7 +107,7 @@ namespace Ekom.Services
                     .ConfigureAwait(false);
 
             }
-            catch (StockException)
+            catch (NotEnoughStockException)
             {
                 _logger.Info<CheckoutService>($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                     + $"Order id: {oi?.UniqueId}");

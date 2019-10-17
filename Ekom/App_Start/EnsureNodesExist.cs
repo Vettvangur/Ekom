@@ -435,9 +435,29 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Price",
                                         },
+                                        new PropertyType(textstringDt, "sku")
+                                        {
+                                            Name = "SKU",
+                                        },
+                                        new PropertyType(_configuration.PerStoreStock ? perStoreStockDt : stockDt, "stock")
+                                        {
+                                            Name = "Stock",
+                                        },
                                     }))
                                 {
                                     Name = "Variant",
+                                },
+                                new PropertyGroup(new PropertyTypeCollection(
+                                    true,
+                                    new List<PropertyType>
+                                    {
+                                        new PropertyType(multipleMediaPickerDt, "images")
+                                        {
+                                            Name = "Images",
+                                        },
+                                    }))
+                                {
+                                    Name = "Details",
                                 },
                             }),
                     }
@@ -529,6 +549,7 @@ namespace Ekom.App_Start
                                         new PropertyType(contentPickerDt, "categories")
                                         {
                                             Name = "Product Categories",
+                                            Description = "Allows a product to belong to categories other than it's umbraco node parent categories. A single product node can therefore belong to multiple logical category tree hierarchies.",
                                         },
                                         new PropertyType(multinodeProductsDt, "relatedProducts")
                                         {

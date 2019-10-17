@@ -108,13 +108,13 @@ namespace Ekom.Models.Data
         /// 
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
-        public DateTime CreateDate { get; set; }
+        public DateTime CreateDate { get; set; } = DateTime.Now;
 
         /// <summary>
         /// Last update date
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
-        public DateTime UpdateDate { get; set; }
+        public DateTime UpdateDate { get; set; } = DateTime.Now;
 
         /// <summary>
         /// <see cref="DateTime"/> payment was verified.

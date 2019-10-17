@@ -1,3 +1,4 @@
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -25,7 +26,7 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        public virtual int Id => Convert.ToInt32(Properties.GetPropertyValue("id"));
+        public virtual int Id => Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
 
         /// <summary>
         /// 
@@ -34,13 +35,13 @@ namespace Ekom.Models
         {
             get
             {
-                var key = Properties.GetPropertyValue("key");
+                var key = Properties.GetPropertyValue("__Key");
 
                 var _key = new Guid();
 
                 if (!Guid.TryParse(key, out _key))
                 {
-                    throw new Exception("No key present for product.");
+                    throw new NodeEntityException("No key present for node.");
                 }
 
                 return _key;
@@ -62,7 +63,7 @@ namespace Ekom.Models
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
-        public virtual string Path => Properties.GetPropertyValue("path");
+        public virtual string Path => Properties.GetPropertyValue("__Path");
         /// <summary>
         /// 
         /// </summary>
@@ -134,7 +135,7 @@ namespace Ekom.Models
             var properties = new Dictionary<string, string>
             {
                 {
-                    "id",
+                    "__NodeId",
                     node.Id.ToString()
                 },
                 {
@@ -146,7 +147,7 @@ namespace Ekom.Models
                     node.Key.ToString()
                 },
                 {
-                    "path",
+                    "__Path",
                     node.Path
                 },
                 {

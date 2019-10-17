@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Exceptions;
+using Ekom.Utilities;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -43,11 +44,10 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-
-                if (ex is DiscountNotFoundException
-                || ex is ArgumentException)
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                    return r;
                 }
 
                 throw;
@@ -65,9 +65,15 @@ namespace Ekom.Controllers
                 await Order.Instance.RemoveCouponFromOrderAsync(storeAlias);
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
-            catch (ArgumentException)
+            catch (Exception ex)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
+                {
+                    return r;
+                }
+
+                throw;
             }
         }
 
@@ -90,11 +96,10 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-                if (ex is OrderLineNotFoundException
-                || ex is DiscountNotFoundException
-                || ex is ArgumentException)
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                    return r;
                 }
 
                 throw;
@@ -115,10 +120,10 @@ namespace Ekom.Controllers
             }
             catch (Exception ex)
             {
-                if (ex is OrderLineNotFoundException
-                || ex is ArgumentException)
+                var r = ExceptionHandler.Handle<HttpStatusCodeResult>(ex);
+                if (r != null)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                    return r;
                 }
 
                 throw;

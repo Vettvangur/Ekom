@@ -293,11 +293,11 @@ namespace Ekom.Models
 
             foreach (var line in orderLinesArray)
             {
-                var lineId = (Guid)line["Key"];
-                var quantity = (int)line["Quantity"];
-                var productJson = line["Product"].ToString();
-                var discount = line["Discount"]?.ToObject<OrderedDiscount>();
-                var orderLineInfo = line["OrderLineInfo"]?.ToObject<OrderLineInfo>();
+                var lineId = (Guid)line[nameof(OrderLine.Key)];
+                var quantity = (int)line[nameof(OrderLine.Quantity)];
+                var productJson = line[nameof(OrderLine.Product)].ToString();
+                var discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
+                var orderLineInfo = line[nameof(OrderLine.OrderLineInfo)]?.ToObject<OrderLineInfo>();
                 var orderLine = new OrderLine(lineId, quantity, productJson, this, orderLineInfo, discount);
 
                 orderLines.Add(orderLine);

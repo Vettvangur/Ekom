@@ -48,7 +48,7 @@ namespace Ekom.Tests
                 Mock.Of<IPerStoreCache<StockData>>()
             );
 
-            Assert.ThrowsException<StockException>(() => stockApi.UpdateStockAsync(newGuid, -5));
+            Assert.ThrowsException<StockException>(() => stockApi.IncrementStockAsync(newGuid, -5));
         }
 
         [TestMethod]

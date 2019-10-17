@@ -19,7 +19,7 @@ namespace Ekom.Repository
         /// <summary>
         /// ctor
         /// </summary>
-        public StockRepository(Configuration config, IScopeProvider scopeProvider, ILogger logger)
+        public StockRepository(IScopeProvider scopeProvider, ILogger logger)
         {
             _scopeProvider = scopeProvider;
             _logger = logger;

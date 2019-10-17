@@ -26,10 +26,10 @@ namespace Ekom.Models.OrderedObjects
         {
             this.paymentProviderObject = paymentProviderObject;
 
-            Id = paymentProviderObject["Id"].Value<int>();
-            Key = Guid.Parse(paymentProviderObject.GetValue("Key").ToString());
-            Title = paymentProviderObject["Title"].Value<string>();
-            var orgPrice = paymentProviderObject["Price"]["Value"].Value<decimal>();
+            Id = paymentProviderObject[nameof(Id)].Value<int>();
+            Key = Guid.Parse(paymentProviderObject.GetValue(nameof(Key)).ToString());
+            Title = paymentProviderObject[nameof(Title)].Value<string>();
+            var orgPrice = paymentProviderObject[nameof(Price)][nameof(Price.Value)].Value<decimal>();
             var price = new Price(orgPrice, store);
             Price = price;
         }

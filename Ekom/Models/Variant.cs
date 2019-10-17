@@ -92,7 +92,7 @@ namespace Ekom.Models
             {
                 return Current.Factory.GetInstance<IProductDiscountService>()
                     .GetProductDiscount(
-                        Guid.Parse(Properties["key"]),
+                        Guid.Parse(Properties["__Key"]),
                         Store.Alias,
                         Properties.GetPropertyValue("price", Store.Alias)
                     );

@@ -15,7 +15,7 @@ namespace Ekom.Services
     {
         readonly ILogger _logger;
         readonly IAppCache _reqCache;
-        readonly IBaseCache<IDomain> _domainCache;
+        readonly IStoreDomainCache _domainCache;
         readonly IBaseCache<IStore> _storeCache;
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace Ekom.Services
         /// </summary>
         public StoreService(
             ILogger logger,
-            IBaseCache<IDomain> domainCache,
+            IStoreDomainCache domainCache,
             IBaseCache<IStore> storeCache,
             AppCaches appCaches
         )
