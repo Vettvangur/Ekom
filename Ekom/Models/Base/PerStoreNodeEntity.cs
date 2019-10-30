@@ -29,11 +29,11 @@ namespace Ekom.Models
         /// <summary>
         /// Get value in properties by store
         /// </summary>
-        /// <param name="alias"></param>
+        /// <param name="propertyAlias"></param>
         /// <param name="storeAlias"></param>
-        public virtual string GetPropertyValue(string alias, string storeAlias)
+        public virtual string GetPropertyValue(string propertyAlias, string storeAlias)
         {
-            return Properties.GetPropertyValue(alias, storeAlias);
+            return Properties.GetPropertyValue(propertyAlias, storeAlias);
         }
 
         /// <summary>

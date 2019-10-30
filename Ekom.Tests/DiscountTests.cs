@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
+using Ekom.Tests;
 using Ekom.Tests.MockClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -29,8 +30,8 @@ namespace Ekom.Tests
         [TestMethod]
         public void DeserialisesOrderInfoWithLineDiscount()
         {
-            var container = Helpers.InitMockContainer();
-            container.Setup(c => c.GetInstance<Configuration>()).Returns(new Configuration());
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(fac => new Configuration());
             var orderData = new OrderData
             {
                 OrderInfo = OrderInfoWithLineDiscount,
@@ -54,17 +55,16 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrder()
         {
-            var container = Helpers.InitMockContainer();
-
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var discount = Objects.Objects.Get_Discount_fixed_500();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(discount, store.Alias, null, oi).Result);
 
             Assert.AreEqual(2000, oi.SubTotal.Value);
         }
@@ -72,16 +72,16 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesPercentageDiscountToOrder()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var discount = Objects.Objects.Get_Discount_percentage_50();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi));
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(discount, store.Alias, null, oi).Result);
 
             Assert.AreEqual(1500, oi.SubTotal.Value);
         }
@@ -89,14 +89,14 @@ namespace Ekom.Tests
         [TestMethod]
         public void DiscountLinkedToProductAppliesToNewOrderLines()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
             var discount = Objects.Objects.Get_Discount_percentage_50();
             product.Discount = discount;
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
             Assert.IsNotNull(oi.orderLines.First().Discount);
             Assert.AreEqual(1500, oi.SubTotal.Value);
@@ -105,7 +105,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void DeterminesBestDiscount()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
@@ -113,20 +113,20 @@ namespace Ekom.Tests
             var discountPerc50 = Objects.Objects.Get_Discount_percentage_50();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
                 discountFixed500,
                 store.Alias,
                 null,
                 oi
-            ));
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(
+            ).Result);
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
                 discountPerc50,
                 store.Alias,
                 null,
                 oi
-            ));
+            ).Result);
 
             Assert.AreEqual(750, oi.SubTotal.Value);
         }
@@ -134,7 +134,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrderLine()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
             var product3 = Objects.Objects.Get_Shirt3_Product();
@@ -143,17 +143,17 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLineAsync(product3, 1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProductAsync(
                 product3,
                 discountFixed500,
                 store.Alias,
                 coupon: null,
                 orderInfo: oi
-            ));
+            ).Result);
 
             Assert.AreEqual(4990, oi.SubTotal.Value);
         }
@@ -161,7 +161,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrderLine2()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
             var product3 = Objects.Objects.Get_Shirt3_Product();
@@ -170,18 +170,18 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProductAsync(
                 product2,
                 discountFixed500,
                 store.Alias,
                 null,
                 oi
-            ));
+            ).Result);
 
-            oi = orderSvc.AddOrderLineAsync(product3, 1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
 
 
             Assert.AreEqual(4990, oi.SubTotal.Value);
@@ -205,7 +205,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void GlobalDiscountGetsApplied()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
 
@@ -215,33 +215,33 @@ namespace Ekom.Tests
             orderSvcMocks.discountCache.GlobalDiscounts[store.Alias][discountPerc50.Key] = discountPerc50;
             var orderSvc = orderSvcMocks.orderSvc;
 
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
             Assert.AreEqual(1995, oi.SubTotal.Value);
         }
 
         [TestMethod]
         public void NonCompliantDiscountGetsRemoved()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product3 = Objects.Objects.Get_Shirt3_Product();
             var discount_fixed_1000_Min_2000 = Objects.Objects.Get_Discount_fixed_1000_Min_2000();
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product3, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product3, 2, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrder(
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
                 discount_fixed_1000_Min_2000,
                 store.Alias,
                 null,
                 oi
-            ));
+            ).Result);
 
             Assert.AreEqual(1000, oi.SubTotal.Value);
 
             Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
-            oi = orderSvc.AddOrderLineAsync(product3, -1, store);
+            oi = orderSvc.AddOrderLineAsync(product3, -1, store).Result;
 
             Assert.AreEqual(1500, oi.SubTotal.Value);
         }
@@ -249,7 +249,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void OrderLineDiscountAmountCalculates()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
 
@@ -257,15 +257,15 @@ namespace Ekom.Tests
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store);
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
 
-            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProduct(
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineProductAsync(
                 product2,
                 discountFixed500,
                 store.Alias,
                 coupon: null,
                 orderInfo: oi
-            ));
+            ).Result);
 
             Assert.AreEqual(500, oi.OrderLines.First().Amount.DiscountAmount.Value);
         }
@@ -273,7 +273,7 @@ namespace Ekom.Tests
         [TestMethod]
         public void OrderInfoDiscountAmountCalculates()
         {
-            var container = Helpers.InitMockContainer();
+            Helpers.RegisterAll();
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
@@ -281,9 +281,9 @@ namespace Ekom.Tests
             var discount = Objects.Objects.Get_Discount_fixed_500();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store);
+            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            orderSvc.ApplyDiscountToOrder(discount, store.Alias, null, oi);
+            orderSvc.ApplyDiscountToOrderAsync(discount, store.Alias, null, oi).Wait();
 
             Assert.AreEqual(1000, oi.DiscountAmount.Value);
         }

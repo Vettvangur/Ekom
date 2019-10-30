@@ -7,6 +7,9 @@ using Moq;
 using System;
 using System.Collections.Concurrent;
 using System.Web;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Logging;
+using Umbraco.Core.Services;
 
 namespace Ekom.Tests.MockClasses
 {
@@ -20,9 +23,6 @@ namespace Ekom.Tests.MockClasses
 
         public OrderServiceMocks()
         {
-            Helpers.InitMockContainer();
-            var httpCtx = Helpers.GetHttpContext();
-            var logFac = Helpers.MockLogFac();
             discountCache = Helpers.MockDiscountCache();
             orderRepo = new Mock<IOrderRepository> { DefaultValue = DefaultValue.Mock };
             activityRepo = new Mock<IActivityLogRepository> { DefaultValue = DefaultValue.Mock };
@@ -30,15 +30,17 @@ namespace Ekom.Tests.MockClasses
             httpCtxMocks = new HttpContextMocks();
             orderSvc = new OrderService(
                 orderRepo.Object,
+                Mock.Of<ICouponRepository>(),
                 activityRepo.Object,
-                Helpers.MockLogFac(),
+                Mock.Of<ILogger>(),
                 Mock.Of<IStoreService>(),
-                Helpers.GetSetAppCtx(),
+                Mock.Of<AppCaches>(),
+                Mock.Of<IMemberService>(),
                 discountCache,
                 httpCtxMocks.httpCtxMock.Object
             );
 
-            var ekmReq = new ContentRequest(new HttpContextWrapper(httpCtx), logFac);
+            var ekmReq = new ContentRequest(httpCtxMocks.httpCtxMock.Object, Mock.Of<ILogger>());
 
             new PrivateObject(orderSvc, new PrivateType(typeof(OrderService)))
                 .SetField("_ekmRequest", ekmReq);

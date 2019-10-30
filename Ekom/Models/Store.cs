@@ -97,8 +97,8 @@ namespace Ekom.Models
             }
             else
             {
-                var srn = GuidUdi.Parse(item.Values["storeRootNode"]);
-                var rootNode = ExamineService.Instance.GetExamineNode(srn.Guid.ToString());
+                var guid = GuidUdiHelper.GetGuid(item.Values["storeRootNode"]);
+                var rootNode = ExamineService.Instance.GetExamineNode(guid.ToString());
                 if (rootNode != null
                 && int.TryParse(rootNode.Id, out var id))
                 {

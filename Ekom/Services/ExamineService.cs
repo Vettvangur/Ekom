@@ -1,3 +1,4 @@
+using Ekom.Interfaces;
 using Examine;
 using Lucene.Net.QueryParsers;
 using System;
@@ -10,15 +11,13 @@ using Umbraco.Examine;
 
 namespace Ekom.Services
 {
-    /// <summary>
-    /// Quick and easy examine querying
-    /// </summary>
-    public class ExamineService
+    /// <inheritDoc/>
+    public class ExamineService : IExamineService
     {
         /// <summary>
         /// ExamineService Instance
         /// </summary>
-        public static ExamineService Instance => Current.Factory.GetInstance<ExamineService>();
+        public static IExamineService Instance => Current.Factory.GetInstance<IExamineService>();
 
         public static DateTime ConvertToDatetime(string value)
         {
@@ -82,10 +81,7 @@ namespace Ekom.Services
             return null;
         }
 
-        /// <summary>
-        /// Intended for Ekom library users, will have more Ekom specific functionality later on
-        /// Builds and runS the Lucene query.
-        /// </summary>
+        /// <inheritDoc/>
         public ISearchResults SearchResult(string query, string examineIndex, out long total)
         {
             total = 0;

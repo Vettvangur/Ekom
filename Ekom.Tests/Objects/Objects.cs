@@ -1,5 +1,7 @@
+using Examine;
 using Ekom.Models;
 using Ekom.Models.Discounts;
+using System.Collections.Generic;
 
 namespace Ekom.Tests.Objects
 {
@@ -12,32 +14,54 @@ namespace Ekom.Tests.Objects
         /// IS store with 10% Vat not included
         /// </summary>
         /// <returns></returns>
-        public static Store Get_IS_Store_Vat_NotIncluded() => new CustomStore(Store_IS_Vat_NotIncluded.json, 1059);
-        public static Store Get_IS_Store_Vat_Included() => new CustomStore(Store_IS_Vat_Included.json, 1059);
+        public static Store Get_IS_Store_Vat_NotIncluded() 
+            => new CustomStore(Store_IS_Vat_NotIncluded.json, 1059);
+        public static Store Get_IS_Store_Vat_Included() 
+            => new CustomStore(Store_IS_Vat_Included.json, 1059);
+        public static Store Get_DK_Store_Vat_Included() 
+            => new CustomStore(Store_DK_Vat_Included.json, 1110);
 
-        public static Store Get_DK_Store_Vat_Included() => new CustomStore(Store_DK_Vat_Included.json, 1110);
-
+        public static SearchResult StoreResult
+            => new SearchResult("1096", 0, () => new Dictionary<string, List<string>>
+            {
+                { "__NodeId", new List<string> { "1096" } },
+                { "__NodeTypeAlias", new List<string> { "ekmStore" } },
+                { "__Published", new List<string> { "y" } },
+                { "__Key", new List<string> { "9d67c718-a703-4958-8e2d-271670faf207" } },
+                { "parentID", new List<string> { "1094" } },
+                { "level", new List<string> { "3" } },
+                { "nodeName", new List<string> { "IS" } },
+                { "urlName", new List<string> { "is" } },
+                { "__Path", new List<string> { "-1,1089,1094,1096" } },
+                { "nodeType", new List<string> { "1084" } },
+                { "storeRootNode", new List<string> { "umb://document/8cea2a5d0290434caa9812850ae4c7d6" } },
+                { "vat", new List<string> { "25" } },
+                { "culture", new List<string> { "is-IS" } },
+                { "currency", new List<string> { "is-IS" } },
+                { "vatIncludedInPrice", new List<string> { "1" } },
+                { "orderNumberTemplate", new List<string> { "#orderIdPadded#" } },
+            });
         public static Product Get_Shirt2_Product()
             => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product()
             => new CustomProduct(Shirt_product_3.oldjson, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product_ForProductDiscount()
             => new CustomProduct(Shirt_product_3.json, Get_IS_Store_Vat_NotIncluded());
-        public static Variant Get_shirt2_blue_S_variant()
-            => new Variant(new CustomSearchResult(shirt2_blue_S_variant_json), Get_IS_Store_Vat_NotIncluded());
-        public static VariantGroup Get_shirt2_blue_variantgroup()
-            => new VariantGroup(new CustomSearchResult(shirt2_blue_variantgroup_json), Get_IS_Store_Vat_NotIncluded());
+        //public static Variant Get_shirt2_blue_S_variant()
+        //    => new Variant(new CustomSearchResult(shirt2_blue_S_variant_json), Get_IS_Store_Vat_NotIncluded());
+        //public static VariantGroup Get_shirt2_blue_variantgroup()
+        //    => new VariantGroup(new CustomSearchResult(shirt2_blue_variantgroup_json), Get_IS_Store_Vat_NotIncluded());
 
-        public static Discount Get_Discount_fixed_500()
-            => new Discount(new CustomSearchResult(Discount_fixed_500.json), Get_IS_Store_Vat_NotIncluded());
-        public static Discount Get_Discount_percentage_50()
-            => new Discount(new CustomSearchResult(Discount_percentage_50.json), Get_IS_Store_Vat_NotIncluded());
-        public static Discount Get_Discount_fixed_1000_Min_2000()
-            => new Discount(new CustomSearchResult(Discount_fixed_1000_Min_2000.json), Get_IS_Store_Vat_NotIncluded());
+        //public static Discount Get_Discount_fixed_500()
+        //    => new Discount(new CustomSearchResult(Discount_fixed_500.json), Get_IS_Store_Vat_NotIncluded());
+        //public static Discount Get_Discount_percentage_50()
+        //    => new Discount(new CustomSearchResult(Discount_percentage_50.json), Get_IS_Store_Vat_NotIncluded());
+        //public static Discount Get_Discount_fixed_1000_Min_2000()
+        //    => new Discount(new CustomSearchResult(Discount_fixed_1000_Min_2000.json), Get_IS_Store_Vat_NotIncluded());
 
-        public static Category Get_Category_Women()
-            => new Category(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
-        public static ProductDiscount GetProductDiscount()
-            => new ProductDiscount(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
+        //public static Category Get_Category_Women()
+        //    => new Category(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
+        //public static ProductDiscount GetProductDiscount()
+        //    => new ProductDiscount(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
     }
 }

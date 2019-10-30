@@ -205,7 +205,6 @@ namespace Ekom.Extensions.Controllers
                             order.UniqueId);
 
                         return Redirect(successUrl);
-
                     }
                     catch (Exception ex)
                     {
@@ -215,7 +214,6 @@ namespace Ekom.Extensions.Controllers
 
                         return Redirect(errorUrl);
                     }
-
                 }
                 else
                 {

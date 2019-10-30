@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("Ekom.Extensions")]
 [assembly: InternalsVisibleTo("Ekom.Manager")]
-[assembly: InternalsVisibleTo("Ekom.Tests")]
+[assembly: InternalsVisibleTo("Umbraco.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 // Version information for an assembly consists of the following four values:

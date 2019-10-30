@@ -367,6 +367,7 @@
     <Compile Include="Interfaces\ICouponRepository.cs" />
     <Compile Include="Services\CheckoutService.cs" />
     <Compile Include="API\Providers.cs" />
+    <Compile Include="Interfaces\IExamineService.cs" />
     <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\ProductDiscountService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
@@ -391,6 +392,7 @@
     <Compile Include="Utilities\Enums.cs" />
     <Compile Include="Services\ExamineService.cs" />
     <Compile Include="Utilities\ExceptionHandler.cs" />
+    <Compile Include="Utilities\GuidUdi.cs" />
     <Compile Include="Utilities\NodeHelper.cs" />
     <Compile Include="Utilities\VatCalculator.cs" />
     <Compile Include="Interfaces\ICategory.cs" />

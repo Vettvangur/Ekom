@@ -39,7 +39,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom", "Ekom\Ekom.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Extensions", "Ekom.Extensions\Ekom.Extensions.csproj", "{FCA082BB-1E07-4C3E-8D77-F095CEE34D77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Tests", "Ekom.Tests\Ekom.Tests.csproj", "{18843487-DA0C-466B-9805-629DEB243421}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbraco.Tests", "Ekom.Tests\Umbraco.Tests.csproj", "{18843487-DA0C-466B-9805-629DEB243421}"
 EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ekom.Manager.Frontend\", "{A8E76D41-1323-4B00-A441-8422D89AEF21}"
 	ProjectSection(WebsiteProperties) = preProject
