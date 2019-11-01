@@ -1,6 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Tests.MockClasses;
 using Ekom.Tests.Utilities;
 using Examine;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -14,6 +15,7 @@ using Umbraco.Core.Configuration;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
@@ -50,51 +52,25 @@ namespace Ekom.Tests
                 .Returns(new SearchResult("10", 0, () => null));
             reg.Register(f => examineSvcMock.Object);
 
-            var mockUrlProvider = new Mock<IUrlProvider>();
-            mockUrlProvider.Setup(x => x.GetUrl(
-                It.IsAny<UmbracoContext>(),
-                It.IsAny<IPublishedContent>(),
-                It.IsAny<UrlMode>(),
-                It.IsAny<string>(),
-                It.IsAny<Uri>()
-            ));
+            var publishedSnapshotServiceCreator = new PublishedSnapshotServiceCreator();
+            publishedSnapshotServiceCreator.PublishedContentCacheMock
+                .Setup(x => x.GetById(10))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>()));
 
-            var mockPublishedContentCache = new Mock<IPublishedContentCache>();
-            mockPublishedContentCache.Setup(x => x.GetById(10))
-                .Returns(Mock.Of<IPublishedContent>());
+            var umbCtxFacCreator = new UmbracoContextFactoryCreator();
+            umbCtxFacCreator.PublishedSnapshotService.Setup(
+                x => x.CreatePublishedSnapshot(It.IsAny<string>()))
+                .Returns(publishedSnapshotServiceCreator.PublishedSnapshotMock.Object);
 
-            var mockPublishedSnapshot = new Mock<IPublishedSnapshot>();
-            mockPublishedSnapshot.SetupGet(x => x.Content)
-                .Returns(mockPublishedContentCache.Object);
+            umbCtxFacCreator.UmbracoSettingsSection.Setup(x => x.WebRouting.UrlProviderMode).Returns("Auto");
+            umbCtxFacCreator.GlobalSettings.Setup(x => x.Path).Returns("/umbraco");
 
-            var mockPublishedSnapshotService = new Mock<IPublishedSnapshotService>();
-            mockPublishedSnapshotService.Setup(x => x.CreatePublishedSnapshot(It.IsAny<string>()))
-                .Returns(mockPublishedSnapshot.Object);
-
-            var umbSettingsSectionMock = new Mock<IUmbracoSettingsSection>()
-            {
-                DefaultValue = DefaultValue.Mock
-            };
-            umbSettingsSectionMock.Setup(x => x.WebRouting.UrlProviderMode).Returns("Auto");
-
-            var globalSettingsMock = new Mock<IGlobalSettings>()
-            {
-                DefaultValue = DefaultValue.Mock
-            };
-            globalSettingsMock.Setup(x => x.Path).Returns("/umbraco");
-
-            var umbCtxFacCreator = new UmbracoContextFactoryCreator
-            {
-                UrlProviders = new List<IUrlProvider> { mockUrlProvider.Object },
-                PublishedSnapshotService = mockPublishedSnapshotService.Object,
-                UmbracoSettingsSection = umbSettingsSectionMock.Object,
-                GlobalSettings = globalSettingsMock.Object,
-            };
             var umbCtxFac = umbCtxFacCreator.Create();
             reg.Register<IUmbracoContextFactory>(f => umbCtxFac);
 
             reg.Register(f => Mock.Of<IStoreDomainCache>(
-                sd => sd.Cache == new ConcurrentDictionary<Guid, Umbraco.Core.Models.IDomain> { }));
+                sd => sd.Cache == new ConcurrentDictionary<Guid, IDomain> { }));
 
             var s = new Store(Objects.Objects.StoreResult);
             Assert.AreEqual(1096, s.Id);

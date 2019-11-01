@@ -110,8 +110,7 @@ namespace Ekom.Models
                 }
             }
 
-            var contextFactory = Current.Factory.GetInstance<IUmbracoContextFactory>();
-            using (var uCtx = contextFactory.EnsureUmbracoContext())
+            using (var uCtx = Current.Factory.GetInstance<IUmbracoContextFactory>().EnsureUmbracoContext())
             {
                 Url = uCtx.UmbracoContext.UrlProvider.GetUrl(StoreRootNode);
             }

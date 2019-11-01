@@ -19,20 +19,38 @@ namespace Ekom.Tests.Utilities
     /// </summary>
     class UmbracoContextFactoryCreator
     {
+        public UmbracoContextFactoryCreator()
+        {
+            var mockUrlProvider = new Mock<IUrlProvider>();
+
+            UrlProvider = mockUrlProvider;
+            UrlProviders = new List<IUrlProvider> { mockUrlProvider.Object };
+        }
+
+        public Mock<IUrlProvider> UrlProvider;
         public List<IUrlProvider> UrlProviders;
-        public IPublishedSnapshotService PublishedSnapshotService;
-        public IUmbracoSettingsSection UmbracoSettingsSection;
-        public IGlobalSettings GlobalSettings;
+        public Mock<IPublishedSnapshotService> PublishedSnapshotService = new Mock<IPublishedSnapshotService>
+        {
+            DefaultValue = DefaultValue.Mock,
+        };
+        public Mock<IUmbracoSettingsSection> UmbracoSettingsSection = new Mock<IUmbracoSettingsSection>
+        {
+            DefaultValue = DefaultValue.Mock,
+        };
+        public Mock<IGlobalSettings> GlobalSettings = new Mock<IGlobalSettings>() 
+        { 
+            DefaultValue = DefaultValue.Mock,
+        };
 
         public UmbracoContextFactory Create()
         {
             return new UmbracoContextFactory(
                 Mock.Of<IUmbracoContextAccessor>(),
-                PublishedSnapshotService ?? Mock.Of<IPublishedSnapshotService>(),
+                PublishedSnapshotService.Object,
                 Mock.Of<IVariationContextAccessor>(),
                 Mock.Of<IDefaultCultureAccessor>(),
-                UmbracoSettingsSection ?? new Mock <IUmbracoSettingsSection> { DefaultValue = DefaultValue.Mock }.Object,
-                GlobalSettings ?? new Mock <IGlobalSettings> { DefaultValue = DefaultValue.Mock }.Object,
+                UmbracoSettingsSection.Object,
+                GlobalSettings.Object,
                 new UrlProviderCollection(UrlProviders ?? Enumerable.Empty<IUrlProvider>()),
                 new MediaUrlProviderCollection(Enumerable.Empty<IMediaUrlProvider>()),
                 Mock.Of<IUserService>());
