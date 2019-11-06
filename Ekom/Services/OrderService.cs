@@ -141,7 +141,7 @@ namespace Ekom.Services
             return null;
         }
 
-        public async Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
+        public Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
             // Add timelimit to get the order ? Maybe 1-2 hours ?
 
@@ -158,7 +158,7 @@ namespace Ekom.Services
                     || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
                     || orderInfo?.OrderStatus == OrderStatus.Pending)
                     {
-                        return orderInfo;
+                        return Task.FromResult(orderInfo);
                     }
                 }
             }
@@ -173,18 +173,14 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-
-                    var orderInfo = _runtimeCache.GetCacheItem(
-                        orderUniqueId.ToString(),
-                        () => GetOrder(orderUniqueId),
-                        TimeSpan.FromDays(1));
+                    var orderInfo = GetOrder(orderUniqueId);
 
                     if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
                     || orderInfo?.OrderStatus == OrderStatus.Dispatched
                     || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
                     || orderInfo?.OrderStatus == OrderStatus.Pending)
                     {
-                        return orderInfo;
+                        return Task.FromResult(orderInfo);
                     }
                 }
             }
@@ -194,11 +190,11 @@ namespace Ekom.Services
 
         public OrderInfo GetOrder(Guid uniqueId)
         {
-            // Chekk for cache ?
-            return _runtimeCache.GetCacheItem<OrderInfo>(
+            // Check for cache ?
+            return _runtimeCache.GetCacheItem(
                 $"EkomOrder-{uniqueId}",
-                () => GetOrderInfoAsync(uniqueId).Result
-            , TimeSpan.FromMinutes(5));
+                () => GetOrderInfoAsync(uniqueId).Result, 
+                TimeSpan.FromMinutes(5));
         }
 
         // fills cache for GetOrder
