@@ -1,18 +1,33 @@
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
 using Ekom.Tests;
 using Ekom.Tests.MockClasses;
+using Ekom.Tests.Utilities;
+using Examine;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Newtonsoft.Json;
+using System;
 using System.Linq;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 
 namespace Ekom.Tests
 {
     [TestClass]
     public class DiscountTests
     {
+        [TestCleanup]
+        public void TearDown()
+        {
+            Current.Reset();
+        }
+
         const string OrderedDiscount = @"{""Key"": ""9f01d763-635e-41c5-8787-d405f5852940"",""Amount"": {""Type"": 1,""Amount"": 0.2},""Constraints"": {""StartRange"": 0,""EndRange"": 0,""CountriesInZone"": []},""Coupons"": [],""HasMasterStock"": false}";
 
         [TestMethod]
@@ -31,7 +46,7 @@ namespace Ekom.Tests
         public void DeserialisesOrderInfoWithLineDiscount()
         {
             var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(fac => new Configuration());
+            reg.Register(f => new Configuration());
             var orderData = new OrderData
             {
                 OrderInfo = OrderInfoWithLineDiscount,
@@ -55,10 +70,20 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrder()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == productKey)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == productKey
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
-
             var discount = Objects.Objects.Get_Discount_fixed_500();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
@@ -72,7 +97,18 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesPercentageDiscountToOrder()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == productKey)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == productKey
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
@@ -89,7 +125,18 @@ namespace Ekom.Tests
         [TestMethod]
         public void DiscountLinkedToProductAppliesToNewOrderLines()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == productKey)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == productKey
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
             var discount = Objects.Objects.Get_Discount_percentage_50();
@@ -105,7 +152,18 @@ namespace Ekom.Tests
         [TestMethod]
         public void DeterminesBestDiscount()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == productKey)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == productKey
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
@@ -134,7 +192,25 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrderLine()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
+            var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product2Key
+                ));
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product3Key
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
             var product3 = Objects.Objects.Get_Shirt3_Product();
@@ -161,7 +237,25 @@ namespace Ekom.Tests
         [TestMethod]
         public void AppliesFixedDiscountToOrderLine2()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
+            var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product2Key
+                ));
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product3Key
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
             var product3 = Objects.Objects.Get_Shirt3_Product();
@@ -205,7 +299,9 @@ namespace Ekom.Tests
         [TestMethod]
         public void GlobalDiscountGetsApplied()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+            Helpers.RegisterUmbracoHelper(reg, fac);
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
 
@@ -222,7 +318,18 @@ namespace Ekom.Tests
         [TestMethod]
         public void NonCompliantDiscountGetsRemoved()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product3Key
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product3 = Objects.Objects.Get_Shirt3_Product();
             var discount_fixed_1000_Min_2000 = Objects.Objects.Get_Discount_fixed_1000_Min_2000();
@@ -249,7 +356,18 @@ namespace Ekom.Tests
         [TestMethod]
         public void OrderLineDiscountAmountCalculates()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product2Key
+                ));
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
 
@@ -273,7 +391,17 @@ namespace Ekom.Tests
         [TestMethod]
         public void OrderInfoDiscountAmountCalculates()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            umbHelperCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.ContentType == Mock.Of<IPublishedContentType>(y => y.Alias == "ekmProduct")
+                    && x.Key == product3Key
+                ));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();

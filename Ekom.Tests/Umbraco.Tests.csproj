@@ -255,22 +255,23 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Umbraco.Core, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\Umbraco.Core.dll</HintPath>
+      <HintPath>..\packages\UmbracoCms.Core.8.1.4\lib\net472\Umbraco.Core.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Examine, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.1.4\lib\net472\Umbraco.Examine.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Web, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\Umbraco.Web.dll</HintPath>
+      <HintPath>..\packages\UmbracoCms.Web.8.1.4\lib\net472\Umbraco.Web.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Web.UI, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.1.4\lib\net472\Umbraco.Web.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DiscountTests.cs" />
     <Compile Include="MockClasses\PublishedSnapshotServiceCreator.cs" />
+    <Compile Include="MockClasses\UmbracoHelperCreator.cs" />
+    <Compile Include="NodeTests.cs" />
     <Compile Include="Utilities\Helpers.cs" />
     <Compile Include="MockClasses\HttpContextMocks.cs" />
     <Compile Include="MockClasses\OrderServiceMocks.cs" />
@@ -282,7 +283,6 @@
     <Compile Include="Objects\Discount_percentage_50.cs" />
     <Compile Include="Objects\Jackets_Product_3_With_Product_Discount.cs" />
     <Compile Include="Objects\Objects.cs" />
-    <Compile Include="Objects\Category_Women.cs" />
     <Compile Include="Objects\ProductDiscount_Fixed.cs" />
     <Compile Include="Objects\ProductDiscount_Percent_10.cs" />
     <Compile Include="Objects\ProductDiscount_Percent_20.cs" />

@@ -33,45 +33,41 @@ namespace Ekom.Models.OrderedObjects
             {
                 Currency = currency;
             }
-            catch
+            finally
             {
-
-                //fallback for is-IS
-
-                var list = new List<CurrencyModel>();
-
-                list.Add(new CurrencyModel()
+                if (Currency == null)
                 {
-                    CurrencyFormat = "C",
-                    CurrencyValue = "is-IS"
-                });
-
-                currency = list;
+                    Currency = new List<CurrencyModel>
+                    {
+                        new CurrencyModel()
+                        {
+                            CurrencyFormat = "C",
+                            CurrencyValue = "is-IS"
+                        }
+                    };
+                }
             }
-
-
         }
 
         public StoreInfo(JObject storeInfoObject)
         {
-
-
-
             try
             {
                 Currency = storeInfoObject[nameof(Currency)]?.ToObject<List<CurrencyModel>>();
             }
-            catch
+            finally
             {
-                var list = new List<CurrencyModel>();
-
-                list.Add(new CurrencyModel()
+                if (Currency == null)
                 {
-                    CurrencyFormat = "C",
-                    CurrencyValue = "is-IS"
-                });
-
-                Currency = list;
+                    Currency = new List<CurrencyModel>
+                    {
+                        new CurrencyModel()
+                        {
+                            CurrencyFormat = "C",
+                            CurrencyValue = "is-IS"
+                        }
+                    };
+                }
             }
 
             Key = Guid.Parse(storeInfoObject[nameof(Key)].Value<string>());
@@ -79,7 +75,6 @@ namespace Ekom.Models.OrderedObjects
             Alias = storeInfoObject[nameof(Alias)].Value<string>();
             VatIncludedInPrice = storeInfoObject[nameof(VatIncludedInPrice)].Value<bool>();
             Vat = storeInfoObject[nameof(Vat)].Value<int>();
-
         }
 
         public StoreInfo(IStore store)

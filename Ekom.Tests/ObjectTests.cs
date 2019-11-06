@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration;
@@ -32,14 +33,13 @@ namespace Ekom.Tests
             Current.Reset();
         }
 
-        //[TestMethod]
-        //public void CategoriesCanCallGetPropertyValueWithStoreAlias()
-        //{
-        //    Helpers.RegisterAll();
-
-        //    ICategory cat = Objects.Objects.Get_Category_Women();
-        //    Assert.AreEqual("Konur", cat.GetPropertyValue("title", "IS"));
-        //}
+        [TestMethod]
+        public void CategoriesCanCallGetPropertyValueWithStoreAlias()
+        {
+            Helpers.RegisterAll();
+            ICategory cat = Objects.Objects.Get_Category_Women();
+            Assert.AreEqual("Konur", cat.GetPropertyValue("title", "IS"));
+        }
 
         [TestMethod]
         public void StoreFromSearchResult()
@@ -50,7 +50,7 @@ namespace Ekom.Tests
             var examineSvcMock = new Mock<IExamineService>();
             examineSvcMock.Setup(x => x.GetExamineNode("8cea2a5d-0290-434c-aa98-12850ae4c7d6"))
                 .Returns(new SearchResult("10", 0, () => null));
-            reg.Register(f => examineSvcMock.Object);
+            reg.Register(examineSvcMock.Object);
 
             var publishedSnapshotServiceCreator = new PublishedSnapshotServiceCreator();
             publishedSnapshotServiceCreator.PublishedContentCacheMock

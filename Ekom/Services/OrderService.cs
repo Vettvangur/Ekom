@@ -523,10 +523,13 @@ namespace Ekom.Services
                     orderInfo,
                     variant
                 );
+
                 if (orderInfo.Discount != null)
                 {
                     if (orderInfo.Discount.DiscountItems.Contains(product.Key))
                     {
+                        _logger.Debug<OrderService>($"Discount {orderInfo.Discount.Key} found on Order, applying to OrderLine");
+
                         await ApplyDiscountToOrderLineAsync(
                             orderLine,
                             product.Discount,
@@ -539,9 +542,9 @@ namespace Ekom.Services
 
                 if (product.Discount != null) // product discount is always null because order discount is added to the order not product
                 {
-                    _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
                     if (product.Discount.DiscountItems.Contains(product.Key))
                     {
+                        _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
                         await ApplyDiscountToOrderLineAsync(
                             orderLine,
                             product.Discount,

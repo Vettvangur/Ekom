@@ -99,23 +99,25 @@ namespace Ekom.Models.Discounts
                 Type = type,
             };
 
-            var nodes = Properties.GetPropertyValue("discountItems", Store.Alias)
-                .Split(',')
-                .Select(x => UmbHelper.Content(Udi.Parse(x))).ToList();
+            var discountItemsVal = Properties.GetPropertyValue("discountItems", Store.Alias);
 
-
-            foreach (var node in nodes)
+            if (!string.IsNullOrEmpty(discountItemsVal))
             {
-                if (node.ContentType.Alias == "ekmProduct")
+                var nodes = discountItemsVal.Split(',').Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
+
+                foreach (var node in nodes)
                 {
-                    discountItems.Add(node.Key);
-                }
-                if (node.ContentType.Alias == "ekmCategory")
-                {
-                    discountItems.AddRange(
-                        node.Descendants()
-                            .Where(x => x.ContentType.Alias == "ekmProduct")
-                            .Select(x => x.Key));
+                    if (node.ContentType.Alias == "ekmProduct")
+                    {
+                        discountItems.Add(node.Key);
+                    }
+                    if (node.ContentType.Alias == "ekmCategory")
+                    {
+                        discountItems.AddRange(
+                            node.Descendants()
+                                .Where(x => x.ContentType.Alias == "ekmProduct")
+                                .Select(x => x.Key));
+                    }
                 }
             }
 

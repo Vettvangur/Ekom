@@ -720,6 +720,11 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Discount",
                                         },
+                                        new PropertyType(multinodeProductsDt, "discountItems")
+                                        {
+                                            Name = "Discount Items",
+                                            Mandatory = true,
+                                        },
                                     }))
                                 {
                                     Name = "Settings",

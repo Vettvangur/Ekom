@@ -210,7 +210,6 @@ namespace Ekom.Models
 
                 var amount = OrderLines.Sum(line =>
                 {
-
                     var price
                         = new Price(
                             line.Amount.OriginalValue,
@@ -223,7 +222,6 @@ namespace Ekom.Models
                         );
 
                     return price.Value;
-
                 });
 
                 if (ShippingProvider != null)

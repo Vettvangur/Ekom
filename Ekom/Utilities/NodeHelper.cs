@@ -218,17 +218,14 @@ namespace Ekom.Utilities
         public static bool IsItemUnpublished(this ISearchResult searchResult)
         {
             string path = searchResult.Values["__Path"];
+            var catalogItems = GetAllCatalogItemsFromPath(path);
+            var pathArray = path.Split(',');
 
-            foreach (var item in GetAllCatalogItemsFromPath(path))
-            {
-                // Unpublished items can't be found in the external examine index
-                if (item == null)
-                {
-                    return true;
-                }
-            }
+            var Ids = pathArray.Skip(3);
 
-            return false;
+            // Unpublished items can't be found in the external examine index
+            // missing items are not returned on get
+            return Ids.Count() > catalogItems.Count();
         }
 
         /// <summary>

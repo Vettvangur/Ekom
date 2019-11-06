@@ -48,7 +48,7 @@ namespace Ekom.Services
             string coupon = null
         )
         {
-            if (IsBetterDiscount(orderInfo, discount) && IsDiscountApplicatable(orderInfo, discount))
+            if (IsBetterDiscount(orderInfo, discount) && IsDiscountApplicable(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
                 //foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
@@ -64,13 +64,10 @@ namespace Ekom.Services
                 orderInfo.Coupon = coupon;
                 foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount == null))
                 {
-                    if (line.Discount == null)
+                    if (discount.DiscountItems.Contains(line.ProductKey))
                     {
-                        if (discount.DiscountItems.Contains(line.ProductKey))
-                        {
-                            line.Discount = orderInfo.Discount;
-                            line.Coupon = coupon;
-                        }
+                        line.Discount = orderInfo.Discount;
+                        line.Coupon = coupon;
                     }
                 }
 
@@ -201,9 +198,10 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Applying discount to orderline");
 
-            if (orderLine.Discount != null)
+            // Is discount applicable
+            if (discount.DiscountItems.Any(x => x == orderLine.ProductKey))
             {
-                if (orderLine.Discount.DiscountItems.Contains(orderLine.ProductKey))
+                if (orderLine.Discount != null)
                 {
                     if (IsBetterDiscount(orderLine, discount))
                     {
@@ -219,15 +217,7 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    orderLine.Discount = null;
-                }
-
-            }
-            else
-            {
-                if (orderInfo.Discount != null)
-                {
-                    if (orderInfo.Discount.DiscountItems.Contains(orderLine.ProductKey))
+                    if (orderInfo.Discount != null)
                     {
                         // Apply cart discount on line for comparison with new discount
                         orderLine.Discount = orderInfo.Discount;
@@ -235,7 +225,6 @@ namespace Ekom.Services
                         return true;
                     }
                 }
-
             }
 
             return false;
@@ -381,24 +370,17 @@ namespace Ekom.Services
             {
                 if (line.Discount != null)
                 {
-                    if (line.Discount?.Constraints.IsValid(storeAlias, total) == false || !line.Discount.DiscountItems.Contains(line.ProductKey))
+                    if (line.Discount?.Constraints.IsValid(storeAlias, total) == false
+                    || !line.Discount.DiscountItems.Contains(line.ProductKey))
                     {
                         RemoveDiscountFromOrderLine(line);
                     }
                 }
-
             }
         }
 
-        public bool IsDiscountApplicatable(OrderInfo orderInfo, IDiscount discount)
-        {
-            if (orderInfo.OrderLines.Any(x => discount.DiscountItems.Any(z => z == x.ProductKey)))
-            {
-                return true;
-            }
-
-            return false;
-        }
+        public bool IsDiscountApplicable(OrderInfo orderInfo, IDiscount discount)
+            => orderInfo.OrderLines.Any(x => discount.DiscountItems.Contains(x.ProductKey));
 
         public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
         {

@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Web;
+using System.Web.Caching;
 using System.Web.Hosting;
 using System.Web.Security;
 using Umbraco.Core;
@@ -52,7 +53,7 @@ namespace Ekom.Tests
 
             RegisterMockedHttpContext(register);
             RegisterMockedUmbracoTypes(register, factory);
-            RegisterOther(register, factory);
+            RegisterEkom(register, factory);
             return (factory, register);
         }
 
@@ -70,6 +71,25 @@ namespace Ekom.Tests
             register.Register(ServiceContext.CreatePartial());
             register.Register(Mock.Of<IProfilingLogger>());
             register.Register(Mock.Of<IUmbracoContextAccessor>());
+            //register.Register(Mock.Of<AppCaches>());
+
+            Current.Factory = factory;
+        }
+        public static void RegisterEkom(IRegister register, IFactory factory)
+        {
+            register.Register(new Configuration());
+            register.Register(Mock.Of<IBaseCache<IZone>>());
+            register.Register(Mock.Of<IExamineService>());
+        }
+
+        /// <summary>
+        /// For same inexplicable reason the following registrations block further registrations from
+        /// overriding previous ones. Even for different types, f.x. a .Register<IExamineService>
+        /// </summary>
+        /// <param name="register"></param>
+        /// <param name="factory"></param>
+        public static void RegisterUmbracoHelper(IRegister register, IFactory factory)
+        {
             var membershipHelper = new MembershipHelper(
                 factory.GetInstance<HttpContextBase>(),
                 Mock.Of<IPublishedMemberCache>(),
@@ -89,19 +109,25 @@ namespace Ekom.Tests
                 Mock.Of<IPublishedContentQuery>(),
                 membershipHelper);
             register.Register(umbHelper);
+        }
 
-            Current.Factory = factory;
-        }
-        public static void RegisterOther(IRegister register, IFactory factory)
-        {
-        }
         public static void AddOrderInfoToHttpSession(OrderInfo orderInfo, IStore store, OrderServiceMocks orderSvcMocks)
         {
             // Setup HttpContext Session to return same OrderInfo
             string sessKey = new PrivateObject(orderSvcMocks.orderSvc, new PrivateType(typeof(OrderService)))
                 .Invoke("CreateKey", store.Alias)
                 as string;
-            orderSvcMocks.httpCtxMocks.httpSessMock.Setup(s => s[sessKey]).Returns(orderInfo);
+            orderSvcMocks.RuntimeCache.Setup(
+                s => s.Get(
+                    It.Is<string>(x => x == orderInfo.UniqueId.ToString()), 
+                    It.IsAny<Func<object>>(),
+                    It.IsAny<TimeSpan>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<CacheItemPriority>(),
+                    It.IsAny<CacheItemRemovedCallback>(),
+                    It.IsAny<string[]>()
+                )).Returns(orderInfo);
+
             // Setup HttpRequest Cookies to retun oi guid
             var cookie = new HttpCookie(sessKey)
             {

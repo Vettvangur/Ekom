@@ -7,9 +7,6 @@ namespace Ekom.Tests.Objects
 {
     partial class Objects
     {
-        const string shirt2_blue_S_variant_json = "{\"id\":\"1200\",\"key\":\"ae263831-ff11-4af9-96d6-3cbc5b35b197\",\"parentID\":\"1195\",\"level\":\"7\",\"writerID\":\"1\",\"creatorID\":\"1\",\"nodeType\":\"1090\",\"template\":\"0\",\"sortOrder\":\"0\",\"createDate\":\"20171123194102000\",\"updateDate\":\"20171127170839000\",\"nodeName\":\"S\",\"urlName\":\"s\",\"writerName\":\"gardar@vettvangur.is\",\"creatorName\":\"gardar@vettvangur.is\",\"nodeTypeAlias\":\"ekmProductVariant\",\"path\":\"-1,1066,1067,1179,1068,1079,1195,1200\",\"price\":\"{\\\"values\\\":{\\\"IS\\\":\\\"4900\\\"},\\\"dtdGuid\\\":\\\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\\\"}\",\"sku\":\"women-sku-shirt-2-blue-s\",\"stock\":\"{\\\"values\\\":null,\\\"dtdGuid\\\":\\\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\\\"}\",\"title\":\"{\\\"values\\\":{\\\"IS\\\":\\\"S\\\",\\\"EN\\\":\\\"S\\\",\\\"DK\\\":\\\"S\\\",\\\"EU\\\":\\\"S\\\"},\\\"dtdGuid\\\":\\\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\\\"}\"}";
-        const string shirt2_blue_variantgroup_json = "{\"id\":\"1195\",\"key\":\"6741e6d9-8a7c-4330-8b2f-2f65073f62a4\",\"parentID\":\"1079\",\"level\":\"6\",\"writerID\":\"1\",\"creatorID\":\"1\",\"nodeType\":\"1089\",\"template\":\"0\",\"sortOrder\":\"1\",\"createDate\":\"20171123192228000\",\"updateDate\":\"20171124130014000\",\"nodeName\":\"Blue\",\"urlName\":\"blue\",\"writerName\":\"gardar@vettvangur.is\",\"creatorName\":\"gardar@vettvangur.is\",\"nodeTypeAlias\":\"ekmProductVariantGroup\",\"path\":\"-1,1066,1067,1179,1068,1079,1195\",\"color\":\"0056ff\",\"images\":\"2209,2210\",\"title\":\"{\\\"values\\\":{\\\"IS\\\":\\\"Blár\\\",\\\"EN\\\":\\\"Blue\\\",\\\"DK\\\":\\\"Blue\\\",\\\"EU\\\":\\\"Blue\\\"},\\\"dtdGuid\\\":\\\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\\\"}\"}";
-
         /// <summary>
         /// IS store with 10% Vat not included
         /// </summary>
@@ -47,21 +44,136 @@ namespace Ekom.Tests.Objects
             => new CustomProduct(Shirt_product_3.oldjson, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product_ForProductDiscount()
             => new CustomProduct(Shirt_product_3.json, Get_IS_Store_Vat_NotIncluded());
-        //public static Variant Get_shirt2_blue_S_variant()
-        //    => new Variant(new CustomSearchResult(shirt2_blue_S_variant_json), Get_IS_Store_Vat_NotIncluded());
-        //public static VariantGroup Get_shirt2_blue_variantgroup()
-        //    => new VariantGroup(new CustomSearchResult(shirt2_blue_variantgroup_json), Get_IS_Store_Vat_NotIncluded());
 
-        //public static Discount Get_Discount_fixed_500()
-        //    => new Discount(new CustomSearchResult(Discount_fixed_500.json), Get_IS_Store_Vat_NotIncluded());
-        //public static Discount Get_Discount_percentage_50()
-        //    => new Discount(new CustomSearchResult(Discount_percentage_50.json), Get_IS_Store_Vat_NotIncluded());
-        //public static Discount Get_Discount_fixed_1000_Min_2000()
-        //    => new Discount(new CustomSearchResult(Discount_fixed_1000_Min_2000.json), Get_IS_Store_Vat_NotIncluded());
+        public static SearchResult Get_shirt2_blue_S_variant_SearchResult()
+            => new SearchResult("1200", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "1200" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmProductVariant" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "ae263831-ff11-4af9-96d6-3cbc5b35b197" } },
+                    { "parentID", new List<string> { "1195" } },
+                    { "level", new List<string> { "7" } },
+                    { "nodeName", new List<string> { "S" } },
+                    { "urlName", new List<string> { "s" } },
+                    { "__Path", new List<string> { "-1,1066,1067,1179,1079,1195,1200" } },
+                    { "nodeType", new List<string> { "1090" } },
+                    { "price", new List<string> { "{\"values\":{\"IS\":\"4900\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "sku", new List<string> { "women-sku-shirt-2-blue-s" } },
+                    { "stock", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "title", new List<string> { "{\"values\":{\"IS\":\"S\",\"EN\":\"S\",\"DK\":\"S\",\"EU\":\"S\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                });
+        public static Variant Get_shirt2_blue_S_variant()
+            => new Variant(
+                Get_shirt2_blue_S_variant_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded()
+            );
+        public static SearchResult Get_shirt2_blue_variantgroup_SearchResult()
+            => new SearchResult("1195", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "1195" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmProductVariantGroup" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "6741e6d9-8a7c-4330-8b2f-2f65073f62a4" } },
+                    { "parentID", new List<string> { "1079" } },
+                    { "level", new List<string> { "6" } },
+                    { "nodeName", new List<string> { "Blue" } },
+                    { "urlName", new List<string> { "blue" } },
+                    { "__Path", new List<string> { "-1,1066,1067,1179,1079,1195" } },
+                    { "nodeType", new List<string> { "1089" } },
+                    { "color", new List<string> { "0056ff" } },
+                    { "images", new List<string> { "2209,2210" } },
+                    { "title", new List<string> { "{\"values\":{\"IS\":\"Blár\",\"EN\":\"Blue\",\"DK\":\"Blue\",\"EU\":\"Blue\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                });
+        public static VariantGroup Get_shirt2_blue_variantgroup()
+            => new VariantGroup(
+                Get_shirt2_blue_variantgroup_SearchResult(), 
+                Get_IS_Store_Vat_NotIncluded());
 
-        //public static Category Get_Category_Women()
-        //    => new Category(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
-        //public static ProductDiscount GetProductDiscount()
-        //    => new ProductDiscount(new CustomSearchResult(Category_Women.json), Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_Discount_fixed_500()
+            => new Discount(
+                new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "2246" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
+                    { "parentID", new List<string> { "2245" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "10% off" } },
+                    { "urlName", new List<string> { "10-off" } },
+                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
+                    { "nodeType", new List<string> { "2237" } },
+                    { "disable", new List<string> { "{\"values\":{\"IS\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
+                    { "discount", new List<string> { "500" } },
+                    { "discountItems", new List<string> { "{\"values\":{\"IS\":\"umb://document/9e8665c7d40542b58913175ca066d5c9\"},\"dtdGuid\":\"7a198290-179f-4c0e-8073-7c94afd9693a\"}" } },
+                    { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "type", new List<string> { "Fixed" } },
+                }), 
+                Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_Discount_percentage_50()
+            => new Discount(
+                new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "2246" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
+                    { "parentID", new List<string> { "2245" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "50% off" } },
+                    { "urlName", new List<string> { "50-off" } },
+                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
+                    { "nodeType", new List<string> { "2237" } },
+                    { "disable", new List<string> { "" } },
+                    { "discount", new List<string> { "50" } },
+                    { "discountItems", new List<string> { "{\"values\":{\"IS\":\"umb://document/9e8665c7d40542b58913175ca066d5c9\"},\"dtdGuid\":\"7a198290-179f-4c0e-8073-7c94afd9693a\"}" } },
+                    { "title", new List<string> { "" } },
+                    { "type", new List<string> { "Percentage" } },
+                }),
+                Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_Discount_fixed_1000_Min_2000()
+            => new Discount(
+                new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "2246" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
+                    { "parentID", new List<string> { "2245" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "Global Fixed 1000 Minimum 2000" } },
+                    { "urlName", new List<string> { "global-fixed-1000-minimum-2000" } },
+                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
+                    { "nodeType", new List<string> { "2237" } },
+                    { "disable", new List<string> { "" } },
+                    { "discount", new List<string> { "1000" } },
+                    { "discountItems", new List<string> { "" } },
+                    { "startOfRange", new List<string> { "2000" } },
+                    { "title", new List<string> { "" } },
+                    { "type", new List<string> { "Fixed" } },
+                }),
+                Get_IS_Store_Vat_NotIncluded());
+
+        public static SearchResult Get_Category_Women_SearchResult()
+            => new SearchResult("1179", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "1179" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmCategory" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "3a5d1dd5-9cbd-4e21-a83d-a759d77190a1" } },
+                    { "parentID", new List<string> { "1067" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "Women" } },
+                    { "urlName", new List<string> { "women" } },
+                    { "__Path", new List<string> { "-1,1066,1067,1179" } },
+                    { "disable", new List<string> { "{\"values\":{\"IS\":\"1\",\"EN\":\"0\",\"DK\":\"0\",\"EU\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
+                    { "slug", new List<string> { "\"values\":{\"IS\":\"konur\",\"EN\":\"women\",\"DK\":\"kvinder\",\"EU\":\"women\"},\"dtdGuid\":\"b79a2484-7a52-47a1-8070-c3a347bc22ee\"}" } },
+                    { "title", new List<string> { "{\"values\":{\"IS\":\"Konur\",\"EN\":\"Women\",\"DK\":\"Kvinder\",\"EU\":\"Women\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                });
+        public static Category Get_Category_Women()
+            => new Category(
+                Get_Category_Women_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded());
     }
 }

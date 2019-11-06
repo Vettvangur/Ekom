@@ -22,19 +22,24 @@ namespace Ekom.Tests
         [TestMethod]
         public void CalculatesPriceCorrectly()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+            Helpers.RegisterUmbracoHelper(reg, fac);
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.AreEqual(3000m, oi.OrderLineTotal.Value);
+            Assert.AreEqual(3300m, oi.OrderLineTotal.Value);
         }
 
         [TestMethod]
         public void CalculatesVatNotIncludedStorePrice()
         {
+            var (fac, reg) = Helpers.RegisterAll();
+            Helpers.RegisterUmbracoHelper(reg, fac);
+
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
@@ -48,7 +53,9 @@ namespace Ekom.Tests
         [TestMethod]
         public void CalculatesVatIncludedStorePrice()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+            Helpers.RegisterUmbracoHelper(reg, fac);
+
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
             var product = new CustomProduct(Shirt_product_3.oldjson, store);
 

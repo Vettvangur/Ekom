@@ -21,9 +21,8 @@ namespace Ekom.Tests
             Current.Reset();
         }
 
-
         [TestMethod]
-        public void DoesNotUpdateWithoutStock()
+        public async Task DoesNotUpdateWithoutStock()
         {
             var newGuid = Guid.NewGuid();
 
@@ -36,8 +35,6 @@ namespace Ekom.Tests
             );
             stockCache[newGuid] = new StockData();
 
-            //c.Register<IBaseCache<StockData>, StockCache>(stockCache);
-
             var stockApi = new Stock(
                 Mock.Of<Configuration>(),
                 Mock.Of<ILogger>(),
@@ -48,7 +45,8 @@ namespace Ekom.Tests
                 Mock.Of<IPerStoreCache<StockData>>()
             );
 
-            Assert.ThrowsException<StockException>(() => stockApi.IncrementStockAsync(newGuid, -5));
+            await Assert.ThrowsExceptionAsync<NotEnoughStockException>(
+                () => stockApi.IncrementStockAsync(newGuid, -5));
         }
 
         [TestMethod]
