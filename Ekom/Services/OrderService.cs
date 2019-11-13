@@ -520,25 +520,15 @@ namespace Ekom.Services
                     variant
                 );
 
-                if (orderInfo.Discount != null)
-                {
-                    if (orderInfo.Discount.DiscountItems.Contains(product.Key))
-                    {
-                        _logger.Debug<OrderService>($"Discount {orderInfo.Discount.Key} found on Order, applying to OrderLine");
-
-                        await ApplyDiscountToOrderLineAsync(
-                            orderLine,
-                            product.Discount,
-                            orderInfo
-                        ).ConfigureAwait(false);
-                    }
-                }
-
                 orderInfo.orderLines.Add(orderLine);
-
-                if (product.Discount != null) // product discount is always null because order discount is added to the order not product
+               
+                if (product.Discount != null 
+                // Make sure that the current OrderInfo discount, if there is one, allows stacking
+                // Stacking being applying a seperate discount to the order and general order items
+                // vs specific discounts for specific OrderLines
+                && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
                 {
-                    if (product.Discount.DiscountItems.Contains(product.Key))
+                    if (IsDiscountApplicable(orderInfo, orderLine, product.Discount))
                     {
                         _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
                         await ApplyDiscountToOrderLineAsync(

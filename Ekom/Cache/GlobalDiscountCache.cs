@@ -1,5 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Discounts;
 using Ekom.Utilities;
 using System;
 using System.Linq;
@@ -10,41 +11,42 @@ using Umbraco.Core.Services;
 
 namespace Ekom.Cache
 {
-    class ProductDiscountCache : PerStoreCache<IProductDiscount>
+    class GlobalDiscountCache : PerStoreCache<IGlobalDiscount>
     {
-        public override string NodeAlias { get; } = "ekmProductDiscount";
+        public override string NodeAlias { get; } = "ekmGlobalDiscount";
 
         readonly IContentService _contentService;
-        public ProductDiscountCache(
+        readonly IPerStoreCache<IProduct> _perStoreProductCache;
+        public GlobalDiscountCache(
             Configuration config,
             ILogger logger,
             IFactory factory,
             IBaseCache<IStore> storeCache,
-            IPerStoreFactory<IProductDiscount> perStoreFactory,
-            IContentService contentService
+            IPerStoreFactory<IGlobalDiscount> perStoreFactory,
+            IContentService contentService,
+            IPerStoreCache<IProduct> perStoreProductCache
         ) : base(config, logger, factory, storeCache, perStoreFactory)
         {
             _contentService = contentService;
+            _perStoreProductCache = perStoreProductCache;
         }
 
         public override void AddReplace(IContent node)
         {
             // We use tempItem to only run the refresh on the products items once. and not for every store.
-            IProductDiscount tempItem = null;
+            IGlobalDiscount tempItem = null;
 
             foreach (var store in _storeCache.Cache)
             {
                 try
                 {
-
                     if (!node.IsItemDisabled(store.Value))
                     {
                         var item = _objFac?.Create(node, store.Value)
-                            ?? (ProductDiscount)Activator.CreateInstance(typeof(ProductDiscount), node, store.Value);
+                            ?? (GlobalDiscount)Activator.CreateInstance(typeof(GlobalDiscount), node, store.Value);
 
                         if (item != null)
                         {
-
                             tempItem = item;
 
                             Cache[store.Value.Alias][node.Key] = item;
@@ -53,7 +55,7 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error<ProductDiscountCache>(
+                    _logger.Error<GlobalDiscountCache>(
                         ex,
                         $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
                     );
@@ -61,8 +63,6 @@ namespace Ekom.Cache
             }
 
             RefreshProductCache(tempItem);
-
-
         }
 
 
@@ -72,8 +72,8 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _logger.Debug<ProductDiscountCache>($"Attempting to remove product discount with key {key}");
-            IProductDiscount i = null;
+            _logger.Debug<GlobalDiscountCache>($"Attempting to remove product discount with key {key}");
+            IGlobalDiscount i = null;
 
             foreach (var store in _storeCache.Cache)
             {
@@ -83,26 +83,23 @@ namespace Ekom.Cache
             RefreshProductCache(i);
         }
 
-        private void RefreshProductCache(IProductDiscount discountItem)
+        private void RefreshProductCache(IGlobalDiscount discountItem)
         {
             if (discountItem != null)
             {
                 // Refresh Product items cache
-                var productCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmProduct");
-
                 foreach (var productId in discountItem.DiscountItems)
                 {
                     //TODO We need to use something else then the IContent here. This will be very slow with many products
+                    // Either that or compute Product.Price each time requested, should be fast with all the caching
                     var productNode = _contentService.GetById(productId);
 
                     if (productNode != null)
                     {
-                        productCache.AddReplace(productNode);
+                        _perStoreProductCache.AddReplace(productNode);
                     }
-
                 }
             }
-
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Ekom.Models
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
 
-        public virtual ProductDiscount ProductDiscount
+        public virtual IDiscount Discount
         {
             get
             {
@@ -47,29 +47,29 @@ namespace Ekom.Models
             }
         }
 
-        public virtual IDiscount Discount
-        {
-            get => _discount;
-            internal set
-            {
-                if (_discount == null
-                || (_discount.Amount.Type == value.Amount.Type
-                && value.CompareTo(_discount) > 0))
-                {
-                    _discount = value;
-                    return;
-                }
+        //public virtual IDiscount Discount
+        //{
+        //    get => _discount;
+        //    internal set
+        //    {
+        //        if (_discount == null
+        //        || (_discount.Amount.Type == value.Amount.Type
+        //        && value.CompareTo(_discount) > 0))
+        //        {
+        //            _discount = value;
+        //            return;
+        //        }
 
-                var oldPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(_discount));
+        //        var oldPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(_discount));
 
-                var newPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(value));
+        //        var newPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(value));
 
-                if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
-                {
-                    _discount = value;
-                }
-            }
-        }
+        //        if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
+        //        {
+        //            _discount = value;
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Product Stock Keeping Unit.
@@ -284,7 +284,7 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -302,7 +302,7 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

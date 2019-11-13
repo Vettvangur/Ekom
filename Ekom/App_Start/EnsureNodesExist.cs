@@ -59,6 +59,12 @@ namespace Ekom.App_Start
                     throw new EnsureNodesException(
                         "Unable to find Ekom Stock property editor, failed creating Ekom nodes.");
                 }
+                if (!_propertyEditorCollection.TryGet("Ekom.Coupon", out IDataEditor couponEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Coupon property editor, failed creating Ekom nodes.");
+                }
                 if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor multiNodeEditor))
                 {
                     // Should never happen
@@ -75,6 +81,11 @@ namespace Ekom.App_Start
                 {
                     throw new EnsureNodesException(
                         "Unable to find Our.Umbraco.Vorto property editor, failed creating Ekom nodes. Ensure GMO.Vorto.Web is installed.");
+                }
+                if (!_propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor dropdownEditor))
+                {
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.DropDown.Flexible property editor, failed creating Ekom nodes.");
                 }
 
                 #endregion
@@ -154,6 +165,10 @@ namespace Ekom.App_Start
                 var stockDt = EnsureDataTypeExists(new DataType(stockEditor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Stock",
+                });
+                var couponDt = EnsureDataTypeExists(new DataType(couponEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Coupons",
                 });
                 var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
                 {
@@ -295,6 +310,26 @@ namespace Ekom.App_Start
                         },
                         MandatoryBehaviour = "primary",
                         LanguageSource = "custom",
+                    },
+                });
+                var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Discount Type",
+                    Configuration = new DropDownFlexibleConfiguration
+                    {
+                        Items = new List<ValueListConfiguration.ValueListItem>
+                        {
+                            new ValueListConfiguration.ValueListItem
+                            {
+                                Id = 1,
+                                Value = "Fixed",
+                            },
+                            new ValueListConfiguration.ValueListItem
+                            {
+                                Id = 2,
+                                Value = "Percentage",
+                            },
+                        }
                     },
                 });
 
@@ -646,11 +681,11 @@ namespace Ekom.App_Start
                                 },
                             }),
                 });
-                categoryCt.AllowedContentTypes 
+                categoryCt.AllowedContentTypes
                     = categoryCt.AllowedContentTypes.Append(
                         new ContentTypeSort(categoryCt.Id, 1)
                     );
-                categoryCt.AllowedContentTypes 
+                categoryCt.AllowedContentTypes
                     = categoryCt.AllowedContentTypes.Append(
                         new ContentTypeSort(productCt.Id, 2)
                     );
@@ -711,26 +746,77 @@ namespace Ekom.App_Start
                                     true,
                                     new List<PropertyType>
                                     {
-                                        // ToDo: Finish when consensus is reached
-                                        new PropertyType(numericDt, "type")
+                                        new PropertyType(discountTypeDt, "type")
                                         {
                                             Name = "Type",
+                                            Mandatory = true,
                                         },
                                         new PropertyType(numericDt, "discount")
                                         {
                                             Name = "Discount",
+                                            Mandatory = true,
+                                        },
+                                        //new PropertyType(multinodeProductsDt, "discountItems")
+                                        //{
+                                        //    Name = "Discount Items",
+                                        //    Mandatory = true,
+                                        //},
+                                    }))
+                                {
+                                    Name = "Settings",
+                                },
+                                new PropertyGroup(new PropertyTypeCollection(
+                                    true,
+                                    new List<PropertyType>
+                                    {
+                                        new PropertyType(couponDt, "coupons")
+                                        {
+                                            Name = "Coupons",
+                                        },
+                                    }))
+                                {
+                                    Name = "Coupons",
+                                },
+                            }
+                    ),
+                });
+                var globalDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                {
+                    Name = "Global Discount",
+                    Alias = "ekmGlobalDiscount",
+                    Icon = "icon-bill-dollar",
+                    ContentTypeComposition = new List<IContentTypeComposition>
+                    {
+                        baseComposition,
+                        rangeComposition,
+                    },
+                    PropertyGroups = new PropertyGroupCollection(
+                       new List<PropertyGroup>
+                           {
+                                new PropertyGroup(new PropertyTypeCollection(
+                                    true,
+                                    new List<PropertyType>
+                                    {
+                                        new PropertyType(numericDt, "type")
+                                        {
+                                            Name = "Type",
+                                            Mandatory = true,
+                                        },
+                                        new PropertyType(numericDt, "discount")
+                                        {
+                                            Name = "Discount",
+                                            Mandatory = true,
                                         },
                                         new PropertyType(multinodeProductsDt, "discountItems")
                                         {
                                             Name = "Discount Items",
-                                            Mandatory = true,
                                         },
                                     }))
                                 {
                                     Name = "Settings",
                                 },
-                            }
-                    ),
+                           }
+                   ),
                 });
 
                 var discountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
@@ -741,6 +827,7 @@ namespace Ekom.App_Start
                     AllowedContentTypes = new List<ContentTypeSort>
                     {
                         new ContentTypeSort(discountCt.Id, 1),
+                        new ContentTypeSort(globalDiscountCt.Id, 2),
                     },
                 });
 

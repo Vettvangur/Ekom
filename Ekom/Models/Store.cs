@@ -34,7 +34,10 @@ namespace Ekom.Models
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
-        public virtual string Currency => Properties.GetPropertyValue("currency");
+        public virtual string Currency => string.IsNullOrEmpty(Properties.GetPropertyValue("currency"))
+            ? Properties["culture"]
+            : Properties.GetPropertyValue("currency")
+            ;
         public virtual List<CurrencyModel> CurrencyModel
         {
             get

@@ -283,6 +283,7 @@
     <Compile Include="Controllers\CatalogController.cs" />
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Controllers\OrderController.Discounts.cs" />
+    <Compile Include="DataEditors\EkomCouponEditor.cs" />
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
@@ -291,7 +292,7 @@
     <Compile Include="Exceptions\StoreConstructorException.cs" />
     <Compile Include="Exceptions\EnsureNodesException.cs" />
     <Compile Include="Interfaces\ICouponCache.cs" />
-    <Compile Include="Cache\ProductDiscountCache.cs" />
+    <Compile Include="Cache\GlobalDiscountCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Cache\DiscountCache.cs" />
@@ -354,7 +355,7 @@
     <Compile Include="Interfaces\IStockRepository.cs" />
     <Compile Include="Models\CustomerShippingInfo.cs" />
     <Compile Include="Models\OrderedObjects\OrderedShippingProvider.cs" />
-    <Compile Include="Models\ProductDiscount.cs" />
+    <Compile Include="Models\Discounts\ProductDiscount.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\ActivityLogRepository.cs" />
@@ -435,6 +436,8 @@
   <ItemGroup>
     <None Include="app.config" />
     <Compile Include="JsonDotNet\JsonDotNet.cs" />
+    <Content Include="App_Plugins\EkomCouponEditor\ekomCoupon.controller.js" />
+    <Content Include="App_Plugins\EkomCouponEditor\ekomCoupon.html" />
     <Content Include="App_Plugins\EkomStockEditor\ekomStock.controller.js" />
     <Content Include="App_Plugins\EkomStockEditor\ekomStock.html" />
     <Content Include="Views\EkomManager\Index.cshtml" />

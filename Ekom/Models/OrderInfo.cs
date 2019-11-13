@@ -128,19 +128,15 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-
                     var price
                         = new Price(
                             line.Amount.OriginalValue,
                             line.Amount.Store,
-                            line.Product.ProductDiscount,
                             line.Discount,
-                            true,
-                            SumOriginalPrice,
-                            line.Quantity
+                            line.Quantity,
+                            true
                         );
 
                     return price.AfterDiscount.Value;
@@ -172,21 +168,17 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
                     var price = new Price(
                                line.Amount.OriginalValue,
                                line.Amount.Store,
-                               line.Product.ProductDiscount,
                                line.Discount,
-                               true,
-                               SumOriginalPrice,
-                               line.Quantity
+                               line.Quantity,
+                               true
                            );
 
                     return price.Value;
-
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -206,22 +198,28 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
-
                 var amount = OrderLines.Sum(line =>
                 {
-                    var price
-                        = new Price(
-                            line.Amount.OriginalValue,
-                            line.Amount.Store,
-                            line.Product.ProductDiscount,
-                            line.Discount,
-                            true,
-                            SumOriginalPrice,
-                            line.Quantity
-                        );
+                    if (line.Discount == null
+                    // This is for OrderService.Discounts.IsBetterDiscount, 
+                    // allowing us to temporarily apply a non stackable discount to the order
+                    // without removing discounts from all orderlines.
+                    // In normal use a non-stackable discount will never be applied to an order 
+                    // at the same time as OrderLines have a discount applied.
+                    || Discount?.Stackable == false)
+                    {
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue,
+                                line.Amount.Store,
+                                Discount,
+                                line.Quantity
+                            );
 
-                    return price.Value;
+                        return lineWithOrderDiscount.Value;
+                    }
+
+                    return line.Amount.Value;
                 });
 
                 if (ShippingProvider != null)

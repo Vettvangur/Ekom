@@ -86,7 +86,7 @@ namespace Ekom.Models
         /// <summary>
         /// Gets the productDiscount for the specific Variant
         /// </summary>
-        public ProductDiscount ProductDiscount
+        public IDiscount Discount
         {
             get
             {
@@ -215,7 +215,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(variantPrice, Store, Discount == null ? null : new OrderedDiscount(Discount));
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace Ekom.Models
                 Price = Product.Price;
             }
 
-            Price = new Price(variantPrice, Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount));
+            Price = new Price(variantPrice, Store, Discount == null ? null : new OrderedDiscount(Discount));
         }
     }
 }

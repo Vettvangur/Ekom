@@ -1,4 +1,4 @@
-﻿## Ekom
+## Ekom
 
 
 ### Hvað er það sem við viljum ná fram með þessari útgáfu ?
@@ -42,3 +42,52 @@ The module listens for incoming requests containing a store querystring paramete
 This means controller actions do not need to ask for a store param as the module will read it from the request uri
 
 and create the uwbsRequest object with store domainprefix and currency if applicable.
+
+
+## Discount Notes
+
+##### Rules for choosing a discount in OrderInfo/OrderLine for calculating price are the following:
+1. Ensure constraints verify
+2. If the line has a discount, use that
+3. If the line does not have a discount but the order has one and it applies to the product on the given OrderLine, use that
+4. If neither then no discount :)
+
+##### Rules for applying a discount to OrderInfo
+1. Ensure constraints verify
+2. If there was no discount previously on OrderInfo...
+- If stackable, apply discount
+- If non-stackable, apply discount to OrderInfo temporarily. Then compare old and new order total. 
+			OrderInfo knows to not use line discount when a non-stackable discount is set
+3. If there is one compare (using non-stackable compare above if applicable) and apply new Discount if better
+
+##### When do GlobalDiscounts get applied?
+When a new OrderLine is created Product.Discount is called, if it returns a match we check the rules above and apply if applicable
+	
+##### Due to the aforementioned rules it's questionable if ApplyDiscountToOrderLineAsync should accept IDiscount versus only accepting IProductDiscount
+With the current discount options only IDiscount can go to OrderInfo and IProductDiscount are applied straight to OrderLine's
+Some day we might want to allow a type that applies manually to OrderLine's with a coupon, allowing stacking with an OrderInfo discount f.x. ?
+
+##### When applying a discount to OrderLine's
+We make sure that the current OrderInfo discount, if there is one, allows stacking
+	
+##### What is stacking
+Applying discounts to specific OrderLine's while applying a seperate discount to the order and general order items
+
+##### ProductDiscount should only apply to applicable OrderLine's - OrderInfo never has a ProductDiscount
+ApplyDiscountToOrder does not accept IProductDiscount currently
+ * we always apply IProductDiscount straight to OrderLines
+Points to consider for allowing OrderInfo to have ProductDiscounts
+ * We could also create a ApplyDiscountToOrder accepting IProductDiscount. It would then apply the ProductDiscount straight to applicable OrderLine's
+ * If we push the discount from OrderInfo to OrderLine on creation of line, how would stackable work
+ * Example: OrderInfo has ProductDiscount, applicable line gets discount a stackable global discount is applied to Order, old OrderLine keeps product discount. Now new OrderLine's do not get the initial ProductDiscount !!
+
+##### Guðjóns ProductDiscount functionality has been largely renamed to GlobalDiscount and additionally can be set with an empty DiscountItems list to apply to all orders where constraints are valid.
+
+##### Caveats:
+We still have no "Real" order discounts, that is it is not currently possible to create a fixed order discount that gives free shipping the discount is applied per OrderLine and gets multiplied by the amount of lines
+	
+ekmDiscount do not currently support DiscountItems. If you successfully apply a coupon or discount to OrderInfo it will be applied to all OrderLines and all ekmProductDiscount get auto added to products so they won't work with coupons
+(previously ekmProductDiscount's were also all cached and displayed on Product.Price if applicable)
+			
+This means there is no current way to apply a coupon to an order and get a discount for only select items.
+Either all items get the discount or the discount is not coupon based and got auto-applied to OrderLines if applicable

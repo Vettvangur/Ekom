@@ -18,8 +18,8 @@ namespace Ekom.Cache
         /// <summary>
         /// All order <see cref="IDiscount"/>'s containing no coupon
         /// </summary>
-        public GlobalDiscountCache GlobalDiscounts { get; }
-            = new GlobalDiscountCache();
+        public ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>> GlobalDiscounts { get; }
+            = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>();
 
         public override string NodeAlias { get; } = "ekmOrderDiscount";
 

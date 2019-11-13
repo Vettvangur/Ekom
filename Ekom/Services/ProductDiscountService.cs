@@ -11,29 +11,24 @@ namespace Ekom.Services
 {
     public class ProductDiscountService : IProductDiscountService
     {
-        readonly IPerStoreCache<IProductDiscount> _productDiscountCache;
+        readonly IPerStoreCache<IGlobalDiscount> _productDiscountCache;
 
-        internal ProductDiscountService(IPerStoreCache<IProductDiscount> productDiscountCache)
+        internal ProductDiscountService(IPerStoreCache<IGlobalDiscount> productDiscountCache)
         {
             _productDiscountCache = productDiscountCache;
         }
 
-
-        public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice)
+        public IGlobalDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
-            var applicableDiscounts = new List<ProductDiscount>();
+            var applicableDiscounts = new List<GlobalDiscount>();
 
             foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
-                if (discount.Value.Disabled)
-                {
-                    continue;
-                }
                 if (discount.Value.DiscountItems.Contains(productKey))
                 {
-                    applicableDiscounts.Add(discount.Value as ProductDiscount);
+                    applicableDiscounts.Add(discount.Value as GlobalDiscount);
                 }
             }
 
@@ -51,24 +46,24 @@ namespace Ekom.Services
             }
             foreach (var usableDiscount in applicableDiscounts)
             {
-                if (usableDiscount.Type == DiscountType.Fixed)
+                if (usableDiscount.Amount.Type == DiscountType.Fixed)
                 {
-                    if (usableDiscount.StartOfRange > 0 && usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
+                    if (usableDiscount.Constraints.StartRange < price 
+                    && usableDiscount.Constraints.EndRange > 0 && price < usableDiscount.Constraints.EndRange)
                     {
-                        if (usableDiscount.Discount > bestFixedDiscountValue)
+                        if (usableDiscount.Amount.Amount > bestFixedDiscountValue)
                         {
-                            bestFixedDiscountValue = usableDiscount.Discount;
+                            bestFixedDiscountValue = usableDiscount.Amount.Amount;
                             bestFixedId = usableDiscount.Id;
                         }
                     }
-
                 }
-                if (usableDiscount.Type == DiscountType.Percentage)
+                if (usableDiscount.Amount.Type == DiscountType.Percentage)
                 {
-                    if (usableDiscount.Discount > bestPercentageDiscountValue)
+                    if (usableDiscount.Amount.Amount > bestPercentageDiscountValue)
                     {
                         bestPercentageDiscount = usableDiscount.Id;
-                        bestPercentageDiscountValue = usableDiscount.Discount;
+                        bestPercentageDiscountValue = usableDiscount.Amount.Amount;
                     }
                 }
             }

@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace Ekom.Tests.Objects
 {
-    public class CustomProductDiscount : ProductDiscount
+    public class CustomProductDiscount : GlobalDiscount
     {
         public override decimal Discount
         {

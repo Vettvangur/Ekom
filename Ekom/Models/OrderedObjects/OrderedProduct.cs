@@ -53,7 +53,7 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
-        public OrderedProductDiscount ProductDiscount { get; }
+        public OrderedDiscount Discount { get; }
 
         public string Title
         {
@@ -138,13 +138,15 @@ namespace Ekom.Models.OrderedObjects
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
-            ImageIds = product.Images.Any() ? product.Images.Select(x => x.Key).ToArray() : new Guid[] { };
+            ImageIds = product.Images.Any() 
+                ? product.Images.Select(x => x.Key).ToArray() 
+                : new Guid[] { };
 
             Properties = new ReadOnlyDictionary<string, string>(
                 product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
             Price = product.Price.Clone() as IPrice;
-            ProductDiscount = product.ProductDiscount == null ? null : new OrderedProductDiscount(product.ProductDiscount);
+            Discount = product.Discount == null ? null : new OrderedDiscount(product.Discount);
             if (variant != null)
             {
                 var variantGroups = new List<OrderedVariantGroup>();
@@ -174,7 +176,9 @@ namespace Ekom.Models.OrderedObjects
             logger.Debug<OrderedProduct>("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
-            ProductDiscount = productPropertiesObject[nameof(ProductDiscount)] != null ? productPropertiesObject[nameof(ProductDiscount)].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
+            Discount = productPropertiesObject[nameof(Discount)] != null 
+                ? productPropertiesObject[nameof(Discount)].ToObject<OrderedDiscount>(EkomJsonDotNet.serializer) 
+                : null;
             Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
             logger.Debug<OrderedProduct>("OrderedProductPriceJson: " + productPropertiesObject[nameof(Price)]);

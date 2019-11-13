@@ -11,9 +11,7 @@ namespace Ekom.Tests.Objects
     class CustomProduct : Product
     {
         public override IPrice Price { get; }
-        public override ProductDiscount ProductDiscount { get; }
-
-        readonly ProductDiscount pd = new ProductDiscount(null);
+        public override IDiscount Discount { get; }
 
         public override IEnumerable<string> Urls { get; internal set; }
         public override IEnumerable<Image> Images => Enumerable.Empty<Image>();
@@ -29,10 +27,10 @@ namespace Ekom.Tests.Objects
             _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
             if (!string.IsNullOrEmpty(productdisc))
             {
-                ProductDiscount = new CustomProductDiscount(store, productdisc);
+                Discount = new CustomProductDiscount(store, productdisc);
             }
 
-            Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store, ProductDiscount == null ? null : new OrderedProductDiscount(ProductDiscount as ProductDiscount));
+            Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
             var f = Price.WithVat;
             Urls = urls ?? Enumerable.Empty<string>();
         }

@@ -28,12 +28,17 @@ namespace Ekom.Models.Discounts
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
         internal List<Guid> discountItems = new List<Guid>();
-        public virtual List<Guid> DiscountItems => discountItems;
+        public virtual IReadOnlyCollection<Guid> DiscountItems => discountItems.AsReadOnly();
 
         /// <summary>
         /// Coupon code activations left
         /// </summary>
         public virtual bool HasMasterStock => Properties.GetPropertyValue("masterStock").ConvertToBool();
+
+        /// <summary>
+        /// If the discount can be used with productdiscounts
+        /// </summary>
+        public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
 
         /// <summary>
         /// Used by Ekom extensions
@@ -103,19 +108,29 @@ namespace Ekom.Models.Discounts
 
             if (!string.IsNullOrEmpty(discountItemsVal))
             {
-                var nodes = discountItemsVal.Split(',').Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
+                var nodes = Properties.GetPropertyValue("discountItems")
+                    .Split(',')
+                    .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
 
                 foreach (var node in nodes)
                 {
-                    if (node.ContentType.Alias == "ekmProduct")
+                    if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Count() == 0)
                     {
                         discountItems.Add(node.Key);
                     }
-                    if (node.ContentType.Alias == "ekmCategory")
+                    else if (node.ContentType.Alias == "ekmProduct" && node.Descendants().Any())
                     {
                         discountItems.AddRange(
                             node.Descendants()
-                                .Where(x => x.ContentType.Alias == "ekmProduct")
+                                .Where(x => x.ContentType.Alias == "ekmProductVariant")
+                                .Select(x => x.Key));
+                    }
+                    else if (node.ContentType.Alias == "ekmCategory")
+                    {
+                        discountItems.AddRange(
+                            node.Descendants()
+                                .Where(x => x.ContentType.Alias == "ekmProduct"
+                                    || x.ContentType.Alias == "ekmProductVariant")
                                 .Select(x => x.Key));
                     }
                 }
@@ -152,10 +167,7 @@ namespace Ekom.Models.Discounts
         /// Called on coupon application
         /// </summary>
         public event CouponEventHandler CouponApplied;
-        /// <summary>
-        /// If the discount can be used with productdiscounts
-        /// </summary>
-        public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
+
         #region Comparisons
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation

@@ -48,28 +48,27 @@ namespace Ekom.Services
             string coupon = null
         )
         {
+            if (discount is IGlobalDiscount)
+            {
+                throw new NotImplementedException(
+                    "Ekom does not currently support comparing or applying GlobalDiscounts to OrderInfo"
+                );
+            }
+
             if (IsBetterDiscount(orderInfo, discount) && IsDiscountApplicable(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
-                //foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
-                //{
-                //    if (IsBetterDiscount(line, discount))
-                //    {
-                //        line.Discount = null;
-                //        line.Coupon = null;
-                //    }
-                //}
+                foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
+                {
+                    if (!discount.Stackable || IsBetterDiscount(line, discount))
+                    {
+                        line.Discount = null;
+                        line.Coupon = null;
+                    }
+                }
 
                 orderInfo.Discount = new OrderedDiscount(discount);
                 orderInfo.Coupon = coupon;
-                foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount == null))
-                {
-                    if (discount.DiscountItems.Contains(line.ProductKey))
-                    {
-                        line.Discount = orderInfo.Discount;
-                        line.Coupon = coupon;
-                    }
-                }
 
                 return true;
             }
@@ -198,9 +197,11 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Applying discount to orderline");
 
-            // Is discount applicable
-            if (discount.DiscountItems.Any(x => x == orderLine.ProductKey))
+            if (IsDiscountApplicable(orderInfo, orderLine, discount))
             {
+                // If a discount is applied to the OrderLine, 
+                // assume that discount was better than thecurrent OrderInfo discount. 
+                // (We have checks in place that make sure that stays true)
                 if (orderLine.Discount != null)
                 {
                     if (IsBetterDiscount(orderLine, discount))
@@ -217,13 +218,45 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    if (orderInfo.Discount != null)
+                    // Apply cart discount on line for comparison with new discount
+                    // was null so we are never overriding
+                    orderLine.Discount = orderInfo.Discount;
+
+                    if ((orderInfo.Discount == null || orderInfo.Discount.Stackable) 
+                    && IsBetterDiscount(orderLine, discount))
                     {
-                        // Apply cart discount on line for comparison with new discount
-                        orderLine.Discount = orderInfo.Discount;
-                        orderLine.Coupon = orderInfo.Coupon;
+                        orderLine.Discount = new OrderedDiscount(discount);
+                        orderLine.Coupon = coupon;
+
+                        await UpdateOrderAndOrderInfoAsync(orderInfo)
+                            .ConfigureAwait(false);
+
+                        _logger.Debug<OrderService>("Successfully applied discount to orderline");
                         return true;
                     }
+                    // When we add a new OrderLine, it might have an applicable GlobalDiscount
+                    // If the OrderInfo has a non-stackable discount we check if the total order price goes down
+                    // on applying the GlobalDiscount, if so we throw away the global discount and use GlobalDiscount instead.
+                    else if (orderInfo.Discount?.Stackable == false && IsBetterDiscount(orderInfo, discount))
+                    {
+                        // It's possible that there exist previous OrderLine's that the GlobalDiscount applies to
+                        // in that case we assume this new orderline tipped the calculation in favor of this given GlobalDiscount
+                        // and that the older lines are missing this new about to be applied GlobalDiscount (since the OrderInfo one was Stackable)
+                        foreach (var line in orderInfo.orderLines)
+                        {
+                            if (IsDiscountApplicable(orderInfo, line, discount))
+                            {
+                                line.Discount = new OrderedDiscount(discount);
+                            }
+                        }
+
+                        orderInfo.Discount = null;
+                        _logger.Debug<OrderService>("Replaced non-stackable OrderInfo discount with a GlobalDiscount");
+                        return true;
+                    }
+                    // Only other case is a worse discount
+
+                    orderLine.Discount = null;
                 }
             }
 
@@ -264,7 +297,6 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
-
             if (orderInfo.Discount == null)
             {
                 return true;
@@ -272,24 +304,53 @@ namespace Ekom.Services
 
             if (orderInfo.Discount.Key == discount.Key)
             {
+                // throwing an exception allows callers to differentiate between an attempt to apply a worse discount
+                // and a duplicate discount application
+                // This can then be handled in api controllers or frontend code to display the appropriate error.
                 throw new DiscountNotFoundException($"Can't add the same discount to order twice.");
             }
 
-            if (orderInfo.Discount.Amount.Type == discount.Amount.Type)
+            if (discount is IGlobalDiscount globalDiscount)
             {
-                return discount.CompareTo(orderInfo.Discount) > 0;
+                var oldTotal = orderInfo.ChargedAmount.Value;
+
+                var prevDiscounts = new List<OrderedDiscount>();
+                foreach (var line in orderInfo.orderLines)
+                {
+                    prevDiscounts.Add(line.Discount);
+
+                    if (IsDiscountApplicable(orderInfo, line, globalDiscount))
+                    {
+                        line.Discount = new OrderedDiscount(globalDiscount);
+                    }
+                }
+
+                var result = orderInfo.ChargedAmount.Value < oldTotal;
+                for (var x = 0; x < orderInfo.OrderLines.Count; x++)
+                {
+                    orderInfo.orderLines[x].Discount = prevDiscounts.ElementAt(x);
+                }
+
+                return result;
             }
+            else
+            {
+                if (orderInfo.Discount.Amount.Type == discount.Amount.Type)
+                {
+                    return discount.CompareTo(orderInfo.Discount) > 0;
+                }
 
-            var oldDiscount = orderInfo.Discount;
-            var oldTotal = orderInfo.ChargedAmount.Value;
+                var oldDiscount = orderInfo.Discount;
+                var oldTotal = orderInfo.ChargedAmount.Value;
 
-            orderInfo.Discount = new OrderedDiscount(discount);
+                orderInfo.Discount = new OrderedDiscount(discount);
 
-            var result = orderInfo.ChargedAmount.Value < oldTotal;
+                var result = orderInfo.ChargedAmount.Value < oldTotal;
 
-            orderInfo.Discount = oldDiscount;
+                orderInfo.Discount = oldDiscount;
 
-            return result;
+                return result;
+            }
         }
 
         private bool IsBetterDiscount(OrderLine orderLine, IDiscount discount)
@@ -337,6 +398,8 @@ namespace Ekom.Services
         /// <summary>
         /// Verifies all <see cref="Discount"/>'s match their constraints.
         /// Removes non-compliant <see cref="Discount"/>'s
+        /// 
+        /// Gets called on OrderInfo updates, constraints may become invalid if the order total changes.
         /// </summary>
         private void VerifyDiscounts(OrderInfo orderInfo)
         {
@@ -371,7 +434,7 @@ namespace Ekom.Services
                 if (line.Discount != null)
                 {
                     if (line.Discount?.Constraints.IsValid(storeAlias, total) == false
-                    || !line.Discount.DiscountItems.Contains(line.ProductKey))
+                    || !IsDiscountApplicable(orderInfo, line, line.Discount))
                     {
                         RemoveDiscountFromOrderLine(line);
                     }
@@ -379,8 +442,27 @@ namespace Ekom.Services
             }
         }
 
-        public bool IsDiscountApplicable(OrderInfo orderInfo, IDiscount discount)
-            => orderInfo.OrderLines.Any(x => discount.DiscountItems.Contains(x.ProductKey));
+        /// <summary>
+        /// Do constraints hold and do discount items match if any
+        /// </summary>
+        /// <param name="orderInfo"></param>
+        /// <param name="discount"></param>
+        /// <returns></returns>
+        private bool IsDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
+            => discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value) 
+            && (discount.DiscountItems.Count == 0 
+            || orderInfo.OrderLines.Any(x => discount.DiscountItems.Contains(x.ProductKey)));
+        /// <summary>
+        /// Do constraints hold and do discount items match if any
+        /// </summary>
+        /// <param name="orderInfo"></param>
+        /// <param name="orderLine"></param>
+        /// <param name="discount"></param>
+        /// <returns></returns>
+        private bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
+            => discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
+            && (discount.DiscountItems.Count == 0 
+            || discount.DiscountItems.Contains(orderLine.ProductKey));
 
         public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
         {

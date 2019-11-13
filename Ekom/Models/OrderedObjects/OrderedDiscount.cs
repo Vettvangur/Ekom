@@ -4,13 +4,15 @@ using Ekom.Models.Discounts;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Ekom.Models.OrderedObjects
 {
     /// <summary>
     /// Frozen <see cref="Discount"/> with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    public class OrderedDiscount : IComparable<IDiscount>
+    public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     {
         /// <summary>
         /// 
@@ -21,7 +23,7 @@ namespace Ekom.Models.OrderedObjects
             bool stackable,
             DiscountAmount amount,
             List<Guid> discountItems,
-            Constraints constraints,
+            IConstraints constraints,
             IReadOnlyCollection<string> coupons,
             bool hasMasterStock)
         {
@@ -42,7 +44,7 @@ namespace Ekom.Models.OrderedObjects
             discount = discount ?? throw new ArgumentNullException(nameof(discount));
             Stackable = discount.Stackable;
             Key = discount.Key;
-            DiscountItems = discount.DiscountItems;
+            DiscountItems = discount.DiscountItems.ToList().AsReadOnly();
             Amount = discount.Amount;
             Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
@@ -59,15 +61,15 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public DiscountAmount Amount { get; internal set; }
 
-        public List<Guid> DiscountItems { get; }
-        /// <summary>
-        /// Ranges
-        /// </summary>
-        public Constraints Constraints { get; internal set; }
+        public IReadOnlyCollection<Guid> DiscountItems { get; }
         /// <summary>
         /// If discount is stackable with productDiscounts
         /// </summary>
         public bool Stackable { get; }
+        /// <summary>
+        /// Ranges
+        /// </summary>
+        public IConstraints Constraints { get; internal set; }
         /// <summary>
         /// 
         /// </summary>
@@ -78,9 +80,12 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public bool HasMasterStock { get; internal set; }
 
+        #region Comparisons
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation
         /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
         public int CompareTo(IDiscount other)
         {
             if (other == null)
@@ -95,5 +100,50 @@ namespace Ekom.Models.OrderedObjects
             else
                 return -1;
         }
+        /// <summary>
+        /// <see cref="IComparable{T}"/> implementation
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(OrderedDiscount other)
+        {
+            if (other == null)
+                return 1;
+
+            else if (Amount.Type != other.Amount.Type)
+                throw new FormatException("Discounts are not equal, please compare type before comparing value.");
+            else if (Amount.Amount == other.Amount.Amount)
+                return 0;
+            else if (Amount.Amount > other.Amount.Amount)
+                return 1;
+            else
+                return -1;
+        }
+
+        /// <summary>
+        /// Operator overloading
+        /// </summary>
+        /// <param name="d1"></param>
+        /// <param name="d2"></param>
+        /// <returns></returns>
+        [Obsolete("Unused")]
+        public static bool operator <(OrderedDiscount d1, IDiscount d2)
+        {
+            return d1.CompareTo(d2) < 0;
+        }
+
+        /// <summary>
+        /// Operator overloading
+        /// </summary>
+        /// <param name="d1"></param>
+        /// <param name="d2"></param>
+        /// <returns></returns>
+        [Obsolete("Unused")]
+        public static bool operator >(OrderedDiscount d1, IDiscount d2)
+        {
+            return d1.CompareTo(d2) > 0;
+        }
+        #endregion
+
     }
 }
