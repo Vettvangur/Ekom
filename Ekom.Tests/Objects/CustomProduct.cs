@@ -11,28 +11,24 @@ namespace Ekom.Tests.Objects
     class CustomProduct : Product
     {
         public override IPrice Price { get; }
-        public override IDiscount Discount { get; }
 
         public override IEnumerable<string> Urls { get; internal set; }
         public override IEnumerable<Image> Images => Enumerable.Empty<Image>();
         public CustomProduct(
             string json,
             IStore store,
-            string productdisc = null,
             IPrice price = null,
             IEnumerable<string> urls = null
         )
             : base(store)
         {
             _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-            if (!string.IsNullOrEmpty(productdisc))
-            {
-                Discount = new CustomProductDiscount(store, productdisc);
-            }
 
             Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
-            var f = Price.WithVat;
             Urls = urls ?? Enumerable.Empty<string>();
         }
+
+        public IDiscount DiscountOverride;
+        public override IDiscount Discount => DiscountOverride ?? base.Discount;
     }
 }

@@ -10,8 +10,6 @@ namespace Ekom.Models.OrderedObjects
     [Obsolete("Currently unused")]
     public class OrderedProductDiscount
     {
-        private readonly string _productDiscountJson;
-
         [JsonConstructor]
         public OrderedProductDiscount(DiscountType type, decimal discount, decimal startOfRange, decimal endOfRange)
         {

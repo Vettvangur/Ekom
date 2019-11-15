@@ -54,7 +54,6 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
             var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Percent_20.json2);
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
-
         }
         [TestMethod]
         public void Fixed_WithinRange_ShouldGiveDiscount_DK()

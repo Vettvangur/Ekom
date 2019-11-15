@@ -140,7 +140,7 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
             var discount = Objects.Objects.Get_Discount_percentage_50();
-            product.Discount = discount;
+            product.DiscountOverride = discount;
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;

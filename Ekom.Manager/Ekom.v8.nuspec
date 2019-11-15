@@ -2,7 +2,7 @@
 <package >
     <metadata>
         <id>Ekom.v8</id>
-        <version>0.1.9</version>
+        <version>0.0.1</version>
         <title>Ekom.v8</title>
         <authors>Vettvangur</authors>
         <owners>Vettvangur</owners>
@@ -10,7 +10,7 @@
         <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Ekom - Vettvangur E-Commerce solution</description>
-        <releaseNotes>Remove dependencies and discount prototype</releaseNotes>
+        <releaseNotes>Initial release</releaseNotes>
         <copyright>Copyright 2019</copyright>
         <tags></tags>
     </metadata>

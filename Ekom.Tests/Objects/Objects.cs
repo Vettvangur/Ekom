@@ -38,9 +38,9 @@ namespace Ekom.Tests.Objects
                 { "vatIncludedInPrice", new List<string> { "1" } },
                 { "orderNumberTemplate", new List<string> { "#orderIdPadded#" } },
             });
-        public static Product Get_Shirt2_Product()
+        public static CustomProduct Get_Shirt2_Product()
             => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
-        public static Product Get_Shirt3_Product()
+        public static CustomProduct Get_Shirt3_Product()
             => new CustomProduct(Shirt_product_3.oldjson, Get_IS_Store_Vat_NotIncluded());
         public static Product Get_Shirt3_Product_ForProductDiscount()
             => new CustomProduct(Shirt_product_3.json, Get_IS_Store_Vat_NotIncluded());
