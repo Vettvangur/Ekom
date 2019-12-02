@@ -17,11 +17,13 @@ variables:
 steps:
 - task: NuGetToolInstaller@1
 - task: NuGetCommand@2
+  displayName: 'NuGet restore'
   inputs:
-    command: 'restore'
     restoreSolution: '$(solution)'
-    feedsToUse: 'select'
-    vstsFeed: 'c09c2ac3-a8a2-4dd7-9567-054efdfcb8e4'
+    feedsToUse: config
+    nugetConfigPath: NuGet.config
+    externalFeedCredentials: 'AppVeyor'
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
