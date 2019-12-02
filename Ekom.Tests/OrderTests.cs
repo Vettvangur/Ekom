@@ -1,8 +1,11 @@
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Tests.MockClasses;
 using Ekom.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Umbraco.Core;
 using Umbraco.Core.Composing;
 
 namespace Ekom.Tests
@@ -20,6 +23,7 @@ namespace Ekom.Tests
         public void CreatesOrder()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -36,6 +40,7 @@ namespace Ekom.Tests
         public void AddsOrderLine()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -55,6 +60,7 @@ namespace Ekom.Tests
         public void UpdatesQuantityPositive()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -73,6 +79,7 @@ namespace Ekom.Tests
         public void UpdatesQuantityNegative()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -91,6 +98,7 @@ namespace Ekom.Tests
         public void SetsQuantity()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();

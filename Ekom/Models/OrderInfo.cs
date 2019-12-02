@@ -109,7 +109,7 @@ namespace Ekom.Models
         public CustomerInfo CustomerInformation { get; } = new CustomerInfo();
 
         /// <summary>
-        /// OrderLines with OrderDiscount excluded
+        /// OrderLines with OrderDiscount excluded and VAT included
         /// </summary>
         public ICalculatedPrice OrderLineTotal
         {
@@ -197,7 +197,7 @@ namespace Ekom.Models
         /// Total monetary value of discount in order
         /// </summary>
         public ICalculatedPrice DiscountAmount
-            => new CalculatedPrice(OrderLineTotal.Value - SubTotal.Value, StoreInfo.Currency.FirstOrDefault());
+            => new CalculatedPrice(OrderLineTotal.Value - GrandTotal.Value, StoreInfo.Currency.FirstOrDefault());
 
         /// <summary>
         /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.

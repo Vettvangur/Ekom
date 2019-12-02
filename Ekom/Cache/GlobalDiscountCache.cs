@@ -43,7 +43,7 @@ namespace Ekom.Cache
                     if (!node.IsItemDisabled(store.Value))
                     {
                         var item = _objFac?.Create(node, store.Value)
-                            ?? (GlobalDiscount)Activator.CreateInstance(typeof(GlobalDiscount), node, store.Value);
+                            ?? (ProductDiscount)Activator.CreateInstance(typeof(ProductDiscount), node, store.Value);
 
                         if (item != null)
                         {

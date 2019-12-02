@@ -528,15 +528,12 @@ namespace Ekom.Services
                 // affecting other OrderLines
                 && (orderInfo.Discount == null || !orderInfo.Discount.Exclusive))
                 {
-                    if (IsDiscountApplicable(orderInfo, orderLine, product.Discount))
-                    {
-                        _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
-                        await ApplyDiscountToOrderLineAsync(
-                            orderLine,
-                            product.Discount,
-                            orderInfo
-                        ).ConfigureAwait(false);
-                    }
+                    _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
+                    await ApplyDiscountToOrderLineAsync(
+                        orderLine,
+                        product.Discount,
+                        orderInfo
+                    ).ConfigureAwait(false);
                 }
             }
 

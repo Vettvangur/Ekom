@@ -300,6 +300,19 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
+            if (orderInfo.Discount == null && discount.Exclusive)
+            {
+                var oldTotal = orderInfo.ChargedAmount.Value;
+
+                orderInfo.Discount = new OrderedDiscount(discount);
+
+                var result = orderInfo.ChargedAmount.Value < oldTotal;
+
+                orderInfo.Discount = null;
+
+                return result;
+            }
+
             if (orderInfo.Discount == null)
             {
                 return true;
@@ -317,6 +330,8 @@ namespace Ekom.Services
             {
                 var oldTotal = orderInfo.ChargedAmount.Value;
 
+                // Save original discounts
+                var prevOrderDiscount = orderInfo.Discount;
                 var prevDiscounts = new List<OrderedDiscount>();
                 foreach (var line in orderInfo.orderLines)
                 {
@@ -327,8 +342,15 @@ namespace Ekom.Services
                         line.Discount = new OrderedDiscount(productDiscount);
                     }
                 }
-
+                // In case of an exclusive discount, we remove since OrderInfo ChargedAmount ignores
+                // product discounts when an exclusive order discount is applied.
+                // This ignoring happens for comparison reasons and is explained in ChargedAmount.
+                orderInfo.Discount = null;
+                // Compare
                 var result = orderInfo.ChargedAmount.Value < oldTotal;
+
+                // Reset to previous discounts
+                orderInfo.Discount = prevOrderDiscount;
                 for (var x = 0; x < orderInfo.OrderLines.Count; x++)
                 {
                     orderInfo.orderLines[x].Discount = prevDiscounts.ElementAt(x);
@@ -338,10 +360,12 @@ namespace Ekom.Services
             }
             else
             {
-                if (orderInfo.Discount.Type == discount.Type)
-                {
-                    return discount.CompareTo(orderInfo.Discount) > 0;
-                }
+                // In case of comparing an Exclusive to an inclusive discount, this simple CompareTo
+                // does not apply
+                //if (orderInfo.Discount.Type == discount.Type)
+                //{
+                //    return discount.CompareTo(orderInfo.Discount) > 0;
+                //}
 
                 var oldDiscount = orderInfo.Discount;
                 var oldTotal = orderInfo.ChargedAmount.Value;
@@ -373,7 +397,7 @@ namespace Ekom.Services
 
             orderLine.Discount = new OrderedDiscount(discount);
 
-            var result = orderLine.Amount.Value > oldTotal.Value;
+            var result = orderLine.Amount.Value < oldTotal.Value;
 
             orderLine.Discount = oldDiscount;
 

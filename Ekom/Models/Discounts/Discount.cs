@@ -51,6 +51,8 @@ namespace Ekom.Models.Discounts
 
         /// <summary>
         /// If the discount can be used with productdiscounts
+        /// F.x. can you apply this discount while having a seperate discount affecting other OrderLines.
+        /// Only applies to order discounts
         /// </summary>
         public virtual bool Exclusive => Properties.GetPropertyValue("exclusive", Store.Alias).ConvertToBool();
 

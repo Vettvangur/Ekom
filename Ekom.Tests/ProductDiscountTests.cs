@@ -8,6 +8,7 @@ using System;
 using Ekom.Cache;
 using System.Collections.Concurrent;
 using Ekom.Services;
+using Ekom.Tests.MockClasses;
 
 namespace Ekom.Tests
 {
@@ -35,6 +36,30 @@ namespace Ekom.Tests
             var product = new CustomProduct(Shirt_product_3.json, store);
 
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
+        }
+
+        [TestMethod]
+        public void GlobalDiscountGetsApplied()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+
+            var discountPerc50 = Objects.Objects.Get_ProductDiscount_percentage_50();
+
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discountPerc50);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product2 = Objects.Objects.Get_Shirt2_Product();
+            discountPerc50.discountItems.Add(product2.Key);
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
+            Assert.AreEqual(1995, oi.SubTotal.Value);
         }
 
         [TestMethod]

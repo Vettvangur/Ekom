@@ -51,12 +51,11 @@ namespace Ekom.Models
             {
 
                 decimal _price = Product.Price.OriginalValue;
-                decimal _totalOriginalPrice = Product.Price.OriginalValue * Quantity;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        _price = _price + (v.Price.OriginalValue - _price);
+                        _price += (v.Price.OriginalValue - _price);
                     }
                 }
 

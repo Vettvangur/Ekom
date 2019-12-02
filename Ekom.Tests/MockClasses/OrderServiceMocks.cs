@@ -63,7 +63,7 @@ namespace Ekom.Tests.MockClasses
 
         public void InitDiscountCache()
         {
-            discountCache.GlobalDiscounts["IS"] = new ConcurrentDictionary<Guid, IDiscount>();
+            discountCache.Cache["IS"] = new ConcurrentDictionary<Guid, IDiscount>();
         }
     }
 }

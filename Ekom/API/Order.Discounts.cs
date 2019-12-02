@@ -48,7 +48,7 @@ namespace Ekom.API
             {
                 if (couponData.NumberAvailable > 0)
                 {
-                    if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+                    if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                     {
                         return await _orderService.ApplyDiscountToOrderAsync(discount, storeAlias, coupon)
                             .ConfigureAwait(false);
@@ -139,7 +139,7 @@ namespace Ekom.API
 
             if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
             {
-                if (_discountCache.GlobalDiscounts[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+                if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                 {
                     return await _orderService.ApplyDiscountToOrderLineAsync(
                         productKey,

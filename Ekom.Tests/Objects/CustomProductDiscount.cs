@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace Ekom.Tests.Objects
 {
-    public class CustomProductDiscount : GlobalDiscount
+    public class CustomProductDiscount : ProductDiscount
     {
         public CustomProductDiscount(IStore store, string json) : base(store)
         {

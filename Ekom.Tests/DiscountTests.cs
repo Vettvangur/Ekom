@@ -7,6 +7,7 @@ using Ekom.Models.OrderedObjects;
 using Ekom.Services;
 using Ekom.Tests;
 using Ekom.Tests.MockClasses;
+using Ekom.Tests.Objects;
 using Ekom.Tests.Utilities;
 using Examine;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -75,14 +76,11 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
 
-            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
-
             new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
             var discount = Objects.Objects.Get_Discount_fixed_500();
-            discount.discountItems = new List<Guid> { productKey };
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
@@ -98,15 +96,12 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
 
-            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
-
             new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var discount = Objects.Objects.Get_Discount_percentage_50();
-            discount.discountItems = new List<Guid> { productKey };
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
@@ -126,7 +121,7 @@ namespace Ekom.Tests
             new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
-            var discount = Objects.Objects.Get_GlobalDiscount_percentage_50();
+            var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
             discount.discountItems = new List<Guid> { productKey };
 
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
@@ -140,6 +135,85 @@ namespace Ekom.Tests
 
             Assert.IsNotNull(oi.orderLines.First().Discount);
             Assert.AreEqual(1500, oi.SubTotal.Value);
+        }
+
+        /// <summary>
+        /// Create an oi and apply order discount.
+        /// add new product with product discount
+        /// </summary>
+        [TestMethod]
+        public void BetterDiscountLinkedToProduct_OverridesOrderDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var orderDiscount = Objects.Objects.Get_Discount_fixed_500();
+            var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
+            discount.discountItems = new List<Guid> { productKey };
+
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product2 = Objects.Objects.Get_Shirt2_Product();
+            var product3 = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
+            Assert.IsTrue(
+                orderSvc.ApplyDiscountToOrderAsync(
+                    orderDiscount,
+                    store.Alias,
+                    null,
+                    oi).Result
+            );
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
+
+            Assert.IsNotNull(oi.orderLines[1].Discount);
+            Assert.AreEqual(4240, oi.SubTotal.Value);
+        }
+        [TestMethod]
+        public void WorseDiscountLinkedToProduct_DoesNotOverrideOrderDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var orderDiscount = Objects.Objects.Get_Discount_percentage_50();
+            var discount = Objects.Objects.Get_ProductDiscount_fixed_500();
+            discount.discountItems = new List<Guid> { productKey };
+
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product2 = Objects.Objects.Get_Shirt2_Product();
+            var product3 = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
+            Assert.IsTrue(
+                orderSvc.ApplyDiscountToOrderAsync(
+                    orderDiscount,
+                    store.Alias,
+                    null,
+                    oi).Result
+            );
+            Helpers.AddOrderInfoToHttpSession(oi, store, orderSvcMocks);
+            oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
+
+            Assert.IsNull(oi.orderLines[1].Discount);
+            Assert.AreEqual(2745, oi.SubTotal.Value);
         }
 
         [TestMethod]
@@ -262,28 +336,6 @@ namespace Ekom.Tests
         }
 
         [TestMethod]
-        public void GlobalDiscountGetsApplied()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(Mock.Of<IProductDiscountService>());
-
-            new UmbracoHelperCreator(reg, fac);
-
-            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
-            var product2 = Objects.Objects.Get_Shirt2_Product();
-
-            var discountPerc50 = Objects.Objects.Get_Discount_percentage_50();
-            discountPerc50.discountItems.Add(product2.Key);
-
-            var orderSvcMocks = new OrderServiceMocks();
-            orderSvcMocks.discountCache.GlobalDiscounts[store.Alias][discountPerc50.Key] = discountPerc50;
-            var orderSvc = orderSvcMocks.orderSvc;
-
-            var oi = orderSvc.AddOrderLineAsync(product2, 1, store).Result;
-            Assert.AreEqual(1995, oi.SubTotal.Value);
-        }
-
-        [TestMethod]
         public void NonCompliantDiscountGetsRemoved()
         {
             var (fac, reg) = Helpers.RegisterAll();
@@ -322,7 +374,7 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
 
-            var umbHelperCreator = new UmbracoHelperCreator(reg, fac);
+            new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
@@ -345,6 +397,33 @@ namespace Ekom.Tests
         }
 
         [TestMethod]
+        public void OrderLinePrices_DontInclude_OrderInfoDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var product2 = Objects.Objects.Get_Shirt2_Product();
+
+            var discountFixed500 = Objects.Objects.Get_Discount_fixed_500();
+
+            var orderSvcMocks = new OrderServiceMocks();
+            var orderSvc = orderSvcMocks.orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product2, 2, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                discountFixed500,
+                store.Alias,
+                coupon: null,
+                orderInfo: oi
+            ).Result);
+
+            Assert.AreEqual(8778, oi.OrderLines.First().Amount.Value);
+        }
+
+        [TestMethod]
         public void OrderInfoDiscountAmountCalculates()
         {
             var (fac, reg) = Helpers.RegisterAll();
@@ -356,7 +435,6 @@ namespace Ekom.Tests
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var discount = Objects.Objects.Get_Discount_fixed_500();
-            discount.discountItems = new List<Guid> { product.Key };
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
@@ -368,7 +446,202 @@ namespace Ekom.Tests
                 orderInfo: oi
             ).Result);
 
-            Assert.AreEqual(1000, oi.DiscountAmount.Value);
+            Assert.AreEqual(1100m, oi.DiscountAmount.Value);
+        }
+
+        [TestMethod]
+        public void AppliesLineDiscount_WithOrderDiscount_Exclusive()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
+            var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_fixed_500();
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+            discount.discountItems.Add(product.Key);
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderLineAsync(
+                oi.orderLines.First().Key,
+                discount,
+                store.Alias,
+                null,
+                oi
+                ).Result
+            );
+            Assert.IsNull(oi.Discount);
+            Assert.AreEqual(750m, oi.SubTotal.Value);
+        }
+        [TestMethod]
+        public void DoesNot_ApplyWorseLineDiscount_WithOrderDiscount_Exclusive()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var discount = Objects.Objects.Get_ProductDiscount_fixed_500();
+            var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_percentage_50();
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+            discount.discountItems.Add(product.Key);
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.IsFalse(orderSvc.ApplyDiscountToOrderLineAsync(
+                oi.orderLines.First().Key,
+                discount,
+                store.Alias,
+                null,
+                oi
+                ).Result
+            );
+            Assert.AreEqual(750m, oi.SubTotal.Value);
+        }
+
+        [TestMethod]
+        public void AppliesOrderDiscountExclusive_WithLineDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var discount = Objects.Objects.Get_ProductDiscount_fixed_500();
+            var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_percentage_50();
+
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+            discount.discountItems.Add(product.Key);
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.IsNull(oi.orderLines.First().Discount);
+            Assert.AreEqual(750m, oi.SubTotal.Value);
+        }
+
+        [TestMethod]
+        public void DoesNot_ApplyWorseOrderDiscountExclusive_WithLineDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
+            var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_fixed_500();
+
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+            discount.discountItems.Add(product.Key);
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsFalse(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.AreEqual(750m, oi.SubTotal.Value);
+        }
+
+        [TestMethod]
+        public void AppliesOrderDiscountExclusive_ReplacingOrderDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var orderDiscount_fixed500 = Objects.Objects.Get_Discount_fixed_500();
+            var orderDiscount_excl_perc = Objects.Objects.Get_ExclusiveDiscount_percentage_50();
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount_fixed500,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount_excl_perc,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.AreEqual(750m, oi.SubTotal.Value);
+        }
+
+        [TestMethod]
+        public void DoesNot_ApplyWorseOrderDiscountExclusive_ReplacingOrderDiscount()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var orderDiscount_perc = Objects.Objects.Get_Discount_percentage_50();
+            var orderDiscount_excl_fixed500 = Objects.Objects.Get_ExclusiveDiscount_fixed_500();
+
+            var product = Objects.Objects.Get_Shirt3_Product();
+
+            var orderSvc = new OrderServiceMocks().orderSvc;
+            var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
+
+            Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount_perc,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.IsFalse(orderSvc.ApplyDiscountToOrderAsync(
+                orderDiscount_excl_fixed500,
+                store.Alias,
+                null,
+                oi).Result
+            );
+            Assert.AreEqual(750m, oi.SubTotal.Value);
         }
     }
 }

@@ -7,20 +7,11 @@ using System.Collections.Concurrent;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
-using GlobalDiscountCache
-    = System.Collections.Concurrent.ConcurrentDictionary<string,
-        System.Collections.Concurrent.ConcurrentDictionary<System.Guid, Ekom.Interfaces.IDiscount>>;
 
 namespace Ekom.Cache
 {
     class DiscountCache : PerStoreCache<IDiscount>
     {
-        /// <summary>
-        /// All order <see cref="IDiscount"/>'s containing no coupon
-        /// </summary>
-        public ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>> GlobalDiscounts { get; }
-            = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IDiscount>>();
-
         public override string NodeAlias { get; } = "ekmOrderDiscount";
 
         /// <summary>
@@ -49,8 +40,6 @@ namespace Ekom.Cache
 
             var curStoreCache
                 = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
-            var curStoreGlobalDiscountCache
-                = GlobalDiscounts[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
 
             foreach (var r in results)
             {
@@ -64,8 +53,6 @@ namespace Ekom.Cache
                         if (item != null)
                         {
                             count++;
-
-                            curStoreGlobalDiscountCache[item.Key] = item;
 
                             var itemKey = Guid.Parse(r.Key());
                             curStoreCache[itemKey] = item;
@@ -101,12 +88,8 @@ namespace Ekom.Cache
 
                         if (item != null)
                         {
-                            GlobalDiscounts[store.Value.Alias][item.Key] = item;
-
                             Cache[store.Value.Alias][node.Key] = item;
-
                         }
-
                     }
                 }
                 catch (Exception ex) // Skip on fail
@@ -128,10 +111,7 @@ namespace Ekom.Cache
             _logger.Debug<DiscountCache>($"Attempting to remove discount with key {key}");
             foreach (var store in _storeCache.Cache)
             {
-
                 Cache[store.Value.Alias].TryRemove(key, out _);
-
-                GlobalDiscounts[store.Value.Alias].TryRemove(key, out _);
             }
         }
     }

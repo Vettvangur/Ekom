@@ -1,8 +1,11 @@
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Tests.MockClasses;
 using Ekom.Tests.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using System;
+using Umbraco.Core;
 using Umbraco.Core.Composing;
 
 namespace Ekom.Tests
@@ -23,6 +26,7 @@ namespace Ekom.Tests
         public void CalculatesPriceCorrectly()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -38,6 +42,7 @@ namespace Ekom.Tests
         public void CalculatesVatNotIncludedStorePrice()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -54,6 +59,7 @@ namespace Ekom.Tests
         public void CalculatesVatIncludedStorePrice()
         {
             var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
             Helpers.RegisterUmbracoHelper(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
@@ -69,7 +75,8 @@ namespace Ekom.Tests
         [TestMethod]
         public void CanGetWithoutVatFromVatIncluded()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
+            reg.Register(Mock.Of<IProductDiscountService>());
 
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
             var product = new CustomProduct(Shirt_product_3.oldjson, store);

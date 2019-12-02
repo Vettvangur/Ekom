@@ -10,12 +10,12 @@ namespace Ekom.Factories
     {
         public IProductDiscount Create(ISearchResult item, IStore store)
         {
-            return new GlobalDiscount(item, store);
+            return new ProductDiscount(item, store);
         }
 
         public IProductDiscount Create(IContent item, IStore store)
         {
-            return new GlobalDiscount(item, store);
+            return new ProductDiscount(item, store);
         }
     }
 }

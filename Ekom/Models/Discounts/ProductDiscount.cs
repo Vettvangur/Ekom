@@ -14,23 +14,23 @@ using Umbraco.Web;
 
 namespace Ekom.Models.Discounts
 {
-    public class GlobalDiscount : Discount, IProductDiscount
+    public class ProductDiscount : Discount, IProductDiscount
     {
         /// <summary>
         /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
         /// </summary>
         /// <param name="store"></param>
-        public GlobalDiscount(IStore store) : base(store) { }
+        public ProductDiscount(IStore store) : base(store) { }
 
         /// <summary>
         /// Construct Product from Examine item
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public GlobalDiscount(ISearchResult item, IStore store) : base(item, store)
+        public ProductDiscount(ISearchResult item, IStore store) : base(item, store)
         {
         }
-        public GlobalDiscount(IContent node, IStore store) : base(node, store)
+        public ProductDiscount(IContent node, IStore store) : base(node, store)
         {
         }
 

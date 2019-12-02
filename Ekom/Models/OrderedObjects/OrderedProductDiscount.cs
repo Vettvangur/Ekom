@@ -19,7 +19,7 @@ namespace Ekom.Models.OrderedObjects
             EndOfRange = endOfRange;
 
         }
-        public OrderedProductDiscount(GlobalDiscount productDiscount)
+        public OrderedProductDiscount(ProductDiscount productDiscount)
         {
             if (productDiscount != null)
             {

@@ -90,7 +90,30 @@ namespace Ekom.Tests.Objects
                 Get_shirt2_blue_variantgroup_SearchResult(), 
                 Get_IS_Store_Vat_NotIncluded());
 
+        private static SearchResult Get_Discount_fixed_500_SearchResult()
+            => new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "2246" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
+                    { "parentID", new List<string> { "2245" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "10% off" } },
+                    { "urlName", new List<string> { "10-off" } },
+                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
+                    { "nodeType", new List<string> { "2237" } },
+                    { "disable", new List<string> { "{\"values\":{\"IS\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
+                    { "amount", new List<string> { "500" } },
+                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
+                    { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "type", new List<string> { "Fixed" } },
+                });
         public static Discount Get_Discount_fixed_500()
+            => new Discount(
+                Get_Discount_fixed_500_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_ExclusiveDiscount_fixed_500()
             => new Discount(
                 new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
                 {
@@ -108,10 +131,42 @@ namespace Ekom.Tests.Objects
                     { "amount", new List<string> { "500" } },
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
-                    { "type", new List<string> { "Fixed" } },
-                }), 
+                    { "exclusive", new List<string> { "1" } },
+                }),
                 Get_IS_Store_Vat_NotIncluded());
+        public static ProductDiscount Get_ProductDiscount_fixed_500()
+            => new ProductDiscount(
+                Get_Discount_fixed_500_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded());
+        private static SearchResult DiscountPercentage50_SearchResult()
+            => new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+                {
+                    { "__NodeId", new List<string> { "2246" } },
+                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+                    { "__Published", new List<string> { "y" } },
+                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a58" } },
+                    { "parentID", new List<string> { "2245" } },
+                    { "level", new List<string> { "3" } },
+                    { "nodeName", new List<string> { "50% off" } },
+                    { "urlName", new List<string> { "50-off" } },
+                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
+                    { "nodeType", new List<string> { "2237" } },
+                    { "disable", new List<string> { "" } },
+                    { "amount", new List<string> { "50" } },
+                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
+                    { "title", new List<string> { "" } },
+                    { "type", new List<string> { "Percentage" } },
+                });
+
         public static Discount Get_Discount_percentage_50()
+            => new Discount(
+                DiscountPercentage50_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded());
+        public static ProductDiscount Get_ProductDiscount_percentage_50()
+            => new ProductDiscount(
+                DiscountPercentage50_SearchResult(),
+                Get_IS_Store_Vat_NotIncluded());
+        public static Discount Get_ExclusiveDiscount_percentage_50()
             => new Discount(
                 new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
                 {
@@ -130,27 +185,7 @@ namespace Ekom.Tests.Objects
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Percentage" } },
-                }),
-                Get_IS_Store_Vat_NotIncluded());
-        public static GlobalDiscount Get_GlobalDiscount_percentage_50()
-            => new GlobalDiscount(
-                new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
-                {
-                    { "__NodeId", new List<string> { "2246" } },
-                    { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
-                    { "__Published", new List<string> { "y" } },
-                    { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
-                    { "parentID", new List<string> { "2245" } },
-                    { "level", new List<string> { "3" } },
-                    { "nodeName", new List<string> { "50% off" } },
-                    { "urlName", new List<string> { "50-off" } },
-                    { "__Path", new List<string> { "-1,1066,2245,2246" } },
-                    { "nodeType", new List<string> { "2237" } },
-                    { "disable", new List<string> { "" } },
-                    { "amount", new List<string> { "50" } },
-                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
-                    { "title", new List<string> { "" } },
-                    { "type", new List<string> { "Percentage" } },
+                    { "exclusive", new List<string> { "1" } },
                 }),
                 Get_IS_Store_Vat_NotIncluded());
         public static Discount Get_Discount_fixed_1000_Min_2000()
