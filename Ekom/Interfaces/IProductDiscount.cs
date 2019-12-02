@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
-    public interface IGlobalDiscount : IDiscount
+    public interface IProductDiscount : IDiscount
     { 
     }
 }

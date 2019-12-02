@@ -1,6 +1,13 @@
+using Ekom.Interfaces;
 using Ekom.Tests.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Umbraco.Core;
 using Umbraco.Core.Composing;
+using Moq;
+using System;
+using Ekom.Cache;
+using System.Collections.Concurrent;
+using Ekom.Services;
 
 namespace Ekom.Tests
 {
@@ -17,67 +24,117 @@ namespace Ekom.Tests
         [TestMethod]
         public void Percentages_NoRange_IS()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Percent_20.json2);
+
+            var discount = new CustomDiscount(ProductDiscount_Percent_20.json2, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.json, store);
+
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
         }
+
         [TestMethod]
         public void Fixed_WithinRange_ShouldGiveDiscount_IS()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Fixed.limited1000);
-            Assert.IsTrue(product.Price.OriginalValue - 1000 == product.Price.WithVat.Value);
 
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.json, store);
+            Assert.IsTrue(product.Price.OriginalValue - 1000 == product.Price.WithVat.Value);
         }
+
         [TestMethod]
         public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooLow_IS()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_Low, store, ProductDiscount_Fixed.limited1000);
+
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_Low, store);
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
         [TestMethod]
         public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooHigh_IS()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_High, store, ProductDiscount_Fixed.limited1000);
+
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_High, store);
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
         [TestMethod]
         public void Percentages_NoRange_DK()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Percent_20.json2);
+
+            var discount = new CustomDiscount(ProductDiscount_Percent_20.json2, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.json, store);
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
         }
         [TestMethod]
         public void Fixed_WithinRange_ShouldGiveDiscount_DK()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.json, store, ProductDiscount_Fixed.limited1000);
+
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.json, store);
             Assert.IsTrue(product.Price.OriginalValue - 5 == product.Price.WithVat.Value);
 
         }
         [TestMethod]
         public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooLow_DK()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_Low, store, ProductDiscount_Fixed.limited1000);
+
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_Low, store);
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
         [TestMethod]
         public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooHigh_DK()
         {
-            Helpers.RegisterAll();
+            var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_High, store, ProductDiscount_Fixed.limited1000);
+
+            var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_High, store);
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
     }

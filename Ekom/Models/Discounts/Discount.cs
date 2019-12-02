@@ -3,6 +3,7 @@ using Ekom.Models.Behaviors;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Examine;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +23,20 @@ namespace Ekom.Models.Discounts
         protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
         protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
         public virtual IConstraints Constraints { get; protected set; }
-        public virtual DiscountAmount Amount { get; protected set; }
+        public virtual DiscountType Type { get; protected set; } = DiscountType.Fixed;
+        public virtual decimal Amount
+        {
+            get
+            {
+                var val = Convert.ToDecimal(Properties.GetPropertyValue("amount", Store.Alias));
+                if (Type == DiscountType.Percentage)
+                {
+                    return val / 100;
+                }
+
+                return val;
+            }
+        }
 
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
@@ -38,7 +52,17 @@ namespace Ekom.Models.Discounts
         /// <summary>
         /// If the discount can be used with productdiscounts
         /// </summary>
-        public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
+        public virtual bool Exclusive => Properties.GetPropertyValue("exclusive", Store.Alias).ConvertToBool();
+
+        /// <summary>
+        /// Used in unit tests
+        /// </summary>
+        /// <param name="store">The store.</param>
+        /// <param name="json">The json.</param>
+        internal Discount(IStore store, string json) :base(store) 
+        {
+            _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+        }
 
         /// <summary>
         /// Used by Ekom extensions
@@ -73,8 +97,6 @@ namespace Ekom.Models.Discounts
 
             //CouponsInternal = couponsInternal?.Split(',');
 
-            var discountAmount = Convert.ToDecimal(Properties.GetPropertyValue("discount"));
-
             var typeValue = Properties.GetPropertyValue("type");
 
             if (int.TryParse(typeValue, out int typeValueInt))
@@ -85,24 +107,11 @@ namespace Ekom.Models.Discounts
                 typeValue = dt.ConfigurationAs<string>();
             }
 
-            DiscountType type = DiscountType.Fixed;
-
-            switch (typeValue)
+            if (typeValue == "Percentage")
             {
-                case "Fixed":
-                    break;
-
-                case "Percentage":
-                    type = DiscountType.Percentage;
-                    discountAmount /= 100;
-                    break;
+                Type = DiscountType.Percentage;
             }
 
-            Amount = new DiscountAmount
-            {
-                Amount = discountAmount,
-                Type = type,
-            };
 
             var discountItemsVal = Properties.GetPropertyValue("discountItems", Store.Alias);
 
@@ -179,11 +188,11 @@ namespace Ekom.Models.Discounts
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;
@@ -198,11 +207,11 @@ namespace Ekom.Models.Discounts
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;

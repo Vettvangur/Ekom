@@ -522,11 +522,11 @@ namespace Ekom.Services
 
                 orderInfo.orderLines.Add(orderLine);
                
-                if (product.Discount != null 
-                // Make sure that the current OrderInfo discount, if there is one, allows stacking
-                // Stacking being applying a seperate discount to the order and general order items
-                // vs specific discounts for specific OrderLines
-                && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
+                if (product.Discount != null
+                // Make sure that the current OrderInfo discount, if there is one, is inclusive
+                // Meaning you can apply this discount while having a seperate discount 
+                // affecting other OrderLines
+                && (orderInfo.Discount == null || !orderInfo.Discount.Exclusive))
                 {
                     if (IsDiscountApplicable(orderInfo, orderLine, product.Discount))
                     {

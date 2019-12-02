@@ -26,7 +26,7 @@ namespace Ekom.API
         readonly ILogger _logger;
         readonly AppCaches _appCaches;
         readonly IStoreService _storeSvc;
-        readonly IPerStoreCache<IGlobalDiscount> _productDiscountCache; // must be before product cache
+        readonly IPerStoreCache<IProductDiscount> _productDiscountCache; // must be before product cache
         readonly IPerStoreCache<IProduct> _productCache;
         readonly IPerStoreCache<ICategory> _categoryCache;
         readonly IPerStoreCache<IVariant> _variantCache;
@@ -40,7 +40,7 @@ namespace Ekom.API
             Configuration config,
             IPerStoreCache<IProduct> productCache,
             IPerStoreCache<ICategory> categoryCache,
-            IPerStoreCache<IGlobalDiscount> productDiscountCache,
+            IPerStoreCache<IProductDiscount> productDiscountCache,
             IPerStoreCache<IVariant> variantCache,
             IPerStoreCache<IVariantGroup> variantGroupCache,
             IStoreService storeService

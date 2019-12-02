@@ -6,14 +6,14 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Factories
 {
-    public class ProductDiscountFactory : IPerStoreFactory<IGlobalDiscount>
+    public class ProductDiscountFactory : IPerStoreFactory<IProductDiscount>
     {
-        public IGlobalDiscount Create(ISearchResult item, IStore store)
+        public IProductDiscount Create(ISearchResult item, IStore store)
         {
             return new GlobalDiscount(item, store);
         }
 
-        public IGlobalDiscount Create(IContent item, IStore store)
+        public IProductDiscount Create(IContent item, IStore store)
         {
             return new GlobalDiscount(item, store);
         }

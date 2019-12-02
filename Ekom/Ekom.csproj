@@ -337,7 +337,6 @@
     <Compile Include="Models\Data\DiscountStockData.cs" />
     <Compile Include="Models\Data\OrderActivityLog.cs" />
     <Compile Include="Models\Discounts\Discount.cs" />
-    <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Models\Image.cs" />

@@ -200,7 +200,7 @@ namespace Ekom.Models
 
                             if (Discount != null)
                             {
-                                switch (Discount.Amount.Type)
+                                switch (Discount.Type)
                                 {
                                     case Discounts.DiscountType.Fixed:
 
@@ -208,7 +208,7 @@ namespace Ekom.Models
                                         {
                                             price = VatCalculator.WithoutVat(price, Store.Vat);
                                         }
-                                        price -= Discount.Amount.Amount;
+                                        price -= Discount.Amount;
                                         if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
                                         {
                                             price = VatCalculator.WithVat(price, Store.Vat);
@@ -217,7 +217,7 @@ namespace Ekom.Models
 
                                     case Discounts.DiscountType.Percentage:
 
-                                        price -= price * Discount.Amount.Amount;
+                                        price -= price * Discount.Amount;
                                         break;
                                 }
                             }
@@ -254,7 +254,7 @@ namespace Ekom.Models
 
                             if (Discount != null)
                             {
-                                switch (Discount.Amount.Type)
+                                switch (Discount.Type)
                                 {
                                     case Discounts.DiscountType.Fixed:
 
@@ -262,7 +262,7 @@ namespace Ekom.Models
                                         {
                                             price = VatCalculator.WithoutVat(price, Store.Vat);
                                         }
-                                        price -= Discount.Amount.Amount;
+                                        price -= Discount.Amount;
                                         if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
                                         {
                                             price = VatCalculator.WithVat(price, Store.Vat);
@@ -271,7 +271,7 @@ namespace Ekom.Models
 
                                     case Discounts.DiscountType.Percentage:
 
-                                        price -= price * Discount.Amount.Amount;
+                                        price -= price * Discount.Amount;
                                         break;
                                 }
                             }
@@ -318,7 +318,7 @@ namespace Ekom.Models
 
                             if (Discount != null)
                             {
-                                switch (Discount.Amount.Type)
+                                switch (Discount.Type)
                                 {
                                     case Discounts.DiscountType.Fixed:
 
@@ -326,7 +326,7 @@ namespace Ekom.Models
                                         {
                                             price = VatCalculator.WithoutVat(price, Store.Vat);
                                         }
-                                        price -= Discount.Amount.Amount;
+                                        price -= Discount.Amount;
                                         if (DiscountAlwaysBeforeVAT && Store.VatIncludedInPrice)
                                         {
                                             price = VatCalculator.WithVat(price, Store.Vat);
@@ -335,7 +335,7 @@ namespace Ekom.Models
 
                                     case Discounts.DiscountType.Percentage:
 
-                                        price -= price * Discount.Amount.Amount;
+                                        price -= price * Discount.Amount;
                                         break;
                                 }
                             }

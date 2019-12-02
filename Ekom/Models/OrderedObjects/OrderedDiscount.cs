@@ -20,17 +20,19 @@ namespace Ekom.Models.OrderedObjects
         [JsonConstructor]
         public OrderedDiscount(
             Guid key,
-            bool stackable,
-            DiscountAmount amount,
+            bool exclusive,
+            decimal amount,
+            DiscountType type,
             List<Guid> discountItems,
-            IConstraints constraints,
-            IReadOnlyCollection<string> coupons,
+            Constraints constraints,
+            List<string> coupons,
             bool hasMasterStock)
         {
             Key = key;
-            Stackable = stackable;
+            Exclusive = exclusive;
             DiscountItems = discountItems;
             Amount = amount;
+            Type = type;
             Constraints = constraints;
             Coupons = coupons;
             HasMasterStock = hasMasterStock;
@@ -42,10 +44,11 @@ namespace Ekom.Models.OrderedObjects
         public OrderedDiscount(IDiscount discount)
         {
             discount = discount ?? throw new ArgumentNullException(nameof(discount));
-            Stackable = discount.Stackable;
+            Exclusive = discount.Exclusive;
             Key = discount.Key;
             DiscountItems = discount.DiscountItems.ToList().AsReadOnly();
             Amount = discount.Amount;
+            Type = discount.Type;
             Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
             HasMasterStock = discount.HasMasterStock;
@@ -56,16 +59,15 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public Guid Key { get; internal set; }
 
-        /// <summary>
-        /// Discount amount in the specified <see cref="DiscountType"/>
-        /// </summary>
-        public DiscountAmount Amount { get; internal set; }
+        public DiscountType Type { get; internal set; }
+
+        public decimal Amount { get; internal set; }
 
         public IReadOnlyCollection<Guid> DiscountItems { get; }
         /// <summary>
-        /// If discount is stackable with productDiscounts
+        /// Can you apply this discount while having a seperate discount affecting other OrderLines
         /// </summary>
-        public bool Stackable { get; }
+        public bool Exclusive { get; }
         /// <summary>
         /// Ranges
         /// </summary>
@@ -91,11 +93,11 @@ namespace Ekom.Models.OrderedObjects
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;
@@ -110,11 +112,11 @@ namespace Ekom.Models.OrderedObjects
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;

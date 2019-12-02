@@ -130,17 +130,20 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line =>
                 {
-                    var price
-                        = new Price(
-                            line.Amount.OriginalValue,
-                            line.Amount.Store,
-                            line.Discount,
-                            line.Quantity,
-                            true
-                        );
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue,
+                                line.Amount.Store,
+                                Discount,
+                                line.Quantity
+                            );
 
-                    return price.AfterDiscount.Value;
+                        return lineWithOrderDiscount.AfterDiscount.Value;
+                    }
 
+                    return line.Amount.AfterDiscount.Value;
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -170,15 +173,20 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line =>
                 {
-                    var price = new Price(
-                               line.Amount.OriginalValue,
-                               line.Amount.Store,
-                               line.Discount,
-                               line.Quantity,
-                               true
-                           );
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount
+                            = new Price(
+                                line.Amount.OriginalValue,
+                                line.Amount.Store,
+                                Discount,
+                                line.Quantity
+                            );
 
-                    return price.Value;
+                        return lineWithOrderDiscount.Value;
+                    }
+
+                    return line.Amount.Value;
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
@@ -202,11 +210,11 @@ namespace Ekom.Models
                 {
                     if (line.Discount == null
                     // This is for OrderService.Discounts.IsBetterDiscount, 
-                    // allowing us to temporarily apply a non stackable discount to the order
+                    // allowing us to temporarily apply an exclusive discount to the order
                     // without removing discounts from all orderlines.
-                    // In normal use a non-stackable discount will never be applied to an order 
+                    // In normal use an exclusive order discount will never be applied to an order 
                     // at the same time as OrderLines have a discount applied.
-                    || Discount?.Stackable == false)
+                    || Discount?.Exclusive == true)
                     {
                         var lineWithOrderDiscount
                             = new Price(

@@ -7,6 +7,7 @@ using Examine;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,6 +25,7 @@ using Umbraco.Core.Dictionary;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Core.Persistence;
+using Umbraco.Core.Persistence.SqlSyntax;
 using Umbraco.Core.Services;
 using Umbraco.Web;
 using Umbraco.Web.PublishedCache;
@@ -144,5 +146,20 @@ namespace Ekom.Tests
                 Mock.Of<IBaseCache<IStore>>(),
                 Mock.Of<IPerStoreFactory<IDiscount>>()
             );
+
+        public static IPerStoreCache<IProductDiscount> CreateGlobalDiscountCacheWithDiscount(string storeAlias, params IProductDiscount[] discounts)
+        {
+            var dictionary = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, IProductDiscount>>();
+            dictionary[storeAlias] = new ConcurrentDictionary<Guid, IProductDiscount>();
+            foreach (var discount in discounts)
+            {
+                dictionary[storeAlias][discount.Key] = discount;
+            }
+
+            var mockGlobalDiscountCache = new Mock<IPerStoreCache<IProductDiscount>>();
+            mockGlobalDiscountCache.Setup(x => x.Cache).Returns(dictionary);
+
+            return mockGlobalDiscountCache.Object;
+        }
     }
 }

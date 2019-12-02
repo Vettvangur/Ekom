@@ -11,7 +11,7 @@ using Umbraco.Core.Services;
 
 namespace Ekom.Cache
 {
-    class GlobalDiscountCache : PerStoreCache<IGlobalDiscount>
+    class GlobalDiscountCache : PerStoreCache<IProductDiscount>
     {
         public override string NodeAlias { get; } = "ekmGlobalDiscount";
 
@@ -22,7 +22,7 @@ namespace Ekom.Cache
             ILogger logger,
             IFactory factory,
             IBaseCache<IStore> storeCache,
-            IPerStoreFactory<IGlobalDiscount> perStoreFactory,
+            IPerStoreFactory<IProductDiscount> perStoreFactory,
             IContentService contentService,
             IPerStoreCache<IProduct> perStoreProductCache
         ) : base(config, logger, factory, storeCache, perStoreFactory)
@@ -34,7 +34,7 @@ namespace Ekom.Cache
         public override void AddReplace(IContent node)
         {
             // We use tempItem to only run the refresh on the products items once. and not for every store.
-            IGlobalDiscount tempItem = null;
+            IProductDiscount tempItem = null;
 
             foreach (var store in _storeCache.Cache)
             {
@@ -73,7 +73,7 @@ namespace Ekom.Cache
         public override void Remove(Guid key)
         {
             _logger.Debug<GlobalDiscountCache>($"Attempting to remove product discount with key {key}");
-            IGlobalDiscount i = null;
+            IProductDiscount i = null;
 
             foreach (var store in _storeCache.Cache)
             {
@@ -83,7 +83,7 @@ namespace Ekom.Cache
             RefreshProductCache(i);
         }
 
-        private void RefreshProductCache(IGlobalDiscount discountItem)
+        private void RefreshProductCache(IProductDiscount discountItem)
         {
             if (discountItem != null)
             {

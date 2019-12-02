@@ -27,8 +27,5 @@ namespace Ekom.Tests.Objects
             Price = price ?? new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
             Urls = urls ?? Enumerable.Empty<string>();
         }
-
-        public IDiscount DiscountOverride;
-        public override IDiscount Discount => DiscountOverride ?? base.Discount;
     }
 }

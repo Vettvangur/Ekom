@@ -5,6 +5,6 @@ namespace Ekom.Interfaces
 {
     public interface IProductDiscountService
     {
-        IGlobalDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice);
+        IProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice);
     }
 }

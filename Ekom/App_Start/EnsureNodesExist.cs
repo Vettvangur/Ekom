@@ -756,11 +756,14 @@ namespace Ekom.App_Start
                                             Name = "Discount",
                                             Mandatory = true,
                                         },
-                                        //new PropertyType(multinodeProductsDt, "discountItems")
-                                        //{
-                                        //    Name = "Discount Items",
-                                        //    Mandatory = true,
-                                        //},
+                                        new PropertyType(multinodeProductsDt, "discountItems")
+                                        {
+                                            Name = "Discount Items",
+                                        },
+                                        new PropertyType(booleanDt, "exclusive")
+                                        {
+                                            Name = "Exclusive",
+                                        },
                                     }))
                                 {
                                     Name = "Settings",
@@ -780,10 +783,10 @@ namespace Ekom.App_Start
                             }
                     ),
                 });
-                var globalDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                var productDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
-                    Name = "Global Discount",
-                    Alias = "ekmGlobalDiscount",
+                    Name = "Product Discount",
+                    Alias = "ekmProductDiscount",
                     Icon = "icon-bill-dollar",
                     ContentTypeComposition = new List<IContentTypeComposition>
                     {
@@ -827,7 +830,7 @@ namespace Ekom.App_Start
                     AllowedContentTypes = new List<ContentTypeSort>
                     {
                         new ContentTypeSort(discountCt.Id, 1),
-                        new ContentTypeSort(globalDiscountCt.Id, 2),
+                        new ContentTypeSort(productDiscountCt.Id, 2),
                     },
                 });
 

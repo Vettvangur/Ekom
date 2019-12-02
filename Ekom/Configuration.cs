@@ -175,7 +175,7 @@ namespace Ekom
                 { UmbracoCurrent.Factory.GetInstance<IStoreDomainCache>() },
                 { UmbracoCurrent.Factory.GetInstance<IBaseCache<IStore>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<ICategory>>() },
-                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IGlobalDiscount>>() },
+                { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IProductDiscount>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IProduct>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IVariant>>() },
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IVariantGroup>>() },

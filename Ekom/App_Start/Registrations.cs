@@ -30,7 +30,7 @@ namespace Ekom.App_Start
             composition.Register<IPerStoreCache<IVariant>, VariantCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<ICategory>, CategoryCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IGlobalDiscount>, GlobalDiscountCache>(Lifetime.Singleton);
+            composition.Register<IPerStoreCache<IProductDiscount>, GlobalDiscountCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IProduct>, ProductCache>(Lifetime.Singleton);
             composition.Register<IBaseCache<IZone>, ZoneCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>(Lifetime.Singleton);
@@ -67,7 +67,7 @@ namespace Ekom.App_Start
                     f.GetInstance<Configuration>(),
                     f.GetInstance<IPerStoreCache<IProduct>>(),
                     f.GetInstance<IPerStoreCache<ICategory>>(),
-                    f.GetInstance<IPerStoreCache<IGlobalDiscount>>(),
+                    f.GetInstance<IPerStoreCache<IProductDiscount>>(),
                     f.GetInstance<IPerStoreCache<IVariant>>(),
                     f.GetInstance<IPerStoreCache<IVariantGroup>>(),
                     f.GetInstance<IStoreService>()
@@ -75,7 +75,7 @@ namespace Ekom.App_Start
             );
             composition.Register<IProductDiscountService>(f =>
                 new ProductDiscountService(
-                    f.GetInstance<IPerStoreCache<IGlobalDiscount>>()
+                    f.GetInstance<IPerStoreCache<IProductDiscount>>()
                 )
             );
 
@@ -134,7 +134,7 @@ namespace Ekom.App_Start
             composition.Register<IPerStoreFactory<IPaymentProvider>, PaymentProviderFactory>(Lifetime.Transient);
             composition.Register<IPerStoreFactory<IShippingProvider>, ShippingProviderFactory>(Lifetime.Transient);
             composition.Register<IPerStoreFactory<IProduct>, ProductFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IGlobalDiscount>, ProductDiscountFactory>(Lifetime.Transient);
+            composition.Register<IPerStoreFactory<IProductDiscount>, ProductDiscountFactory>(Lifetime.Transient);
             composition.Register<IPerStoreFactory<IVariant>, VariantFactory>(Lifetime.Transient);
             composition.Register<IPerStoreFactory<IVariantGroup>, VariantGroupFactory>(Lifetime.Transient);
         }

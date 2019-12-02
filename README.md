@@ -46,6 +46,14 @@ and create the uwbsRequest object with store domainprefix and currency if applic
 
 ## Discount Notes
 
+#### Terminology
+1. Order discounts, applied to OrderInfo, can have coupons, can be inclusive/exclusive (meaning they can or cant be applied at the same time as product discounts in the same order)
+  - When applying order discounts, we test constraints. We do not check discountItems.
+  - Checking discount items for order discounts would not be a stand-in for complex checks such as "minimum of 3 pants".
+  - It would also not make the order discount magically apply only to select order lines, we use product discounts for that
+2. Product discounts, can be global (meaning they automatically apply to new OrderLines on creation if their conditions are met)
+  - Can have coupons?
+
 ##### Rules for choosing a discount in OrderInfo/OrderLine for calculating price are the following:
 1. Ensure constraints verify
 2. If the line has a discount, use that
@@ -56,11 +64,12 @@ and create the uwbsRequest object with store domainprefix and currency if applic
 1. Ensure constraints verify
 2. If there was no discount previously on OrderInfo...
 - If stackable, apply discount
-- If non-stackable, apply discount to OrderInfo temporarily. Then compare old and new order total. 
-			OrderInfo knows to not use line discount when a non-stackable discount is set
+- If non-stackable and there are no line discounts, apply discount
+- If non-stackable, and there are line discounts applied, apply discount to OrderInfo temporarily. Then compare old and new order total. If the new discount compares favorably, remove the line discounts and apply the new order discount.
+  - OrderInfo does not use line discount when a non-stackable discount is set, this is only for this specific case of comparing.
 3. If there is one compare (using non-stackable compare above if applicable) and apply new Discount if better
 
-##### When do GlobalDiscounts get applied?
+##### When do ProductDiscounts get applied?
 When a new OrderLine is created Product.Discount is called, if it returns a match we check the rules above and apply if applicable
 	
 ##### Due to the aforementioned rules it's questionable if ApplyDiscountToOrderLineAsync should accept IDiscount versus only accepting IProductDiscount
@@ -78,10 +87,8 @@ ApplyDiscountToOrder does not accept IProductDiscount currently
  * we always apply IProductDiscount straight to OrderLines
 Points to consider for allowing OrderInfo to have ProductDiscounts
  * We could also create a ApplyDiscountToOrder accepting IProductDiscount. It would then apply the ProductDiscount straight to applicable OrderLine's
- * If we push the discount from OrderInfo to OrderLine on creation of line, how would stackable work
- * Example: OrderInfo has ProductDiscount, applicable line gets discount a stackable global discount is applied to Order, old OrderLine keeps product discount. Now new OrderLine's do not get the initial ProductDiscount !!
-
-##### Guðjóns ProductDiscount functionality has been largely renamed to GlobalDiscount and additionally can be set with an empty DiscountItems list to apply to all orders where constraints are valid.
+ * If we push the discount from OrderInfo to OrderLine on creation of line, how would 'exclusive' work
+ * Example: OrderInfo has ProductDiscount, applicable line gets discount. An inclusive global discount is applied to Order, old OrderLine keeps product discount. Now new OrderLine's do not get the initial ProductDiscount !!
 
 ##### Caveats:
 We still have no "Real" order discounts, that is it is not currently possible to create a fixed order discount that gives free shipping the discount is applied per OrderLine and gets multiplied by the amount of lines

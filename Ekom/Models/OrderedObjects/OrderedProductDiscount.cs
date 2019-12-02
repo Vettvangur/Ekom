@@ -23,8 +23,8 @@ namespace Ekom.Models.OrderedObjects
         {
             if (productDiscount != null)
             {
-                Type = productDiscount.Amount.Type;
-                Discount = productDiscount.Amount.Amount;
+                Type = productDiscount.Type;
+                Discount = productDiscount.Amount;
                 StartOfRange = productDiscount.Constraints.StartRange;
                 EndOfRange = productDiscount.Constraints.EndRange;
             }

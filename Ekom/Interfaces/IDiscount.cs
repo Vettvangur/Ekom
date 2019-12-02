@@ -11,9 +11,18 @@ namespace Ekom.Interfaces
     public interface IDiscount : IComparable<IDiscount>, IComparable<OrderedDiscount>
     {
         /// <summary>
-        /// Discount amount in the specified <see cref="DiscountType"/>
+        /// Fixed or percentage?
         /// </summary>
-        DiscountAmount Amount { get; }
+        DiscountType Type { get; }
+        /// <summary>
+        /// Discount amount in the specified <see cref="DiscountType"/>
+        ///
+        /// Percentage example:
+        /// Umbraco input: 28.5 <para></para>
+        /// Stored value: 0.285<para></para>
+        /// Effective value: 28.5%<para></para>
+        /// </summary>
+        decimal Amount { get; }
         /// <summary>
         /// Ranges
         /// </summary>
@@ -30,7 +39,7 @@ namespace Ekom.Interfaces
         /// If the discount can be applied ontop of product discounts.
         /// Discount stacking = Applying discounts to specific OrderLine's while applying a seperate discount to the order and general order items
         /// </summary>
-        bool Stackable { get; }
+        bool Exclusive { get; }
         /// <summary>
         /// The products that are in this discount;
         /// </summary>
