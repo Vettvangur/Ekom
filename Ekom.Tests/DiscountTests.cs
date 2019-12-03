@@ -145,7 +145,7 @@ namespace Ekom.Tests
         public void BetterDiscountLinkedToProduct_OverridesOrderDiscount()
         {
             throw new NotSupportedException();
-
+            //test2
             var (fac, reg) = Helpers.RegisterAll();
 
             var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
