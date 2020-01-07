@@ -63,7 +63,7 @@ namespace Ekom.Tests
         }
 
         [TestMethod]
-        public void Fixed_WithinRange_ShouldGiveDiscount_IS()
+        public void Fixed_PriceRange_ShouldGiveDiscount_IS()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
@@ -78,7 +78,7 @@ namespace Ekom.Tests
         }
 
         [TestMethod]
-        public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooLow_IS()
+        public void Fixed_PriceRange_ShouldNotGiveDiscount_ProductPriceTooLow_IS()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
@@ -92,7 +92,7 @@ namespace Ekom.Tests
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
         [TestMethod]
-        public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooHigh_IS()
+        public void Fixed_PriceRange_ShouldNotGiveDiscount_ProductPriceTooHigh_IS()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
@@ -120,7 +120,7 @@ namespace Ekom.Tests
             Assert.IsTrue(product.Price.OriginalValue - product.Price.OriginalValue * 0.20m == product.Price.WithVat.Value);
         }
         [TestMethod]
-        public void Fixed_WithinRange_ShouldGiveDiscount_DK()
+        public void Fixed_PriceRange_ShouldGiveDiscount_DK()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
@@ -135,7 +135,7 @@ namespace Ekom.Tests
 
         }
         [TestMethod]
-        public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooLow_DK()
+        public void Fixed_PriceRange_ShouldNotGiveDiscount_ProductPriceTooLow_DK()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
@@ -149,7 +149,7 @@ namespace Ekom.Tests
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
         [TestMethod]
-        public void Fixed_WithinRange_ShouldNotGiveDiscount_ProductPriceTooHigh_DK()
+        public void Fixed_PriceRange_ShouldNotGiveDiscount_ProductPriceTooHigh_DK()
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
@@ -160,6 +160,24 @@ namespace Ekom.Tests
             reg.Register<IProductDiscountService>(productDiscountService);
 
             var product = new CustomProduct(Shirt_product_3.Discount_Price_Too_High, store);
+            Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
+        }
+
+        [TestMethod]
+        public void Unlinked_ProductDiscount_NotApplied()
+        {
+            var (fac, reg) = Helpers.RegisterAll();
+
+            new UmbracoHelperCreator(reg, fac);
+
+            var store = Objects.Objects.Get_DK_Store_Vat_Included();
+
+            var discountPerc50 = Objects.Objects.Get_ProductDiscount_percentage_50();
+            var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discountPerc50);
+            var productDiscountService = new ProductDiscountService(cache);
+            reg.Register<IProductDiscountService>(productDiscountService);
+
+            var product = new CustomProduct(Shirt_product_2.json, store);
             Assert.IsTrue(product.Price.OriginalValue == product.Price.WithVat.Value);
         }
     }

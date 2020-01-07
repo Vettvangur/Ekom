@@ -85,7 +85,7 @@ namespace Ekom.Tests
         }
 
         /// <summary>
-        /// For same inexplicable reason the following registrations block further registrations from
+        /// For some inexplicable reason the following registrations block further registrations from
         /// overriding previous ones. Even for different types, f.x. a .Register<IExamineService>
         /// </summary>
         /// <param name="register"></param>
