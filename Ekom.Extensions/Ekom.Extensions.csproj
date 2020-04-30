@@ -284,7 +284,7 @@
     <Compile Include="Utilities\HtmlHelperExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <Content Include="app.config" />
     <None Include="Ekom.Extensions.nuspec">
       <SubType>Designer</SubType>
     </None>

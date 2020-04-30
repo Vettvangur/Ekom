@@ -26,5 +26,9 @@
         "build": "npx gulp sass && npx webpack --env.prod",
         "dev": "npx gulp sass && npx webpack"
     },
-    "-vs-binding": { "ProjectOpened": [ "dev" ] }
+    "-vs-binding": {
+        "ProjectOpened": [
+            "dev"
+        ]
+    }
 }
