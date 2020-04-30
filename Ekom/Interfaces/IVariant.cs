@@ -18,6 +18,22 @@ namespace Ekom.Interfaces
         /// The price.
         /// </value>
         IPrice Price { get; }
+
+        /// <summary>
+        /// Gets the prices.
+        /// </summary>
+        /// <value>
+        /// The price.
+        /// </value>
+        List<IPrice> Prices { get; }
+
+        /// <summary>
+        /// Gets the Vat.
+        /// </summary>
+        /// <value>
+        /// The stock.
+        /// </value>
+        decimal Vat { get; }
         /// <summary>
         /// Parent product
         /// </summary>

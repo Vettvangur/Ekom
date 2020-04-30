@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
@@ -11,5 +11,7 @@ namespace Ekom.Interfaces
         /// Countries encompassing this Zone
         /// </summary>
         IEnumerable<string> Countries { get; }
+
+        string Title { get; }
     }
 }

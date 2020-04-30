@@ -1,0 +1,57 @@
+{      
+	propertyEditors: [
+        {
+            "name": "Ekom Coupon Editor",
+            "alias": "ekomCouponEditor",
+            "editor": {
+                "valueType": "STRING",
+                "view": "~/App_Plugins/Ekom/Datatypes/EkomCouponEditor/ekomCoupon.html"
+            }
+        },
+		{          
+			alias: "Ekom.Countries",           
+			name: "Ekom Countries",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/Countries/countries.html"
+			}         
+		},
+		{          
+			alias: "Ekom.Currencies",           
+			name: "Ekom Currencies",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/Currencies/currencies.html"
+			}         
+		},
+		{          
+			alias: "Ekom.Prices",           
+			name: "Ekom Prices",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/prices/prices.html"
+			}         
+		},
+		{
+			alias: "Ekom.Zones",           
+			name: "Ekom Zone Selector",         
+			editor: {
+				view: "~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.html"
+			},          
+		},
+		{
+		"name": "Ekom Stock Editor",
+		"alias": "ekomStockEditor",
+		"editor": {
+			"valueType": "STRING",
+			"view": "~/App_Plugins/Ekom/Datatypes/EkomStockEditor/ekomStock.html"
+		}
+		}
+	]
+	,        
+	javascript: [
+		'~/App_Plugins/Ekom/DataTypes/Currencies/currencies.controller.js',
+        '~/App_Plugins/Ekom/DataTypes/Prices/prices.controller.js',
+        "~/App_Plugins/Ekom/DataTypes/EkomStockEditor/ekomStock.controller.js",
+		'~/App_Plugins/Ekom/DataTypes/ZoneSelector/zoneselector.controller.js',
+		"~/App_Plugins/Ekom/DataTypes/EkomStockEditor/ekomStock.controller.js",
+        "~/App_Plugins/Ekom/Datatypes/EkomCouponEditor/ekomCoupon.controller.js"
+	]
+}

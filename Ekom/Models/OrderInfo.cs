@@ -117,7 +117,7 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line => line.Amount.Value);
 
-                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
+                return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
 
@@ -128,25 +128,28 @@ namespace Ekom.Models
         {
             get
             {
+                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                    if (line.Discount == null)
-                    {
-                        var lineWithOrderDiscount
-                            = new Price(
-                                line.Amount.OriginalValue,
-                                line.Amount.Store,
-                                Discount,
-                                line.Quantity
-                            );
 
-                        return lineWithOrderDiscount.AfterDiscount.Value;
-                    }
+                    var price
+                        = new Price(
+                            line.Amount.OriginalValue,
+                            StoreInfo.Currency,
+                            StoreInfo.Vat,
+                            StoreInfo.VatIncludedInPrice,
+                            line.Product.ProductDiscount,
+                            line.Discount,
+                            true,
+                            SumOriginalPrice,
+                            line.Quantity
+                        );
 
-                    return line.Amount.AfterDiscount.Value;
+                    return price.AfterDiscount.Value;
+
                 });
 
-                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
+                return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
 
@@ -160,7 +163,7 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
 
-                return new CalculatedPrice(amount, StoreInfo.Currency.FirstOrDefault());
+                return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
 

@@ -34,11 +34,20 @@ namespace Ekom.Models
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
-        public virtual string Currency => string.IsNullOrEmpty(Properties.GetPropertyValue("currency"))
-            ? Properties["culture"]
-            : Properties.GetPropertyValue("currency")
-            ;
-        public virtual List<CurrencyModel> CurrencyModel
+        public virtual CurrencyModel Currency
+        {
+            get
+            {
+                return GetCurrentCurrency();
+            }
+        }
+
+        public CurrencyModel GetCurrentCurrency()
+        {
+            return CookieHelper.GetCurrencyCookieValue(Currencies, Alias);
+        }
+
+        public virtual List<CurrencyModel> Currencies
         {
             get
             {
@@ -64,7 +73,7 @@ namespace Ekom.Models
                 }
                 catch (Exception ex)
                 {
-                    Current.Logger.Error<Store>("Unable to parse currency object from store", ex);
+                    //Backword Compatability
                     var l = new List<CurrencyModel>();
                     l.Add(new CurrencyModel
                     {
@@ -74,7 +83,10 @@ namespace Ekom.Models
                     return l;
                 }
             }
+
+
         }
+
         /// <summary>
         /// Umbraco input: 28.5 <para></para>
         /// Stored VAT value: 0.285<para></para>

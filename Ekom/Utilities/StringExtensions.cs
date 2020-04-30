@@ -1,5 +1,9 @@
+using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Models.Discounts;
+using Ekom.Models.OrderedObjects;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Our.Umbraco.Vorto.Models;
 using System;
 using System.Collections.Generic;
@@ -124,6 +128,76 @@ namespace Ekom.Utilities
             return string.Empty;
 
         }
+        public static List<IPrice> GetPriceValues(this string priceJson, List<CurrencyModel> storeCurrencies, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null, string storeAlias = null, string key = null)
+        {
+            var prices = new List<IPrice>();
+
+            try
+            {
+                var _prices = JArray.Parse(priceJson);
+
+                foreach (var price in _prices)
+                {
+
+                    var currencyValue = price["Currency"].Value<string>();
+                    var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
+
+                    //ProductDiscount productDiscount = !string.IsNullOrEmpty(key) ?  Configuration.Current.s.GetInstance<IProductDiscountService>().GetProductDiscount(new Guid(key), storeAlias, price["Price"].Value<string>(), currency.CurrencyValue) : null;
+
+                    prices.Add(new Price(price["Price"].Value<string>(), currency, vat, vatIncludedInPrice, null));
+                }
+            }
+            catch
+            {
+                if (fallbackCurrency == null)
+                {
+                    var store = API.Store.Instance.GetStore();
+
+                    fallbackCurrency = store.Currency;
+                }
+
+                //var productDiscount = Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(new Guid(key), storeAlias, priceJson, fallbackCurrency.CurrencyValue);
+
+                prices = new List<IPrice>
+                    {
+                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, null)
+                    };
+            }
+
+            return prices;
+        }
+
+        public static List<CurrencyValue> GetCurrencyValues(this string priceJson)
+        {
+            var values = new List<CurrencyValue>();
+
+            try
+            {
+                var _values = JArray.Parse(priceJson);
+
+                foreach (var value in _values)
+                {
+                    var currencyValue = value["Currency"].Value<string>();
+
+                    values.Add(new CurrencyValue(value["Price"].Value<decimal>(), currencyValue));
+                }
+            }
+            catch
+            {
+
+                if (decimal.TryParse(priceJson, out decimal value))
+                {
+                    var store = API.Store.Instance.GetStore();
+
+                    values = new List<CurrencyValue>
+                    {
+                        new CurrencyValue(value, store.Currency.CurrencyValue)
+                    };
+                }
+            }
+
+            return values;
+        }
 
         public static bool IsJson(this string input)
         {
@@ -179,7 +253,7 @@ namespace Ekom.Utilities
             return Enumerable.Empty<Image>();
         }
 
-        public static bool IsBoolean(this string value)
+        internal static bool IsBoolean(this string value)
         {
             if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase))
             {

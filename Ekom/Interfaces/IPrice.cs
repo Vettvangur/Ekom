@@ -1,3 +1,4 @@
+using Ekom.Models;
 using Ekom.Models.OrderedObjects;
 using System;
 
@@ -66,7 +67,7 @@ namespace Ekom.Interfaces
         /// <summary>
         /// 
         /// </summary>
-        StoreInfo Store { get; }
+        CurrencyModel Currency { get; }
     }
 
     /// <summary>

@@ -3,6 +3,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using System.Web;
 
 namespace Ekom.Models.OrderedObjects
 {
@@ -17,7 +21,8 @@ namespace Ekom.Models.OrderedObjects
         [JsonConstructor]
         public StoreInfo(
             Guid key,
-            List<CurrencyModel> currency,
+            CurrencyModel currency,
+            List<CurrencyModel> currencies,
             string culture,
             string alias,
             bool vatIncludedInPrice,
@@ -37,7 +42,23 @@ namespace Ekom.Models.OrderedObjects
             {
                 if (Currency == null)
                 {
-                    Currency = new List<CurrencyModel>
+                    Currency = new CurrencyModel()
+                    {
+                        CurrencyFormat = "C",
+                        CurrencyValue = "is-IS"
+                    };
+                }
+            }
+
+            try
+            {
+                Currencies = currencies;
+            }
+            finally
+            {
+                if (Currencies == null)
+                {
+                    Currencies = new List<CurrencyModel>
                     {
                         new CurrencyModel()
                         {
@@ -53,28 +74,58 @@ namespace Ekom.Models.OrderedObjects
         {
             try
             {
-                Currency = storeInfoObject[nameof(Currency)]?.ToObject<List<CurrencyModel>>();
+                Currencies = storeInfoObject["Currencies"]?.ToObject<List<CurrencyModel>>();
             }
-            finally
+            catch
             {
-                if (Currency == null)
+                if (Currencies == null)
                 {
-                    Currency = new List<CurrencyModel>
+                    Currencies = new List<CurrencyModel>
                     {
                         new CurrencyModel()
                         {
                             CurrencyFormat = "C",
                             CurrencyValue = "is-IS"
+
                         }
                     };
                 }
             }
 
-            Key = Guid.Parse(storeInfoObject[nameof(Key)].Value<string>());
-            Culture = storeInfoObject[nameof(Culture)].Value<string>();
-            Alias = storeInfoObject[nameof(Alias)].Value<string>();
-            VatIncludedInPrice = storeInfoObject[nameof(VatIncludedInPrice)].Value<bool>();
-            Vat = storeInfoObject[nameof(Vat)].Value<int>();
+            try
+            {
+                Currency = storeInfoObject["Currency"]?.ToObject<CurrencyModel>();
+            }
+            catch
+            {
+                string currencyCulture = "is-IS";
+
+                if (storeInfoObject["Currency"] != null && !string.IsNullOrEmpty(storeInfoObject["Currency"].Value<string>()))
+                {
+                    try
+                    {
+                        CultureInfo c = new CultureInfo(storeInfoObject["Currency"].Value<string>());
+
+                        currencyCulture = storeInfoObject["Currency"].Value<string>();
+                    }
+                    catch
+                    {
+
+                    }
+                }
+
+                Currency = new CurrencyModel()
+                {
+                    CurrencyFormat = "C",
+                    CurrencyValue = currencyCulture
+                };
+            }
+
+            Key = Guid.Parse(storeInfoObject["Key"].Value<string>());
+            Culture = storeInfoObject["Culture"].Value<string>();
+            Alias = storeInfoObject["Alias"].Value<string>();
+            VatIncludedInPrice = storeInfoObject["VatIncludedInPrice"].Value<bool>();
+            Vat = storeInfoObject["Vat"].Value<decimal>();
         }
 
         public StoreInfo(IStore store)
@@ -82,7 +133,8 @@ namespace Ekom.Models.OrderedObjects
             if (store != null)
             {
                 Key = store.Key;
-                Currency = store.CurrencyModel;
+                Currency = store.Currency;
+                Currencies = store.Currencies;
                 Culture = store.Culture.Name;
                 Alias = store.Alias;
                 VatIncludedInPrice = store.VatIncludedInPrice;
@@ -91,7 +143,8 @@ namespace Ekom.Models.OrderedObjects
         }
 
         public Guid Key { get; }
-        public List<CurrencyModel> Currency { get; }
+        public CurrencyModel Currency { get; set; }
+        public List<CurrencyModel> Currencies { get; }
         public string Culture { get; }
         public string Alias { get; }
         public bool VatIncludedInPrice { get; }

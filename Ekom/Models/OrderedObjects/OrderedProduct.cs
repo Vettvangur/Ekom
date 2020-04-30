@@ -53,7 +53,7 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
-        public OrderedDiscount Discount { get; }
+        public OrderedProductDiscount ProductDiscount { get; }
 
         public string Title
         {

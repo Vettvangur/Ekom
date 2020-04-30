@@ -20,19 +20,17 @@ namespace Ekom.Models.OrderedObjects
         [JsonConstructor]
         public OrderedDiscount(
             Guid key,
-            bool exclusive,
-            decimal amount,
-            DiscountType type,
+            bool stackable,
+            DiscountAmount amount,
             List<Guid> discountItems,
             Constraints constraints,
-            List<string> coupons,
+            IReadOnlyCollection<string> coupons,
             bool hasMasterStock)
         {
             Key = key;
-            Exclusive = exclusive;
+            Stackable = stackable;
             DiscountItems = discountItems;
             Amount = amount;
-            Type = type;
             Constraints = constraints;
             Coupons = coupons;
             HasMasterStock = hasMasterStock;
@@ -44,11 +42,10 @@ namespace Ekom.Models.OrderedObjects
         public OrderedDiscount(IDiscount discount)
         {
             discount = discount ?? throw new ArgumentNullException(nameof(discount));
-            Exclusive = discount.Exclusive;
+            Stackable = discount.Stackable;
             Key = discount.Key;
-            DiscountItems = discount.DiscountItems.ToList().AsReadOnly();
+            DiscountItems = discount.DiscountItems;
             Amount = discount.Amount;
-            Type = discount.Type;
             Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
             HasMasterStock = discount.HasMasterStock;
@@ -61,9 +58,9 @@ namespace Ekom.Models.OrderedObjects
 
         public DiscountType Type { get; internal set; }
 
-        public decimal Amount { get; internal set; }
+        public DiscountAmount Amount { get; internal set; }
 
-        public IReadOnlyCollection<Guid> DiscountItems { get; }
+        public List<Guid> DiscountItems { get; }
         /// <summary>
         /// Can you apply this discount while having a seperate discount affecting other OrderLines
         /// </summary>
@@ -72,6 +69,10 @@ namespace Ekom.Models.OrderedObjects
         /// Ranges
         /// </summary>
         public IConstraints Constraints { get; internal set; }
+        /// <summary>
+        /// If discount is stackable with productDiscounts
+        /// </summary>
+        public bool Stackable { get; }
         /// <summary>
         /// 
         /// </summary>
@@ -93,59 +94,15 @@ namespace Ekom.Models.OrderedObjects
             if (other == null)
                 return 1;
 
-            else if (Type != other.Type)
+            else if (Amount.Type != other.Amount.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount == other.Amount)
+            else if (Amount.Amount == other.Amount.Amount)
                 return 0;
-            else if (Amount > other.Amount)
+            else if (Amount.Amount > other.Amount.Amount)
                 return 1;
             else
                 return -1;
         }
-        /// <summary>
-        /// <see cref="IComparable{T}"/> implementation
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public int CompareTo(OrderedDiscount other)
-        {
-            if (other == null)
-                return 1;
-
-            else if (Type != other.Type)
-                throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount == other.Amount)
-                return 0;
-            else if (Amount > other.Amount)
-                return 1;
-            else
-                return -1;
-        }
-
-        /// <summary>
-        /// Operator overloading
-        /// </summary>
-        /// <param name="d1"></param>
-        /// <param name="d2"></param>
-        /// <returns></returns>
-        [Obsolete("Unused")]
-        public static bool operator <(OrderedDiscount d1, IDiscount d2)
-        {
-            return d1.CompareTo(d2) < 0;
-        }
-
-        /// <summary>
-        /// Operator overloading
-        /// </summary>
-        /// <param name="d1"></param>
-        /// <param name="d2"></param>
-        /// <returns></returns>
-        [Obsolete("Unused")]
-        public static bool operator >(OrderedDiscount d1, IDiscount d2)
-        {
-            return d1.CompareTo(d2) > 0;
-        }
-        #endregion
 
     }
 }

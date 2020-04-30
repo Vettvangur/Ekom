@@ -1,22 +1,24 @@
 using Ekom.Models.Discounts;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Ekom.Models.OrderedObjects
 {
-    /// <summary>
-    /// Currently unused
-    /// </summary>
-    [Obsolete("Currently unused")]
     public class OrderedProductDiscount
     {
         [JsonConstructor]
-        public OrderedProductDiscount(DiscountType type, decimal discount, decimal startOfRange, decimal endOfRange)
+        public OrderedProductDiscount(DiscountType type, decimal discount, decimal startOfRange, decimal endOfRange, bool disabled)
         {
             Type = type;
             Discount = discount;
             StartOfRange = startOfRange;
             EndOfRange = endOfRange;
+            Disabled = disabled;
 
         }
         public OrderedProductDiscount(ProductDiscount productDiscount)
@@ -24,9 +26,10 @@ namespace Ekom.Models.OrderedObjects
             if (productDiscount != null)
             {
                 Type = productDiscount.Type;
-                Discount = productDiscount.Amount;
-                StartOfRange = productDiscount.Constraints.StartRange;
-                EndOfRange = productDiscount.Constraints.EndRange;
+                Discount = productDiscount.Discount;
+                StartOfRange = productDiscount.StartOfRange;
+                EndOfRange = productDiscount.EndOfRange;
+                Disabled = productDiscount.Disabled;
             }
         }
 

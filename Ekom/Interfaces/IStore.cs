@@ -24,8 +24,11 @@ namespace Ekom.Interfaces
         /// The culture.
         /// </value>
         CultureInfo Culture { get; }
-        string Currency { get; }
-        List<CurrencyModel> CurrencyModel { get; }
+        CurrencyModel Currency { get; }
+
+        CurrencyModel GetCurrentCurrency();
+
+        List<CurrencyModel> Currencies { get; }
         string Alias { get; }
         IEnumerable<IDomain> Domains { get; }
         string OrderNumberPrefix { get; }
