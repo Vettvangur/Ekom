@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using Ekom.Models;
+using System.Collections.Generic;
 
 namespace Ekom.Interfaces
 {
@@ -15,12 +16,14 @@ namespace Ekom.Interfaces
         /// End of range that provider supports.
         /// 0 means this provider supports carts of any cost.
         /// </summary>
-        int EndRange { get; }
+        decimal EndRange { get; }
+
+        List<CurrencyValue> EndRanges { get; }
         /// <summary>
         /// Start of range that provider supports.
         /// </summary>
-        int StartRange { get; }
-
+        decimal StartRange { get; }
+        List<CurrencyValue> StartRanges { get; }
         /// <summary>
         /// Determine if constraints conditions are met.
         /// </summary>

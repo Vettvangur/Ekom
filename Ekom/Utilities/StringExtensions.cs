@@ -1,4 +1,5 @@
 using Ekom.Interfaces;
+using Ekom.JsonDotNet;
 using Ekom.Models;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
@@ -13,7 +14,7 @@ using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.Utilities
 {
-    static class StringExtension
+    public static class StringExtension
     {
         private static string RemoveAccent(this string txt)
         {
@@ -128,6 +129,39 @@ namespace Ekom.Utilities
             return string.Empty;
 
         }
+        public static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null, OrderedProductDiscount orderedProductDiscount = null)
+        {
+            var prices = new List<IPrice>();
+
+            try
+            {
+                var _prices = JArray.Parse(priceJson);
+
+                foreach (var price in _prices)
+                {
+                    var currency = price["Currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
+
+                    prices.Add(new Price(price, currency, vat, vatIncludedInPrice, orderedProductDiscount));
+                }
+            }
+            catch
+            {
+                if (fallbackCurrency == null)
+                {
+                    var store = API.Store.Instance.GetStore();
+
+                    fallbackCurrency = store.Currency;
+                }
+
+                prices = new List<IPrice>
+                    {
+                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, orderedProductDiscount)
+                    };
+            }
+
+            return prices;
+        }
+
         public static List<IPrice> GetPriceValues(this string priceJson, List<CurrencyModel> storeCurrencies, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null, string storeAlias = null, string key = null)
         {
             var prices = new List<IPrice>();

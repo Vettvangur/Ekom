@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 using Umbraco.Core.Logging;
 using Umbraco.Web.Mvc;
@@ -342,6 +343,50 @@ namespace Ekom.Controllers
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Update currency for current store
+        /// </summary>
+        /// <param name="currency">Currency value</param>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        public async Task<JsonResult> ChangeCurrency(string currency)
+        {
+            var store = API.Store.Instance.GetStore();
+
+            var orderInfo = Order.Instance.GetOrder(store.Alias);
+
+            if (orderInfo != null)
+            {
+                await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias).ConfigureAwait(false);
+            }
+
+            HttpCookie cookie = Request.Cookies["EkomCurrency-" + store.Alias];
+
+            if (cookie == null)
+            {
+                cookie = new HttpCookie("EkomCurrency-" + store.Alias);
+
+                cookie.Value = currency;
+
+                cookie.Expires = DateTime.UtcNow.AddDays(360);
+
+                Response.Cookies.Add(cookie);
+
+            }
+            else
+            {
+                Response.Cookies["EkomCurrency-" + store.Alias].Value = currency;
+            }
+
+            orderInfo = Order.Instance.GetOrder(store.Alias);
+
+            return Json(new
+            {
+                success = true,
+                orderInfo
+            }, JsonRequestBehavior.AllowGet);
         }
     }
 #pragma warning restore CA2007 // Consider calling ConfigureAwait on the awaited task

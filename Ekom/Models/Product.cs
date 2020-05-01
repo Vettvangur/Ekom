@@ -6,6 +6,7 @@ using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Web;
 using System.Web.Script.Serialization;
@@ -34,42 +35,37 @@ namespace Ekom.Models
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
 
-        public virtual IDiscount Discount
+        /// <summary>
+        /// Best discount mapped to product, populated after discount cache fills.
+        /// </summary>
+
+        public virtual ProductDiscount ProductDiscount(string price)
         {
-            get
-            {
-                return Current.Factory.GetInstance<IProductDiscountService>()
-                    .GetProductDiscount(
-                        Key,
-                        Store.Alias,
-                        Properties.GetPropertyValue("price", Store.Alias)
-                    );
-            }
+            return Current.Factory.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["__Key"]), Store.Alias, price);
         }
 
-        //public virtual IDiscount Discount
-        //{
-        //    get => _discount;
-        //    internal set
-        //    {
-        //        if (_discount == null
-        //        || (_discount.Amount.Type == value.Amount.Type
-        //        && value.CompareTo(_discount) > 0))
-        //        {
-        //            _discount = value;
-        //            return;
-        //        }
+        public virtual IDiscount Discount
+        {
+            get => _discount;
+            internal set
+            {
+                if (_discount == null
+                || (_discount.Amount.Type == value.Amount.Type
+                && value.CompareTo(_discount) > 0))
+                {
+                    _discount = value;
+                }
 
-        //        var oldPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(_discount));
+                var oldPrice = new Price(Price.OriginalValue, Store.Currency, Store.Vat, Store.VatIncludedInPrice, null, new OrderedDiscount(_discount));
 
-        //        var newPrice = new Price(Price.OriginalValue, Store, null, new OrderedDiscount(value));
+                var newPrice = new Price(Price.OriginalValue, Store.Currency, Store.Vat, Store.VatIncludedInPrice, null, new OrderedDiscount(value));
 
-        //        if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
-        //        {
-        //            _discount = value;
-        //        }
-        //    }
-        //}
+                if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
+                {
+                    _discount = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Product Stock Keeping Unit.
@@ -111,19 +107,18 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Product images
-        /// </summary>
-        public virtual IEnumerable<Image> Images
+        // <summary>
+        // Product images
+        // </summary>
+        public virtual IEnumerable<Image> Images()
         {
-            get
-            {
-                var _images = Properties.GetPropertyValue("images", Store.Alias);
+            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
 
-                var imageNodes = _images.GetImages();
+            var _images = Properties.GetPropertyValue(value ?? "images", Store.Alias);
 
-                return imageNodes;
-            }
+            var imageNodes = _images.GetImages();
+
+            return imageNodes;
         }
 
         /// <summary>
@@ -213,9 +208,58 @@ namespace Ekom.Models
         public virtual IEnumerable<string> Urls { get; internal set; }
 
         /// <summary>
+        /// Get Price by current store currency
+        /// </summary>
+        public virtual IPrice Price
+        {
+            get
+            {
+                if (HttpContext.Current != null)
+                {
+                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + Store.Alias];
+
+                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    {
+                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
+
+                        if (price != null)
+                        {
+                            return price;
+                        }
+                    }
+
+                }
+
+                return Prices.FirstOrDefault();
+
+            }
+        }
+
+        /// <summary>
         /// 
         /// </summary>
-        public virtual IPrice Price { get; }
+        public virtual List<IPrice> Prices
+        {
+            get
+            {
+                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Key.ToString(), Store.Alias);
+
+                return prices;
+            }
+        }
+
+        public virtual decimal Vat
+        {
+            get
+            {
+                if (Properties.HasPropertyValue("vat", Store.Alias))
+                {
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias));
+                }
+
+                return Store.Vat;
+            }
+        }
 
         /// <summary>
         /// All child variant groups of this product
@@ -284,7 +328,6 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
@@ -302,7 +345,7 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store, Discount == null ? null : new OrderedDiscount(Discount));
+
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))

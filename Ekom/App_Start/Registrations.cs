@@ -96,6 +96,7 @@ namespace Ekom.App_Start
                     f.GetInstance<ILogger>(),
                     f.GetInstance<IPerStoreCache<IShippingProvider>>(),
                     f.GetInstance<IPerStoreCache<IPaymentProvider>>(),
+                    f.GetInstance<IBaseCache<IZone>>(),
                     f.GetInstance<IStoreService>(),
                     f.GetInstance<ICountriesRepository>()
                 )

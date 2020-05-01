@@ -2,6 +2,7 @@ using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Models.Discounts;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -18,22 +19,28 @@ namespace Ekom.Services
             _productDiscountCache = productDiscountCache;
         }
 
-        public IProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice)
+        public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice, string currency = null)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
-            var applicableDiscounts = new List<IProductDiscount>();
+            var applicableDiscounts = new List<ProductDiscount>();
 
             foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
+
+                var f = JsonConvert.SerializeObject(discount.Value);
+                if (discount.Value.Disabled)
+                {
+                    continue;
+                }
                 if (discount.Value.DiscountItems.Contains(productKey))
                 {
-                    applicableDiscounts.Add(discount.Value);
+                    applicableDiscounts.Add(discount.Value as ProductDiscount);
                 }
             }
 
-            Guid bestFixedKey = Guid.Empty;
-            Guid bestPercentageDiscount = Guid.Empty;
+            int bestFixedId = 0;
+            int bestPercentageDiscount = 0;
             decimal bestPercentageDiscountValue = 0;
             decimal bestFixedDiscountValue = 0;
 
@@ -46,43 +53,44 @@ namespace Ekom.Services
             {
                 if (usableDiscount.Type == DiscountType.Fixed)
                 {
-                    if (usableDiscount.Constraints.StartRange < price 
-                    && usableDiscount.Constraints.EndRange > 0 && price < usableDiscount.Constraints.EndRange)
+                    if (usableDiscount.StartOfRange > 0 && usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
                     {
-                        if (usableDiscount.Amount > bestFixedDiscountValue)
+                        if (usableDiscount.Discount > bestFixedDiscountValue)
                         {
-                            bestFixedDiscountValue = usableDiscount.Amount;
-                            bestFixedKey = usableDiscount.Key;
+                            bestFixedDiscountValue = usableDiscount.Discount;
+                            bestFixedId = usableDiscount.Id;
                         }
                     }
+
                 }
                 if (usableDiscount.Type == DiscountType.Percentage)
                 {
-                    if (usableDiscount.Amount > bestPercentageDiscountValue)
+                    if (usableDiscount.Discount > bestPercentageDiscountValue)
                     {
-                        bestPercentageDiscount = usableDiscount.Key;
-                        bestPercentageDiscountValue = usableDiscount.Amount;
+                        bestPercentageDiscount = usableDiscount.Id;
+                        bestPercentageDiscountValue = usableDiscount.Discount;
                     }
                 }
             }
-            if (bestFixedKey == Guid.Empty)
+
+            if (bestFixedId == 0)
             {
-                return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
+                return applicableDiscounts.SingleOrDefault(x => x.Id == bestPercentageDiscount);
             }
-            else if (bestPercentageDiscount == Guid.Empty)
+            else if (bestPercentageDiscount == 0)
             {
-                return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
+                return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
             }
             else
             {
                 var eef = Math.Abs(bestFixedDiscountValue / price) * 100;
                 if (Math.Abs(((bestFixedDiscountValue / price) * 100)) > bestPercentageDiscountValue)
                 {
-                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
+                    return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
                 }
                 else
                 {
-                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
+                    return applicableDiscounts.SingleOrDefault(x => x.Id == bestPercentageDiscount);
                 }
             }
         }

@@ -54,7 +54,7 @@ namespace Ekom.Repository
             {
                 await db.UpdateAsync(orderData).ConfigureAwait(false);
                 //Clear cache after update.
-                _appCaches.RuntimeCache.ClearByKey($"EkomOrder-{orderData.UniqueId}");
+                _appCaches.RuntimeCache.ClearByKey(orderData.UniqueId.ToString());
 
             }
         }

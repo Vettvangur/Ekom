@@ -219,12 +219,14 @@ namespace Ekom.Extensions.Controllers
                 {
                     var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
+                    var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
+
                     return Content(await pp.RequestAsync(
                         order.ChargedAmount.Value,
                         orderItems,
                         skipReceipt: true,
                         vortoLanguage: order.StoreInfo.Alias,
-                        language: "IS", //TODO needs to come from Store, but we can not use culture
+                        language: language, 
                         member: Umbraco.MembershipHelper.GetCurrentMemberId(),
                         orderCustomString: order.UniqueId.ToString()
                     //paymentProviderId: paymentRequest.PaymentProvider.ToString()

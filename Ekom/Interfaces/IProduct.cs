@@ -61,10 +61,12 @@ namespace Ekom.Interfaces
         /// Get Backorder status
         /// </summary>
         bool Backorder { get; }
+
         /// <summary>
-        /// Product images
-        /// </summary>
-        IEnumerable<Image> Images { get; }
+        // Product images
+        // </summary>
+        IEnumerable<Image> Images();
+
         /// <summary>
         /// A product can have multiple variant groups, 
         /// therefore we allow to configure a default/primary variant group.
@@ -95,8 +97,12 @@ namespace Ekom.Interfaces
         /// <returns></returns>
         IEnumerable<ICategory> CategoryAncestors { get; }
         /// <summary>
-        /// A discount specific to this product populated after product discount cache is filled.
+        /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
         IDiscount Discount { get; }
+        /// <summary>
+        /// A discount specific to this product populated after product discount cache is filled.
+        /// </summary>
+        ProductDiscount ProductDiscount(string price);
     }
 }

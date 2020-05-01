@@ -24,7 +24,7 @@ namespace Ekom.API
         readonly ILogger _logger;
         readonly IPerStoreCache<IShippingProvider> _shippingProviderCache;
         readonly IPerStoreCache<IPaymentProvider> _paymentProviderCache;
-
+        readonly IBaseCache<IZone> _zoneCache;
         readonly IStoreService _storeSvc;
         readonly ICountriesRepository _countryRepo;
 
@@ -36,6 +36,7 @@ namespace Ekom.API
             ILogger logger,
             IPerStoreCache<IShippingProvider> shippingProviderCache,
             IPerStoreCache<IPaymentProvider> paymentProviderCache,
+            IBaseCache<IZone> zoneCache,
             IStoreService storeService,
             ICountriesRepository countryRepo
         )
@@ -43,20 +44,19 @@ namespace Ekom.API
             _config = config;
             _shippingProviderCache = shippingProviderCache;
             _paymentProviderCache = paymentProviderCache;
+            _zoneCache = zoneCache;
             _storeSvc = storeService;
             _countryRepo = countryRepo;
             _logger = logger;
         }
 
         /// <summary>
-        /// Get all shipping providers, using the store from request cache.
+        /// Get all shipping providers
         /// </summary>
         /// <returns></returns>
         public IEnumerable<IShippingProvider> GetShippingProviders()
         {
-            var store = _storeSvc.GetStoreFromCache();
-
-            return GetShippingProviders(store);
+            return GetShippingProviders(null, null, 0);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Ekom.API
         /// </param>
         /// <returns></returns>
         public IEnumerable<IShippingProvider> GetShippingProviders(
-            IStore store = null,
+            string store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
@@ -83,6 +83,7 @@ namespace Ekom.API
                 orderAmount
             ).Cast<ShippingProvider>();
         }
+
 
         /// <summary>
         /// Get payment providers, optionally filter on country code and amount.
@@ -96,7 +97,7 @@ namespace Ekom.API
         /// </param>
         /// <returns></returns>
         public IEnumerable<IPaymentProvider> GetPaymentProviders(
-            IStore store = null,
+            string store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
@@ -119,24 +120,26 @@ namespace Ekom.API
         /// <returns></returns>
         private IEnumerable<IConstrained> GetProviders(
             Func<string, IEnumerable<IConstrained>> cacheFunc,
-            IStore store = null,
+            string store = null,
             string countryCode = null,
             decimal orderAmount = 0
         )
         {
-            if (store == null)
+            if (string.IsNullOrEmpty(store))
             {
-                store = _storeSvc.GetStoreFromCache();
+                store = _storeSvc.GetStoreFromCache().Alias;
             }
 
-            var providers = cacheFunc(store.Alias);
+            var providers = cacheFunc(store);
 
-            if (countryCode != null)
+            if (!string.IsNullOrEmpty(countryCode) && countryCode.Length == 2)
             {
                 providers = providers
-                    .Where(x => x.Constraints.CountriesInZone.Contains(countryCode.ToUpper()));
+                    .Where(x => x.Constraints.CountriesInZone.Any() && x.Constraints.CountriesInZone.Contains(countryCode.ToUpper()));
             }
-            if (orderAmount != 0)
+
+
+            if (orderAmount > 0)
             {
                 providers = providers
                     .Where(x =>
@@ -183,6 +186,11 @@ namespace Ekom.API
             }
 
             return _paymentProviderCache[store.Alias][key];
+        }
+
+        public IEnumerable<IZone> GetAllZones()
+        {
+            return _zoneCache.Cache.Select(x => x.Value);
         }
     }
 }

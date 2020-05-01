@@ -10,6 +10,7 @@ using Ekom.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -131,7 +132,8 @@ namespace Ekom.Services
                     //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
                     if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                    && orderInfo?.OrderStatus != OrderStatus.Dispatched)
+                    && orderInfo?.OrderStatus != OrderStatus.Dispatched 
+                    && orderInfo?.OrderStatus != OrderStatus.OfflinePayment)
                     {
                         return orderInfo;
                     }
@@ -223,8 +225,6 @@ namespace Ekom.Services
 
             order.OrderStatus = status;
 
-            var key = CreateKey(order.StoreAlias);
-
             // Create function for this, For completed orders
             if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
             {
@@ -268,6 +268,44 @@ namespace Ekom.Services
             _logger.Debug<OrderService>($"Change Order {order.OrderNumber} status to {status.ToString()}");
         }
 
+        public async Task ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias)
+        {
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
+            var storeCurrency = store.Currencies.FirstOrDefault(x => x.CurrencyValue == currency);
+
+            if (storeCurrency != null)
+            {
+
+                var order = await _orderRepository.GetOrderAsync(uniqueId).ConfigureAwait(false);
+
+                var oldCurrency = order.Currency;
+
+                order.Currency = storeCurrency.ISOCurrencySymbol;
+
+                var orderInfo = GetOrder(uniqueId);
+
+                if (orderInfo != null)
+                {
+                    orderInfo.StoreInfo.Currency = storeCurrency;
+
+                    var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+
+                    order.OrderInfo = serializedOrderInfo;
+
+                    await _orderRepository.UpdateOrderAsync(order).ConfigureAwait(false);
+
+                    _runtimeCache.GetCacheItem<OrderInfo>(
+                        uniqueId.ToString(),
+                        () => new OrderInfo(order),
+                        TimeSpan.FromDays(1));
+
+                    _logger.Debug<OrderService>($"Change Currency {oldCurrency}  to {currency}");
+                }
+            }
+
+        }
+
         public async Task UpdatePaidDate(Guid uniqueId)
         {
 
@@ -295,7 +333,8 @@ namespace Ekom.Services
             int quantity,
             string storeAlias,
             OrderAction? action = null,
-            Guid? variantKey = null
+            Guid? variantKey = null,
+            OrderDynamicRequest dynamic = null
         )
         {
             if (productKey == Guid.Empty)
@@ -305,13 +344,15 @@ namespace Ekom.Services
 
             var product = Catalog.Instance.GetProduct(productKey);
 
+            var disableStock = ConfigurationManager.AppSettings["ekmCustomDisableStock"];
+
             if (product == null)
             {
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
             }
             else
             {
-                if (variantKey == null && !product.Backorder && product.Stock < quantity)
+                if (variantKey == null && !product.Backorder && product.Stock < quantity && (disableStock == "true" ? false : true))
                 {
                     throw new NotEnoughStockException("Stock not available for product " + variantKey);
                 }
@@ -328,7 +369,7 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    if (!product.Backorder && variant.Stock < quantity)
+                    if ((!product.Backorder && variant.Stock < quantity) && (disableStock == "true" ? false : true))
                     {
                         throw new NotEnoughStockException("Stock not available for variant " + variantKey);
                     }
@@ -343,7 +384,8 @@ namespace Ekom.Services
                 quantity,
                 store,
                 action,
-                variant
+                variant,
+                dynamic
             ).ConfigureAwait(false);
         }
 
@@ -357,7 +399,8 @@ namespace Ekom.Services
             int quantity,
             IStore store,
             OrderAction? action = null,
-            IVariant variant = null
+            IVariant variant = null,
+            OrderDynamicRequest dynamic = null
         )
         {
             if (product == null)
@@ -377,6 +420,7 @@ namespace Ekom.Services
             {
                 orderInfo = await CreateEmptyOrderAsync().ConfigureAwait(false);
             }
+
             _logger.Debug<OrderService>("ProductId: " + product.Id +
                 " variantId: " + variant?.Key +
                 " qty: " + quantity +
@@ -391,7 +435,8 @@ namespace Ekom.Services
                 product,
                 quantity,
                 cartAction,
-                variant).ConfigureAwait(false);
+                variant,
+                dynamic).ConfigureAwait(false);
 
             return orderInfo;
         }
@@ -436,7 +481,8 @@ namespace Ekom.Services
             IProduct product,
             int quantity,
             OrderAction action,
-            IVariant variant
+            IVariant variant,
+            OrderDynamicRequest dynamic = null
         )
         {
             if (quantity == 0)
@@ -517,23 +563,24 @@ namespace Ekom.Services
                     quantity,
                     lineId,
                     orderInfo,
-                    variant
+                    variant,
+                    dynamic
                 );
 
                 orderInfo.orderLines.Add(orderLine);
                
-                if (product.Discount != null
-                // Make sure that the current OrderInfo discount, if there is one, is inclusive
-                // Meaning you can apply this discount while having a seperate discount 
-                // affecting other OrderLines
-                && (orderInfo.Discount == null || !orderInfo.Discount.Exclusive))
+                if (product.Discount != null)
                 {
                     _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
-                    await ApplyDiscountToOrderLineAsync(
-                        orderLine,
-                        product.Discount,
-                        orderInfo
-                    ).ConfigureAwait(false);
+                    if (product.Discount.DiscountItems.Contains(product.Key))
+                    {
+                        await ApplyDiscountToOrderLineAsync(
+                            orderLine,
+                            product.Discount,
+                            orderInfo
+                            ).ConfigureAwait(false);
+                    }
+
                 }
             }
 
@@ -574,7 +621,7 @@ namespace Ekom.Services
             //Backwards compatability for old currency storeinfo 
             try
             {
-                var culture = new CultureInfo(orderInfo.StoreInfo.Currency.FirstOrDefault().CurrencyValue);
+                var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
 
                 var ri = new RegionInfo(culture.LCID);
                 orderData.Currency = ri.ISOCurrencySymbol;
@@ -614,9 +661,14 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
         }
 
-        private async Task<OrderInfo> CreateEmptyOrderAsync()
+        private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias = null)
         {
             _logger.Debug<OrderService>("Add OrderLine ...  Create Empty Order..");
+
+            if (!string.IsNullOrEmpty(storeAlias))
+            {
+                _store = API.Store.Instance.GetStore(storeAlias);
+            }
 
             Guid orderUniqueId;
             if (Configuration.Current.UserBasket)
@@ -632,8 +684,7 @@ namespace Ekom.Services
             }
             else
             {
-                var key = CreateKey();
-                orderUniqueId = CreateOrderIdCookie(key);
+                orderUniqueId = CreateOrderIdCookie(CreateKey());
             }
 
             var orderdata = await SaveOrderDataAsync(orderUniqueId)
@@ -650,7 +701,9 @@ namespace Ekom.Services
                 UniqueId = uniqueId,
                 CreateDate = _date,
                 StoreAlias = _store.Alias,
-                OrderStatus = OrderStatus.Incomplete
+                OrderStatus = OrderStatus.Incomplete,
+                Currency = _store.Currency.ISOCurrencySymbol,
+                UpdateDate = DateTime.Now
             };
 
             if (_ekmRequest.User != null)
@@ -663,6 +716,7 @@ namespace Ekom.Services
 
             await _orderRepository.InsertOrderAsync(orderData)
                 .ConfigureAwait(false);
+
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
@@ -720,7 +774,7 @@ namespace Ekom.Services
 
                 if (provider != null)
                 {
-                    var orderedShippingProvider = new OrderedShippingProvider(provider);
+                    var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
 
                     orderInfo.ShippingProvider = orderedShippingProvider;
 
@@ -748,7 +802,7 @@ namespace Ekom.Services
 
                 if (provider != null)
                 {
-                    var orderedPaymentProvider = new OrderedPaymentProvider(provider);
+                    var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo);
 
                     orderInfo.PaymentProvider = orderedPaymentProvider;
 
@@ -822,7 +876,7 @@ namespace Ekom.Services
             var guidCookie = new HttpCookie(key)
             {
                 Value = _guid.ToString(),
-                Expires = DateTime.Now.AddDays(1d)
+                Expires = DateTime.Now.AddDays(Configuration.Current.BasketCookieLifetime)
             };
 
             _httpCtx.Response.Cookies.Add(guidCookie);

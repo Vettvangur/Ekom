@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Ekom.Interfaces
 {
     public interface IPaymentProvider : IPerStoreNodeEntity, IConstrained

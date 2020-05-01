@@ -34,6 +34,7 @@ namespace Ekom.Interfaces
         /// The stock.
         /// </value>
         decimal Vat { get; }
+
         /// <summary>
         /// Parent product
         /// </summary>
@@ -49,7 +50,8 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
-        IDiscount Discount { get; }
+        /// 
+        ProductDiscount ProductDiscount(string price);
         string SKU { get; }
         /// <summary>
         /// Gets the stock.
@@ -72,5 +74,10 @@ namespace Ekom.Interfaces
         /// Does not include categories product is an indirect child of.
         /// </summary>
         List<ICategory> Categories();
+
+        /// <summary>
+        // Variant images
+        // </summary>
+        IEnumerable<Image> Images();
     }
 }

@@ -38,7 +38,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="item"></param>
         /// <param name="store"></param>
-        public ProductDiscount(SearchResult item, IStore store) : base(item, store)
+        public ProductDiscount(ISearchResult item, IStore store) : base(item, store)
         {
 
         }

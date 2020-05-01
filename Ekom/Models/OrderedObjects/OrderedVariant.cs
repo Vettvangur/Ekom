@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Configuration;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
@@ -99,23 +100,50 @@ namespace Ekom.Models.OrderedObjects
         /// <summary>
         /// 
         /// </summary>
-        public IPrice Price { get; }
+        public IPrice Price
+        {
+            get
+            {
+                return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
+            }
+            set { }
+        }
+
+        public List<IPrice> Prices { get; }
+
+        public decimal Vat { get; }
+
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
-        public StoreInfo StoreInfo { get; }
+        private StoreInfo StoreInfo { get; }
 
         public IReadOnlyDictionary<string, string> Properties;
+
+        // <summary>
+        // Variant images
+        // </summary>
+        public virtual IEnumerable<Image> Images()
+        {
+            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
+
+            var _images = Properties.GetPropertyValue(value ?? "images", StoreInfo.Alias);
+
+            var imageNodes = _images.GetImages();
+
+            return imageNodes;
+        }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedVariant(IVariant variant, StoreInfo storeInfo)
+        public OrderedVariant(IVariant variant, StoreInfo storeInfo, decimal productVat)
         {
             variant = variant ?? throw new ArgumentNullException(nameof(variant));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-            Price = variant.Price.Clone() as IPrice;
+            Vat = productVat;
+            Prices = variant.Prices.ToList();
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
@@ -128,7 +156,42 @@ namespace Ekom.Models.OrderedObjects
         {
             this.variantObject = variantObject;
             StoreInfo = storeInfo;
-            Price = variantObject[nameof(Price)].ToObject<Price>(EkomJsonDotNet.serializer);
+
+            var pricesObj = variantObject["Prices"];
+            var priceObj = variantObject["Price"];
+
+            try
+            {
+                if (pricesObj != null && !string.IsNullOrEmpty(pricesObj.ToString()))
+                {
+
+                    Prices = pricesObj.ToString().GetPriceValuesConstructed(Vat, storeInfo.VatIncludedInPrice, storeInfo.Currency);
+                }
+                else
+                {
+                    try
+                    {
+                        Prices = new List<IPrice>()
+                        {
+                            priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
+                        };
+                    }
+                    catch
+                    {
+                        Prices = new List<IPrice>()
+                        {
+                            new Price(priceObj, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice)
+                        };
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                //Log.Error("Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"), ex);
+            }
+
+            Price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());

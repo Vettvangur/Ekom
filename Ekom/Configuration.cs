@@ -63,6 +63,27 @@ namespace Ekom
         }
 
         /// <summary>
+        /// BasketCookieLifetime
+        /// Set how many days the order cookie should live, Default 1 day
+        /// </summary>
+        public virtual double BasketCookieLifetime
+        {
+            get
+            {
+                var value = ConfigurationManager.AppSettings["ekmBasketCookieLifetime"];
+
+                double _value = 1;
+
+                if (double.TryParse(value, out double __value))
+                {
+                    _value = __value;
+                }
+
+                return _value;
+            }
+        }
+
+        /// <summary>
         /// Numeric format string to use for currency
         /// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
         /// </summary>

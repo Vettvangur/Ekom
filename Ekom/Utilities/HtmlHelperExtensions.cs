@@ -67,6 +67,10 @@ namespace Ekom.Utilities
 
                     defaultClassName = "cart__coupon-form";
                     break;
+                case FormType.ChangeCurrency:
+
+                    defaultClassName = "order__changeCurrency-form";
+                    break;
             }
 
             className = className ?? defaultClassName;
@@ -108,5 +112,9 @@ namespace Ekom.Utilities
         /// 
         /// </summary>
         ApplyCouponToOrder,
+        /// <summary>
+        /// 
+        /// </summary>
+        ChangeCurrency
     }
 }

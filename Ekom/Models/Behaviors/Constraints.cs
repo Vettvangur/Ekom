@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 
@@ -22,6 +23,7 @@ namespace Ekom.Models.Behaviors
         /// <param name="amount"></param>
         /// <returns></returns>
         public bool IsValid(
+
             string countryCode,
             decimal amount
         )
@@ -30,16 +32,124 @@ namespace Ekom.Models.Behaviors
             && (EndRange == 0 || EndRange >= amount)
         ;
 
+        private INodeEntity _node;
         /// <summary>
         /// Start of range that provider supports.
         /// </summary>
-        public int StartRange { get; }
+        public decimal StartRange
+        {
+
+            get
+            {
+                if (HttpContext.Current != null)
+                {
+                    var store = _node is PerStoreNodeEntity perStoreNode ? perStoreNode.Store : API.Store.Instance.GetStore();
+
+                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + store.Alias];
+
+                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    {
+                        var price = StartRanges.FirstOrDefault(x => x.Currency == cookie.Value);
+
+                        if (price != null)
+                        {
+                            return price.Value;
+                        }
+                    }
+
+                }
+
+                return StartRanges.Any() ? StartRanges.FirstOrDefault().Value : 0;
+            }
+        }
+        private List<CurrencyValue> _startRanges;
+        public List<CurrencyValue> StartRanges
+        {
+            get
+            {
+                if (_startRanges != null)
+                {
+                    return _startRanges;
+                }
+
+                if (_node is PerStoreNodeEntity perStoreNode)
+                {
+                    var value = _node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias);
+
+                    return value.GetCurrencyValues();
+                }
+                else
+                {
+                    var value = _node.Properties.GetPropertyValue("startOfRange");
+
+                    return value.GetCurrencyValues();
+                }
+            }
+            set
+            {
+                _startRanges = value;
+            }
+        }
 
         /// <summary>
         /// End of range that provider supports.
         /// 0 means this provider supports carts of any cost.
         /// </summary>
-        public int EndRange { get; }
+        public decimal EndRange
+        {
+
+            get
+            {
+                if (HttpContext.Current != null)
+                {
+                    var store = _node is PerStoreNodeEntity perStoreNode ? perStoreNode.Store : API.Store.Instance.GetStore();
+
+                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + store.Alias];
+
+                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    {
+                        var price = EndRanges.FirstOrDefault(x => x.Currency == cookie.Value);
+
+                        if (price != null)
+                        {
+                            return price.Value;
+                        }
+                    }
+
+                }
+
+                return EndRanges.Any() ? EndRanges.FirstOrDefault().Value : 0;
+            }
+        }
+        private List<CurrencyValue> _endRanges;
+        public List<CurrencyValue> EndRanges
+        {
+            get
+            {
+                if (_endRanges != null)
+                {
+                    return _endRanges;
+                }
+
+                if (_node is PerStoreNodeEntity perStoreNode)
+                {
+                    var value = _node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias);
+
+                    return value.GetCurrencyValues();
+                }
+                else
+                {
+                    var value = _node.Properties.GetPropertyValue("endOfRange");
+
+                    return value.GetCurrencyValues();
+                }
+
+            }
+            set
+            {
+                _endRanges = value;
+            }
+        }
 
         /// <summary>
         /// All countries in <see cref="Models.Zone"/>
@@ -51,26 +161,9 @@ namespace Ekom.Models.Behaviors
         /// </summary>
         public Constraints(INodeEntity node)
         {
-            int startRange = 0;
-            int endRange = int.MaxValue;
-            Guid zoneKey = Guid.Empty;
-            if (node is PerStoreNodeEntity perStoreNode)
-            {
-                var startPropValue = node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias);
-                var endPropValue = node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias);
-                int.TryParse(startPropValue, out startRange);
-                int.TryParse(endPropValue, out endRange);
-            }
-            else
-            {
-                var startPropValue = node.Properties.GetPropertyValue("startOfRange");
-                var endPropValue = node.Properties.GetPropertyValue("startOfRange");
-                int.TryParse(startPropValue, out startRange);
-                int.TryParse(endPropValue, out endRange);
-            }
+            _node = node;
 
-            StartRange = startRange;
-            EndRange = endRange;
+            Guid zoneKey = Guid.Empty;
 
             if (node.Properties.ContainsKey("zone")
             && GuidUdi.TryParse(node.Properties["zone"], out var guidUdi))
@@ -102,8 +195,6 @@ namespace Ekom.Models.Behaviors
             Guid zone,
             IEnumerable<string> countriesInZone)
         {
-            StartRange = startRange;
-            EndRange = endRange;
             CountriesInZone = countriesInZone;
         }
 
@@ -113,8 +204,8 @@ namespace Ekom.Models.Behaviors
         /// <param name="constraints"></param>
         public Constraints(IConstraints constraints)
         {
-            StartRange = constraints.StartRange;
-            EndRange = constraints.EndRange;
+            StartRanges = constraints.StartRanges;
+            EndRanges = constraints.EndRanges;
             CountriesInZone = new List<string>(constraints.CountriesInZone);
         }
     }

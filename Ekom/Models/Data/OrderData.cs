@@ -91,7 +91,7 @@ namespace Ekom.Models.Data
         public decimal TotalAmount { get; set; }
 
         /// <summary>
-        /// Contains the currency ISO code (e: "ISK" or "USD")
+        /// Contains the culture (e: "is-IS" or "is")
         /// </summary>
         [Length(5)]
         [NullSetting(NullSetting = NullSettings.Null)]

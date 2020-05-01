@@ -330,6 +330,7 @@
     <Compile Include="Models\Country.cs" />
     <Compile Include="Models\Base\NodeEntity.cs" />
     <Compile Include="Models\CurrencyModel.cs" />
+    <Compile Include="Models\CurrencyValue.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\CustomerInfo.cs" />
     <Compile Include="Models\Data\CouponData.cs" />
@@ -337,6 +338,7 @@
     <Compile Include="Models\Data\DiscountStockData.cs" />
     <Compile Include="Models\Data\OrderActivityLog.cs" />
     <Compile Include="Models\Discounts\Discount.cs" />
+    <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Models\Image.cs" />
@@ -345,6 +347,7 @@
     <Compile Include="Interfaces\IPaymentProvider.cs" />
     <Compile Include="Interfaces\IShippingProvider.cs" />
     <Compile Include="Interfaces\IZone.cs" />
+    <Compile Include="Models\OrderDynamicRequest.cs" />
     <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
     <Compile Include="Models\OrderedObjects\OrderedProductDiscount.cs" />
@@ -354,7 +357,7 @@
     <Compile Include="Interfaces\IStockRepository.cs" />
     <Compile Include="Models\CustomerShippingInfo.cs" />
     <Compile Include="Models\OrderedObjects\OrderedShippingProvider.cs" />
-    <Compile Include="Models\Discounts\ProductDiscount.cs" />
+    <Compile Include="Models\ProductDiscount.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\ActivityLogRepository.cs" />
@@ -372,6 +375,7 @@
     <Compile Include="Services\ProductDiscountService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
+    <Compile Include="Utilities\CookieHelper.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />
     <Compile Include="Cache\Base\ICache.cs" />
     <Compile Include="Cache\Base\IPerStoreCache.cs" />

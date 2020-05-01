@@ -43,6 +43,11 @@ namespace Ekom.Models
         public string Coupon { get; internal set; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public Guid OrderlineLink { get; internal set; }
+
+        /// <summary>
         /// Line price with discount and quantity and variant modifications
         /// </summary>
         public IPrice Amount
@@ -50,18 +55,21 @@ namespace Ekom.Models
             get
             {
 
-                decimal _price = Product.Price.OriginalValue;
+                decimal _price = Product.Price.Value;
+                decimal _totalOriginalPrice = Product.Price.Value * Quantity;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        _price += (v.Price.OriginalValue - _price);
+                        _price = _price + (v.Price.Value - _price);
                     }
                 }
 
-                return new Price(_price, Product.Price.Store, Discount, Quantity, false);
+                // Product.ProductDiscount is always null, do we need it ? the discount is calculated in the Price.Value. before it was using Original Value.
+                return new Price(_price, OrderInfo.StoreInfo.Currency, OrderInfo.StoreInfo.Vat, OrderInfo.StoreInfo.VatIncludedInPrice, Product.ProductDiscount, Discount, false, _totalOriginalPrice, Quantity);
             }
         }
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -71,7 +79,8 @@ namespace Ekom.Models
             string productJson,
             OrderInfo orderInfo,
             OrderLineInfo orderLineInfo,
-            OrderedDiscount discount)
+            OrderedDiscount discount,
+            Guid orderLineLink)
         {
             Key = lineId;
             Quantity = quantity;
@@ -79,6 +88,7 @@ namespace Ekom.Models
             OrderLineInfo = orderLineInfo;
             Product = new OrderedProduct(productJson, orderInfo.StoreInfo);
             Discount = discount;
+            OrderlineLink = orderLineLink;
         }
 
         /// <summary>
@@ -89,12 +99,19 @@ namespace Ekom.Models
             int quantity,
             Guid lineId,
             OrderInfo orderInfo,
-            IVariant variant = null)
+            IVariant variant = null,
+            OrderDynamicRequest dynamic = null)
         {
             OrderInfo = orderInfo;
             Quantity = quantity;
             Key = lineId;
-            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo);
+            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, dynamic);
+
+            if (dynamic != null)
+            {
+                OrderlineLink = dynamic.OrderLineLink;
+            }
+
         }
     }
 }

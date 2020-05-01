@@ -21,7 +21,14 @@ namespace Ekom.Services
 
         public static DateTime ConvertToDatetime(string value)
         {
-            return DateTime.ParseExact(value, "yyyyMMddHHmmssfff", System.Globalization.CultureInfo.InvariantCulture);
+            try
+            {
+                return new DateTime(Convert.ToInt64(value));
+            }
+            catch
+            {
+                return DateTime.ParseExact(value, "yyyyMMddHHmmssfff", System.Globalization.CultureInfo.InvariantCulture);
+            }
         }
 
         readonly ILogger _logger;

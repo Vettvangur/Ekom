@@ -400,8 +400,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Plugins\EkomStockEditor\ekomStock.controller.js" />
-    <Content Include="App_Plugins\EkomStockEditor\ekomStock.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Countries\countries.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Countries\countries.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Currencies\currencies.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Currencies\currencies.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\EkomCouponEditor\ekomCoupon.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\EkomCouponEditor\ekomCoupon.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\EkomStockEditor\ekomStock.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\EkomStockEditor\ekomStock.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Prices\prices.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\Prices\prices.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZoneSelector\zoneselector.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZoneSelector\zoneselector.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.controller.js" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.resource.js" />
@@ -464,6 +474,7 @@
     <Content Include="Views\Partials\Grid\Bootstrap3-Fluid.cshtml" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
     <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
+    <Content Include="App_Plugins\Ekom\package.manifest" />
     <None Include="packages.config" />
     <Content Include="Views\Masterpage.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />
@@ -559,7 +570,7 @@
     </ItemGroup>
     <MakeDir Directories="$(WebProjectOutputDir)\bin\roslyn" />
     <Copy SourceFiles="@(RoslynFiles)" DestinationFolder="$(WebProjectOutputDir)\bin\roslyn" SkipUnchangedFiles="true" Retries="$(CopyRetryCount)" RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)" />
-</Target>
+  </Target>
   <Import Project="..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets" Condition="Exists('..\packages\Umbraco.SqlServerCE.4.0.0.1\build\Umbraco.SqlServerCE.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

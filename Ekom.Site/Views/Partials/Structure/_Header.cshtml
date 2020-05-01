@@ -28,7 +28,7 @@
                             @foreach (var store in allStores.Where(x => x.Id != currentStore.Id))
                             {
                                 <li>
-                                    <a href="#">@store.Title</a>
+                                    <a href="@store.Url" class="select__link">@store.Title</a>
                                 </li>
                             }
                         </ul>
@@ -39,12 +39,20 @@
 
                     <div class="select select--light">
 
-                        <span class="select__value">ISK</span>
+                        <span class="select__value">@currentStore.GetCurrentCurrency().ISOCurrencySymbol</span>
 
                         <ul class="select__dropdown">
-                            <li>
-                                <a href="#">USD</a>
-                            </li>
+                            @foreach (var currency in currentStore.Currencies)
+                            {
+                                <li>
+                                    @using (Html.BeginEkomForm(FormType.ChangeCurrency))
+                                    {
+                                        <input type="hidden" name="currency" value="@currency.CurrencyValue" />
+                                        <button type="submit" class="select__buttonLink">@currency.ISOCurrencySymbol</button>
+                                    }
+                                </li>
+                            }
+
                         </ul>
 
                     </div>
@@ -52,7 +60,7 @@
                 </div>
 
                 <div class="header__right">
-                   
+
                     <span class="header__divider"></span>
 
                     <a href="@(LoginNode != null ? LoginNode.Url : "")" class="header__top__link">
@@ -89,7 +97,7 @@
                 </div>
 
                 <div class="header__center">
-                    
+
                     <div class="header__brand">
                         <a href="@currentStore.Url">Ekom</a>
                     </div>
@@ -97,7 +105,7 @@
                 </div>
 
                 <div class="header__right">
-                    
+
                     <a href="@(checkoutNode != null ? checkoutNode.Url : "")" class="header__cart">
                         <span class="header__cart__text">Your cart:</span>
                         <span class="header__cart__qty">@(order != null ? order.TotalQuantity : 0)</span>

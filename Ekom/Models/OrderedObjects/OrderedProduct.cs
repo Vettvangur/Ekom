@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Configuration;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
@@ -99,54 +100,90 @@ namespace Ekom.Models.OrderedObjects
             }
         }
 
-        public IPrice Price { get; }
+        public IPrice Price
+        {
+            get
+            {
+                return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
+            }
+            set { }
+        }
+
+        public List<IPrice> Prices { get; }
+
+        public decimal Vat
+        {
+            get
+            {
+                if (Properties.HasPropertyValue("vat", StoreInfo.Alias))
+                {
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", StoreInfo.Alias));
+                }
+
+                return StoreInfo.Vat;
+            }
+        }
 
         [ScriptIgnore]
         [JsonIgnore]
         [XmlIgnore]
-        public StoreInfo StoreInfo { get; }
+        private StoreInfo StoreInfo { get; }
 
-        /// <summary>
-        /// Umbraco media uniqueid's
-        /// </summary>
-        public Guid[] ImageIds { get; set; }
-
-        /// <summary>
-        /// Uses <see cref="UmbracoHelper"/> to attempt to get Urls for all <see cref="ImageIds"/>
-        /// </summary>
-        public IEnumerable<string> ImageUrls
-        {
-            get
-            {
-                if (!Configuration.Current.DisableCartImages)
-                {
-                    var umbHelper = Current.Factory.GetInstance<UmbracoHelper>();
-                    return ImageIds.Select(id => umbHelper.Media(id)?.Url);
-                }
-                return null;
-            }
-        }
-
-        public IReadOnlyDictionary<string, string> Properties;
+        public Dictionary<string, string> Properties;
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
+
+        // <summary>
+        // Product images
+        // </summary>
+        public virtual IEnumerable<Image> Images()
+        {
+            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
+
+            var _images = Properties.GetPropertyValue(value ?? "images", StoreInfo.Alias);
+
+            var imageNodes = _images.GetImages();
+
+            return imageNodes;
+        }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
+        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest dynamic = null)
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
-            ImageIds = product.Images.Any() 
-                ? product.Images.Select(x => x.Key).ToArray() 
-                : new Guid[] { };
 
-            Properties = new ReadOnlyDictionary<string, string>(
-                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+            Properties = new Dictionary<string, string>(
+               product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-            Price = product.Price.Clone() as IPrice;
-            Discount = product.Discount == null ? null : new OrderedDiscount(product.Discount);
+            if (dynamic != null && !string.IsNullOrEmpty(dynamic.Title))
+            {
+                Properties["title"] = dynamic.Title;
+            }
+
+            if (dynamic != null && !string.IsNullOrEmpty(dynamic.Slug))
+            {
+                Properties["slug"] = dynamic.Slug;
+            }
+
+            if (dynamic != null && dynamic.Price > 0)
+            {
+                Price = new Price(dynamic.Price, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice);
+
+            }
+            else
+            {
+                Price = product.Price.Clone() as IPrice;
+            }
+
+            Prices = product.Prices.ToList();
+
+            var productDiscount = product.ProductDiscount(Price.Value.ToString());
+
+            ProductDiscount = productDiscount != null ? productDiscount.Clone() as OrderedProductDiscount : null;
+
             if (variant != null)
             {
                 var variantGroups = new List<OrderedVariantGroup>();
@@ -154,7 +191,7 @@ namespace Ekom.Models.OrderedObjects
                 var variantGroup = variant.VariantGroup;
 
 
-                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo));
+                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo, Vat));
 
                 VariantGroups = variantGroups;
             }
@@ -169,30 +206,53 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public OrderedProduct(string productJson, StoreInfo storeInfo)
         {
-            _productJson = productJson;
             StoreInfo = storeInfo;
 
             var logger = Current.Factory.GetInstance<ILogger>();
+
             logger.Debug<OrderedProduct>("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
-            Discount = productPropertiesObject[nameof(Discount)] != null 
-                ? productPropertiesObject[nameof(Discount)].ToObject<OrderedDiscount>(EkomJsonDotNet.serializer) 
-                : null;
-            Properties = new ReadOnlyDictionary<string, string>(
-                productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
-            logger.Debug<OrderedProduct>("OrderedProductPriceJson: " + productPropertiesObject[nameof(Price)]);
+            ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
+            Properties = new Dictionary<string, string>(
+                productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
+
+            var pricesObj = productPropertiesObject["Prices"];
+
+            var priceObj = productPropertiesObject["Price"];
+
             try
             {
-                Price = productPropertiesObject[nameof(Price)].ToObject<Price>(EkomJsonDotNet.serializer);
+                if (pricesObj != null && !string.IsNullOrEmpty(pricesObj.ToString()))
+                {
+
+                    Prices = pricesObj.ToString().GetPriceValuesConstructed(Vat, storeInfo.VatIncludedInPrice, storeInfo.Currency);
+                }
+                else
+                {
+                    try
+                    {
+                        Prices = new List<IPrice>()
+                        {
+                            priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
+                        };
+                    }
+                    catch
+                    {
+                        Prices = new List<IPrice>()
+                        {
+                            new Price(priceObj, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice)
+                        };
+                    }
+                }
+
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // failed due to old order, try to fix by splitting the constructor up.
-                Price = new Price(productPropertiesObject[nameof(Price)]);
+                logger.Error<OrderedProduct>(ex,"Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"));
             }
 
-            ImageIds = productPropertiesObject[nameof(ImageIds)].ToObject<Guid[]>();
+            Price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
 
             // Add Variant Group
 

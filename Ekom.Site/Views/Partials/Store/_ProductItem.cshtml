@@ -1,30 +1,53 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@using Ekom.Utilities;
 
 @{
+
     var product = (Ekom.Interfaces.IProduct)ViewData["product"];
     var gridSize = (string)ViewData["size"];
 
     if (product != null)
     {
         var primaryVariantGroup = product.PrimaryVariantGroup;
-        var primaryImage = primaryVariantGroup != null &&
-            primaryVariantGroup.Images.Any() ? primaryVariantGroup.Images.FirstOrDefault().Url :
-            product.Images.Any() ? product.Images.First().Url : "/content/img/product.jpg";
+
+        var images = product.GetPropertyValue("images").GetImages();
+
+        var primaryImage = images.FirstOrDefault();
 
         <div class="cell @gridSize">
 
             <div class="productItem">
 
-                <a href="@product.Url" class="productItem__image">
-                    <img src="@primaryImage?width=370&height=500&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title"/>
-                </a>
+                @if (primaryImage != null)
+                {
+                    <a href="@product.Url" class="productItem__image">
+                        <img src="@primaryImage.Url?width=370&height=500&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title" />
+                    </a>
+                }
+
 
                 <a href="@product.Url" class="productItem__caption">
                     <strong>@product.Title</strong>
                 </a>
 
-                <p class="productItem__price">@product.Price.WithVat.CurrencyString</p>
 
+                @if (primaryVariantGroup != null && primaryVariantGroup.Variants.Any())
+                {
+                    if (product.ProductDiscount("") != null)
+                    {
+                        <p class="productItem__beforePrice" style="text-decoration:line-through;">@primaryVariantGroup.Variants.OrderBy(x => x.SortOrder).FirstOrDefault().Price.BeforeDiscount.CurrencyString</p>
+                    }
+                    <p class="productItem__price">@primaryVariantGroup.Variants.OrderBy(x => x.SortOrder).FirstOrDefault().Price.WithVat.CurrencyString</p>
+                }
+                else
+                {
+                    if (product.ProductDiscount("") != null)
+                    {
+                        <p class="productItem__beforePrice" style="text-decoration:line-through;">@product.Price.BeforeDiscount.CurrencyString</p>
+                    }
+                    <p class="productItem__price">@product.Price.WithVat.CurrencyString</p>
+
+                }
             </div>
         </div>
     }

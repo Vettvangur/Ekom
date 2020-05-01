@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Ekom.Utilities
 {
@@ -101,6 +101,26 @@ namespace Ekom.Utilities
             }
 
             return val.GetVortoValue(storeAlias) ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Get value from umbraco properties by store
+        /// Retrieves a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
+        /// </summary>
+        public static bool HasPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string storeAlias)
+        {
+
+            if (properties.ContainsKey(propertyAlias))
+            {
+                if (!string.IsNullOrEmpty(GetPropertyValue(properties, propertyAlias, storeAlias)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

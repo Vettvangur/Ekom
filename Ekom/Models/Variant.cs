@@ -7,7 +7,9 @@ using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
+using System.Web;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
@@ -24,8 +26,9 @@ namespace Ekom.Models
     public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         private IPerStoreCache<IVariantGroup> __variantGroupCache;
-        private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-            __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
+
+        //private IPerStoreCache<IVariantGroup> _variantGroupCache =>
+        //    __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
 
         /// <summary>
         /// Stock Keeping Unit, identifier
@@ -83,21 +86,15 @@ namespace Ekom.Models
                 return Product.Key;
             }
         }
+
         /// <summary>
         /// Gets the productDiscount for the specific Variant
         /// </summary>
-        public IDiscount Discount
+        public ProductDiscount ProductDiscount(string price)
         {
-            get
-            {
-                return Current.Factory.GetInstance<IProductDiscountService>()
-                    .GetProductDiscount(
-                        Guid.Parse(Properties["__Key"]),
-                        Store.Alias,
-                        Properties.GetPropertyValue("price", Store.Alias)
-                    );
-            }
+            return Current.Factory.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["__Key"]), Store.Alias, price);
         }
+
         // Waiting for variants to be composed with their parent product
         ///// <summary>
         ///// Get the Product Key
@@ -148,9 +145,64 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// 
+        /// Get Price by current store currency
         /// </summary>
-        public virtual IPrice Price { get; }
+        public virtual IPrice Price
+        {
+            get
+            {
+                if (HttpContext.Current != null)
+                {
+                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + Store.Alias];
+
+                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    {
+                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
+
+                        if (price != null)
+                        {
+                            return price;
+                        }
+                    }
+
+                }
+
+                return Prices.FirstOrDefault();
+
+            }
+        }
+
+        public virtual List<IPrice> Prices
+        {
+            get
+            {
+                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Key.ToString(), Store.Alias);
+
+                return prices;
+            }
+        }
+
+        public virtual decimal Vat
+        {
+            get
+            {
+                return Product.Vat;
+            }
+        }
+
+        // <summary>
+        // Variant images
+        // </summary>
+        public virtual IEnumerable<Image> Images()
+        {
+            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
+
+            var _images = Properties.GetPropertyValue(value ?? "images", Store.Alias);
+
+            var imageNodes = _images.GetImages();
+
+            return imageNodes;
+        }
 
         /// <summary>
         /// All categories variant belongs to, includes parent category.
@@ -208,14 +260,6 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(ISearchResult item, IStore store) : base(item, store)
         {
-            var variantPrice = Properties.GetPropertyValue("price", Store.Alias);
-
-            if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
-            {
-                Price = Product.Price;
-            }
-
-            Price = new Price(variantPrice, Store, Discount == null ? null : new OrderedDiscount(Discount));
         }
 
         /// <summary>
@@ -225,14 +269,6 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(IContent node, IStore store) : base(node, store)
         {
-            var variantPrice = Properties.GetPropertyValue("price", Store.Alias);
-
-            if (string.IsNullOrEmpty(variantPrice) || variantPrice == "0")
-            {
-                Price = Product.Price;
-            }
-
-            Price = new Price(variantPrice, Store, Discount == null ? null : new OrderedDiscount(Discount));
         }
     }
 }

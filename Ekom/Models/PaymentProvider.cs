@@ -1,7 +1,10 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using Ekom.Models.Behaviors;
 using Ekom.Utilities;
 using Examine;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
 using Umbraco.Core.Models;
 
 namespace Ekom.Models
@@ -24,7 +27,43 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        public virtual IPrice Price { get; }
+        public virtual IPrice Price
+        {
+            get
+            {
+                if (HttpContext.Current != null)
+                {
+                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + Store.Alias];
+
+                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    {
+                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
+
+                        if (price != null)
+                        {
+                            return price;
+                        }
+                    }
+
+                }
+
+                return Prices.FirstOrDefault();
+
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual List<IPrice> Prices
+        {
+            get
+            {
+                var Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
+
+                return Prices;
+            }
+        }
 
         /// <summary>
         /// Used by Ekom extensions
@@ -40,7 +79,6 @@ namespace Ekom.Models
         public PaymentProvider(ISearchResult item, IStore store) : base(item, store)
         {
             Constraints = new Constraints(this);
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
         }
 
         /// <summary>
@@ -51,7 +89,6 @@ namespace Ekom.Models
         public PaymentProvider(IContent node, IStore store) : base(node, store)
         {
             Constraints = new Constraints(this);
-            Price = new Price(Properties.GetPropertyValue("price", Store.Alias), Store);
         }
     }
 }

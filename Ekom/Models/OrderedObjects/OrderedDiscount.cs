@@ -12,7 +12,7 @@ namespace Ekom.Models.OrderedObjects
     /// <summary>
     /// Frozen <see cref="Discount"/> with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    public class OrderedDiscount : IComparable<IDiscount>, IDiscount
+    public class OrderedDiscount : IComparable<IDiscount>
     {
         /// <summary>
         /// 
@@ -56,19 +56,16 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public Guid Key { get; internal set; }
 
-        public DiscountType Type { get; internal set; }
-
+        /// <summary>
+        /// Discount amount in the specified <see cref="DiscountType"/>
+        /// </summary>
         public DiscountAmount Amount { get; internal set; }
 
         public List<Guid> DiscountItems { get; }
         /// <summary>
-        /// Can you apply this discount while having a seperate discount affecting other OrderLines
-        /// </summary>
-        public bool Exclusive { get; }
-        /// <summary>
         /// Ranges
         /// </summary>
-        public IConstraints Constraints { get; internal set; }
+        public Constraints Constraints { get; internal set; }
         /// <summary>
         /// If discount is stackable with productDiscounts
         /// </summary>
@@ -83,12 +80,9 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public bool HasMasterStock { get; internal set; }
 
-        #region Comparisons
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation
         /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
         public int CompareTo(IDiscount other)
         {
             if (other == null)

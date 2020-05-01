@@ -1,4 +1,4 @@
-﻿var variants = {
+var variants = {
 
 	init: function () {
 
@@ -42,6 +42,12 @@
 						let dropdown = variantEl.querySelector('select');
 
 						dropdown.setAttribute('name', dropdown.getAttribute('data-name'));
+
+            var firstItem = dropdown.options[dropdown.options.selectedIndex];
+
+            if (firstItem) {
+             document.getElementsByClassName('product__price')[0].innerHTML = firstItem.getAttribute('data-price');
+            }
 
 					}
 

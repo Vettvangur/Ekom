@@ -136,6 +136,12 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
+        public async Task UpdateCurrencyAsync(string currency, Guid orderId, string storeAlias)
+        {
+            await _orderService.ChangeCurrencyAsync(orderId, currency, storeAlias)
+                .ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Add order line to cart asynchronously.
         /// </summary>

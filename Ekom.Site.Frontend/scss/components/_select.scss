@@ -2,6 +2,7 @@
     border: 1px solid $border-color;
     height: 48px;
     display: inline-block;
+    position: relative;
 
     &--light {
         border: 0;
@@ -26,9 +27,36 @@
 
     &__dropdown {
         display: none;
+        position: absolute;
+        z-index: 99;
+        background-color: #fff;
+        left: 0;
+        list-style: none;
+        margin: -2px 0 0 0;
+        width: 100%;
+        border: 1px solid #edeef4;
+        border-top: 0;
     }
 
-    &:hover > .select__dropdown {
+    &__link {
         display: block;
+        color: $dark-gray;
+        text-align: center;
+        padding: 3px 0;
+    }
+
+    &__buttonLink {
+        display: block;
+        color: $dark-gray;
+        text-align: center;
+        padding: 3px 0;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    &:hover {
+        .select__dropdown {
+            display: block;
+        }
     }
 }
