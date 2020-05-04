@@ -272,126 +272,6 @@ namespace Ekom.App_Start
                     {
                     }
                 });
-                //#region Grid Configuration
-                //var productsGridDt = EnsureDataTypeExists(new DataType(gridEditor, ekmDtContainer.Id)
-                //{
-                //    Name = "Ekom - Products Grid Editor",
-                //    Configuration = new GridConfiguration
-                //    {
-                //        Items = new JObject
-                //        {
-                //            { "columns", 12 },
-                //            { "templates", new JArray
-                //                {
-                //                   new JObject {
-                //                       { "name", "Content" },
-                //                       { "sections", new JArray
-                //                           {
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 12 },
-                //                                }
-                //                           }
-                //                       }
-                //                    },
-                //                }
-                //            },
-                //            { "layouts", new JArray
-                //                {
-                //                    new JObject
-                //                    {
-                //                        { "name", "Expanded" },
-                //                        { "areas", new JArray
-                //                            {
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 12 }
-                //                                }
-                //                            }
-                //                        },
-                //                        { "label", "Expanded" },
-                //                    },
-                //                    new JObject
-                //                    {
-                //                        { "name", "Container" },
-                //                        { "areas", new JArray
-                //                            {
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 12 }
-                //                                }
-                //                            }
-                //                        },
-                //                        { "label", "Container" },
-                //                    },
-                //                    new JObject
-                //                    {
-                //                        { "name", "8-Columns" },
-                //                        { "areas", new JArray
-                //                            {
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 8 }
-                //                                }
-                //                            }
-                //                        },
-                //                    },
-                //                    new JObject
-                //                    {
-                //                        { "name", "6+6 Columns" },
-                //                        { "areas", new JArray
-                //                            {
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 6 },
-                //                                },
-                //                                new JObject
-                //                                {
-                //                                    { "grid", 6 },
-                //                                },
-                //                            }
-                //                        },
-                //                    },
-                //                }
-                //            }
-                //        },
-                //        Rte = new JObject
-                //        {
-                //            { "toolbar", new JArray
-                //                {
-                //                    "code", "styleselect", "bold", "italic", "alignleft", "aligncenter", "alignright", "bullist", "numlist", "outdent", "indent", "link", "umbmediapicker", "umbmacro", "umbembeddialog",
-                //                }
-                //            },
-                //            { "stylesheets", new JArray
-                //                {
-                //                    "umbraco", "Rte",
-                //                }
-                //            },
-                //            { "dimensions", new JObject
-                //                {
-                //                    { "height", 500 }
-                //                }
-                //            },
-                //            { "maxImageSize", 500 },
-                //        },
-                //    }
-                //});
-                //#endregion
-                //var perStoreProductGridDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-                //{
-                //    Name = "Ekom - Products Grid Editor - Per Store",
-                //    Configuration = new VortoConfiguration
-                //    {
-                //        DataType = new DataTypeInfo
-                //        {
-                //            Guid = productsGridDt.Key,
-                //            Name = productsGridDt.Name,
-                //            PropertyEditorAlias = productsGridDt.EditorAlias,
-                //        },
-                //        MandatoryBehaviour = "primary",
-                //        LanguageSource = "custom",
-                //    },
-                //});
                 var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Discount Type",
@@ -618,10 +498,6 @@ namespace Ekom.App_Start
                             new ContentTypeSort(productVariantCt.Id, 1),
                             new ContentTypeSort(productVariantGroupCt.Id, 2),
                         },
-                        ContentTypeComposition = new List<IContentTypeComposition>
-                        {
-                            baseComposition,
-                        },
                         PropertyGroups = new PropertyGroupCollection(
                             new List<PropertyGroup>
                             {
@@ -629,9 +505,17 @@ namespace Ekom.App_Start
                                     true,
                                     new List<PropertyType>
                                     {
+                                        new PropertyType(perStoreTextDt, "title")
+                                        {
+                                            Name = "Title",
+                                        },
                                         new PropertyType(textstringDt, "sku")
                                         {
                                             Name = "SKU",
+                                        },
+                                        new PropertyType(perStoreTextDt, "description")
+                                        {
+                                            Name = "Description",
                                         },
                                         new PropertyType(multipleMediaPickerDt, "images")
                                         {
