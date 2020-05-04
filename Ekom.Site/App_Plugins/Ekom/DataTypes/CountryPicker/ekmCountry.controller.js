@@ -1,4 +1,4 @@
-﻿angular.module("umbraco").controller("ekom.countries", function ($scope, assetsService, $routeParams, $http, editorState) {
+angular.module("umbraco").controller("Ekom.Country", function ($scope, assetsService, $routeParams, $http, editorState) {
 
     $http.get('/Umbraco/Ekom/Api/GetCountries').then(function (res) {
 

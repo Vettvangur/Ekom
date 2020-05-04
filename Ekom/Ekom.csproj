@@ -283,6 +283,11 @@
     <Compile Include="Controllers\CatalogController.cs" />
     <Compile Include="Controllers\OrderController.cs" />
     <Compile Include="Controllers\OrderController.Discounts.cs" />
+    <Compile Include="DataEditors\EkomRangeEditor.cs" />
+    <Compile Include="DataEditors\EkomZonePicker.cs" />
+    <Compile Include="DataEditors\EkomCurrencyPicker.cs" />
+    <Compile Include="DataEditors\EkomCountryPicker.cs" />
+    <Compile Include="DataEditors\EkomPriceEditor.cs" />
     <Compile Include="DataEditors\EkomCouponEditor.cs" />
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />

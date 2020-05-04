@@ -1,4 +1,4 @@
-angular.module('umbraco').controller('Ekom.StockEditor', function($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
+angular.module('umbraco').controller('Ekom.Stock', function($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
     $scope.storeList = [];
     $scope.content = null;
     $scope.stockValue = 0;

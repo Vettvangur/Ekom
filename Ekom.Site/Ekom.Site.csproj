@@ -400,18 +400,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Plugins\Ekom\DataTypes\Countries\countries.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\Countries\countries.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\Currencies\currencies.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\Currencies\currencies.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\EkomCouponEditor\ekomCoupon.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\EkomCouponEditor\ekomCoupon.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\EkomStockEditor\ekomStock.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\EkomStockEditor\ekomStock.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\Prices\prices.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\Prices\prices.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\ZoneSelector\zoneselector.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\ZoneSelector\zoneselector.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.controller.js" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.html" />
     <Content Include="App_Plugins\ModelsBuilder\modelsbuilder.resource.js" />

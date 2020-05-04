@@ -1,4 +1,4 @@
-angular.module("umbraco").controller("ekom.prices", function ($scope, $http) {
+angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
 
   if (typeof $scope.model.value === 'object' && $scope.model.value !== null && $scope.model.value !== '') {
     $scope.prices = $scope.model.value;

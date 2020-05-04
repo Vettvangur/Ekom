@@ -1,4 +1,4 @@
-angular.module("umbraco").controller("ekom.zoneSelector", function ($scope, assetsService, $http) {
+angular.module("umbraco").controller("Ekom.Zone", function ($scope, assetsService, $http) {
 
 	//var prevalueField = $scope.model.config.prevaluekeyname;
 

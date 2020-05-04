@@ -10,8 +10,8 @@ namespace Ekom.DataEditors
     /// Calls Ekom.Api.InsertCoupon/RemoveCoupon/GetCouponsForDiscount for actions
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/EkomCouponEditor/ekomCoupon.controller", Priority = 1)]
-    [DataEditor("Ekom.Coupon", "Ekom Coupon Editor", "~/App_Plugins/EkomCouponEditor/ekomCoupon", ValueType = ValueTypes.Json)]
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/CouponEditor/ekomCoupon.controller", Priority = 1)]
+    [DataEditor("Ekom.Coupon", "Ekom Coupon Editor", "~/App_Plugins/Ekom/DataTypes/CouponEditor/ekomCoupon", ValueType = ValueTypes.Json)]
     public class EkomCouponEditor : DataEditor
     {
         /// <summary>

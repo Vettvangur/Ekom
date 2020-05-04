@@ -10,8 +10,8 @@ namespace Ekom.DataEditors
     /// Calls Ekom/Api/GetStockByStore to query/update stock
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/EkomStockEditor/ekomStock.controller.js", Priority = 1)]
-    [DataEditor("Ekom.Stock", "Ekom Stock Editor", "~/App_Plugins/EkomStockEditor/ekomStock.html", ValueType = ValueTypes.Integer)]
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/StockEditor/ekomStock.controller.js", Priority = 1)]
+    [DataEditor("Ekom.Stock", "Ekom Stock Editor", "~/App_Plugins/Ekom/DataTypes/StockEditor/ekomStock.html", ValueType = ValueTypes.Integer)]
     public class EkomStockEditor : DataEditor
     {
         /// <summary>

@@ -1,0 +1,12 @@
+﻿<div ng-controller="Ekom.Range">
+  
+  <div ng-repeat="item in currencies">
+
+    <div style="margin-bottom:10px;">
+      <label style="display:block;" for="range_{{ item.ISOCurrencySymbol }}_{{ fieldAlias }}">
+        {{ item.ISOCurrencySymbol }}
+      </label>
+      <input type="number" min="0" step="any" id="range__{{ item.ISOCurrencySymbol }}_{{ fieldAlias }}" ng-model="prices[$index].Price"/>
+    </div>
+  </div>
+</div>

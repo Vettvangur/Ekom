@@ -65,18 +65,48 @@ namespace Ekom.App_Start
                     throw new EnsureNodesException(
                         "Unable to find Ekom Coupon property editor, failed creating Ekom nodes.");
                 }
+                if (!_propertyEditorCollection.TryGet("Ekom.Range", out IDataEditor rangeEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Range property editor, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Ekom.Price", out IDataEditor priceEditor))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Price property editor, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Ekom.Country", out IDataEditor countryPicker))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Country property picker, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Ekom.Zone", out IDataEditor zonePicker))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Zone property picker, failed creating Ekom nodes.");
+                }
+                if (!_propertyEditorCollection.TryGet("Ekom.Currency", out IDataEditor currencyPicker))
+                {
+                    // Should never happen
+                    throw new EnsureNodesException(
+                        "Unable to find Ekom Currency property picker, failed creating Ekom nodes.");
+                }
                 if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor multiNodeEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.MultiNodeTreePicker property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Umbraco.Grid", out IDataEditor gridEditor))
-                {
-                    // Should never happen
-                    throw new EnsureNodesException(
-                        "Unable to find Umbraco.Grid property editor, failed creating Ekom nodes.");
-                }
+                //if (!_propertyEditorCollection.TryGet("Umbraco.Grid", out IDataEditor gridEditor))
+                //{
+                //    // Should never happen
+                //    throw new EnsureNodesException(
+                //        "Unable to find Umbraco.Grid property editor, failed creating Ekom nodes.");
+                //}
                 if (!_propertyEditorCollection.TryGet("Our.Umbraco.Vorto", out IDataEditor editor))
                 {
                     throw new EnsureNodesException(
@@ -170,6 +200,56 @@ namespace Ekom.App_Start
                 {
                     Name = "Ekom - Coupons",
                 });
+                var currencyDt = EnsureDataTypeExists(new DataType(currencyPicker, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Currency",
+                });
+                var zoneDt = EnsureDataTypeExists(new DataType(zonePicker, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Zone",
+                });
+                var countryDt = EnsureDataTypeExists(new DataType(countryPicker, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Country",
+                });
+                var priceDt = EnsureDataTypeExists(new DataType(priceEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Price",
+                });
+                var rangeDt = EnsureDataTypeExists(new DataType(rangeEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Range",
+                });
+                var perStoreRangeDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Range - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = rangeDt.Key,
+                            Name = rangeDt.Name,
+                            PropertyEditorAlias = rangeDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
+                var perStorePriceDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Price - Per Store",
+                    Configuration = new VortoConfiguration
+                    {
+                        DataType = new DataTypeInfo
+                        {
+                            Guid = priceDt.Key,
+                            Name = priceDt.Name,
+                            PropertyEditorAlias = priceDt.EditorAlias,
+                        },
+                        MandatoryBehaviour = "primary",
+                        LanguageSource = "custom",
+                    },
+                });
                 var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Stock - Per Store",
@@ -192,126 +272,126 @@ namespace Ekom.App_Start
                     {
                     }
                 });
-                #region Grid Configuration
-                var productsGridDt = EnsureDataTypeExists(new DataType(gridEditor, ekmDtContainer.Id)
-                {
-                    Name = "Ekom - Products Grid Editor",
-                    Configuration = new GridConfiguration
-                    {
-                        Items = new JObject
-                        {
-                            { "columns", 12 },
-                            { "templates", new JArray
-                                {
-                                   new JObject {
-                                       { "name", "Content" },
-                                       { "sections", new JArray
-                                           {
-                                                new JObject
-                                                {
-                                                    { "grid", 12 },
-                                                }
-                                           }
-                                       }
-                                    },
-                                }
-                            },
-                            { "layouts", new JArray
-                                {
-                                    new JObject
-                                    {
-                                        { "name", "Expanded" },
-                                        { "areas", new JArray
-                                            {
-                                                new JObject
-                                                {
-                                                    { "grid", 12 }
-                                                }
-                                            }
-                                        },
-                                        { "label", "Expanded" },
-                                    },
-                                    new JObject
-                                    {
-                                        { "name", "Container" },
-                                        { "areas", new JArray
-                                            {
-                                                new JObject
-                                                {
-                                                    { "grid", 12 }
-                                                }
-                                            }
-                                        },
-                                        { "label", "Container" },
-                                    },
-                                    new JObject
-                                    {
-                                        { "name", "8-Columns" },
-                                        { "areas", new JArray
-                                            {
-                                                new JObject
-                                                {
-                                                    { "grid", 8 }
-                                                }
-                                            }
-                                        },
-                                    },
-                                    new JObject
-                                    {
-                                        { "name", "6+6 Columns" },
-                                        { "areas", new JArray
-                                            {
-                                                new JObject
-                                                {
-                                                    { "grid", 6 },
-                                                },
-                                                new JObject
-                                                {
-                                                    { "grid", 6 },
-                                                },
-                                            }
-                                        },
-                                    },
-                                }
-                            }
-                        },
-                        Rte = new JObject
-                        {
-                            { "toolbar", new JArray
-                                {
-                                    "code", "styleselect", "bold", "italic", "alignleft", "aligncenter", "alignright", "bullist", "numlist", "outdent", "indent", "link", "umbmediapicker", "umbmacro", "umbembeddialog",
-                                }
-                            },
-                            { "stylesheets", new JArray
-                                {
-                                    "umbraco", "Rte",
-                                }
-                            },
-                            { "dimensions", new JObject
-                                {
-                                    { "height", 500 }
-                                }
-                            },
-                            { "maxImageSize", 500 },
-                        },
-                    }
-                });
-                #endregion
-                var perStoreProductGridDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-                {
-                    Name = "Ekom - Products Grid Editor - Per Store",
-                    Configuration = new VortoConfiguration
-                    {
-                        DataType = new DataTypeInfo
-                        {
-                            Guid = productsGridDt.Key,
-                            Name = productsGridDt.Name,
-                            PropertyEditorAlias = productsGridDt.EditorAlias,
-                        },
-                        MandatoryBehaviour = "primary",
-                        LanguageSource = "custom",
-                    },
-                });
+                //#region Grid Configuration
+                //var productsGridDt = EnsureDataTypeExists(new DataType(gridEditor, ekmDtContainer.Id)
+                //{
+                //    Name = "Ekom - Products Grid Editor",
+                //    Configuration = new GridConfiguration
+                //    {
+                //        Items = new JObject
+                //        {
+                //            { "columns", 12 },
+                //            { "templates", new JArray
+                //                {
+                //                   new JObject {
+                //                       { "name", "Content" },
+                //                       { "sections", new JArray
+                //                           {
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 12 },
+                //                                }
+                //                           }
+                //                       }
+                //                    },
+                //                }
+                //            },
+                //            { "layouts", new JArray
+                //                {
+                //                    new JObject
+                //                    {
+                //                        { "name", "Expanded" },
+                //                        { "areas", new JArray
+                //                            {
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 12 }
+                //                                }
+                //                            }
+                //                        },
+                //                        { "label", "Expanded" },
+                //                    },
+                //                    new JObject
+                //                    {
+                //                        { "name", "Container" },
+                //                        { "areas", new JArray
+                //                            {
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 12 }
+                //                                }
+                //                            }
+                //                        },
+                //                        { "label", "Container" },
+                //                    },
+                //                    new JObject
+                //                    {
+                //                        { "name", "8-Columns" },
+                //                        { "areas", new JArray
+                //                            {
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 8 }
+                //                                }
+                //                            }
+                //                        },
+                //                    },
+                //                    new JObject
+                //                    {
+                //                        { "name", "6+6 Columns" },
+                //                        { "areas", new JArray
+                //                            {
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 6 },
+                //                                },
+                //                                new JObject
+                //                                {
+                //                                    { "grid", 6 },
+                //                                },
+                //                            }
+                //                        },
+                //                    },
+                //                }
+                //            }
+                //        },
+                //        Rte = new JObject
+                //        {
+                //            { "toolbar", new JArray
+                //                {
+                //                    "code", "styleselect", "bold", "italic", "alignleft", "aligncenter", "alignright", "bullist", "numlist", "outdent", "indent", "link", "umbmediapicker", "umbmacro", "umbembeddialog",
+                //                }
+                //            },
+                //            { "stylesheets", new JArray
+                //                {
+                //                    "umbraco", "Rte",
+                //                }
+                //            },
+                //            { "dimensions", new JObject
+                //                {
+                //                    { "height", 500 }
+                //                }
+                //            },
+                //            { "maxImageSize", 500 },
+                //        },
+                //    }
+                //});
+                //#endregion
+                //var perStoreProductGridDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                //{
+                //    Name = "Ekom - Products Grid Editor - Per Store",
+                //    Configuration = new VortoConfiguration
+                //    {
+                //        DataType = new DataTypeInfo
+                //        {
+                //            Guid = productsGridDt.Key,
+                //            Name = productsGridDt.Name,
+                //            PropertyEditorAlias = productsGridDt.EditorAlias,
+                //        },
+                //        MandatoryBehaviour = "primary",
+                //        LanguageSource = "custom",
+                //    },
+                //});
                 var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Discount Type",
@@ -404,7 +484,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Zone",
                                         },
-                                        new PropertyType(perStoreIntDt, "price")
+                                        new PropertyType(perStorePriceDt, "price")
                                         {
                                             Name = "Price",
                                         },
@@ -429,11 +509,11 @@ namespace Ekom.App_Start
                                     true,
                                     new List<PropertyType>
                                     {
-                                        new PropertyType(perStoreIntDt, "startOfRange")
+                                        new PropertyType(perStoreRangeDt, "startOfRange")
                                         {
                                             Name = "Start of Range",
                                         },
-                                        new PropertyType(perStoreIntDt, "endOfRange")
+                                        new PropertyType(perStoreRangeDt, "endOfRange")
                                         {
                                             Name = "End of Range",
                                         },
@@ -466,7 +546,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Title",
                                         },
-                                        new PropertyType(perStoreTextDt, "price")
+                                        new PropertyType(perStorePriceDt, "price")
                                         {
                                             Name = "Price",
                                         },
@@ -553,14 +633,6 @@ namespace Ekom.App_Start
                                         {
                                             Name = "SKU",
                                         },
-                                        new PropertyType(textstringDt, "barcode")
-                                        {
-                                            Name = "Barcode",
-                                        },
-                                        new PropertyType(perStoreTextDt, "underTitle")
-                                        {
-                                            Name = "Under title",
-                                        },
                                         new PropertyType(multipleMediaPickerDt, "images")
                                         {
                                             Name = "Images",
@@ -569,17 +641,13 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Slug",
                                         },
-                                        new PropertyType(perStoreTextDt, "price")
+                                        new PropertyType(perStorePriceDt, "price")
                                         {
                                             Name = "Price",
                                         },
                                         new PropertyType(_configuration.PerStoreStock ? perStoreStockDt : stockDt, "stock")
                                         {
                                             Name = "Stock",
-                                        },
-                                        new PropertyType(textstringDt, "amount")
-                                        {
-                                            Name = "Amount",
                                         },
                                         new PropertyType(contentPickerDt, "categories")
                                         {
@@ -592,32 +660,8 @@ namespace Ekom.App_Start
                                         },
                                     }))
                                 {
-                                    Name = "Product",
-                                },
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(perStoreMediaPickerDt, "coverImage")
-                                        {
-                                            Name = "Cover Image",
-                                        },
-                                        new PropertyType(perStoreTextDt, "coverHeader")
-                                        {
-                                            Name = "Cover Header",
-                                        },
-                                        new PropertyType(perStoreTextDt, "coverSubtitle")
-                                        {
-                                            Name = "Cover Subtitle",
-                                        },
-                                        new PropertyType(perStoreProductGridDt, "content")
-                                        {
-                                            Name = "Content",
-                                        },
-                                    }))
-                                {
-                                    Name = "Cover",
-                                },
+                                    Name = "Product"
+                                }
                             }),
                     }
                 );
@@ -643,14 +687,6 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Slug",
                                         },
-                                        new PropertyType(perStoreTextDt, "header")
-                                        {
-                                            Name = "Header",
-                                        },
-                                        new PropertyType(perStoreTextDt, "Subheader")
-                                        {
-                                            Name = "subheader",
-                                        },
                                         new PropertyType(perStoreTextDt, "description")
                                         {
                                             Name = "Description",
@@ -658,11 +694,7 @@ namespace Ekom.App_Start
                                         new PropertyType(mediaPickerDt, "categoryImage")
                                         {
                                             Name = "Category image",
-                                        },
-                                        new PropertyType(mediaPickerDt, "menuImage")
-                                        {
-                                            Name = "Menu image",
-                                        },
+                                        }
                                     }))
                                     {
                                         Name = "Category",
@@ -705,122 +737,245 @@ namespace Ekom.App_Start
 
                 #region Discounts
 
-                var couponCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+
+                var orderDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
-                    Name = "Coupon",
-                    Alias = "ekmCoupon",
-                    Icon = "icon-coin-euro",
+                    Name = "Order Discount",
+                    Alias = "ekmOrderDiscount",
+                    Icon = "icon-coin-dollar",
+                    ContentTypeComposition = new List<IContentTypeComposition>
+                        {
+                            baseComposition,
+                            rangeComposition,
+                        },
                     PropertyGroups = new PropertyGroupCollection(
-                        new List<PropertyGroup>
-                            {
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(numericDt, "count")
-                                        {
-                                            Name = "Count",
-                                        },
-                                    }))
+                            new List<PropertyGroup>
                                 {
-                                    Name = "Settings",
-                                },
-                            }
-                    ),
+                                    new PropertyGroup(new PropertyTypeCollection(
+                                        true,
+                                        new List<PropertyType>
+                                        {
+                                            new PropertyType(discountTypeDt, "type")
+                                            {
+                                                Name = "Type",
+                                                Mandatory = true,
+                                            },
+                                            new PropertyType(perStoreRangeDt, "discount")
+                                            {
+                                                Name = "Discount",
+                                                Mandatory = true,
+                                            },
+                                            new PropertyType(multinodeProductsDt, "discountItems")
+                                            {
+                                                Name = "Discount Items",
+                                            },
+                                            new PropertyType(booleanDt, "exclusive")
+                                            {
+                                                Name = "Exclusive",
+                                            },
+                                            new PropertyType(booleanDt, "stackable")
+                                            {
+                                                Name = "Stackable",
+                                            },
+                                        }))
+                                    {
+                                        Name = "Settings",
+                                    },
+                                    new PropertyGroup(new PropertyTypeCollection(
+                                        true,
+                                        new List<PropertyType>
+                                        {
+                                            new PropertyType(couponDt, "coupons")
+                                            {
+                                                Name = "Coupons",
+                                            },
+                                        }))
+                                    {
+                                        Name = "Coupons",
+                                    },
+                                }
+                        ),
                 });
 
-                var discountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                var orderDiscountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
-                    Name = "Discount",
-                    Alias = "ekmDiscount",
-                    Icon = "icon-bill-euro",
-                    ContentTypeComposition = new List<IContentTypeComposition>
+                    Name = "Order Discounts",
+                    Alias = "ekmOrderDiscounts",
+                    Icon = "icon-bulleted-list",
+                    AllowedContentTypes = new List<ContentTypeSort>
                     {
-                        baseComposition,
-                        rangeComposition,
+                        new ContentTypeSort(orderDiscountCt.Id, 1),
                     },
-                    PropertyGroups = new PropertyGroupCollection(
-                        new List<PropertyGroup>
-                            {
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(discountTypeDt, "type")
-                                        {
-                                            Name = "Type",
-                                            Mandatory = true,
-                                        },
-                                        new PropertyType(numericDt, "discount")
-                                        {
-                                            Name = "Discount",
-                                            Mandatory = true,
-                                        },
-                                        new PropertyType(multinodeProductsDt, "discountItems")
-                                        {
-                                            Name = "Discount Items",
-                                        },
-                                        new PropertyType(booleanDt, "exclusive")
-                                        {
-                                            Name = "Exclusive",
-                                        },
-                                    }))
-                                {
-                                    Name = "Settings",
-                                },
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(couponDt, "coupons")
-                                        {
-                                            Name = "Coupons",
-                                        },
-                                    }))
-                                {
-                                    Name = "Coupons",
-                                },
-                            }
-                    ),
                 });
+
                 var productDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
                     Name = "Product Discount",
                     Alias = "ekmProductDiscount",
-                    Icon = "icon-bill-dollar",
+                    Icon = "icon-coin-dollar",
                     ContentTypeComposition = new List<IContentTypeComposition>
-                    {
-                        baseComposition,
-                        rangeComposition,
-                    },
+                        {
+                            baseComposition,
+                            rangeComposition,
+                        },
                     PropertyGroups = new PropertyGroupCollection(
-                       new List<PropertyGroup>
-                           {
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(numericDt, "type")
-                                        {
-                                            Name = "Type",
-                                            Mandatory = true,
-                                        },
-                                        new PropertyType(numericDt, "discount")
-                                        {
-                                            Name = "Discount",
-                                            Mandatory = true,
-                                        },
-                                        new PropertyType(multinodeProductsDt, "discountItems")
-                                        {
-                                            Name = "Discount Items",
-                                        },
-                                    }))
+                            new List<PropertyGroup>
                                 {
-                                    Name = "Settings",
-                                },
-                           }
-                   ),
+                                    new PropertyGroup(new PropertyTypeCollection(
+                                        true,
+                                        new List<PropertyType>
+                                        {
+                                            new PropertyType(discountTypeDt, "type")
+                                            {
+                                                Name = "Type",
+                                                Mandatory = true,
+                                            },
+                                            new PropertyType(perStoreRangeDt, "discount")
+                                            {
+                                                Name = "Discount",
+                                                Mandatory = true,
+                                            },
+                                            new PropertyType(multinodeProductsDt, "discountItems")
+                                            {
+                                                Name = "Discount Items",
+                                            }
+                                        }))
+                                    {
+                                        Name = "Settings",
+                                    }
+                                }
+                        ),
                 });
+
+
+                var productDiscountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                {
+                    Name = "Product Discounts",
+                    Alias = "ekmProductDiscounts",
+                    Icon = "icon-bulleted-list",
+                    AllowedContentTypes = new List<ContentTypeSort>
+                    {
+                        new ContentTypeSort(productDiscountCt.Id, 1),
+                    },
+                });
+
+
+                //var couponCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                //{
+                //    Name = "Coupon",
+                //    Alias = "ekmCoupon",
+                //    Icon = "icon-coin-euro",
+                //    PropertyGroups = new PropertyGroupCollection(
+                //        new List<PropertyGroup>
+                //            {
+                //                new PropertyGroup(new PropertyTypeCollection(
+                //                    true,
+                //                    new List<PropertyType>
+                //                    {
+                //                        new PropertyType(numericDt, "count")
+                //                        {
+                //                            Name = "Count",
+                //                        },
+                //                    }))
+                //                {
+                //                    Name = "Settings",
+                //                },
+                //            }
+                //    ),
+                //});
+
+                //var discountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                //{
+                //    Name = "Discount",
+                //    Alias = "ekmDiscount",
+                //    Icon = "icon-bill-euro",
+                //    ContentTypeComposition = new List<IContentTypeComposition>
+                //    {
+                //        baseComposition,
+                //        rangeComposition,
+                //    },
+                //    PropertyGroups = new PropertyGroupCollection(
+                //        new List<PropertyGroup>
+                //            {
+                //                new PropertyGroup(new PropertyTypeCollection(
+                //                    true,
+                //                    new List<PropertyType>
+                //                    {
+                //                        new PropertyType(discountTypeDt, "type")
+                //                        {
+                //                            Name = "Type",
+                //                            Mandatory = true,
+                //                        },
+                //                        new PropertyType(numericDt, "discount")
+                //                        {
+                //                            Name = "Discount",
+                //                            Mandatory = true,
+                //                        },
+                //                        new PropertyType(multinodeProductsDt, "discountItems")
+                //                        {
+                //                            Name = "Discount Items",
+                //                        },
+                //                        new PropertyType(booleanDt, "exclusive")
+                //                        {
+                //                            Name = "Exclusive",
+                //                        },
+                //                    }))
+                //                {
+                //                    Name = "Settings",
+                //                },
+                //                new PropertyGroup(new PropertyTypeCollection(
+                //                    true,
+                //                    new List<PropertyType>
+                //                    {
+                //                        new PropertyType(couponDt, "coupons")
+                //                        {
+                //                            Name = "Coupons",
+                //                        },
+                //                    }))
+                //                {
+                //                    Name = "Coupons",
+                //                },
+                //            }
+                //    ),
+                //});
+                //var productDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
+                //{
+                //    Name = "Product Discount",
+                //    Alias = "ekmProductDiscount",
+                //    Icon = "icon-bill-dollar",
+                //    ContentTypeComposition = new List<IContentTypeComposition>
+                //    {
+                //        baseComposition,
+                //        rangeComposition,
+                //    },
+                //    PropertyGroups = new PropertyGroupCollection(
+                //       new List<PropertyGroup>
+                //           {
+                //                new PropertyGroup(new PropertyTypeCollection(
+                //                    true,
+                //                    new List<PropertyType>
+                //                    {
+                //                        new PropertyType(numericDt, "type")
+                //                        {
+                //                            Name = "Type",
+                //                            Mandatory = true,
+                //                        },
+                //                        new PropertyType(numericDt, "discount")
+                //                        {
+                //                            Name = "Discount",
+                //                            Mandatory = true,
+                //                        },
+                //                        new PropertyType(multinodeProductsDt, "discountItems")
+                //                        {
+                //                            Name = "Discount Items",
+                //                        },
+                //                    }))
+                //                {
+                //                    Name = "Settings",
+                //                },
+                //           }
+                //   ),
+                //});
 
                 var discountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
@@ -829,8 +984,8 @@ namespace Ekom.App_Start
                     Icon = "icon-bills-euro",
                     AllowedContentTypes = new List<ContentTypeSort>
                     {
-                        new ContentTypeSort(discountCt.Id, 1),
-                        new ContentTypeSort(productDiscountCt.Id, 2),
+                        new ContentTypeSort(orderDiscountsCt.Id, 1),
+                        new ContentTypeSort(productDiscountsCt.Id, 2),
                     },
                 });
 
@@ -859,10 +1014,10 @@ namespace Ekom.App_Start
                                         Name = "Alias",
                                         Description = "Name of the DLL",
                                     },
-                                    new PropertyType(numericDt, "discount")
-                                    {
-                                        Name = "Discount",
-                                    },
+                                    //new PropertyType(numericDt, "discount")
+                                    //{
+                                    //    Name = "Discount",
+                                    //},
                                     new PropertyType(perStoreTextDt, "successUrl")
                                     {
                                         Name = "Success Url",
@@ -879,6 +1034,10 @@ namespace Ekom.App_Start
                                     new PropertyType(mediaPickerDt, "logo")
                                     {
                                         Name = "Logo",
+                                    },
+                                    new PropertyType(textstringDt, "currency")
+                                    {
+                                        Name = "Currency"
                                     },
                                 }))
                             {

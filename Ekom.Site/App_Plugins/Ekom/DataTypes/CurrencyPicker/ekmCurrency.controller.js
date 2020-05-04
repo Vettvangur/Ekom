@@ -1,4 +1,4 @@
-angular.module("umbraco").controller("ekom.currencies", function($scope, assetsService, $http) {
+angular.module("umbraco").controller("Ekom.Currency", function($scope, assetsService, $http) {
 
     $scope.currencies = $scope.model.value;
 
