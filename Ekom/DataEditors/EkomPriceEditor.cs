@@ -9,8 +9,8 @@ namespace Ekom.DataEditors
     /// Umbraco Data Editor for Price values.
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/PriceEditor/ekmPrice.controller", Priority = 1)]
-    [DataEditor("Ekom.Price", "Ekom Price Editor", "~/App_Plugins/Ekom/DataTypes/PriceEditor/ekmPrice", ValueType = ValueTypes.Json)]
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/PriceEditor/ekmPrice.controller.js", Priority = 1)]
+    [DataEditor("Ekom.Price", "Ekom Price Editor", "~/App_Plugins/Ekom/DataTypes/PriceEditor/ekmPrice.html", ValueType = ValueTypes.Json)]
     public class EkomPriceEditor : DataEditor
     {
         /// <summary>

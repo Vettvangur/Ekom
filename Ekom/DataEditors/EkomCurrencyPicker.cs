@@ -9,8 +9,8 @@ namespace Ekom.DataEditors
     /// Umbraco Data Editor for Currency values.
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/CurrencyPicker/ekmCurrency.controller", Priority = 1)]
-    [DataEditor("Ekom.Currency", "Ekom Currency Picker", "~/App_Plugins/Ekom/DataTypes/CurrencyPicker/ekmCurrency", ValueType = ValueTypes.Json)]
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/CurrencyPicker/ekmCurrency.controller.js", Priority = 1)]
+    [DataEditor("Ekom.Currency", "Ekom Currency Picker", "~/App_Plugins/Ekom/DataTypes/CurrencyPicker/ekmCurrency.html", ValueType = ValueTypes.Json)]
     public class EkomCurrencyPicker : DataEditor
     {
         /// <summary>

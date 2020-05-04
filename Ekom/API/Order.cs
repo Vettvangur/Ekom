@@ -60,6 +60,12 @@ namespace Ekom.API
         public IOrderInfo GetOrder()
         {
             var store = _storeSvc.GetStoreFromCache();
+
+            if (store == null)
+            {
+                return null;
+            }
+
             return GetOrder(store.Alias);
         }
 

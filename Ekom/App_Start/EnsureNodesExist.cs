@@ -49,7 +49,7 @@ namespace Ekom.App_Start
             _logger.Debug<EnsureNodesExist>("Ensuring Umbraco nodes exist");
 
             // Test for existence of Ekom root node
-            if (!_contentService.GetRootContent().Any(x => x.ContentType.Alias == "ekom"))
+            if (!_contentService.GetRootContent().Any(x => x.ContentType.Alias == "ekom" && !x.Trashed))
             {
                 #region Property Editors
 
@@ -670,7 +670,9 @@ namespace Ekom.App_Start
                 {
                     Name = "Category",
                     Alias = "ekmCategory",
-                    AllowedContentTypes = new List<ContentTypeSort> { },
+                    AllowedContentTypes = new List<ContentTypeSort> {
+                        new ContentTypeSort(productCt.Id, 1)
+                    },
                     Icon = "icon-folder",
                     PropertyGroups = new PropertyGroupCollection(
                             new List<PropertyGroup>
@@ -713,15 +715,16 @@ namespace Ekom.App_Start
                                 },
                             }),
                 });
-                categoryCt.AllowedContentTypes
-                    = categoryCt.AllowedContentTypes.Append(
-                        new ContentTypeSort(categoryCt.Id, 1)
-                    );
-                categoryCt.AllowedContentTypes
-                    = categoryCt.AllowedContentTypes.Append(
-                        new ContentTypeSort(productCt.Id, 2)
-                    );
-                _contentTypeService.Save(categoryCt);
+
+                if (!categoryCt.AllowedContentTypes.Any(x => x.Alias == categoryCt.Alias))
+                {
+                    categoryCt.AllowedContentTypes
+                        = categoryCt.AllowedContentTypes.Append(
+                            new ContentTypeSort(categoryCt.Id, 1)
+                        );
+
+                    _contentTypeService.Save(categoryCt);
+                }
 
                 var catalogCt = EnsureContentTypeExists(new ContentType(catalogContainer.Id)
                 {
@@ -792,7 +795,7 @@ namespace Ekom.App_Start
                                         }))
                                     {
                                         Name = "Coupons",
-                                    },
+                                    }
                                 }
                         ),
                 });
@@ -847,7 +850,6 @@ namespace Ekom.App_Start
                         ),
                 });
 
-
                 var productDiscountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
                     Name = "Product Discounts",
@@ -858,124 +860,6 @@ namespace Ekom.App_Start
                         new ContentTypeSort(productDiscountCt.Id, 1),
                     },
                 });
-
-
-                //var couponCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
-                //{
-                //    Name = "Coupon",
-                //    Alias = "ekmCoupon",
-                //    Icon = "icon-coin-euro",
-                //    PropertyGroups = new PropertyGroupCollection(
-                //        new List<PropertyGroup>
-                //            {
-                //                new PropertyGroup(new PropertyTypeCollection(
-                //                    true,
-                //                    new List<PropertyType>
-                //                    {
-                //                        new PropertyType(numericDt, "count")
-                //                        {
-                //                            Name = "Count",
-                //                        },
-                //                    }))
-                //                {
-                //                    Name = "Settings",
-                //                },
-                //            }
-                //    ),
-                //});
-
-                //var discountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
-                //{
-                //    Name = "Discount",
-                //    Alias = "ekmDiscount",
-                //    Icon = "icon-bill-euro",
-                //    ContentTypeComposition = new List<IContentTypeComposition>
-                //    {
-                //        baseComposition,
-                //        rangeComposition,
-                //    },
-                //    PropertyGroups = new PropertyGroupCollection(
-                //        new List<PropertyGroup>
-                //            {
-                //                new PropertyGroup(new PropertyTypeCollection(
-                //                    true,
-                //                    new List<PropertyType>
-                //                    {
-                //                        new PropertyType(discountTypeDt, "type")
-                //                        {
-                //                            Name = "Type",
-                //                            Mandatory = true,
-                //                        },
-                //                        new PropertyType(numericDt, "discount")
-                //                        {
-                //                            Name = "Discount",
-                //                            Mandatory = true,
-                //                        },
-                //                        new PropertyType(multinodeProductsDt, "discountItems")
-                //                        {
-                //                            Name = "Discount Items",
-                //                        },
-                //                        new PropertyType(booleanDt, "exclusive")
-                //                        {
-                //                            Name = "Exclusive",
-                //                        },
-                //                    }))
-                //                {
-                //                    Name = "Settings",
-                //                },
-                //                new PropertyGroup(new PropertyTypeCollection(
-                //                    true,
-                //                    new List<PropertyType>
-                //                    {
-                //                        new PropertyType(couponDt, "coupons")
-                //                        {
-                //                            Name = "Coupons",
-                //                        },
-                //                    }))
-                //                {
-                //                    Name = "Coupons",
-                //                },
-                //            }
-                //    ),
-                //});
-                //var productDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
-                //{
-                //    Name = "Product Discount",
-                //    Alias = "ekmProductDiscount",
-                //    Icon = "icon-bill-dollar",
-                //    ContentTypeComposition = new List<IContentTypeComposition>
-                //    {
-                //        baseComposition,
-                //        rangeComposition,
-                //    },
-                //    PropertyGroups = new PropertyGroupCollection(
-                //       new List<PropertyGroup>
-                //           {
-                //                new PropertyGroup(new PropertyTypeCollection(
-                //                    true,
-                //                    new List<PropertyType>
-                //                    {
-                //                        new PropertyType(numericDt, "type")
-                //                        {
-                //                            Name = "Type",
-                //                            Mandatory = true,
-                //                        },
-                //                        new PropertyType(numericDt, "discount")
-                //                        {
-                //                            Name = "Discount",
-                //                            Mandatory = true,
-                //                        },
-                //                        new PropertyType(multinodeProductsDt, "discountItems")
-                //                        {
-                //                            Name = "Discount Items",
-                //                        },
-                //                    }))
-                //                {
-                //                    Name = "Settings",
-                //                },
-                //           }
-                //   ),
-                //});
 
                 var discountsCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                 {
@@ -1117,7 +1001,7 @@ namespace Ekom.App_Start
                                         Name = "Culture",
                                         Mandatory = true,
                                     },
-                                    new PropertyType(textstringDt, "currency")
+                                    new PropertyType(currencyDt, "currency")
                                     {
                                         Name = "Currency",
                                     },
@@ -1217,24 +1101,24 @@ namespace Ekom.App_Start
                 // Content creation disabled until Umbraco patch
                 // https://github.com/umbraco/Umbraco-CMS/issues/5281
 
-                //var ekom = EnsureContentExists("Ekom", "ekom");
-                //var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
-                //EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
-                //EnsureContentExists("Payment Providers", "netPaymentProviders", ekom.Id);
-                //EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
-                //EnsureContentExists("Stores", "ekmStores", ekom.Id);
-                //EnsureContentExists("Zones", "ekmZones", ekom.Id);
+                var ekom = EnsureContentExists("Ekom", "ekom");
+                var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
+                EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
+                EnsureContentExists("Payment Providers", "netPaymentProviders", ekom.Id);
+                EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
+                EnsureContentExists("Stores", "ekmStores", ekom.Id);
+                EnsureContentExists("Zones", "ekmZones", ekom.Id);
 
-                //var multiNodeProductsPickerConfiguration = (multinodeProductsDt.Configuration as MultiNodePickerConfiguration);
-                //if (multiNodeProductsPickerConfiguration.TreeSource?.StartNodeId == null)
-                //{
-                //    multiNodeProductsPickerConfiguration.TreeSource = new MultiNodePickerConfigurationTreeSource
-                //    {
-                //        ObjectType = "content",
-                //        StartNodeId = new GuidUdi("document", catalog.Key),
-                //    };
-                //    _dataTypeService.Save(multinodeProductsDt);
-                //}
+                var multiNodeProductsPickerConfiguration = (multinodeProductsDt.Configuration as MultiNodePickerConfiguration);
+                if (multiNodeProductsPickerConfiguration.TreeSource?.StartNodeId == null)
+                {
+                    multiNodeProductsPickerConfiguration.TreeSource = new MultiNodePickerConfigurationTreeSource
+                    {
+                        ObjectType = "content",
+                        StartNodeId = new GuidUdi("document", catalog.Key),
+                    };
+                    _dataTypeService.Save(multinodeProductsDt);
+                }
 
                 #endregion
             }

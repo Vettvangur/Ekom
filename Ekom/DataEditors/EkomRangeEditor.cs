@@ -9,8 +9,8 @@ namespace Ekom.DataEditors
     /// Umbraco Data Editor for Range values.
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/RangeEditor/ekmRange.controller", Priority = 1)]
-    [DataEditor("Ekom.Range", "Ekom Range Editor", "~/App_Plugins/Ekom/DataTypes/RangeEditor/ekmRange", ValueType = ValueTypes.Json)]
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/RangeEditor/ekmRange.controller.js", Priority = 1)]
+    [DataEditor("Ekom.Range", "Ekom Range Editor", "~/App_Plugins/Ekom/DataTypes/RangeEditor/ekmRange.html", ValueType = ValueTypes.Json)]
     public class EkomRangeEditor : DataEditor
     {
         /// <summary>
