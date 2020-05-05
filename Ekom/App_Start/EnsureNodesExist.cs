@@ -509,6 +509,10 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Title",
                                         },
+                                        new PropertyType(perStoreTextDt, "slug")
+                                        {
+                                            Name = "Slug",
+                                        },
                                         new PropertyType(textstringDt, "sku")
                                         {
                                             Name = "SKU",
@@ -520,10 +524,6 @@ namespace Ekom.App_Start
                                         new PropertyType(multipleMediaPickerDt, "images")
                                         {
                                             Name = "Images",
-                                        },
-                                        new PropertyType(perStoreTextDt, "slug")
-                                        {
-                                            Name = "Slug",
                                         },
                                         new PropertyType(perStorePriceDt, "price")
                                         {
@@ -545,7 +545,19 @@ namespace Ekom.App_Start
                                     }))
                                 {
                                     Name = "Product"
-                                }
+                                },
+                                new PropertyGroup(new PropertyTypeCollection(
+                                    true,
+                                    new List<PropertyType>
+                                    {
+                                        new PropertyType(perStoreBoolDt, "disable")
+                                        {
+                                            Name = "Disable",
+                                        },
+                                    }))
+                                {
+                                    Name = "Stores",
+                                },
                             }),
                     }
                 );
@@ -982,9 +994,6 @@ namespace Ekom.App_Start
 
                 #region Content Nodes
 
-                // Content creation disabled until Umbraco patch
-                // https://github.com/umbraco/Umbraco-CMS/issues/5281
-
                 var ekom = EnsureContentExists("Ekom", "ekom");
                 var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
                 EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
@@ -1100,6 +1109,7 @@ namespace Ekom.App_Start
                 throw new EnsureNodesException($"Unable to SaveAndPublish {name} content with doc type {documentTypeAlias} and parent {parentId}");
             }
         }
+
         public void Terminate()
         {
         }
