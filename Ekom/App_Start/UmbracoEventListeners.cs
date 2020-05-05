@@ -61,7 +61,7 @@ namespace Ekom.App_Start
                 {
                     if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant")
                     {
-                        UpdateSlug(content, alias, e);
+                        UpdatePropertiesDefaultValues(content, alias, e);
                     }
                 }
                 catch (Exception ex)
@@ -133,7 +133,7 @@ namespace Ekom.App_Start
             );
         }
 
-        private void UpdateSlug(
+        private void UpdatePropertiesDefaultValues(
             IContent content,
             string alias,
             PublishEventArgs<IContent> e)
@@ -155,8 +155,9 @@ namespace Ekom.App_Start
                 if (string.IsNullOrEmpty(title))
                 {
                     title = name;
-                    titleItems.Add(store.Alias, title);
                 }
+
+                titleItems.Add(store.Alias, title);
 
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
