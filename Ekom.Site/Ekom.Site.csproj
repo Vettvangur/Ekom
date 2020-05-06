@@ -503,6 +503,7 @@
     <Content Include="Views\Partials\Store\_ProductItem.cshtml" />
     <Content Include="Views\Partials\Grid\Foundation.cshtml" />
     <Content Include="Views\EkomManager\Index.cshtml" />
+    <Content Include="Views\Partials\Grid\Bootstrap2.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

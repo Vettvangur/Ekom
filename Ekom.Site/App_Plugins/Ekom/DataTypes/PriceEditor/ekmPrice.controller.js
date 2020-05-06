@@ -1,60 +1,88 @@
-angular.module("umbraco").controller("Ekom.Price", function ($scope, $http) {
+angular.module("umbraco").controller("Ekom.Price", function($scope, $http) {
+    $scope.fieldAlias = $scope.model.alias;
 
-  if (typeof $scope.model.value === 'object' && $scope.model.value !== null && $scope.model.value !== '') {
-    $scope.prices = $scope.model.value;
-  } else {
+    //$scope.currencies = [];
+    $scope.stores = [];
 
-    if ($scope.model.value !== undefined) {
-      $scope.prices = $scope.model.value.replace(/,/g, '.');
-    }
-  }
+    $http.get('/umbraco/backoffice/ekom/api/getAllStores').then(function(results) {
 
-  $scope.fieldAlias = $scope.model.alias;
+        $scope.stores = results.data;
 
-  $scope.storeAlias = $scope.model.alias.split('.')[1];
+        // Set default prices value from existing value
+        if (typeof $scope.model.value === 'object' && $scope.model.value !== null && $scope.model.value !== '') {
+            // If model value is json then return
 
-  $scope.currencies = [];
+            if ($scope.model.value.hasOwnProperty('values')) {
 
-  $http.get('/umbraco/backoffice/ekom/api/getAllStores').then(function (results) {
+                var temp1 = $scope.model.value.values;
 
-    let store = results.data.find(o => o.Alias === $scope.storeAlias);
+                Object.keys(temp1).forEach(key => temp1[key] = JSON.parse(temp1[key]));
 
-    if (isFinite($scope.prices)) {
+                $scope.prices = temp1;
 
-      $scope.prices = [];
+            } else {
+                $scope.prices = $scope.model.value;
+            }
 
-      for (c = 0; store.Currencies.length > c; c += 1) {
+        } else {
+            // If model value is not json then return as decimal
+            if ($scope.model.value !== undefined) {
+                $scope.prices = $scope.model.value.replace(/,/g, '.');
+            }
+        }
 
-        $scope.prices.push({
-          Currency: store.Currencies[c].CurrencyValue,
-          Price: parseFloat($scope.model.value.replace(/,/g, '.'))
-        });
+        // Backward Compatability if value is decimal and not json
+        if (isFinite($scope.prices)) {
 
-      }
+            $scope.prices = {};
 
-    }
+            for (s = 0; $scope.stores.length > s; s += 1) {
 
-    $scope.currencies = store.Currencies;
+                let store = $scope.stores[s];
 
-    if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
+                $scope.prices[store.Alias] = [];
 
-      $scope.prices = [];
+                for (c = 0; store.Currencies.length > c; c += 1) {
 
-      for (i = 0; $scope.currencies.length > i; i += 1) {
+                    $scope.prices[store.Alias].push({
+                        Currency: store.Currencies[c].CurrencyValue,
+                        Price: parseFloat($scope.model.value.replace(/,/g, '.'))
+                    });
 
-        $scope.prices.push({
-          "Price": 0, "Currency": $scope.currencies[i].CurrencyValue
-        });
+                }
 
-      }
+            }
 
-    }
+        }
 
-  });
+        if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
 
-  $scope.$on("formSubmitting", function () {
+            $scope.prices = {};
 
-    $scope.model.value = $scope.prices;
-  });
+            for (s = 0; $scope.stores.length > s; s += 1) {
+   
+                let store = $scope.stores[s];
+
+                $scope.prices[store.Alias] = [];
+
+                for (c = 0; store.Currencies.length > c; c += 1) {
+
+                    $scope.prices[store.Alias].push({
+                        Currency: store.Currencies[c].CurrencyValue,
+                        Price: 0
+                    });
+
+                }
+
+            }
+
+        }
+
+    });
+
+    $scope.$on("formSubmitting", function() {
+
+        $scope.model.value = $scope.prices;
+    });
 
 });

@@ -1,3 +1,4 @@
+using Ekom.Models;
 using System;
 using System.Collections.Generic;
 using Umbraco.Core.Models.PublishedContent;
@@ -13,7 +14,11 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Variant group Images
         /// </summary>
-        IEnumerable<IPublishedContent> Images { get; }
+        IEnumerable<Image> Images();
+        /// <summary>
+        /// Get the Primary variant price, if no variants then fallback to product price
+        /// </summary>
+        IPrice Price { get; }
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>

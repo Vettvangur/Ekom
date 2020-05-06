@@ -39,8 +39,10 @@ namespace Ekom.Models
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
 
-        public virtual ProductDiscount ProductDiscount(string price)
+        public virtual ProductDiscount ProductDiscount(string price = null)
         {
+            price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
+
             return Current.Factory.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["__Key"]), Store.Alias, price);
         }
 
@@ -112,11 +114,21 @@ namespace Ekom.Models
         // </summary>
         public virtual IEnumerable<Image> Images()
         {
-            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
-
-            var _images = Properties.GetPropertyValue(value ?? "images", Store.Alias);
+            var _images = Properties.GetPropertyValue(Configuration.Current.CustomImage, Store.Alias);
 
             var imageNodes = _images.GetImages();
+
+            var primaryVariantGroup = PrimaryVariantGroup;
+
+            if (!imageNodes.Any() && primaryVariantGroup != null)
+            {
+                imageNodes = PrimaryVariantGroup.Images();
+
+                if (!imageNodes.Any() && primaryVariantGroup.Variants.Any())
+                {
+                    imageNodes = PrimaryVariantGroup.Variants.FirstOrDefault().Images();
+                }
+            }
 
             return imageNodes;
         }
@@ -130,17 +142,20 @@ namespace Ekom.Models
         {
             get
             {
-                var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
-
-                if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
+                if (Properties.ContainsKey("primaryVariantGroup"))
                 {
-                    var node = NodeHelper.GetNodeByUdi(primaryGroupValue);
+                    var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
 
-                    if (node != null)
+                    if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
                     {
-                        var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+                        var node = NodeHelper.GetNodeByUdi(primaryGroupValue);
 
-                        return variantGroup.Value;
+                        if (node != null)
+                        {
+                            var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+
+                            return variantGroup.Value;
+                        }
                     }
                 }
 

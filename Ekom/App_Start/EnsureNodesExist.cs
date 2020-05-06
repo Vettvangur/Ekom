@@ -21,6 +21,7 @@ namespace Ekom.App_Start
         private readonly ILogger _logger;
         private readonly Configuration _configuration;
         private readonly IContentService _contentService;
+        private readonly IFileService _fileService;
         private readonly IContentTypeService _contentTypeService;
         private readonly IDataTypeService _dataTypeService;
         private readonly PropertyEditorCollection _propertyEditorCollection;
@@ -28,6 +29,7 @@ namespace Ekom.App_Start
 
         public EnsureNodesExist(
             ILogger logger,
+            IFileService fileService,
             IContentService contentService,
             IContentTypeService contentTypeService,
             IDataTypeService dataTypeService,
@@ -36,6 +38,7 @@ namespace Ekom.App_Start
             IUmbracoContextFactory contextFactory)
         {
             _logger = logger;
+            _fileService = fileService;
             _contentService = contentService;
             _contentTypeService = contentTypeService;
             _dataTypeService = dataTypeService;
@@ -101,12 +104,6 @@ namespace Ekom.App_Start
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.MultiNodeTreePicker property editor, failed creating Ekom nodes.");
                 }
-                //if (!_propertyEditorCollection.TryGet("Umbraco.Grid", out IDataEditor gridEditor))
-                //{
-                //    // Should never happen
-                //    throw new EnsureNodesException(
-                //        "Unable to find Umbraco.Grid property editor, failed creating Ekom nodes.");
-                //}
                 if (!_propertyEditorCollection.TryGet("Our.Umbraco.Vorto", out IDataEditor editor))
                 {
                     throw new EnsureNodesException(
@@ -116,6 +113,28 @@ namespace Ekom.App_Start
                 {
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.DropDown.Flexible property editor, failed creating Ekom nodes.");
+                }
+
+                #endregion
+
+                #region Templates
+
+                var allTemplates = _fileService.GetTemplates();
+
+                var productTemplate = allTemplates.FirstOrDefault(x => x.Alias.ToLowerInvariant() == "product" || x.Alias.ToLowerInvariant() == "ekmproduct");
+                var categoryTemplate = allTemplates.FirstOrDefault(x => x.Alias.ToLowerInvariant() == "category" || x.Alias.ToLowerInvariant() == "ekmcategory");
+
+                var productTemplates = new List<ITemplate>();
+                var categoryTemplates = new List<ITemplate>();
+
+                if (productTemplate !=null)
+                {
+                    productTemplates.Add(productTemplate);
+                }
+
+                if (categoryTemplate != null)
+                {
+                    categoryTemplates.Add(categoryTemplate);
                 }
 
                 #endregion
@@ -220,36 +239,7 @@ namespace Ekom.App_Start
                 {
                     Name = "Ekom - Range",
                 });
-                var perStoreRangeDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-                {
-                    Name = "Ekom - Range - Per Store",
-                    Configuration = new VortoConfiguration
-                    {
-                        DataType = new DataTypeInfo
-                        {
-                            Guid = rangeDt.Key,
-                            Name = rangeDt.Name,
-                            PropertyEditorAlias = rangeDt.EditorAlias,
-                        },
-                        MandatoryBehaviour = "primary",
-                        LanguageSource = "custom",
-                    },
-                });
-                var perStorePriceDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-                {
-                    Name = "Ekom - Price - Per Store",
-                    Configuration = new VortoConfiguration
-                    {
-                        DataType = new DataTypeInfo
-                        {
-                            Guid = priceDt.Key,
-                            Name = priceDt.Name,
-                            PropertyEditorAlias = priceDt.EditorAlias,
-                        },
-                        MandatoryBehaviour = "primary",
-                        LanguageSource = "custom",
-                    },
-                });
+
                 var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Stock - Per Store",
@@ -265,11 +255,28 @@ namespace Ekom.App_Start
                         LanguageSource = "custom",
                     },
                 });
-                var multinodeProductsDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
+                var multinodeCatalogDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
                 {
-                    Name = "Ekom - Products - Multinode Tree Picker",
+                    Name = "Ekom - Catalog Picker",
                     Configuration = new MultiNodePickerConfiguration
                     {
+                         Filter = "ekmProduct, ekmProductVariant, ekmCategory"
+                    }
+                });
+                var multinodeProductDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Product Picker",
+                    Configuration = new MultiNodePickerConfiguration
+                    {
+                        Filter = "ekmProduct"
+                    }
+                });
+                var multinodeCategoryDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Category Picker",
+                    Configuration = new MultiNodePickerConfiguration
+                    {
+                        Filter = "ekmCategory"
                     }
                 });
                 var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, ekmDtContainer.Id)
@@ -292,7 +299,18 @@ namespace Ekom.App_Start
                         }
                     },
                 });
-
+                var variantGroupDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
+                {
+                    Name = "Ekom - Variant Group Picker",
+                    Configuration = new MultiNodePickerConfiguration
+                    {
+                         TreeSource = new MultiNodePickerConfigurationTreeSource()
+                         {
+                              StartNodeQuery = "$current"
+                         },
+                          MaxNumber = 1
+                    }
+                });
                 #endregion
 
                 var ekmDocTypeContainer = EnsureContainerExists("Ekom");
@@ -311,7 +329,7 @@ namespace Ekom.App_Start
                     {
                         Name = "Base Composition",
                         Alias = "ekmBaseComposition",
-
+                        SortOrder = 10,
                         PropertyGroups = new PropertyGroupCollection(
                             new List<PropertyGroup>
                             {
@@ -364,7 +382,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Zone",
                                         },
-                                        new PropertyType(perStorePriceDt, "price")
+                                        new PropertyType(priceDt, "price")
                                         {
                                             Name = "Price",
                                         },
@@ -381,6 +399,7 @@ namespace Ekom.App_Start
                     {
                         Name = "Range Composition",
                         Alias = "ekmRange",
+                        SortOrder = 20,
 
                         PropertyGroups = new PropertyGroupCollection(
                             new List<PropertyGroup>
@@ -389,13 +408,15 @@ namespace Ekom.App_Start
                                     true,
                                     new List<PropertyType>
                                     {
-                                        new PropertyType(perStoreRangeDt, "startOfRange")
+                                        new PropertyType(rangeDt, "startOfRange")
                                         {
                                             Name = "Start of Range",
+                                            SortOrder = 20
                                         },
-                                        new PropertyType(perStoreRangeDt, "endOfRange")
+                                        new PropertyType(rangeDt, "endOfRange")
                                         {
                                             Name = "End of Range",
+                                            SortOrder = 21
                                         },
                                     }))
                                 {
@@ -426,13 +447,17 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Title",
                                         },
-                                        new PropertyType(perStorePriceDt, "price")
-                                        {
-                                            Name = "Price",
-                                        },
                                         new PropertyType(textstringDt, "sku")
                                         {
                                             Name = "SKU",
+                                        },
+                                        new PropertyType(multipleMediaPickerDt, "images")
+                                        {
+                                            Name = "Images",
+                                        },
+                                        new PropertyType(priceDt, "price")
+                                        {
+                                            Name = "Price",
                                         },
                                         new PropertyType(_configuration.PerStoreStock ? perStoreStockDt : stockDt, "stock")
                                         {
@@ -441,19 +466,7 @@ namespace Ekom.App_Start
                                     }))
                                 {
                                     Name = "Variant",
-                                },
-                                new PropertyGroup(new PropertyTypeCollection(
-                                    true,
-                                    new List<PropertyType>
-                                    {
-                                        new PropertyType(multipleMediaPickerDt, "images")
-                                        {
-                                            Name = "Images",
-                                        },
-                                    }))
-                                {
-                                    Name = "Details",
-                                },
+                                }
                             }),
                     }
                 );
@@ -479,6 +492,14 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Title",
                                         },
+                                        new PropertyType(multipleMediaPickerDt, "images")
+                                        {
+                                            Name = "Images",
+                                        },
+                                        new PropertyType(textstringDt, "color")
+                                        {
+                                            Name = "Color",
+                                        },
                                     }))
                                 {
                                     Name = "Variant Group",
@@ -493,6 +514,7 @@ namespace Ekom.App_Start
                         Name = "Product",
                         Alias = "ekmProduct",
                         Icon = "icon-loupe",
+                        AllowedTemplates = productTemplates,
                         AllowedContentTypes = new List<ContentTypeSort>
                         {
                             new ContentTypeSort(productVariantCt.Id, 1),
@@ -525,7 +547,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Images",
                                         },
-                                        new PropertyType(perStorePriceDt, "price")
+                                        new PropertyType(priceDt, "price")
                                         {
                                             Name = "Price",
                                         },
@@ -538,9 +560,13 @@ namespace Ekom.App_Start
                                             Name = "Product Categories",
                                             Description = "Allows a product to belong to categories other than it's umbraco node parent categories. A single product node can therefore belong to multiple logical category tree hierarchies.",
                                         },
-                                        new PropertyType(multinodeProductsDt, "relatedProducts")
+                                        new PropertyType(multinodeProductDt, "relatedProducts")
                                         {
                                             Name = "Related products",
+                                        },
+                                        new PropertyType(variantGroupDt, "primaryVariantGroup")
+                                        {
+                                            Name = "Primary Variant Group",
                                         },
                                     }))
                                 {
@@ -570,6 +596,7 @@ namespace Ekom.App_Start
                         new ContentTypeSort(productCt.Id, 1)
                     },
                     Icon = "icon-folder",
+                    AllowedTemplates = categoryTemplates,
                     PropertyGroups = new PropertyGroupCollection(
                             new List<PropertyGroup>
                             {
@@ -658,23 +685,28 @@ namespace Ekom.App_Start
                                             {
                                                 Name = "Type",
                                                 Mandatory = true,
+                                                SortOrder = 5,
                                             },
-                                            new PropertyType(perStoreRangeDt, "discount")
+                                            new PropertyType(rangeDt, "discount")
                                             {
                                                 Name = "Discount",
                                                 Mandatory = true,
+                                                SortOrder = 6,
                                             },
-                                            new PropertyType(multinodeProductsDt, "discountItems")
+                                            new PropertyType(multinodeCatalogDt, "discountItems")
                                             {
                                                 Name = "Discount Items",
+                                                SortOrder = 7,
                                             },
                                             new PropertyType(booleanDt, "exclusive")
                                             {
                                                 Name = "Exclusive",
+                                                SortOrder = 8,
                                             },
                                             new PropertyType(booleanDt, "stackable")
                                             {
                                                 Name = "Stackable",
+                                                SortOrder = 9,
                                             },
                                         }))
                                     {
@@ -728,15 +760,18 @@ namespace Ekom.App_Start
                                             {
                                                 Name = "Type",
                                                 Mandatory = true,
+                                                SortOrder = 5,
                                             },
-                                            new PropertyType(perStoreRangeDt, "discount")
+                                            new PropertyType(rangeDt, "discount")
                                             {
                                                 Name = "Discount",
                                                 Mandatory = true,
+                                                SortOrder = 6,
                                             },
-                                            new PropertyType(multinodeProductsDt, "discountItems")
+                                            new PropertyType(multinodeCatalogDt, "discountItems")
                                             {
                                                 Name = "Discount Items",
+                                                SortOrder = 7,
                                             }
                                         }))
                                     {
@@ -998,20 +1033,11 @@ namespace Ekom.App_Start
                 var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
                 EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
                 EnsureContentExists("Payment Providers", "netPaymentProviders", ekom.Id);
-                EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
+                var discounts = EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
+                EnsureContentExists("Product Discounts", "ekmProductDiscounts", discounts.Id);
+                EnsureContentExists("Order Discounts", "ekmOrderDiscounts", discounts.Id);
                 EnsureContentExists("Stores", "ekmStores", ekom.Id);
                 EnsureContentExists("Zones", "ekmZones", ekom.Id);
-
-                var multiNodeProductsPickerConfiguration = (multinodeProductsDt.Configuration as MultiNodePickerConfiguration);
-                if (multiNodeProductsPickerConfiguration.TreeSource?.StartNodeId == null)
-                {
-                    multiNodeProductsPickerConfiguration.TreeSource = new MultiNodePickerConfigurationTreeSource
-                    {
-                        ObjectType = "content",
-                        StartNodeId = new GuidUdi("document", catalog.Key),
-                    };
-                    _dataTypeService.Save(multinodeProductsDt);
-                }
 
                 #endregion
             }

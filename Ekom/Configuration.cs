@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using Umbraco.Core;
-using Umbraco.Core.Models;
 using UmbracoCurrent = Umbraco.Core.Composing.Current;
 
 namespace Ekom
@@ -22,55 +21,55 @@ namespace Ekom
         public static Configuration Current => UmbracoCurrent.Factory.GetInstance<Configuration>();
 
         /// <summary>
-        /// ekmPerStoreStock
+        /// Ekom.PerStoreStock
         /// Controls which stock cache to will be used. Per store or per Product/Variant.
         /// </summary>
         public virtual bool PerStoreStock
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmPerStoreStock"];
+                var value = ConfigurationManager.AppSettings["Ekom.PerStoreStock"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// ekmExamineSearcher
+        /// Ekom.ExamineIndex
         /// Overrides the default of ExternalSearcher
         /// </summary>
         public virtual string ExamineIndex
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmExamineIndex"];
+                var value = ConfigurationManager.AppSettings["Ekom.ExamineIndex"];
 
                 return value ?? "ExternalIndex";
             }
         }
 
         /// <summary>
-        /// ekmShareBasket
+        /// Ekom.ShareBasket
         /// </summary>
         public virtual bool ShareBasketBetweenStores
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmShareBasket"];
+                var value = ConfigurationManager.AppSettings["Ekom.ShareBasket"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// BasketCookieLifetime
+        /// Ekom.BasketCookieLifetime
         /// Set how many days the order cookie should live, Default 1 day
         /// </summary>
         public virtual double BasketCookieLifetime
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmBasketCookieLifetime"];
+                var value = ConfigurationManager.AppSettings["Ekom.BasketCookieLifetime"];
 
                 double _value = 1;
 
@@ -84,31 +83,21 @@ namespace Ekom
         }
 
         /// <summary>
-        /// Numeric format string to use for currency
-        /// https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-numeric-format-strings
+        /// Ekom.CustomImage
+        /// Overrides the default of images
         /// </summary>
-        public virtual string CurrencyFormat
+        public virtual string CustomImage
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmCurrencyFormat"];
+                var value = ConfigurationManager.AppSettings["Ekom.CustomImage"];
 
-                return value ?? "C";
-            }
-        }
-
-        public virtual bool CustomOrderPrice
-        {
-            get
-            {
-                var value = ConfigurationManager.AppSettings["ekmCustomOrderPrice"];
-
-                return value.ConvertToBool();
+                return value ?? "images";
             }
         }
 
         /// <summary>
-        /// ekmVirtualContent
+        /// Ekom.VirtualContent
         /// Allows for configuration of content nodes to use for matching all requests
         /// Use case: Data populated from Navision, Ekom used as in memory cache with no backing umbraco nodes.
         /// </summary>
@@ -116,21 +105,21 @@ namespace Ekom
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmVirtualContent"];
+                var value = ConfigurationManager.AppSettings["Ekom.VirtualContent"];
 
                 return value.ConvertToBool();
             }
         }
 
         /// <summary>
-        /// ekmCategoryRootLevel
+        /// Ekom.CategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>
         public virtual int CategoryRootLevel
         {
             get
             {
-                return int.Parse(ConfigurationManager.AppSettings["ekmCategoryRootLevel"] ?? "3");
+                return int.Parse(ConfigurationManager.AppSettings["Ekom.CategoryRootLevel"] ?? "3");
             }
         }
 
@@ -139,14 +128,14 @@ namespace Ekom
         /// Give value in minutes when overriding default
         /// </summary>
         public virtual TimeSpan ReservationTimeout
-            => TimeSpan.FromMinutes(double.Parse(ConfigurationManager.AppSettings["ekmReservationTimeout"] ?? "30"));
+            => TimeSpan.FromMinutes(double.Parse(ConfigurationManager.AppSettings["Ekom.ReservationTimeout"] ?? "30"));
 
         /// <summary>
         /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
         /// submitted to the checkout controller?
         /// </summary>
         public virtual bool StoreCustomerData
-            => ConfigurationManager.AppSettings["ekmCustomerData"].ConvertToBool();
+            => ConfigurationManager.AppSettings["Ekom.CustomerData"].ConvertToBool();
 
         /// <summary>
         /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
@@ -156,7 +145,7 @@ namespace Ekom
         {
             get
             {
-                var configVal = ConfigurationManager.AppSettings["ekmVatCalcRounding"];
+                var configVal = ConfigurationManager.AppSettings["Ekom.VatCalcRounding"];
 
                 if (!Enum.TryParse(configVal, out Rounding preferredRounding))
                 {
@@ -169,14 +158,14 @@ namespace Ekom
         }
 
         /// <summary>
-        /// ekmUserBasket
+        /// Ekom.UserBasket
         /// Single basket per user, not saved in session or cookie, only on the member under "orderId".
         /// </summary>
         public virtual bool UserBasket
         {
             get
             {
-                var value = ConfigurationManager.AppSettings["ekmUserBasket"];
+                var value = ConfigurationManager.AppSettings["Ekom.UserBasket"];
 
                 return value.ConvertToBool();
             }
@@ -206,20 +195,6 @@ namespace Ekom
                 { UmbracoCurrent.Factory.GetInstance<IPerStoreCache<IDiscount>>() },
             }
         );
-
-        /// <summary>
-        /// ekmUserBasket
-        /// Single basket per user, not saved in session or cookie, only on the member under "orderId".
-        /// </summary>
-        public virtual bool DisableCartImages
-        {
-            get
-            {
-                var value = ConfigurationManager.AppSettings["ekmDisableCartImages"];
-
-                return value.ConvertToBool();
-            }
-        }
 
         /// <summary> 
         /// Returns all <see cref="ICache"/> in the sequence succeeding the given cache 

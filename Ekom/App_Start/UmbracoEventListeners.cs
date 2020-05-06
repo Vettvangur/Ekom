@@ -53,20 +53,28 @@ namespace Ekom.App_Start
             IContentService cs,
             PublishEventArgs<IContent> e)
         {
-            foreach (var content in e.PublishedEntities)
+            // Moved to Saving
+        }
+
+        public void ContentService_Saving(
+            IContentService cs,
+            ContentSavingEventArgs e)
+        {
+
+            foreach (var content in e.SavedEntities)
             {
                 var alias = content.ContentType.Alias;
 
                 try
                 {
-                    if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant")
+                    if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant" || alias == "ekmProductDiscount" || alias == "ekmOrderDiscount")
                     {
                         UpdatePropertiesDefaultValues(content, alias, e);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error<UmbracoEventListeners>("ContentService_Publishing Failed", ex);
+                    _logger.Error<UmbracoEventListeners>("ContentService_Saving Failed", ex);
                     throw;
                 }
             }
@@ -136,10 +144,8 @@ namespace Ekom.App_Start
         private void UpdatePropertiesDefaultValues(
             IContent content,
             string alias,
-            PublishEventArgs<IContent> e)
+            ContentSavingEventArgs e)
         {
-            var parent = UmbHelper.Content(content.ParentId);
-            var siblings = parent.Children().Where(x => x.Id != content.Id && !x.IsPublished());
 
             var stores = API.Store.Instance.GetAllStores();
 
@@ -161,6 +167,9 @@ namespace Ekom.App_Start
 
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
+                    var parent = UmbHelper.Content(content.ParentId);
+                    var siblings = parent.Children().Where(x => x.Id != content.Id && !x.IsPublished());
+
                     var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
 
                     if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))

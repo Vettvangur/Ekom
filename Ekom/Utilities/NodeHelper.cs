@@ -264,6 +264,16 @@ namespace Ekom.Utilities
             string path = "",
             IEnumerable<ISearchResult> allCatalogItems = null)
         {
+            var selfDisableField = GetStoreProperty(searchResult, "disable", store.Alias);
+
+            if (!string.IsNullOrEmpty(selfDisableField))
+            {
+                if (selfDisableField.ConvertToBool())
+                {
+                    return true;
+                }
+            }
+
             path = string.IsNullOrEmpty(path) ? searchResult.Values["__Path"] : path;
 
             allCatalogItems = allCatalogItems == null ? GetAllCatalogItemsFromPath(path) :
@@ -304,6 +314,17 @@ namespace Ekom.Utilities
             string path = "",
             IEnumerable<ISearchResult> allCatalogItems = null)
         {
+
+            var selfDisableField = GetStoreProperty(node, "disable", store.Alias);
+
+            if (!string.IsNullOrEmpty(selfDisableField))
+            {
+                if (selfDisableField.IsBoolean())
+                {
+                    return true;
+                }
+            }
+
             path = string.IsNullOrEmpty(path) ? node.Path : path;
 
             allCatalogItems = allCatalogItems == null ? GetParents(path) : allCatalogItems;

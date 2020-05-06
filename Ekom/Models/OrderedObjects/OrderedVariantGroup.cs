@@ -19,7 +19,6 @@ namespace Ekom.Models.OrderedObjects
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string Title { get; set; }
-        public Guid[] ImageIds { get; set; }
         public IEnumerable<OrderedVariant> Variants { get; set; }
 
         public IReadOnlyDictionary<string, string> Properties;
@@ -39,9 +38,6 @@ namespace Ekom.Models.OrderedObjects
             Id = variantGroup.Id;
             Key = variantGroup.Key;
             Title = variantGroup.Title;
-            ImageIds = variantGroup.Images.Any()
-                ? variantGroup.Images.Select(x => x.Key).ToArray()
-                : new Guid[] { };
 
             var variants = new List<OrderedVariant>
             {
@@ -67,7 +63,6 @@ namespace Ekom.Models.OrderedObjects
             Id = (int)variantGroupObject[nameof(Id)];
             Key = (Guid)variantGroupObject[nameof(Key)];
             Title = (string)variantGroupObject[nameof(Title)];
-            ImageIds = variantGroupObject[nameof(ImageIds)].ToObject<Guid[]>();
 
             var variants = variantGroupObject[nameof(Variants)];
 

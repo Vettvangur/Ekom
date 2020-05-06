@@ -103,6 +103,6 @@ namespace Ekom.Interfaces
         /// <summary>
         /// A discount specific to this product populated after product discount cache is filled.
         /// </summary>
-        ProductDiscount ProductDiscount(string price);
+        ProductDiscount ProductDiscount(string price = null);
     }
 }

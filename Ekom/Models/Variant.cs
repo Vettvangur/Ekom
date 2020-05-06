@@ -151,23 +151,36 @@ namespace Ekom.Models
         {
             get
             {
+                var prices = Prices.ToList();
+
                 if (HttpContext.Current != null)
                 {
                     var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + Store.Alias];
 
                     if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
                     {
-                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
+                        var price = prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
 
                         if (price != null)
                         {
+
+                            if (price.OriginalValue == 0)
+                            {
+                                return Product.Price;
+                            }
+
                             return price;
                         }
                     }
 
                 }
 
-                return Prices.FirstOrDefault();
+                if (prices.FirstOrDefault().OriginalValue == 0)
+                {
+                    return Product.Price;
+                }
+
+                return prices.FirstOrDefault();
 
             }
         }
@@ -195,9 +208,7 @@ namespace Ekom.Models
         // </summary>
         public virtual IEnumerable<Image> Images()
         {
-            var value = ConfigurationManager.AppSettings["ekmCustomImage"];
-
-            var _images = Properties.GetPropertyValue(value ?? "images", Store.Alias);
+            var _images = Properties.GetPropertyValue(Configuration.Current.CustomImage, Store.Alias);
 
             var imageNodes = _images.GetImages();
 

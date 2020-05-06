@@ -1,12 +1,15 @@
 ﻿<div ng-controller="Ekom.Price">
-  
-  <div ng-repeat="item in currencies">
 
-    <div style="margin-bottom:10px;">
-      <label style="display:block;" for="price_{{ item.ISOCurrencySymbol }}_{{ fieldAlias }}">
-        {{ item.ISOCurrencySymbol }}
-      </label>
-      <input type="number" min="0" step="any" id="price_{{ item.ISOCurrencySymbol }}_{{ fieldAlias }}" ng-model="prices[$index].Price"/> <span style="display: inline-block; vertical-align: sub;">{{ item.CurrencySymbol }}</span>
+  <fieldset ng-repeat="store in stores">
+    <legend style="font-size: 18px; font-weight:bold;">{{ store.Alias }}</legend>
+    <div ng-repeat="currency in store.Currencies">
+      <div style="margin-bottom:10px;">
+        <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="price_{{ currency.ISOCurrencySymbol }}_{{ fieldAlias }}_{{ store.Alias }}">
+          {{ currency.ISOCurrencySymbol }}
+        </label>
+        <input type="number" min="0" step="any" id="price_{{ currency.ISOCurrencySymbol }}_{{ fieldAlias }}_{{ store.Alias }}" ng-model="prices[store.Alias][$index].Price" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.CurrencySymbol }}</span>
+      </div>
     </div>
-  </div>
+  <fieldset/>
+
 </div>

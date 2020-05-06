@@ -6,6 +6,7 @@ using Examine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
@@ -37,6 +38,24 @@ namespace Ekom.Models
         /// </summary>
         public Guid ProductKey => Product.Key;
 
+        /// <summary>
+        /// Get the Primary variant price, if no variants then fallback to product price
+        /// </summary>
+        public IPrice Price
+        {
+            get
+            {
+                var variants = Variants;
+
+                if (variants.Any())
+                {
+                    return variants.FirstOrDefault().Price;
+                }
+
+                return Product.Price;
+            }
+        }
+
         // Waiting for variants to be composed with their parent product
         ///// <summary>
         ///// Get the Product Key
@@ -47,19 +66,16 @@ namespace Ekom.Models
         ///// </summary>
         //public int ProductId => Product.Id;
 
-        /// <summary>
-        /// Variant group Images
-        /// </summary>
-        public IEnumerable<IPublishedContent> Images
+        // <summary>
+        // Variant Group images
+        // </summary>
+        public virtual IEnumerable<Image> Images()
         {
-            get
-            {
-                var _images = Properties.GetPropertyValue("images", Store.Alias);
+            var _images = Properties.GetPropertyValue(Configuration.Current.CustomImage, Store.Alias);
 
-                var imageNodes = _images.GetMediaNodes();
+            var imageNodes = _images.GetImages();
 
-                return imageNodes;
-            }
+            return imageNodes;
         }
 
         /// <summary>

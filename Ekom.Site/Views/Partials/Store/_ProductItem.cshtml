@@ -1,5 +1,4 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
-@using Ekom.Utilities;
 
 @{
 
@@ -10,44 +9,30 @@
     {
         var primaryVariantGroup = product.PrimaryVariantGroup;
 
-        var images = product.GetPropertyValue("images").GetImages();
+        var price = primaryVariantGroup != null ? primaryVariantGroup.Price : product.Price;
 
-        var primaryImage = images.FirstOrDefault();
+        var images = product.Images();
 
         <div class="cell @gridSize">
 
             <div class="productItem">
 
-                @if (primaryImage != null)
+                @if (images.Any())
                 {
                     <a href="@product.Url" class="productItem__image">
-                        <img src="@primaryImage.Url?width=370&height=500&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title" />
+                        <img src="@images.FirstOrDefault().Url?width=370&height=500&mode=crop&bgcolor=ffffff&format=jpg" alt="@product.Title" />
                     </a>
                 }
-
 
                 <a href="@product.Url" class="productItem__caption">
                     <strong>@product.Title</strong>
                 </a>
 
-
-                @if (primaryVariantGroup != null && primaryVariantGroup.Variants.Any())
+                @if (price.BeforeDiscount.Value != price.Value)
                 {
-                    if (product.ProductDiscount("") != null)
-                    {
-                        <p class="productItem__beforePrice" style="text-decoration:line-through;">@primaryVariantGroup.Variants.OrderBy(x => x.SortOrder).FirstOrDefault().Price.BeforeDiscount.CurrencyString</p>
-                    }
-                    <p class="productItem__price">@primaryVariantGroup.Variants.OrderBy(x => x.SortOrder).FirstOrDefault().Price.WithVat.CurrencyString</p>
+                    <p class="productItem__beforePrice" style="text-decoration:line-through;">@price.BeforeDiscount.CurrencyString</p>
                 }
-                else
-                {
-                    if (product.ProductDiscount("") != null)
-                    {
-                        <p class="productItem__beforePrice" style="text-decoration:line-through;">@product.Price.BeforeDiscount.CurrencyString</p>
-                    }
-                    <p class="productItem__price">@product.Price.WithVat.CurrencyString</p>
-
-                }
+                <p class="productItem__price">@price.WithVat.CurrencyString</p>
             </div>
         </div>
     }
