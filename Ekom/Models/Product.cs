@@ -257,7 +257,7 @@ namespace Ekom.Models
         {
             get
             {
-                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Key.ToString(), Store.Alias);
+                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Store.Alias, Key.ToString());
 
                 return prices;
             }

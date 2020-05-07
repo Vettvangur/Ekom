@@ -158,16 +158,22 @@ namespace Ekom.Models
 
                 var ranges = Properties.GetPropertyValue("startOfRange", Store.Alias).GetCurrencyValues();
 
-                var rangeItem = ranges.FirstOrDefault();
-
-                var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
-
-                if (ranges.Any(x => x.Currency == currency.CurrencyValue))
+                if (ranges != null && ranges.Any())
                 {
-                    rangeItem = ranges.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
+                    var rangeItem = ranges.FirstOrDefault();
+
+                    var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+
+                    if (ranges.Any(x => x.Currency == currency.CurrencyValue))
+                    {
+                        rangeItem = ranges.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
+                    }
+
+                    return rangeItem.Value;
                 }
 
-                return rangeItem.Value;
+                return 0;
+
             }
         }
 
@@ -178,16 +184,22 @@ namespace Ekom.Models
 
                 var ranges = Properties.GetPropertyValue("endOfRange", Store.Alias).GetCurrencyValues();
 
-                var rangeItem = ranges.FirstOrDefault();
-
-                var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
-
-                if (ranges.Any(x => x.Currency == currency.CurrencyValue))
+                if (ranges != null && ranges.Any())
                 {
-                    rangeItem = ranges.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
+                    var rangeItem = ranges.FirstOrDefault();
+
+                    var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+
+                    if (ranges.Any(x => x.Currency == currency.CurrencyValue))
+                    {
+                        rangeItem = ranges.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
+                    }
+
+                    return rangeItem.Value;
                 }
 
-                return rangeItem.Value;
+                return 0;
+
             }
         }
         public virtual bool Disabled

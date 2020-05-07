@@ -124,7 +124,22 @@ namespace Ekom.Utilities
                 }
 
             }
-            catch { }
+            catch {
+                try
+                {
+                    var o = JObject.Parse(value);
+
+                    if (o.TryGetValue(storeAlias, out JToken itemValue))
+                    {
+                        return itemValue.ToString();
+                    }
+
+                }
+                catch
+                {
+
+                }
+            }
 
             return string.Empty;
 
