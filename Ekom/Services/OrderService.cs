@@ -569,18 +569,18 @@ namespace Ekom.Services
 
                 orderInfo.orderLines.Add(orderLine);
                
-                if (product.Discount != null)
+                if (product.ProductDiscount() != null
+                // Make sure that the current OrderInfo discount, if there is one, is inclusive
+                // Meaning you can apply this discount while having a seperate discount 
+                // affecting other OrderLines
+                && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
                 {
-                    _logger.Debug<OrderService>($"Discount {product.Discount.Key} found on product, applying to OrderLine");
-                    if (product.Discount.DiscountItems.Contains(product.Key))
-                    {
-                        await ApplyDiscountToOrderLineAsync(
-                            orderLine,
-                            product.Discount,
-                            orderInfo
-                            ).ConfigureAwait(false);
-                    }
-
+                    _logger.Debug<OrderService>($"Discount {product.ProductDiscount().Key} found on product, applying to OrderLine");
+                    await ApplyDiscountToOrderLineAsync(
+                        orderLine,
+                        product.ProductDiscount(),
+                        orderInfo
+                    ).ConfigureAwait(false);
                 }
             }
 

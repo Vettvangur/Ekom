@@ -48,23 +48,17 @@ namespace Ekom.Models.Discounts
                         return DiscountType.Fixed;
                 }
             }
-
         }
-        public virtual DiscountAmount Amount
+        public virtual decimal Amount
         {
             get
             {
-
                 decimal discountAmount = 0;
-
-                var discount = Discounts.FirstOrDefault();
 
                 var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
 
-                if (Discounts.Any(x => x.Currency == currency.CurrencyValue))
-                {
-                    discount = Discounts.FirstOrDefault(x => x.Currency == currency.CurrencyValue);
-                }
+                var discount = Discounts.FirstOrDefault(x => x.Currency == currency.CurrencyValue)
+                    ?? Discounts.First();
 
                 discountAmount = Convert.ToDecimal(discount.Value);
 
@@ -73,23 +67,39 @@ namespace Ekom.Models.Discounts
                     discountAmount /= 100;
                 }
 
-                return new DiscountAmount
-                {
-                    Amount = discountAmount,
-                    Type = Type,
-                };
-            }
-            set
-            {
-
+                return discountAmount;
             }
         }
 
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
-        internal List<Guid> discountItems = new List<Guid>();
-        public virtual List<Guid> DiscountItems => discountItems;
+        public virtual IReadOnlyCollection<Guid> DiscountItems
+        {
+            get
+            {
+                List<Guid> returnList = new List<Guid>();
+
+                var nodes = Properties.GetPropertyValue("discountItems")
+                    .Split(',')
+                    .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
+
+                foreach (var node in nodes.Where(x => x != null))
+                {
+                    returnList.Add(node.Key);
+                    if (node.Children.Any())
+                    {
+                        returnList.AddRange(
+                            node.Descendants()
+                                .Where(x => x.ContentType.Alias == "ekmProduct"
+                                    || x.ContentType.Alias == "ekmProductVariant")
+                                .Select(x => x.Key));
+                    }
+                }
+
+                return returnList.AsReadOnly();
+            }
+        }
 
         /// <summary>
         /// Coupon code activations left
@@ -133,40 +143,15 @@ namespace Ekom.Models.Discounts
         private void Construct()
         {
             Constraints = new Constraints(this);
-
-            var nodes = Properties.GetPropertyValue("discountItems")
-                .Split(',')
-                .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
-
-
-            foreach (var node in nodes)
-            {
-                var descendants = node.Descendants().ToList();
-
-                if (node.ContentType.Alias == "ekmProduct")
-                {
-                    discountItems.Add(node.Key);
-
-                    if (descendants.Any())
-                    {
-                        discountItems.AddRange(
-                            descendants
-                                .Where(x => x.ContentType.Alias == "ekmProductVariant")
-                                .Select(x => x.Key));
-                    }
-                }
-                if (node.ContentType.Alias == "ekmCategory")
-                {
-                    discountItems.AddRange(descendants.Where(x => x.ContentType.Alias == "ekmProduct").Select(x => x.Key));
-                }
-            }
         }
 
-        public virtual List<CurrencyValue> Discounts
+        internal List<CurrencyValue> Discounts
         {
             get
             {
-                return Properties.GetPropertyValue("discount", Store.Alias).GetCurrencyValues();
+                return Properties
+                    .GetPropertyValue("discount", Store.Alias)
+                    .GetCurrencyValues();
             }
         }
 
@@ -180,6 +165,7 @@ namespace Ekom.Models.Discounts
         /// If the discount can be used with productdiscounts
         /// </summary>
         public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
+
         #region Comparisons
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation
@@ -191,30 +177,11 @@ namespace Ekom.Models.Discounts
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
-                return 1;
-            else
-                return -1;
-        }
-        /// <summary>
-        /// <see cref="IComparable{T}"/> implementation
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public int CompareTo(OrderedDiscount other)
-        {
-            if (other == null)
-                return 1;
-
-            else if (Amount.Type != other.Amount.Type)
-                throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
-                return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;

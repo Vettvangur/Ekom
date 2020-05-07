@@ -175,7 +175,7 @@ namespace Ekom.Models
 
                 }
 
-                if (prices.FirstOrDefault().OriginalValue == 0)
+                if (prices.FirstOrDefault()?.OriginalValue == 0)
                 {
                     return Product.Price;
                 }
@@ -189,7 +189,14 @@ namespace Ekom.Models
         {
             get
             {
-                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Store.Alias, Key.ToString());
+                var prices = Properties.GetPropertyValue("price", Store.Alias)
+                    .GetPriceValues(
+                        Store.Currencies,
+                        Vat,
+                        Store.VatIncludedInPrice,
+                        Store.Currency,
+                        Store.Alias,
+                        Key.ToString());
 
                 return prices;
             }

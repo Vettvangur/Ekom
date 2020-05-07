@@ -21,12 +21,8 @@ using Umbraco.Web;
 
 namespace Ekom.Models
 {
-    public class ProductDiscount : PerStoreNodeEntity, IProductDiscount
+    public class ProductDiscount : Discount, IProductDiscount
     {
-
-        protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
-        protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
-
         /// <summary>
         /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
         /// </summary>
@@ -48,34 +44,7 @@ namespace Ekom.Models
 
         }
 
-        public virtual DiscountType Type
-        {
-            get
-            {
-                var typeValue = Properties.GetPropertyValue("type");
-
-                if (int.TryParse(typeValue, out int typeValueInt))
-                {
-                    var dt = DataTypeService.GetDataType(typeValueInt);
-
-                    // FIX: verify
-                    typeValue = dt.ConfigurationAs<string>();
-                }
-
-                switch (typeValue)
-                {
-                    case "Fixed":
-                        return DiscountType.Fixed;
-
-                    case "Percentage":
-                        return DiscountType.Percentage;
-                    default:
-                        return DiscountType.Fixed;
-                }
-            }
-
-        }
-        public virtual decimal Discount
+        public override decimal Amount
         {
 
             get
@@ -113,38 +82,6 @@ namespace Ekom.Models
 
         }
 
-        public virtual List<CurrencyValue> Discounts
-        {
-            get
-            {
-                var items = Properties.GetPropertyValue("discount", Store.Alias).GetCurrencyValues();
-
-                return items;
-            }
-        }
-
-
-        public List<Guid> DiscountItems
-        {
-            get
-            {
-                List<Guid> returnList = new List<Guid>();
-
-                var nodes = Properties.GetPropertyValue("discountItems")
-                    .Split(',')
-                    .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
-
-                foreach (var node in nodes.Where(x => x != null))
-                {
-                    returnList.Add(node.Key);
-                    if (node.Children.Any())
-                    {
-                        returnList.AddRange(node.Descendants().Where(x => x.ContentType.Alias == "ekmProduct" || x.ContentType.Alias == "ekmCategory" || x.ContentType.Alias == "ekmProductVariant").Select(x => x.Key));
-                    }
-                }
-                return returnList;
-            }
-        }
         /// <summary>
         /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
         /// </summary>
@@ -173,7 +110,6 @@ namespace Ekom.Models
                 }
 
                 return 0;
-
             }
         }
 
@@ -199,9 +135,9 @@ namespace Ekom.Models
                 }
 
                 return 0;
-
             }
         }
+
         public virtual bool Disabled
         {
             get
@@ -210,6 +146,5 @@ namespace Ekom.Models
             }
 
         }
-
     }
 }

@@ -97,7 +97,6 @@ namespace Ekom.Models
         private OrderedShippingProvider _shippingProvider;
         public OrderedShippingProvider ShippingProvider
         {
-
             get
             {
                 if (_shippingProvider != null)
@@ -121,7 +120,6 @@ namespace Ekom.Models
         private OrderedPaymentProvider _paymentProvider;
         public OrderedPaymentProvider PaymentProvider
         {
-
             get
             {
                 if (_paymentProvider != null)
@@ -149,7 +147,9 @@ namespace Ekom.Models
         {
             get
             {
-                return OrderLines?.Any() == true ? OrderLines.Sum(x => x.Quantity) : 0;
+                return OrderLines?.Any() == true
+                    ? OrderLines.Sum(x => x.Quantity)
+                    : 0;
             }
         }
 
@@ -168,6 +168,16 @@ namespace Ekom.Models
             }
         }
 
+        private Price LinePriceWithOrderDiscount(IOrderLine line) =>
+            new Price(
+                line.Amount.OriginalValue,
+                StoreInfo.Currency,
+                StoreInfo.Vat,
+                StoreInfo.VatIncludedInPrice,
+                Discount,
+                line.Quantity
+            );
+
         /// <summary>
         /// OrderLines with OrderDiscount included and Vat left as-is
         /// </summary>
@@ -175,25 +185,16 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
-                    var price
-                        = new Price(
-                            line.Amount.OriginalValue,
-                            StoreInfo.Currency,
-                            StoreInfo.Vat,
-                            StoreInfo.VatIncludedInPrice,
-                            line.Product.ProductDiscount,
-                            line.Discount,
-                            true,
-                            SumOriginalPrice,
-                            line.Quantity
-                        );
+                        return lineWithOrderDiscount.AfterDiscount.Value;
+                    }
 
-                    return price.AfterDiscount.Value;
-
+                    return line.Amount.AfterDiscount.Value;
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
@@ -221,23 +222,16 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
                 var amount = OrderLines.Sum(line =>
                 {
-                    var price = new Price(
-                               line.Amount.OriginalValue,
-                               StoreInfo.Currency,
-                               StoreInfo.Vat,
-                               StoreInfo.VatIncludedInPrice,
-                               line.Product.ProductDiscount,
-                               line.Discount,
-                               true,
-                               SumOriginalPrice,
-                               line.Quantity
-                           );
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
-                    return price.Value;
+                        return lineWithOrderDiscount.Value;
+                    }
 
+                    return line.Amount.Value;
                 });
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
@@ -248,7 +242,9 @@ namespace Ekom.Models
         /// Total monetary value of discount in order
         /// </summary>
         public ICalculatedPrice DiscountAmount
-            => new CalculatedPrice(OrderLineTotal.Value - SubTotal.Value, StoreInfo.Currency);
+            => new CalculatedPrice(
+                OrderLineTotal.Value - GrandTotal.Value,
+                StoreInfo.Currency);
 
         /// <summary>
         /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.
@@ -257,26 +253,22 @@ namespace Ekom.Models
         {
             get
             {
-                var SumOriginalPrice = orderLines.Sum(line => line.Amount.OriginalValue);
-
                 var amount = OrderLines.Sum(line =>
                 {
+                    if (line.Discount == null
+                    // This is for OrderService.Discounts.IsBetterDiscount, 
+                    // allowing us to temporarily apply an exclusive discount to the order
+                    // without removing discounts from all orderlines.
+                    // In normal use an exclusive order discount will never be applied to an order 
+                    // at the same time as OrderLines have a discount applied.
+                    || Discount?.Stackable == false)
+                    {
+                        var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
-                    var price
-                        = new Price(
-                            line.Amount.OriginalValue,
-                            StoreInfo.Currency,
-                            StoreInfo.Vat,
-                            StoreInfo.VatIncludedInPrice,
-                            line.Product.ProductDiscount,
-                            line.Discount,
-                            true,
-                            SumOriginalPrice,
-                            line.Quantity
-                        );
+                        return lineWithOrderDiscount.Value;
+                    }
 
-                    return price.Value;
-
+                    return line.Amount.Value;
                 });
 
                 if (ShippingProvider != null)
@@ -348,11 +340,20 @@ namespace Ekom.Models
             {
                 var lineId = (Guid)line[nameof(OrderLine.Key)];
                 var quantity = (int)line[nameof(OrderLine.Quantity)];
-                var orderLineLink = line["orderLineLink"] != null ? (Guid)line["orderLineLink"] : Guid.Empty;
+                var orderLineLink = line[nameof(OrderLine.OrderlineLink)] != null
+                    ? (Guid)line[nameof(OrderLine.OrderlineLink)]
+                    : Guid.Empty;
                 var productJson = line[nameof(OrderLine.Product)].ToString();
-                var discount = line[nameof(OrderLine.Discount)] != null ? line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>() : null;
+                var discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
                 var orderLineInfo = line[nameof(OrderLine.OrderLineInfo)]?.ToObject<OrderLineInfo>();
-                var orderLine = new OrderLine(lineId, quantity, productJson, this, orderLineInfo, discount, orderLineLink);
+                var orderLine = new OrderLine(
+                    lineId,
+                    quantity,
+                    productJson,
+                    this,
+                    orderLineInfo,
+                    discount,
+                    orderLineLink);
 
                 orderLines.Add(orderLine);
             }

@@ -54,19 +54,22 @@ namespace Ekom.Models
         {
             get
             {
-
-                decimal _price = Product.Price.Value;
-                decimal _totalOriginalPrice = Product.Price.Value * Quantity;
+                decimal _price = Product.Price.OriginalValue;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        _price = _price + (v.Price.Value - _price);
+                        _price += (v.Price.OriginalValue - _price);
                     }
                 }
 
-                // Product.ProductDiscount is always null, do we need it ? the discount is calculated in the Price.Value. before it was using Original Value.
-                return new Price(_price, OrderInfo.StoreInfo.Currency, OrderInfo.StoreInfo.Vat, OrderInfo.StoreInfo.VatIncludedInPrice, Product.ProductDiscount, Discount, false, _totalOriginalPrice, Quantity);
+                return new Price(
+                    _price, 
+                    OrderInfo.StoreInfo.Currency, 
+                    OrderInfo.StoreInfo.Vat, 
+                    OrderInfo.StoreInfo.VatIncludedInPrice, 
+                    Discount, 
+                    Quantity);
             }
         }
 
@@ -100,16 +103,16 @@ namespace Ekom.Models
             Guid lineId,
             OrderInfo orderInfo,
             IVariant variant = null,
-            OrderDynamicRequest dynamic = null)
+            OrderDynamicRequest dynamicRequest = null)
         {
             OrderInfo = orderInfo;
             Quantity = quantity;
             Key = lineId;
-            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, dynamic);
+            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, dynamicRequest);
 
-            if (dynamic != null)
+            if (dynamicRequest != null)
             {
-                OrderlineLink = dynamic.OrderLineLink;
+                OrderlineLink = dynamicRequest.OrderLineLink;
             }
 
         }

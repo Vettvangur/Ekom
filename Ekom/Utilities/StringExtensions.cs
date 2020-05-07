@@ -142,9 +142,8 @@ namespace Ekom.Utilities
             }
 
             return string.Empty;
-
         }
-        public static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null, OrderedProductDiscount orderedProductDiscount = null)
+        public static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
         {
             var prices = new List<IPrice>();
 
@@ -156,7 +155,7 @@ namespace Ekom.Utilities
                 {
                     var currency = price["Currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
 
-                    prices.Add(new Price(price, currency, vat, vatIncludedInPrice, orderedProductDiscount));
+                    prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
                 }
             }
             catch
@@ -169,9 +168,9 @@ namespace Ekom.Utilities
                 }
 
                 prices = new List<IPrice>
-                    {
-                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, orderedProductDiscount)
-                    };
+                {
+                    new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice)
+                };
             }
 
             return prices;

@@ -12,7 +12,7 @@ namespace Ekom.Models.OrderedObjects
     /// <summary>
     /// Frozen <see cref="Discount"/> with coupons and <see cref="DiscountAmount"/>
     /// </summary>
-    public class OrderedDiscount : IComparable<IDiscount>
+    public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     {
         /// <summary>
         /// 
@@ -21,16 +21,18 @@ namespace Ekom.Models.OrderedObjects
         public OrderedDiscount(
             Guid key,
             bool stackable,
-            DiscountAmount amount,
+            decimal amount,
+            DiscountType type,
             List<Guid> discountItems,
             Constraints constraints,
-            IReadOnlyCollection<string> coupons,
+            List<string> coupons,
             bool hasMasterStock)
         {
             Key = key;
             Stackable = stackable;
             DiscountItems = discountItems;
             Amount = amount;
+            Type = type;
             Constraints = constraints;
             Coupons = coupons;
             HasMasterStock = hasMasterStock;
@@ -46,6 +48,7 @@ namespace Ekom.Models.OrderedObjects
             Key = discount.Key;
             DiscountItems = discount.DiscountItems;
             Amount = discount.Amount;
+            Type = discount.Type;
             Constraints = new Constraints(discount.Constraints);
             Coupons = new List<string>(discount.Coupons);
             HasMasterStock = discount.HasMasterStock;
@@ -56,16 +59,15 @@ namespace Ekom.Models.OrderedObjects
         /// </summary>
         public Guid Key { get; internal set; }
 
-        /// <summary>
-        /// Discount amount in the specified <see cref="DiscountType"/>
-        /// </summary>
-        public DiscountAmount Amount { get; internal set; }
+        public DiscountType Type { get; internal set; }
 
-        public List<Guid> DiscountItems { get; }
+        public decimal Amount { get; internal set; }
+
+        public IReadOnlyCollection<Guid> DiscountItems { get; }
         /// <summary>
         /// Ranges
         /// </summary>
-        public Constraints Constraints { get; internal set; }
+        public IConstraints Constraints { get; internal set; }
         /// <summary>
         /// If discount is stackable with productDiscounts
         /// </summary>
@@ -88,15 +90,14 @@ namespace Ekom.Models.OrderedObjects
             if (other == null)
                 return 1;
 
-            else if (Amount.Type != other.Amount.Type)
+            else if (Type != other.Type)
                 throw new FormatException("Discounts are not equal, please compare type before comparing value.");
-            else if (Amount.Amount == other.Amount.Amount)
+            else if (Amount == other.Amount)
                 return 0;
-            else if (Amount.Amount > other.Amount.Amount)
+            else if (Amount > other.Amount)
                 return 1;
             else
                 return -1;
         }
-
     }
 }

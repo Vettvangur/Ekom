@@ -294,6 +294,7 @@
     <Compile Include="DataEditors\EkomCouponEditor.cs" />
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />
+    <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
     <Compile Include="Exceptions\UmbracoEventException.cs" />
@@ -346,9 +347,7 @@
     <Compile Include="Models\Data\DiscountStockData.cs" />
     <Compile Include="Models\Data\OrderActivityLog.cs" />
     <Compile Include="Models\Discounts\Discount.cs" />
-    <Compile Include="Models\Discounts\DiscountAmount.cs" />
     <Compile Include="Models\Discounts\DiscountType.cs" />
-    <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Models\Image.cs" />
     <Compile Include="Interfaces\IOrderLine.cs" />
     <Compile Include="Interfaces\IVariantGroup.cs" />
@@ -365,7 +364,7 @@
     <Compile Include="Interfaces\IStockRepository.cs" />
     <Compile Include="Models\CustomerShippingInfo.cs" />
     <Compile Include="Models\OrderedObjects\OrderedShippingProvider.cs" />
-    <Compile Include="Models\ProductDiscount.cs" />
+    <Compile Include="Models\Discounts\ProductDiscount.cs" />
     <Compile Include="Models\ShippingProvider.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Repository\ActivityLogRepository.cs" />

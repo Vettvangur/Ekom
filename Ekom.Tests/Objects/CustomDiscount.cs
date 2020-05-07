@@ -12,8 +12,14 @@ namespace Ekom.Tests.Objects
     class CustomDiscount : Discount, IProductDiscount
     {
         public override IConstraints Constraints { get; protected set; }
-        public override DiscountType Type { get; protected set; }
+        public override DiscountType Type { get; }
         public override bool HasMasterStock { get; }
+
+        public decimal StartOfRange => 0;
+
+        public decimal EndOfRange => 0;
+
+        public bool Disabled => false;
 
         //public override IReadOnlyCollection<string> Coupons { get; }
 
@@ -42,15 +48,12 @@ namespace Ekom.Tests.Objects
                 Type = DiscountType.Percentage;
             }
 
-            var discountItemsVal = Properties.GetPropertyValue("discountItems", Store.Alias);
-            if (!string.IsNullOrEmpty(discountItemsVal))
-            {
-                discountItems = Properties.GetPropertyValue("discountItems")
-                    .Split(',')
-                    .Select(x => GuidUdiHelper.GetGuid(x)).ToList();
-            }
-
             Constraints = new Constraints(this);
         }
+
+        public override IReadOnlyCollection<Guid> DiscountItems
+            => Properties.GetPropertyValue("discountItems")
+                    .Split(',')
+                    .Select(x => GuidUdiHelper.GetGuid(x)).ToList();
     }
 }

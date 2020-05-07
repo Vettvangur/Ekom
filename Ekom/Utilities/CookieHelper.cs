@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Umbraco.Core;
+using Umbraco.Core.Composing;
 
 namespace Ekom.Utilities
 {
@@ -12,31 +14,20 @@ namespace Ekom.Utilities
     {
         public static CurrencyModel GetCurrencyCookieValue(List<CurrencyModel> currencies, string storeAlias)
         {
-            try
+            var httpContext = Current.Factory.GetInstance<HttpContextBase>();
+            var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
+
+            if (!string.IsNullOrEmpty(cookie?.Value))
             {
-                if (HttpContext.Current != null && HttpContext.Current.Request != null)
+                var c = currencies.FirstOrDefault(x => x.CurrencyValue == cookie.Value);
+
+                if (c != null)
                 {
-                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + storeAlias];
-
-                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
-                    {
-                        var c = currencies.FirstOrDefault(x => x.CurrencyValue == cookie.Value);
-
-                        if (c != null)
-                        {
-                            return c;
-                        }
-                    }
-
+                    return c;
                 }
-            }
-            catch
-            {
-
             }
 
             return currencies.FirstOrDefault();
-
         }
     }
 }

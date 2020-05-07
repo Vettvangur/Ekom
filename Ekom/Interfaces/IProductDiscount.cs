@@ -10,13 +10,8 @@ using Umbraco.Core.Models;
 
 namespace Ekom.Interfaces
 {
-    public interface IProductDiscount : IPerStoreNodeEntity, ICloneable
+    public interface IProductDiscount : IDiscount
     {
-        string Title { get; }
-        DiscountType Type { get; }
-        decimal Discount { get; }
-        List<CurrencyValue> Discounts { get; }
-        List<Guid> DiscountItems { get; }
         decimal StartOfRange { get; }
         decimal EndOfRange { get; }
         bool Disabled { get; }

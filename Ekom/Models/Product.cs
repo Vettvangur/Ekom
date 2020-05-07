@@ -30,7 +30,6 @@ namespace Ekom.Models
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
 
-        private IDiscount _discount;
         /// <summary>
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
@@ -39,34 +38,16 @@ namespace Ekom.Models
         /// Best discount mapped to product, populated after discount cache fills.
         /// </summary>
 
-        public virtual ProductDiscount ProductDiscount(string price = null)
+        public virtual IDiscount ProductDiscount(string price = null)
         {
             price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
 
-            return Current.Factory.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["__Key"]), Store.Alias, price);
-        }
-
-        public virtual IDiscount Discount
-        {
-            get => _discount;
-            internal set
-            {
-                if (_discount == null
-                || (_discount.Amount.Type == value.Amount.Type
-                && value.CompareTo(_discount) > 0))
-                {
-                    _discount = value;
-                }
-
-                var oldPrice = new Price(Price.OriginalValue, Store.Currency, Store.Vat, Store.VatIncludedInPrice, null, new OrderedDiscount(_discount));
-
-                var newPrice = new Price(Price.OriginalValue, Store.Currency, Store.Vat, Store.VatIncludedInPrice, null, new OrderedDiscount(value));
-
-                if (oldPrice.AfterDiscount.Value <= newPrice.AfterDiscount.Value)
-                {
-                    _discount = value;
-                }
-            }
+            return Current.Factory.GetInstance<IProductDiscountService>()
+                    .GetProductDiscount(
+                        Key,
+                        Store.Alias,
+                        price
+                    );
         }
 
         /// <summary>
@@ -229,24 +210,21 @@ namespace Ekom.Models
         {
             get
             {
-                if (HttpContext.Current != null)
+                var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
+
+                var cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias];
+
+                if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
                 {
-                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + Store.Alias];
+                    var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
 
-                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
+                    if (price != null)
                     {
-                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
-
-                        if (price != null)
-                        {
-                            return price;
-                        }
+                        return price;
                     }
-
                 }
 
                 return Prices.FirstOrDefault();
-
             }
         }
 
@@ -257,7 +235,14 @@ namespace Ekom.Models
         {
             get
             {
-                var prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Vat, Store.VatIncludedInPrice, Store.Currency, Store.Alias, Key.ToString());
+                var prices = Properties.GetPropertyValue("price", Store.Alias)
+                    .GetPriceValues(
+                        Store.Currencies,
+                        Vat,
+                        Store.VatIncludedInPrice,
+                        Store.Currency,
+                        Store.Alias,
+                        Key.ToString());
 
                 return prices;
             }

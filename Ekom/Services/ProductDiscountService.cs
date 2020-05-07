@@ -19,11 +19,11 @@ namespace Ekom.Services
             _productDiscountCache = productDiscountCache;
         }
 
-        public ProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice, string currency = null)
+        public IProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice, string currency = null)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
-            var applicableDiscounts = new List<ProductDiscount>();
+            var applicableDiscounts = new List<IProductDiscount>();
 
             foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
@@ -35,12 +35,12 @@ namespace Ekom.Services
                 }
                 if (discount.Value.DiscountItems.Contains(productKey))
                 {
-                    applicableDiscounts.Add(discount.Value as ProductDiscount);
+                    applicableDiscounts.Add(discount.Value);
                 }
             }
 
-            int bestFixedId = 0;
-            int bestPercentageDiscount = 0;
+            Guid bestFixedKey = Guid.Empty;
+            Guid bestPercentageDiscount = Guid.Empty;
             decimal bestPercentageDiscountValue = 0;
             decimal bestFixedDiscountValue = 0;
 
@@ -55,42 +55,42 @@ namespace Ekom.Services
                 {
                     if (usableDiscount.StartOfRange > 0 && usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
                     {
-                        if (usableDiscount.Discount > bestFixedDiscountValue)
+                        if (usableDiscount.Amount > bestFixedDiscountValue)
                         {
-                            bestFixedDiscountValue = usableDiscount.Discount;
-                            bestFixedId = usableDiscount.Id;
+                            bestFixedDiscountValue = usableDiscount.Amount;
+                            bestFixedKey = usableDiscount.Key;
                         }
                     }
 
                 }
                 if (usableDiscount.Type == DiscountType.Percentage)
                 {
-                    if (usableDiscount.Discount > bestPercentageDiscountValue)
+                    if (usableDiscount.Amount > bestPercentageDiscountValue)
                     {
-                        bestPercentageDiscount = usableDiscount.Id;
-                        bestPercentageDiscountValue = usableDiscount.Discount;
+                        bestPercentageDiscount = usableDiscount.Key;
+                        bestPercentageDiscountValue = usableDiscount.Amount;
                     }
                 }
             }
 
-            if (bestFixedId == 0)
+            if (bestFixedKey == Guid.Empty)
             {
-                return applicableDiscounts.SingleOrDefault(x => x.Id == bestPercentageDiscount);
+                return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
             }
-            else if (bestPercentageDiscount == 0)
+            else if (bestPercentageDiscount == Guid.Empty)
             {
-                return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
+                return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
             }
             else
             {
                 var eef = Math.Abs(bestFixedDiscountValue / price) * 100;
                 if (Math.Abs(((bestFixedDiscountValue / price) * 100)) > bestPercentageDiscountValue)
                 {
-                    return applicableDiscounts.SingleOrDefault(x => x.Id == bestFixedId);
+                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
                 }
                 else
                 {
-                    return applicableDiscounts.SingleOrDefault(x => x.Id == bestPercentageDiscount);
+                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
                 }
             }
         }

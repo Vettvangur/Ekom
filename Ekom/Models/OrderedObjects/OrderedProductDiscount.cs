@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace Ekom.Models.OrderedObjects
 {
+    /// <summary>
+    /// Currently unused, <see cref="OrderedDiscount"/> takes care of all persisted discounts
+    /// </summary>
+    [Obsolete("Currently unused")]
     public class OrderedProductDiscount
     {
         [JsonConstructor]
@@ -26,7 +30,7 @@ namespace Ekom.Models.OrderedObjects
             if (productDiscount != null)
             {
                 Type = productDiscount.Type;
-                Discount = productDiscount.Discount;
+                Discount = productDiscount.Amount;
                 StartOfRange = productDiscount.StartOfRange;
                 EndOfRange = productDiscount.EndOfRange;
                 Disabled = productDiscount.Disabled;

@@ -54,7 +54,7 @@ namespace Ekom.Models.OrderedObjects
                 return Properties.GetPropertyValue("sku");
             }
         }
-        public OrderedProductDiscount ProductDiscount { get; }
+        public IDiscount ProductDiscount { get; }
 
         public string Title
         {
@@ -150,7 +150,7 @@ namespace Ekom.Models.OrderedObjects
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest dynamic = null)
+        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest dynamicRequest = null)
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
@@ -158,20 +158,19 @@ namespace Ekom.Models.OrderedObjects
             Properties = new Dictionary<string, string>(
                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-            if (dynamic != null && !string.IsNullOrEmpty(dynamic.Title))
+            if (dynamicRequest != null && !string.IsNullOrEmpty(dynamicRequest.Title))
             {
-                Properties["title"] = dynamic.Title;
+                Properties["title"] = dynamicRequest.Title;
             }
 
-            if (dynamic != null && !string.IsNullOrEmpty(dynamic.Slug))
+            if (dynamicRequest != null && !string.IsNullOrEmpty(dynamicRequest.Slug))
             {
-                Properties["slug"] = dynamic.Slug;
+                Properties["slug"] = dynamicRequest.Slug;
             }
 
-            if (dynamic != null && dynamic.Price > 0)
+            if (dynamicRequest?.Price > 0)
             {
-                Price = new Price(dynamic.Price, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice);
-
+                Price = new Price(dynamicRequest.Price, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice);
             }
             else
             {
@@ -182,7 +181,7 @@ namespace Ekom.Models.OrderedObjects
 
             var productDiscount = product.ProductDiscount(Price.Value.ToString());
 
-            ProductDiscount = productDiscount != null ? productDiscount.Clone() as OrderedProductDiscount : null;
+            ProductDiscount = productDiscount != null ? new OrderedDiscount(productDiscount) : null;
 
             if (variant != null)
             {
@@ -213,13 +212,15 @@ namespace Ekom.Models.OrderedObjects
             logger.Debug<OrderedProduct>("Created OrderedProduct from json");
 
             var productPropertiesObject = JObject.Parse(productJson);
-            ProductDiscount = productPropertiesObject["ProductDiscount"] != null ? productPropertiesObject["ProductDiscount"].ToObject<OrderedProductDiscount>(EkomJsonDotNet.serializer) : null;
+            ProductDiscount = productPropertiesObject[nameof(ProductDiscount)]?
+                .ToObject<IDiscount>(EkomJsonDotNet.serializer);
+
             Properties = new Dictionary<string, string>(
-                productPropertiesObject["Properties"].ToObject<Dictionary<string, string>>());
+                productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
 
-            var pricesObj = productPropertiesObject["Prices"];
+            var pricesObj = productPropertiesObject[nameof(Prices)];
 
-            var priceObj = productPropertiesObject["Price"];
+            var priceObj = productPropertiesObject[nameof(Price)];
 
             try
             {

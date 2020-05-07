@@ -63,8 +63,8 @@ namespace Ekom.Interfaces
         bool Backorder { get; }
 
         /// <summary>
-        // Product images
-        // </summary>
+        /// Product images
+        /// </summary>
         IEnumerable<Image> Images();
 
         /// <summary>
@@ -97,12 +97,8 @@ namespace Ekom.Interfaces
         /// <returns></returns>
         IEnumerable<ICategory> CategoryAncestors { get; }
         /// <summary>
-        /// Best discount mapped to product, populated after discount cache fills.
-        /// </summary>
-        IDiscount Discount { get; }
-        /// <summary>
         /// A discount specific to this product populated after product discount cache is filled.
         /// </summary>
-        ProductDiscount ProductDiscount(string price = null);
+        IDiscount ProductDiscount(string price = null);
     }
 }
