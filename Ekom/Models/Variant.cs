@@ -90,9 +90,14 @@ namespace Ekom.Models
         /// <summary>
         /// Gets the productDiscount for the specific Variant
         /// </summary>
-        public ProductDiscount ProductDiscount(string price)
+        public IProductDiscount ProductDiscount(string price)
         {
-            return Current.Factory.GetInstance<IProductDiscountService>().GetProductDiscount(Guid.Parse(this.Properties["__Key"]), Store.Alias, price);
+            return Current.Factory.GetInstance<IProductDiscountService>()
+                .GetProductDiscount(
+                    Key,
+                    Store.Alias,
+                    price
+                );
         }
 
         // Waiting for variants to be composed with their parent product

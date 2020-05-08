@@ -145,13 +145,14 @@ namespace Ekom.Models.Discounts
             Constraints = new Constraints(this);
         }
 
-        internal List<CurrencyValue> Discounts
+        public IReadOnlyCollection<CurrencyValue> Discounts
         {
             get
             {
                 return Properties
                     .GetPropertyValue("discount", Store.Alias)
-                    .GetCurrencyValues();
+                    .GetCurrencyValues()
+                    .AsReadOnly();
             }
         }
 

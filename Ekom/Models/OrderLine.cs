@@ -102,19 +102,12 @@ namespace Ekom.Models
             int quantity,
             Guid lineId,
             OrderInfo orderInfo,
-            IVariant variant = null,
-            OrderDynamicRequest dynamicRequest = null)
+            IVariant variant = null)
         {
             OrderInfo = orderInfo;
             Quantity = quantity;
             Key = lineId;
-            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, dynamicRequest);
-
-            if (dynamicRequest != null)
-            {
-                OrderlineLink = dynamicRequest.OrderLineLink;
-            }
-
+            Product = new OrderedProduct(product, variant, orderInfo.StoreInfo);
         }
     }
 }

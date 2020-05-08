@@ -333,8 +333,7 @@ namespace Ekom.Services
             int quantity,
             string storeAlias,
             OrderAction? action = null,
-            Guid? variantKey = null,
-            OrderDynamicRequest dynamic = null
+            Guid? variantKey = null
         )
         {
             if (productKey == Guid.Empty)
@@ -384,8 +383,7 @@ namespace Ekom.Services
                 quantity,
                 store,
                 action,
-                variant,
-                dynamic
+                variant
             ).ConfigureAwait(false);
         }
 
@@ -399,8 +397,7 @@ namespace Ekom.Services
             int quantity,
             IStore store,
             OrderAction? action = null,
-            IVariant variant = null,
-            OrderDynamicRequest dynamic = null
+            IVariant variant = null
         )
         {
             if (product == null)
@@ -435,8 +432,7 @@ namespace Ekom.Services
                 product,
                 quantity,
                 cartAction,
-                variant,
-                dynamic).ConfigureAwait(false);
+                variant).ConfigureAwait(false);
 
             return orderInfo;
         }
@@ -481,8 +477,7 @@ namespace Ekom.Services
             IProduct product,
             int quantity,
             OrderAction action,
-            IVariant variant,
-            OrderDynamicRequest dynamic = null
+            IVariant variant
         )
         {
             if (quantity == 0)
@@ -563,8 +558,7 @@ namespace Ekom.Services
                     quantity,
                     lineId,
                     orderInfo,
-                    variant,
-                    dynamic
+                    variant
                 );
 
                 orderInfo.orderLines.Add(orderLine);
@@ -592,6 +586,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
+            VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
@@ -857,6 +852,40 @@ namespace Ekom.Services
 
             return true;
         }
+
+        /// <summary>
+        /// Verifies all providers match their constraints.
+        /// Removes non-compliant providers
+        /// 
+        /// Gets called on OrderInfo updates, constraints may become invalid if the order total changes.
+        /// </summary>
+        private void VerifyProviders(OrderInfo orderInfo)
+        {
+            var total = orderInfo.OrderLineTotal.Value;
+            var storeAlias = orderInfo.StoreInfo.Alias;
+
+            // Verify paymentProvider constraints
+            if (orderInfo.PaymentProvider != null)
+            {
+                var paymentProvider = Providers.Instance.GetShippingProvider(orderInfo.PaymentProvider.Key);
+
+                if (!paymentProvider.Constraints.IsValid(storeAlias, total))
+                {
+                    orderInfo.PaymentProvider = null;
+                }
+            }
+            // Verify shipping provider constraints
+            if (orderInfo.ShippingProvider != null)
+            {
+                var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
+
+                if (!shippingProvider.Constraints.IsValid(storeAlias, total))
+                {
+                    orderInfo.ShippingProvider = null;
+                }
+            }
+        }
+
 
 
         public Guid GetOrderIdFromCookie(string key)

@@ -295,6 +295,7 @@
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
+    <Compile Include="Interfaces\IBaseDiscount.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
     <Compile Include="Exceptions\UmbracoEventException.cs" />
@@ -354,7 +355,6 @@
     <Compile Include="Interfaces\IPaymentProvider.cs" />
     <Compile Include="Interfaces\IShippingProvider.cs" />
     <Compile Include="Interfaces\IZone.cs" />
-    <Compile Include="Models\OrderDynamicRequest.cs" />
     <Compile Include="Models\OrderedObjects\OrderedPaymentProvider.cs" />
     <Compile Include="Models\OrderedObjects\OrderedDiscount.cs" />
     <Compile Include="Models\OrderedObjects\OrderedProductDiscount.cs" />

@@ -53,7 +53,8 @@ namespace Ekom.Services
             {
                 if (usableDiscount.Type == DiscountType.Fixed)
                 {
-                    if (usableDiscount.StartOfRange > 0 && usableDiscount.StartOfRange < price && price < usableDiscount.EndOfRange)
+                    if (usableDiscount.StartOfRange < price 
+                    && (usableDiscount.EndOfRange == 0 || price < usableDiscount.EndOfRange))
                     {
                         if (usableDiscount.Amount > bestFixedDiscountValue)
                         {

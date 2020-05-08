@@ -150,7 +150,7 @@ namespace Ekom.Models.OrderedObjects
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest dynamicRequest = null)
+        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo)
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
@@ -158,25 +158,7 @@ namespace Ekom.Models.OrderedObjects
             Properties = new Dictionary<string, string>(
                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-            if (dynamicRequest != null && !string.IsNullOrEmpty(dynamicRequest.Title))
-            {
-                Properties["title"] = dynamicRequest.Title;
-            }
-
-            if (dynamicRequest != null && !string.IsNullOrEmpty(dynamicRequest.Slug))
-            {
-                Properties["slug"] = dynamicRequest.Slug;
-            }
-
-            if (dynamicRequest?.Price > 0)
-            {
-                Price = new Price(dynamicRequest.Price, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice);
-            }
-            else
-            {
-                Price = product.Price.Clone() as IPrice;
-            }
-
+            Price = product.Price.Clone() as IPrice;
             Prices = product.Prices.ToList();
 
             var productDiscount = product.ProductDiscount(Price.Value.ToString());

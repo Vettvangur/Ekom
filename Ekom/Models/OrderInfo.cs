@@ -93,53 +93,9 @@ namespace Ekom.Models
         /// </summary>
         public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
 
-        // We need to check for contraints in provider each time its fetched. But this needs to be done more efficently
-        private OrderedShippingProvider _shippingProvider;
-        public OrderedShippingProvider ShippingProvider
-        {
-            get
-            {
-                if (_shippingProvider != null)
-                {
-                    var provider = API.Providers.Instance.GetShippingProviders(StoreInfo.Alias, CustomerInformation.Customer.Country, GrandTotal.Value).FirstOrDefault(x => x.Key == _shippingProvider.Key);
+        public OrderedShippingProvider ShippingProvider { get; set; }
+        public OrderedPaymentProvider PaymentProvider { get; set; }
 
-                    if (provider != null)
-                    {
-                        return _shippingProvider;
-                    }
-
-                }
-
-                return null;
-            }
-            set
-            {
-                _shippingProvider = value;
-            }
-        }
-        private OrderedPaymentProvider _paymentProvider;
-        public OrderedPaymentProvider PaymentProvider
-        {
-            get
-            {
-                if (_paymentProvider != null)
-                {
-                    var provider = API.Providers.Instance.GetPaymentProviders(StoreInfo.Alias, CustomerInformation.Customer.Country, GrandTotal.Value).FirstOrDefault(x => x.Key == _paymentProvider.Key);
-
-                    if (provider != null)
-                    {
-                        return _paymentProvider;
-                    }
-
-                }
-
-                return null;
-            }
-            set
-            {
-                _paymentProvider = value;
-            }
-        }
         /// <summary>
         /// Total count of items and subitems on each order line.
         /// </summary>

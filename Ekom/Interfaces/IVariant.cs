@@ -51,7 +51,7 @@ namespace Ekom.Interfaces
         /// Product Stock Keeping Unit.
         /// </summary>
         /// 
-        ProductDiscount ProductDiscount(string price);
+        IProductDiscount ProductDiscount(string price);
         string SKU { get; }
         /// <summary>
         /// Gets the stock.
