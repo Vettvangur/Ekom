@@ -229,28 +229,22 @@ namespace Ekom.App_Start
                 if (domain.RootContentId != null)
                 {
                     var rootContent = _cs.GetById(domain.RootContentId.Value);
-                    IContent ekmStoreContent;
-                    if (int.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out int storeId))
+
+                    var store = _storeCache.Cache.Values.FirstOrDefault(x => x.StoreRootNode == rootContent.Id);
+
+                    if (store != null)
                     {
-                        ekmStoreContent = _cs.GetById(storeId);
-                    }
-                    else
-                    {
-                        var srn = GuidUdi.Parse(rootContent.GetValue<string>("ekmStorePicker"));
-                        ekmStoreContent = _cs.GetById(srn.Guid);
-                    }
-                    
-                    if (ekmStoreContent?.ContentType?.Alias != "ekmStore")
-                    {
-                        throw new EventException(
-                            "Error updating store! " +
-                            $"Erronous ekom store picked for root content {domain.RootContentId.Value} domain {domain.DomainName}. " +
-                            "Please ensure you have correctly selected a ekmStore node using the ekmStorePicker on this root content node."
-                        );
+                        IContent ekmStoreContent = _cs.GetById(store.Id);
+
+                        if (ekmStoreContent != null)
+                        {
+                            // Update cached IStore
+                            _storeCache.AddReplace(ekmStoreContent);
+                        }
+
                     }
 
-                    // Update cached IStore
-                    _storeCache.AddReplace(ekmStoreContent);
+
                 }
             }
         }

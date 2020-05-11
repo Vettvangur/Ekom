@@ -10,7 +10,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Core;
 
 namespace Ekom.Utilities
 {
@@ -190,12 +192,18 @@ namespace Ekom.Utilities
                     var currencyValue = price["Currency"].Value<string>();
                     var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
-                    //ProductDiscount productDiscount = !string.IsNullOrEmpty(key) ?  Configuration.Current.s.GetInstance<IProductDiscountService>().GetProductDiscount(new Guid(key), storeAlias, price["Price"].Value<string>(), currency.CurrencyValue) : null;
+                    IDiscount productDiscount = !string.IsNullOrEmpty(key) ? Current.Factory.GetInstance<IProductDiscountService>()
+                    .GetProductDiscount(
+                        new Guid(key),
+                        storeAlias,
+                        price["Price"].Value<string>()
+                    ) : null;
 
-                    prices.Add(new Price(price["Price"].Value<string>(), currency, vat, vatIncludedInPrice, null));
+
+                    prices.Add(new Price(price["Price"].Value<string>(), currency, vat, vatIncludedInPrice, productDiscount != null ? new OrderedDiscount(productDiscount) : null));
                 }
             }
-            catch
+            catch(Exception ex)
             {
                 if (fallbackCurrency == null)
                 {
@@ -204,11 +212,16 @@ namespace Ekom.Utilities
                     fallbackCurrency = store.Currency;
                 }
 
-                //var productDiscount = Configuration.container.GetInstance<IProductDiscountService>().GetProductDiscount(new Guid(key), storeAlias, priceJson, fallbackCurrency.CurrencyValue);
+                IDiscount productDiscount = !string.IsNullOrEmpty(key) ? Current.Factory.GetInstance<IProductDiscountService>()
+                .GetProductDiscount(
+                    new Guid(key),
+                    storeAlias,
+                    priceJson
+                ) : null;
 
                 prices = new List<IPrice>
                     {
-                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, null)
+                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, productDiscount != null ? new OrderedDiscount(productDiscount) : null)
                     };
             }
 

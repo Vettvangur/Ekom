@@ -50,6 +50,7 @@ namespace Ekom
 
         /// <summary>
         /// Ekom.ShareBasket
+        /// This will allow baskets to be shared between stores but we aware that it requires the same currencies to be available cross stores or it will break down.
         /// </summary>
         public virtual bool ShareBasketBetweenStores
         {

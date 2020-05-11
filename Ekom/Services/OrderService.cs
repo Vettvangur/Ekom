@@ -948,8 +948,11 @@ namespace Ekom.Services
         {
             var key = "ekmOrder";
 
-            storeAlias = string.IsNullOrEmpty(storeAlias) ? _store.Alias : storeAlias;
-            key += "-" + storeAlias;
+            if (!Configuration.Current.ShareBasketBetweenStores)
+            {
+                storeAlias = string.IsNullOrEmpty(storeAlias) ? _store.Alias : storeAlias;
+                key += "-" + storeAlias;
+            }
 
             return key;
         }

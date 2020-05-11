@@ -37,6 +37,9 @@ namespace Ekom.Models.Discounts
                     typeValue = dt.ConfigurationAs<string>();
                 }
 
+
+                typeValue = typeValue.Contains('[') ? JsonConvert.DeserializeObject<string[]>(typeValue).FirstOrDefault() : typeValue;
+
                 switch (typeValue)
                 {
                     case "Fixed":

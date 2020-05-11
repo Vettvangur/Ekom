@@ -25,6 +25,12 @@ namespace Ekom.Services
 
             var applicableDiscounts = new List<IProductDiscount>();
 
+            // If no discounts are available in cache
+            if (!_productDiscountCache.Cache[storeAlias].Values.Any())
+            {
+                return null;
+            }
+
             foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
 
@@ -39,15 +45,18 @@ namespace Ekom.Services
                 }
             }
 
+            // If no discounts are available for this item
+            if (applicableDiscounts.Count() == 0)
+            {
+                return null;
+            }
+
             Guid bestFixedKey = Guid.Empty;
             Guid bestPercentageDiscount = Guid.Empty;
             decimal bestPercentageDiscountValue = 0;
             decimal bestFixedDiscountValue = 0;
 
-            if (applicableDiscounts.Count() == 0)
-            {
-                return null;
-            }
+
 
             foreach (var usableDiscount in applicableDiscounts)
             {

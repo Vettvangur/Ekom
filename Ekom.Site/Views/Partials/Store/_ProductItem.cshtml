@@ -32,6 +32,10 @@
                 {
                     <p class="productItem__beforePrice" style="text-decoration:line-through;">@price.BeforeDiscount.CurrencyString</p>
                 }
+
+
+                @product.Price.BeforeDiscount.Value - @product.Price.AfterDiscount.Value
+
                 <p class="productItem__price">@price.WithVat.CurrencyString</p>
             </div>
         </div>

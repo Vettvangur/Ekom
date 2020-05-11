@@ -240,27 +240,16 @@ namespace Ekom.App_Start
                     Name = "Ekom - Range",
                 });
 
-                var perStoreStockDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
-                {
-                    Name = "Ekom - Stock - Per Store",
-                    Configuration = new VortoConfiguration
-                    {
-                        DataType = new DataTypeInfo
-                        {
-                            Guid = stockDt.Key,
-                            Name = stockDt.Name,
-                            PropertyEditorAlias = stockDt.EditorAlias,
-                        },
-                        MandatoryBehaviour = "primary",
-                        LanguageSource = "custom",
-                    },
-                });
                 var multinodeCatalogDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
                 {
                     Name = "Ekom - Catalog Picker",
                     Configuration = new MultiNodePickerConfiguration
                     {
-                         Filter = "ekmProduct, ekmProductVariant, ekmCategory"
+                         Filter = "ekmProduct, ekmProductVariant, ekmCategory",
+                        TreeSource = new MultiNodePickerConfigurationTreeSource()
+                        {
+                            StartNodeQuery = "$root/ekom/ekmCatalog"
+                        }
                     }
                 });
                 var multinodeProductDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
@@ -268,7 +257,11 @@ namespace Ekom.App_Start
                     Name = "Ekom - Product Picker",
                     Configuration = new MultiNodePickerConfiguration
                     {
-                        Filter = "ekmProduct"
+                        Filter = "ekmProduct",
+                        TreeSource = new MultiNodePickerConfigurationTreeSource()
+                        {
+                            StartNodeQuery = "$root/ekom/ekmCatalog"
+                        }
                     }
                 });
                 var multinodeCategoryDt = EnsureDataTypeExists(new DataType(multiNodeEditor, ekmDtContainer.Id)
@@ -276,7 +269,11 @@ namespace Ekom.App_Start
                     Name = "Ekom - Category Picker",
                     Configuration = new MultiNodePickerConfiguration
                     {
-                        Filter = "ekmCategory"
+                        Filter = "ekmCategory",
+                        TreeSource = new MultiNodePickerConfigurationTreeSource()
+                        {
+                            StartNodeQuery = "$root/ekom/ekmCatalog"
+                        }
                     }
                 });
                 var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, ekmDtContainer.Id)
@@ -459,7 +456,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Price",
                                         },
-                                        new PropertyType(_configuration.PerStoreStock ? perStoreStockDt : stockDt, "stock")
+                                        new PropertyType(stockDt, "stock")
                                         {
                                             Name = "Stock",
                                         },
@@ -551,7 +548,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Price",
                                         },
-                                        new PropertyType(_configuration.PerStoreStock ? perStoreStockDt : stockDt, "stock")
+                                        new PropertyType(stockDt, "stock")
                                         {
                                             Name = "Stock",
                                         },

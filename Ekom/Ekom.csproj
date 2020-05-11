@@ -301,7 +301,7 @@
     <Compile Include="Exceptions\StoreConstructorException.cs" />
     <Compile Include="Exceptions\EnsureNodesException.cs" />
     <Compile Include="Interfaces\ICouponCache.cs" />
-    <Compile Include="Cache\GlobalDiscountCache.cs" />
+    <Compile Include="Cache\ProductDiscountCache.cs" />
     <Compile Include="Cache\ShippingProviderCache.cs" />
     <Compile Include="Cache\StockPerStoreCache.cs" />
     <Compile Include="Cache\DiscountCache.cs" />

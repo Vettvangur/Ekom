@@ -30,7 +30,7 @@ namespace Ekom.App_Start
             composition.Register<IPerStoreCache<IVariant>, VariantCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<ICategory>, CategoryCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IProductDiscount>, GlobalDiscountCache>(Lifetime.Singleton);
+            composition.Register<IPerStoreCache<IProductDiscount>, ProductDiscountCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IProduct>, ProductCache>(Lifetime.Singleton);
             composition.Register<IBaseCache<IZone>, ZoneCache>(Lifetime.Singleton);
             composition.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>(Lifetime.Singleton);

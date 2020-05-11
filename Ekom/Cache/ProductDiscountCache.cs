@@ -11,13 +11,13 @@ using Umbraco.Core.Services;
 
 namespace Ekom.Cache
 {
-    class GlobalDiscountCache : PerStoreCache<IProductDiscount>
+    class ProductDiscountCache : PerStoreCache<IProductDiscount>
     {
-        public override string NodeAlias { get; } = "ekmGlobalDiscount";
+        public override string NodeAlias { get; } = "ekmProductDiscount";
 
         readonly IContentService _contentService;
         readonly IPerStoreCache<IProduct> _perStoreProductCache;
-        public GlobalDiscountCache(
+        public ProductDiscountCache(
             Configuration config,
             ILogger logger,
             IFactory factory,
@@ -55,7 +55,7 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error<GlobalDiscountCache>(
+                    _logger.Error<ProductDiscountCache>(
                         ex,
                         $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
                     );
@@ -72,7 +72,7 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _logger.Debug<GlobalDiscountCache>($"Attempting to remove product discount with key {key}");
+            _logger.Debug<ProductDiscountCache>($"Attempting to remove product discount with key {key}");
             IProductDiscount i = null;
 
             foreach (var store in _storeCache.Cache)
