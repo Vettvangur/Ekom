@@ -163,7 +163,7 @@ namespace Ekom.Models.Discounts
         /// </summary>
         public event CouponEventHandler CouponApplied;
         /// <summary>
-        /// If the discount can be used with productdiscounts
+        /// If the discount can be used with product discounts
         /// </summary>
         public virtual bool Stackable => Properties.GetPropertyValue("stackable", Store.Alias).ConvertToBool();
 

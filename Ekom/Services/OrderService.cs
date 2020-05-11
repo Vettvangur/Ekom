@@ -93,7 +93,7 @@ namespace Ekom.Services
         {
             if (Configuration.Current.UserBasket)
             {
-                if (_ekmRequest.User != null)
+                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
                     if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
@@ -151,7 +151,7 @@ namespace Ekom.Services
 
             if (Configuration.Current.UserBasket)
             {
-                if (_ekmRequest.User != null)
+                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
 
@@ -596,7 +596,7 @@ namespace Ekom.Services
             var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
                 .ConfigureAwait(false);
 
-            if (_ekmRequest.User != null)
+            if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
                 orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
                 orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
@@ -682,12 +682,12 @@ namespace Ekom.Services
                 orderUniqueId = CreateOrderIdCookie(CreateKey());
             }
 
-            var orderdata = await SaveOrderDataAsync(orderUniqueId)
+            var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId)
                 .ConfigureAwait(false);
 
             return new OrderInfo(orderdata, _store);
         }
-        private async Task<OrderData> SaveOrderDataAsync(Guid uniqueId)
+        private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId)
         {
             _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
 
@@ -701,7 +701,7 @@ namespace Ekom.Services
                 UpdateDate = DateTime.Now
             };
 
-            if (_ekmRequest.User != null)
+            if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
                 orderData.CustomerEmail = _ekmRequest.User.Email;
                 orderData.CustomerUsername = _ekmRequest.User.Username;
@@ -713,7 +713,7 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
 
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
-            await _orderRepository.UpdateOrderAsync(orderData)
+            await _orderRepository.InsertOrderAsync(orderData)
                 .ConfigureAwait(false);
 
             return orderData;

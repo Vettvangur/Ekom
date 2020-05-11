@@ -35,6 +35,7 @@ namespace Ekom.Cache
         {
             if (ExamineManager.TryGetIndex(_config.ExamineIndex, out IIndex index))
             {
+                // This line can give error Lock obtain timed out.
                 var searcher = index.GetSearcher();
 
 #if DEBUG

@@ -1,4 +1,5 @@
 ﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@using Ekom.Utilities;
 @{
     var order = (Ekom.Interfaces.IOrderInfo)ViewData["order"];
 
@@ -19,25 +20,36 @@
                 {
                     var product = orderline.Product;
 
-                    Ekom.Models.OrderedObjects.OrderedVariantGroup variantGroup = product.VariantGroups.FirstOrDefault();
+                    var variantGroup = product.VariantGroups.FirstOrDefault();
 
-                    var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
+                    var catalogPrice = product.Price.WithVat.CurrencyString;
 
-                    var catalogProduct = Ekom.API.Catalog.Instance.GetProduct(product.StoreInfo.Alias, product.Key);
+                    if (variantGroup != null)
+                    {
+                        var variant = variantGroup.Variants.FirstOrDefault();
+                        if (variant != null)
+                        {
+                            catalogPrice = variant.Price.WithVat.CurrencyString;
+                        }
+                    }
+
+                    //var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
+
+                    var catalogProduct = Ekom.API.Catalog.Instance.GetProduct(order.StoreInfo.Alias, product.Key);
 
                     <tr>
                         <td class="no-padding-left">
                             <div class="cart__productInformation">
 
-                                @if (images.Any())
-                                {
-                                    <div class="cart__productImage">
-                                        <a href="@catalogProduct.Url">
-                                            <img src="@images.First().Url?width=130&height=90&mode=crop&bgcolor=ffffff&anchor=top&format=jpg" alt="@product.Title" />
-                                        </a>
-                                        
-                                    </div>
-                                }
+                                @*@if (images.Any())
+                                    {
+                                        <div class="cart__productImage">
+                                            <a href="@catalogProduct.Url">
+                                                <img src="@images.First().Url?width=130&height=90&mode=crop&bgcolor=ffffff&anchor=top&format=jpg" alt="@product.Title" />
+                                            </a>
+
+                                        </div>
+                                    }*@
 
                                 <a href="@catalogProduct.Url" class="cart__productCaption">@product.Title</a>
 
@@ -58,7 +70,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="cart__price">@orderline.Product.Price.WithoutVat.CurrencyString</span>
+                            <span class="cart__price">@catalogPrice</span>
                         </td>
                         <td>
                             @using (Html.BeginEkomForm(FormType.AddToOrderCart))
@@ -68,7 +80,7 @@
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <input type="number" name="quantity" value="@orderline.Quantity" />
                                 <button type="submit" class="button small show-for-sr">Update</button>
-                            }     
+                            }
                         </td>
                         <td>
                             <span class="cart__price">@orderline.Amount.WithVat.CurrencyString</span>

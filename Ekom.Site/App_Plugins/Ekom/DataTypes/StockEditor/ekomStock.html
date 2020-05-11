@@ -1,9 +1,12 @@
 ﻿<div ng-controller="Ekom.Stock">
-  <input type="number" ng-model="stockValue">
 
-  <select ng-class="{'hide':!perStoreStock}" data-ng-options="item.Alias as item.Alias for item in storeList" data-ng-model="storeSelected" ng-change="UpdateStore()"></select>
-
-  <div class="btn-group">
-    <a class="btn btn-success" ng-click="UpdateStock()">Update</a>
+  <div class="perStoreStock" ng-class="{'hide':!perStoreStock}">
+    <div ng-repeat="store in stores" style="margin-bottom: 10px;">
+      <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="stock_{{ store.Alias }}">{{ store.Alias }}</label>
+      <input type="number" min="0" ng-model="stock[store.Alias]" id="stock_{{ store.Alias }}">
+      <a class="btn btn-success" ng-click="UpdateStock(store.Alias)">Update</a>
+    </div>
   </div>
+
+
 </div>

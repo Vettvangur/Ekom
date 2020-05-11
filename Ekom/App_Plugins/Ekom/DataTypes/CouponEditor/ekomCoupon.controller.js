@@ -1,4 +1,4 @@
-﻿angular.module('umbraco').controller('Ekom.CouponEditor', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
+angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
  
   var key = editorState.current.key;
 

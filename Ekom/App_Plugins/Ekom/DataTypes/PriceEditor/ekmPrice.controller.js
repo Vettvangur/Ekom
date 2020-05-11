@@ -1,6 +1,7 @@
 angular.module("umbraco").controller("Ekom.Price", function($scope, $http) {
     $scope.fieldAlias = $scope.model.alias;
 
+    //$scope.currencies = [];
     $scope.stores = [];
 
     $http.get('/umbraco/backoffice/ekom/api/getAllStores').then(function(results) {

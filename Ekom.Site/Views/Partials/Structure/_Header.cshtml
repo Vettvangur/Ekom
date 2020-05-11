@@ -41,20 +41,22 @@
 
                         <span class="select__value">@currentStore.GetCurrentCurrency().ISOCurrencySymbol</span>
 
-                        <ul class="select__dropdown">
-                            @foreach (var currency in currentStore.Currencies)
-                            {
-                                <li>
-                                    @using (Html.BeginEkomForm(FormType.ChangeCurrency))
-                                    {
-                                        <input type="hidden" name="currency" value="@currency.CurrencyValue" />
-                                        <button type="submit" class="select__buttonLink">@currency.ISOCurrencySymbol</button>
-                                    }
-                                </li>
-                            }
+                        @if (currentStore.Currencies.Count() > 1)
+                        {
+                            <ul class="select__dropdown">
+                                @foreach (var currency in currentStore.Currencies)
+                                {
+                                    <li>
+                                        @using (Html.BeginEkomForm(FormType.ChangeCurrency))
+                                        {
+                                            <input type="hidden" name="currency" value="@currency.CurrencyValue" />
+                                            <button type="submit" class="select__buttonLink">@currency.ISOCurrencySymbol</button>
+                                        }
+                                    </li>
+                                }
 
-                        </ul>
-
+                            </ul>
+                        }
                     </div>
 
                 </div>

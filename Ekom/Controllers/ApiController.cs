@@ -30,10 +30,6 @@ namespace Ekom.Controllers
             _countriesRepo = countriesRepo;
         }
 
-        /// <summary>
-        /// List of countries with name and code.
-        /// </summary>
-        /// <returns></returns>
         public List<Country> GetCountries()
         {
             return _countriesRepo.GetAllCountries();

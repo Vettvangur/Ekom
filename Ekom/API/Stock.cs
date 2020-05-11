@@ -4,6 +4,9 @@ using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Hangfire.States;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
@@ -119,7 +122,8 @@ namespace Ekom.API
         /// <returns></returns>
         public StockData GetStockData(Guid key, string storeAlias)
         {
-            return _stockPerStoreCache.Cache[storeAlias].ContainsKey(key)
+
+            return _stockPerStoreCache.Cache.ContainsKey(storeAlias) && _stockPerStoreCache.Cache[storeAlias].ContainsKey(key)
             ? _stockPerStoreCache.Cache[storeAlias][key]
             : new StockData
             {
@@ -128,6 +132,8 @@ namespace Ekom.API
                 Stock = 0,
                 UniqueId = $"{storeAlias}_{key}",
             };
+
+
         }
 
         /// <summary>
@@ -355,14 +361,19 @@ namespace Ekom.API
         /// <exception cref="ArgumentNullException"/>
         private bool SetStockWithLock(StockData stockData, int value)
         {
+            if (stockData.Stock == value)
+            {
+                return true;
+            }
+
             if (stockData == null)
             {
                 throw new ArgumentNullException(nameof(stockData));
             }
-            if (stockData.Stock == value)
-            {
-                throw new ArgumentException($"Stock is already set to provided value.", nameof(value));
-            }
+            //if (stockData.Stock == value)
+            //{
+            //    throw new ArgumentException($"Stock is already set to provided value.", nameof(value));
+            //}
             if (value < 0)
             {
                 throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));

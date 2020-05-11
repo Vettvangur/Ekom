@@ -73,7 +73,7 @@ namespace Ekom.Cache
 
             var curStoreCache = Cache[store.Alias];
 
-            foreach (var stock in stockData)
+            foreach (var stock in stockData.Where(x => x.UniqueId.StartsWith(store.Alias)))
             {
                 var stockIdSplit = stock.UniqueId.Split('_');
 

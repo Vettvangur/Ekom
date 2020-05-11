@@ -295,7 +295,6 @@
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
-    <Compile Include="Interfaces\IBaseDiscount.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
     <Compile Include="Exceptions\UmbracoEventException.cs" />
@@ -446,10 +445,20 @@
   <ItemGroup>
     <None Include="app.config" />
     <Compile Include="JsonDotNet\JsonDotNet.cs" />
-    <Content Include="App_Plugins\EkomCouponEditor\ekomCoupon.controller.js" />
-    <Content Include="App_Plugins\EkomCouponEditor\ekomCoupon.html" />
-    <Content Include="App_Plugins\EkomStockEditor\ekomStock.controller.js" />
-    <Content Include="App_Plugins\EkomStockEditor\ekomStock.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
     <Content Include="Views\EkomManager\Index.cshtml" />
     <None Include="Ekom.ruleset" />
     <None Include="packages.config" />

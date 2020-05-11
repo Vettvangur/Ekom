@@ -77,6 +77,12 @@ namespace Ekom
 
             // FIX: To override the default stock cache register before EkomStartup
 
+            // Fill Caches
+            foreach (var cacheEntry in _config.CacheList.Value)
+            {
+                cacheEntry.FillCache();
+            }
+
             // The following two caches are not closely related to the ones listed in _config.CacheList
             // They should not be added to the config list since that list is used by f.x. _config.Succeed in many caches
 
@@ -90,12 +96,6 @@ namespace Ekom
 
             _factory.GetInstance<ICouponCache>()
                 .FillCache();
-
-            // Fill Caches
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
 
             // VirtualContent=true allows for configuration of content nodes to use for matching all requests
             // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
