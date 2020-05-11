@@ -191,8 +191,6 @@ namespace Ekom.Models.OrderedObjects
                 //Log.Error("Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"), ex);
             }
 
-            Price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
-
             Properties = new ReadOnlyDictionary<string, string>(
                 variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
         }

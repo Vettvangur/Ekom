@@ -168,21 +168,10 @@ namespace Ekom.Models
 
                         if (price != null)
                         {
-
-                            if (price.OriginalValue == 0)
-                            {
-                                return Product.Price;
-                            }
-
                             return price;
                         }
                     }
 
-                }
-
-                if (prices.FirstOrDefault()?.OriginalValue == 0)
-                {
-                    return Product.Price;
                 }
 
                 return prices.FirstOrDefault();
@@ -203,6 +192,12 @@ namespace Ekom.Models
                         Store.Alias,
                         Key.ToString());
 
+                foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList()) {
+                    var index = prices.IndexOf(p);
+
+                    prices[index] = Product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
+
+                }
                 return prices;
             }
         }

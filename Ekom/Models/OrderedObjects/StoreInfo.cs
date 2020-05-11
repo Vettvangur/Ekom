@@ -121,7 +121,7 @@ namespace Ekom.Models.OrderedObjects
                 };
             }
 
-            Key = Guid.Parse(storeInfoObject["__Key"].Value<string>());
+            Key = Guid.Parse(storeInfoObject["Key"].Value<string>());
             Culture = storeInfoObject["Culture"].Value<string>();
             Alias = storeInfoObject["Alias"].Value<string>();
             VatIncludedInPrice = storeInfoObject["VatIncludedInPrice"].Value<bool>();
