@@ -187,10 +187,13 @@ namespace Ekom.Repository
 
             if (orderDiscountCache != null)
             {
-                var cs = _contentService;
-                var discountNode = cs.GetById(coupon.DiscountId);
+                // Content service is always null. need to FIX
+                var discountNode = _contentService.GetById(coupon.DiscountId);
 
-                orderDiscountCache.AddReplace(discountNode);
+                if (discountNode != null)
+                {
+                    orderDiscountCache.AddReplace(discountNode);
+                }
 
             }
         }

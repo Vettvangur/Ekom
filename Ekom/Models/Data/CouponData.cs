@@ -1,5 +1,6 @@
 using NPoco;
 using System;
+using Umbraco.Core.Persistence.DatabaseAnnotations;
 
 namespace Ekom.Models.Data
 {
@@ -7,12 +8,12 @@ namespace Ekom.Models.Data
     /// Current stock of a given item
     /// </summary>
     [TableName("EkomCoupon")]
-    [PrimaryKey("Id", AutoIncrement = true)]
     public class CouponData
     {
         /// <summary>
         /// Identity column in the database primary key
         /// </summary>
+        [PrimaryKeyColumn(AutoIncrement = true, Clustered = false)]
         public int Id { get; set; }
         /// <summary>
         /// String that is distrubuted as the coupon

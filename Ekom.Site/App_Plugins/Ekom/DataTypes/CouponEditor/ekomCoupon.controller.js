@@ -8,38 +8,47 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Init = function () {
 
-    $http.post('/umbraco/backoffice/ekom/api/GetCouponsForDiscount?discountId=' + key)
-      .success(function (result) {
+      $http.post('/umbraco/backoffice/ekom/api/GetCouponsForDiscount?discountId=' + key)
+        .then(
+            function(result) {
 
-        $scope.Coupons = result;
+                console.log(result.data);
 
-        if ($scope.Coupons.length > 0) {
-          $scope.Selected = $scope.Coupons[0].CouponCode;
-        }
+                $scope.Coupons = result.data;
 
-      });
+                if ($scope.Coupons.length > 0) {
+                    $scope.Selected = $scope.Coupons[0].CouponCode;
+                }
+            },
+            function() {
+
+            });
 
   };
 
   $scope.Insert = function () {
 
-    $http.post('/umbraco/backoffice/ekom/api/InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable) 
-      .success(function () {
+      $http.post('/umbraco/backoffice/ekom/api/InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable)
+          .then(
+              function() {
+                  $scope.Init();
+              },
+              function() {
 
-        $scope.Init();
-
-      });
+              });
 
   };
 
   $scope.Remove = function (couponCode) {
 
-    $http.post('/umbraco/backoffice/ekom/api/RemoveCoupon?discountId=' + key + '&couponCode=' + couponCode)
-      .success(function () {
+      $http.post('/umbraco/backoffice/ekom/api/RemoveCoupon?discountId=' + key + '&couponCode=' + couponCode)
+          .then(
+              function() {
+                  $scope.Init();
+              },
+              function() {
 
-        $scope.Init();
-
-      });
+              });
 
   };
 
