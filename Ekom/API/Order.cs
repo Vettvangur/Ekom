@@ -223,6 +223,14 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
+        public async Task<IOrderInfo> UpdateOrderlineQuantity(Guid orderLineId, int quantity, string storeAlias)
+        {
+            return await _orderService.UpdateOrderlineQuantity(orderLineId, quantity, storeAlias)
+                .ConfigureAwait(false);
+        }
+
+
+
         public async Task CompleteOrderAsync(Guid orderId)
         {
             await _checkoutService.CompleteAsync(orderId)

@@ -43,7 +43,11 @@ namespace Ekom.Utilities
                     actionName = "AddToOrder";
                     defaultClassName = "cart__quantity-form";
                     break;
+                case FormType.UpdateOrderLineQuantity:
 
+                    actionName = "UpdateOrderlineQuantity";
+                    defaultClassName = "cart__quantity-form";
+                    break;
                 case FormType.RemoveOrderLine:
 
                     defaultClassName = "cart__remove-form";
@@ -92,6 +96,10 @@ namespace Ekom.Utilities
         /// AddOrderLine action with cart view styles
         /// </summary>
         AddToOrderCart,
+        /// <summary>
+        /// Update orderline quantity
+        /// </summary>
+        UpdateOrderLineQuantity,
         /// <summary>
         /// 
         /// </summary>

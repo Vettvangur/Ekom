@@ -268,6 +268,41 @@ namespace Ekom.Services
             _logger.Debug<OrderService>($"Change Order {order.OrderNumber} status to {status.ToString()}");
         }
 
+        public async Task<OrderInfo> UpdateOrderlineQuantity(
+            Guid orderLineId,
+            int quantity,
+            string storeAlias
+        )
+        {
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
+            if (store == null)
+            {
+                throw new ArgumentNullException(nameof(store));
+            }
+
+            var orderInfo = GetOrder(store);
+
+            if (orderInfo == null)
+            {
+                throw new ArgumentNullException(nameof(orderInfo));
+            }
+
+            var orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
+
+            if (orderline == null)
+            {
+                throw new OrderLineNotFoundException("Could not find order line with key: " + orderLineId);
+            }
+
+            orderline.Quantity = quantity;
+
+            await UpdateOrderAndOrderInfoAsync(orderInfo)
+                .ConfigureAwait(false);
+
+            return orderInfo;
+        }
+
         public async Task ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias)
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);

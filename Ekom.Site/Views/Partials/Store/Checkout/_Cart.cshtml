@@ -73,10 +73,9 @@
                             <span class="cart__price">@catalogPrice</span>
                         </td>
                         <td>
-                            @using (Html.BeginEkomForm(FormType.AddToOrderCart))
+                            @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity))
                             {
-                                <input type="hidden" name="lineId" value="@orderline.Key" />
-                                <input type="hidden" name="action" value="@Ekom.Utilities.OrderAction.AddOrUpdate" />
+                                <input type="hidden" name="orderLineId" value="@orderline.Key" />
                                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                                 <input type="number" name="quantity" value="@orderline.Quantity" />
                                 <button type="submit" class="button small show-for-sr">Update</button>
