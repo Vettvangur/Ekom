@@ -103,11 +103,11 @@ namespace Ekom.Models
 
             if (!imageNodes.Any() && primaryVariantGroup != null)
             {
-                imageNodes = PrimaryVariantGroup.Images();
+                imageNodes = primaryVariantGroup.Images();
 
                 if (!imageNodes.Any() && primaryVariantGroup.Variants.Any())
                 {
-                    imageNodes = PrimaryVariantGroup.Variants.FirstOrDefault().Images();
+                    imageNodes = primaryVariantGroup.Variants.FirstOrDefault()?.Images();
                 }
             }
 

@@ -128,7 +128,11 @@ namespace Ekom.Utilities
 
             if (_uriResult)
             {
-                return uriResult.AbsolutePath;
+                var builder = new UriBuilder(uriResult) { Port = -1 };
+
+                var newUri = builder.Uri;
+
+                return newUri.AbsolutePath;
             }
             else
             {

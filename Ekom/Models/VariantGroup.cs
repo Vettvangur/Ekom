@@ -31,12 +31,12 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        public int ProductId => Product.Id;
+        public int ProductId => Product?.Id ?? 0;
 
         /// <summary>
         /// Get the Product Key
         /// </summary>
-        public Guid ProductKey => Product.Key;
+        public Guid ProductKey => Product?.Key ?? Guid.Empty;
 
         /// <summary>
         /// Get the Primary variant price, if no variants then fallback to product price
@@ -107,11 +107,6 @@ namespace Ekom.Models
         {
             var parentProductExamine = NodeHelper.GetFirstParentWithDocType(item, "ekmProduct");
             var parentProduct = Catalog.Instance.GetProduct(int.Parse(parentProductExamine.Id));
-
-            if (parentProduct == null)
-            {
-                throw new ProductNotFoundException("Unable to find parent product of variant group");
-            }
             Product = parentProduct;
         }
 
@@ -125,12 +120,6 @@ namespace Ekom.Models
             var publishedContent = Current.Factory.GetInstance<UmbracoHelper>().Content(node.Id);
             var publishedParentProduct = NodeHelper.GetFirstParentWithDocType(publishedContent, "ekmProduct");
             var parentProduct = Catalog.Instance.GetProduct(publishedParentProduct.Id);
-
-            if (parentProduct == null)
-            {
-                throw new ProductNotFoundException("Unable to find parent product of variant group");
-            }
-
             Product = parentProduct;
         }
     }
