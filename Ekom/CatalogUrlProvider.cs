@@ -27,46 +27,7 @@ namespace Ekom
             string culture,
             Uri current)
         {
-            return _reqCache.GetCacheItem(
-                "EkomUrlProvider-GetUrl-" + content.Id,
-                () =>
-                {
-                    try
-                    {
-                        if (content == null ||
-                            (content.ContentType.Alias != "ekmProduct" && content.ContentType.Alias != "ekmCategory")) return null;
-
-                        var stores = API.Store.Instance.GetAllStores();
-
-                        if (!stores.Any()) return null;
-
-                        if (content.ContentType.Alias == "ekmProduct")
-                        {
-                            var product = API.Catalog.Instance.GetProduct(stores.First().Alias, content.Id);
-
-                            if (product != null)
-                            {
-                                return new UrlInfo(product.Url, true, culture);
-                            }
-
-                        }
-                        else
-                        {
-                            var category = API.Catalog.Instance.GetCategory(stores.First().Alias, content.Id);
-
-                            if (category != null)
-                            {
-                                return new UrlInfo(category.Url, true, culture);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error<CatalogUrlProvider>(ex, "EkomUrlProvider Get Url Failed");
-                    }
-
-                    return null;
-                });
+            return null;
         }
 
         public IEnumerable<UrlInfo> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
@@ -87,9 +48,9 @@ namespace Ekom
 
                     var stores = API.Store.Instance.GetAllStores().ToList();
 
-                    if (stores.Count() <= 1) return list;
+                    if (!stores.Any()) return list;
 
-                    foreach (var store in stores.Skip(1))
+                    foreach (var store in stores)
                     {
                         if (content.ContentType.Alias == "ekmProduct")
                         {

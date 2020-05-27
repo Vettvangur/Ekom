@@ -2,12 +2,19 @@ using Ekom.Interfaces;
 using Examine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Xml.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
+using Umbraco.Core.Configuration.UmbracoSettings;
+using Umbraco.Core.IO;
+using Umbraco.Core.Models.PublishedContent;
 
 namespace Ekom.Utilities
 {
-    static class UrlHelper
+    public static class UrlHelper
     {
         /// <summary>
         /// Build URLs for category
@@ -21,11 +28,11 @@ namespace Ekom.Utilities
 
             if (store.Domains != null)
             {
-                foreach (var domain in store.Domains)
-                {
-                    string domainPath = GetDomainPrefix(domain.DomainName);
+                var domains = store.Domains.Select(domain => GetDomainPrefix(domain.DomainName)).DistinctBy(x => x).ToList();
 
-                    var builder = new StringBuilder(domainPath.AddTrailing());
+                foreach (var domainPath in domains)
+                {
+                    var builder = new StringBuilder(domainPath);
 
                     foreach (var examineItem in examineItems)
                     {
@@ -57,7 +64,7 @@ namespace Ekom.Utilities
                 urls.Add(url);
             }
 
-            return urls;
+            return urls.DistinctBy(x => x);
         }
 
         /// <summary>
@@ -78,7 +85,7 @@ namespace Ekom.Utilities
                 {
                     string domainPath = GetDomainPrefix(domain.DomainName);
 
-                    var builder = new StringBuilder(domainPath.AddTrailing());
+                    var builder = new StringBuilder(domainPath);
 
                     foreach (var item in hierarchy)
                     {
@@ -123,23 +130,24 @@ namespace Ekom.Utilities
 
         public static string GetDomainPrefix(string url)
         {
-            // Handle domains w/ scheme
-            bool _uriResult = Uri.TryCreate(url, UriKind.Absolute, out var uriResult);
+            url = url.AddTrailing();
 
-            if (_uriResult)
+            if (url.Contains(":") && url.IndexOf(":", StringComparison.Ordinal) > 5)
             {
-                var builder = new UriBuilder(uriResult) { Port = -1 };
+                url = url.Substring(url.IndexOf("/", StringComparison.Ordinal));
 
-                var newUri = builder.Uri;
-
-                return newUri.AbsolutePath;
+                return url;
             }
-            else
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uriAbsoluteResult))
             {
-                var firstIndexOf = url.IndexOf("/");
-
-                return firstIndexOf > 0 ? url.Substring(firstIndexOf) : string.Empty;
+                return uriAbsoluteResult.AbsolutePath.AddTrailing();
             }
+
+            var firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
+
+            return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
         }
+
     }
 }

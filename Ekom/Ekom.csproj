@@ -294,6 +294,7 @@
     <Compile Include="DataEditors\EkomCouponEditor.cs" />
     <Compile Include="Exceptions\NodeEntityException.cs" />
     <Compile Include="Exceptions\NotEnoughStockException.cs" />
+    <Compile Include="Interfaces\IConfigHelper.cs" />
     <Compile Include="Interfaces\IDiscount.cs" />
     <Compile Include="Interfaces\IStoreDomainCache.cs" />
     <Compile Include="DataEditors\EkomStockEditor.cs" />
@@ -380,6 +381,7 @@
     <Compile Include="Services\OrderService.Discounts.cs" />
     <Compile Include="Services\ProductDiscountService.cs" />
     <Compile Include="Utilities\ArrayExtensions.cs" />
+    <Compile Include="Utilities\ConfigHelper.cs" />
     <Compile Include="Utilities\ContentExtensions.cs" />
     <Compile Include="Utilities\CookieHelper.cs" />
     <Compile Include="Utilities\DictionaryExtensions.cs" />

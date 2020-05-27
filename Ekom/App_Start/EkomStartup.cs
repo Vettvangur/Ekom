@@ -2,6 +2,7 @@ using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
+using Ekom.Utilities;
 using Hangfire;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
@@ -34,6 +35,7 @@ namespace Ekom
                 .Append<EnsureNodesExist>()
                 .Append<EkomStartup>()
                 ;
+            composition.Register<IConfigHelper, ConfigHelper>();
         }
     }
 

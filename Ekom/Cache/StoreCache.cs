@@ -39,7 +39,6 @@ namespace Ekom.Cache
                 var searcher = index.GetSearcher();
 
 #if DEBUG
-
                 Stopwatch stopwatch = new Stopwatch();
 
                 stopwatch.Start();
@@ -58,13 +57,11 @@ namespace Ekom.Cache
                     {
                         var item = _objFac?.Create(r) ?? new Store(r);
 
-                        if (item != null)
-                        {
-                            count++;
+                        count++;
 
-                            var itemKey = Guid.Parse(r.Key());
-                            AddOrReplaceFromCache(itemKey, item);
-                        }
+                        var itemKey = Guid.Parse(r.Key());
+                        AddOrReplaceFromCache(itemKey, item);
+                        
                     }
                     catch (Exception ex) // Skip on fail
                     {

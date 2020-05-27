@@ -24,18 +24,16 @@
 
                     var catalogPrice = product.Price.WithVat.CurrencyString;
 
-                    if (variantGroup != null)
+                    var variant = variantGroup?.Variants.FirstOrDefault();
+
+                    if (variant != null)
                     {
-                        var variant = variantGroup.Variants.FirstOrDefault();
-                        if (variant != null)
-                        {
-                            catalogPrice = variant.Price.WithVat.CurrencyString;
-                        }
+                        catalogPrice = variant.Price.WithVat.CurrencyString;
                     }
 
                     //var images = variantGroup != null ? variantGroup.ImageIds.GetImageNodes() : product.ImageIds.GetImageNodes();
 
-                    var catalogProduct = Ekom.API.Catalog.Instance.GetProduct(order.StoreInfo.Alias, product.Key);
+                    var catalogProduct = Catalog.Instance.GetProduct(order.StoreInfo.Alias, product.Key);
 
                     <tr>
                         <td class="no-padding-left">

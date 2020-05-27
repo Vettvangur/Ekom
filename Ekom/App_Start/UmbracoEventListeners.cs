@@ -260,32 +260,34 @@ namespace Ekom.App_Start
 
             if (domain != null)
             {
-                if (domain.RootContentId != null)
-                {
-                    var rootContent = _cs.GetById(domain.RootContentId.Value);
-                    IContent ekmStoreContent;
-                    if (int.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out int storeId))
-                    {
-                        ekmStoreContent = _cs.GetById(storeId);
-                    }
-                    else
-                    {
-                        var srn = GuidUdi.Parse(rootContent.GetValue<string>("ekmStorePicker"));
-                        ekmStoreContent = _cs.GetById(srn.Guid);
-                    }
+                // FIX
+                //if (domain.RootContentId != null)
+                //{
+                //    var rootContent = _cs.GetById(domain.RootContentId.Value);
+                //    IContent ekmStoreContent;
+                //    if (int.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out int storeId))
+                //    {
+                //        ekmStoreContent = _cs.GetById(storeId);
+                //    }
+                //    else
+                //    {
+                //        var srn = GuidUdi.TryParse(rootContent.GetValue<string>("ekmStorePicker"), out var _udi);
 
-                    if (ekmStoreContent?.ContentType?.Alias != "ekmStore")
-                    {
-                        throw new EventException(
-                            "Error updating store! " +
-                            $"Erronous ekom store picked for root content {domain.RootContentId.Value} domain {domain.DomainName}. " +
-                            "Please ensure you have correctly selected a ekmStore node using the ekmStorePicker on this root content node."
-                        );
-                    }
+                //        ekmStoreContent = _cs.GetById(_udi.Guid);
+                //    }
 
-                    // Update cached IStore
-                    _storeCache.AddReplace(ekmStoreContent);
-                }
+                //    if (ekmStoreContent?.ContentType?.Alias != "ekmStore")
+                //    {
+                //        throw new EventException(
+                //            "Error updating store! " +
+                //            $"Erronous ekom store picked for root content {domain.RootContentId.Value} domain {domain.DomainName}. " +
+                //            "Please ensure you have correctly selected a ekmStore node using the ekmStorePicker on this root content node."
+                //        );
+                //    }
+
+                //    // Update cached IStore
+                //    _storeCache.AddReplace(ekmStoreContent);
+                
             }
         }
     }

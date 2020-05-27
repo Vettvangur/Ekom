@@ -120,6 +120,7 @@ namespace Ekom.Utilities
 
                     var node = umbracoHelper.Media(mediaGuid);
 
+ 
                     if (node != null)
                     {
                         return node;
