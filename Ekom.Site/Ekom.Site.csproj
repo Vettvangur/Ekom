@@ -403,6 +403,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.svg" />
+    <Content Include="App_Plugins\EkomManager\assets\icons\backupIcons.svg" />
+    <Content Include="App_Plugins\EkomManager\assets\icons\ellipse.svg" />
+    <Content Include="App_Plugins\EkomManager\assets\icons\IconPack\down-dir.svg" />
+    <Content Include="App_Plugins\EkomManager\assets\icons\IconPack\vv-logo.svg" />
+    <Content Include="App_Plugins\EkomManager\assets\icons\icons.svg" />
+    <Content Include="App_Plugins\EkomManager\css\app.min.css" />
+    <Content Include="App_Plugins\EkomManager\EkomRedirect\EkomRedirect.js" />
+    <Content Include="App_Plugins\EkomManager\EkomRedirect\Views\dashboard.html" />
+    <Content Include="App_Plugins\EkomManager\js\app.min.js" />
+    <Content Include="App_Plugins\EkomManager\js\assets\fonts\icons.svg" />
+    <Content Include="App_Plugins\EkomManager\lang\en-us.xml" />
     <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
     <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
     <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
@@ -479,6 +491,13 @@
     <Content Include="Views\Partials\Grid\Bootstrap3-Fluid.cshtml" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
     <Content Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
+    <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.eot" />
+    <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.ttf" />
+    <Content Include="App_Plugins\EkomManager\assets\fonts\ekommanager.woff" />
+    <Content Include="App_Plugins\EkomManager\css\app.min.css.map" />
+    <Content Include="App_Plugins\EkomManager\js\app.min.js.map" />
+    <Content Include="App_Plugins\EkomManager\package.manifest" />
+    <Content Include="App_Plugins\EkomManager\EkomRedirect\package.manifest" />
     <None Include="packages.config" />
     <Content Include="Views\Masterpage.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />

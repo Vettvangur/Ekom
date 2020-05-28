@@ -285,7 +285,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="App_Start\ReactConfig.cs" />
+    <Compile Include="App_Start\EkomSection.cs" />
     <Compile Include="App_Start\RegisterCustomBackofficeMvcRouteComponent.cs" />
     <Compile Include="App_Start\Startup.cs" />
     <Compile Include="Controllers\EkomController.cs" />

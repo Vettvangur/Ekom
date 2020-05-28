@@ -1,5 +1,4 @@
-﻿@inherits UmbracoTemplatePage
-@using Ekom.Site.Helpers
+﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
 @using System.Net;
 @{
     Layout = null;
@@ -16,17 +15,10 @@
     <title>Ekom - Manager</title>
 
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,400,600,700" rel="stylesheet">
-    @{ 
+    @{
         string hostName = Request.Url.Host.ToString();
     }
-    @if (Extensions.IsDebug() && hostName == "ekom.localhost.vettvangur.is")
-    {
-        <link rel="stylesheet" type="text/css" href="http://localhost:3777/css/app.styles.css?v=@DateTime.Now.Ticks" />
-    }
-    else
-    {
-        <link rel="stylesheet" type="text/css" href="/app_plugins/ekomManager/css/app.min.css?v=@DateTime.Now.ToString("Mdyyyyhh")" />
-    }
+    <link rel="stylesheet" type="text/css" href="/app_plugins/ekomManager/css/app.min.css?v=@DateTime.Now.ToString("Mdyyyyhh")" />
     <link rel="stylesheet" href="/app_plugins/ekomManager/css/react-table.css?v=@DateTime.Now.Ticks" />
 
     <META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
@@ -34,14 +26,6 @@
 
 <body>
     <div id="app" data-userName="@userName" class="pageContainer"></div>
-
-    @if (Extensions.IsDebug() && hostName == "ekom.localhost.vettvangur.is")
-    {
-        <script src="http://localhost:3777/app.js?v=@DateTime.Now.Ticks"></script>
-    }
-    else
-    {
-        <script src="/app_plugins/ekomManager/js/app.min.js?v=@DateTime.Now.ToString("Mdyyyyhh")"></script>
-    }
+    <script src="/app_plugins/ekomManager/js/app.min.js?v=@DateTime.Now.ToString("Mdyyyyhh")"></script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+{
+    "dashboards":  [
+        {
+            "alias": "ekomDashboard",
+            "view":  "~/App_Plugins/EkomManager/EkomRedirect/Views/dashboard.html",
+            "sections":  [ "ekommanager" ],
+            "weight": -10
+        }
+    ]
+}
