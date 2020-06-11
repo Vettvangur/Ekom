@@ -77,13 +77,13 @@ namespace Ekom
         {
             _logger.Info<EkomStartup>("Initializing...");
 
-            // FIX: To override the default stock cache register before EkomStartup
-
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
             {
                 cacheEntry.FillCache();
             }
+
+            // FIX: To override the default stock cache register before EkomStartup
 
             // The following two caches are not closely related to the ones listed in _config.CacheList
             // They should not be added to the config list since that list is used by f.x. _config.Succeed in many caches

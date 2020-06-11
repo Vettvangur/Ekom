@@ -461,10 +461,9 @@
     <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
     <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
     <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
-    <Content Include="Views\EkomManager\Index.cshtml" />
     <None Include="Ekom.ruleset" />
     <None Include="packages.config" />
-    <None Include="Views\web.config.transform" />
+    <Content Include="Views\web.config.transform" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Attributes\" />

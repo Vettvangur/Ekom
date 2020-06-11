@@ -361,15 +361,15 @@ namespace Ekom.API
         /// <exception cref="ArgumentNullException"/>
         private bool SetStockWithLock(StockData stockData, int value)
         {
+            if (stockData == null)
+            {
+                throw new ArgumentNullException(nameof(stockData));
+            }
             if (stockData.Stock == value)
             {
                 return true;
             }
 
-            if (stockData == null)
-            {
-                throw new ArgumentNullException(nameof(stockData));
-            }
             //if (stockData.Stock == value)
             //{
             //    throw new ArgumentException($"Stock is already set to provided value.", nameof(value));
