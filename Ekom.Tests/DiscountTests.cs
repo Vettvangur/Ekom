@@ -122,7 +122,6 @@ namespace Ekom.Tests
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
-            discount.discountItems = new List<Guid> { productKey };
 
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -153,7 +152,6 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var orderDiscount = Objects.Objects.Get_Discount_fixed_500();
             var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
-            discount.discountItems = new List<Guid> { productKey };
 
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -190,7 +188,6 @@ namespace Ekom.Tests
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var orderDiscount = Objects.Objects.Get_Discount_percentage_50();
             var discount = Objects.Objects.Get_ProductDiscount_fixed_500();
-            discount.discountItems = new List<Guid> { productKey };
 
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -229,9 +226,8 @@ namespace Ekom.Tests
             var product = Objects.Objects.Get_Shirt3_Product();
 
             var discountFixed500 = Objects.Objects.Get_Discount_fixed_500();
-            discountFixed500.discountItems = new List<Guid> { productKey };
+
             var discountPerc50 = Objects.Objects.Get_Discount_percentage_50();
-            discountPerc50.discountItems = new List<Guid> { productKey };
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
@@ -268,7 +264,6 @@ namespace Ekom.Tests
             var product3 = Objects.Objects.Get_Shirt3_Product();
 
             var discountFixed500 = Objects.Objects.Get_Discount_fixed_500();
-            discountFixed500.discountItems = new List<Guid> { product2Key, product3Key };
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
@@ -303,7 +298,6 @@ namespace Ekom.Tests
             var product3 = Objects.Objects.Get_Shirt3_Product();
 
             var discountFixed500 = Objects.Objects.Get_Discount_fixed_500();
-            discountFixed500.discountItems = new List<Guid> { product2Key, product3Key };
 
             var orderSvcMocks = new OrderServiceMocks();
             var orderSvc = orderSvcMocks.orderSvc;
@@ -462,7 +456,6 @@ namespace Ekom.Tests
             var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_fixed_500();
 
             var product = Objects.Objects.Get_Shirt3_Product();
-            discount.discountItems.Add(product.Key);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
@@ -497,7 +490,6 @@ namespace Ekom.Tests
             var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_percentage_50();
 
             var product = Objects.Objects.Get_Shirt3_Product();
-            discount.discountItems.Add(product.Key);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
@@ -535,7 +527,6 @@ namespace Ekom.Tests
             reg.Register<IProductDiscountService>(productDiscountService);
 
             var product = Objects.Objects.Get_Shirt3_Product();
-            discount.discountItems.Add(product.Key);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
@@ -566,7 +557,6 @@ namespace Ekom.Tests
             reg.Register<IProductDiscountService>(productDiscountService);
 
             var product = Objects.Objects.Get_Shirt3_Product();
-            discount.discountItems.Add(product.Key);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;

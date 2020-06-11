@@ -54,7 +54,6 @@ namespace Ekom.Tests
             reg.Register<IProductDiscountService>(productDiscountService);
 
             var product2 = Objects.Objects.Get_Shirt2_Product();
-            discountPerc50.discountItems.Add(product2.Key);
 
             var orderSvc = new OrderServiceMocks().orderSvc;
 
