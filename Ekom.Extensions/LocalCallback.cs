@@ -1,5 +1,5 @@
-﻿using System;
-using Umbraco.NetPayment;
+using Ekom.NetPayment;
+using System;
 
 namespace Ekom.Extensions
 {

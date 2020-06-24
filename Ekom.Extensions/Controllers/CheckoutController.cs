@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
-using Umbraco.NetPayment;
-using Umbraco.NetPayment.API;
-using Umbraco.NetPayment.Helpers;
+using Ekom.NetPayment;
+using Ekom.NetPayment.API;
+using Ekom.NetPayment.Helpers;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Extensions.Controllers
@@ -217,20 +217,20 @@ namespace Ekom.Extensions.Controllers
                 }
                 else
                 {
-                    var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
+                    var pp = Ekom.NetPayment.API.NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
                     var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
 
-                    return Content(await pp.RequestAsync(
-                        order.ChargedAmount.Value,
-                        orderItems,
-                        skipReceipt: true,
-                        vortoLanguage: order.StoreInfo.Alias,
-                        language: language, 
-                        member: Umbraco.MembershipHelper.GetCurrentMemberId(),
-                        orderCustomString: order.UniqueId.ToString()
-                    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
-                    ));
+                    return Content(await pp.RequestAsync(new PaymentSettings
+                    {
+                        Orders = orderItems,
+                        SkipReceipt = true,
+                        VortoLanguage = order.StoreInfo.Alias,
+                        Language = language,
+                        Member = Members.GetCurrentMemberId(),
+                        OrderCustomString = order.UniqueId.ToString(),
+                        //paymentProviderId: paymentRequest.PaymentProvider.ToString()
+                    }));
                 }
             }
             catch (Exception ex)

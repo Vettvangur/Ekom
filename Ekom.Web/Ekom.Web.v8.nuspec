@@ -1,17 +1,23 @@
 <?xml version="1.0"?>
 <package >
     <metadata>
-        <id>Ekom.v8</id>
+        <id>Ekom.Web.v8</id>
         <version>0.0.1</version>
-        <title>Ekom.v8</title>
+        <title>Ekom.Web.v8</title>
         <authors>Vettvangur</authors>
         <owners>Vettvangur</owners>
         <projectUrl>https://github.com/Vettvangur/Ekom</projectUrl>
-        <iconUrl>https://www.vettvangur.is/content/favicon.png</iconUrl>
+        <icon>images\VV_Logo.png</icon>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Ekom - Vettvangur E-Commerce solution</description>
         <releaseNotes>Initial release</releaseNotes>
         <copyright>Copyright 2019</copyright>
         <tags></tags>
+        <dependencies>
+            <dependency id="GMO.Vorto.Web.v8" version="[0.1.3]"/>
+        </dependencies>
     </metadata>
+    <files>
+        <file src="..\VV_Logo.png" target="images\" />
+    </files>
 </package>

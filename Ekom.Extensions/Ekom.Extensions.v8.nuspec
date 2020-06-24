@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Ekom.Extensions</id>
-    <version>0.3.0</version>
+    <id>Ekom.Extensions.v8</id>
+    <version>0.0.1</version>
     <title>Ekom Controllers</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
