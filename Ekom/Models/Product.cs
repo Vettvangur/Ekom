@@ -30,14 +30,6 @@ namespace Ekom.Models
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
 
-        /// <summary>
-        /// Best discount mapped to product, populated after discount cache fills.
-        /// </summary>
-
-        /// <summary>
-        /// Best discount mapped to product, populated after discount cache fills.
-        /// </summary>
-
         public virtual IDiscount ProductDiscount(string price = null)
         {
             price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;

@@ -104,15 +104,38 @@ namespace Ekom.Tests.Objects
                     { "__Path", new List<string> { "-1,1066,2245,2246" } },
                     { "nodeType", new List<string> { "2237" } },
                     { "disable", new List<string> { "{\"values\":{\"IS\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
-                    { "amount", new List<string> { "500" } },
-                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
+                    { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 500 } ] }" } },
+                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9,umb://document/30762e8049594c24a29a13583ff73a06" } },
                     { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
                     { "type", new List<string> { "Fixed" } },
                 });
+        //private static SearchResult Get_OrderDiscount_fixed_500_SearchResult()
+        //    => new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
+        //        {
+        //            { "__NodeId", new List<string> { "2246" } },
+        //            { "__NodeTypeAlias", new List<string> { "ekmdiscount" } },
+        //            { "__Published", new List<string> { "y" } },
+        //            { "__Key", new List<string> { "1506f28f-6397-4fd6-b330-9e2cabd50a57" } },
+        //            { "parentID", new List<string> { "2245" } },
+        //            { "level", new List<string> { "3" } },
+        //            { "nodeName", new List<string> { "10% off" } },
+        //            { "urlName", new List<string> { "10-off" } },
+        //            { "__Path", new List<string> { "-1,1066,2245,2246" } },
+        //            { "nodeType", new List<string> { "2237" } },
+        //            { "disable", new List<string> { "{\"values\":{\"IS\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
+        //            { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 500 } ] }" } },
+        //            { "discountItems", new List<string> { "" } },
+        //            { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+        //            { "type", new List<string> { "Fixed" } },
+        //        });
         public static Discount Get_Discount_fixed_500()
             => new Discount(
                 Get_Discount_fixed_500_SearchResult(),
                 Get_IS_Store_Vat_NotIncluded());
+        //public static Discount Get_OrderDiscount_fixed_500()
+        //    => new Discount(
+        //        Get_OrderDiscount_fixed_500_SearchResult(),
+        //        Get_IS_Store_Vat_NotIncluded());
         public static Discount Get_ExclusiveDiscount_fixed_500()
             => new Discount(
                 new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
@@ -128,8 +151,8 @@ namespace Ekom.Tests.Objects
                     { "__Path", new List<string> { "-1,1066,2245,2246" } },
                     { "nodeType", new List<string> { "2237" } },
                     { "disable", new List<string> { "{\"values\":{\"IS\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
-                    { "amount", new List<string> { "500" } },
-                    { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
+                    { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 500 } ] }" } },
+                    { "discountItems", new List<string> { "" } },
                     { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
                     { "exclusive", new List<string> { "1" } },
                 }),
@@ -152,7 +175,7 @@ namespace Ekom.Tests.Objects
                     { "__Path", new List<string> { "-1,1066,2245,2246" } },
                     { "nodeType", new List<string> { "2237" } },
                     { "disable", new List<string> { "" } },
-                    { "amount", new List<string> { "50" } },
+                    { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 50 } ] }" } },
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Percentage" } },
@@ -181,7 +204,7 @@ namespace Ekom.Tests.Objects
                     { "__Path", new List<string> { "-1,1066,2245,2246" } },
                     { "nodeType", new List<string> { "2237" } },
                     { "disable", new List<string> { "" } },
-                    { "amount", new List<string> { "50" } },
+                    { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 50 } ] }" } },
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Percentage" } },
@@ -203,7 +226,7 @@ namespace Ekom.Tests.Objects
                     { "__Path", new List<string> { "-1,1066,2245,2246" } },
                     { "nodeType", new List<string> { "2237" } },
                     { "disable", new List<string> { "" } },
-                    { "amount", new List<string> { "1000" } },
+                    { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 1000 } ] }" } },
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "startOfRange", new List<string> { "2000" } },
                     { "title", new List<string> { "" } },

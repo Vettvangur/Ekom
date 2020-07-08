@@ -34,7 +34,7 @@ and create the uwbsRequest object with store domainprefix and currency if applic
 - If non-stackable and there are no line discounts, apply discount
 - If non-stackable, and there are line discounts applied, apply discount to OrderInfo temporarily. Then compare old and new order total. If the new discount compares favorably, remove the line discounts and apply the new order discount.
   - OrderInfo does not use line discount when a non-stackable discount is set, this is only for this specific case of comparing.
-3. If there is one compare (using non-stackable compare above if applicable) and apply new Discount if better
+3. If there is one, compare (using non-stackable compare above if applicable) and apply new Discount if better
 
 ##### When do ProductDiscounts get applied?
 When a new OrderLine is created Product.Discount is called, if it returns a match we check the rules above and apply if applicable

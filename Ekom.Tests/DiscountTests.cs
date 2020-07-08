@@ -257,7 +257,12 @@ namespace Ekom.Tests
             var product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
             var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
 
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product3Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
@@ -291,7 +296,12 @@ namespace Ekom.Tests
             var product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
             var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
 
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product2Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();
@@ -308,8 +318,8 @@ namespace Ekom.Tests
                 product2,
                 discountFixed500,
                 store.Alias,
-                null,
-                oi
+                coupon: null,
+                orderInfo: oi
             ).Result);
 
             oi = orderSvc.AddOrderLineAsync(product3, 1, store).Result;
@@ -449,13 +459,18 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
 
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var discount = Objects.Objects.Get_ProductDiscount_percentage_50();
             var orderDiscount = Objects.Objects.Get_ExclusiveDiscount_fixed_500();
 
             var product = Objects.Objects.Get_Shirt3_Product();
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product.Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product.Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;

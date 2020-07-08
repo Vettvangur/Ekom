@@ -43,7 +43,7 @@ namespace Ekom.Models.Behaviors
             {
                 var httpContext = Current.Factory.GetInstance<HttpContextBase>();
 
-                if (httpContext != null)
+                if (httpContext?.Request != null)
                 {
                     var store = _node is PerStoreNodeEntity perStoreNode 
                         ? perStoreNode.Store 
@@ -103,11 +103,13 @@ namespace Ekom.Models.Behaviors
 
             get
             {
-                if (HttpContext.Current != null)
+                var httpContext = Current.Factory.GetInstance<HttpContextBase>();
+
+                if (httpContext?.Request != null)
                 {
                     var store = _node is PerStoreNodeEntity perStoreNode ? perStoreNode.Store : API.Store.Instance.GetStore();
 
-                    var cookie = HttpContext.Current.Request.Cookies["EkomCurrency-" + store.Alias];
+                    var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
 
                     if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
                     {
@@ -118,7 +120,6 @@ namespace Ekom.Models.Behaviors
                             return price.Value;
                         }
                     }
-
                 }
 
                 return EndRanges.Any() ? EndRanges.FirstOrDefault().Value : 0;
