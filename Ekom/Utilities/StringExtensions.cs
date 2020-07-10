@@ -89,62 +89,55 @@ namespace Ekom.Utilities
         public static string GetVortoValue(this string value, string storeAlias)
         {
 
-            try
+            if (!string.IsNullOrEmpty(value))
             {
 
-                if (!string.IsNullOrEmpty(value))
+                if (value.IsJson())
                 {
-
-                    if (value.IsJson())
+                    VortoValue o = null;
+                    try
                     {
-                        var o = JsonConvert.DeserializeObject<VortoValue>(value);
+                        o = JsonConvert.DeserializeObject<VortoValue>(value);
+                    }
+                    catch { }
 
-                        if (o != null)
+                    if (o != null)
+                    {
+                        object itemValue = null;
+
+                        var foundValue = o.Values?.TryGetValue(storeAlias, out itemValue);
+
+                        if (foundValue == true)
                         {
-
-                            object itemValue = null;
-
-                            var foundValue = o.Values.TryGetValue(storeAlias, out itemValue);
-
-                            if (foundValue)
+                            if (itemValue != null)
                             {
-
-                                if (itemValue != null)
-                                {
-                                    return itemValue.ToString();
-                                }
+                                return itemValue.ToString();
                             }
-
-
                         }
                     }
-                    else
-                    {
-                        return value;
-                    }
-
                 }
-
+                else
+                {
+                    return value;
+                }
             }
-            catch {
-                try
-                {
-                    var o = JObject.Parse(value);
 
-                    if (o.TryGetValue(storeAlias, out JToken itemValue))
-                    {
-                        return itemValue.ToString();
-                    }
+            JObject parsed = null;
+            try
+            {
+                parsed = JObject.Parse(value);
+            }
+            catch { }
 
-                }
-                catch
-                {
-
-                }
+            JToken itemVal = null;
+            if (parsed?.TryGetValue(storeAlias, out itemVal) == true)
+            {
+                return itemVal.ToString();
             }
 
             return string.Empty;
         }
+
         public static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
         {
             var prices = new List<IPrice>();
@@ -203,7 +196,7 @@ namespace Ekom.Utilities
                     prices.Add(new Price(price["Price"].Value<string>(), currency, vat, vatIncludedInPrice, productDiscount != null ? new OrderedDiscount(productDiscount) : null));
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 if (fallbackCurrency == null)
                 {
@@ -239,7 +232,7 @@ namespace Ekom.Utilities
                 foreach (var value in _values)
                 {
                     var currencyValue = value["Currency"].Value<string>();
-                    var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0); 
+                    var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
 
                     values.Add(new CurrencyValue(val, currencyValue));
                 }

@@ -695,15 +695,10 @@ namespace Ekom.App_Start
                                                 Name = "Discount Items",
                                                 SortOrder = 7,
                                             },
-                                            new PropertyType(booleanDt, "exclusive")
-                                            {
-                                                Name = "Exclusive",
-                                                SortOrder = 8,
-                                            },
                                             new PropertyType(booleanDt, "stackable")
                                             {
                                                 Name = "Stackable",
-                                                SortOrder = 9,
+                                                SortOrder = 8,
                                             },
                                         }))
                                     {

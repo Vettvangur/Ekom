@@ -1,7 +1,7 @@
 {
-    "name": "sgsthing",
+    "name": "ekomv8",
     "version": "1.0.0",
-    "description": "Frontend for SGS - Þing",
+    "description": "Frontend for Ekom V8",
     "main": "js/app.ts",
     "author": "Vettvangur",
     "private": true,

@@ -33,8 +33,6 @@ namespace Ekom.Services
 
             foreach (var discount in _productDiscountCache.Cache[storeAlias])
             {
-
-                var f = JsonConvert.SerializeObject(discount.Value);
                 if (discount.Value.Disabled)
                 {
                     continue;

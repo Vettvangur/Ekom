@@ -11,11 +11,11 @@ namespace Ekom.Tests.Objects
         /// IS store with 10% Vat not included
         /// </summary>
         /// <returns></returns>
-        public static Store Get_IS_Store_Vat_NotIncluded() 
+        public static Store Get_IS_Store_Vat_NotIncluded()
             => new CustomStore(Store_IS_Vat_NotIncluded.json, 1059);
-        public static Store Get_IS_Store_Vat_Included() 
+        public static Store Get_IS_Store_Vat_Included()
             => new CustomStore(Store_IS_Vat_Included.json, 1059);
-        public static Store Get_DK_Store_Vat_Included() 
+        public static Store Get_DK_Store_Vat_Included()
             => new CustomStore(Store_DK_Vat_Included.json, 1110);
 
         public static SearchResult StoreResult
@@ -37,6 +37,7 @@ namespace Ekom.Tests.Objects
                 { "currency", new List<string> { "is-IS" } },
                 { "vatIncludedInPrice", new List<string> { "1" } },
                 { "orderNumberTemplate", new List<string> { "#orderIdPadded#" } },
+                { "sortOrder", new List<string> { "1" } },
             });
         public static CustomProduct Get_Shirt2_Product()
             => new CustomProduct(Shirt_product_2.json, Get_IS_Store_Vat_NotIncluded());
@@ -62,6 +63,7 @@ namespace Ekom.Tests.Objects
                     { "sku", new List<string> { "women-sku-shirt-2-blue-s" } },
                     { "stock", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
                     { "title", new List<string> { "{\"values\":{\"IS\":\"S\",\"EN\":\"S\",\"DK\":\"S\",\"EU\":\"S\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "sortOrder", new List<string> { "1" } },
                 });
         public static Variant Get_shirt2_blue_S_variant()
             => new Variant(
@@ -84,10 +86,11 @@ namespace Ekom.Tests.Objects
                     { "color", new List<string> { "0056ff" } },
                     { "images", new List<string> { "2209,2210" } },
                     { "title", new List<string> { "{\"values\":{\"IS\":\"Blár\",\"EN\":\"Blue\",\"DK\":\"Blue\",\"EU\":\"Blue\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "sortOrder", new List<string> { "1" } },
                 });
         public static VariantGroup Get_shirt2_blue_variantgroup()
             => new VariantGroup(
-                Get_shirt2_blue_variantgroup_SearchResult(), 
+                Get_shirt2_blue_variantgroup_SearchResult(),
                 Get_IS_Store_Vat_NotIncluded());
 
         private static SearchResult Get_Discount_fixed_500_SearchResult()
@@ -108,6 +111,8 @@ namespace Ekom.Tests.Objects
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9,umb://document/30762e8049594c24a29a13583ff73a06" } },
                     { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
                     { "type", new List<string> { "Fixed" } },
+                    { "sortOrder", new List<string> { "1" } },
+                    { "stackable", new List<string> { "1" } },
                 });
         //private static SearchResult Get_OrderDiscount_fixed_500_SearchResult()
         //    => new SearchResult("2246", 0, () => new Dictionary<string, List<string>>
@@ -127,6 +132,7 @@ namespace Ekom.Tests.Objects
         //            { "discountItems", new List<string> { "" } },
         //            { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
         //            { "type", new List<string> { "Fixed" } },
+        //            { "sortOrder", new List<string> { "1" } },
         //        });
         public static Discount Get_Discount_fixed_500()
             => new Discount(
@@ -154,7 +160,8 @@ namespace Ekom.Tests.Objects
                     { "discount", new List<string> { "{\"IS\": [{ \"Currency\": \"is-IS\", \"Value\": 500 } ] }" } },
                     { "discountItems", new List<string> { "" } },
                     { "title", new List<string> { "{\"values\":null,\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
-                    { "exclusive", new List<string> { "1" } },
+                    { "stackable", new List<string> { "0" } },
+                    { "sortOrder", new List<string> { "1" } },
                 }),
                 Get_IS_Store_Vat_NotIncluded());
         public static ProductDiscount Get_ProductDiscount_fixed_500()
@@ -179,6 +186,8 @@ namespace Ekom.Tests.Objects
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Percentage" } },
+                    { "sortOrder", new List<string> { "1" } },
+                    { "stackable", new List<string> { "1" } },
                 });
 
         public static Discount Get_Discount_percentage_50()
@@ -208,7 +217,8 @@ namespace Ekom.Tests.Objects
                     { "discountItems", new List<string> { "umb://document/9e8665c7d40542b58913175ca066d5c9" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Percentage" } },
-                    { "exclusive", new List<string> { "1" } },
+                    { "stackable", new List<string> { "0" } },
+                    { "sortOrder", new List<string> { "1" } },
                 }),
                 Get_IS_Store_Vat_NotIncluded());
         public static Discount Get_Discount_fixed_1000_Min_2000()
@@ -231,6 +241,8 @@ namespace Ekom.Tests.Objects
                     { "startOfRange", new List<string> { "2000" } },
                     { "title", new List<string> { "" } },
                     { "type", new List<string> { "Fixed" } },
+                    { "sortOrder", new List<string> { "1" } },
+                    { "stackable", new List<string> { "1" } },
                 }),
                 Get_IS_Store_Vat_NotIncluded());
 
@@ -249,7 +261,9 @@ namespace Ekom.Tests.Objects
                     { "disable", new List<string> { "{\"values\":{\"IS\":\"1\",\"EN\":\"0\",\"DK\":\"0\",\"EU\":\"0\"},\"dtdGuid\":\"383bb1cf-eb59-4bff-b5de-48f17f8d3bef\"}" } },
                     { "slug", new List<string> { "\"values\":{\"IS\":\"konur\",\"EN\":\"women\",\"DK\":\"kvinder\",\"EU\":\"women\"},\"dtdGuid\":\"b79a2484-7a52-47a1-8070-c3a347bc22ee\"}" } },
                     { "title", new List<string> { "{\"values\":{\"IS\":\"Konur\",\"EN\":\"Women\",\"DK\":\"Kvinder\",\"EU\":\"Women\"},\"dtdGuid\":\"75e484b5-66b9-4d86-b651-5ebb7a3c580b\"}" } },
+                    { "sortOrder", new List<string> { "1" } },
                 });
+
         public static Category Get_Category_Women()
             => new Category(
                 Get_Category_Women_SearchResult(),

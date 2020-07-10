@@ -26,6 +26,9 @@ namespace Ekom.Tests
     [TestClass]
     public class DiscountTests
     {
+        static Guid product2Key = Guid.Parse("30762e80-4959-4c24-a29a-13583ff73a06");
+        static Guid product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
+
         [TestCleanup]
         public void TearDown()
         {
@@ -116,8 +119,6 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
 
-            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
-
             new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
@@ -145,9 +146,17 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
 
-            var productKey = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
-
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product3Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product2Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var orderDiscount = Objects.Objects.Get_Discount_fixed_500();
@@ -531,7 +540,12 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
 
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product3Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product3Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var discount = Objects.Objects.Get_ProductDiscount_fixed_500();
