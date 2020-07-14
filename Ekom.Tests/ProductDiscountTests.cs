@@ -9,6 +9,8 @@ using Ekom.Cache;
 using System.Collections.Concurrent;
 using Ekom.Services;
 using Ekom.Tests.MockClasses;
+using Umbraco.Core.Cache;
+using Umbraco.Core.Logging;
 
 namespace Ekom.Tests
 {
@@ -27,6 +29,13 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
+
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
 
             var discount = new CustomDiscount(ProductDiscount_Percent_20.json2, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
@@ -67,6 +76,13 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
 
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
+
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -82,6 +98,13 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
 
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
+
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -95,6 +118,13 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_IS_Store_Vat_Included();
+
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
 
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
@@ -110,6 +140,13 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
 
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
+
             var discount = new CustomDiscount(ProductDiscount_Percent_20.json2, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -123,6 +160,13 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
+
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
 
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
@@ -139,6 +183,13 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
 
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
+
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);
             var productDiscountService = new ProductDiscountService(cache);
@@ -152,6 +203,13 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
             var store = Objects.Objects.Get_DK_Store_Vat_Included();
+
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled,
+                Mock.Of<ILogger>(),
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
 
             var discount = new CustomDiscount(ProductDiscount_Fixed.limited1000, store);
             var cache = Helpers.CreateGlobalDiscountCacheWithDiscount(store.Alias, discount);

@@ -1,3 +1,4 @@
+using Ekom.API;
 using Ekom.Controllers;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -17,7 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Cache;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Web;
 
@@ -358,12 +361,18 @@ namespace Ekom.Tests
         {
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
-
             //var product3Key = Guid.Parse("9e8665c7-d405-42b5-8913-175ca066d5c9");
 
             new UmbracoHelperCreator(reg, fac);
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+            var storeSvc = new Mock<API.Store>(
+                AppCaches.Disabled, 
+                Mock.Of<ILogger>(), 
+                Mock.Of<IStoreService>(x => x.GetStoreFromCache() == store)
+            );
+            reg.Register(storeSvc.Object);
+
             var product3 = Objects.Objects.Get_Shirt3_Product();
             var discount_fixed_1000_Min_2000 = Objects.Objects.Get_Discount_fixed_1000_Min_2000();
 
@@ -392,7 +401,12 @@ namespace Ekom.Tests
             var (fac, reg) = Helpers.RegisterAll();
             reg.Register(Mock.Of<IProductDiscountService>());
 
-            new UmbracoHelperCreator(reg, fac);
+            var umbCreator = new UmbracoHelperCreator(reg, fac);
+            umbCreator.PublishedContentQuery
+                .Setup(x => x.Content(It.Is<Guid>(y => y == product2Key)))
+                .Returns(Mock.Of<IPublishedContent>(
+                    x => x.Key == product2Key
+                    && x.Children == Enumerable.Empty<IPublishedContent>()));
 
             var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
             var product2 = Objects.Objects.Get_Shirt2_Product();

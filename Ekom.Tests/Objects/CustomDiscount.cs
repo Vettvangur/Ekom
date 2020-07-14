@@ -15,9 +15,11 @@ namespace Ekom.Tests.Objects
         public override DiscountType Type { get; }
         public override bool HasMasterStock { get; }
 
-        public decimal StartOfRange => 0;
+        private decimal _startOfRange = 0;
+        public virtual decimal StartOfRange => _startOfRange;
 
-        public decimal EndOfRange => 0;
+        private decimal _endOfRange = 0;
+        public virtual decimal EndOfRange => _endOfRange;
 
         public bool Disabled => false;
 
