@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Migrations;
+using Umbraco.Core.Migrations.Upgrade;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Scoping;
+using Umbraco.Core.Services;
 
 namespace Ekom.App_Start
 {
@@ -67,38 +69,13 @@ namespace Ekom.App_Start
         }
     }
 
-    class EkomMigrationContext : IMigrationContext
+    class EkomMigrationPlan : MigrationPlan
     {
-        public EkomMigrationContext(IUmbracoDatabase database, ILogger logger)
+        public EkomMigrationPlan()
+            : base("Ekom")
         {
-            Database = database;
-            Logger = logger;
-        }
-
-        /// <inheritdoc />
-        public ILogger Logger { get; }
-
-        /// <inheritdoc />
-        public IUmbracoDatabase Database { get; }
-
-        /// <inheritdoc />
-        public ISqlContext SqlContext => Database.SqlContext;
-
-        /// <inheritdoc />
-        public int Index { get; set; }
-
-        /// <inheritdoc />
-        public bool BuildingExpression { get; set; }
-
-        // this is only internally exposed
-        public List<Type> PostMigrations { get; } = new List<Type>();
-
-        /// <inheritdoc />
-        public void AddPostMigration<TMigration>()
-            where TMigration : IMigration
-        {
-            // just adding - will be de-duplicated when executing
-            PostMigrations.Add(typeof(TMigration));
+            From(string.Empty)
+                .To<MigrationCreateTables>("1");
         }
     }
 
@@ -106,15 +83,18 @@ namespace Ekom.App_Start
     {
         private readonly IScopeProvider scopeProvider;
         private readonly IMigrationBuilder migrationBuilder;
+        private readonly IKeyValueService keyValueService;
         private readonly ILogger logger;
 
         public EnsureTablesExist(
             IScopeProvider scopeProvider,
             IMigrationBuilder migrationBuilder,
+            IKeyValueService keyValueService,
             ILogger logger)
         {
             this.scopeProvider = scopeProvider;
             this.migrationBuilder = migrationBuilder;
+            this.keyValueService = keyValueService;
             this.logger = logger;
         }
 
@@ -123,23 +103,12 @@ namespace Ekom.App_Start
             logger.Debug<EnsureTablesExist>("Ensuring Ekom db tables exist");
 
             // perform any upgrades (as needed)
-
-            // We hack the 'migration' execution together manually to ensure it runs on each startup
-            // If we would like to use migrations at a later date we can refactor easily
-            using (var scope = scopeProvider.CreateScope())
-            {
-                var context = new EkomMigrationContext(scope.Database, logger);
-                var migration = migrationBuilder.Build(typeof(MigrationCreateTables), context);
-                migration.Migrate();
-
-                scope.Complete();
-            }
+            var upgrader = new Upgrader(new EkomMigrationPlan());
+            upgrader.Execute(scopeProvider, migrationBuilder, keyValueService, logger);
 
             logger.Debug<EnsureTablesExist>("Done");
         }
 
-        public void Terminate()
-        {
-        }
+        public void Terminate() { }
     }
 }

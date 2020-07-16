@@ -43,12 +43,14 @@ namespace Ekom.Repository
             if (!await CouponCodeExistAsync(couponData.CouponCode)
                 .ConfigureAwait(false))
             {
-                using (var db = _scopeProvider.CreateScope().Database)
+                using (var db = _scopeProvider.CreateScope())
                 {
-                    await db.InsertAsync(couponData)
+                    await db.Database.InsertAsync(couponData)
                         .ConfigureAwait(false);
 
                     RefreshCache(couponData);
+
+                    db.Complete();
                 }
             }
             else
@@ -59,12 +61,14 @@ namespace Ekom.Repository
 
         public async Task UpdateCouponAsync(CouponData couponData)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                await db.UpdateAsync(couponData)
+                await db.Database.UpdateAsync(couponData)
                         .ConfigureAwait(false);
 
                 RefreshCache(couponData);
+
+                db.Complete();
             }
         }
 
@@ -75,12 +79,14 @@ namespace Ekom.Repository
 
             if (coupon != null)
             {
-                using (var db = _scopeProvider.CreateScope().Database)
+                using (var db = _scopeProvider.CreateScope())
                 {
-                    await db.DeleteAsync(coupon)
+                    await db.Database.DeleteAsync(coupon)
                         .ConfigureAwait(false);
 
                     RemoveCache(coupon);
+
+                    db.Complete();
                 }
             }
             else
@@ -92,7 +98,7 @@ namespace Ekom.Repository
 
         public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode)
                         .ConfigureAwait(false);
@@ -101,7 +107,7 @@ namespace Ekom.Repository
 
         public async Task<CouponData> GetCouponByKeyAsync(Guid key)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponKey = @0", key)
                         .ConfigureAwait(false);
@@ -110,7 +116,7 @@ namespace Ekom.Repository
 
         public async Task<CouponData> GetCouponByCodeAsync(string couponCode)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 return await db.FirstOrDefaultAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode)
                         .ConfigureAwait(false);
@@ -119,7 +125,7 @@ namespace Ekom.Repository
 
         public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 return await db.FetchAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0", discountId)
                     .ConfigureAwait(false);
@@ -128,7 +134,7 @@ namespace Ekom.Repository
 
         public async Task<bool> DiscountHasCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 var query = await db.QueryAsync<CouponData>("SELECT * FROM EkomCoupon Where DiscountId = @0 AND CouponCode = @1", discountId, couponCode)
                     .ConfigureAwait(false);
@@ -139,7 +145,7 @@ namespace Ekom.Repository
 
         public async Task<bool> CouponCodeExistAsync(string couponCode)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 var query = await db.QueryAsync<CouponData>("SELECT * FROM EkomCoupon Where CouponCode = @0", couponCode)
                         .ConfigureAwait(false);
@@ -150,7 +156,7 @@ namespace Ekom.Repository
 
         public async Task MarkUsedAsync(string couponCode)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope())
             {
                 var coupon = await GetCouponByCodeAsync(couponCode)
                     .ConfigureAwait(false);
@@ -160,10 +166,12 @@ namespace Ekom.Repository
                     coupon.NumberAvailable--;
                 }
 
-                await db.UpdateAsync(coupon)
+                await db.Database.UpdateAsync(coupon)
                     .ConfigureAwait(false);
 
                 RefreshCache(coupon);
+
+                db.Complete();
             }
         }
 

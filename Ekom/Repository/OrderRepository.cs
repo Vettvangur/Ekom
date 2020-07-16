@@ -4,6 +4,7 @@ using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
@@ -33,43 +34,47 @@ namespace Ekom.Repository
 
         public async Task<OrderData> GetOrderAsync(Guid uniqueId)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
-                return await db.FirstOrDefaultAsync<OrderData>("WHERE UniqueId = @0", uniqueId)
+                return await db.Query<OrderData>()
+                    .Where(x => x.UniqueId == uniqueId)
+                    .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
             }
         }
 
         public async Task InsertOrderAsync(OrderData orderData)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                await db.InsertAsync(orderData).ConfigureAwait(false);
+                await db.Database.InsertAsync(orderData).ConfigureAwait(false);
+                db.Complete();
             }
         }
 
         public async Task UpdateOrderAsync(OrderData orderData)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                await db.UpdateAsync(orderData).ConfigureAwait(false);
+                await db.Database.UpdateAsync(orderData).ConfigureAwait(false);
                 //Clear cache after update.
                 _appCaches.RuntimeCache.ClearByKey(orderData.UniqueId.ToString());
 
+                db.Complete();
             }
         }
 
         public async Task<List<OrderData>> GetCompletedOrdersByCustomerIdAsync(int customerId)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
-                return await db.FetchAsync<OrderData>(
-                    "WHERE CustomerId = @0 AND (OrderStatusCol = @1 or OrderStatusCol = @2 or OrderStatusCol = @3)",
-                    customerId,
-                    OrderStatus.ReadyForDispatch,
-                    OrderStatus.OfflinePayment,
-                    OrderStatus.Dispatched
-                ).ConfigureAwait(false);
+                return await db.Query<OrderData>()
+                    .Where(x => x.CustomerId == customerId 
+                        && (x.OrderStatusCol == (int)OrderStatus.ReadyForDispatch 
+                        || x.OrderStatusCol == (int)OrderStatus.OfflinePayment
+                        || x.OrderStatusCol == (int)OrderStatus.Dispatched))
+                    .ToListAsync()
+                    .ConfigureAwait(false);
             }
         }
     }

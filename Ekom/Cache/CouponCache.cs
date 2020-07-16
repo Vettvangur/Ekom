@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Persistence;
 using Umbraco.Core.Scoping;
 using GlobalCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Models.Data.CouponData>;
@@ -16,17 +17,19 @@ namespace Ekom.Cache
     {
         readonly ILogger _logger;
         readonly IScopeProvider _scopeProvider;
+        readonly IUmbracoDatabaseFactory _databaseFactory;
 
-        public ConcurrentDictionary<string, CouponData> Cache { get; }
-            = new GlobalCouponCache();
+        public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
 
         public CouponCache(
             ILogger logger,
-            IScopeProvider scopeProvider
+            IScopeProvider scopeProvider,
+            IUmbracoDatabaseFactory databaseFactory
         )
         {
             _scopeProvider = scopeProvider;
             _logger = logger;
+            _databaseFactory = databaseFactory;
         }
 
         /// <inheritdoc />
@@ -37,9 +40,11 @@ namespace Ekom.Cache
             _logger.Info<CouponCache>("Starting to fill coupon cache...");
 
             List<CouponData> allCoupons;
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _databaseFactory.CreateDatabase())
             {
+                //var db = scope.Database;
                 allCoupons = db.FetchAsync<CouponData>().Result;
+                //scope.Complete();
             }
 
             foreach (var coupon in allCoupons)

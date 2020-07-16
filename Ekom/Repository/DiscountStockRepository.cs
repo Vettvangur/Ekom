@@ -3,8 +3,10 @@ using Ekom.Interfaces;
 using Ekom.Models.Data;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using Umbraco.Core.Logging;
+using Umbraco.Core.Persistence;
 using Umbraco.Core.Scoping;
 
 namespace Ekom.Repository
@@ -13,16 +15,19 @@ namespace Ekom.Repository
     {
         readonly ILogger _logger;
         readonly IScopeProvider _scopeProvider;
+        readonly IUmbracoDatabaseFactory _umbracoDatabaseFactory;
         /// <summary>
         /// ctor
         /// </summary>
         public DiscountStockRepository(
             Configuration config,
             IScopeProvider scopeProvider,
+            IUmbracoDatabaseFactory umbracoDatabaseFactory,
             ILogger logger)
         {
             _scopeProvider = scopeProvider;
             _logger = logger;
+            _umbracoDatabaseFactory = umbracoDatabaseFactory;
         }
 
         /// <summary>
@@ -36,7 +41,7 @@ namespace Ekom.Repository
         /// <returns></returns>
         public async Task<DiscountStockData> GetStockByUniqueIdAsync(string uniqueId)
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 var stockData = await db.FirstOrDefaultAsync<DiscountStockData>("WHERE UniqueId = @0", uniqueId)
                     .ConfigureAwait(false);
@@ -56,9 +61,10 @@ namespace Ekom.Repository
             };
 
             // Run synchronously to ensure that callers can expect a db record present after method runs
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope())
             {
-                await db.InsertAsync(stockData).ConfigureAwait(false);
+                await db.Database.InsertAsync(stockData).ConfigureAwait(false);
+                db.Complete();
             }
 
             return stockData;
@@ -70,7 +76,7 @@ namespace Ekom.Repository
         /// <returns></returns>
         public async Task<IEnumerable<DiscountStockData>> GetAllStockAsync()
         {
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
             {
                 return await db.FetchAsync<DiscountStockData>()
                     .ConfigureAwait(false);
@@ -103,32 +109,33 @@ namespace Ekom.Repository
             stockDataFromRepo.Stock += value;
             stockDataFromRepo.UpdateDate = DateTime.Now;
 
-            // Update stock with locking
-            var sql = _scopeProvider.CreateScope().SqlContext.Sql().Append("BEGIN")
-                .Append("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
-                .Append("SET DEADLOCK_PRIORITY LOW;")
-                .Append("DECLARE @status int = 0;")
-                .Append("DECLARE @stock int = 0;")
-                .Select("TOP 1 @stock = Stock")
-                .From(Configuration.DiscountStockTableName)
-                .Where("UniqueId = @0", uniqueId)
-                .Append("BEGIN TRANSACTION")
-                .Append("IF (@stock + @0 >= 0)", value)
-                .Append("BEGIN")
-                .Append("UPDATE @0", Configuration.DiscountStockTableName)
-                .Append("SET Stock = @stock + @0", value)
-                .Where("UniqueId = @0", uniqueId)
-                .Append("END")
-                .Append("ELSE")
-                .Append("SET @status = 1")
-                .Append("COMMIT TRANSACTION")
-                .Append("RETURN @status")
-                .Append("END")
-            ;
-
             // Called synchronously and hopefully contained by a locking construct
-            using (var db = _scopeProvider.CreateScope().Database)
+            using (var db = _umbracoDatabaseFactory.CreateDatabase())
             {
+                // Update stock with locking
+                var sql = db.SqlContext.Sql()
+                    .Append("BEGIN")
+                    .Append("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
+                    .Append("SET DEADLOCK_PRIORITY LOW;")
+                    .Append("DECLARE @status int = 0;")
+                    .Append("DECLARE @stock int = 0;")
+                    .Select("TOP 1 @stock = Stock")
+                    .From(Configuration.DiscountStockTableName)
+                    .Where("UniqueId = @0", uniqueId)
+                    .Append("BEGIN TRANSACTION")
+                    .Append("IF (@stock + @0 >= 0)", value)
+                    .Append("BEGIN")
+                    .Append("UPDATE @0", Configuration.DiscountStockTableName)
+                    .Append("SET Stock = @stock + @0", value)
+                    .Where("UniqueId = @0", uniqueId)
+                    .Append("END")
+                    .Append("ELSE")
+                    .Append("SET @status = 1")
+                    .Append("COMMIT TRANSACTION")
+                    .Append("RETURN @status")
+                    .Append("END")
+                ;
+
                 var result = await db.SingleAsync<int>(sql).ConfigureAwait(false);
 
                 if (result != 0)

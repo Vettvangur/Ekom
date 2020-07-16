@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Ekom.Extensions.v8</id>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <title>Ekom Controllers</title>
     <authors>Vettvangur</authors>
     <owners>Vettvangur</owners>
@@ -13,5 +13,11 @@
     <releaseNotes>Remove dependencies and discount prototype</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags></tags>
+    <dependencies>
+        <dependency id="Ekom.Core.v8" version="[0.0.2,1.0)"/>
+    </dependencies>
   </metadata>
+  <files>
+      <file src="..\VV_Logo.png" target="images\" />
+  </files>
 </package>

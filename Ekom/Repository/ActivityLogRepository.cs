@@ -41,7 +41,7 @@ namespace Ekom.Repository
 
         public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
         {
-            using (var db = _scopeProvider.CreateScope())
+            using (var db = _scopeProvider.CreateScope(autoComplete: true))
             {
                 var queryResult = await db.Database.QueryAsync<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
                   ,a.[Key]
@@ -62,7 +62,7 @@ namespace Ekom.Repository
 
         public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersAsync()
         {
-            using (var db = _scopeProvider.CreateScope())
+            using (var db = _scopeProvider.CreateScope(autoComplete: true))
             {
                 var queryResult = await db.Database.QueryAsync<OrderActivityLog>(
                     @"SELECT TOP 100 a.[UniqueId]
@@ -83,7 +83,7 @@ namespace Ekom.Repository
 
         public async Task<List<OrderActivityLog>> GetLogsAsync(string OrderNumber)
         {
-            using (var db = _scopeProvider.CreateScope())
+            using (var db = _scopeProvider.CreateScope(autoComplete: true))
             {
                 return await db.Database.FetchAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
                       ,a.[Key]
@@ -94,13 +94,14 @@ namespace Ekom.Repository
                   FROM [EkomOrdersActivityLog] a
                   left join EkomOrders b on b.UniqueId = a.[Key]
                   WHERE OrderNumber = @0
-                  order by Date desc", OrderNumber);
+                  order by Date desc", OrderNumber)
+                    .ConfigureAwait(false);
             }
         }
 
         public async Task<List<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
         {
-            using (var db = _scopeProvider.CreateScope())
+            using (var db = _scopeProvider.CreateScope(autoComplete: true))
             {
                 return await db.Database.FetchAsync<OrderActivityLog>(@"SELECT a.[UniqueId]
                       ,a.[Key]
@@ -111,7 +112,8 @@ namespace Ekom.Repository
                   FROM [EkomOrdersActivityLog] a
                   left join EkomOrders b on b.UniqueId = a.[Key]
                   WHERE a.[Key] = @0
-                  order by Date desc", uniqueId);
+                  order by Date desc", uniqueId)
+                    .ConfigureAwait(false);
             }
         }
     }
