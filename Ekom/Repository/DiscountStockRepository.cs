@@ -41,11 +41,14 @@ namespace Ekom.Repository
         /// <returns></returns>
         public async Task<DiscountStockData> GetStockByUniqueIdAsync(string uniqueId)
         {
-            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
+            using (var scope = _scopeProvider.CreateScope())
             {
-                var stockData = await db.FirstOrDefaultAsync<DiscountStockData>("WHERE UniqueId = @0", uniqueId)
+                var stockData = await scope.Database.Query<DiscountStockData>()
+                    .Where(x => x.UniqueId == uniqueId)
+                    .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
 
+                scope.Complete();
                 return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
             }
         }
@@ -76,10 +79,12 @@ namespace Ekom.Repository
         /// <returns></returns>
         public async Task<IEnumerable<DiscountStockData>> GetAllStockAsync()
         {
-            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
+            using (var scope = _scopeProvider.CreateScope())
             {
-                return await db.FetchAsync<DiscountStockData>()
+                var data = await scope.Database.FetchAsync<DiscountStockData>()
                     .ConfigureAwait(false);
+                scope.Complete();
+                return data;
             }
         }
 

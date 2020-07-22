@@ -2,7 +2,7 @@
 <package >
     <metadata>
         <id>Ekom.Web.v8</id>
-        <version>0.0.3</version>
+        <version>0.0.4</version>
         <title>Ekom.Web.v8</title>
         <authors>Vettvangur</authors>
         <owners>Vettvangur</owners>
@@ -14,7 +14,7 @@
         <copyright>Copyright 2019</copyright>
         <tags></tags>
         <dependencies>
-            <dependency id="Ekom.Core.v8" version="[0.0.2,1.0)"/>
+            <dependency id="Ekom.Core.v8" version="[0.0.3,1.0)"/>
             <dependency id="GMO.Vorto.Web.v8" version="[0.1.4,1.0)"/>
         </dependencies>
     </metadata>

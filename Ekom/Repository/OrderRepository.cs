@@ -34,12 +34,15 @@ namespace Ekom.Repository
 
         public async Task<OrderData> GetOrderAsync(Guid uniqueId)
         {
-            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
+            using (var scope = _scopeProvider.CreateScope())
             {
-                return await db.Query<OrderData>()
+                var data = await scope.Database.Query<OrderData>()
                     .Where(x => x.UniqueId == uniqueId)
                     .FirstOrDefaultAsync()
                     .ConfigureAwait(false);
+
+                scope.Complete();
+                return data;
             }
         }
 
@@ -66,9 +69,9 @@ namespace Ekom.Repository
 
         public async Task<List<OrderData>> GetCompletedOrdersByCustomerIdAsync(int customerId)
         {
-            using (var db = _scopeProvider.CreateScope(autoComplete: true).Database)
+            using (var scope = _scopeProvider.CreateScope())
             {
-                return await db.Query<OrderData>()
+                return await scope.Database.Query<OrderData>()
                     .Where(x => x.CustomerId == customerId 
                         && (x.OrderStatusCol == (int)OrderStatus.ReadyForDispatch 
                         || x.OrderStatusCol == (int)OrderStatus.OfflinePayment
