@@ -2,7 +2,7 @@
 <package >
     <metadata>
         <id>Ekom.Core.v8</id>
-        <version>0.0.3</version>
+        <version>$version$</version>
         <title>Ekom.Core.v8</title>
         <authors>Vettvangur</authors>
         <owners>Vettvangur</owners>

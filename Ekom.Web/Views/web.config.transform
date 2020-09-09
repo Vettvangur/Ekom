@@ -4,6 +4,7 @@
 			<namespaces>
                 <add namespace="Ekom.API" />
                 <add namespace="Ekom.Utilities" />
+                <add namespace="Our.Umbraco.Vorto.Extensions" />
             </namespaces>
 		</pages>
 	</system.web.webPages.razor>

@@ -1,7 +1,7 @@
 using Ekom.Exceptions;
-using GMO.Vorto.PropertyEditor;
 using Newtonsoft.Json.Linq;
 using Our.Umbraco.Vorto.Models;
+using Our.Umbraco.Vorto.PropertyEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;

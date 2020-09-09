@@ -71,5 +71,9 @@
         "svgo-loader": "^2.2.0",
         "whatwg-fetch": "^3.0.0"
     },
-    "-vs-binding": { "ProjectOpened": [ "dev" ] }
+    "-vs-binding": {
+        "ProjectOpened": [
+            "dev"
+        ]
+    }
 }
