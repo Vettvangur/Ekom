@@ -56,8 +56,8 @@
     <Reference Include="Examine, Version=1.0.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Examine.1.0.2\lib\net452\Examine.dll</HintPath>
     </Reference>
-    <Reference Include="GMO.Vorto, Version=0.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.v8.0.2.1\lib\net472\GMO.Vorto.dll</HintPath>
+    <Reference Include="GMO.Vorto, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GMO.Vorto.v8.0.3.0\lib\net472\GMO.Vorto.dll</HintPath>
     </Reference>
     <Reference Include="GMO.Vorto.Web, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\GMO.Vorto.Web.v8.0.2.0\lib\net472\GMO.Vorto.Web.dll</HintPath>

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Events;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
@@ -167,8 +168,11 @@ namespace Ekom.App_Start
 
                 if (alias == "ekmProduct" || alias == "ekmCategory")
                 {
-                    var parent = UmbHelper.Content(content.ParentId);
-                    var siblings = parent.Children().Where(x => x.Id != content.Id && !x.IsPublished());
+                    var cs = Current.Services.ContentService;
+                    var parent = cs.GetById(content.ParentId);
+                    
+                    var siblings = cs.GetPagedChildren(parent.Id, 1, int.MaxValue, out _)
+                        .Where(x => x.Id != content.Id && !x.Published);
 
                     var slug = NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
 
@@ -180,7 +184,7 @@ namespace Ekom.App_Start
                     // Update Slug if Slug Exists on same Level and is Published
                     if (!string.IsNullOrEmpty(slug)
                     && siblings.Any(
-                        x => x.GetVortoValue<string>("slug", store.Alias) == slug.ToLowerInvariant())
+                        x => (string)x.GetVortoValue("slug", store.Alias) == slug.ToLowerInvariant())
                     )
                     {
                         // Random not a nice solution
