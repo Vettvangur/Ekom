@@ -1,54 +1,54 @@
-angular.module("umbraco").controller("Ekom.Currency", function($scope, assetsService, $http) {
+angular.module("umbraco").controller("Ekom.Currency", function ($scope, assetsService, $http) {
 
-    $scope.currencies = $scope.model.value;
+  $scope.currencies = $scope.model.value;
 
-    if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
-        $scope.currencies = [];
+  if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
+    $scope.currencies = [];
+  }
+
+  $scope.currencyCulture = '';
+  $scope.currencyFormat = '';
+
+  $scope.addCurrency = function () {
+    event.preventDefault();
+
+    if ($scope.currencyCulture !== '' && $scope.currencyFormat !== '') {
+
+      var currencyItem = { "CurrencyFormat": $scope.currencyFormat, "CurrencyValue": $scope.currencyCulture, "Sort": $scope.currencies.length };
+
+      $scope.currencies.push(currencyItem);
     }
 
-    $scope.currencyCulture = '';
-    $scope.currencyFormat = '';
+  };
 
-    $scope.addCurrency = function() {
-        event.preventDefault();
+  $scope.combine = function (item) {
+    return "Culture: " + item.CurrencyValue + " Format: " + item.CurrencyFormat;
+  };
 
-        if ($scope.currencyCulture !== '' && $scope.currencyFormat !== '') {
+  $scope.removeCurrency = function (itemToRemove) {
+    event.preventDefault();
 
-            var currencyItem = { "CurrencyFormat": $scope.currencyFormat, "CurrencyValue": $scope.currencyCulture, "Sort": $scope.currencies.length };
+    var idx = $scope.currencies.indexOf(itemToRemove);
 
-            $scope.currencies.push(currencyItem);
-        }
+    $scope.currencies.splice(idx, 1);
 
-    };
+    $scope.updateSort();
+  };
 
-    $scope.combine = function(item) {
-        return "Culture: " + item.CurrencyValue + " Format: " + item.CurrencyFormat;
-    };
+  $scope.updateSort = function () {
 
-    $scope.removeCurrency = function(itemToRemove) {
-        event.preventDefault();
+    for (i = 0; $scope.currencies.length > i; i += 1) {
 
-        var idx = $scope.currencies.indexOf(itemToRemove);
+      $scope.currencies[i].Sort = i;
 
-        $scope.currencies.splice(idx, 1);
+    }
 
-        $scope.updateSort();
-    };
+  };
 
-    $scope.updateSort = function() {
+  $scope.$watch('currencies', function () {
 
-        for (i = 0; $scope.currencies.length > i; i += 1) {
+    $scope.model.value = $scope.currencies;
 
-            $scope.currencies[i].Sort = i;
-
-        }
-
-    };
-
-    $scope.$watch('currencies', function() {
-
-        $scope.model.value = $scope.currencies;
-
-    }, true);
+  }, true);
 
 });

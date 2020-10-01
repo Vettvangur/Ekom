@@ -1,5 +1,5 @@
 angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
- 
+
   var key = editorState.current.key;
 
   $scope.Coupons = [];
@@ -23,7 +23,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Insert = function () {
 
-    $http.post('/umbraco/backoffice/ekom/api/InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable) 
+    $http.post('/umbraco/backoffice/ekom/api/InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable)
       .then(function () {
 
         $scope.Init();
