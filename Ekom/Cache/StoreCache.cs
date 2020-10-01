@@ -75,7 +75,7 @@ namespace Ekom.Cache
                 _logger.Debug<StoreCache>("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
 #endif
 #if !DEBUG
-                _logger.Debug<StoreCache>("Finished filling per store cache with " + count + " items");
+                _logger.Debug<StoreCache>("Finished filling store cache with " + count + " items");
 #endif
 
             }

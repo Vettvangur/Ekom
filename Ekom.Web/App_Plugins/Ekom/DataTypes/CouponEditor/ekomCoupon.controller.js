@@ -9,7 +9,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
   $scope.Init = function () {
 
     $http.post('/umbraco/backoffice/ekom/api/GetCouponsForDiscount?discountId=' + key)
-      .success(function (result) {
+      .then(function (result) {
 
         $scope.Coupons = result;
 
@@ -24,7 +24,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
   $scope.Insert = function () {
 
     $http.post('/umbraco/backoffice/ekom/api/InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable) 
-      .success(function () {
+      .then(function () {
 
         $scope.Init();
 
@@ -35,7 +35,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
   $scope.Remove = function (couponCode) {
 
     $http.post('/umbraco/backoffice/ekom/api/RemoveCoupon?discountId=' + key + '&couponCode=' + couponCode)
-      .success(function () {
+      .then(function () {
 
         $scope.Init();
 

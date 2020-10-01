@@ -42,12 +42,13 @@ angular.module('umbraco').controller('Ekom.Stock', function($scope, assetsServic
     $scope.UpdateStock = function() {
 
         $http.post('/umbraco/backoffice/ekom/api/setStock?id=' + $scope.content.key + "&stock=" + $scope.stockValue + "&storeAlias=" + $scope.storeSelected)
-            .success(function() {
+            .then(
+              function() {
                 notificationsService.success("Success", "Stock has been updated");
-            })
-            .error(function() {
+              },
+              function() {
                 notificationsService.error("Update Failed.", "Stock update failed");
-            });
+              });
     };
 
     $scope.UpdateStore = function() {
