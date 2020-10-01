@@ -257,12 +257,6 @@
     <Compile Include="Repositories\ManagerRepository.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Ekom\Ekom.csproj">
-      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
-      <Name>Ekom</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
     <Content Include="Views\EkomManager\Index.cshtml" />

@@ -18,7 +18,6 @@ namespace Ekom.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    [PluginController("Ekom")]
     public partial class OrderController : SurfaceController
     {
         readonly ILogger _logger;

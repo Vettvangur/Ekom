@@ -548,10 +548,6 @@
       <Project>{c8d798cd-9d24-444e-a7fc-9cdb0816669f}</Project>
       <Name>Ekom.Site.Extensions</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Ekom\Ekom.csproj">
-      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
-      <Name>Ekom</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Views\LeBlender\" />

@@ -266,10 +266,6 @@
       <Project>{f73650a8-caac-466d-ac8b-5f9220a237dd}</Project>
       <Name>Ekom.Manager</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Ekom\Ekom.csproj">
-      <Project>{ab2c71e4-09f8-41a7-a1b0-b62dbb12e011}</Project>
-      <Name>Ekom</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeQuality.Analyzers.2.9.3\analyzers\dotnet\cs\Humanizer.dll" />
