@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Core.v8</PackageId>
-        <Version>0.0.5</Version>
+        <Version>0.1.1</Version>
         <Title>Ekom.Core.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -30,16 +30,31 @@
 
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <DefineConstants>DEBUG;TRACE</DefineConstants>
+      <DocumentationFile>bin\Debug\Ekom.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <DocumentationFile>bin\Release\Ekom.xml</DocumentationFile>
+    </PropertyGroup>
+
     <ItemGroup>
       <!-- Package icon -->
-      <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+      <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
     </ItemGroup>
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>Ekom.Extensions</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>Ekom.Manager</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>Umbraco.Tests</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
@@ -47,11 +62,12 @@
     <ItemGroup>
         <PackageReference Include="GMO.Vorto.v8" Version="0.3.0" />
         <PackageReference Include="Hangfire" Version="1.7.14" />
-        <PackageReference Include="Microsoft.CodeQuality.Analyzers" Version="3.3.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Web.Infrastructure" Version="1.0.0" />
         <PackageReference Include="UmbracoCms.Core" Version="[8.6.1,9.0)" />
         <PackageReference Include="UmbracoCms.Web" Version="[8.6.1,9.0)" />
     </ItemGroup>

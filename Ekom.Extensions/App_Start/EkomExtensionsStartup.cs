@@ -2,7 +2,7 @@ using Ekom.Services;
 using System;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
-using Ekom.NetPayment;
+using Umbraco.NetPayment;
 
 namespace Ekom
 {

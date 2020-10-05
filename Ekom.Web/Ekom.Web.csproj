@@ -1,78 +1,86 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C30A736D-3ABA-41A3-979B-3D00E817FEC5}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Ekom.Web</RootNamespace>
-    <AssemblyName>Ekom.Web</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
-    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
-    <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\web.config.transform" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Ekom.Web.v8.nuspec">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Ekom.Manager\Ekom.Manager.csproj">
-      <Project>{f73650a8-caac-466d-ac8b-5f9220a237dd}</Project>
-      <Name>Ekom.Manager</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net472</TargetFramework>
+        <AssemblyName>Ekom.Web</AssemblyName>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+        <!-- Package properties -->
+        <PackageId>Ekom.Web.v8</PackageId>
+        <Version>0.1.1</Version>
+        <Title>Ekom.Web.v8</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images\VV_Logo.png</PackageIcon>
+        <Description>Ekom - Vettvangur E-Commerce solution</Description>
+        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+        <Copyright>Copyright 2019</Copyright>
+        <PackageTags></PackageTags>
+
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <DefineConstants>DEBUG;TRACE</DefineConstants>
+      <DocumentationFile>bin\Debug\Ekom.Web.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <DocumentationFile>bin\Release\Ekom.Web.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Package icon -->
+        <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+        <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+        <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
+        <Content Include="Views\web.config.transform" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+      <None Remove="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+      <None Remove="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Ekom.Core.v8" Version="[0.0.4,1.0)" />
+        <PackageReference Include="GMO.Vorto.Web.v8" Version="[0.2.0,1.0)" />
+    </ItemGroup>
 </Project>

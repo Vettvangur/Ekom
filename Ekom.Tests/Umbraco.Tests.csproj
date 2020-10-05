@@ -305,7 +305,16 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
+      <Project>{5cd62d25-9988-4dc4-b636-ac69da87ae9a}</Project>
+      <Name>Ekom.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Ekom\Ekom.csproj">
+      <Project>{709ae7ec-3bb7-4d90-8274-db2205e48214}</Project>
+      <Name>Ekom</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

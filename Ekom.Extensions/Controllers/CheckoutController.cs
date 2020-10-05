@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
-using Ekom.NetPayment;
-using Ekom.NetPayment.API;
-using Ekom.NetPayment.Helpers;
+using Umbraco.NetPayment;
+using Umbraco.NetPayment.API;
+using Umbraco.NetPayment.Helpers;
 using Umbraco.Web.Mvc;
 
 namespace Ekom.Extensions.Controllers
@@ -217,7 +217,7 @@ namespace Ekom.Extensions.Controllers
                 }
                 else
                 {
-                    var pp = Ekom.NetPayment.API.NetPayment.Current.GetPaymentProvider(ekomPP.Name);
+                    var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
 
                     var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
 

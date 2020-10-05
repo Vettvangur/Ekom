@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -49,19 +51,13 @@
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Ekom.Extensions\Ekom.Extensions.csproj">
-      <Project>{fca082bb-1e07-4c3e-8d77-f095cee34d77}</Project>
-      <Name>Ekom.Extensions</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>cd $(SolutionDir)
 
-nuget pack $(SolutionDir)Ekom -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -IncludeReferencedProjects -Symbols -SymbolPackageFormat snupkg
-nuget pack $(SolutionDir)Ekom.Web -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -Symbols -SymbolPackageFormat snupkg
-nuget pack $(SolutionDir)Ekom.Extensions -Build -Properties Configuration=Release -OutputDirectory $(ProjectDir)NuGet -Symbols -SymbolPackageFormat snupkg
+dotnet pack $(SolutionDir)Ekom -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
+dotnet pack $(SolutionDir)Ekom.Web -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
+dotnet pack $(SolutionDir)Ekom.Extensions -t:Build,Pack -p:Configuration=Release --include-symbols -o $(ProjectDir)NuGet
 </PostBuildEvent>
   </PropertyGroup>
 </Project>

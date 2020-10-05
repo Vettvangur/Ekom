@@ -1,9 +1,9 @@
-using Ekom.NetPayment;
+using Umbraco.NetPayment;
 using System;
 
 namespace Ekom.Extensions
 {
-    public class LocalCallback
+    public static class LocalCallback
     {
         /// <summary>
         /// Raises the success event on successful payment verification
