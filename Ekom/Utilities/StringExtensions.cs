@@ -181,19 +181,27 @@ namespace Ekom.Utilities
 
                 foreach (var price in _prices)
                 {
-
                     var currencyValue = price["Currency"].Value<string>();
                     var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
-                    IDiscount productDiscount = !string.IsNullOrEmpty(key) ? Current.Factory.GetInstance<IProductDiscountService>()
-                    .GetProductDiscount(
-                        new Guid(key),
-                        storeAlias,
-                        price["Price"].Value<string>()
-                    ) : null;
+                    IDiscount productDiscount = !string.IsNullOrEmpty(key) 
+                        ? Current.Factory.GetInstance<IProductDiscountService>()
+                            .GetProductDiscount(
+                                new Guid(key),
+                                storeAlias,
+                                price["Price"].Value<string>()
+                            ) 
+                        : null;
 
-
-                    prices.Add(new Price(price["Price"].Value<string>(), currency, vat, vatIncludedInPrice, productDiscount != null ? new OrderedDiscount(productDiscount) : null));
+                    prices.Add(new Price(
+                        price["Price"].Value<string>(),
+                        currency,
+                        vat,
+                        vatIncludedInPrice,
+                        productDiscount != null 
+                            ? new OrderedDiscount(productDiscount) 
+                            : null)
+                    );
                 }
             }
             catch (Exception ex)
@@ -205,17 +213,26 @@ namespace Ekom.Utilities
                     fallbackCurrency = store.Currency;
                 }
 
-                IDiscount productDiscount = !string.IsNullOrEmpty(key) ? Current.Factory.GetInstance<IProductDiscountService>()
-                .GetProductDiscount(
-                    new Guid(key),
-                    storeAlias,
-                    priceJson
-                ) : null;
+                IDiscount productDiscount = !string.IsNullOrEmpty(key) 
+                    ? Current.Factory.GetInstance<IProductDiscountService>()
+                        .GetProductDiscount(
+                            new Guid(key),
+                            storeAlias,
+                            priceJson
+                        ) 
+                    : null;
 
                 prices = new List<IPrice>
-                    {
-                        new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice, productDiscount != null ? new OrderedDiscount(productDiscount) : null)
-                    };
+                {
+                    new Price(
+                        priceJson,
+                        fallbackCurrency,
+                        vat,
+                        vatIncludedInPrice,
+                        productDiscount != null 
+                            ? new OrderedDiscount(productDiscount) 
+                            : null)
+                };
             }
 
             return prices;

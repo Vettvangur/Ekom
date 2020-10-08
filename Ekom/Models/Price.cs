@@ -57,7 +57,9 @@ namespace Ekom.Models
         )
             : this(
                 decimal.Parse(
-                    price?.Replace(',', '.') ?? "0",
+                    string.IsNullOrEmpty(price)
+                        ? "0"
+                        : price?.Replace(',', '.') ?? "0",
                     NumberStyles.Any,
                     CultureInfo.InvariantCulture),
                 currency,

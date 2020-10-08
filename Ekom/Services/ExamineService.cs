@@ -133,7 +133,7 @@ namespace Ekom.Services
                 if (luceneQuery.Length > 0)
                 {
                     var rawQuery = searcher.CreateQuery("content").NativeQuery(luceneQuery.ToString());
-                    searchResults = rawQuery.Execute();
+                    searchResults = rawQuery.Execute(int.MaxValue);
                 }
                 else
                 {

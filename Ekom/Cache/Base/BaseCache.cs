@@ -92,8 +92,7 @@ namespace Ekom.Cache
 
                 var results = searcher.CreateQuery("content")
                     .NodeTypeAlias(NodeAlias)
-                    .Execute();
-
+                    .Execute(int.MaxValue);
                 foreach (var r in results)
                 {
                     try
