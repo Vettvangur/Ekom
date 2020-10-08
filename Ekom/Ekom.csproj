@@ -7,14 +7,14 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Core.v8</PackageId>
-        <Version>0.1.2</Version>
+        <Version>0.1.3</Version>
         <Title>Ekom.Core.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
         <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+        <PackageReleaseNotes>Revert OrderController Plugin attribute removal</PackageReleaseNotes>
         <Copyright>Copyright 2019</Copyright>
         <PackageTags></PackageTags>
 
