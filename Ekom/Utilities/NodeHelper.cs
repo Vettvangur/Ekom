@@ -1,7 +1,9 @@
 using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Services;
 using Examine;
 using Newtonsoft.Json;
+using Our.Umbraco.Vorto.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -431,6 +433,66 @@ namespace Ekom.Utilities
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// Set a price store specific property <para/>
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="storeAlias"></param>
+        /// <param name="currency"></param>
+        /// <param name="price"></param>
+        /// <returns>Property Value</returns>
+        public static void SetPriceStoreValue(this IContent item, string storeAlias, string currency, decimal price)
+        {
+            if (item.HasProperty("price"))
+            {
+           
+                var fieldValue = item.GetValue<string>("price");
+
+                var currencyPrices = new List<CurrencyPrice>();
+
+                if (!string.IsNullOrEmpty(fieldValue))
+                {
+                    try
+                    {
+                        var jsonCurrencyValue = fieldValue.GetVortoValue(storeAlias);
+
+                        currencyPrices = jsonCurrencyValue.GetCurrencyPrices();
+
+                    } catch
+                    {
+
+                    }
+                }
+
+                if (currencyPrices.Any(x => x.Currency == currency))
+                {
+                    currencyPrices.FirstOrDefault(x => x.Currency == currency).Price = price;
+
+                } else
+                {
+                    currencyPrices.Add(new CurrencyPrice(price, currency));
+                }
+
+                item.SetVortoValue("price", storeAlias, currencyPrices);
+            }
+        }
+
+        /// <summary>
+        /// Set a store specific property <para/>
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="field">Umbraco Alias</param>
+        /// <param name="storeAlias"></param>
+        /// <param name="value"></param>
+        /// <returns>Property Value</returns>
+        public static void SetStorePropertyValue(this IContent item, string field, string storeAlias, object value)
+        {
+            if (item.HasProperty(field))
+            {
+                item.SetVortoValue(field,storeAlias,value);
+            }
         }
 
         public static string Key(this ISearchResult searchResult) => searchResult.Values["__Key"];

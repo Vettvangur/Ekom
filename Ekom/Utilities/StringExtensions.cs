@@ -270,6 +270,32 @@ namespace Ekom.Utilities
 
             return values;
         }
+        public static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
+        {
+            var values = new List<CurrencyPrice>();
+
+            try
+            {
+                {
+                    values = JsonConvert.DeserializeObject<List<CurrencyPrice>>(priceJson);
+                }
+            }
+            catch
+            {
+
+                if (decimal.TryParse(priceJson, out decimal value))
+                {
+                    var store = API.Store.Instance.GetStore();
+
+                    values = new List<CurrencyPrice>
+                    {
+                        new CurrencyPrice(value, store.Currency.CurrencyValue)
+                    };
+                }
+            }
+
+            return values;
+        }
 
         public static bool IsJson(this string input)
         {
