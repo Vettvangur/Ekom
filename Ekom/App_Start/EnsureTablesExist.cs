@@ -14,6 +14,7 @@ namespace Ekom.App_Start
 {
     class MigrationCreateTables : MigrationBase
     {
+
         readonly ILogger _logger;
         readonly Configuration _config;
         public MigrationCreateTables(
@@ -46,6 +47,7 @@ namespace Ekom.App_Start
 
                 Create.Table<OrderData>().Do();
                 Execute.Sql($"ALTER TABLE {TableInfo.FromPoco(typeof(OrderData)).TableName} ALTER COLUMN OrderInfo NVARCHAR(MAX)").Do();
+                Execute.Sql($"CREATE CLUSTERED INDEX [{EkomMigrationPlan.OrderDataUniqueIndex}] ON {TableInfo.FromPoco(typeof(OrderData)).TableName} ( [UniqueId] ASC )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]").Do();
             }
             if (!TableExists(TableInfo.FromPoco(typeof(CouponData)).TableName))
             {
@@ -85,13 +87,15 @@ namespace Ekom.App_Start
 
         public override void Migrate()
         {
-            Execute.Sql($"DROP INDEX [IX_EkomOrders_UniqueId] ON {TableInfo.FromPoco(typeof(StockData)).TableName} WITH ( ONLINE = OFF )").Do();
-            Execute.Sql($"CREATE UNIQUE CLUSTERED INDEX [IX_EkomOrders_UniqueId] ON {TableInfo.FromPoco(typeof(StockData)).TableName} ( [UniqueId] ASC )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]").Do();
+            Execute.Sql($"DROP INDEX [{EkomMigrationPlan.OrderDataUniqueIndex}] ON {TableInfo.FromPoco(typeof(OrderData)).TableName} WITH ( ONLINE = OFF )").Do();
+            Execute.Sql($"CREATE UNIQUE CLUSTERED INDEX [{EkomMigrationPlan.OrderDataUniqueIndex}] ON {TableInfo.FromPoco(typeof(OrderData)).TableName} ( [UniqueId] ASC )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]").Do();
         }
     }
 
     class EkomMigrationPlan : MigrationPlan
     {
+        public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
+
         public EkomMigrationPlan()
             : base("Ekom")
         {

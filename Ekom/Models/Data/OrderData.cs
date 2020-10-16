@@ -16,10 +16,9 @@ namespace Ekom.Models.Data
         /// <summary>
         /// Primary means of identifying orders
         /// 
-        /// Install migrates to Unique clustered which is not supported by
+        /// Install creates as Unique clustered which is not supported by
         /// umbraco database annotation attributes
         /// </summary>
-        [Index(IndexTypes.Clustered)]
         public Guid UniqueId { get; set; }
 
         /// <summary>
