@@ -23,25 +23,25 @@ namespace Ekom.App_Start
         /// <summary>Registers the Ekom type mappings with Umbraco IoC.</summary>
         public static void Register(Composition composition)
         {
-            composition.Register<Configuration>(Lifetime.Singleton);
+            composition.RegisterUnique<Configuration>();
 
-            composition.Register<IStoreDomainCache, StoreDomainCache>(Lifetime.Singleton);
-            composition.Register<IBaseCache<IStore>, StoreCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IVariant>, VariantCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IVariantGroup>, VariantGroupCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<ICategory>, CategoryCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IProductDiscount>, ProductDiscountCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IProduct>, ProductCache>(Lifetime.Singleton);
-            composition.Register<IBaseCache<IZone>, ZoneCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IShippingProvider>, ShippingProviderCache>(Lifetime.Singleton);
-            composition.Register<IBaseCache<StockData>, StockCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<StockData>, StockPerStoreCache>(Lifetime.Singleton);
+            composition.RegisterUnique<IStoreDomainCache, StoreDomainCache>();
+            composition.RegisterUnique<IBaseCache<IStore>, StoreCache>();
+            composition.RegisterUnique<IPerStoreCache<IVariant>, VariantCache>();
+            composition.RegisterUnique<IPerStoreCache<IVariantGroup>, VariantGroupCache>();
+            composition.RegisterUnique<IPerStoreCache<ICategory>, CategoryCache>();
+            composition.RegisterUnique<IPerStoreCache<IProductDiscount>, ProductDiscountCache>();
+            composition.RegisterUnique<IPerStoreCache<IProduct>, ProductCache>();
+            composition.RegisterUnique<IBaseCache<IZone>, ZoneCache>();
+            composition.RegisterUnique<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>();
+            composition.RegisterUnique<IPerStoreCache<IShippingProvider>, ShippingProviderCache>();
+            composition.RegisterUnique<IBaseCache<StockData>, StockCache>();
+            composition.RegisterUnique<IPerStoreCache<StockData>, StockPerStoreCache>();
 
             // The following database based caches are not strictly related to the preceding ones
-            composition.Register<ICouponCache, CouponCache>(Lifetime.Singleton);
-            composition.Register<DiscountCache>(Lifetime.Singleton);
-            composition.Register<IPerStoreCache<IDiscount>>(f => f.GetInstance<DiscountCache>()); // Lifetime based on preceding line
+            composition.RegisterUnique<ICouponCache, CouponCache>();
+            composition.RegisterUnique<DiscountCache>();
+            composition.RegisterUnique<IPerStoreCache<IDiscount>>(f => f.GetInstance<DiscountCache>()); // Lifetime based on preceding line
 
             composition.Register<IStoreService, StoreService>(Lifetime.Transient);
             composition.Register<OrderService>(Lifetime.Transient);

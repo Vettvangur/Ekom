@@ -69,13 +69,35 @@ namespace Ekom.App_Start
         }
     }
 
+    class MigrationUpdatev2 : MigrationBase
+    {
+        readonly ILogger _logger;
+        readonly Configuration _config;
+        public MigrationUpdatev2(
+            ILogger logger,
+            Configuration configuration,
+            IMigrationContext context)
+            : base(context)
+        {
+            _logger = logger;
+            _config = configuration;
+        }
+
+        public override void Migrate()
+        {
+            Execute.Sql($"DROP INDEX [IX_EkomOrders_UniqueId] ON {TableInfo.FromPoco(typeof(StockData)).TableName} WITH ( ONLINE = OFF )").Do();
+            Execute.Sql($"CREATE UNIQUE CLUSTERED INDEX [IX_EkomOrders_UniqueId] ON {TableInfo.FromPoco(typeof(StockData)).TableName} ( [UniqueId] ASC )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]").Do();
+        }
+    }
+
     class EkomMigrationPlan : MigrationPlan
     {
         public EkomMigrationPlan()
             : base("Ekom")
         {
             From(string.Empty)
-                .To<MigrationCreateTables>("1");
+                .To<MigrationCreateTables>("1")
+                .To<MigrationUpdatev2>("2");
         }
     }
 

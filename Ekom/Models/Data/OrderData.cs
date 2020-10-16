@@ -14,11 +14,17 @@ namespace Ekom.Models.Data
     public class OrderData
     {
         /// <summary>
+        /// Primary means of identifying orders
         /// 
+        /// Install migrates to Unique clustered which is not supported by
+        /// umbraco database annotation attributes
         /// </summary>
         [Index(IndexTypes.Clustered)]
         public Guid UniqueId { get; set; }
 
+        /// <summary>
+        /// Required by some payment providers and bookkeeping software
+        /// </summary>
         [PrimaryKeyColumn(AutoIncrement = true, Clustered = false)]
         public int ReferenceId { get; set; }
 

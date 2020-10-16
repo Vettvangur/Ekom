@@ -17,7 +17,7 @@ namespace Ekom
     /// <summary>
     /// Hooks into the umbraco application startup lifecycle 
     /// </summary>
-    class Composer : IUserComposer
+    public class EkomComposer : IUserComposer
     {
         /// <summary>
         /// Umbraco lifecycle method

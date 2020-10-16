@@ -373,7 +373,7 @@ namespace Ekom.Services
         {
             if (productKey == Guid.Empty)
             {
-                throw new ArgumentException(nameof(productKey));
+                throw new ArgumentException("Empty product key", nameof(productKey));
             }
 
             var product = Catalog.Instance.GetProduct(productKey);
@@ -748,7 +748,7 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
 
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
-            await _orderRepository.InsertOrderAsync(orderData)
+            await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
 
             return orderData;
