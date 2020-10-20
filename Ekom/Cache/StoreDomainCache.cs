@@ -48,7 +48,9 @@ namespace Ekom.Cache
             }
 
             _logger.Info<StoreDomainCache>(
-                $"Finished filling store domain cache with {domains.Count()} domain items. Time it took to fill: {stopwatch.Elapsed}"
+                "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
+                domains.Count,
+                stopwatch.Elapsed
             );
         }
 

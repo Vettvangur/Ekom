@@ -113,23 +113,23 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _logger.Warn<BaseCache<TItem>>("Failed to map to store. Id: " + r.Id, ex);
+                        _logger.Warn<BaseCache<TItem>>(ex, "Failed to map to store. Id: {Id}" + r.Id);
                     }
                 }
 
 #if DEBUG
                 stopwatch.Stop();
                 _logger.Debug<BaseCache<TItem>>(
-                    $"Finished filling base cache with {count} items. Time it took to fill: {stopwatch.Elapsed}");
+                    "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
 #endif
 #if !DEBUG
-                _logger.Debug(typeof(BaseCache<TItem>), "Finished filling base cache with " + count + " items");
+                _logger.Debug(typeof(BaseCache<TItem>), "Finished filling base cache with {Count} items", count);
 #endif
             }
             else
             {
                 _logger.Error<BaseCache<TItem>>(
-                    $"No examine search found with the name {_config.ExamineIndex}, Can not fill cache.");
+                    "No examine search found with the name {ExamineIndex}, Can not fill cache.", _config.ExamineIndex);
             }
         }
 

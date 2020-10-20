@@ -75,7 +75,7 @@ namespace Ekom.App_Start
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error<UmbracoEventListeners>("ContentService_Saving Failed", ex);
+                    _logger.Error<UmbracoEventListeners>(ex, "ContentService_Saving Failed");
                     throw;
                 }
             }
@@ -193,7 +193,9 @@ namespace Ekom.App_Start
                         slug = slug + "-" + rnd.Next(1, 150);
 
                         _logger.Warn<UmbracoEventListeners>(
-                            "Duplicate slug found for product : " + content.Id + " store: " + store.Alias);
+                            "Duplicate slug found for product : {Id} store: {Store}",
+                            content.Id,
+                            store.Alias);
 
                         e.Messages.Add(
                             new EventMessage(

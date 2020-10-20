@@ -63,7 +63,9 @@ namespace Ekom.Cache
                 {
                     _logger.Error<DiscountCache>(
                         ex,
-                        $"Error on adding item with id: {r.Id} from Examine in Store: {store.Alias}"
+                        "Error on adding item with id: {Id} from Examine in Store: {Store}",
+                        r.Id,
+                        store.Alias
                     );
                 }
             }
@@ -96,7 +98,9 @@ namespace Ekom.Cache
                 {
                     _logger.Error<DiscountCache>(
                         ex,
-                        $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
+                        "Error on Add/Replacing item with id: {Id} in store: {Store}",
+                        node.Id,
+                        store.Value.Alias
                     );
                 }
             }
@@ -108,7 +112,7 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _logger.Debug<DiscountCache>($"Attempting to remove discount with key {key}");
+            _logger.Debug<DiscountCache>("Attempting to remove discount with key {Key}", key);
             foreach (var store in _storeCache.Cache)
             {
                 Cache[store.Value.Alias].TryRemove(key, out _);

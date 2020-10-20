@@ -53,7 +53,10 @@ namespace Ekom.Cache
             }
 
             stopwatch.Stop();
-            _logger.Info<CouponCache>("Finished filling Coupon cache with " + allCoupons.Count() + " items. Time it took to fill: " + stopwatch.Elapsed);
+            _logger.Info<CouponCache>(
+                "Finished filling Coupon cache with {Count} items. Time it took to fill: {Elapsed}",
+                allCoupons.Count,
+                stopwatch.Elapsed);
         }
 
         /// <inheritdoc />

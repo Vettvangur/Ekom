@@ -1065,7 +1065,11 @@ namespace Ekom.App_Start
             {
                 textDt = dt;
                 _dataTypeService.Save(textDt);
-                _logger.Info<EnsureNodesExist>($"Created Data Type {dt.Name}, editor alias {dt.EditorAlias}");
+                _logger.Info<EnsureNodesExist>(
+                    "Created Data Type {Name}, editor alias {EditorAlias}",
+                    dt.Name,
+                    dt.EditorAlias
+                );
             }
 
             return textDt;
@@ -1080,7 +1084,7 @@ namespace Ekom.App_Start
                 if (createContainerAttempt.Success)
                 {
                     ekmContainer = createContainerAttempt.Result.Entity;
-                    _logger.Info<EnsureNodesExist>($"Created doc type container {name}");
+                    _logger.Info<EnsureNodesExist>("Created doc type container {Name}", name);
                 }
                 else
                 {
@@ -1099,7 +1103,10 @@ namespace Ekom.App_Start
             {
                 ekmContentType = contentType;
                 _contentTypeService.Save(ekmContentType);
-                _logger.Info<EnsureNodesExist>($"Created content type {contentType.Name}, alias {contentType.Alias}");
+                _logger.Info<EnsureNodesExist>(
+                    "Created content type {Name}, alias {Alias}",
+                    contentType.Name,
+                    contentType.Alias);
             }
 
             return ekmContentType;
@@ -1119,7 +1126,11 @@ namespace Ekom.App_Start
 
             if (res.Success)
             {
-                _logger.Info<EnsureNodesExist>($"Created content {name}, alias {documentTypeAlias}");
+                _logger.Info<EnsureNodesExist>(
+                    "Created content {Name}, alias {DocumentTypeAlias}", 
+                    name,
+                    documentTypeAlias);
+
                 return content;
             }
             else

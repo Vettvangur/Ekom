@@ -265,7 +265,10 @@ namespace Ekom.Services
                     : userName)
                 .ConfigureAwait(false);
 
-            _logger.Debug<OrderService>($"Change Order {order.OrderNumber} status to {status.ToString()}");
+            _logger.Debug<OrderService>(
+                "Change Order {OrderNumber} status to {Status}",
+                order.OrderNumber,
+                status);
         }
 
         public async Task<OrderInfo> UpdateOrderlineQuantity(
@@ -335,7 +338,10 @@ namespace Ekom.Services
                         () => new OrderInfo(order),
                         TimeSpan.FromDays(1));
 
-                    _logger.Debug<OrderService>($"Change Currency {oldCurrency}  to {currency}");
+                    _logger.Debug<OrderService>(
+                        "Change Currency {OldCurrency}  to {Currency}",
+                        oldCurrency,
+                        currency);
                 }
             }
 
@@ -352,7 +358,9 @@ namespace Ekom.Services
             await _orderRepository.UpdateOrderAsync(order)
                 .ConfigureAwait(false);
 
-            _logger.Debug<OrderService>("Update Paid Date " + order.OrderNumber);
+            _logger.Debug<OrderService>(
+                "Update Paid Date {OrderNumber}",
+                order.OrderNumber);
         }
 
         /// <summary>
@@ -453,13 +461,20 @@ namespace Ekom.Services
                 orderInfo = await CreateEmptyOrderAsync().ConfigureAwait(false);
             }
 
-            _logger.Debug<OrderService>("ProductId: " + product.Id +
-                " variantId: " + variant?.Key +
-                " qty: " + quantity +
-                " Action: " + action +
-                " Order: " + orderInfo.OrderNumber +
-                " Store: " + _store.Alias +
-                " Cart action " + cartAction
+            _logger.Debug<OrderService>("ProductId: {ProductId}" +
+                " variantId: {VariantId}" +
+                " qty: {Quantity}" +
+                " Action: {Action}" +
+                " Order: {OrderNumber}" +
+                " Store: {Store}" +
+                " Cart action {CartAction}",
+                product.Id,
+                variant?.Key,
+                quantity,
+                action,
+                orderInfo.OrderNumber,
+                _store.Alias,
+                cartAction
             );
 
             await AddOrderLineToOrderInfoAsync(
@@ -474,7 +489,7 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
         {
-            _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
+            _logger.Debug<OrderService>("Remove OrderLine... LineId: {LineId}");
 
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -528,7 +543,11 @@ namespace Ekom.Services
             var lineId = Guid.NewGuid();
 
             _logger.Debug<OrderService>(
-                $"Order: {orderInfo.OrderNumber} Product Key: {product.Key} Variant: {variant?.Key} Action: {action}");
+                "Order: {OrderNumber} Product Key: {ProductKey} Variant: {VariantKey} Action: {Action}",
+                orderInfo.OrderNumber,
+                product.Key,
+                variant?.Key,
+                action);
 
             OrderLine existingOrderLine = null;
 
@@ -604,7 +623,9 @@ namespace Ekom.Services
                 // affecting other OrderLines
                 && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
                 {
-                    _logger.Debug<OrderService>($"Discount {product.ProductDiscount().Key} found on product, applying to OrderLine");
+                    _logger.Debug<OrderService>(
+                        "Discount {ProductDiscountKey} found on product, applying to OrderLine",
+                        product.ProductDiscount().Key);
                     await ApplyDiscountToOrderLineAsync(
                         orderLine,
                         product.ProductDiscount(),
@@ -724,7 +745,7 @@ namespace Ekom.Services
         }
         private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId)
         {
-            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: " + _store.Alias);
+            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: {Store}", _store.Alias);
 
             var orderData = new OrderData
             {
@@ -977,9 +998,8 @@ namespace Ekom.Services
             }
             else
             {
-                _logger.Warn<OrderService>("Could not delete order cookie. Cookie not found. Key: " + key);
+                _logger.Warn<OrderService>("Could not delete order cookie. Cookie not found. Key: {Key}", key);
             }
-
         }
 
         private string GenerateOrderNumberTemplate(int referenceId)

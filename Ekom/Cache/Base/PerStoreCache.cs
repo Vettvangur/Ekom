@@ -119,17 +119,23 @@ namespace Ekom.Cache
 #if DEBUG
                 stopwatch.Stop();
                 _logger.Debug<PerStoreCache<TItem>>(
-                    $"Finished filling per store cache with {count} items. Time it took to fill: {stopwatch.Elapsed}"
+                    "Finished filling per store cache with {Count} items. Time it took to fill: {Elapsed}",
+                    count,
+                    stopwatch.Elapsed
                 );
 #endif
 #if !DEBUG
-                _logger.Debug(typeof(PerStoreCache<>), "Finished filling per store cache with " + count + " items");
+                _logger.Debug(
+                    typeof(PerStoreCache<>), 
+                    "Finished filling per store cache with {Count} items", 
+                    count);
 #endif
             }
             else
             {
                 _logger.Error<PerStoreCache<TItem>>(
-                    $"No examine search found with the name {_config.ExamineIndex}, Can not fill cache."
+                    "No examine search found with the name {ExamineIndex}, Can not fill cache.",
+                    _config.ExamineIndex
                 );
             }
         }
@@ -167,9 +173,11 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _logger.Error<PerStoreCache<TItem>>(
+                    _logger.Warn<PerStoreCache<TItem>>(
                         ex,
-                        $"Error on adding item with id: {r.Id} from Examine in Store: {store.Alias}"
+                        "Error on adding item with id: {Id} from Examine in Store: {Alias}",
+                        r.Id,
+                        store.Alias
                     );
                 }
             }
@@ -206,9 +214,11 @@ namespace Ekom.Cache
                 }
                 catch (Exception ex) // Skip on fail
                 {
-                    _logger.Error<PerStoreCache<TItem>>(
+                    _logger.Warn<PerStoreCache<TItem>>(
                         ex,
-                        $"Error on Add/Replacing item with id: {node.Id} in store: {store.Value.Alias}"
+                        "Error on Add/Replacing item with id: {Id} in store: {Store}",
+                        node.Id,
+                        store.Value.Alias
                     );
                 }
             }

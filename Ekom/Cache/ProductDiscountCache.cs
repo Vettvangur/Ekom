@@ -72,7 +72,7 @@ namespace Ekom.Cache
         /// </summary>
         public override void Remove(Guid key)
         {
-            _logger.Debug<ProductDiscountCache>($"Attempting to remove product discount with key {key}");
+            _logger.Debug<ProductDiscountCache>("Attempting to remove product discount with key {Key}", key);
             IProductDiscount i = null;
 
             foreach (var store in _storeCache.Cache)

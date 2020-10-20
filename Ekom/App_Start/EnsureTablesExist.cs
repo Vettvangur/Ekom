@@ -31,19 +31,25 @@ namespace Ekom.App_Start
         {
             if (!TableExists(TableInfo.FromPoco(typeof(StockData)).TableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(StockData)).TableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    TableInfo.FromPoco(typeof(StockData)).TableName);
 
                 Create.Table<StockData>().Do();
             }
             if (!TableExists(TableInfo.FromPoco(typeof(OrderActivityLog)).TableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(OrderActivityLog)).TableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    TableInfo.FromPoco(typeof(OrderActivityLog)).TableName);
 
                 Create.Table<OrderActivityLog>().Do();
             }
             if (!TableExists(TableInfo.FromPoco(typeof(OrderData)).TableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(OrderData)).TableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    TableInfo.FromPoco(typeof(OrderData)).TableName);
 
                 Create.Table<OrderData>().Do();
                 Execute.Sql($"ALTER TABLE {TableInfo.FromPoco(typeof(OrderData)).TableName} ALTER COLUMN OrderInfo NVARCHAR(MAX)").Do();
@@ -51,20 +57,26 @@ namespace Ekom.App_Start
             }
             if (!TableExists(TableInfo.FromPoco(typeof(CouponData)).TableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(CouponData)).TableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    TableInfo.FromPoco(typeof(CouponData)).TableName);
 
                 Create.Table<CouponData>().Do();
             }
             if (!TableExists(Configuration.DiscountStockTableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {Configuration.DiscountStockTableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    Configuration.DiscountStockTableName);
 
                 Create.Table<DiscountStockData>().Do();
             }
             if (_config.StoreCustomerData
             && !TableExists(TableInfo.FromPoco(typeof(CustomerData)).TableName))
             {
-                _logger.Info<MigrationCreateTables>($"Creating {TableInfo.FromPoco(typeof(CustomerData)).TableName} table");
+                _logger.Info<MigrationCreateTables>(
+                    "Creating {TableName} table",
+                    TableInfo.FromPoco(typeof(CustomerData)).TableName);
 
                 Create.Table<CustomerData>().Do();
             }
