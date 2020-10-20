@@ -852,6 +852,23 @@ namespace Ekom.Services
             return orders.Select(x => new OrderInfo(x)).ToList();
         }
 
+        public Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(params OrderStatus[] orderStatuses)
+        {
+            if (_ekmRequest.User?.UserId == null)
+            {
+                return null;
+            }
+
+            return GetStatusOrdersByCustomerIdAsync(_ekmRequest.User.UserId, orderStatuses);
+        }
+        public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, params OrderStatus[] orderStatuses)
+        {
+            var orders = await _orderRepository.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Select(x => new OrderInfo(x)).ToList();
+        }
+
         public bool CheckStockAvailability(IOrderInfo orderInfo)
         {
 

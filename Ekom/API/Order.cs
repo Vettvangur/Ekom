@@ -5,6 +5,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
@@ -117,10 +118,64 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException($"The value for '{nameof(storeAlias)}' must be specified");
             }
 
             return await _orderService.GetCompletedOrderAsync(storeAlias)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get all orders with the given <see cref="OrderStatus"/> for the given customer
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <param name="orderStatuses"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerIdAsync(
+            int customerId,
+            params OrderStatus[] orderStatuses
+        )
+        {
+            if (!orderStatuses.Any())
+            {
+                throw new ArgumentException("At least one OrderStatus must be specified");
+            }
+
+            var orders = await _orderService.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Cast<IOrderInfo>();
+        }
+
+        /// <summary>
+        /// Get all orders with the given <see cref="OrderStatus"/>
+        /// </summary>
+        /// <param name="orderStatuses"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerIdAsync(
+            params OrderStatus[] orderStatuses
+        )
+        {
+            if (!orderStatuses.Any())
+            {
+                throw new ArgumentException("At least one OrderStatus must be specified");
+            }
+
+            var orders = await _orderService.GetStatusOrdersByCustomerIdAsync(orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Cast<IOrderInfo>();
+        }
+
+
+        /// <summary>
+        /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
+        /// </summary>
+        /// <param name="customerId"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
+        {
+            return await _orderService.GetCompleteCustomerOrdersAsync(customerId)
                 .ConfigureAwait(false);
         }
 
@@ -234,17 +289,6 @@ namespace Ekom.API
         public async Task CompleteOrderAsync(Guid orderId)
         {
             await _checkoutService.CompleteAsync(orderId)
-                .ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
-        /// </summary>
-        /// <param name="customerId"></param>
-        /// <returns></returns>
-        public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
-        {
-            return await _orderService.GetCompleteCustomerOrdersAsync(customerId)
                 .ConfigureAwait(false);
         }
 

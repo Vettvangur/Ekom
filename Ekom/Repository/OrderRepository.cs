@@ -3,6 +3,7 @@ using Ekom.Models.Data;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
@@ -76,6 +77,20 @@ namespace Ekom.Repository
                         && (x.OrderStatusCol == (int)OrderStatus.ReadyForDispatch 
                         || x.OrderStatusCol == (int)OrderStatus.OfflinePayment
                         || x.OrderStatusCol == (int)OrderStatus.Dispatched))
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+            }
+        }
+
+        public async Task<List<OrderData>> GetStatusOrdersByCustomerIdAsync(
+            int customerId, 
+            OrderStatus[] orderStatuses)
+        {
+            using (var scope = _scopeProvider.CreateScope())
+            {
+                return await scope.Database.Query<OrderData>()
+                    .Where(x => x.CustomerId == customerId)
+                    .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol))
                     .ToListAsync()
                     .ConfigureAwait(false);
             }
