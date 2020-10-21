@@ -126,6 +126,32 @@ namespace Ekom.API
         }
 
         /// <summary>
+        /// Get all orders with the given <see cref="OrderStatus"/> for the given customerUsername
+        /// </summary>
+        /// <param name="customerUsername"></param>
+        /// <param name="orderStatuses"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerUsernameAsync(
+            string customerUsername,
+            params OrderStatus[] orderStatuses
+        )
+        {
+            if (string.IsNullOrEmpty(customerUsername))
+            {
+                throw new ArgumentException($"Null or empty {nameof(customerUsername)} provided");
+            }
+            if (!orderStatuses.Any())
+            {
+                throw new ArgumentException("At least one OrderStatus must be specified");
+            }
+
+            var orders = await _orderService.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Cast<IOrderInfo>();
+        }
+
+        /// <summary>
         /// Get all orders with the given <see cref="OrderStatus"/> for the given customer
         /// </summary>
         /// <param name="customerId"></param>

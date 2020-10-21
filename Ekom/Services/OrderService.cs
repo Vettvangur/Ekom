@@ -889,6 +889,13 @@ namespace Ekom.Services
 
             return orders.Select(x => new OrderInfo(x)).ToList();
         }
+        public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, params OrderStatus[] orderStatuses)
+        {
+            var orders = await _orderRepository.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Select(x => new OrderInfo(x)).ToList();
+        }
 
         public bool CheckStockAvailability(IOrderInfo orderInfo)
         {

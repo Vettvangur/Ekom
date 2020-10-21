@@ -83,13 +83,27 @@ namespace Ekom.Repository
         }
 
         public async Task<List<OrderData>> GetStatusOrdersByCustomerIdAsync(
-            int customerId, 
+            int customerId,
             OrderStatus[] orderStatuses)
         {
             using (var scope = _scopeProvider.CreateScope())
             {
                 return await scope.Database.Query<OrderData>()
                     .Where(x => x.CustomerId == customerId)
+                    .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol))
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+            }
+        }
+
+        public async Task<List<OrderData>> GetStatusOrdersByCustomerUsernameAsync(
+            string customerUsername,
+            OrderStatus[] orderStatuses)
+        {
+            using (var scope = _scopeProvider.CreateScope())
+            {
+                return await scope.Database.Query<OrderData>()
+                    .Where(x => x.CustomerUsername == customerUsername)
                     .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol))
                     .ToListAsync()
                     .ConfigureAwait(false);

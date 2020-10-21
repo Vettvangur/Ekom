@@ -14,5 +14,8 @@ namespace Ekom.Interfaces
         Task<List<OrderData>> GetCompletedOrdersByCustomerIdAsync(int customerId);
 
         Task<List<OrderData>> GetStatusOrdersByCustomerIdAsync(int customerId, OrderStatus[] orderStatuses);
+        Task<List<OrderData>> GetStatusOrdersByCustomerUsernameAsync(
+            string customerUsername,
+            OrderStatus[] orderStatuses);
     }
 }
