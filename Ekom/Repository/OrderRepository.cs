@@ -1,9 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Utilities;
+using Hangfire.States;
+using NPoco.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
@@ -68,43 +71,28 @@ namespace Ekom.Repository
             }
         }
 
-        public async Task<List<OrderData>> GetCompletedOrdersByCustomerIdAsync(int customerId)
+        /// <summary>
+        /// Get all Orders with the given OrderStatuses. Optionally filter further by any column.
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <param name="orderStatuses"></param>
+        /// <returns></returns>
+        public async Task<List<OrderData>> GetStatusOrdersAsync(
+            Expression<Func<OrderData, bool>> filter = null,
+            params OrderStatus[] orderStatuses
+        )
         {
-            using (var scope = _scopeProvider.CreateScope())
+            using (var scope = _scopeProvider.CreateScope(autoComplete: true))
             {
-                return await scope.Database.Query<OrderData>()
-                    .Where(x => x.CustomerId == customerId 
-                        && (x.OrderStatusCol == (int)OrderStatus.ReadyForDispatch 
-                        || x.OrderStatusCol == (int)OrderStatus.OfflinePayment
-                        || x.OrderStatusCol == (int)OrderStatus.Dispatched))
-                    .ToListAsync()
-                    .ConfigureAwait(false);
-            }
-        }
+                var query = scope.Database.Query<OrderData>()
+                    .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol));
 
-        public async Task<List<OrderData>> GetStatusOrdersByCustomerIdAsync(
-            int customerId,
-            OrderStatus[] orderStatuses)
-        {
-            using (var scope = _scopeProvider.CreateScope())
-            {
-                return await scope.Database.Query<OrderData>()
-                    .Where(x => x.CustomerId == customerId)
-                    .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol))
-                    .ToListAsync()
-                    .ConfigureAwait(false);
-            }
-        }
+                if (filter != null)
+                {
+                    query = query.Where(filter);
+                }
 
-        public async Task<List<OrderData>> GetStatusOrdersByCustomerUsernameAsync(
-            string customerUsername,
-            OrderStatus[] orderStatuses)
-        {
-            using (var scope = _scopeProvider.CreateScope())
-            {
-                return await scope.Database.Query<OrderData>()
-                    .Where(x => x.CustomerUsername == customerUsername)
-                    .Where(x => orderStatuses.Contains((OrderStatus)x.OrderStatusCol))
+                return await query
                     .ToListAsync()
                     .ConfigureAwait(false);
             }

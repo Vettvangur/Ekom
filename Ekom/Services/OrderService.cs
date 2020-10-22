@@ -867,12 +867,23 @@ namespace Ekom.Services
 
         public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
         {
-            var orders = await _orderRepository.GetCompletedOrdersByCustomerIdAsync(customerId)
-                .ConfigureAwait(false);
+            var orders = await _orderRepository.GetStatusOrdersAsync(
+                x => x.CustomerId == customerId,
+                OrderStatus.ReadyForDispatch,
+                OrderStatus.OfflinePayment,
+                OrderStatus.Dispatched
+
+            ).ConfigureAwait(false);
 
             return orders.Select(x => new OrderInfo(x)).ToList();
         }
 
+        public async Task<List<OrderInfo>> GetStatusOrdersAsync(params OrderStatus[] orderStatuses)
+        {
+            return (await _orderRepository.GetStatusOrdersAsync(null, orderStatuses).ConfigureAwait(false))
+                .Select(x => new OrderInfo(x))
+                .ToList();
+        }
         public Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(params OrderStatus[] orderStatuses)
         {
             if (_ekmRequest.User?.UserId == null)
@@ -884,15 +895,21 @@ namespace Ekom.Services
         }
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, params OrderStatus[] orderStatuses)
         {
-            var orders = await _orderRepository.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
-                .ConfigureAwait(false);
+            var orders = await _orderRepository.GetStatusOrdersAsync(
+                x => x.CustomerId == customerId, 
+                orderStatuses
+
+            ).ConfigureAwait(false);
 
             return orders.Select(x => new OrderInfo(x)).ToList();
         }
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, params OrderStatus[] orderStatuses)
         {
-            var orders = await _orderRepository.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
-                .ConfigureAwait(false);
+            var orders = await _orderRepository.GetStatusOrdersAsync(
+                x => x.CustomerUsername == customerUsername, 
+                orderStatuses
+                
+            ).ConfigureAwait(false);
 
             return orders.Select(x => new OrderInfo(x)).ToList();
         }

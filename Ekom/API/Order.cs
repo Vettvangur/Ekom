@@ -174,7 +174,7 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get all orders with the given <see cref="OrderStatus"/>
+        /// Get all orders for logged in user with the given <see cref="OrderStatus"/>
         /// </summary>
         /// <param name="orderStatuses"></param>
         /// <returns></returns>
@@ -188,6 +188,26 @@ namespace Ekom.API
             }
 
             var orders = await _orderService.GetStatusOrdersByCustomerIdAsync(orderStatuses)
+                .ConfigureAwait(false);
+
+            return orders.Cast<IOrderInfo>();
+        }
+
+        /// <summary>
+        /// Get all orders with the given <see cref="OrderStatus"/>
+        /// </summary>
+        /// <param name="orderStatuses"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersAsync(
+            params OrderStatus[] orderStatuses
+        )
+        {
+            if (!orderStatuses.Any())
+            {
+                throw new ArgumentException("At least one OrderStatus must be specified");
+            }
+
+            var orders = await _orderService.GetStatusOrdersAsync(orderStatuses)
                 .ConfigureAwait(false);
 
             return orders.Cast<IOrderInfo>();
