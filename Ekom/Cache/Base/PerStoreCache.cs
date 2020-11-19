@@ -202,6 +202,10 @@ namespace Ekom.Cache
                             ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
 
                         if (item != null) Cache[store.Value.Alias][node.Key] = item;
+                    } 
+                    else 
+                    {
+                        Cache[store.Value.Alias].TryRemove(node.Key, out _);
                     }
                 }
                 catch (Exception ex) // Skip on fail
