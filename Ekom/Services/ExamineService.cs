@@ -64,7 +64,8 @@ namespace Ekom.Services
                 return results.FirstOrDefault();
             }
 
-            _logger.Warn<ExamineService>("GetNodeFromExamine Failed. Node with Id " + Id + " not found.");
+            _logger.Warn<ExamineService>(
+                "GetNodeFromExamine Failed. Node with Id {Id} not found.", Id);
             return null;
         }
         public ISearchResult GetExamineNode(string Key)
@@ -84,7 +85,8 @@ namespace Ekom.Services
                 return results.FirstOrDefault();
             }
 
-            _logger.Warn<ExamineService>("GetNodeFromExamine Failed. Node with Key " + Key + " not found.");
+            _logger.Warn<ExamineService>(
+                "GetNodeFromExamine Failed. Node with Key {Key} not found.", Key);
             return null;
         }
 
@@ -146,7 +148,7 @@ namespace Ekom.Services
             }
             else
             {
-                _logger.Error<ExamineService>($"Unable to get Searcher {examineIndex}!");
+                _logger.Error<ExamineService>("Unable to get Searcher {ExamineIndex}!", examineIndex);
 
                 return null;
             }

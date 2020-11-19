@@ -65,23 +65,27 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _logger.Warn<StoreCache>(ex, "Failed to map to store. Id: " + r.Id);
+                        _logger.Warn<StoreCache>(ex, "Failed to map to store. Id: {Id}", r.Id);
                     }
                 }
 
 #if DEBUG
                 stopwatch.Stop();
 
-                _logger.Debug<StoreCache>("Finished filling store cache with " + count + " items. Time it took to fill: " + stopwatch.Elapsed);
+                _logger.Debug<StoreCache>(
+                    "Finished filling store cache with {Count} items. Time it took to fill: {Elapsed}",
+                    count,
+                    stopwatch.Elapsed);
 #endif
 #if !DEBUG
-                _logger.Debug<StoreCache>("Finished filling store cache with " + count + " items");
+                _logger.Debug<StoreCache>("Finished filling store cache with {Count} items", count);
 #endif
-
             }
             else
             {
-                _logger.Error<StoreCache>($"No examine index found with the name {_config.ExamineIndex}, Can not fill store cache.");
+                _logger.Error<StoreCache>(
+                    "No examine index found with the name {ExamineIndex}, Can not fill store cache.",
+                    _config.ExamineIndex);
             }
         }
 

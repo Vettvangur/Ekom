@@ -181,7 +181,7 @@ namespace Ekom.Models
                 {
                     "createDate",
                     node.CreateDate.ToString("yyyyMMddHHmmssfff")
-                }
+                },
             };
 
             return properties;

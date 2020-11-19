@@ -20,5 +20,5 @@ indent_size = 2
 [*.{html,config}]
 indent_size = 2
 
-[*.{html,cshtml}]
+[*.{html,cshtml,aspx}]
 charset = utf-8-bom

@@ -50,7 +50,6 @@ namespace Ekom.Interfaces
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>
-        /// 
         IProductDiscount ProductDiscount(string price);
         string SKU { get; }
         /// <summary>
@@ -76,8 +75,8 @@ namespace Ekom.Interfaces
         List<ICategory> Categories();
 
         /// <summary>
-        // Variant images
-        // </summary>
+        /// Variant images
+        /// </summary>
         IEnumerable<Image> Images();
     }
 }

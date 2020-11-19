@@ -192,7 +192,10 @@ namespace Ekom.Extensions.Controllers
                 // save job ids to sql for retrieval after checkout completion
                 await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs);
 
-                _logger.Info<CheckoutController>("Payment Provider: " + paymentRequest.PaymentProvider + " offline: " + isOfflinePayment);
+                _logger.Info<CheckoutController>(
+                    "Payment Provider: {PaymentProvider} offline: {isOfflinePayment}",
+                    paymentRequest.PaymentProvider,
+                    isOfflinePayment);
 
                 if (isOfflinePayment)
                 {
@@ -208,7 +211,10 @@ namespace Ekom.Extensions.Controllers
                     }
                     catch (Exception ex)
                     {
-                        _logger.Error<CheckoutController>(ex, "Offline Payment Failed. Order: " + order.UniqueId);
+                        _logger.Error<CheckoutController>(
+                            ex,
+                            "Offline Payment Failed. Order: {UniqueId}",
+                            order.UniqueId);
 
                         var errorUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("errorUrl", storeAlias), Request);
 
