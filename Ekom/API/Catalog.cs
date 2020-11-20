@@ -68,16 +68,6 @@ namespace Ekom.API
             return r?.Product;
         }
 
-        public IPerStoreCache<IVariant> GetVariantCache()
-        {
-            return _variantCache;
-        }
-
-        public IPerStoreCache<IVariantGroup> GetVariantGroupCache()
-        {
-            return _variantGroupCache;
-        }
-
         /// <summary>
         /// Get product by Guid using store from ekmRequest
         /// </summary>
