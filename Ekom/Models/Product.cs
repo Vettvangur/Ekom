@@ -125,9 +125,9 @@ namespace Ekom.Models
 
                         if (node != null)
                         {
-                            var variantGroup = __variantGroupCache.Cache.FirstOrDefault(x => x.Key == Store.Alias).Value.FirstOrDefault(x => x.Value.Id == node.Id);
+                            var variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
 
-                            return variantGroup.Value;
+                            return variantGroup;
                         }
                     }
                 }

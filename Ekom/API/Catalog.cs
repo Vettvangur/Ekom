@@ -68,6 +68,16 @@ namespace Ekom.API
             return r?.Product;
         }
 
+        public IPerStoreCache<IVariant> GetVariantCache()
+        {
+            return _variantCache;
+        }
+
+        public IPerStoreCache<IVariantGroup> GetVariantGroupCache()
+        {
+            return _variantGroupCache;
+        }
+
         /// <summary>
         /// Get product by Guid using store from ekmRequest
         /// </summary>
@@ -416,14 +426,14 @@ namespace Ekom.API
             return null;
         }
 
-        public IVariant GetVariant(string storeAlias, Guid Key)
+        public IVariant GetVariant(string storeAlias, Guid key)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            if (_variantCache.Cache[storeAlias].TryGetValue(Key, out var val))
+            if (_variantCache.Cache[storeAlias].TryGetValue(key, out var val))
             {
                 return val;
             }
@@ -443,15 +453,19 @@ namespace Ekom.API
                                    .Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
-        public IVariantGroup GetVariantGroup(string storeAlias, int Id)
+        public IVariantGroup GetVariantGroup(string storeAlias, Guid key)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            return _variantGroupCache.Cache[storeAlias]
-                                   .FirstOrDefault(x => x.Value.Id == Id).Value;
+            if (_variantGroupCache.Cache[storeAlias].TryGetValue(key, out var val))
+            {
+                return val;
+            }
+
+            return null;
         }
     }
 }

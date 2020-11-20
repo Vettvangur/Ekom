@@ -113,20 +113,7 @@ namespace Ekom.Models
         /// <summary>
         /// <see cref="IVariantGroup"/> Key
         /// </summary>
-        public Guid VariantGroupKey
-        {
-            get
-            {
-                var group = VariantGroup;
-
-                if (group != null)
-                {
-                    return group.Key;
-                }
-
-                return Guid.Empty;
-            }
-        }
+        public Guid VariantGroupKey { get; set; }
 
         /// <summary>
         /// Variant group <see cref="IVariant"/> belongs to
@@ -142,7 +129,8 @@ namespace Ekom.Models
 
                 if (int.TryParse(parentId, out int _parentId))
                 {
-                    return Catalog.Instance.GetVariantGroup(Store.Alias, _parentId);
+
+                    return Catalog.Instance.GetVariantGroup(Store.Alias, VariantGroupKey);
                 }
 
                 return null;
@@ -278,6 +266,15 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(ISearchResult item, IStore store) : base(item, store)
         {
+            var examineNode = Current.Factory.GetInstance<IExamineService>().GetExamineNode(ParentId);
+
+            if (examineNode != null)
+            {
+                if (Guid.TryParse(examineNode["__Key"], out Guid key))
+                {
+                    VariantGroupKey = key;
+                }
+            }
         }
 
         /// <summary>
@@ -287,6 +284,9 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(IContent node, IStore store) : base(node, store)
         {
+            var parentNode = Current.Services.ContentService.GetById(node.ParentId);
+
+            VariantGroupKey = parentNode.Key;
         }
     }
 }

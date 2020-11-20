@@ -1,4 +1,4 @@
-﻿using Ekom.Interfaces;
+using Ekom.Interfaces;
 using System;
 using System.Collections.Concurrent;
 
@@ -9,7 +9,7 @@ namespace Ekom.Cache
     /// The store cache looks at the list of caches when it is updated and runs through them.
     /// Updating all per store caches.
     /// </summary>
-    interface IPerStoreCache : ICache
+    public interface IPerStoreCache : ICache
     {
         /// <summary>
         /// Handles initial population of cache data
@@ -21,7 +21,7 @@ namespace Ekom.Cache
     /// Used to register per store caches with unity
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    interface IPerStoreCache<T> : ICache, IPerStoreCache
+    public interface IPerStoreCache<T> : ICache, IPerStoreCache
     {
         /// <summary>
         /// 

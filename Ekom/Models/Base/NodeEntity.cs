@@ -28,6 +28,23 @@ namespace Ekom.Models
         /// </summary>
         public virtual int Id => Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual int ParentId
+        {
+            get
+            {
+                if (int.TryParse(Properties.GetPropertyValue("parentID"), out int _parentId))
+                {
+                    return _parentId;
+                }
+
+                return 0;
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
