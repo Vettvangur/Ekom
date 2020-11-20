@@ -33,10 +33,8 @@ namespace Ekom.Cache
         {
             var domains = _domainService.GetAll(false).ToList();
 
-#if DEBUG
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-#endif
 
             _logger.Info<StoreDomainCache>("Starting to fill store domain cache...");
 
@@ -48,18 +46,11 @@ namespace Ekom.Cache
                 }
             }
 
-#if DEBUG
             _logger.Info<StoreDomainCache>(
                 "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
                 domains.Count,
                 stopwatch.Elapsed
             );
-#else
-            _logger.Debug<StoreDomainCache>(
-                "Finished filling store domain cache with {Count} domain items.",
-                domains.Count
-            );
-#endif
         }
 
         /// <inheritdoc />

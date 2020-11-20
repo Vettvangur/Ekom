@@ -38,11 +38,8 @@ namespace Ekom.Cache
                 // This line can give error Lock obtain timed out.
                 var searcher = index.GetSearcher();
 
-#if DEBUG
                 Stopwatch stopwatch = new Stopwatch();
-
                 stopwatch.Start();
-#endif
 
                 _logger.Debug<StoreCache>("Starting to fill store cache...");
                 int count = 0;
@@ -69,16 +66,11 @@ namespace Ekom.Cache
                     }
                 }
 
-#if DEBUG
                 stopwatch.Stop();
-
                 _logger.Info<StoreCache>(
                     "Finished filling store cache with {Count} items. Time it took to fill: {Elapsed}",
                     count,
                     stopwatch.Elapsed);
-#else
-                _logger.Debug<StoreCache>("Finished filling store cache with {Count} items", count);
-#endif
             }
             else
             {

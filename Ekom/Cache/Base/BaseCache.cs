@@ -79,11 +79,9 @@ namespace Ekom.Cache
             if (!string.IsNullOrEmpty(NodeAlias)
             && ExamineManager.TryGetIndex(_config.ExamineIndex, out IIndex index))
             {
-#if DEBUG
                 Stopwatch stopwatch = new Stopwatch();
-
                 stopwatch.Start();
-#endif
+
                 var searcher = index.GetSearcher();
 
                 _logger.Debug<BaseCache<TItem>>("Starting to fill...");
@@ -117,13 +115,9 @@ namespace Ekom.Cache
                     }
                 }
 
-#if DEBUG
                 stopwatch.Stop();
                 _logger.Info<BaseCache<TItem>>(
                     "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
-#else
-                _logger.Debug(typeof(BaseCache<TItem>), "Finished filling base cache with {Count} items", count);
-#endif
             }
             else
             {
