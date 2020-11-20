@@ -35,8 +35,10 @@ namespace Ekom.Cache
         /// <inheritdoc />
         public void FillCache()
         {
+#if DEBUG
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+#endif
             _logger.Info<CouponCache>("Starting to fill coupon cache...");
 
             List<CouponData> allCoupons;
@@ -52,11 +54,17 @@ namespace Ekom.Cache
                 Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
             }
 
+#if DEBUG
             stopwatch.Stop();
             _logger.Info<CouponCache>(
                 "Finished filling Coupon cache with {Count} items. Time it took to fill: {Elapsed}",
                 allCoupons.Count,
                 stopwatch.Elapsed);
+#else
+            _logger.Debug<CouponCache>(
+                "Finished filling Coupon cache with {Count} items.",
+                allCoupons.Count);
+#endif
         }
 
         /// <inheritdoc />

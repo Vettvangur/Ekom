@@ -45,8 +45,10 @@ namespace Ekom.Cache
 
         public override void FillCache()
         {
+#if DEBUG
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+#endif
             _logger.Info<StockPerStoreCache>("Starting to fill...");
 
             int count = 0;
@@ -59,12 +61,19 @@ namespace Ekom.Cache
                 count += FillStoreCache(store, filteredStock);
             }
 
+#if DEBUG
             stopwatch.Stop();
             _logger.Info<StockPerStoreCache>(
                 "Finished filling cache with {Count} items. Time it took to fill: {Elapsed}",
                 count,
                 stopwatch.Elapsed
             );
+#else
+            _logger.Debug<StockPerStoreCache>(
+                "Finished filling cache with {Count} items.",
+                count
+            );
+#endif
         }
 
         private int FillStoreCache(IStore store, IEnumerable<StockData> stockData)

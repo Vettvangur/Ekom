@@ -118,13 +118,12 @@ namespace Ekom.Cache
 
 #if DEBUG
                 stopwatch.Stop();
-                _logger.Debug<PerStoreCache<TItem>>(
+                _logger.Info<PerStoreCache<TItem>>(
                     "Finished filling per store cache with {Count} items. Time it took to fill: {Elapsed}",
                     count,
                     stopwatch.Elapsed
                 );
-#endif
-#if !DEBUG
+#else
                 _logger.Debug(
                     typeof(PerStoreCache<>), 
                     "Finished filling per store cache with {Count} items", 

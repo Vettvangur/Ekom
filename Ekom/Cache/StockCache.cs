@@ -41,8 +41,10 @@ namespace Ekom.Cache
 
         public override void FillCache()
         {
+#if DEBUG
             var stopwatch = new Stopwatch();
             stopwatch.Start();
+#endif
             _logger.Info<StockCache>("Starting to fill...");
 
             var allStock = _stockRepo.GetAllStockAsync().Result;
@@ -53,11 +55,17 @@ namespace Ekom.Cache
                 Cache[key] = stock;
             }
 
+#if DEBUG
             stopwatch.Stop();
             _logger.Info<StockCache>(
                 "Finished filling cache with {Count} items. Time it took to fill: {Elapsed}",
                 allStock.Count,
                 stopwatch.Elapsed);
+#else
+            _logger.Debug<StockCache>(
+                "Finished filling cache with {Count} items.",
+                allStock.Count);
+#endif
         }
     }
 }

@@ -119,10 +119,9 @@ namespace Ekom.Cache
 
 #if DEBUG
                 stopwatch.Stop();
-                _logger.Debug<BaseCache<TItem>>(
+                _logger.Info<BaseCache<TItem>>(
                     "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
-#endif
-#if !DEBUG
+#else
                 _logger.Debug(typeof(BaseCache<TItem>), "Finished filling base cache with {Count} items", count);
 #endif
             }
