@@ -981,7 +981,7 @@ namespace Ekom.Services
             // Verify paymentProvider constraints
             if (orderInfo.PaymentProvider != null)
             {
-                var paymentProvider = Providers.Instance.GetShippingProvider(orderInfo.PaymentProvider.Key);
+                var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key);
 
                 if (!paymentProvider.Constraints.IsValid(countryCode, total))
                 {
