@@ -779,7 +779,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdateCustomerInformation...");
 
-            if (form.Keys.Any(x => x == "storeAlias"))
+            if (form.ContainsKey("storeAlias"))
             {
                 var storeAlias = form["storeAlias"];
 
@@ -799,6 +799,22 @@ namespace Ekom.Services
                     var value = form[key];
 
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+                }
+
+                if (form.ContainsKey("ShippingProvider"))
+                {
+                    if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
+                    {
+                        await UpdateShippingInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                    }
+                }
+
+                if (form.ContainsKey("PaymentProvider"))
+                {
+                    if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
+                    {
+                        await UpdatePaymentInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                    }
                 }
 
                 await UpdateOrderAndOrderInfoAsync(orderInfo)
