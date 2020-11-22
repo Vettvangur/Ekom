@@ -788,6 +788,22 @@ namespace Ekom.Services
 
                 var orderInfo = GetOrder(storeAlias);
 
+                if (form.ContainsKey("ShippingProvider"))
+                {
+                    if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
+                    {
+                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                    }
+                }
+
+                if (form.ContainsKey("PaymentProvider"))
+                {
+                    if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
+                    {
+                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                    }
+                }
+
                 foreach (var key in form.Keys.Where(x => x.StartsWith("customer")))
                 {
                     var value = form[key];
@@ -799,22 +815,6 @@ namespace Ekom.Services
                     var value = form[key];
 
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
-                }
-
-                if (form.ContainsKey("ShippingProvider"))
-                {
-                    if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
-                    {
-                        await UpdateShippingInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
-                    }
-                }
-
-                if (form.ContainsKey("PaymentProvider"))
-                {
-                    if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
-                    {
-                        await UpdatePaymentInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
-                    }
                 }
 
                 await UpdateOrderAndOrderInfoAsync(orderInfo)
