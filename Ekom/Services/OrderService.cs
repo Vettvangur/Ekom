@@ -841,8 +841,9 @@ namespace Ekom.Services
 
                 if (provider != null)
                 {
-                    var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
 
+                    var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
+                    
                     orderInfo.ShippingProvider = orderedShippingProvider;
 
                     await UpdateOrderAndOrderInfoAsync(orderInfo)
@@ -975,24 +976,25 @@ namespace Ekom.Services
         private void VerifyProviders(OrderInfo orderInfo)
         {
             var total = orderInfo.OrderLineTotal.Value;
-            var storeAlias = orderInfo.StoreInfo.Alias;
+            var countryCode = orderInfo.CustomerInformation.Customer.Country;
 
             // Verify paymentProvider constraints
             if (orderInfo.PaymentProvider != null)
             {
                 var paymentProvider = Providers.Instance.GetShippingProvider(orderInfo.PaymentProvider.Key);
 
-                if (!paymentProvider.Constraints.IsValid(storeAlias, total))
+                if (!paymentProvider.Constraints.IsValid(countryCode, total))
                 {
                     orderInfo.PaymentProvider = null;
                 }
             }
+
             // Verify shipping provider constraints
             if (orderInfo.ShippingProvider != null)
             {
                 var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
 
-                if (!shippingProvider.Constraints.IsValid(storeAlias, total))
+                if (!shippingProvider.Constraints.IsValid(countryCode, total))
                 {
                     orderInfo.ShippingProvider = null;
                 }

@@ -27,10 +27,12 @@ namespace Ekom.Models.Behaviors
             string countryCode,
             decimal amount
         )
-            => (!CountriesInZone.Any() || CountriesInZone.Contains(countryCode.ToUpper()))
+        {
+            return (!string.IsNullOrEmpty(countryCode) ? (!CountriesInZone.Any() || CountriesInZone.Contains(countryCode.ToUpper())) : true)
             && StartRange <= amount
-            && (EndRange == 0 || EndRange >= amount)
-        ;
+            && (EndRange == 0 || EndRange >= amount);
+
+        }
 
         private INodeEntity _node;
         /// <summary>
