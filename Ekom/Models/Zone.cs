@@ -13,7 +13,7 @@ namespace Ekom.Models
         /// <summary>
         /// Countries encompassing this Zone
         /// </summary>
-        public IEnumerable<string> Countries => Properties["zone"].Split(',');
+        public IEnumerable<string> Countries => Properties.ContainsKey("zoneSelector") ? Properties["zoneSelector"].Split(',') : Properties["zone"].Split(',');
 
         /// <summary>
         /// ctor
