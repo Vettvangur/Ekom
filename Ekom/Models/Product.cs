@@ -324,7 +324,7 @@ namespace Ekom.Models
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
-                throw new Exception("No url's or no title present in product");
+                throw new Exception("No url's or no title present in product." + Title + " - " + Urls.Any());
             }
         }
 
@@ -342,7 +342,8 @@ namespace Ekom.Models
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
-                throw new Exception("No url's or no title present in product");
+
+                throw new Exception("No url's or no title present in product. " + Title + " - " + Urls.Any());
             }
         }
 

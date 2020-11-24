@@ -134,6 +134,16 @@ namespace Ekom.App_Start
             }
         }
 
+        public void ContentService_Trashed(IContentService sender, MoveEventArgs<IContent> args)
+        {
+            foreach (var node in args.MoveInfoCollection)
+            {
+                var cacheEntry = FindMatchingCache(node.Entity.ContentType.Alias);
+
+                cacheEntry?.Remove(node.Entity.Key);
+            }
+        }
+
         private ICache FindMatchingCache(string contentTypeAlias)
         {
             return _config.CacheList.Value.FirstOrDefault(x

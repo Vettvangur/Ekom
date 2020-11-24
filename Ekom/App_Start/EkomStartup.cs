@@ -109,6 +109,7 @@ namespace Ekom
                 ContentService.Published += umbEvListeners.ContentService_Published;
                 ContentService.Unpublished += umbEvListeners.ContentService_UnPublished;
                 ContentService.Deleted += umbEvListeners.ContentService_Deleted;
+                ContentService.Trashed += umbEvListeners.ContentService_Trashed;
                 ContentService.Publishing += umbEvListeners.ContentService_Publishing;
                 ContentService.Saving += umbEvListeners.ContentService_Saving;
                 ContentService.Moved += umbEvListeners.ContentService_Moved;
