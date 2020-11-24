@@ -60,7 +60,7 @@ namespace Ekom.Models
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
 
-                        _price += (v.Price.Value - _price);
+                        _price += (v.Price.OriginalValue - _price);
 
                     }
                 }

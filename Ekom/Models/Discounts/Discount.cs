@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Script.Serialization;
+using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Models;
 using Umbraco.Core.Services;
@@ -22,6 +24,7 @@ namespace Ekom.Models.Discounts
     {
         protected virtual UmbracoHelper UmbHelper => Current.Factory.GetInstance<UmbracoHelper>();
         protected virtual IDataTypeService DataTypeService => Current.Factory.GetInstance<IDataTypeService>();
+
         public virtual IConstraints Constraints { get; protected set; }
         public virtual DiscountType Type
         {
@@ -74,9 +77,6 @@ namespace Ekom.Models.Discounts
             }
         }
 
-        internal string[] couponsInternal;
-        public virtual IReadOnlyCollection<string> Coupons
-            => Array.AsReadOnly(couponsInternal ?? new string[0]);
         public virtual IReadOnlyCollection<string> DiscountItems
         {
             get

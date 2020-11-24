@@ -29,10 +29,6 @@ namespace Ekom.Interfaces
         /// </summary>
         IConstraints Constraints { get; }
         /// <summary>
-        /// 
-        /// </summary>
-        IReadOnlyCollection<string> Coupons { get; }
-        /// <summary>
         /// Coupon code activations left
         /// </summary>
         bool HasMasterStock { get; }

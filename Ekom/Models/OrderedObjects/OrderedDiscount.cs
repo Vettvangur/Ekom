@@ -25,7 +25,6 @@ namespace Ekom.Models.OrderedObjects
             DiscountType type,
             List<string> discountItems,
             Constraints constraints,
-            List<string> coupons,
             bool hasMasterStock)
         {
             Key = key;
@@ -34,7 +33,6 @@ namespace Ekom.Models.OrderedObjects
             Amount = amount;
             Type = type;
             Constraints = constraints;
-            Coupons = coupons;
             HasMasterStock = hasMasterStock;
         }
 
@@ -50,7 +48,6 @@ namespace Ekom.Models.OrderedObjects
             Amount = discount.Amount;
             Type = discount.Type;
             Constraints = new Constraints(discount.Constraints);
-            Coupons = new List<string>(discount.Coupons);
             HasMasterStock = discount.HasMasterStock;
         }
 
@@ -72,10 +69,6 @@ namespace Ekom.Models.OrderedObjects
         /// If discount is stackable with productDiscounts
         /// </summary>
         public bool Stackable { get; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public IReadOnlyCollection<string> Coupons { get; internal set; }
 
         /// <summary>
         /// Coupon code activations left

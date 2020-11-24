@@ -38,7 +38,8 @@ namespace Ekom.Models
                     .GetProductDiscount(
                         Path,
                         Store.Alias,
-                        price
+                        price,
+                        categories.Select(x => x.Id.ToString()).ToArray()
                     );
         }
 
@@ -234,7 +235,9 @@ namespace Ekom.Models
                         Store.VatIncludedInPrice,
                         Store.Currency,
                         Store.Alias,
-                        Path);
+                        Path,
+                        Categories.Select(x => x.Id.ToString()).ToArray()
+                        );
 
                 return prices;
             }

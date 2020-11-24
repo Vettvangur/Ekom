@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Ekom.Services
 {
-    public class ProductDiscountService : IProductDiscountService
+    class ProductDiscountService : IProductDiscountService
     {
         readonly IPerStoreCache<IProductDiscount> _productDiscountCache;
 
@@ -19,7 +19,7 @@ namespace Ekom.Services
             _productDiscountCache = productDiscountCache;
         }
 
-        public IProductDiscount GetProductDiscount(string path, string storeAlias, string inputPrice, string currency = null)
+        public IProductDiscount GetProductDiscount(string path, string storeAlias, string inputPrice, string[] categories = null)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
@@ -38,7 +38,9 @@ namespace Ekom.Services
                     continue;
                 }
 
-                if (!string.IsNullOrEmpty(path) && path.Split(',').Intersect(discount.Value.DiscountItems.ToArray()).Any())
+                var disc = discount.Value as Discount;
+
+                if (!string.IsNullOrEmpty(path) && path.Split(',').Intersect(disc.DiscountItems).Any() || (categories != null && categories.Intersect(disc.DiscountItems).Any()))
                 {
                     applicableDiscounts.Add(discount.Value);
                 }

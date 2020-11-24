@@ -178,7 +178,9 @@ namespace Ekom.Utilities
             bool vatIncludedInPrice,
             CurrencyModel fallbackCurrency = null,
             string storeAlias = null,
-            string path = null)
+            string path = null,
+            string[] categories = null
+            )
         {
             var prices = new List<IPrice>();
 
@@ -196,7 +198,8 @@ namespace Ekom.Utilities
                             .GetProductDiscount(
                                 path,
                                 storeAlias,
-                                price["Price"].Value<string>()
+                                price["Price"].Value<string>(),
+                                categories
                             ) 
                         : null;
 
@@ -225,7 +228,8 @@ namespace Ekom.Utilities
                         .GetProductDiscount(
                             path,
                             storeAlias,
-                            priceJson
+                            priceJson,
+                            categories
                         ) 
                     : null;
 

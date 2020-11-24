@@ -5,6 +5,7 @@ using Ekom.Models;
 using Ekom.Models.Data;
 using Ekom.Models.Discounts;
 using Ekom.Models.OrderedObjects;
+using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -481,9 +482,13 @@ namespace Ekom.Services
         /// <param name="discount"></param>
         /// <returns></returns>
         private bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
-            => discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
-            && (discount.DiscountItems.Count == 0
-            || orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems.ToArray()).Any());
+        {
+            return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
+                && (discount.DiscountItems.Count == 0
+                || (orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems).Any())
+                || (orderLine.Product.Properties.GetPropertyValue("categories").Split(',').Select(x => NodeHelper.GetNodeByUdi(x)?.Id.ToString()).Intersect(discount.DiscountItems).Any())
+                );
+        }
 
         public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
         {

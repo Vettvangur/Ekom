@@ -96,7 +96,8 @@ namespace Ekom.Models
                 .GetProductDiscount(
                     Path,
                     Store.Alias,
-                    price
+                    price,
+                    Product.Categories.Select(x => x.Id.ToString()).ToArray()
                 );
         }
 
@@ -178,7 +179,9 @@ namespace Ekom.Models
                         Store.VatIncludedInPrice,
                         Store.Currency,
                         Store.Alias,
-                        Path);
+                        Path,
+                        Product.Categories.Select(x => x.Id.ToString()).ToArray()
+                        );
 
                 foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList()) {
                     var index = prices.IndexOf(p);
