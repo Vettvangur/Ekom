@@ -19,7 +19,7 @@ namespace Ekom.Services
             _productDiscountCache = productDiscountCache;
         }
 
-        public IProductDiscount GetProductDiscount(Guid productKey, string storeAlias, string inputPrice, string currency = null)
+        public IProductDiscount GetProductDiscount(string path, string storeAlias, string inputPrice, string currency = null)
         {
             var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
@@ -37,14 +37,15 @@ namespace Ekom.Services
                 {
                     continue;
                 }
-                if (discount.Value.DiscountItems.Contains(productKey))
+
+                if (!string.IsNullOrEmpty(path) && path.Split(',').Intersect(discount.Value.DiscountItems.ToArray()).Any())
                 {
                     applicableDiscounts.Add(discount.Value);
                 }
             }
 
             // If no discounts are available for this item
-            if (applicableDiscounts.Count() == 0)
+            if (applicableDiscounts.Count == 0)
             {
                 return null;
             }

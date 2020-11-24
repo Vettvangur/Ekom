@@ -44,7 +44,7 @@ namespace Ekom.Interfaces
         /// <summary>
         /// The products that are in this discount;
         /// </summary>
-        IReadOnlyCollection<Guid> DiscountItems { get; }
+        IReadOnlyCollection<string> DiscountItems { get; }
         /// <summary>
         /// Gets the unique key identifier.
         /// </summary>

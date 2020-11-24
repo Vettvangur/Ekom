@@ -94,7 +94,7 @@ namespace Ekom.Models
         {
             return Current.Factory.GetInstance<IProductDiscountService>()
                 .GetProductDiscount(
-                    Key,
+                    Path,
                     Store.Alias,
                     price
                 );
@@ -178,7 +178,7 @@ namespace Ekom.Models
                         Store.VatIncludedInPrice,
                         Store.Currency,
                         Store.Alias,
-                        Key.ToString());
+                        Path);
 
                 foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList()) {
                     var index = prices.IndexOf(p);

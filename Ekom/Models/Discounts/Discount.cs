@@ -77,29 +77,32 @@ namespace Ekom.Models.Discounts
         internal string[] couponsInternal;
         public virtual IReadOnlyCollection<string> Coupons
             => Array.AsReadOnly(couponsInternal ?? new string[0]);
-        public virtual IReadOnlyCollection<Guid> DiscountItems
+        public virtual IReadOnlyCollection<string> DiscountItems
         {
             get
             {
-                List<Guid> returnList = new List<Guid>();
+                // Im returning INT instead of GUID if we would like to query by Path that is stored as comma seperate int
+                var returnList = new List<string>();
 
                 var nodes = Properties.GetPropertyValue("discountItems")
                     ?.Split(',')
                     .Where(x => !string.IsNullOrEmpty(x))
                     .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
 
-                foreach (var node in nodes.Where(x => x != null))
-                {
-                    returnList.Add(node.Key);
-                    if (node.Children.Any())
-                    {
-                        returnList.AddRange(
-                            node.Descendants()
-                                .Where(x => x.ContentType.Alias == "ekmProduct"
-                                    || x.ContentType.Alias == "ekmProductVariant")
-                                .Select(x => x.Key));
-                    }
-                }
+                returnList.AddRange(nodes.Select(x => x.Id.ToString()));
+
+                //foreach (var node in nodes.Where(x => x != null))
+                //{
+                //    returnList.Add(node.Key);
+                //    if (node.Children.Any())
+                //    {
+                //        returnList.AddRange(
+                //            node.Descendants()
+                //                .Where(x => x.ContentType.Alias == "ekmProduct"
+                //                    || x.ContentType.Alias == "ekmProductVariant")
+                //                .Select(x => x.Key));
+                //    }
+                //}
 
                 return returnList.AsReadOnly();
             }

@@ -23,7 +23,7 @@ namespace Ekom.Models.OrderedObjects
             bool stackable,
             decimal amount,
             DiscountType type,
-            List<Guid> discountItems,
+            List<string> discountItems,
             Constraints constraints,
             List<string> coupons,
             bool hasMasterStock)
@@ -63,7 +63,7 @@ namespace Ekom.Models.OrderedObjects
 
         public decimal Amount { get; internal set; }
 
-        public IReadOnlyCollection<Guid> DiscountItems { get; }
+        public IReadOnlyCollection<string> DiscountItems { get; }
         /// <summary>
         /// Ranges
         /// </summary>

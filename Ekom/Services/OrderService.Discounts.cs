@@ -483,7 +483,7 @@ namespace Ekom.Services
         private bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
             => discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
             && (discount.DiscountItems.Count == 0
-            || discount.DiscountItems.Contains(orderLine.ProductKey));
+            || orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems.ToArray()).Any());
 
         public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
         {

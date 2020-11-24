@@ -171,7 +171,14 @@ namespace Ekom.Utilities
             return prices;
         }
 
-        public static List<IPrice> GetPriceValues(this string priceJson, List<CurrencyModel> storeCurrencies, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null, string storeAlias = null, string key = null)
+        public static List<IPrice> GetPriceValues(
+            this string priceJson,
+            List<CurrencyModel> storeCurrencies,
+            decimal vat,
+            bool vatIncludedInPrice,
+            CurrencyModel fallbackCurrency = null,
+            string storeAlias = null,
+            string path = null)
         {
             var prices = new List<IPrice>();
 
@@ -184,10 +191,10 @@ namespace Ekom.Utilities
                     var currencyValue = price["Currency"].Value<string>();
                     var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
-                    IDiscount productDiscount = !string.IsNullOrEmpty(key) 
+                    IDiscount productDiscount = !string.IsNullOrEmpty(path) 
                         ? Current.Factory.GetInstance<IProductDiscountService>()
                             .GetProductDiscount(
-                                new Guid(key),
+                                path,
                                 storeAlias,
                                 price["Price"].Value<string>()
                             ) 
@@ -213,10 +220,10 @@ namespace Ekom.Utilities
                     fallbackCurrency = store.Currency;
                 }
 
-                IDiscount productDiscount = !string.IsNullOrEmpty(key) 
+                IDiscount productDiscount = !string.IsNullOrEmpty(path) 
                     ? Current.Factory.GetInstance<IProductDiscountService>()
                         .GetProductDiscount(
-                            new Guid(key),
+                            path,
                             storeAlias,
                             priceJson
                         ) 

@@ -36,7 +36,7 @@ namespace Ekom.Models
 
             return Current.Factory.GetInstance<IProductDiscountService>()
                     .GetProductDiscount(
-                        Key,
+                        Path,
                         Store.Alias,
                         price
                     );
@@ -234,7 +234,7 @@ namespace Ekom.Models
                         Store.VatIncludedInPrice,
                         Store.Currency,
                         Store.Alias,
-                        Key.ToString());
+                        Path);
 
                 return prices;
             }
@@ -336,7 +336,7 @@ namespace Ekom.Models
         public Product(IContent node, IStore store) : base(node, store)
         {
             PopulateCategoryAncestors();
-            PopulateCategories();
+            PopulateCategories(true);
 
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
@@ -347,18 +347,33 @@ namespace Ekom.Models
             }
         }
 
-        private void PopulateCategories()
+        private void PopulateCategories(bool log = false)
         {
-            int categoryId = Convert.ToInt32(Properties.GetPropertyValue("parentID"));
+            int categoryId = ParentId;
+
+            if (log)
+            {
+                Current.Logger.Info(this.GetType(), "PopulateCategories: " + categoryId);
+            }
 
             var categoryField = Properties.Any(x => x.Key == "categories") ?
                                 Properties.GetPropertyValue("categories") : "";
+
+            if (log)
+            {
+                Current.Logger.Info(this.GetType(), "PopulateCategories: categoryField" + categoryField);
+            }
 
             var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
                 categories.Add(primaryCategory);
+
+                if (log)
+                {
+                    Current.Logger.Info(this.GetType(), "PopulateCategories: primaryCategory" + primaryCategory.Id);
+                }
             }
 
             if (!string.IsNullOrEmpty(categoryField))
@@ -372,6 +387,11 @@ namespace Ekom.Models
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
+                        if (log)
+                        {
+                            Current.Logger.Info(this.GetType(), "PopulateCategories: categoryItem" + categoryItem.Id);
+                        }
+
                         categories.Add(categoryItem);
                     }
                 }

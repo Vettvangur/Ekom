@@ -62,7 +62,7 @@ namespace Ekom.Cache
                 }
             }
 
-            RefreshProductCache(tempItem);
+            //RefreshProductCache(tempItem);
         }
 
 
@@ -80,26 +80,27 @@ namespace Ekom.Cache
                 Cache[store.Value.Alias].TryRemove(key, out i);
             }
 
-            RefreshProductCache(i);
+            //RefreshProductCache(i);
         }
 
         private void RefreshProductCache(IProductDiscount discountItem)
         {
-            if (discountItem != null)
-            {
+           // if (discountItem != null)
+           // {
+                // Need Fixing
                 // Refresh Product items cache
-                foreach (var productId in discountItem.DiscountItems)
-                {
+                //foreach (var productId in discountItem.DiscountItems)
+                //{
                     //TODO We need to use something else then the IContent here. This will be very slow with many products
                     // Either that or compute Product.Price each time requested, should be fast with all the caching
-                    var productNode = _contentService.GetById(productId);
+                   // var productNode = _contentService.GetById(productId);
 
-                    if (productNode != null)
-                    {
-                        _perStoreProductCache.AddReplace(productNode);
-                    }
-                }
-            }
+                   // if (productNode != null)
+                   // {
+                   //     _perStoreProductCache.AddReplace(productNode);
+                   // }
+               // }
+            //}
         }
     }
 }
