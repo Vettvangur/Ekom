@@ -820,8 +820,9 @@ namespace Ekom.App_Start
                                 {
                                     new PropertyType(textstringDt, "basePaymentProvider")
                                     {
-                                        Name = "Alias",
-                                        Description = "Name of the DLL",
+                                        Name = "Base Payment Provider DLL",
+                                        Description = "Allows payment provider overloading. " +
+                                            "F.x. Borgun ISK and Borgun USD nodes with different names and different xml configurations targetting the same base payment provider."
                                     },
                                     //new PropertyType(numericDt, "discount")
                                     //{
@@ -1036,14 +1037,14 @@ namespace Ekom.App_Start
                     #endregion
                 }
 
+                _logger.Debug<EnsureNodesExist>("Done");
             }
+#pragma warning disable CA1031 // Should not kill startup
             catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
             {
                 _logger.Error<EnsureNodesExist>(ex, "Failed to Initialize EnsureNodesExist");
             }
-
-
-            _logger.Debug<EnsureNodesExist>("Done");
         }
 
         private EntityContainer EnsureDataTypeContainerExists()

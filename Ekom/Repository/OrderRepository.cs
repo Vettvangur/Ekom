@@ -42,7 +42,7 @@ namespace Ekom.Repository
             {
                 var data = await scope.Database.Query<OrderData>()
                     .Where(x => x.UniqueId == uniqueId)
-                    .FirstOrDefaultAsync()
+                    .SingleOrDefaultAsync()
                     .ConfigureAwait(false);
 
                 scope.Complete();

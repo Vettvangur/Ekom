@@ -5,6 +5,7 @@ using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Models;
 using Ekom.Models.Data;
+using Ekom.Models.Events;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Newtonsoft.Json;
@@ -214,18 +215,26 @@ namespace Ekom.Services
         }
 
 
-        public async Task ChangeOrderStatusAsync(Guid uniqueId, OrderStatus status, string userName = null, bool fireEvents = true)
+        public async Task ChangeOrderStatusAsync(
+            Guid uniqueId,
+            OrderStatus status,
+            string userName = null,
+            bool fireEvents = true)
         {
-
-            if (fireEvents)
-            {
-                // Add before event handler
-            }
-
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             var oldStatus = order.OrderStatus;
+
+            if (fireEvents)
+            {
+                Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
+                {
+                    OrderUniqueId = uniqueId,
+                    PreviousStatus = oldStatus,
+                    Status = status,
+                });
+            }
 
             order.OrderStatus = status;
 
@@ -262,9 +271,13 @@ namespace Ekom.Services
 
             if (fireEvents)
             {
-                // Add after event handler
+                Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
+                {
+                    OrderUniqueId = uniqueId,
+                    PreviousStatus = oldStatus,
+                    Status = status,
+                });
             }
-
 
             await _activityLogRepository.InsertAsync(
                 uniqueId,
@@ -695,6 +708,11 @@ namespace Ekom.Services
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
             UpdateOrderInfoInCache(orderInfo);
+
+            Order.OnOrderUpdated(this, new Models.Events.OrderUpdatedEventArgs
+            {
+                OrderInfo = orderInfo,
+            });
         }
 
         /// <summary>

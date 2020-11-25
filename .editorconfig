@@ -11,14 +11,34 @@ indent_size = 4
 indent_style = space
 insert_final_newline = true
 
-# CA1822: Mark members as static
-dotnet_diagnostic.CA1822.severity = none
-
 [*.{js,jsx,ts,tsx}]
 indent_size = 2
 
-[*.{html,config}]
+[*.{html,config,nuspec}]
+indent_size = 2
+
+[*.config.*]
 indent_size = 2
 
 [*.{html,cshtml,aspx}]
 charset = utf-8-bom
+
+[*.cs]
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = none
+
+# CA1303: Do not pass literals as localized parameters
+dotnet_diagnostic.CA1303.severity = suggestion
+
+# CA1304: Specify IFormatProvider
+dotnet_diagnostic.CA1304.severity = suggestion
+
+# CA1305: Specify CultureInfo
+dotnet_diagnostic.CA1305.severity = suggestion
+
+# CS1591: Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = suggestion
+
+# CA2237: Mark ISerializable types with SerializableAttribute
+dotnet_diagnostic.CA2237.severity = none

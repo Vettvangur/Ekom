@@ -82,58 +82,67 @@ namespace Ekom.Extensions.Controllers
                 var orderItems = new List<OrderItem>();
                 foreach (var line in order.OrderLines)
                 {
-                    try
+                    #region Stock
+
+                    // We assume if there are any hangfire jobs on this order at all, stock has already been reserved.
+                    // This situation comes up during soft and hard payment failures, retrying different CC f.x.
+                    if (!order.HangfireJobs.Any())
                     {
-                        if (!line.Product.Backorder)
+                        try
                         {
-                            if (line.Product.VariantGroups.Any())
+                            if (!line.Product.Backorder)
                             {
-                                foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                                if (line.Product.VariantGroups.Any())
                                 {
-                                    var variantStock = Stock.Instance.GetStock(variant.Key);
-
-                                    if (variantStock >= line.Quantity)
+                                    foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                                     {
-                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
-                                    }
-                                    else
-                                    {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
-                                    }
-                                }
+                                        var variantStock = Stock.Instance.GetStock(variant.Key);
 
-                            }
-                            else
-                            {
-                                var productStock = Stock.Instance.GetStock(line.ProductKey);
+                                        if (variantStock >= line.Quantity)
+                                        {
+                                            hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                        }
+                                        else
+                                        {
+                                            return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
+                                        }
+                                    }
 
-                                if (productStock >= line.Quantity)
-                                {
-                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                                 }
                                 else
                                 {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
+                                    var productStock = Stock.Instance.GetStock(line.ProductKey);
+
+                                    if (productStock >= line.Quantity)
+                                    {
+                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                    }
+                                    else
+                                    {
+                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
+                                    }
                                 }
                             }
+
+                            // How does this work ? we dont have a coupon per orderline!
+                            //if (line.Discount != null)
+                            //{
+                            //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+
+                            //    if (line.Discount.HasMasterStock)
+                            //    {
+                            //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                            //    }
+                            //}
                         }
-
-                        // How does this work ? we dont have a coupon per orderline!
-                        //if (line.Discount != null)
-                        //{
-                        //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
-
-                        //    if (line.Discount.HasMasterStock)
-                        //    {
-                        //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-                        //    }
-                        //}
+                        catch (NotEnoughStockException ex)
+                        {
+                            _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                            return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
+                        }
                     }
-                    catch (NotEnoughStockException ex)
-                    {
-                        _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
-                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
-                    }
+
+                    #endregion
 
                     orderItems.Add(new OrderItem
                     {
@@ -232,7 +241,7 @@ namespace Ekom.Extensions.Controllers
                 }
                 else
                 {
-                    var pp = NetPayment.Current.GetPaymentProvider(ekomPP.Name);
+                    var pp = NetPayment.Instance.GetPaymentProvider(ekomPP.Name);
 
                     var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
 

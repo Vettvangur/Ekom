@@ -2,6 +2,7 @@ using Ekom.Interfaces;
 using Ekom.JsonDotNet;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,11 +60,10 @@ namespace Ekom.Models.OrderedObjects
                         };
                     }
                 }
-
             }
             catch (Exception ex)
             {
-                //Log.Error("Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"), ex);
+                Log.Error("Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"), ex);
             }
         }
 

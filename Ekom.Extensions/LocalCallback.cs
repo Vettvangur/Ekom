@@ -13,7 +13,6 @@ namespace Ekom.Extensions
         {
             Success?.Invoke(o);
             LocalCallbacks.OnSuccess(o);
-
         }
 
         /// <summary>
