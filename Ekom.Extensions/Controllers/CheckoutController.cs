@@ -98,7 +98,7 @@ namespace Ekom.Extensions.Controllers
                                     }
                                     else
                                     {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant");
+                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&key=" + variant.Key);
                                     }
                                 }
 
@@ -113,7 +113,7 @@ namespace Ekom.Extensions.Controllers
                                 }
                                 else
                                 {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product");
+                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&key=" + line.ProductKey);
                                 }
                             }
                         }
