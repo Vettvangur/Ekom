@@ -98,7 +98,7 @@ namespace Ekom.Extensions.Controllers
                                     }
                                     else
                                     {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&key=" + variant.Key);
+                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
                                     }
                                 }
 
@@ -113,7 +113,7 @@ namespace Ekom.Extensions.Controllers
                                 }
                                 else
                                 {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&key=" + line.ProductKey);
+                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
                                 }
                             }
                         }
@@ -207,6 +207,14 @@ namespace Ekom.Extensions.Controllers
                         await Order.Instance.UpdateStatusAsync(
                             Ekom.Utilities.OrderStatus.OfflinePayment,
                             order.UniqueId);
+
+                        LocalCallback.OnSuccess(new Umbraco.NetPayment.OrderStatus()
+                        {
+                            Member = Members.GetCurrentMemberId(),
+                            PaymentProviderKey = ekomPP.Key,
+                            PaymentProvider = ekomPP.Name,
+                            Custom = order.UniqueId.ToString()
+                        });
 
                         return Redirect(successUrl);
                     }
