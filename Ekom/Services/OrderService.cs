@@ -489,7 +489,7 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
         {
-            _logger.Debug<OrderService>("Remove OrderLine... LineId: {LineId}");
+            _logger.Info<OrderService>("Remove OrderLine... LineId: " + lineId);
 
             _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
 
