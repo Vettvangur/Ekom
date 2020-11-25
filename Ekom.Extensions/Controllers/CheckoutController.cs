@@ -98,7 +98,7 @@ namespace Ekom.Extensions.Controllers
                                     }
                                     else
                                     {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError");
+                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant");
                                     }
                                 }
 
@@ -113,7 +113,7 @@ namespace Ekom.Extensions.Controllers
                                 }
                                 else
                                 {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError");
+                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product");
                                 }
                             }
                         }
@@ -129,9 +129,10 @@ namespace Ekom.Extensions.Controllers
                         //    }
                         //}
                     }
-                    catch (NotEnoughStockException)
+                    catch (NotEnoughStockException ex)
                     {
-                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError");
+                        _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
                     }
 
                     orderItems.Add(new OrderItem
