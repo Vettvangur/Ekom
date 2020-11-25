@@ -25,7 +25,7 @@ namespace Ekom.Controllers
             _managerRepository = managerRepository;
         }
 
-        public async Task<IOrderInfo> GetOrderAsync([FromUri] Guid uniqueId)
+        public async Task<IOrderInfo> GetOrder([FromUri] Guid uniqueId)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace Ekom.Controllers
             }
         }
         [HttpGet]
-        public async Task<IEnumerable<OrderActivityLog>> GetActivityLogAsync([FromUri] Guid orderId)
+        public async Task<IEnumerable<OrderActivityLog>> GetActivityLog([FromUri] Guid orderId)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace Ekom.Controllers
             }
         }
         [HttpGet]
-        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsAsync()
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogs()
         {
             try
             {
@@ -76,7 +76,7 @@ namespace Ekom.Controllers
             }
         }
         [HttpGet]
-        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsByUserAsync([FromUri] string userName)
+        public async Task<IEnumerable<OrderActivityLog>> GetLatestActivityLogsByUser([FromUri] string userName)
         {
             try
             {
@@ -93,7 +93,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<OrderListData> GetOrdersAsync()
+        public async Task<OrderListData> GetOrders()
         {
             try
             {
@@ -111,7 +111,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<OrderListData> GetAllOrdersAsync([FromUri] DateTime start, [FromUri] DateTime end)
+        public async Task<OrderListData> GetAllOrders([FromUri] DateTime start, [FromUri] DateTime end)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace Ekom.Controllers
             }
         }
         [HttpGet]
-        public async Task<OrderListData> SearchOrdersAsync([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string orderStatus = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
+        public async Task<OrderListData> SearchOrders([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] string query = "", [FromUri] string store = "", [FromUri] string orderStatus = "", [FromUri] string payment = "", [FromUri] string shipping = "", [FromUri] string discount = "")
         {
             try
             {
@@ -136,7 +136,7 @@ namespace Ekom.Controllers
                 throw;
             }
         }
-        public async Task<OrderListData> GetOrdersByStatusAsync([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
+        public async Task<OrderListData> GetOrdersByStatus([FromUri] DateTime start, [FromUri] DateTime end, [FromUri] OrderStatus orderStatus)
         {
             try
             {
@@ -150,13 +150,13 @@ namespace Ekom.Controllers
         }
 
         [HttpPost]
-        public async Task<bool> UpdateStatusAsync([FromUri]Guid orderId, [FromUri]int orderStatus)
+        public async Task<bool> UpdateStatus([FromUri]Guid orderId, [FromUri]int orderStatus, [FromUri] bool notification)
         {
             try
             {
                 var status = (OrderStatus)orderStatus;
 
-                await _managerRepository.UpdateStatusAsync(orderId, status);
+                await _managerRepository.UpdateStatusAsync(orderId, status, notification);
 
                 return true;
             }

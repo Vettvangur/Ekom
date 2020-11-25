@@ -214,9 +214,13 @@ namespace Ekom.Services
         }
 
 
-        public async Task ChangeOrderStatusAsync(Guid uniqueId, OrderStatus status, string userName = null)
+        public async Task ChangeOrderStatusAsync(Guid uniqueId, OrderStatus status, string userName = null, bool fireEvents = true)
         {
-            // Add event handler
+
+            if (fireEvents)
+            {
+                // Add before event handler
+            }
 
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
@@ -255,6 +259,11 @@ namespace Ekom.Services
                 uniqueId.ToString(),
                 () => new OrderInfo(order),
                 TimeSpan.FromDays(1));
+
+            if (fireEvents)
+            {
+                // Add after event handler
+            }
 
 
             await _activityLogRepository.InsertAsync(
