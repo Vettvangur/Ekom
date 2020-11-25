@@ -1,4 +1,4 @@
-﻿import * as React from 'react';
+import * as React from 'react';
 import styled, { StyledFunction } from 'styled-components';
 import { inject, observer } from 'mobx-react';
 import { RouterStore } from 'mobx-react-router';
@@ -19,6 +19,7 @@ const styledMenuWrapper: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
   
 const styledMenuItem: StyledFunction<any | React.HTMLProps<HTMLDivElement>> =
   styled.div;
+
 const StyledMenuWrapper = styledMenuWrapper`
   width: 12.5rem;
   height: 100vh;
@@ -83,6 +84,27 @@ const MenuItemLink = styled(Link)`
       margin-right: 7px;
   }
 `;
+
+const UmbracoItemLink = styled.a`
+  display:block;
+  color: inherit;
+  &.menu-item-selected {
+    display: flex;
+    align-items: center;
+    &::after {
+      content: '';
+      height: 0px;
+      width:100%;
+      border: 1px solid ${variables.red};
+      margin-right: -20px;
+      margin-left: 20px;
+    }
+  }
+  &::before {
+      margin-right: 7px;
+  }
+`;
+
 
 const MobileMenuHeader = styled.div`
   display:none;
@@ -224,6 +246,8 @@ class Menu extends React.Component<IMenuProps, State> {
                 ))}
               </React.Fragment>
             ))}
+            <br/><br/><br/>
+            <UmbracoItemLink href="/umbraco">Back to Umbraco</UmbracoItemLink>
           </MenuLinks>
         </StyledMenuWrapper>
       </>
