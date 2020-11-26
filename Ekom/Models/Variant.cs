@@ -33,7 +33,7 @@ namespace Ekom.Models
         /// <summary>
         /// Stock Keeping Unit, identifier
         /// </summary>
-        public string SKU => Properties.GetPropertyValue("sku");
+        public string SKU => string.IsNullOrEmpty(Properties.GetPropertyValue("sku")) ? Product.SKU : Properties.GetPropertyValue("sku");
 
         /// <summary>
         /// 
