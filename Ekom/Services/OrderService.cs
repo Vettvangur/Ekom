@@ -218,23 +218,23 @@ namespace Ekom.Services
         public async Task ChangeOrderStatusAsync(
             Guid uniqueId,
             OrderStatus status,
-            string userName = null,
-            bool fireEvents = true)
+            string userName = null
+/*            bool fireEvents = true*/)
         {
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             var oldStatus = order.OrderStatus;
 
-            if (fireEvents)
-            {
-                Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
-                {
-                    OrderUniqueId = uniqueId,
-                    PreviousStatus = oldStatus,
-                    Status = status,
-                });
-            }
+            //if (fireEvents)
+            //{
+            //    Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
+            //    {
+            //        OrderUniqueId = uniqueId,
+            //        PreviousStatus = oldStatus,
+            //        Status = status,
+            //    });
+            //}
 
             order.OrderStatus = status;
 
@@ -269,15 +269,15 @@ namespace Ekom.Services
                 () => new OrderInfo(order),
                 TimeSpan.FromDays(1));
 
-            if (fireEvents)
-            {
-                Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
-                {
-                    OrderUniqueId = uniqueId,
-                    PreviousStatus = oldStatus,
-                    Status = status,
-                });
-            }
+            //if (fireEvents)
+            //{
+            //    Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
+            //    {
+            //        OrderUniqueId = uniqueId,
+            //        PreviousStatus = oldStatus,
+            //        Status = status,
+            //    });
+            //}
 
             await _activityLogRepository.InsertAsync(
                 uniqueId,

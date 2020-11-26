@@ -150,13 +150,13 @@ namespace Ekom.Controllers
         }
 
         [HttpPost]
-        public async Task<bool> UpdateStatus([FromUri]Guid orderId, [FromUri]int orderStatus, [FromUri] bool notification)
+        public async Task<bool> UpdateStatus([FromUri]Guid orderId, [FromUri]int orderStatus /*[FromUri] bool notification*/)
         {
             try
             {
                 var status = (OrderStatus)orderStatus;
 
-                await _managerRepository.UpdateStatusAsync(orderId, status, notification);
+                await _managerRepository.UpdateStatusAsync(orderId, status /*notification*/);
 
                 return true;
             }
