@@ -354,29 +354,14 @@ namespace Ekom.Models
         {
             int categoryId = ParentId;
 
-            if (log)
-            {
-                Current.Logger.Info(this.GetType(), "PopulateCategories: " + categoryId);
-            }
-
             var categoryField = Properties.Any(x => x.Key == "categories") ?
                                 Properties.GetPropertyValue("categories") : "";
-
-            if (log)
-            {
-                Current.Logger.Info(this.GetType(), "PopulateCategories: categoryField" + categoryField);
-            }
 
             var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
                 categories.Add(primaryCategory);
-
-                if (log)
-                {
-                    Current.Logger.Info(this.GetType(), "PopulateCategories: primaryCategory" + primaryCategory.Id);
-                }
             }
 
             if (!string.IsNullOrEmpty(categoryField))
@@ -390,11 +375,6 @@ namespace Ekom.Models
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
-                        if (log)
-                        {
-                            Current.Logger.Info(this.GetType(), "PopulateCategories: categoryItem" + categoryItem.Id);
-                        }
-
                         categories.Add(categoryItem);
                     }
                 }
