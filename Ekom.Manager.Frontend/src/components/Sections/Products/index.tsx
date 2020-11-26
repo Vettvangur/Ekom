@@ -76,7 +76,19 @@ export default class OrderContainer extends React.Component<IProps> {
                     productCol: true,
                   })}
                 >
-                  {orderline.Product.Title}
+                  {orderline.Product.Title} - {orderline.Product.SKU}<br/>
+
+                  {orderline.Product.VariantGroups.map((variantGroup) => (
+                    <div>
+                      - Variant<br/>
+                      {variantGroup.Title}
+
+                      {variantGroup.Variants.map((variant) => (
+                        <span> - Size: { variant.Properties.size} SKU: { variant.Properties.sku}</span>
+                       ))}
+
+                      </div>
+                    ))}
                 </div>
                 <div
                   className={cx({
