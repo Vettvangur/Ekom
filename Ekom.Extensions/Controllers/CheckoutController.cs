@@ -146,7 +146,7 @@ namespace Ekom.Extensions.Controllers
 
                     orderItems.Add(new OrderItem
                     {
-                        GrandTotal = line.Amount.BeforeDiscount.Value,
+                        GrandTotal = line.Amount.WithVat.Value,
                         Price = line.Product.Price.WithVat.Value,
                         Title = line.Product.Title,
                         Quantity = line.Quantity,
