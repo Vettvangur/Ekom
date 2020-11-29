@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Extensions.v8</PackageId>
-        <Version>0.2.0</Version>
+        <Version>0.2.1</Version>
         <Title>Ekom Controllers</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

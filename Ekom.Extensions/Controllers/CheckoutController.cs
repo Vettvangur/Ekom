@@ -55,6 +55,8 @@ namespace Ekom.Extensions.Controllers
                 var hangfireJobs = new List<string>();
 
                 var order = Order.Instance.GetOrder();
+                var store = Store.Instance.GetStore();
+                
                 var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
                 if (order.PaymentProvider == null)
@@ -144,13 +146,13 @@ namespace Ekom.Extensions.Controllers
 
                     #endregion
 
-                    orderItems.Add(new OrderItem
-                    {
-                        GrandTotal = line.Amount.WithVat.Value,
-                        Price = line.Product.Price.WithVat.Value,
-                        Title = line.Product.Title,
-                        Quantity = line.Quantity,
-                    });
+                    //orderItems.Add(new OrderItem
+                    //{
+                    //    GrandTotal = line.Amount.WithVat.Value,
+                    //    Price = line.Product.Price.WithVat.Value,
+                    //    Title = line.Product.Title,
+                    //    Quantity = line.Quantity,
+                    //});
                 }
 
                 // Does not work with Coupon codes
@@ -171,33 +173,66 @@ namespace Ekom.Extensions.Controllers
                 //    }
                 //}
 
-                if (paymentRequest.ShippingProvider != Guid.Empty)
-                {
-                    var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
+                //if (paymentRequest.ShippingProvider != Guid.Empty)
+                //{
+                //    var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
 
-                    if (ekomSP.Price.Value > 0)
+                //    if (ekomSP.Price.Value > 0)
+                //    {
+                //        orderItems.Add(new OrderItem
+                //        {
+                //            GrandTotal = ekomSP.Price.Value,
+                //            Price = ekomSP.Price.Value,
+                //            Title = ekomSP.Title,
+                //            Quantity = 1,
+                //        });
+                //    }
+
+                //}
+
+                //if (order.Discount != null)
+                //{
+                //    orderItems.Add(new OrderItem
+                //    {
+                //        Title = "Afsláttur",
+                //        Quantity = 1,
+                //        Price = order.DiscountAmount.Value * -1,
+                //        GrandTotal = order.DiscountAmount.Value * -1,
+                //    });
+                //}
+
+                string orderTitle = "Pöntun";
+
+                if (store != null)
+                {
+                    var paymentOrderTitle = store.GetPropertyValue("paymentOrderTitle");
+
+                    if (!string.IsNullOrEmpty(paymentOrderTitle))
                     {
-                        orderItems.Add(new OrderItem
+                        if (paymentOrderTitle.Substring(0,1) == "#")
                         {
-                            GrandTotal = ekomSP.Price.Value,
-                            Price = ekomSP.Price.Value,
-                            Title = ekomSP.Title,
-                            Quantity = 1,
-                        });
+                            var dictionaryValue = Umbraco.GetDictionaryValue(paymentOrderTitle.Substring(1));
+
+                            if (!string.IsNullOrEmpty(dictionaryValue))
+                            {
+                                orderTitle = dictionaryValue;
+                            }
+                        } else
+                        {
+                            orderTitle = paymentOrderTitle;
+                        }
                     }
-
                 }
 
-                if (order.Discount != null)
+                orderTitle += " - " + order.OrderNumber;
+
+                orderItems.Add(new OrderItem
                 {
-                    orderItems.Add(new OrderItem
-                    {
-                        Title = "Afsláttur",
-                        Quantity = 1,
-                        Price = order.DiscountAmount.Value * -1,
-                        GrandTotal = order.DiscountAmount.Value * -1,
-                    });
-                }
+                    GrandTotal = order.ChargedAmount.Value,
+                    Price = order.ChargedAmount.Value,
+                    Title = orderTitle,
+                    Quantity = 1,
+                });
 
                 // save job ids to sql for retrieval after checkout completion
                 await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs);
