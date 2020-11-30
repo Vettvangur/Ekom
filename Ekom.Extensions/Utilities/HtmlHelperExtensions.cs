@@ -39,7 +39,7 @@ namespace Ekom.Extensions.Utilities
             }
 
             className = className ?? defaultClassName;
-
+    
             return htmlHelper.BeginUmbracoForm<CheckoutController>(actionName, null, new { @class = className });
         }
     }

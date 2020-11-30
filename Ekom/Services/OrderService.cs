@@ -850,7 +850,8 @@ namespace Ekom.Services
                 return orderInfo;
             }
 
-            return null;
+            throw new ArgumentNullException("storeAlias");
+
         }
 
         public async Task<OrderInfo> UpdateShippingInformationAsync(Guid shippingProviderId, string storeAlias)

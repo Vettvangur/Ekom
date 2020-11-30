@@ -8,6 +8,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Security.AntiXss;
 using Umbraco.Core.Logging;
 using Umbraco.Web.Mvc;
 
@@ -193,7 +194,7 @@ namespace Ekom.Controllers
             try
             {
                 var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
-                    form.AllKeys.ToDictionary(k => k, v => form[v])
+                    form.AllKeys.ToDictionary(k => k, v => AntiXssEncoder.HtmlEncode(form[v], false))
                 );
 
                 return Json(new

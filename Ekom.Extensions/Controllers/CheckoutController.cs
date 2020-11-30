@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using System.Web.Security.AntiXss;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Scoping;
 using Umbraco.NetPayment;
@@ -52,6 +53,10 @@ namespace Ekom.Extensions.Controllers
 
             try
             {
+                if (Request.Form.AllKeys.Contains("ekomUpdateInformation")) {
+                    await Order.Instance.UpdateCustomerInformationAsync(Request.Form.AllKeys.ToDictionary(k => k, v => AntiXssEncoder.HtmlEncode(Request.Form.Get(v), false))).ConfigureAwait(false);
+                }
+
                 var hangfireJobs = new List<string>();
 
                 var order = Order.Instance.GetOrder();
@@ -79,6 +84,11 @@ namespace Ekom.Extensions.Controllers
                             // Unfinished
                         });
                     }
+                }
+
+                if (string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) || string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+                {
+                    return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
                 }
 
                 var orderItems = new List<OrderItem>();
