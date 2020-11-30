@@ -1002,28 +1002,32 @@ namespace Ekom.Services
         /// </summary>
         private void VerifyProviders(OrderInfo orderInfo)
         {
-            var total = orderInfo.OrderLineTotal.Value;
-            var countryCode = orderInfo.CustomerInformation.Customer.Country;
 
-            // Verify paymentProvider constraints
-            if (orderInfo.PaymentProvider != null)
+            if (orderInfo.PaymentProvider != null ||orderInfo.ShippingProvider != null)
             {
-                var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key);
+                var total = orderInfo.OrderLineTotal.Value;
+                var countryCode = orderInfo.CustomerInformation.Customer.Country;
 
-                if (!paymentProvider.Constraints.IsValid(countryCode, total))
+                // Verify paymentProvider constraints
+                if (orderInfo.PaymentProvider != null)
                 {
-                    orderInfo.PaymentProvider = null;
+                    var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key);
+
+                    if (!paymentProvider.Constraints.IsValid(countryCode, total))
+                    {
+                        orderInfo.PaymentProvider = null;
+                    }
                 }
-            }
 
-            // Verify shipping provider constraints
-            if (orderInfo.ShippingProvider != null)
-            {
-                var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
-
-                if (!shippingProvider.Constraints.IsValid(countryCode, total))
+                // Verify shipping provider constraints
+                if (orderInfo.ShippingProvider != null)
                 {
-                    orderInfo.ShippingProvider = null;
+                    var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
+
+                    if (!shippingProvider.Constraints.IsValid(countryCode, total))
+                    {
+                        orderInfo.ShippingProvider = null;
+                    }
                 }
             }
         }
