@@ -93,8 +93,8 @@ namespace Ekom.Cache
                 {
 
                     var results = searcher.CreateQuery("content")
-                        .NodeTypeAlias(NodeAlias)
-                        .Execute(int.MaxValue);
+                            .Field("__NodeTypeAlias", NodeAlias.MultipleCharacterWildcard())
+                            .Execute(int.MaxValue);
 
                     if (storeParam == null) // Startup initialization
                     {
