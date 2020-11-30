@@ -91,10 +91,19 @@ namespace Ekom.Cache
 
                 try
                 {
+                    ISearchResults results = null;
 
-                    var results = searcher.CreateQuery("content")
+                    if (NodeAlias == "netPaymentProvider")
+                    {
+                        results = searcher.CreateQuery("content")
                             .Field("__NodeTypeAlias", NodeAlias.MultipleCharacterWildcard())
                             .Execute(int.MaxValue);
+                    } else
+                    {
+                        results = searcher.CreateQuery("content")
+                            .NodeTypeAlias(NodeAlias)
+                            .Execute(int.MaxValue);
+                    }
 
                     if (storeParam == null) // Startup initialization
                     {

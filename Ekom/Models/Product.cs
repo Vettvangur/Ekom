@@ -327,7 +327,7 @@ namespace Ekom.Models
 
             if (!Urls.Any() || string.IsNullOrEmpty(Title))
             {
-                throw new Exception("No url's or no title present in product." + Title + " - " + Urls.Any());
+                throw new Exception("No url's or no title present in product." + Title + " - " + Urls.Any() + " - " + Categories.Any());
             }
         }
 
@@ -339,7 +339,7 @@ namespace Ekom.Models
         public Product(IContent node, IStore store) : base(node, store)
         {
             PopulateCategoryAncestors();
-            PopulateCategories(true);
+            PopulateCategories();
 
             Urls = UrlHelper.BuildProductUrls(Slug, Categories, store);
 
@@ -350,7 +350,7 @@ namespace Ekom.Models
             }
         }
 
-        private void PopulateCategories(bool log = false)
+        private void PopulateCategories()
         {
             int categoryId = ParentId;
 
