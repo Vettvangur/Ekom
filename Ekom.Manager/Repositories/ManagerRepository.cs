@@ -153,6 +153,8 @@ namespace Ekom.Repository
             {
                 whereQuery += "AND (Discount = @7) ";
             }
+            whereQuery += " ORDER BY ReferenceId desc";
+
             using (var db = _scopeProvider.CreateScope().Database)
             {
                 var orders = await db.FetchAsync<OrderData>(whereQuery,
