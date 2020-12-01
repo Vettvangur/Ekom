@@ -25,7 +25,7 @@ namespace Ekom.Utilities
         ///     <button type = "submit" class="button">Submit</button>            
         /// }
         /// </example>
-        public static MvcForm BeginEkomForm(this HtmlHelper htmlHelper, FormType formType, string className = null)
+        public static MvcForm BeginEkomForm(this HtmlHelper htmlHelper, FormType formType, string className = null, string Id = null)
         {
             var actionName = formType.ToString();
             var defaultClassName = "";
@@ -79,7 +79,7 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
 
-            return htmlHelper.BeginUmbracoForm<OrderController>(actionName, null, new { @class = className });
+            return htmlHelper.BeginUmbracoForm<OrderController>(actionName, null, new { @class = className, @id = Id });
         }
     }
 
