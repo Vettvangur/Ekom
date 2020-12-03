@@ -439,7 +439,7 @@ namespace Ekom.API
             }
 
             return _variantCache.Cache[storeAlias]
-                                   .Where(x => x.Value.VariantGroup.Id == Id)
+                                   .Where(x => x.Value.VariantGroup != null && x.Value.VariantGroup.Id == Id)
                                    .Select(x => x.Value).OrderBy(x => x.SortOrder);
         }
 
