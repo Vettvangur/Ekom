@@ -152,6 +152,8 @@ namespace Ekom.App_Start
                     var mediaPickerDt = _dataTypeService.GetDataType(new Guid("135d60e0-64d9-49ed-ab08-893c9ba44ae5"));
                     var multipleMediaPickerDt = _dataTypeService.GetDataType(new Guid("9dbbcbbb-2327-434a-b355-af1b84e5010a"));
                     var tagsDt = _dataTypeService.GetDataType(new Guid("b6b73142-b9c1-4bf8-a16d-e1c23320b549"));
+                    var rteDt = _dataTypeService.GetDataType(new Guid("ca90c950-0aff-4e72-b976-a30b1ac57dad"));
+                    var textareaDt = _dataTypeService.GetDataType(new Guid("c6bac0dd-4ab9-45b1-8e30-e4b619ee5da3"));
 
                     var perStoreTextDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
                     {
@@ -213,6 +215,37 @@ namespace Ekom.App_Start
                             LanguageSource = "custom",
                         },
                     });
+                    var perStoreRteDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                    {
+                        Name = "Ekom - Richtext Editor - Per Store",
+                        Configuration = new VortoConfiguration
+                        {
+                            DataType = new DataTypeInfo
+                            {
+                                Guid = rteDt.Key,
+                                Name = rteDt.Name,
+                                PropertyEditorAlias = rteDt.EditorAlias,
+                            },
+                            MandatoryBehaviour = "primary",
+                            LanguageSource = "custom",
+                        },
+                    });
+                    var perStoreTextareaDt = EnsureDataTypeExists(new DataType(editor, ekmDtContainer.Id)
+                    {
+                        Name = "Ekom - Textarea - Per Store",
+                        Configuration = new VortoConfiguration
+                        {
+                            DataType = new DataTypeInfo
+                            {
+                                Guid = textareaDt.Key,
+                                Name = textareaDt.Name,
+                                PropertyEditorAlias = textareaDt.EditorAlias,
+                            },
+                            MandatoryBehaviour = "primary",
+                            LanguageSource = "custom",
+                        },
+                    });
+
                     var stockDt = EnsureDataTypeExists(new DataType(stockEditor, ekmDtContainer.Id)
                     {
                         Name = "Ekom - Stock",
@@ -340,7 +373,7 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Title",
                                         },
-                                        new PropertyType(perStoreTextDt, "description")
+                                        new PropertyType(perStoreRteDt, "description")
                                         {
                                             Name = "Description",
                                         },
@@ -553,6 +586,11 @@ namespace Ekom.App_Start
                                         new PropertyType(stockDt, "stock")
                                         {
                                             Name = "Stock",
+                                        },
+                                        new PropertyType(booleanDt, "enableBackorder")
+                                        {
+                                            Name = "Enable Backorder",
+                                            Description = "If set then the product can be sold indefinitely"
                                         },
                                         new PropertyType(contentPickerDt, "categories")
                                         {
@@ -848,6 +886,10 @@ namespace Ekom.App_Start
                                     new PropertyType(textstringDt, "currency")
                                     {
                                         Name = "Currency"
+                                    },
+                                    new PropertyType(booleanDt, "offlinePayment")
+                                    {
+                                        Name = "Offline Payment"
                                     },
                                 }))
                             {
