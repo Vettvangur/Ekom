@@ -148,7 +148,7 @@ namespace Ekom.App_Start
         {
             return _config.CacheList.Value.FirstOrDefault(x
                 => !string.IsNullOrEmpty(x.NodeAlias)
-                && x.NodeAlias == contentTypeAlias
+                && contentTypeAlias.StartsWith(x.NodeAlias, StringComparison.InvariantCulture)
             );
         }
 
