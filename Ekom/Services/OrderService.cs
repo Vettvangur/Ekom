@@ -739,6 +739,16 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
         }
 
+        public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
+        {
+            var o = GetOrder(storeAlias);
+
+            o._hangfireJobs.Clear();
+
+            await UpdateOrderAndOrderInfoAsync(o)
+                .ConfigureAwait(false);
+        }
+
         private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias = null)
         {
             _logger.Debug<OrderService>("Add OrderLine ...  Create Empty Order..");

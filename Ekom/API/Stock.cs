@@ -317,6 +317,19 @@ namespace Ekom.API
         }
 
         /// <summary>
+        /// Rollback scheduled stock reservation.
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <exception cref="StockException"></exception>
+        public async Task RollbackJob(string jobId)
+        {
+            await _stockRepo.RollBackJob(jobId).ConfigureAwait(false);
+
+            Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName);
+            Hangfire.BackgroundJob.Delete(jobId, EnqueuedState.StateName);
+        }
+
+        /// <summary>
         /// Only requeues from scheduled state.
         /// Never requeues succeeded jobs.
         /// </summary>

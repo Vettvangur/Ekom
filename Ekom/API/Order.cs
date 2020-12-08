@@ -391,5 +391,20 @@ namespace Ekom.API
             await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)
                 .ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Remove all hangfire job ids to <see cref="IOrderInfo"/> and db
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
+            await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
+                .ConfigureAwait(false);
+        }
     }
 }

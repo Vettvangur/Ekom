@@ -91,68 +91,75 @@ namespace Ekom.Extensions.Controllers
                     return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
                 }
 
+                if (order.HangfireJobs.Any())
+                {
+                    foreach (var job in order.HangfireJobs)
+                    {
+                        await Stock.Instance.RollbackJob(job).ConfigureAwait(false);
+                    }
+
+                    await Order.Instance.RemoveHangfireJobsToOrderAsync(storeAlias);
+                }
+
                 var orderItems = new List<OrderItem>();
                 foreach (var line in order.OrderLines)
                 {
                     #region Stock
 
-                    // We assume if there are any hangfire jobs on this order at all, stock has already been reserved.
-                    // This situation comes up during soft and hard payment failures, retrying different CC f.x.
-                    if (!order.HangfireJobs.Any())
+                    try
                     {
-                        try
+                        if (!line.Product.Backorder)
                         {
-                            if (!line.Product.Backorder)
+                            if (line.Product.VariantGroups.Any())
                             {
-                                if (line.Product.VariantGroups.Any())
+                                foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                                 {
-                                    foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                                    var variantStock = Stock.Instance.GetStock(variant.Key);
+
+                                    if (variantStock >= line.Quantity)
                                     {
-                                        var variantStock = Stock.Instance.GetStock(variant.Key);
-
-                                        if (variantStock >= line.Quantity)
-                                        {
-                                            hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
-                                        }
-                                        else
-                                        {
-                                            return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
-                                        }
-                                    }
-
-                                }
-                                else
-                                {
-                                    var productStock = Stock.Instance.GetStock(line.ProductKey);
-
-                                    if (productStock >= line.Quantity)
-                                    {
-                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                            
+                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
                                     }
                                     else
                                     {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
+                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
                                     }
                                 }
+
                             }
+                            else
+                            {
+                                var productStock = Stock.Instance.GetStock(line.ProductKey);
 
-                            // How does this work ? we dont have a coupon per orderline!
-                            //if (line.Discount != null)
-                            //{
-                            //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+                                if (productStock >= line.Quantity)
+                                {
+                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                }
+                                else
+                                {
+                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
+                                }
+                            }
+                        }
 
-                            //    if (line.Discount.HasMasterStock)
-                            //    {
-                            //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-                            //    }
-                            //}
-                        }
-                        catch (NotEnoughStockException ex)
-                        {
-                            _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
-                            return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
-                        }
+                        // How does this work ? we dont have a coupon per orderline!
+                        //if (line.Discount != null)
+                        //{
+                        //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+
+                        //    if (line.Discount.HasMasterStock)
+                        //    {
+                        //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                        //    }
+                        //}
                     }
+                    catch (NotEnoughStockException ex)
+                    {
+                        _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
+                    }
+                    
 
                     #endregion
 

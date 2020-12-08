@@ -1,8 +1,10 @@
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Persistence;
@@ -113,6 +115,30 @@ namespace Ekom.Repository
             {
                 await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
                 return stockDataFromRepo.Stock;
+            }
+        }
+
+        /// <summary>
+        /// Rollback scheduled stock reservation.
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <exception cref="StockException"></exception>
+        public async Task RollBackJob(string jobId)
+        {
+            using (var db = _databaseFactory.CreateDatabase())
+            {
+                string hangfireArgument = await db.FirstOrDefaultAsync<string>("SELECT Arguments FROM [HangFire].[Job] WHERE Id = @id AND StateName = @state", new { id = jobId, state = "Scheduled" } ).ConfigureAwait(false);
+
+                if (!string.IsNullOrEmpty(hangfireArgument))
+                {
+                    var arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
+
+                    var key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
+                    var stock = Convert.ToInt32(arguments.LastOrDefault());
+
+                    await Ekom.API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
+
+                }
             }
         }
     }

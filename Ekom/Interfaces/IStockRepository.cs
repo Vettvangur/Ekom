@@ -49,5 +49,12 @@ namespace Ekom.Interfaces
         /// <param name="oldValue">Old stock value</param>
         /// <returns></returns>
         Task<int> SetAsync(string uniqueId, int modifyAmount, int oldValue);
+
+        /// <summary>
+        /// Rollback scheduled stock reservation.
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <exception cref="StockException"></exception>
+        Task RollBackJob(string jobId);
     }
 }
