@@ -146,10 +146,21 @@ namespace Ekom.App_Start
 
         private ICache FindMatchingCache(string contentTypeAlias)
         {
-            return _config.CacheList.Value.FirstOrDefault(x
-                => !string.IsNullOrEmpty(x.NodeAlias)
-                && contentTypeAlias.StartsWith(x.NodeAlias, StringComparison.InvariantCulture)
-            );
+
+            if (contentTypeAlias.Contains("netPaymentProvider"))
+            {
+                return _config.CacheList.Value.FirstOrDefault(x
+                    => !string.IsNullOrEmpty(x.NodeAlias)
+                    && contentTypeAlias.StartsWith(x.NodeAlias, StringComparison.InvariantCulture)
+                );
+            } else
+            {
+                return _config.CacheList.Value.FirstOrDefault(x
+                    => !string.IsNullOrEmpty(x.NodeAlias)
+                    && contentTypeAlias.Equals(x.NodeAlias, StringComparison.InvariantCulture)
+                );
+            }
+
         }
 
         private void UpdatePropertiesDefaultValues(
