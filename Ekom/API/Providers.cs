@@ -81,7 +81,7 @@ namespace Ekom.API
                 store,
                 countryCode,
                 orderAmount
-            ).Cast<ShippingProvider>();
+            ).Cast<IShippingProvider>();
         }
 
 
@@ -107,7 +107,7 @@ namespace Ekom.API
                 store,
                 countryCode,
                 orderAmount
-            ).Cast<PaymentProvider>();
+            ).Cast<IPaymentProvider>();
         }
 
         /// <summary>
