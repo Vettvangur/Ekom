@@ -275,8 +275,8 @@ namespace Ekom.API
         /// <param name="productId">The product identifier.</param>
         /// <param name="quantity">The quantity.</param>
         /// <param name="storeAlias">The store alias.</param>
-        /// <param name="action">Deprecated: Default is AddOrUpdate, we also allow to set quantity to fixed amount.</param>
-        /// <param name="variantId">The variant identifier.</param>
+        /// <param name="action">Deprecated, use settings paramter.</param>
+        /// <param name="variantId">Deprecated, use settings paramter.</param>
         /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
