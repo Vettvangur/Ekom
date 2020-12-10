@@ -336,9 +336,10 @@ namespace Ekom.App_Start
                         Name = "Ekom - Variant Group Picker",
                         Configuration = new MultiNodePickerConfiguration
                         {
+                            Filter = "ekmProductVariantGroup",
                             TreeSource = new MultiNodePickerConfigurationTreeSource()
                             {
-                                StartNodeQuery = "$current"
+                                StartNodeQuery = "$current",
                             },
                             MaxNumber = 1
                         }

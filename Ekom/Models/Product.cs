@@ -124,7 +124,7 @@ namespace Ekom.Models
                     {
                         var node = NodeHelper.GetNodeByUdi(primaryGroupValue);
 
-                        if (node != null)
+                        if (node != null && node.ContentType.Alias == "ekmProductVariantGroup")
                         {
                             var variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
 
