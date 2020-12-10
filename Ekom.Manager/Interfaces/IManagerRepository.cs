@@ -27,6 +27,6 @@ namespace Ekom.Interfaces
         Task InsertOrderAsync(OrderData orderData);
         Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount);
         Task UpdateOrderAsync(OrderData orderData);
-        Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus /*bool notification*/);
+        Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus, bool notification);
     }
 }
