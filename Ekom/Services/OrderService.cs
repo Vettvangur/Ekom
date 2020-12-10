@@ -425,7 +425,7 @@ namespace Ekom.Services
             IVariant variant = null;
             if (settings?.VariantKey != null)
             {
-                variant = Catalog.Instance.GetVariant(settings.VariantKey);
+                variant = Catalog.Instance.GetVariant(settings.VariantKey.Value);
 
                 if (variant == null)
                 {

@@ -275,57 +275,21 @@ namespace Ekom.API
         /// <param name="productId">The product identifier.</param>
         /// <param name="quantity">The quantity.</param>
         /// <param name="storeAlias">The store alias.</param>
-        /// <param name="action">Default is AddOrUpdate, we also allow to set quantity to fixed amount.</param>
+        /// <param name="action">Deprecated: Default is AddOrUpdate, we also allow to set quantity to fixed amount.</param>
         /// <param name="variantId">The variant identifier.</param>
+        /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
         /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
         /// <exception cref="ProductNotFoundException"></exception>
         /// <exception cref="VariantNotFoundException"></exception>
         /// <exception cref="NotEnoughStockException"></exception>
-        [Obsolete("Prefer overload with optional settings parameter")]
         public async Task<IOrderInfo> AddOrderLineAsync(
             Guid productId,
             int quantity,
             string storeAlias,
             OrderAction? action = null,
-            Guid? variantId = null
-        )
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
-            }
-
-            return await _orderService.AddOrderLineAsync(
-                productId,
-                quantity,
-                storeAlias,
-                settings: new AddOrderSettings
-                {
-                    OrderAction = action ?? OrderAction.AddOrUpdate,
-                    VariantKey = variantId,
-                })
-                .ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Add order line to cart asynchronously.
-        /// </summary>
-        /// <param name="productId">The product identifier.</param>
-        /// <param name="quantity">The quantity.</param>
-        /// <param name="storeAlias">The store alias.</param>
-        /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException">storeAlias</exception>
-        /// <exception cref="OrderLineNegativeException">Can f.x. indicate a request to modify lines to negative values</exception>
-        /// <exception cref="ProductNotFoundException"></exception>
-        /// <exception cref="VariantNotFoundException"></exception>
-        /// <exception cref="NotEnoughStockException"></exception>
-        public async Task<IOrderInfo> AddOrderLineAsync(
-            Guid productId,
-            int quantity,
-            string storeAlias,
+            Guid? variantId = null,
             AddOrderSettings settings = null
         )
         {
@@ -333,6 +297,12 @@ namespace Ekom.API
             {
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
+
+            settings = settings ?? new AddOrderSettings
+            {
+                OrderAction = action ?? OrderAction.AddOrUpdate,
+                VariantKey = variantId,
+            };
 
             return await _orderService.AddOrderLineAsync(
                 productId,
