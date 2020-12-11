@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.API.Settings;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
@@ -218,23 +219,23 @@ namespace Ekom.Services
         public async Task ChangeOrderStatusAsync(
             Guid uniqueId,
             OrderStatus status,
-            string userName = null
-/*            bool fireEvents = true*/)
+            string userName = null,
+            bool fireEvents = true)
         {
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             var oldStatus = order.OrderStatus;
 
-            //if (fireEvents)
-            //{
-            //    Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
-            //    {
-            //        OrderUniqueId = uniqueId,
-            //        PreviousStatus = oldStatus,
-            //        Status = status,
-            //    });
-            //}
+            if (fireEvents)
+            {
+                Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
+                {
+                    OrderUniqueId = uniqueId,
+                    PreviousStatus = oldStatus,
+                    Status = status,
+                });
+            }
 
             order.OrderStatus = status;
 
@@ -269,15 +270,15 @@ namespace Ekom.Services
                 () => new OrderInfo(order),
                 TimeSpan.FromDays(1));
 
-            //if (fireEvents)
-            //{
-            //    Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
-            //    {
-            //        OrderUniqueId = uniqueId,
-            //        PreviousStatus = oldStatus,
-            //        Status = status,
-            //    });
-            //}
+            if (fireEvents)
+            {
+                Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
+                {
+                    OrderUniqueId = uniqueId,
+                    PreviousStatus = oldStatus,
+                    Status = status,
+                });
+            }
 
             await _activityLogRepository.InsertAsync(
                 uniqueId,
@@ -397,8 +398,7 @@ namespace Ekom.Services
             Guid productKey,
             int quantity,
             string storeAlias,
-            OrderAction? action = null,
-            Guid? variantKey = null
+            AddOrderSettings settings = null
         )
         {
             if (productKey == Guid.Empty)
@@ -416,30 +416,30 @@ namespace Ekom.Services
             }
             else
             {
-                if (variantKey == null && !product.Backorder && product.Stock < quantity && (disableStock == "true" ? false : true))
+                if (settings?.VariantKey == null && !product.Backorder && product.Stock < quantity && (disableStock == "true" ? false : true))
                 {
-                    throw new NotEnoughStockException("Stock not available for product " + variantKey);
+                    throw new NotEnoughStockException("Stock not available for product " + product.Key);
                 }
             }
 
             IVariant variant = null;
-            if (variantKey != null)
+            if (settings?.VariantKey != null)
             {
-                variant = Catalog.Instance.GetVariant(variantKey.Value);
+                variant = Catalog.Instance.GetVariant(settings.VariantKey.Value);
 
                 if (variant == null)
                 {
-                    throw new VariantNotFoundException("Unable to find variant with key " + variantKey);
+                    throw new VariantNotFoundException("Unable to find variant with key " + settings.VariantKey);
                 }
                 else
                 {
-                    if ((!product.Backorder && variant.Stock < quantity) && (disableStock == "true" ? false : true))
+                    if ((!product.Backorder && variant.Stock < quantity) 
+                    && (disableStock == "true" ? false : true))
                     {
-                        throw new NotEnoughStockException("Stock not available for variant " + variantKey);
+                        throw new NotEnoughStockException("Stock not available for variant " + settings.VariantKey);
                     }
                 }
             }
-
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -447,8 +447,9 @@ namespace Ekom.Services
                 product,
                 quantity,
                 store,
-                action,
-                variant
+                settings?.OrderAction,
+                variant,
+                settings?.FireOnOrderUpdatedEvent ?? true
             ).ConfigureAwait(false);
         }
 
@@ -462,7 +463,8 @@ namespace Ekom.Services
             int quantity,
             IStore store,
             OrderAction? action = null,
-            IVariant variant = null
+            IVariant variant = null,
+            bool fireEvents = true
         )
         {
             if (product == null)
@@ -504,12 +506,16 @@ namespace Ekom.Services
                 product,
                 quantity,
                 cartAction,
-                variant).ConfigureAwait(false);
+                variant,
+                fireEvents).ConfigureAwait(false);
 
             return orderInfo;
         }
 
-        public async Task<OrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
+        public async Task<OrderInfo> RemoveOrderLineAsync(
+            Guid lineId,
+            string storeAlias,
+            OrderSettings settings = null)
         {
             _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
@@ -528,7 +534,7 @@ namespace Ekom.Services
                 throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
             }
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
+            await UpdateOrderAndOrderInfoAsync(orderInfo, settings?.FireOnOrderUpdatedEvent ?? true)
                 .ConfigureAwait(false);
 
             return orderInfo;
@@ -549,7 +555,8 @@ namespace Ekom.Services
             IProduct product,
             int quantity,
             OrderAction action,
-            IVariant variant
+            IVariant variant,
+            bool fireEvents
         )
         {
             if (quantity == 0)
@@ -656,11 +663,11 @@ namespace Ekom.Services
                 }
             }
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
+            await UpdateOrderAndOrderInfoAsync(orderInfo, fireEvents)
                 .ConfigureAwait(false);
         }
 
-        private async Task UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo)
+        private async Task UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo, bool fireEvents = true)
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
@@ -709,10 +716,13 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
             UpdateOrderInfoInCache(orderInfo);
 
-            Order.OnOrderUpdated(this, new Models.Events.OrderUpdatedEventArgs
+            if (fireEvents)
             {
-                OrderInfo = orderInfo,
-            });
+                Order.OnOrderUpdated(this, new OrderUpdatedEventArgs
+                {
+                    OrderInfo = orderInfo,
+                });
+            }
         }
 
         /// <summary>

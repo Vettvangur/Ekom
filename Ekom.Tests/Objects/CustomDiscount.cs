@@ -53,9 +53,10 @@ namespace Ekom.Tests.Objects
             Constraints = new Constraints(this);
         }
 
-        public override IReadOnlyCollection<Guid> DiscountItems
+        public override IReadOnlyCollection<string> DiscountItems
             => Properties.GetPropertyValue("discountItems")
                     .Split(',')
-                    .Select(x => GuidUdiHelper.GetGuid(x)).ToList();
+            // No idea if this makes sense anymore
+                    .Select(x => x).ToList();
     }
 }

@@ -1,3 +1,4 @@
+using Ekom.API.Settings;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
@@ -27,10 +28,10 @@ namespace Ekom.API
         #region Events
 
         /// <summary>
-        /// Event to fire on <see cref="IOrderInfo" updates/>
+        /// Event to fire on <see cref="IOrderInfo"/> updates
         /// </summary>
         public static event EventHandler<OrderUpdatedEventArgs> OrderUpdated;
-        internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args) 
+        internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args)
             => OrderUpdated?.Invoke(sender, args);
 
         public static event EventHandler<OrderStatusEventArgs> OrderStatusChanging;
@@ -98,7 +99,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             return _orderService.GetOrder(storeAlias);
@@ -122,7 +123,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             return GetCompletedOrderAsync(storeAlias).Result;
@@ -244,21 +245,21 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus /*bool fireEvents = true*/)
+        public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, bool fireEvents = true)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             var order = _orderService.GetOrder(storeAlias);
-            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null /*fireEvents*/)
+            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null, fireEvents)
                 .ConfigureAwait(false);
         }
 
-        public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null/* bool fireEvents = true*/)
+        public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, bool fireEvents = true)
         {
-            await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName /*fireEvents*/)
+            await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, fireEvents)
                 .ConfigureAwait(false);
         }
 
@@ -274,8 +275,9 @@ namespace Ekom.API
         /// <param name="productId">The product identifier.</param>
         /// <param name="quantity">The quantity.</param>
         /// <param name="storeAlias">The store alias.</param>
-        /// <param name="action">Default is AddOrUpdate, we also allow to set quantity to fixed amount.</param>
-        /// <param name="variantId">The variant identifier.</param>
+        /// <param name="action">Deprecated, use settings paramter.</param>
+        /// <param name="variantId">Deprecated, use settings paramter.</param>
+        /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
         /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
@@ -287,15 +289,26 @@ namespace Ekom.API
             int quantity,
             string storeAlias,
             OrderAction? action = null,
-            Guid? variantId = null
+            Guid? variantId = null,
+            AddOrderSettings settings = null
         )
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.AddOrderLineAsync(productId, quantity, storeAlias, action, variantId)
+            settings = settings ?? new AddOrderSettings
+            {
+                OrderAction = action ?? OrderAction.AddOrUpdate,
+                VariantKey = variantId,
+            };
+
+            return await _orderService.AddOrderLineAsync(
+                productId,
+                quantity,
+                storeAlias,
+                settings: settings)
                 .ConfigureAwait(false);
         }
 
@@ -314,7 +327,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             return await _orderService.UpdateShippingInformationAsync(ShippingProvider, storeAlias)
@@ -325,21 +338,31 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             return await _orderService.UpdatePaymentInformationAsync(PaymentProvider, storeAlias)
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> RemoveOrderLineAsync(Guid lineId, string storeAlias)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="lineId"></param>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <param name="settings">Ekom Order Api optional configuration</param>
+        /// <returns></returns>
+        public async Task<IOrderInfo> RemoveOrderLineAsync(
+            Guid lineId,
+            string storeAlias,
+            OrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.RemoveOrderLineAsync(lineId, storeAlias)
+            return await _orderService.RemoveOrderLineAsync(lineId, storeAlias, settings)
                 .ConfigureAwait(false);
         }
 
@@ -385,7 +408,7 @@ namespace Ekom.API
             }
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
             await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)

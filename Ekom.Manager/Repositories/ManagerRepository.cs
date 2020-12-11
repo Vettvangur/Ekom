@@ -258,9 +258,9 @@ namespace Ekom.Repository
             });
         }
 
-        public async Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus /*bool notification*/)
+        public async Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus, bool notification)
         {
-            await API.Order.Instance.UpdateStatusAsync(orderStatus, orderId)
+            await API.Order.Instance.UpdateStatusAsync(orderStatus, orderId, fireEvents: notification)
                 .ConfigureAwait(false);
         }
     }
