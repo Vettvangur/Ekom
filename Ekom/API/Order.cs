@@ -275,8 +275,6 @@ namespace Ekom.API
         /// <param name="productId">The product identifier.</param>
         /// <param name="quantity">The quantity.</param>
         /// <param name="storeAlias">The store alias.</param>
-        /// <param name="action">Deprecated, use settings paramter.</param>
-        /// <param name="variantId">Deprecated, use settings paramter.</param>
         /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
@@ -288,8 +286,6 @@ namespace Ekom.API
             Guid productId,
             int quantity,
             string storeAlias,
-            OrderAction? action = null,
-            Guid? variantId = null,
             AddOrderSettings settings = null
         )
         {
@@ -298,17 +294,11 @@ namespace Ekom.API
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            settings = settings ?? new AddOrderSettings
-            {
-                OrderAction = action ?? OrderAction.AddOrUpdate,
-                VariantKey = variantId,
-            };
-
             return await _orderService.AddOrderLineAsync(
                 productId,
                 quantity,
                 storeAlias,
-                settings: settings)
+                settings: settings ?? new AddOrderSettings())
                 .ConfigureAwait(false);
         }
 
