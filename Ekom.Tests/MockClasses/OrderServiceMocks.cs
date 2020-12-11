@@ -20,7 +20,7 @@ namespace Ekom.Tests.MockClasses
         public Mock<IOrderRepository> orderRepo;
         public Mock<IActivityLogRepository> activityRepo;
         public HttpContextMocks httpCtxMocks;
-        public CacheService Cache;
+        public AppCaches AppCaches;
         public Mock<IAppCache> RequestCache;
         public Mock<IAppPolicyCache> RuntimeCache;
         public ContentRequest ContentRequest;
@@ -32,9 +32,7 @@ namespace Ekom.Tests.MockClasses
             activityRepo = new Mock<IActivityLogRepository> { DefaultValue = DefaultValue.Mock };
             RequestCache = new Mock<IAppCache> { DefaultValue = DefaultValue.Mock };
             RuntimeCache = new Mock<IAppPolicyCache> { DefaultValue = DefaultValue.Mock };
-            Cache = new CacheService(
-                new AppCaches(RuntimeCache.Object, RequestCache.Object, new IsolatedCaches(_ => NoAppCache.Instance))
-            );
+            AppCaches = new AppCaches(RuntimeCache.Object, RequestCache.Object, new IsolatedCaches(_ => NoAppCache.Instance));
             httpCtxMocks = new HttpContextMocks();
             ContentRequest = new ContentRequest(httpCtxMocks.httpCtxMock.Object, Mock.Of<ILogger>());
 
@@ -49,7 +47,7 @@ namespace Ekom.Tests.MockClasses
                 activityRepo.Object,
                 Mock.Of<ILogger>(),
                 Mock.Of<IStoreService>(),
-                Cache,
+                AppCaches,
                 Mock.Of<IMemberService>(),
                 discountCache,
                 httpCtxMocks.httpCtxMock.Object

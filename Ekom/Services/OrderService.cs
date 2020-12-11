@@ -28,7 +28,7 @@ namespace Ekom.Services
         readonly ILogger _logger;
         readonly HttpContextBase _httpCtx;
         readonly IAppCache _reqCache;
-        readonly CacheService _cache;
+        readonly IAppPolicyCache _runtimeCache;
         readonly IMemberService _memberService;
         readonly DiscountCache _discountCache;
         readonly IActivityLogRepository _activityLogRepository;
@@ -51,7 +51,7 @@ namespace Ekom.Services
             IActivityLogRepository activityLogRepository,
             ILogger logger,
             IStoreService storeService,
-            CacheService cache,
+            AppCaches appCaches,
             IMemberService memberService,
             DiscountCache discountCache)
         {
@@ -62,7 +62,8 @@ namespace Ekom.Services
             _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
-            _cache = cache;
+            _reqCache = appCaches.RequestCache;
+            _runtimeCache = appCaches.RuntimeCache;
             _memberService = memberService;
         }
 
@@ -75,14 +76,14 @@ namespace Ekom.Services
             IActivityLogRepository activityLogRepository,
             ILogger logger,
             IStoreService storeService,
-            CacheService cache,
+            AppCaches appCaches,
             IMemberService memberService,
             DiscountCache discountCache,
             HttpContextBase httpCtx)
-            : this(orderRepo, couponRepository, activityLogRepository, logger, storeService, cache, memberService, discountCache)
+            : this(orderRepo, couponRepository, activityLogRepository, logger, storeService, appCaches, memberService, discountCache)
         {
             _httpCtx = httpCtx;
-            _ekmRequest = cache.GetContentRequest();
+            _ekmRequest = _reqCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
         public OrderInfo GetOrder(string storeAlias)
@@ -117,7 +118,7 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-                    var orderInfo = _cache.GetItem(
+                    var orderInfo = _runtimeCache.GetCacheItem(
                         orderUniqueId.ToString(),
                         () => GetOrder(orderUniqueId),
                         TimeSpan.FromDays(1));
@@ -196,7 +197,7 @@ namespace Ekom.Services
         public OrderInfo GetOrder(Guid uniqueId)
         {
             // Check for cache ?
-            return _cache.GetItem(
+            return _runtimeCache.GetCacheItem(
                 uniqueId.ToString(),
                 () => GetOrderInfoAsync(uniqueId).Result, 
                 TimeSpan.FromMinutes(5));
@@ -259,14 +260,14 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    _cache.RemoveItem(uniqueId.ToString());
+                    _runtimeCache.ClearByKey(uniqueId.ToString());
                 }
             }
 
             await _orderRepository.UpdateOrderAsync(order)
                 .ConfigureAwait(false);
 
-            _cache.GetItem<OrderInfo>(
+            _runtimeCache.GetCacheItem<OrderInfo>(
                 uniqueId.ToString(),
                 () => new OrderInfo(order),
                 TimeSpan.FromDays(1));
@@ -357,7 +358,7 @@ namespace Ekom.Services
 
                     await _orderRepository.UpdateOrderAsync(order).ConfigureAwait(false);
 
-                    _cache.GetItem<OrderInfo>(
+                    _runtimeCache.GetCacheItem<OrderInfo>(
                         uniqueId.ToString(),
                         () => new OrderInfo(order),
                         TimeSpan.FromDays(1));
@@ -732,7 +733,9 @@ namespace Ekom.Services
         /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInCache(OrderInfo orderInfo)
         {
-            _cache.InsertCacheItem<OrderInfo>(
+            var key = CreateKey(orderInfo.StoreInfo.Alias);
+
+            _runtimeCache.InsertCacheItem<OrderInfo>(
                 orderInfo.UniqueId.ToString(),
                 () => orderInfo,
                 TimeSpan.FromDays(1));
@@ -845,13 +848,13 @@ namespace Ekom.Services
                     }
                 }
 
-                foreach (var key in form.Keys.Where(x => x.StartsWith("customer")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
                 {
                     var value = form[key];
                     orderInfo.CustomerInformation.Customer.Properties[key] = value;
                 }
 
-                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
                 {
                     var value = form[key];
 
@@ -864,8 +867,7 @@ namespace Ekom.Services
                 return orderInfo;
             }
 
-            throw new ArgumentNullException("storeAlias");
-
+            throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
         }
 
         public async Task<OrderInfo> UpdateShippingInformationAsync(Guid shippingProviderId, string storeAlias)
