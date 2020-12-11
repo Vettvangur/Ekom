@@ -44,6 +44,7 @@ namespace Ekom.Models
                 CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
                 Discount = orderInfoJObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
                 Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
+                _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
             }
         }
 

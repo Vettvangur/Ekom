@@ -53,7 +53,8 @@ namespace Ekom.Extensions.Controllers
 
             try
             {
-                if (Request.Form.AllKeys.Contains("ekomUpdateInformation")) {
+                if (Request.Form.AllKeys.Contains("ekomUpdateInformation")) 
+                {
                     await Order.Instance.UpdateCustomerInformationAsync(Request.Form.AllKeys.ToDictionary(k => k, v => AntiXssEncoder.HtmlEncode(Request.Form.Get(v), false))).ConfigureAwait(false);
                 }
 
@@ -95,10 +96,10 @@ namespace Ekom.Extensions.Controllers
                 {
                     foreach (var job in order.HangfireJobs)
                     {
-                        await Stock.Instance.RollbackJob(job).ConfigureAwait(false);
+                        await Stock.Instance.RollbackJob(job);
                     }
 
-                    await Order.Instance.RemoveHangfireJobsToOrderAsync(storeAlias);
+                    await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias);
                 }
 
                 var orderItems = new List<OrderItem>();

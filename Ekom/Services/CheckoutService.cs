@@ -42,6 +42,8 @@ namespace Ekom.Services
 
             try
             {
+                _logger.Info<CheckoutService>("Completing order {OrderId}", key);
+
                 o = await _orderRepo.GetOrderAsync(key).ConfigureAwait(false);
 
                 if (o == null) return;

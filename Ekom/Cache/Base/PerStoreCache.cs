@@ -96,7 +96,11 @@ namespace Ekom.Cache
                     results = searcher.CreateQuery("content")
                         .NodeTypeAlias(NodeAlias)
                         .Execute(int.MaxValue);
-                    
+
+                    _logger.Info<PerStoreCache<TItem>>(
+                        "FillCache - Examine index {ExamineIndex}, {TotalItemCount} search results", 
+                        _config.ExamineIndex, 
+                        results.TotalItemCount);
 
                     if (storeParam == null) // Startup initialization
                     {

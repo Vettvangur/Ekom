@@ -255,7 +255,7 @@ namespace Ekom.API
         /// <returns>Hangfire Job Id</returns>
         public async Task<string> ReserveStockAsync(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
         {
-            if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
             if (timeSpan == default(TimeSpan))
             {
                 timeSpan = _config.ReservationTimeout;
@@ -283,7 +283,7 @@ namespace Ekom.API
         /// <returns>Hangfire Job Id</returns>
         public async Task<string> ReserveStockAsync(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
         {
-            if (value >= 0) throw new ArgumentOutOfRangeException();
+            if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
             if (timeSpan == default)
             {
                 timeSpan = _config.ReservationTimeout;

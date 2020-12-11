@@ -419,7 +419,7 @@ namespace Ekom.API
         /// Remove all hangfire job ids to <see cref="IOrderInfo"/> and db
         /// </summary>
         /// <param name="storeAlias"></param>
-        public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
+        public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {

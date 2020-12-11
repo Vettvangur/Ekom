@@ -92,6 +92,11 @@ namespace Ekom.Cache
                         .NodeTypeAlias(NodeAlias)
                         .Execute(int.MaxValue);
 
+                _logger.Info<PerStoreCache<TItem>>(
+                    "FillCache - Examine index {ExamineIndex}, {TotalItemCount} search results",
+                    _config.ExamineIndex,
+                    results.TotalItemCount);
+
                 foreach (var r in results)
                 {
                     try
