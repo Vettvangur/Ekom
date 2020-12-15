@@ -2,6 +2,7 @@ using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
 using Ekom.Utilities;
+using NPoco;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,7 +111,6 @@ namespace Ekom.Repository
             }
         }
 
-
         public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string payment, string shipping, string discount)
         {
 
@@ -175,7 +175,28 @@ namespace Ekom.Repository
             }
         }
 
+        public async Task<PaymentData> GetPaymentData(Guid orderId)
+        {
+            try
+            {
+                using (var db = _scopeProvider.CreateScope().Database)
+                {
+                    var customOrderId = await db.FirstOrDefaultAsync<Guid>("SELECT UniqueId FROM [NetPaymentOrder] WHERE Custom = @orderId", new { orderId = orderId }).ConfigureAwait(false);
 
+                    if (customOrderId != null && customOrderId != Guid.Empty)
+                    {
+                        return await db.FirstOrDefaultAsync<PaymentData>("SELECT * FROM [NetPayments] WHERE Id = @Id", new { Id = customOrderId }).ConfigureAwait(false);
+                    }
+                }
+
+            } catch
+            {
+
+            }
+
+
+            return null;
+        }
         public async Task<OrderListData> GetAllOrdersAsync(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");

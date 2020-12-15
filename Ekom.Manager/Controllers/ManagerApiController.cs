@@ -179,6 +179,11 @@ namespace Ekom.Controllers
             }
         }
 
+        public async Task<PaymentData> GetPaymentData([FromUri] Guid orderId)
+        {
+            return await _managerRepository.GetPaymentData(orderId);
+        }
+
         [HttpPost]
         public async Task<bool> UpdateStatus([FromUri]Guid orderId, [FromUri]int orderStatus, [FromUri] bool notification)
         {
