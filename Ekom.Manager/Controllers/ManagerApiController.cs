@@ -6,6 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Umbraco.Core;
+using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Core.Services;
+using Umbraco.Web.Composing;
 using Umbraco.Web.WebApi;
 
 namespace Ekom.Controllers
@@ -18,12 +22,37 @@ namespace Ekom.Controllers
     public class ManagerApiController : UmbracoAuthorizedApiController
     {
         readonly IManagerRepository _managerRepository;
+        readonly IContentService _contentService;
         /// <summary>
         /// ctor
         /// </summary>
-        public ManagerApiController(IManagerRepository managerRepository)
+        public ManagerApiController(IManagerRepository managerRepository, IContentService contentService)
         {
+            _contentService = contentService;
             _managerRepository = managerRepository;
+        }
+
+        public string GetNodeName(string nodeId)
+        {
+            IPublishedContent node = null;
+            var helper = Current.UmbracoHelper;
+
+            if (Udi.TryParse(nodeId, out Udi _udi))
+            {
+                node = helper.Content(_udi);
+            }
+
+            if (int.TryParse(nodeId, out int _int))
+            {
+                node = helper.Content(_int);
+            }
+
+            if (Guid.TryParse(nodeId, out Guid _guid))
+            {
+                node = helper.Content(_guid);
+            }
+
+            return node != null ? node.Name : "";
         }
 
         public async Task<IOrderInfo> GetOrder([FromUri] Guid uniqueId)

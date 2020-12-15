@@ -91,15 +91,15 @@ namespace Ekom.Extensions.Controllers
                     return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
                 }
 
-                if (order.HangfireJobs.Any())
-                {
-                    foreach (var job in order.HangfireJobs)
-                    {
-                        await Stock.Instance.RollbackJob(job).ConfigureAwait(false);
-                    }
+                //if (order.HangfireJobs.Any())
+                //{
+                //    foreach (var job in order.HangfireJobs)
+                //    {
+                //        await Stock.Instance.RollbackJob(job).ConfigureAwait(false);
+                //    }
 
-                    await Order.Instance.RemoveHangfireJobsToOrderAsync(storeAlias);
-                }
+                //    await Order.Instance.RemoveHangfireJobsToOrderAsync(storeAlias);
+                //}
 
                 var orderItems = new List<OrderItem>();
                 foreach (var line in order.OrderLines)
@@ -118,8 +118,11 @@ namespace Ekom.Extensions.Controllers
 
                                     if (variantStock >= line.Quantity)
                                     {
-                                            
-                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+
+                                        //hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+
+                                        await Stock.Instance.IncrementStockAsync(variant.Key, (line.Quantity * -1)).ConfigureAwait(false);
+
                                     }
                                     else
                                     {
@@ -134,7 +137,9 @@ namespace Ekom.Extensions.Controllers
 
                                 if (productStock >= line.Quantity)
                                 {
-                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                    //hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+
+                                    await Stock.Instance.IncrementStockAsync(line.ProductKey, (line.Quantity * -1)).ConfigureAwait(false);
                                 }
                                 else
                                 {

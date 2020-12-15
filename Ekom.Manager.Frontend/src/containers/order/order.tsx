@@ -293,7 +293,9 @@ export default class Order extends React.Component<IProps> {
                 order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.Address,
                 order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.ZipCode,
                 order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.City,
-                order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.Country
+                order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.Country,
+                order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.Phone,
+                order.CustomerInformation.Customer !== null && order.CustomerInformation.Customer.Properties.customerSsn
               ]} />
               {order.CustomerInformation.Shipping !== null &&
                 <InformationColumn heading="Shipping" list={order.CustomerInformation.Shipping !== null && [

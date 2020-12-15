@@ -20,6 +20,30 @@ export default class OrderContainer extends React.Component<IProps> {
   constructor(props: IProps) {
     super(props);
   }
+
+  state = {};
+
+  async FetchNode(nodeId) {
+
+    const response = await fetch('/umbraco/backoffice/ekom/managerapi/GetNodeName?nodeId=' + nodeId);
+    const json = await response.json();
+
+    var newNodeId = nodeId.substring(17, nodeId.length - 17);
+
+    this.setState({
+      [newNodeId]: json
+    });
+
+  };
+
+  async componentDidMount() {
+
+    this.props.orderlines.filter(line => line.Product.Properties.hasOwnProperty("stores")).forEach((orderline, index) =>{
+        this.FetchNode(orderline.Product.Properties.stores);
+    })
+
+  };
+
   public render() {
     const {
       orderlines,
@@ -87,8 +111,16 @@ export default class OrderContainer extends React.Component<IProps> {
                         <span> - Size: { variant.Properties.size} SKU: { variant.Properties.sku}</span>
                        ))}
 
+                      {orderline.Product.Properties.hasOwnProperty("stores") ? <div>
+                        <br/>
+                        <span>Store:  </span>
+                        <strong>{ this.state[orderline.Product.Properties.stores.substring(17, orderline.Product.Properties.stores.length - 17)] }</strong>
+                      </div> : null}
+
                       </div>
                     ))}
+
+          
                 </div>
                 <div
                   className={cx({

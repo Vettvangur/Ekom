@@ -29,4 +29,5 @@ export interface ICustomerProperties {
   customerZipCode: string;
   customerPhone: string;
   customerComment: string;
+  customerSsn: string;
 }
