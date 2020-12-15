@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Utilities;
 using System;
@@ -25,6 +26,11 @@ namespace Ekom.Extensions.Controllers
     [PluginController("Ekom")]
     public class CheckoutController : SurfaceController
     {
+        /// <summary>
+        /// Appended after error redirect
+        /// </summary>
+        protected virtual string ErrorQueryString { get; set; } = "?errorStatus=serverError";
+
         readonly ILogger _logger;
         readonly Configuration _config;
         readonly IScopeProvider _scopeProvider;
@@ -44,280 +50,345 @@ namespace Ekom.Extensions.Controllers
         /// </summary>
         /// <param name="paymentRequest"></param>
         /// <returns></returns>
-        public async Task<ActionResult> Pay(PaymentRequest paymentRequest)
+        public virtual async Task<ActionResult> Pay(PaymentRequest paymentRequest)
         {
-            if (paymentRequest == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
             try
             {
-                if (Request.Form.AllKeys.Contains("ekomUpdateInformation")) {
-                    await Order.Instance.UpdateCustomerInformationAsync(Request.Form.AllKeys.ToDictionary(k => k, v => AntiXssEncoder.HtmlEncode(Request.Form.Get(v), false))).ConfigureAwait(false);
+                var order = Order.Instance.GetOrder();
+                var store = Store.Instance.GetStore();
+                var storeAlias = order.StoreInfo.Alias;
+
+                var res = await ValidationAndOrderUpdates(paymentRequest, order);
+                if (res != null)
+                {
+                    return res;
+                }
+
+                if (order.HangfireJobs.Any())
+                {
+                    foreach (var job in order.HangfireJobs)
+                    {
+                        await Stock.Instance.RollbackJob(job);
+                    }
+
+                    await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias);
                 }
 
                 var hangfireJobs = new List<string>();
-
-                var order = Order.Instance.GetOrder();
-                var store = Store.Instance.GetStore();
-                
-                var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
-
-                if (order.PaymentProvider == null)
+                res = await ProcessOrderLines(paymentRequest, order, hangfireJobs);
+                if (res != null)
                 {
-                    await Order.Instance.UpdatePaymentInformationAsync(
-                        paymentRequest.PaymentProvider,
-                        order.StoreInfo.Alias);
+                    return res;
                 }
 
-                var storeAlias = order.StoreInfo.Alias;
-
-                var isOfflinePayment = ekomPP.GetPropertyValue("offlinePayment", storeAlias).IsBoolean();
-
-                if (_config.StoreCustomerData)
+                res = await ProcessCoupons(paymentRequest, order);
+                if (res != null)
                 {
-                    using (var db = _scopeProvider.CreateScope().Database)
-                    {
-                        await db.InsertAsync(new CustomerData
-                        {
-                            // Unfinished
-                        });
-                    }
+                    return res;
                 }
-
-                if (string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) || string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
-                {
-                    return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
-                }
-
-                //if (order.HangfireJobs.Any())
-                //{
-                //    foreach (var job in order.HangfireJobs)
-                //    {
-                //        await Stock.Instance.RollbackJob(job).ConfigureAwait(false);
-                //    }
-
-                //    await Order.Instance.RemoveHangfireJobsToOrderAsync(storeAlias);
-                //}
-
-                var orderItems = new List<OrderItem>();
-                foreach (var line in order.OrderLines)
-                {
-                    #region Stock
-
-                    try
-                    {
-                        if (!line.Product.Backorder)
-                        {
-                            if (line.Product.VariantGroups.Any())
-                            {
-                                foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
-                                {
-                                    var variantStock = Stock.Instance.GetStock(variant.Key);
-
-                                    if (variantStock >= line.Quantity)
-                                    {
-
-                                        //hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
-
-                                        await Stock.Instance.IncrementStockAsync(variant.Key, (line.Quantity * -1)).ConfigureAwait(false);
-
-                                    }
-                                    else
-                                    {
-                                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
-                                    }
-                                }
-
-                            }
-                            else
-                            {
-                                var productStock = Stock.Instance.GetStock(line.ProductKey);
-
-                                if (productStock >= line.Quantity)
-                                {
-                                    //hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
-
-                                    await Stock.Instance.IncrementStockAsync(line.ProductKey, (line.Quantity * -1)).ConfigureAwait(false);
-                                }
-                                else
-                                {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
-                                }
-                            }
-                        }
-
-                        // How does this work ? we dont have a coupon per orderline!
-                        //if (line.Discount != null)
-                        //{
-                        //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
-
-                        //    if (line.Discount.HasMasterStock)
-                        //    {
-                        //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-                        //    }
-                        //}
-                    }
-                    catch (NotEnoughStockException ex)
-                    {
-                        _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
-                        return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
-                    }
-                    
-
-                    #endregion
-
-                    //orderItems.Add(new OrderItem
-                    //{
-                    //    GrandTotal = line.Amount.WithVat.Value,
-                    //    Price = line.Product.Price.WithVat.Value,
-                    //    Title = line.Product.Title,
-                    //    Quantity = line.Quantity,
-                    //});
-                }
-
-                // Does not work with Coupon codes
-                //if (order.Discount != null)
-                //{
-                //    try
-                //    {
-                //        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1, order.Coupon));
-
-                //        if (order.Discount.HasMasterStock)
-                //        {
-                //            hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1));
-                //        }
-                //    }
-                //    catch (StockException)
-                //    {
-                //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
-                //    }
-                //}
-
-                //if (paymentRequest.ShippingProvider != Guid.Empty)
-                //{
-                //    var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
-
-                //    if (ekomSP.Price.Value > 0)
-                //    {
-                //        orderItems.Add(new OrderItem
-                //        {
-                //            GrandTotal = ekomSP.Price.Value,
-                //            Price = ekomSP.Price.Value,
-                //            Title = ekomSP.Title,
-                //            Quantity = 1,
-                //        });
-                //    }
-
-                //}
-
-                //if (order.Discount != null)
-                //{
-                //    orderItems.Add(new OrderItem
-                //    {
-                //        Title = "Afsláttur",
-                //        Quantity = 1,
-                //        Price = order.DiscountAmount.Value * -1,
-                //        GrandTotal = order.DiscountAmount.Value * -1,
-                //    });
-                //}
-
-                string orderTitle = "Pöntun";
-
-                if (store != null)
-                {
-                    var paymentOrderTitle = store.GetPropertyValue("paymentOrderTitle");
-
-                    if (!string.IsNullOrEmpty(paymentOrderTitle))
-                    {
-                        if (paymentOrderTitle.Substring(0,1) == "#")
-                        {
-                            var dictionaryValue = Umbraco.GetDictionaryValue(paymentOrderTitle.Substring(1));
-
-                            if (!string.IsNullOrEmpty(dictionaryValue))
-                            {
-                                orderTitle = dictionaryValue;
-                            }
-                        } else
-                        {
-                            orderTitle = paymentOrderTitle;
-                        }
-                    }
-                }
-
-                orderTitle += " - " + order.OrderNumber;
-
-                orderItems.Add(new OrderItem
-                {
-                    GrandTotal = order.ChargedAmount.Value,
-                    Price = order.ChargedAmount.Value,
-                    Title = orderTitle,
-                    Quantity = 1,
-                });
 
                 // save job ids to sql for retrieval after checkout completion
                 await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs);
 
-                _logger.Info<CheckoutController>(
-                    "Payment Provider: {PaymentProvider} offline: {isOfflinePayment}",
-                    paymentRequest.PaymentProvider,
-                    isOfflinePayment);
+                var orderTitle = await CreateOrderTitle(paymentRequest, order, store);
 
-                if (isOfflinePayment)
-                {
-                    try
-                    {
-                        var successUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("successUrl", storeAlias), Request) + "?orderId=" + order.UniqueId;
-
-                        await Order.Instance.UpdateStatusAsync(
-                            Ekom.Utilities.OrderStatus.OfflinePayment,
-                            order.UniqueId);
-
-                        LocalCallback.OnSuccess(new Umbraco.NetPayment.OrderStatus()
-                        {
-                            Member = Members.GetCurrentMemberId(),
-                            PaymentProviderKey = ekomPP.Key,
-                            PaymentProvider = ekomPP.Name,
-                            Custom = order.UniqueId.ToString()
-                        });
-
-                        return Redirect(successUrl);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error<CheckoutController>(
-                            ex,
-                            "Offline Payment Failed. Order: {UniqueId}",
-                            order.UniqueId);
-
-                        var errorUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("errorUrl", storeAlias), Request);
-
-                        return Redirect(errorUrl);
-                    }
-                }
-                else
-                {
-                    var pp = NetPayment.Instance.GetPaymentProvider(ekomPP.Name);
-
-                    var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
-
-                    return Content(await pp.RequestAsync(new PaymentSettings
-                    {
-                        Orders = orderItems,
-                        SkipReceipt = true,
-                        VortoLanguage = order.StoreInfo.Alias,
-                        Language = language,
-                        Member = Members.GetCurrentMemberId(),
-                        OrderCustomString = order.UniqueId.ToString(),
-                        //paymentProviderId: paymentRequest.PaymentProvider.ToString()
-                    }));
-                }
+                return await ProcessPayment(paymentRequest, order, orderTitle);
             }
+#pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
             {
                 _logger.Error<CheckoutController>(ex, "Checkout payment failed!");
-                return RedirectToCurrentUmbracoPage("?errorStatus=serverError");
+                return RedirectToCurrentUmbracoPage(ErrorQueryString);
+            }
+        }
+
+        protected virtual async Task<ActionResult> ValidationAndOrderUpdates(PaymentRequest paymentRequest, IOrderInfo order)
+        {
+            if (paymentRequest == null)
+            {
+                return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
+            }
+
+            if (Request.Form.AllKeys.Contains("ekomUpdateInformation"))
+            {
+                await Order.Instance.UpdateCustomerInformationAsync(
+                    Request.Form.AllKeys.ToDictionary(
+                        k => k,
+                        v => AntiXssEncoder.HtmlEncode(Request.Form.Get(v), false)
+                    )).ConfigureAwait(false);
+            }
+
+            if (order.PaymentProvider == null)
+            {
+                await Order.Instance.UpdatePaymentInformationAsync(
+                    paymentRequest.PaymentProvider,
+                    order.StoreInfo.Alias);
+            }
+
+            if (_config.StoreCustomerData)
+            {
+                using (var db = _scopeProvider.CreateScope().Database)
+                {
+                    await db.InsertAsync(new CustomerData
+                    {
+                        // Unfinished
+                    });
+                }
+            }
+
+            if (string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
+            || string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+            {
+                return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Optionally return an ActionResult to immediately return a specified response
+        /// </summary>
+        /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
+        protected virtual async Task<ActionResult> ProcessOrderLines(PaymentRequest paymentRequest, IOrderInfo order, List<string> hangfireJobs)
+        {
+            foreach (var line in order.OrderLines)
+            {
+                #region Stock
+
+                try
+                {
+                    if (!line.Product.Backorder)
+                    {
+                        if (line.Product.VariantGroups.Any())
+                        {
+                            foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                            {
+                                var variantStock = Stock.Instance.GetStock(variant.Key);
+
+                                if (variantStock >= line.Quantity)
+                                {
+
+                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                }
+                                else
+                                {
+                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var productStock = Stock.Instance.GetStock(line.ProductKey);
+
+                            if (productStock >= line.Quantity)
+                            {
+                                hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                            }
+                            else
+                            {
+                                return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
+                            }
+                        }
+                    }
+
+                    // How does this work ? we dont have a coupon per orderline!
+                    //if (line.Discount != null)
+                    //{
+                    //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+
+                    //    if (line.Discount.HasMasterStock)
+                    //    {
+                    //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                    //    }
+                    //}
+                }
+                catch (NotEnoughStockException ex)
+                {
+                    _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
+                }
+
+
+                #endregion
+
+                //orderItems.Add(new OrderItem
+                //{
+                //    GrandTotal = line.Amount.WithVat.Value,
+                //    Price = line.Product.Price.WithVat.Value,
+                //    Title = line.Product.Title,
+                //    Quantity = line.Quantity,
+                //});
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Not yet implemented by default
+        /// </summary>
+        /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
+        protected virtual Task<ActionResult> ProcessCoupons(PaymentRequest paymentRequest, IOrderInfo orderInfo)
+        {
+            // Does not work with Coupon codes
+            //if (order.Discount != null)
+            //{
+            //    try
+            //    {
+            //        hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1, order.Coupon));
+
+            //        if (order.Discount.HasMasterStock)
+            //        {
+            //            hangfireJobs.Add(_stock.ReserveDiscountStock(order.Discount.Key, -1));
+            //        }
+            //    }
+            //    catch (StockException)
+            //    {
+            //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Not enough discount stock available");
+            //    }
+            //}
+
+            //if (paymentRequest.ShippingProvider != Guid.Empty)
+            //{
+            //    var ekomSP = Providers.Instance.GetShippingProvider(paymentRequest.ShippingProvider);
+
+            //    if (ekomSP.Price.Value > 0)
+            //    {
+            //        orderItems.Add(new OrderItem
+            //        {
+            //            GrandTotal = ekomSP.Price.Value,
+            //            Price = ekomSP.Price.Value,
+            //            Title = ekomSP.Title,
+            //            Quantity = 1,
+            //        });
+            //    }
+
+            //}
+
+            //if (order.Discount != null)
+            //{
+            //    orderItems.Add(new OrderItem
+            //    {
+            //        Title = "Afsláttur",
+            //        Quantity = 1,
+            //        Price = order.DiscountAmount.Value * -1,
+            //        GrandTotal = order.DiscountAmount.Value * -1,
+            //    });
+            //}
+
+            return Task.FromResult<ActionResult>(null);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected virtual Task<string> CreateOrderTitle(PaymentRequest paymentRequest, IOrderInfo order, IStore store)
+        {
+            string orderTitle = "Pöntun";
+
+            if (store != null)
+            {
+                var paymentOrderTitle = store.GetPropertyValue("paymentOrderTitle");
+
+                if (!string.IsNullOrEmpty(paymentOrderTitle))
+                {
+                    if (paymentOrderTitle.Substring(0, 1) == "#")
+                    {
+                        var dictionaryValue = Umbraco.GetDictionaryValue(paymentOrderTitle.Substring(1));
+
+                        if (!string.IsNullOrEmpty(dictionaryValue))
+                        {
+                            orderTitle = dictionaryValue;
+                        }
+                    }
+                    else
+                    {
+                        orderTitle = paymentOrderTitle;
+                    }
+                }
+            }
+
+            return Task.FromResult(orderTitle += " - " + order.OrderNumber);
+        }
+
+        /// <summary>
+        /// Optionally return an ActionResult to immediately return a specified response.
+        /// </summary>
+        /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
+        protected async virtual Task<ActionResult> ProcessPayment(PaymentRequest paymentRequest, IOrderInfo order, string orderTitle)
+        {
+            var storeAlias = order.StoreInfo.Alias;
+
+            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
+
+
+            var isOfflinePayment = ekomPP.GetPropertyValue("offlinePayment", storeAlias).IsBoolean();
+
+            var orderItems = new List<OrderItem>();
+            orderItems.Add(new OrderItem
+            {
+                GrandTotal = order.ChargedAmount.Value,
+                Price = order.ChargedAmount.Value,
+                Title = orderTitle,
+                Quantity = 1,
+            });
+
+            _logger.Info<CheckoutController>(
+                "Payment Provider: {PaymentProvider} offline: {isOfflinePayment}",
+                paymentRequest.PaymentProvider,
+                isOfflinePayment);
+
+            if (isOfflinePayment)
+            {
+                try
+                {
+                    var successUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("successUrl", storeAlias), Request) + "?orderId=" + order.UniqueId;
+
+                    await Order.Instance.UpdateStatusAsync(
+                        Ekom.Utilities.OrderStatus.OfflinePayment,
+                        order.UniqueId);
+
+                    LocalCallback.OnSuccess(new Umbraco.NetPayment.OrderStatus()
+                    {
+                        Member = Members.GetCurrentMemberId(),
+                        PaymentProviderKey = ekomPP.Key,
+                        PaymentProvider = ekomPP.Name,
+                        Custom = order.UniqueId.ToString()
+                    });
+
+                    return Redirect(successUrl);
+                }
+#pragma warning disable CA1031 // Do not catch general exception types
+                catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+                {
+                    _logger.Error<CheckoutController>(
+                        ex,
+                        "Offline Payment Failed. Order: {UniqueId}",
+                        order.UniqueId);
+
+                    var errorUrl = URIHelper.EnsureFullUri(ekomPP.GetPropertyValue("errorUrl", storeAlias), Request);
+
+                    return Redirect(errorUrl);
+                }
+            }
+            else
+            {
+                var pp = NetPayment.Instance.GetPaymentProvider(ekomPP.Name);
+
+                var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
+
+                return Content(await pp.RequestAsync(new PaymentSettings
+                {
+                    Orders = orderItems,
+                    SkipReceipt = true,
+                    VortoLanguage = order.StoreInfo.Alias,
+                    Language = language,
+                    Member = Members.GetCurrentMemberId(),
+                    OrderCustomString = order.UniqueId.ToString(),
+                    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
+                }));
             }
         }
     }

@@ -37,6 +37,8 @@ namespace Ekom.Services
         readonly IStoreService _storeSvc;
         readonly ContentRequest _ekmRequest;
 
+        // ToDo: Refactor, this is too error prone. There is a reason nobody does it like this.
+        // Prefer supply these as params
         IStore _store;
         DateTime _date;
 
@@ -109,7 +111,7 @@ namespace Ekom.Services
             {
                 _store = store;
 
-                var key = CreateKey();
+                var key = CreateKey(store.Alias);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
 
@@ -170,7 +172,7 @@ namespace Ekom.Services
             {
                 _store = store;
 
-                var key = CreateKey();
+                var key = CreateKey(storeAlias);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
 
@@ -196,7 +198,7 @@ namespace Ekom.Services
         {
             // Check for cache ?
             return _runtimeCache.GetCacheItem(
-                $"EkomOrder-{uniqueId}",
+                uniqueId.ToString(),
                 () => GetOrderInfoAsync(uniqueId).Result, 
                 TimeSpan.FromMinutes(5));
         }
@@ -482,7 +484,7 @@ namespace Ekom.Services
 
             if (orderInfo == null)
             {
-                orderInfo = await CreateEmptyOrderAsync().ConfigureAwait(false);
+                orderInfo = await CreateEmptyOrderAsync(_store.Alias).ConfigureAwait(false);
             }
 
             _logger.Debug<OrderService>("ProductId: {ProductId}" +
@@ -759,14 +761,9 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
         }
 
-        private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias = null)
+        private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias)
         {
             _logger.Debug<OrderService>("Add OrderLine ...  Create Empty Order..");
-
-            if (!string.IsNullOrEmpty(storeAlias))
-            {
-                _store = API.Store.Instance.GetStore(storeAlias);
-            }
 
             Guid orderUniqueId;
             if (Configuration.Current.UserBasket)
@@ -782,7 +779,7 @@ namespace Ekom.Services
             }
             else
             {
-                orderUniqueId = CreateOrderIdCookie(CreateKey());
+                orderUniqueId = CreateOrderIdCookie(CreateKey(storeAlias));
             }
 
             var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId)
@@ -851,13 +848,13 @@ namespace Ekom.Services
                     }
                 }
 
-                foreach (var key in form.Keys.Where(x => x.StartsWith("customer")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
                 {
                     var value = form[key];
                     orderInfo.CustomerInformation.Customer.Properties[key] = value;
                 }
 
-                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping")))
+                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
                 {
                     var value = form[key];
 
@@ -870,8 +867,7 @@ namespace Ekom.Services
                 return orderInfo;
             }
 
-            throw new ArgumentNullException("storeAlias");
-
+            throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
         }
 
         public async Task<OrderInfo> UpdateShippingInformationAsync(Guid shippingProviderId, string storeAlias)
@@ -1110,7 +1106,7 @@ namespace Ekom.Services
             return template.Replace("#orderId#", _referenceId).Replace("#orderIdPadded#", referenceId.ToString("0000")).Replace("#storeAlias#", _store.Alias).Replace("#day#", _date.Day.ToString()).Replace("#month#", _date.Month.ToString()).Replace("#year#", _date.Year.ToString());
         }
 
-        private string CreateKey(string storeAlias = null)
+        private string CreateKey(string storeAlias)
         {
             var key = "ekmOrder";
 

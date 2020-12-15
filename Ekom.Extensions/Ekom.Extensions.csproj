@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Extensions.v8</PackageId>
-        <Version>0.2.3</Version>
+        <Version>0.3.0-alpha.4</Version>
         <Title>Ekom Controllers</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -53,8 +53,8 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Ekom.Core.v8" Version="[0.2.0,1.0)" />
-        <PackageReference Include="Umbraco.NetPayment.v8" Version="[11.1.0,12.0.0)" />
+        <PackageReference Include="Ekom.Core.v8" Version="[0.3,1.0)" />
+        <PackageReference Include="Umbraco.NetPayment.v8" Version="[11.5.1,12.0.0)" />
         <PackageReference Include="UmbracoCms.Core" Version="[8.6.1,9.0)" />
         <PackageReference Include="UmbracoCms.Web" Version="[8.6.1,9.0)" />
     </ItemGroup>

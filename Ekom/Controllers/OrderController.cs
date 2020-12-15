@@ -56,8 +56,11 @@ namespace Ekom.Controllers
                     request.productId,
                     request.quantity,
                     request.storeAlias,
-                    request.action,
-                    request.variantId);
+                    new API.Settings.AddOrderSettings
+                    {
+                        OrderAction = request.action ?? OrderAction.AddOrUpdate,
+                        VariantKey = request.variantId,
+                    });
 
                 return Json(new
                 {
