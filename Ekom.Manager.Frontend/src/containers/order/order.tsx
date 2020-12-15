@@ -123,6 +123,8 @@ interface IProps {
 @withRouter
 @observer
 export default class Order extends React.Component<IProps> {
+  state =  { cardInfo: null }
+
   constructor(props) {
     super(props);
   }
@@ -131,7 +133,28 @@ export default class Order extends React.Component<IProps> {
     const { match, ordersStore } = this.props;
     const orderId = match.params.id;
     ordersStore.shouldFetchOrder(orderId);
+    this.fetchOrder(orderId);
   }
+
+  async fetchOrder(orderId: string) {
+    const response = await fetch(`/umbraco/backoffice/ekom/managerapi/getPaymentData?orderId=${orderId}`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = await response.json();
+
+    if (!payload) {
+      return null;
+    }
+
+    this.setState({cardInfo: payload})
+  }
+
+
 
   updateStatus = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -307,7 +330,10 @@ export default class Order extends React.Component<IProps> {
                 ]} />
               }
               <InformationColumn heading="Payment" list={[
-                order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered'
+                order.PaymentProvider !== null ? order.PaymentProvider.Title : 'Not registered',
+                this.state.cardInfo !== null ? this.state.cardInfo.CardNumber : null,
+                this.state.cardInfo !== null ? this.state.cardInfo.CardType : null,
+                this.state.cardInfo !== null ? this.state.cardInfo.AuthorizationNumber : null
               ]} />
               <InformationColumn heading="Delivery" list={[
                 order.ShippingProvider !== null ? order.ShippingProvider.Title : 'Not registered'
