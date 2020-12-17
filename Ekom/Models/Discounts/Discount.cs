@@ -87,7 +87,9 @@ namespace Ekom.Models.Discounts
                 var nodes = Properties.GetPropertyValue("discountItems")
                     ?.Split(',')
                     .Where(x => !string.IsNullOrEmpty(x))
-                    .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x))).ToList();
+                    .Select(x => UmbHelper.Content(GuidUdiHelper.GetGuid(x)))
+                    .Where(x => x != null)
+                    .ToList();
 
                 returnList.AddRange(nodes.Select(x => x.Id.ToString()));
 

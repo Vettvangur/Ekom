@@ -21,7 +21,9 @@ namespace Ekom.Services
 
         public IProductDiscount GetProductDiscount(string path, string storeAlias, string inputPrice, string[] categories = null)
         {
-            var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) ? "0" : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
+            var price = decimal.Parse(string.IsNullOrEmpty(inputPrice) 
+                ? "0" 
+                : inputPrice.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture);
 
             var applicableDiscounts = new List<IProductDiscount>();
 
@@ -40,7 +42,9 @@ namespace Ekom.Services
 
                 var disc = discount.Value as Discount;
 
-                if (!string.IsNullOrEmpty(path) && path.Split(',').Intersect(disc.DiscountItems).Any() || (categories != null && categories.Intersect(disc.DiscountItems).Any()))
+                if (!string.IsNullOrEmpty(path) 
+                && path.Split(',').Intersect(disc.DiscountItems).Any() 
+                || (categories != null && categories.Intersect(disc.DiscountItems).Any()))
                 {
                     applicableDiscounts.Add(discount.Value);
                 }

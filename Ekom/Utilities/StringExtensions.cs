@@ -214,7 +214,7 @@ namespace Ekom.Utilities
                     );
                 }
             }
-            catch (Exception ex)
+            catch (JsonException)
             {
                 if (fallbackCurrency == null)
                 {
