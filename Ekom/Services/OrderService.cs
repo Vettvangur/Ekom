@@ -118,10 +118,7 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-                    var orderInfo = _runtimeCache.GetCacheItem(
-                        orderUniqueId.ToString(),
-                        () => GetOrder(orderUniqueId),
-                        TimeSpan.FromDays(1));
+                    var orderInfo = GetOrder(orderUniqueId);
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
                     //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
@@ -199,8 +196,8 @@ namespace Ekom.Services
             // Check for cache ?
             return _runtimeCache.GetCacheItem(
                 uniqueId.ToString(),
-                () => GetOrderInfoAsync(uniqueId).Result, 
-                TimeSpan.FromMinutes(5));
+                () => GetOrderInfoAsync(uniqueId).Result,
+                TimeSpan.FromDays(1));
         }
 
         // fills cache for GetOrder
