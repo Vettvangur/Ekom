@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Extensions.v8</PackageId>
-        <Version>0.3.0</Version>
+        <Version>0.3.1</Version>
         <Title>Ekom Controllers</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

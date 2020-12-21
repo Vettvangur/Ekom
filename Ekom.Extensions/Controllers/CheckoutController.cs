@@ -381,6 +381,16 @@ namespace Ekom.Extensions.Controllers
 
                 return Content(await pp.RequestAsync(new PaymentSettings
                 {
+                    CustomerInfo = new CustomerInfo()
+                    {
+                        Address = order.CustomerInformation.Customer.Address,
+                        City = order.CustomerInformation.Customer.City,
+                        Email = order.CustomerInformation.Customer.Email,
+                        Name = order.CustomerInformation.Customer.Name,
+                        NationalRegistryId = order.CustomerInformation.Customer.Properties.GetPropertyValue("customerSsn"),
+                        PhoneNumber = order.CustomerInformation.Customer.Phone,
+                        PostalCode = order.CustomerInformation.Customer.ZipCode
+                    },
                     Orders = orderItems,
                     SkipReceipt = true,
                     VortoLanguage = order.StoreInfo.Alias,
