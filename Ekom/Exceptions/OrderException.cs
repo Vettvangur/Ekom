@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// Indicates an error while performing order changes.
     /// </summary>
-    public class OrderLineNegativeException : Exception
+    public class OrderLineNegativeException : EkomException
     {
         /// <summary>
         /// Ctor

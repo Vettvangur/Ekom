@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// Indicates an error while performing stock changes.
     /// </summary>
-    public class StockException : Exception
+    public class StockException : EkomException
     {
         /// <summary>
         /// Stock value in repository at time of exception

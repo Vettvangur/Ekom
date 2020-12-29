@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class ProductNotFoundException : Exception
+    public class ProductNotFoundException : EkomException
     {
         /// <summary>
         /// Ctor

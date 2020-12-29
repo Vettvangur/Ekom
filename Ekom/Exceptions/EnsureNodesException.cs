@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class EnsureNodesException : Exception
+    public class EnsureNodesException : EkomException
     {
         /// <summary>
         /// 

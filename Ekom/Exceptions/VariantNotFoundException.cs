@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class VariantNotFoundException : Exception
+    public class VariantNotFoundException : EkomException
     {
         /// <summary>
         /// Ctor
