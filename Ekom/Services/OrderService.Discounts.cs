@@ -30,15 +30,26 @@ namespace Ekom.Services
         {
             orderInfo = orderInfo ?? GetOrder(storeAlias);
 
-            if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo)
-                    .ConfigureAwait(false);
+                if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+                {
+                    await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        .ConfigureAwait(false);
 
-                return true;
+                    return true;
+                }
+
+                return false;
             }
-            return false;
+            finally
+            {
+                semaphore.Release();
+            }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -84,8 +95,17 @@ namespace Ekom.Services
         {
             var orderInfo = GetOrder(storeAlias);
 
-            RemoveDiscountFromOrder(orderInfo);
-            await UpdateOrderAndOrderInfoAsync(orderInfo).ConfigureAwait(false);
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                RemoveDiscountFromOrder(orderInfo);
+                await UpdateOrderAndOrderInfoAsync(orderInfo).ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
         private void RemoveDiscountFromOrder(OrderInfo orderInfo)
         {
@@ -139,21 +159,31 @@ namespace Ekom.Services
         {
 
             orderInfo = orderInfo ?? GetOrder(storeAlias);
-            OrderLine orderLine
-                = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
-                as OrderLine;
 
-            if (orderLine == null)
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                throw new OrderLineNotFoundException($"Unable to find order line with product key: {product.Key}");
-            }
+                OrderLine orderLine
+                    = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
+                    as OrderLine;
 
-            return await ApplyDiscountToOrderLineAsync(
-                orderLine,
-                discount,
-                orderInfo,
-                coupon
-            ).ConfigureAwait(false);
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line with product key: {product.Key}");
+                }
+
+                return await ApplyDiscountToOrderLineAsync(
+                    orderLine,
+                    discount,
+                    orderInfo,
+                    coupon
+                ).ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         /// <summary>
@@ -170,21 +200,31 @@ namespace Ekom.Services
         )
         {
             orderInfo = orderInfo ?? GetOrder(storeAlias);
-            OrderLine orderLine
+
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                OrderLine orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
                 as OrderLine;
 
-            if (orderLine == null)
-            {
-                throw new OrderLineNotFoundException($"Unable to find order line: {lineKey}");
-            }
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line: {lineKey}");
+                }
 
-            return await ApplyDiscountToOrderLineAsync(
-                orderLine,
-                discount,
-                orderInfo,
-                coupon
-            ).ConfigureAwait(false);
+                return await ApplyDiscountToOrderLineAsync(
+                    orderLine,
+                    discount,
+                    orderInfo,
+                    coupon
+                ).ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         /// <summary>
@@ -275,18 +315,28 @@ namespace Ekom.Services
         public async Task RemoveDiscountFromOrderLineAsync(Guid productKey, string storeAlias)
         {
             var orderInfo = GetOrder(storeAlias);
-            var orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
+
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                 as OrderLine;
 
-            if (orderLine == null)
-            {
-                throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
+                }
+
+                RemoveDiscountFromOrderLine(orderLine);
+
+                await UpdateOrderAndOrderInfoAsync(orderInfo)
+                    .ConfigureAwait(false);
             }
-
-            RemoveDiscountFromOrderLine(orderLine);
-
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
-                .ConfigureAwait(false);
+            finally
+            {
+                semaphore.Release();
+            }
         }
         private void RemoveDiscountFromOrderLine(OrderLine orderLine)
         {

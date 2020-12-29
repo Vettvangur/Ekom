@@ -11,10 +11,12 @@ using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Umbraco.Core.Cache;
@@ -23,6 +25,34 @@ using Umbraco.Core.Services;
 
 namespace Ekom.Services
 {
+    /// <summary>
+    /// GetOrder and Caching <br />
+    /// <br />
+    /// When an OrderInfo is created, it is persisted in Sql immediately. 
+    /// As a part of that creation, modifications are made which are in turn persisted in sql. <br />
+    /// A cookie with UniqueId is returned in Response. <br />
+    /// When the next request arrives, 
+    /// it uses GetOrder falling back to retrieving from Sql if obj is not in cache.
+    /// It then makes changes, modifying the OrderInfo object now referenced by the runtime cache 
+    /// and finally persisting to Sql. <br />
+    /// When the third request arrives making more modifications, 
+    /// GetOrder will return the modified OrderInfo from cache, 
+    /// or from Sql if a restart happened.<br />
+    /// If an event handler fires, either following creation of an OrderInfo or for subsequent requests,
+    /// that event handler will follow the same rules as the above cases.
+    /// It only diverges in regards to where it reads the cookie from, 
+    /// for event handlers they will likely find the UniqueId in the response cookie.
+    /// <br />
+    /// In all cases these requests will have the most up to date OrderInfo. <br />
+    /// <br />
+    /// Locking <br />
+    /// <br />
+    /// A possible alternative to the current code would be to lock always after grabbing the OrderInfo object<br />
+    /// Now although two methods might both complete grabbing OrderInfo at the same time and only one continues,
+    /// there should be no issue since they should be holding a reference to the same object.
+    /// We could then look for the SemaphoreSlim inside HttpContext.Items in HttpHandlers 
+    /// before returning the request to take care of Release()'ing the lock.
+    /// </summary>
     partial class OrderService
     {
         readonly ILogger _logger;
@@ -133,7 +163,7 @@ namespace Ekom.Services
                     //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
                     if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                    && orderInfo?.OrderStatus != OrderStatus.Dispatched 
+                    && orderInfo?.OrderStatus != OrderStatus.Dispatched
                     && orderInfo?.OrderStatus != OrderStatus.OfflinePayment)
                     {
                         return orderInfo;
@@ -310,22 +340,29 @@ namespace Ekom.Services
 
             if (orderInfo == null)
             {
-                throw new ArgumentNullException(nameof(orderInfo));
+                throw new OrderInfoNotFoundException();
             }
 
-            var orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
-
-            if (orderline == null)
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                throw new OrderLineNotFoundException("Could not find order line with key: " + orderLineId);
+                var orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
+
+                if (orderline == null)
+                {
+                    throw new OrderLineNotFoundException("Could not find order line with key: " + orderLineId);
+                }
+
+                orderline.Quantity = quantity;
+
+                return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                    .ConfigureAwait(false);
             }
-
-            orderline.Quantity = quantity;
-
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
-                .ConfigureAwait(false);
-
-            return orderInfo;
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         public async Task ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias)
@@ -432,7 +469,7 @@ namespace Ekom.Services
                 }
                 else
                 {
-                    if ((!product.Backorder && variant.Stock < quantity) 
+                    if ((!product.Backorder && variant.Stock < quantity)
                     && (disableStock == "true" ? false : true))
                     {
                         throw new NotEnoughStockException("Stock not available for variant " + settings.VariantKey);
@@ -474,7 +511,7 @@ namespace Ekom.Services
             _store = store ?? throw new ArgumentNullException(nameof(store));
             _date = DateTime.Now;
 
-            // If cart action is null then update is the default state
+            // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
             var orderInfo = GetOrder(_store);
@@ -522,21 +559,33 @@ namespace Ekom.Services
 
             var orderInfo = GetOrder(storeAlias);
 
-            var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
-
-            if (orderLine != null)
+            if (orderInfo == null)
             {
-                RemoveOrderLine(orderInfo, orderLine as OrderLine);
-            }
-            else
-            {
-                throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
+                throw new OrderInfoNotFoundException();
             }
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo, settings?.FireOnOrderUpdatedEvent ?? true)
-                .ConfigureAwait(false);
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
 
-            return orderInfo;
+                if (orderLine != null)
+                {
+                    RemoveOrderLine(orderInfo, orderLine as OrderLine);
+                }
+                else
+                {
+                    throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
+                }
+
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings?.FireOnOrderUpdatedEvent ?? true)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
@@ -549,7 +598,7 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderLineNegativeException"></exception>
-        private async Task AddOrderLineToOrderInfoAsync(
+        private async Task<OrderInfo> AddOrderLineToOrderInfoAsync(
             OrderInfo orderInfo,
             IProduct product,
             int quantity,
@@ -568,105 +617,115 @@ namespace Ekom.Services
                 throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
             }
 
-            var lineId = Guid.NewGuid();
-
-            _logger.Debug<OrderService>(
-                "Order: {OrderNumber} Product Key: {ProductKey} Variant: {VariantKey} Action: {Action}",
-                orderInfo.OrderNumber,
-                product.Key,
-                variant?.Key,
-                action);
-
-            OrderLine existingOrderLine = null;
-
-            if (orderInfo.OrderLines != null)
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                if (variant != null)
+
+                var lineId = Guid.NewGuid();
+
+                _logger.Debug<OrderService>(
+                    "Order: {OrderNumber} Product Key: {ProductKey} Variant: {VariantKey} Action: {Action}",
+                    orderInfo.OrderNumber,
+                    product.Key,
+                    variant?.Key,
+                    action);
+
+                OrderLine existingOrderLine = null;
+
+                if (orderInfo.OrderLines != null)
                 {
-                    existingOrderLine
-                        = orderInfo.OrderLines
-                            .FirstOrDefault(
-                                x => x.Product.Key == product.Key
-                                && x.Product.VariantGroups
-                                    .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
+                    if (variant != null)
+                    {
+                        existingOrderLine
+                            = orderInfo.OrderLines
+                                .FirstOrDefault(
+                                    x => x.Product.Key == product.Key
+                                    && x.Product.VariantGroups
+                                        .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
+                                as OrderLine;
+                    }
+                    else
+                    {
+                        existingOrderLine
+                            = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
                             as OrderLine;
+                    }
+                }
+
+                if (existingOrderLine != null)
+                {
+                    _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
+
+                    // Update orderline quantity with value
+                    if (action == OrderAction.Set)
+                    {
+                        existingOrderLine.Quantity = quantity;
+                    }
+                    else
+                    {
+                        if (existingOrderLine.Quantity + quantity < 0)
+                        {
+                            throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
+                        }
+
+                        existingOrderLine.Quantity += quantity;
+
+                        // If the update action ends up setting quantity to zero we remove the order line
+                        if (existingOrderLine.Quantity == 0)
+                        {
+                            RemoveOrderLine(orderInfo, existingOrderLine);
+                        }
+                    }
                 }
                 else
                 {
-                    existingOrderLine
-                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
-                        as OrderLine;
-                }
-            }
-
-            if (existingOrderLine != null)
-            {
-                _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
-
-                // Update orderline quantity with value
-                if (action == OrderAction.Set)
-                {
-                    existingOrderLine.Quantity = quantity;
-                }
-                else
-                {
-                    if (existingOrderLine.Quantity + quantity < 0)
+                    if (quantity < 0)
                     {
-                        throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
+                        throw new OrderLineNegativeException("OrderLines cannot be created with negative quantity");
                     }
 
-                    existingOrderLine.Quantity += quantity;
+                    // Update orderline when adding product to orderline
 
-                    // If the update action ends up setting quantity to zero we remove the order line
-                    if (existingOrderLine.Quantity == 0)
+                    _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Not Found");
+
+                    var orderLine = new OrderLine(
+                        product,
+                        quantity,
+                        lineId,
+                        orderInfo,
+                        variant
+                    );
+
+                    orderInfo.orderLines.Add(orderLine);
+
+                    if (product.ProductDiscount() != null
+                    // Make sure that the current OrderInfo discount, if there is one, is inclusive
+                    // Meaning you can apply this discount while having a separate discount 
+                    // affecting other OrderLines
+                    && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
                     {
-                        RemoveOrderLine(orderInfo, existingOrderLine);
+                        _logger.Debug<OrderService>(
+                            "Discount {ProductDiscountKey} found on product, applying to OrderLine",
+                            product.ProductDiscount().Key);
+                        await ApplyDiscountToOrderLineAsync(
+                            orderLine,
+                            product.ProductDiscount(),
+                            orderInfo
+                        ).ConfigureAwait(false);
                     }
                 }
+
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, fireEvents)
+                    .ConfigureAwait(false);
             }
-            else
+            finally
             {
-                if (quantity < 0)
-                {
-                    throw new OrderLineNegativeException("OrderLines cannot be created with negative quantity");
-                }
-
-                // Update orderline when adding product to orderline
-
-                _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Not Found");
-
-                var orderLine = new OrderLine(
-                    product,
-                    quantity,
-                    lineId,
-                    orderInfo,
-                    variant
-                );
-
-                orderInfo.orderLines.Add(orderLine);
-               
-                if (product.ProductDiscount() != null
-                // Make sure that the current OrderInfo discount, if there is one, is inclusive
-                // Meaning you can apply this discount while having a seperate discount 
-                // affecting other OrderLines
-                && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
-                {
-                    _logger.Debug<OrderService>(
-                        "Discount {ProductDiscountKey} found on product, applying to OrderLine",
-                        product.ProductDiscount().Key);
-                    await ApplyDiscountToOrderLineAsync(
-                        orderLine,
-                        product.ProductDiscount(),
-                        orderInfo
-                    ).ConfigureAwait(false);
-                }
+                semaphore.Release();
             }
-
-            await UpdateOrderAndOrderInfoAsync(orderInfo, fireEvents)
-                .ConfigureAwait(false);
         }
 
-        private async Task UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo, bool fireEvents = true)
+        private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo, bool fireEvents = true)
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
@@ -722,10 +781,18 @@ namespace Ekom.Services
                     OrderInfo = orderInfo,
                 });
             }
+
+            // This way, if an event handler modifies the Order, we return an up to date OrderInfo
+            // In most cases however, this will simply get the same OrderInfo object that was
+            // placed in RuntimeCache a few lines earlier via UpdateOrderInfoInCache
+            return GetOrder(orderInfo.UniqueId);
         }
 
         /// <summary>
         /// Is this necessary?
+        /// Likely not, but is cheap.
+        /// 
+        /// See above for notes on GetOrder and caching
         /// </summary>
         /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInCache(OrderInfo orderInfo)
@@ -740,22 +807,48 @@ namespace Ekom.Services
 
         public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
         {
-            var o = GetOrder(storeAlias);
+            var orderInfo = GetOrder(storeAlias);
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
 
-            o._hangfireJobs.AddRange(hangfireJobs);
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                orderInfo._hangfireJobs.AddRange(hangfireJobs);
 
-            await UpdateOrderAndOrderInfoAsync(o)
-                .ConfigureAwait(false);
+                await UpdateOrderAndOrderInfoAsync(orderInfo)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
         {
-            var o = GetOrder(storeAlias);
+            var orderInfo = GetOrder(storeAlias);
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
 
-            o._hangfireJobs.Clear();
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                orderInfo._hangfireJobs.Clear();
 
-            await UpdateOrderAndOrderInfoAsync(o)
-                .ConfigureAwait(false);
+                await UpdateOrderAndOrderInfoAsync(orderInfo)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias)
@@ -858,10 +951,8 @@ namespace Ekom.Services
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
                 }
 
-                await UpdateOrderAndOrderInfoAsync(orderInfo)
+                return await UpdateOrderAndOrderInfoAsync(orderInfo)
                     .ConfigureAwait(false);
-
-                return orderInfo;
             }
 
             throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
@@ -875,25 +966,37 @@ namespace Ekom.Services
             _date = DateTime.Now;
 
             var orderInfo = GetOrder(storeAlias);
-
-            if (shippingProviderId != Guid.Empty)
+            if (orderInfo == null)
             {
-                var provider = API.Providers.Instance.GetShippingProvider(shippingProviderId, _store);
-
-                if (provider != null)
-                {
-
-                    var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
-                    
-                    orderInfo.ShippingProvider = orderedShippingProvider;
-
-                    await UpdateOrderAndOrderInfoAsync(orderInfo)
-                        .ConfigureAwait(false);
-                }
-
+                throw new OrderInfoNotFoundException();
             }
 
-            return orderInfo;
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (shippingProviderId != Guid.Empty)
+                {
+                    var provider = API.Providers.Instance.GetShippingProvider(shippingProviderId, _store);
+
+                    if (provider != null)
+                    {
+
+                        var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
+
+                        orderInfo.ShippingProvider = orderedShippingProvider;
+
+                        return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                            .ConfigureAwait(false);
+                    }
+                }
+
+                return orderInfo;
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         public async Task<OrderInfo> UpdatePaymentInformationAsync(Guid paymentProviderId, string storeAlias)
@@ -905,22 +1008,31 @@ namespace Ekom.Services
 
             var orderInfo = GetOrder(storeAlias);
 
-            if (paymentProviderId != Guid.Empty)
+            var semaphore = GetOrderLock(orderInfo);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                var provider = API.Providers.Instance.GetPaymentProvider(paymentProviderId, _store);
-
-                if (provider != null)
+                if (paymentProviderId != Guid.Empty)
                 {
-                    var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo);
+                    var provider = API.Providers.Instance.GetPaymentProvider(paymentProviderId, _store);
 
-                    orderInfo.PaymentProvider = orderedPaymentProvider;
+                    if (provider != null)
+                    {
+                        var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo);
 
-                    await UpdateOrderAndOrderInfoAsync(orderInfo)
-                        .ConfigureAwait(false);
+                        orderInfo.PaymentProvider = orderedPaymentProvider;
+
+                        return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                            .ConfigureAwait(false);
+                    }
                 }
-            }
 
-            return orderInfo;
+                return orderInfo;
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
@@ -954,7 +1066,7 @@ namespace Ekom.Services
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, params OrderStatus[] orderStatuses)
         {
             var orders = await _orderRepository.GetStatusOrdersAsync(
-                x => x.CustomerId == customerId, 
+                x => x.CustomerId == customerId,
                 orderStatuses
 
             ).ConfigureAwait(false);
@@ -964,9 +1076,9 @@ namespace Ekom.Services
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, params OrderStatus[] orderStatuses)
         {
             var orders = await _orderRepository.GetStatusOrdersAsync(
-                x => x.CustomerUsername == customerUsername, 
+                x => x.CustomerUsername == customerUsername,
                 orderStatuses
-                
+
             ).ConfigureAwait(false);
 
             return orders.Select(x => new OrderInfo(x)).ToList();
@@ -1017,7 +1129,7 @@ namespace Ekom.Services
         private void VerifyProviders(OrderInfo orderInfo)
         {
 
-            if (orderInfo.PaymentProvider != null ||orderInfo.ShippingProvider != null)
+            if (orderInfo.PaymentProvider != null || orderInfo.ShippingProvider != null)
             {
                 var total = orderInfo.OrderLineTotal.Value;
                 var countryCode = orderInfo.CustomerInformation.Customer.Country;
@@ -1048,9 +1160,13 @@ namespace Ekom.Services
 
 
 
-        public Guid GetOrderIdFromCookie(string key)
+        private Guid GetOrderIdFromCookie(string key)
         {
-            var cookie = _httpCtx.Request.Cookies[key];
+            var cookie = _httpCtx.Request.Cookies[key]
+                // When the order was created in this request
+                // This enables support for event handlers accessing the api and modifying order info
+                // during the request that created the OrderInfo
+                ?? _httpCtx.Response.Cookies[key];
             if (cookie != null)
             {
                 return new Guid(cookie.Value);
@@ -1059,7 +1175,7 @@ namespace Ekom.Services
             return Guid.Empty;
         }
 
-        public Guid CreateOrderIdCookie(string key)
+        private Guid CreateOrderIdCookie(string key)
         {
             var _guid = Guid.NewGuid();
             var guidCookie = new HttpCookie(key)
@@ -1115,5 +1231,11 @@ namespace Ekom.Services
 
             return key;
         }
+
+        private SemaphoreSlim GetOrderLock(IOrderInfo orderInfo)
+            => _orderLocks.GetOrAdd(orderInfo.UniqueId, new SemaphoreSlim(1, 1));
+
+        private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _orderLocks
+            = new ConcurrentDictionary<Guid, SemaphoreSlim>();
     }
 }
