@@ -1166,7 +1166,14 @@ namespace Ekom.Services
                 // When the order was created in this request
                 // This enables support for event handlers accessing the api and modifying order info
                 // during the request that created the OrderInfo
-                ?? _httpCtx.Response.Cookies[key];
+                ?? (_httpCtx.Response.Cookies.AllKeys.Contains(key) 
+                // the response cookie collection has extremely specific behavior
+                // Any key accessed will by default create and return a fresh cookie, 
+                // regardless of it existing or not beforehand.
+                    ? _httpCtx.Response.Cookies[key] 
+                    : null)
+                ;
+
             if (cookie != null)
             {
                 return new Guid(cookie.Value);
@@ -1177,15 +1184,15 @@ namespace Ekom.Services
 
         private Guid CreateOrderIdCookie(string key)
         {
-            var _guid = Guid.NewGuid();
+            var guid = Guid.NewGuid();
             var guidCookie = new HttpCookie(key)
             {
-                Value = _guid.ToString(),
+                Value = guid.ToString(),
                 Expires = DateTime.Now.AddDays(Configuration.Current.BasketCookieLifetime)
             };
 
             _httpCtx.Response.Cookies.Add(guidCookie);
-            return _guid;
+            return guid;
         }
 
         private void DeleteOrderCookie(string key)
