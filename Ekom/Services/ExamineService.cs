@@ -118,12 +118,12 @@ namespace Ekom.Services
 
                         if (i == 0)
                         {
-                            luceneQuery.Append("+");
+                            luceneQuery.Append('+');
                         }
 
-                        luceneQuery.Append("(");
+                        luceneQuery.Append('(');
                         luceneQuery.Append(term);
-                        luceneQuery.Append(")");
+                        luceneQuery.Append(')');
 
                         i++;
                     }

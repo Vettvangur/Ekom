@@ -19,6 +19,14 @@ namespace Ekom.Controllers
     /// Private api, used by Ekom Manager
     /// </summary>
     [Umbraco.Web.Mvc.PluginController("Ekom")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Reliability",
+        "CA2007:Consider calling ConfigureAwait on the awaited task",
+        Justification = "Async controller actions don't need ConfigureAwait")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Style",
+        "VSTHRD200:Use \"Async\" suffix for async methods",
+        Justification = "Async controller action")]
     public class ManagerApiController : UmbracoAuthorizedApiController
     {
         readonly IManagerRepository _managerRepository;

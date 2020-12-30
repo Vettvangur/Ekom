@@ -49,9 +49,20 @@ namespace Ekom.Services
     /// <br />
     /// A possible alternative to the current code would be to lock always after grabbing the OrderInfo object<br />
     /// Now although two methods might both complete grabbing OrderInfo at the same time and only one continues,
-    /// there should be no issue since they should be holding a reference to the same object.
-    /// We could then look for the SemaphoreSlim inside HttpContext.Items in HttpHandlers 
-    /// before returning the request to take care of Release()'ing the lock.
+    /// there should be no issue since they should be holding a reference to the same object 
+    /// (so the latter one isn't missing any data).<br />
+    /// We could then look for a reference to the SemaphoreSlim inside HttpContext.Items in HttpHandlers 
+    /// before returning the request to take care of Release()'ing the lock.<br />
+    /// Problems with this approach are that many of the methods contained herein are riddled with calls to grab OrderInfo,
+    /// likely some paths will grab it multiple times over the course of a call to the service.
+    /// The question then becomes, where would we place the lock..<br />
+    /// <br />
+    /// A better solution might be to attempt a lock in an http handler
+    /// and release again at the end of the module pipeline.
+    /// At present I'm not confident enough regarding HttpModule specifics to attempt this. 
+    /// came across SO posts regarding events firing twice 
+    /// and docs regarding re-use of HttpApplication 
+    /// and other stuff which put me off the whole thing..
     /// </summary>
     partial class OrderService
     {
@@ -218,7 +229,7 @@ namespace Ekom.Services
                 }
             }
 
-            return null;
+            return Task.FromResult<OrderInfo>(null);
         }
 
         public OrderInfo GetOrder(Guid uniqueId)
@@ -323,10 +334,11 @@ namespace Ekom.Services
                 status);
         }
 
-        public async Task<OrderInfo> UpdateOrderlineQuantity(
+        public async Task<OrderInfo> UpdateOrderlineQuantityAsync(
             Guid orderLineId,
             int quantity,
-            string storeAlias
+            string storeAlias,
+            OrderSettings settings = null
         )
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
@@ -343,8 +355,16 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+
             var semaphore = GetOrderLock(orderInfo);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
             try
             {
                 var orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
@@ -361,7 +381,10 @@ namespace Ekom.Services
             }
             finally
             {
-                semaphore.Release();
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
@@ -485,7 +508,7 @@ namespace Ekom.Services
                 store,
                 settings?.OrderAction,
                 variant,
-                settings?.FireOnOrderUpdatedEvent ?? true
+                settings
             ).ConfigureAwait(false);
         }
 
@@ -500,12 +523,16 @@ namespace Ekom.Services
             IStore store,
             OrderAction? action = null,
             IVariant variant = null,
-            bool fireEvents = true
+            OrderSettings settings = null
         )
         {
             if (product == null)
             {
                 throw new ArgumentNullException(nameof(product));
+            }
+            if (settings == null)
+            {
+                settings = new OrderSettings();
             }
 
             _store = store ?? throw new ArgumentNullException(nameof(store));
@@ -543,7 +570,7 @@ namespace Ekom.Services
                 quantity,
                 cartAction,
                 variant,
-                fireEvents).ConfigureAwait(false);
+                settings).ConfigureAwait(false);
 
             return orderInfo;
         }
@@ -563,9 +590,16 @@ namespace Ekom.Services
             {
                 throw new OrderInfoNotFoundException();
             }
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
 
             var semaphore = GetOrderLock(orderInfo);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
             try
             {
                 var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
@@ -584,7 +618,10 @@ namespace Ekom.Services
             }
             finally
             {
-                semaphore.Release();
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
@@ -604,7 +641,7 @@ namespace Ekom.Services
             int quantity,
             OrderAction action,
             IVariant variant,
-            bool fireEvents
+            OrderSettings settings
         )
         {
             if (quantity == 0)
@@ -618,7 +655,10 @@ namespace Ekom.Services
             }
 
             var semaphore = GetOrderLock(orderInfo);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
             try
             {
 
@@ -716,12 +756,15 @@ namespace Ekom.Services
                     }
                 }
 
-                return await UpdateOrderAndOrderInfoAsync(orderInfo, fireEvents)
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                     .ConfigureAwait(false);
             }
             finally
             {
-                semaphore.Release();
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
@@ -958,7 +1001,10 @@ namespace Ekom.Services
             throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
         }
 
-        public async Task<OrderInfo> UpdateShippingInformationAsync(Guid shippingProviderId, string storeAlias)
+        public async Task<OrderInfo> UpdateShippingInformationAsync(
+            Guid shippingProviderId,
+            string storeAlias,
+            OrderSettings settings = null)
         {
             _logger.Debug<OrderService>("UpdateShippingInformation...");
 
@@ -970,9 +1016,16 @@ namespace Ekom.Services
             {
                 throw new OrderInfoNotFoundException();
             }
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
 
             var semaphore = GetOrderLock(orderInfo);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
             try
             {
                 if (shippingProviderId != Guid.Empty)
@@ -986,7 +1039,7 @@ namespace Ekom.Services
 
                         orderInfo.ShippingProvider = orderedShippingProvider;
 
-                        return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
                     }
                 }
@@ -995,11 +1048,17 @@ namespace Ekom.Services
             }
             finally
             {
-                semaphore.Release();
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
-        public async Task<OrderInfo> UpdatePaymentInformationAsync(Guid paymentProviderId, string storeAlias)
+        public async Task<OrderInfo> UpdatePaymentInformationAsync(
+            Guid paymentProviderId,
+            string storeAlias,
+            OrderSettings settings = null)
         {
             _logger.Debug<OrderService>("UpdatePaymentInformation...");
 
@@ -1007,9 +1066,20 @@ namespace Ekom.Services
             _date = DateTime.Now;
 
             var orderInfo = GetOrder(storeAlias);
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
 
             var semaphore = GetOrderLock(orderInfo);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
             try
             {
                 if (paymentProviderId != Guid.Empty)
@@ -1022,7 +1092,7 @@ namespace Ekom.Services
 
                         orderInfo.PaymentProvider = orderedPaymentProvider;
 
-                        return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
                     }
                 }
@@ -1031,7 +1101,10 @@ namespace Ekom.Services
             }
             finally
             {
-                semaphore.Release();
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
@@ -1058,7 +1131,7 @@ namespace Ekom.Services
         {
             if (_ekmRequest.User?.UserId == null)
             {
-                return null;
+                return Task.FromResult<List<OrderInfo>>(null);
             }
 
             return GetStatusOrdersByCustomerIdAsync(_ekmRequest.User.UserId, orderStatuses);
@@ -1162,17 +1235,20 @@ namespace Ekom.Services
 
         private Guid GetOrderIdFromCookie(string key)
         {
-            var cookie = _httpCtx.Request.Cookies[key]
-                // When the order was created in this request
-                // This enables support for event handlers accessing the api and modifying order info
-                // during the request that created the OrderInfo
-                ?? (_httpCtx.Response.Cookies.AllKeys.Contains(key) 
-                // the response cookie collection has extremely specific behavior
-                // Any key accessed will by default create and return a fresh cookie, 
-                // regardless of it existing or not beforehand.
-                    ? _httpCtx.Response.Cookies[key] 
-                    : null)
-                ;
+            var cookie = _httpCtx.Request.Cookies[key];
+
+            // Applicable when the order was created in this request
+            // This enables support for event handlers accessing the api and modifying order info
+            // during the request that created the OrderInfo
+            if (cookie == null
+            // The response cookie collection has extremely specific behavior
+            // Any key accessed will by default create and return a fresh cookie, 
+            // regardless of it existing or not beforehand. (previous cookies are overwritten this way)
+            // Therefore we check AllKeys before accessing the collection directly
+            && _httpCtx.Response.Cookies.AllKeys.Contains(key))
+            {
+                cookie = _httpCtx.Response.Cookies[key];
+            }
 
             if (cookie != null)
             {
