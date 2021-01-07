@@ -78,10 +78,10 @@ namespace Ekom.Services
         readonly IStoreService _storeSvc;
         readonly ContentRequest _ekmRequest;
 
-        // ToDo: Refactor, this is too error prone. There is a reason nobody does it like this.
-        // Prefer supply these as params
-        IStore _store;
-        DateTime _date;
+        /// <summary>
+        /// Ensure all future usages of date for this request point to the same time
+        /// </summary>
+        readonly DateTime _date;
 
         /// <summary>
         /// W/o HttpCtx, for usage in Hangfire f.x. ?
@@ -106,6 +106,8 @@ namespace Ekom.Services
             _reqCache = appCaches.RequestCache;
             _runtimeCache = appCaches.RuntimeCache;
             _memberService = memberService;
+
+            _date = DateTime.Now;
         }
 
         /// <summary>
@@ -149,8 +151,6 @@ namespace Ekom.Services
             }
             else
             {
-                _store = store;
-
                 var key = CreateKey(store.Alias);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
@@ -186,8 +186,6 @@ namespace Ekom.Services
         {
             // Add timelimit to get the order ? Maybe 1-2 hours ?
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
-
             if (Configuration.Current.UserBasket)
             {
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
@@ -202,8 +200,6 @@ namespace Ekom.Services
             }
             else
             {
-                _store = store;
-
                 var key = CreateKey(storeAlias);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
@@ -332,12 +328,7 @@ namespace Ekom.Services
             OrderSettings settings = null
         )
         {
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
-
-            if (store == null)
-            {
-                throw new ArgumentNullException(nameof(store));
-            }
+            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
 
             var orderInfo = GetOrder(store);
 
@@ -422,7 +413,6 @@ namespace Ekom.Services
 
         public async Task UpdatePaidDate(Guid uniqueId)
         {
-
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
@@ -517,26 +507,21 @@ namespace Ekom.Services
             OrderSettings settings = null
         )
         {
-            if (product == null)
-            {
-                throw new ArgumentNullException(nameof(product));
-            }
+            _reqCache.GetCacheItem("ekmStore", () => store);
+
             if (settings == null)
             {
                 settings = new OrderSettings();
             }
 
-            _store = store ?? throw new ArgumentNullException(nameof(store));
-            _date = DateTime.Now;
-
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
-            var orderInfo = GetOrder(_store);
+            var orderInfo = GetOrder(store);
 
             if (orderInfo == null)
             {
-                orderInfo = await CreateEmptyOrderAsync(_store.Alias).ConfigureAwait(false);
+                orderInfo = await CreateEmptyOrderAsync(store.Alias).ConfigureAwait(false);
             }
 
             _logger.Debug<OrderService>("ProductId: {ProductId}" +
@@ -551,11 +536,12 @@ namespace Ekom.Services
                 quantity,
                 action,
                 orderInfo.OrderNumber,
-                _store.Alias,
+                store.Alias,
                 cartAction
             );
 
             await AddOrderLineToOrderInfoAsync(
+                store,
                 orderInfo,
                 product,
                 quantity,
@@ -571,8 +557,6 @@ namespace Ekom.Services
             string storeAlias,
             RemoveOrderSettings settings = null)
         {
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-
             var orderInfo = GetOrder(storeAlias);
 
             if (orderInfo == null)
@@ -633,8 +617,6 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-
             var orderInfo = GetOrder(storeAlias);
 
             if (orderInfo == null)
@@ -687,6 +669,7 @@ namespace Ekom.Services
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderLineNegativeException"></exception>
         private async Task<OrderInfo> AddOrderLineToOrderInfoAsync(
+            IStore store,
             OrderInfo orderInfo,
             IProduct product,
             int quantity,
@@ -965,22 +948,24 @@ namespace Ekom.Services
                 orderUniqueId = CreateOrderIdCookie(CreateKey(storeAlias));
             }
 
-            var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId)
+            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
+
+            var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
                 .ConfigureAwait(false);
 
-            return new OrderInfo(orderdata, _store);
+            return new OrderInfo(orderdata, store);
         }
-        private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId)
+        private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId, IStore store)
         {
-            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: {Store}", _store.Alias);
+            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: {Store}", store.Alias);
 
             var orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
-                StoreAlias = _store.Alias,
+                StoreAlias = store.Alias,
                 OrderStatus = OrderStatus.Incomplete,
-                Currency = _store.Currency.ISOCurrencySymbol,
+                Currency = store.Currency.ISOCurrencySymbol,
                 UpdateDate = DateTime.Now
             };
 
@@ -995,7 +980,7 @@ namespace Ekom.Services
             await _orderRepository.InsertOrderAsync(orderData)
                 .ConfigureAwait(false);
 
-            orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId);
+            orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId, store);
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
 
@@ -1009,9 +994,6 @@ namespace Ekom.Services
             if (form.ContainsKey("storeAlias"))
             {
                 var storeAlias = form["storeAlias"];
-
-                _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-                _date = DateTime.Now;
 
                 var orderInfo = GetOrder(storeAlias);
 
@@ -1058,8 +1040,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdateShippingInformation...");
 
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-            _date = DateTime.Now;
+            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
 
             var orderInfo = GetOrder(storeAlias);
             if (orderInfo == null)
@@ -1080,7 +1061,7 @@ namespace Ekom.Services
             {
                 if (shippingProviderId != Guid.Empty)
                 {
-                    var provider = API.Providers.Instance.GetShippingProvider(shippingProviderId, _store);
+                    var provider = API.Providers.Instance.GetShippingProvider(shippingProviderId, store);
 
                     if (provider != null)
                     {
@@ -1112,8 +1093,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdatePaymentInformation...");
 
-            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
-            _date = DateTime.Now;
+            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
 
             var orderInfo = GetOrder(storeAlias);
             if (orderInfo == null)
@@ -1134,7 +1114,7 @@ namespace Ekom.Services
             {
                 if (paymentProviderId != Guid.Empty)
                 {
-                    var provider = API.Providers.Instance.GetPaymentProvider(paymentProviderId, _store);
+                    var provider = API.Providers.Instance.GetPaymentProvider(paymentProviderId, store);
 
                     if (provider != null)
                     {
@@ -1338,18 +1318,24 @@ namespace Ekom.Services
             }
         }
 
-        private string GenerateOrderNumberTemplate(int referenceId)
+        private string GenerateOrderNumberTemplate(int referenceId, IStore store)
         {
             var _referenceId = referenceId.ToString();
 
-            if (string.IsNullOrEmpty(_store.OrderNumberTemplate))
+            if (string.IsNullOrEmpty(store.OrderNumberTemplate))
             {
-                return string.Format("{0}{1}", _store.OrderNumberPrefix, referenceId.ToString("0000"));
+                return string.Format("{0}{1}", store.OrderNumberPrefix, referenceId.ToString("0000"));
             }
 
-            var template = _store.OrderNumberTemplate;
+            var template = store.OrderNumberTemplate;
 
-            return template.Replace("#orderId#", _referenceId).Replace("#orderIdPadded#", referenceId.ToString("0000")).Replace("#storeAlias#", _store.Alias).Replace("#day#", _date.Day.ToString()).Replace("#month#", _date.Month.ToString()).Replace("#year#", _date.Year.ToString());
+            return template
+                .Replace("#orderId#", _referenceId)
+                .Replace("#orderIdPadded#", referenceId.ToString("0000"))
+                .Replace("#storeAlias#", store.Alias)
+                .Replace("#day#", _date.Day.ToString())
+                .Replace("#month#", _date.Month.ToString())
+                .Replace("#year#", _date.Year.ToString());
         }
 
         private string CreateKey(string storeAlias)
@@ -1358,7 +1344,6 @@ namespace Ekom.Services
 
             if (!Configuration.Current.ShareBasketBetweenStores)
             {
-                storeAlias = string.IsNullOrEmpty(storeAlias) ? _store.Alias : storeAlias;
                 key += "-" + storeAlias;
             }
 
