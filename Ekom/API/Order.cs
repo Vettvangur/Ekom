@@ -440,5 +440,20 @@ namespace Ekom.API
             await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
                 .ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Determine if an <see cref="OrderStatus"/> is considered by Ekom as final.
+        /// Ekom also uses this logic to control cart reset.
+        /// </summary>
+        /// <param name="orderStatus"></param>
+        /// <returns></returns>
+        public static bool IsOrderFinal(OrderStatus? orderStatus)
+            => orderStatus != null
+                && (orderStatus.Value == OrderStatus.OfflinePayment
+                || orderStatus.Value == OrderStatus.Pending
+                || orderStatus.Value == OrderStatus.ReadyForDispatch
+                || orderStatus.Value == OrderStatus.ReadyForDispatchWhenStockArrives
+                || orderStatus.Value == OrderStatus.Dispatched
+                );
     }
 }

@@ -141,8 +141,7 @@ namespace Ekom.Services
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
-                    if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                    && orderInfo?.OrderStatus != OrderStatus.Dispatched)
+                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return orderInfo;
                     }
@@ -173,9 +172,7 @@ namespace Ekom.Services
 
                     //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
-                    if (orderInfo?.OrderStatus != OrderStatus.ReadyForDispatch
-                    && orderInfo?.OrderStatus != OrderStatus.Dispatched
-                    && orderInfo?.OrderStatus != OrderStatus.OfflinePayment)
+                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return orderInfo;
                     }
@@ -197,10 +194,7 @@ namespace Ekom.Services
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
 
-                    if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
-                    || orderInfo?.OrderStatus == OrderStatus.Dispatched
-                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
-                    || orderInfo?.OrderStatus == OrderStatus.Pending)
+                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return Task.FromResult(orderInfo);
                     }
@@ -219,10 +213,7 @@ namespace Ekom.Services
                 {
                     var orderInfo = GetOrder(orderUniqueId);
 
-                    if (orderInfo?.OrderStatus == OrderStatus.ReadyForDispatch
-                    || orderInfo?.OrderStatus == OrderStatus.Dispatched
-                    || orderInfo?.OrderStatus == OrderStatus.OfflinePayment
-                    || orderInfo?.OrderStatus == OrderStatus.Pending)
+                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return Task.FromResult(orderInfo);
                     }
@@ -280,7 +271,7 @@ namespace Ekom.Services
             order.OrderStatus = status;
 
             // Create function for this, For completed orders
-            if (status == OrderStatus.ReadyForDispatch || status == OrderStatus.OfflinePayment)
+            if (Order.IsOrderFinal(order.OrderStatus))
             {
                 if (status == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue)
                 {
@@ -1374,9 +1365,11 @@ namespace Ekom.Services
             return key;
         }
 
+        /// See comments for service and under <see cref="OrderSettings"/>
         private SemaphoreSlim GetOrderLock(IOrderInfo orderInfo)
             => _orderLocks.GetOrAdd(orderInfo.UniqueId, new SemaphoreSlim(1, 1));
 
+        /// See comments for service and under <see cref="OrderSettings"/>
         private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _orderLocks
             = new ConcurrentDictionary<Guid, SemaphoreSlim>();
     }
