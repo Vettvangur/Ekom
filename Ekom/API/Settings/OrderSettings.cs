@@ -48,4 +48,15 @@ namespace Ekom.API.Settings
         /// </summary>
         public Guid? VariantKey { get; set; }
     }
+
+    /// <summary>
+    /// Ekom Order Api RemoveOrderLine optional configuration
+    /// </summary>
+    public class RemoveOrderSettings : OrderSettings
+    {
+        /// <summary>
+        /// Target a specific Variant under the given product
+        /// </summary>
+        public Guid? VariantKey { get; set; }
+    }
 }

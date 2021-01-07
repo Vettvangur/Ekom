@@ -575,6 +575,66 @@ namespace Ekom.Services
             return orderInfo;
         }
 
+        public async Task<OrderInfo> RemoveOrderLineProductAsync(
+            Guid productKey,
+            string storeAlias,
+            RemoveOrderSettings settings = null)
+        {
+            _store = _store ?? _storeSvc.GetStoreByAlias(storeAlias);
+
+            var orderInfo = GetOrder(storeAlias);
+
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
+
+            OrderLine existingOrderLine = null;
+
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                if (orderInfo.OrderLines != null)
+                {
+                    if (settings?.VariantKey != null)
+                    {
+                        existingOrderLine
+                            = orderInfo.OrderLines
+                                .FirstOrDefault(
+                                    x => x.Product.Key == productKey
+                                    && x.Product.VariantGroups
+                                        .Any(b => b.Variants.Any(z => z.Key == settings?.VariantKey)))
+                                as OrderLine;
+                    }
+                    else
+                    {
+                        existingOrderLine
+                            = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productKey)
+                            as OrderLine;
+                    }
+                }
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
+
+            if (existingOrderLine == null)
+            {
+                throw new OrderLineNotFoundException("Could not find order line with the given product or variant");
+            }
+
+            return await RemoveOrderLineAsync(existingOrderLine.Key, storeAlias, settings)
+                .ConfigureAwait(false);
+        }
+
         public async Task<OrderInfo> RemoveOrderLineAsync(
             Guid lineId,
             string storeAlias,
@@ -661,7 +721,6 @@ namespace Ekom.Services
             }
             try
             {
-
                 var lineId = Guid.NewGuid();
 
                 _logger.Debug<OrderService>(
