@@ -68,7 +68,6 @@ namespace Ekom.Services
     {
         readonly ILogger _logger;
         readonly HttpContextBase _httpCtx;
-        readonly IAppCache _reqCache;
         readonly IAppPolicyCache _runtimeCache;
         readonly IMemberService _memberService;
         readonly DiscountCache _discountCache;
@@ -103,7 +102,6 @@ namespace Ekom.Services
             _activityLogRepository = activityLogRepository;
             _storeSvc = storeService;
             _discountCache = discountCache;
-            _reqCache = appCaches.RequestCache;
             _runtimeCache = appCaches.RuntimeCache;
             _memberService = memberService;
 
@@ -126,7 +124,7 @@ namespace Ekom.Services
             : this(orderRepo, couponRepository, activityLogRepository, logger, storeService, appCaches, memberService, discountCache)
         {
             _httpCtx = httpCtx;
-            _ekmRequest = _reqCache.GetCacheItem<ContentRequest>("ekmRequest");
+            _ekmRequest = appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
         public OrderInfo GetOrder(string storeAlias)
@@ -328,7 +326,7 @@ namespace Ekom.Services
             OrderSettings settings = null
         )
         {
-            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderInfo = GetOrder(store);
 
@@ -507,8 +505,6 @@ namespace Ekom.Services
             OrderSettings settings = null
         )
         {
-            _reqCache.GetCacheItem("ekmStore", () => store);
-
             if (settings == null)
             {
                 settings = new OrderSettings();
@@ -541,7 +537,6 @@ namespace Ekom.Services
             );
 
             await AddOrderLineToOrderInfoAsync(
-                store,
                 orderInfo,
                 product,
                 quantity,
@@ -669,7 +664,6 @@ namespace Ekom.Services
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="OrderLineNegativeException"></exception>
         private async Task<OrderInfo> AddOrderLineToOrderInfoAsync(
-            IStore store,
             OrderInfo orderInfo,
             IProduct product,
             int quantity,
@@ -948,7 +942,7 @@ namespace Ekom.Services
                 orderUniqueId = CreateOrderIdCookie(CreateKey(storeAlias));
             }
 
-            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
                 .ConfigureAwait(false);
@@ -1040,7 +1034,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdateShippingInformation...");
 
-            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderInfo = GetOrder(storeAlias);
             if (orderInfo == null)
@@ -1093,7 +1087,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdatePaymentInformation...");
 
-            var store = _reqCache.GetCacheItem("ekmStore", () => _storeSvc.GetStoreByAlias(storeAlias));
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderInfo = GetOrder(storeAlias);
             if (orderInfo == null)
@@ -1189,10 +1183,8 @@ namespace Ekom.Services
 
         public bool CheckStockAvailability(IOrderInfo orderInfo)
         {
-
             foreach (var line in orderInfo.OrderLines)
             {
-
                 if (!line.Product.Backorder)
                 {
                     if (line.Product.VariantGroups.Any())
