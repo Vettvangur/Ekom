@@ -143,7 +143,7 @@ namespace Ekom.Services
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId);
-                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+                    if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return orderInfo;
                     }
@@ -172,7 +172,7 @@ namespace Ekom.Services
 
                     //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
-                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+                    if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return orderInfo;
                     }
