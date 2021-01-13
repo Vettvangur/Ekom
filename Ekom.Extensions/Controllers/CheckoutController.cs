@@ -168,8 +168,13 @@ namespace Ekom.Extensions.Controllers
 
                                 if (variantStock >= line.Quantity)
                                 {
-
-                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                    if (_config.ReservationTimeout.Seconds <= 0)
+                                    {
+                                        await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1));
+                                    } else
+                                    {
+                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                    }  
                                 }
                                 else
                                 {
@@ -183,7 +188,15 @@ namespace Ekom.Extensions.Controllers
 
                             if (productStock >= line.Quantity)
                             {
-                                hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                if (_config.ReservationTimeout.Seconds <= 0)
+                                {
+                                    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
+                                }
+                                else
+                                {
+                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                }
+                              
                             }
                             else
                             {

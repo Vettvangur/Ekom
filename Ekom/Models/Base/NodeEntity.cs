@@ -193,11 +193,11 @@ namespace Ekom.Models
                 },
                 {
                     "updateDate",
-                    node.UpdateDate.ToString("yyyyMMddHHmmssfff")
+                    node.UpdateDate.Ticks.ToString()
                 },
                 {
                     "createDate",
-                    node.CreateDate.ToString("yyyyMMddHHmmssfff")
+                    node.CreateDate.Ticks.ToString()
                 },
             };
 
