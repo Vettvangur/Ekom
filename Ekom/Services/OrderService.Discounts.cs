@@ -17,7 +17,6 @@ namespace Ekom.Services
 {
     partial class OrderService // : IOrderService
     {
-
         /// <summary>
         /// 
         /// </summary>
@@ -25,17 +24,15 @@ namespace Ekom.Services
         public async Task<bool> ApplyDiscountToOrderAsync(
             IDiscount discount,
             string storeAlias = null,
-            string coupon = null,
-            OrderInfo orderInfo = null,
-            OrderSettings settings = null
+            DiscountOrderSettings settings = null
         )
         {
             if (settings == null)
             {
-                settings = new OrderSettings();
+                settings = new DiscountOrderSettings();
             }
 
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            var orderInfo = GetOrder(storeAlias);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -44,7 +41,7 @@ namespace Ekom.Services
             }
             try
             {
-                if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+                if (ApplyDiscountToOrder(discount, orderInfo, settings))
                 {
                     await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                         .ConfigureAwait(false);
@@ -70,7 +67,7 @@ namespace Ekom.Services
         private bool ApplyDiscountToOrder(
             IDiscount discount,
             OrderInfo orderInfo,
-            string coupon = null
+            DiscountOrderSettings settings
         )
         {
             if (discount is IProductDiscount)
@@ -96,7 +93,7 @@ namespace Ekom.Services
                 }
 
                 orderInfo.Discount = new OrderedDiscount(discount);
-                orderInfo.Coupon = coupon;
+                orderInfo.Coupon = settings.Coupon;
 
                 return true;
             }
@@ -146,11 +143,15 @@ namespace Ekom.Services
         public async Task<bool> ApplyDiscountToOrderLineProductAsync(
             Guid productKey,
             IDiscount discount,
-            string storeAlias = null,
-            string coupon = null,
-            OrderInfo orderInfo = null
+            string storeAlias,
+            DiscountOrderSettings settings = null
         )
         {
+            if (settings == null)
+            {
+                settings = new DiscountOrderSettings();
+            }
+
             IProduct product = Catalog.Instance.GetProduct(productKey);
 
             if (product == null)
@@ -162,8 +163,7 @@ namespace Ekom.Services
                 product,
                 discount,
                 storeAlias,
-                coupon,
-                orderInfo
+                settings
             ).ConfigureAwait(false);
         }
 
@@ -176,18 +176,16 @@ namespace Ekom.Services
         public async Task<bool> ApplyDiscountToOrderLineProductAsync(
             IProduct product,
             IDiscount discount,
-            string storeAlias = null,
-            string coupon = null,
-            OrderInfo orderInfo = null,
-            OrderSettings settings = null
+            string storeAlias,
+            DiscountOrderSettings settings = null
         )
         {
             if (settings == null)
             {
-                settings = new OrderSettings();
+                settings = new DiscountOrderSettings();
             }
 
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            var orderInfo = GetOrder(storeAlias);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -196,7 +194,7 @@ namespace Ekom.Services
             }
             try
             {
-                OrderLine orderLine
+                var orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
                     as OrderLine;
 
@@ -230,18 +228,16 @@ namespace Ekom.Services
         public async Task<bool> ApplyDiscountToOrderLineAsync(
             Guid lineKey,
             IDiscount discount,
-            string storeAlias = null,
-            string coupon = null,
-            OrderInfo orderInfo = null,
-            OrderSettings settings = null
+            string storeAlias,
+            DiscountOrderSettings settings = null
         )
         {
             if (settings == null)
             {
-                settings = new OrderSettings();
+                settings = new DiscountOrderSettings();
             }
 
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
+            var orderInfo = GetOrder(storeAlias);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -250,7 +246,7 @@ namespace Ekom.Services
             }
             try
             {
-                OrderLine orderLine
+                var orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
                     as OrderLine;
 
@@ -263,7 +259,6 @@ namespace Ekom.Services
                     orderLine,
                     discount,
                     orderInfo,
-                    coupon,
                     settings
                 ).ConfigureAwait(false);
             }
@@ -285,11 +280,15 @@ namespace Ekom.Services
             OrderLine orderLine,
             IDiscount discount,
             OrderInfo orderInfo,
-            string coupon = null,
-            OrderSettings settings = null
+            DiscountOrderSettings settings = null
         )
         {
             _logger.Debug<OrderService>("Applying discount to orderline");
+
+            if (settings == null)
+            {
+                settings = new DiscountOrderSettings();
+            }
 
             if (IsDiscountApplicable(orderInfo, orderLine, discount))
             {
@@ -301,7 +300,7 @@ namespace Ekom.Services
                     if (IsBetterDiscount(orderLine, discount))
                     {
                         orderLine.Discount = new OrderedDiscount(discount);
-                        orderLine.Coupon = coupon;
+                        orderLine.Coupon = settings.Coupon;
 
                         await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
@@ -320,7 +319,7 @@ namespace Ekom.Services
                     && IsBetterDiscount(orderLine, discount))
                     {
                         orderLine.Discount = new OrderedDiscount(discount);
-                        orderLine.Coupon = coupon;
+                        orderLine.Coupon = settings.Coupon;
 
                         await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
@@ -609,12 +608,12 @@ namespace Ekom.Services
         {
             if (string.IsNullOrEmpty(couponCode))
             {
-                throw new ArgumentException(nameof(couponCode));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(couponCode));
             }
 
             if (discountId == Guid.Empty)
             {
-                throw new ArgumentException(nameof(discountId));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(discountId));
             }
 
             await _couponRepository.InsertCouponAsync(new CouponData()
@@ -630,12 +629,12 @@ namespace Ekom.Services
         {
             if (string.IsNullOrEmpty(couponCode))
             {
-                throw new ArgumentException(nameof(couponCode));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(couponCode));
             }
 
             if (discountId == Guid.Empty)
             {
-                throw new ArgumentException(nameof(discountId));
+                throw new ArgumentException("== Guid.Empty", nameof(discountId));
             }
 
             await _couponRepository.RemoveCouponAsync(discountId, couponCode)
@@ -646,7 +645,7 @@ namespace Ekom.Services
         {
             if (discountId == Guid.Empty)
             {
-                throw new ArgumentException(nameof(discountId));
+                throw new ArgumentException("== Guid.Empty", nameof(discountId));
             }
 
             return await _couponRepository.GetCouponsForDiscountAsync(discountId)

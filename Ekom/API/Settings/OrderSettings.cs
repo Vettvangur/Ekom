@@ -1,3 +1,5 @@
+using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
@@ -58,5 +60,32 @@ namespace Ekom.API.Settings
         /// Target a specific Variant under the given product
         /// </summary>
         public Guid? VariantKey { get; set; }
+    }
+
+    /// <summary>
+    /// Ekom Order Api ChangeOrderStatus optional configuration
+    /// </summary>
+    public class ChangeOrderSettings : OrderSettings
+    {
+        private bool _fireOnOrderStatusChangingEvent = true;
+        /// <summary>
+        /// Disable Ekom OnOrderStatusChanging event
+        /// </summary>
+        public bool FireOnOrderStatusChangingEvent
+        {
+            get => _fireOnOrderStatusChangingEvent && FireEvents;
+            set => _fireOnOrderStatusChangingEvent = value;
+        }
+    }
+
+    /// <summary>
+    /// Ekom Order Api RemoveOrderLine optional configuration
+    /// </summary>
+    public class DiscountOrderSettings : OrderSettings
+    {
+        /// <summary>
+        /// Target a specific Variant under the given product
+        /// </summary>
+        public string Coupon { get; set; }
     }
 }

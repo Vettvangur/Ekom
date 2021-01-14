@@ -1253,8 +1253,6 @@ namespace Ekom.Services
             }
         }
 
-
-
         private Guid GetOrderIdFromCookie(string key)
         {
             var cookie = _httpCtx.Request.Cookies[key];

@@ -35,11 +35,11 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(coupon))
             {
-                throw new ArgumentException(nameof(coupon));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
             }
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
             }
 
             coupon = coupon.ToLowerInvariant();
@@ -50,7 +50,13 @@ namespace Ekom.API
                 {
                     if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
                     {
-                        return await _orderService.ApplyDiscountToOrderAsync(discount, storeAlias, coupon)
+                        return await _orderService.ApplyDiscountToOrderAsync(
+                            discount, 
+                            storeAlias, 
+                            new Settings.DiscountOrderSettings
+                            {
+                                Coupon = coupon,
+                            })
                             .ConfigureAwait(false);
                     }
                     else
@@ -91,7 +97,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
             }
 
             await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
@@ -124,15 +130,15 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(coupon))
             {
-                throw new ArgumentException(nameof(coupon));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
             }
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
             }
             if (productKey == Guid.Empty)
             {
-                throw new ArgumentException(nameof(productKey));
+                throw new ArgumentException("== Guid.Empty", nameof(productKey));
             }
 
             coupon = coupon.ToLowerInvariant();
@@ -145,7 +151,10 @@ namespace Ekom.API
                         productKey,
                         discount,
                         storeAlias,
-                        coupon)
+                        new Settings.DiscountOrderSettings
+                        {
+                            Coupon = coupon,
+                        })
                         .ConfigureAwait(false);
                 }
                 else
@@ -184,11 +193,11 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
             }
             if (productKey == Guid.Empty)
             {
-                throw new ArgumentException(nameof(productKey));
+                throw new ArgumentException("== Guid.Empty", nameof(productKey));
             }
 
             await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
