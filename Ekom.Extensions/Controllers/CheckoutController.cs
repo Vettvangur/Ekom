@@ -191,6 +191,14 @@ namespace Ekom.Extensions.Controllers
 
                             if (productStock >= line.Quantity)
                             {
+                                //if (_config.ReservationTimeout.Seconds <= 0)
+                                //{
+                                //    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
+                                //}
+                                //else
+                                //{
+                                //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                //}
                                 hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                             }
                             else
@@ -389,6 +397,16 @@ namespace Ekom.Extensions.Controllers
 
                 return Content(await pp.RequestAsync(new PaymentSettings
                 {
+                    CustomerInfo = new CustomerInfo()
+                    {
+                        Address = order.CustomerInformation.Customer.Address,
+                        City = order.CustomerInformation.Customer.City,
+                        Email = order.CustomerInformation.Customer.Email,
+                        Name = order.CustomerInformation.Customer.Name,
+                        NationalRegistryId = order.CustomerInformation.Customer.Properties.GetPropertyValue("customerSsn"),
+                        PhoneNumber = order.CustomerInformation.Customer.Phone,
+                        PostalCode = order.CustomerInformation.Customer.ZipCode
+                    },
                     Orders = orderItems,
                     SkipReceipt = true,
                     VortoLanguage = order.StoreInfo.Alias,
