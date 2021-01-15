@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.API.Settings;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
@@ -25,20 +26,43 @@ namespace Ekom.Services
             IDiscount discount,
             string storeAlias = null,
             string coupon = null,
-            OrderInfo orderInfo = null
+            OrderInfo orderInfo = null,
+            OrderSettings settings = null
         )
         {
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+
             orderInfo = orderInfo ?? GetOrder(storeAlias);
 
-            if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo)
-                    .ConfigureAwait(false);
-
-                return true;
+                await semaphore.WaitAsync().ConfigureAwait(false);
             }
-            return false;
+            try
+            {
+                if (ApplyDiscountToOrder(discount, orderInfo, coupon))
+                {
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+
+                    return true;
+                }
+
+                return false;
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -80,12 +104,32 @@ namespace Ekom.Services
             return false;
         }
 
-        public async Task RemoveDiscountFromOrderAsync(string storeAlias)
+        public async Task RemoveDiscountFromOrderAsync(string storeAlias, OrderSettings settings = null)
         {
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+
             var orderInfo = GetOrder(storeAlias);
 
-            RemoveDiscountFromOrder(orderInfo);
-            await UpdateOrderAndOrderInfoAsync(orderInfo).ConfigureAwait(false);
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                RemoveDiscountFromOrder(orderInfo);
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
         }
         private void RemoveDiscountFromOrder(OrderInfo orderInfo)
         {
@@ -134,26 +178,48 @@ namespace Ekom.Services
             IDiscount discount,
             string storeAlias = null,
             string coupon = null,
-            OrderInfo orderInfo = null
+            OrderInfo orderInfo = null,
+            OrderSettings settings = null
         )
         {
-
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
-            OrderLine orderLine
-                = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
-                as OrderLine;
-
-            if (orderLine == null)
+            if (settings == null)
             {
-                throw new OrderLineNotFoundException($"Unable to find order line with product key: {product.Key}");
+                settings = new OrderSettings();
             }
 
-            return await ApplyDiscountToOrderLineAsync(
-                orderLine,
-                discount,
-                orderInfo,
-                coupon
-            ).ConfigureAwait(false);
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
+
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                OrderLine orderLine
+                    = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
+                    as OrderLine;
+
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line with product key: {product.Key}");
+                }
+
+                return await ApplyDiscountToOrderLineAsync(
+                    orderLine,
+                    discount,
+                    orderInfo,
+                    coupon,
+                    settings
+                ).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
         }
 
         /// <summary>
@@ -166,25 +232,48 @@ namespace Ekom.Services
             IDiscount discount,
             string storeAlias = null,
             string coupon = null,
-            OrderInfo orderInfo = null
+            OrderInfo orderInfo = null,
+            OrderSettings settings = null
         )
         {
-            orderInfo = orderInfo ?? GetOrder(storeAlias);
-            OrderLine orderLine
-                = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
-                as OrderLine;
-
-            if (orderLine == null)
+            if (settings == null)
             {
-                throw new OrderLineNotFoundException($"Unable to find order line: {lineKey}");
+                settings = new OrderSettings();
             }
 
-            return await ApplyDiscountToOrderLineAsync(
-                orderLine,
-                discount,
-                orderInfo,
-                coupon
-            ).ConfigureAwait(false);
+            orderInfo = orderInfo ?? GetOrder(storeAlias);
+
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                OrderLine orderLine
+                    = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
+                    as OrderLine;
+
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line: {lineKey}");
+                }
+
+                return await ApplyDiscountToOrderLineAsync(
+                    orderLine,
+                    discount,
+                    orderInfo,
+                    coupon,
+                    settings
+                ).ConfigureAwait(false);
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
         }
 
         /// <summary>
@@ -196,7 +285,8 @@ namespace Ekom.Services
             OrderLine orderLine,
             IDiscount discount,
             OrderInfo orderInfo,
-            string coupon = null
+            string coupon = null,
+            OrderSettings settings = null
         )
         {
             _logger.Debug<OrderService>("Applying discount to orderline");
@@ -213,7 +303,7 @@ namespace Ekom.Services
                         orderLine.Discount = new OrderedDiscount(discount);
                         orderLine.Coupon = coupon;
 
-                        await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
 
                         _logger.Debug<OrderService>("Successfully applied discount to orderline");
@@ -232,7 +322,7 @@ namespace Ekom.Services
                         orderLine.Discount = new OrderedDiscount(discount);
                         orderLine.Coupon = coupon;
 
-                        await UpdateOrderAndOrderInfoAsync(orderInfo)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                             .ConfigureAwait(false);
 
                         _logger.Debug<OrderService>("Successfully applied discount to orderline");
@@ -272,21 +362,46 @@ namespace Ekom.Services
         /// </summary>
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
-        public async Task RemoveDiscountFromOrderLineAsync(Guid productKey, string storeAlias)
+        public async Task RemoveDiscountFromOrderLineAsync(
+            Guid productKey, 
+            string storeAlias,
+            OrderSettings settings = null)
         {
-            var orderInfo = GetOrder(storeAlias);
-            var orderLine = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
-                as OrderLine;
-
-            if (orderLine == null)
+            if (settings == null)
             {
-                throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
+                settings = new OrderSettings();
             }
 
-            RemoveDiscountFromOrderLine(orderLine);
+            var orderInfo = GetOrder(storeAlias);
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
-                .ConfigureAwait(false);
+            var semaphore = GetOrderLock(orderInfo);
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                var orderLine 
+                    = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
+                    as OrderLine;
+
+                if (orderLine == null)
+                {
+                    throw new OrderLineNotFoundException($"Unable to find order line: {productKey}");
+                }
+
+                RemoveDiscountFromOrderLine(orderLine);
+
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
         }
         private void RemoveDiscountFromOrderLine(OrderLine orderLine)
         {

@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// Indicates an error while rolling back stock changes.
     /// </summary>
-    public class StockRollbackException : Exception
+    public class StockRollbackException : EkomException
     {
         /// <summary>
         /// Ctor

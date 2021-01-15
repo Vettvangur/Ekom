@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class CouponDuplicateException : Exception
+    public class CouponDuplicateException : EkomException
     {
         /// <summary>
         /// Ctor

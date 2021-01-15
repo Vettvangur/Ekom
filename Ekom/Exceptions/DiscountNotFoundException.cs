@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class DiscountNotFoundException : Exception
+    public class DiscountNotFoundException : EkomException
     {
         /// <summary>
         /// Ctor

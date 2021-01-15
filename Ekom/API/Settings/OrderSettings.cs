@@ -17,6 +17,20 @@ namespace Ekom.API.Settings
         /// useful for event listeners not interested in creating a cascade of events.
         /// </summary>
         public bool FireOnOrderUpdatedEvent { get; set; } = true;
+
+        // Event handlers are called from inside the lock, 
+        // at the end of a call to the OrderService, immediately after writing to db.
+        // There is one common method which offered that spot and since it's inside the lock,
+        // we have a special flag for event handlers to allow them to enter.
+        //
+        // We could make OrderInfo public, OrderLines public and provide OrderInfo to event handlers
+        // But then all their modifications would bypass any checks in place in Ekom 
+        // and all hell would break loose?
+        /// <summary>
+        /// This flag currently enables special provisions for event handler entry into
+        /// locked sections of Order manipulation code.
+        /// </summary>
+        public bool IsEventHandler { get; set; }
     }
 
     /// <summary>
@@ -29,6 +43,17 @@ namespace Ekom.API.Settings
         /// </summary>
         public OrderAction OrderAction { get; set; } = OrderAction.AddOrUpdate;
 
+        /// <summary>
+        /// Target a specific Variant under the given product
+        /// </summary>
+        public Guid? VariantKey { get; set; }
+    }
+
+    /// <summary>
+    /// Ekom Order Api RemoveOrderLine optional configuration
+    /// </summary>
+    public class RemoveOrderSettings : OrderSettings
+    {
         /// <summary>
         /// Target a specific Variant under the given product
         /// </summary>

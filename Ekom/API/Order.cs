@@ -338,6 +338,27 @@ namespace Ekom.API
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="productKey"></param>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <param name="settings">Ekom Order Api optional configuration</param>
+        /// <returns></returns>
+        public async Task<IOrderInfo> RemoveOrderLineProductAsync(
+            Guid productKey,
+            string storeAlias,
+            RemoveOrderSettings settings = null)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
+            }
+
+            return await _orderService.RemoveOrderLineProductAsync(productKey, storeAlias, settings ?? null)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="lineId"></param>
         /// <param name="storeAlias">The store alias.</param>
         /// <param name="settings">Ekom Order Api optional configuration</param>
@@ -356,9 +377,9 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> UpdateOrderlineQuantity(Guid orderLineId, int quantity, string storeAlias)
+        public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(Guid orderLineId, int quantity, string storeAlias)
         {
-            return await _orderService.UpdateOrderlineQuantity(orderLineId, quantity, storeAlias)
+            return await _orderService.UpdateOrderlineQuantityAsync(orderLineId, quantity, storeAlias)
                 .ConfigureAwait(false);
         }
 
@@ -419,5 +440,20 @@ namespace Ekom.API
             await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
                 .ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Determine if an <see cref="OrderStatus"/> is considered by Ekom as final.
+        /// Ekom also uses this logic to control cart reset.
+        /// </summary>
+        /// <param name="orderStatus"></param>
+        /// <returns></returns>
+        public static bool IsOrderFinal(OrderStatus? orderStatus)
+            => orderStatus != null
+                && (orderStatus.Value == OrderStatus.OfflinePayment
+                || orderStatus.Value == OrderStatus.Pending
+                || orderStatus.Value == OrderStatus.ReadyForDispatch
+                || orderStatus.Value == OrderStatus.ReadyForDispatchWhenStockArrives
+                || orderStatus.Value == OrderStatus.Dispatched
+                );
     }
 }

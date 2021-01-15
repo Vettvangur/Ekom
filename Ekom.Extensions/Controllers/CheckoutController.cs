@@ -5,6 +5,7 @@ using Ekom.Models.Data;
 using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -24,6 +25,14 @@ namespace Ekom.Extensions.Controllers
     /// Offers a default way to complete checkout using Ekom
     /// </summary>
     [PluginController("Ekom")]
+    [SuppressMessage(
+        "Reliability",
+        "CA2007:Consider calling ConfigureAwait on the awaited task",
+        Justification = "Async controller actions don't need ConfigureAwait")]
+    [SuppressMessage(
+        "Style",
+        "VSTHRD200:Use \"Async\" suffix for async methods",
+        Justification = "Async controller action")]
     public class CheckoutController : SurfaceController
     {
         /// <summary>
@@ -168,13 +177,14 @@ namespace Ekom.Extensions.Controllers
 
                                 if (variantStock >= line.Quantity)
                                 {
-                                    if (_config.ReservationTimeout.Seconds <= 0)
-                                    {
-                                        await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1));
-                                    } else
-                                    {
-                                        hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
-                                    }  
+                                    //if (_config.ReservationTimeout.Seconds <= 0)
+                                    //{
+                                    //    await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1));
+                                    //} else
+                                    //{
+                                    //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
+                                    //}  
+                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
                                 }
                                 else
                                 {
@@ -188,15 +198,15 @@ namespace Ekom.Extensions.Controllers
 
                             if (productStock >= line.Quantity)
                             {
-                                if (_config.ReservationTimeout.Seconds <= 0)
-                                {
-                                    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
-                                }
-                                else
-                                {
-                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
-                                }
-                              
+                                //if (_config.ReservationTimeout.Seconds <= 0)
+                                //{
+                                //    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
+                                //}
+                                //else
+                                //{
+                                //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
+                                //}
+                                hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                             }
                             else
                             {

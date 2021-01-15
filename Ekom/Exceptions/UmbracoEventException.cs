@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class EventException : Exception
+    public class EventException : EkomException
     {
         /// <summary>
         /// 

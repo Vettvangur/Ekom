@@ -5,7 +5,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// 
     /// </summary>
-    public class StoreConstructorException : Exception
+    public class StoreConstructorException : EkomException
     {
         /// <summary>
         /// 

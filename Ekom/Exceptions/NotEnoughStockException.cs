@@ -4,7 +4,7 @@ namespace Ekom.Exceptions
 {
     /// <summary>
     /// </summary>
-    public class NotEnoughStockException : Exception
+    public class NotEnoughStockException : EkomException
     {
         /// <summary>
         /// Stock value in repository at time of exception

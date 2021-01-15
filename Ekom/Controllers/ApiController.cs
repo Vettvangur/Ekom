@@ -17,6 +17,14 @@ namespace Ekom.Controllers
     /// Public api, used by property editors
     /// </summary>
     [PluginController("Ekom")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Reliability",
+        "CA2007:Consider calling ConfigureAwait on the awaited task",
+        Justification = "Async controller actions don't need ConfigureAwait")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Style",
+        "VSTHRD200:Use \"Async\" suffix for async methods",
+        Justification = "Async controller action")]
     public class ApiController : UmbracoAuthorizedApiController
     {
         readonly ICountriesRepository _countriesRepo;
