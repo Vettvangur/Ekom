@@ -836,7 +836,6 @@ namespace Ekom.Services
 
                 var ri = new RegionInfo(culture.LCID);
                 orderData.Currency = ri.ISOCurrencySymbol;
-
             }
             catch (ArgumentException)
             {

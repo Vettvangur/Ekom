@@ -50,10 +50,13 @@ namespace Ekom.Services
 
                 oi = new OrderInfo(o);
 
+                // Currently unused
                 foreach (var job in oi.HangfireJobs)
                 {
                     Stock.Instance.CancelRollback(job);
                 }
+
+                Stock.Instance.ValidateOrderStock(oi);
 
                 if (oi.Discount != null)
                 {
@@ -102,23 +105,22 @@ namespace Ekom.Services
                     {
                         _logger.Error<CheckoutService>(ex);
                     }
-
                 }
 
                 await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
                     .ConfigureAwait(false);
-
             }
             catch (NotEnoughStockException)
             {
-                _logger.Info<CheckoutService>($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                _logger.Error<CheckoutService>($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                     + $"Order id: {oi?.UniqueId}");
-                throw;
+
+                return;
             }
             catch (Exception ex)
             {
                 _logger.Error<CheckoutService>(ex);
-                throw;
+                return;
             }
         }
     }

@@ -73,6 +73,7 @@ namespace Ekom.Extensions.Controllers
                     return res;
                 }
 
+                // Reset hangfire jobs in cases were user cancels on payment page and changes cart f.x.
                 if (order.HangfireJobs.Any())
                 {
                     foreach (var job in order.HangfireJobs)
@@ -161,81 +162,42 @@ namespace Ekom.Extensions.Controllers
         /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
         protected virtual async Task<ActionResult> ProcessOrderLines(PaymentRequest paymentRequest, IOrderInfo order, List<string> hangfireJobs)
         {
-            foreach (var line in order.OrderLines)
+            #region Stock
+
+            try
             {
-                #region Stock
+                Stock.Instance.ValidateOrderStock(order);
 
-                try
-                {
-                    if (!line.Product.Backorder)
-                    {
-                        if (line.Product.VariantGroups.Any())
-                        {
-                            foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
-                            {
-                                var variantStock = Stock.Instance.GetStock(variant.Key);
-
-                                if (variantStock >= line.Quantity)
-                                {
-                                    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(variant.Key, (line.Quantity * -1)));
-                                }
-                                else
-                                {
-                                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=variant&orderline=" + line.Key);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            var productStock = Stock.Instance.GetStock(line.ProductKey);
-
-                            if (productStock >= line.Quantity)
-                            {
-                                //if (_config.ReservationTimeout.Seconds <= 0)
-                                //{
-                                //    await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1));
-                                //}
-                                //else
-                                //{
-                                //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
-                                //}
-                                hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
-                            }
-                            else
-                            {
-                                return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=product&orderline=" + line.Key);
-                            }
-                        }
-                    }
-
-                    // How does this work ? we dont have a coupon per orderline!
-                    //if (line.Discount != null)
-                    //{
-                    //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
-
-                    //    if (line.Discount.HasMasterStock)
-                    //    {
-                    //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
-                    //    }
-                    //}
-                }
-                catch (NotEnoughStockException ex)
-                {
-                    _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
-                    return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
-                }
-
-
-                #endregion
-
-                //orderItems.Add(new OrderItem
+                // How does this work ? we dont have a coupon per orderline!
+                //if (line.Discount != null)
                 //{
-                //    GrandTotal = line.Amount.WithVat.Value,
-                //    Price = line.Product.Price.WithVat.Value,
-                //    Title = line.Product.Title,
-                //    Quantity = line.Quantity,
-                //});
+                //    hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1, line.Coupon));
+
+                //    if (line.Discount.HasMasterStock)
+                //    {
+                //        hangfireJobs.Add(_stock.ReserveDiscountStock(line.Discount.Key, 1));
+                //    }
+                //}
             }
+            catch (NotEnoughLineStockException ex)
+            {
+                _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                if (ex.Variant.HasValue && ex.OrderLineKey != default)
+                {
+                    var type = ex.Variant.Value ? "variant" : "product";
+                    return RedirectToCurrentUmbracoPage(
+                        $"?errorStatus=stockError&errorType={type}&orderline=" + ex.OrderLineKey);
+                }
+
+                return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
+            }
+            catch (NotEnoughStockException ex)
+            {
+                _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
+            }
+
+            #endregion
 
             return null;
         }

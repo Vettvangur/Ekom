@@ -18,7 +18,7 @@ namespace Ekom
         {
             // Hook into NetPayment completion event
 
-            LocalCallbacks.Success += new LocalCallbacks.successCallback(CompleteCheckout);
+            LocalCallbacks.Success += CompleteCheckout;
         }
 
         private void CompleteCheckout(OrderStatus o)

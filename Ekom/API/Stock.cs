@@ -14,6 +14,19 @@ using Umbraco.Core.Logging;
 
 namespace Ekom.API
 {
+    // Stock reservations:
+    // Vandamal med stock i dag
+    // 	vid erum ad reserve'a thad seint ad vid faum bara brot af avinningnum sem aetlunin er ad na med stock
+    // 		ef vid faerum reserving i cartid thurfum vid ad utfaera order virkni sem fylgist med hvert er elsta reservationid og nytir thad til ad birta notandanum time remaining
+    // 			
+    // 	Ef vid reserve'um i payment skrefinu thurfum vid ad laga hvernig vid resettum reservationin svo notandi geti ekki eytt korfunni sinni og nullad oll reservationin sin i einum tab medan hann chillar a greidslusidunni i odrum tab
+    // 	Verdum ad laesa korfunni einhvernveginn medan notandinn er a greidslusidunni
+    // 		validation getur borid saman upphaed Order og greidda upphaed en a erfitt med ad sja breytingar a vorulinum og notandinn gaeti stutad reservations og stocki ef hann t.d. gjorbreytir korfunni sinni en er enn med somu korfuupphaed
+    // 	Draumalausn vaeri ofurutfaersla sem gaeti bodid upp a upplifunin i anda Secret Lair, thu ferd i rod ef stockid er upptekid, thegar rodin kemur ad ther reserve'um vid fyrir thig i x tima medan thu klarar kaup.
+    // 		Thetta hentar best thegar thad kemur announcement um limited quantity a voru med miklu eftirspurn.
+    // 		
+    // Allar svona reservation lausnir virka lang best med fully managed greidsluferli thar sem notandinn greidir a sidu sem vid stjornum, thannig getum vid stoppad hann af ad greida ef timinn hans rennur ut a greidslusidunni sjalfri.
+    // Annars geturu enntha lent i ad borga a sidu borgunar medan reservationid thitt rann ut a sidunni
     /// <summary>
     /// The Ekom API, get/update stock for item
     /// </summary>
@@ -132,8 +145,52 @@ namespace Ekom.API
                 Stock = 0,
                 UniqueId = $"{storeAlias}_{key}",
             };
+        }
 
+        /// <summary>
+        /// Verify stock for <see cref="IOrderInfo"/>
+        /// </summary>
+        /// <param name="orderInfo"></param>
+        /// <returns></returns>
+        public void ValidateOrderStock(IOrderInfo orderInfo)
+        {
+            foreach (var orderLine in orderInfo.OrderLines)
+            {
+                if (orderLine.Product.Backorder)
+                {
+                    continue;
+                }
 
+                if (orderLine.Product.VariantGroups.Any())
+                {
+                    foreach (var variant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
+                    {
+                        var variantStock = GetStock(variant.Key);
+
+                        if (variantStock < orderLine.Quantity)
+                        {
+                            throw new NotEnoughLineStockException
+                            {
+                                OrderLineKey = orderLine.Key,
+                                Variant = true,
+                            };
+                        }
+                    }
+                }
+                else
+                {
+                    var productStock = GetStock(orderLine.ProductKey);
+
+                    if (productStock < orderLine.Quantity)
+                    {
+                        throw new NotEnoughLineStockException
+                        {
+                            OrderLineKey = orderLine.Key,
+                            Variant = false,
+                        };
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -253,7 +310,7 @@ namespace Ekom.API
         /// <param name="timeSpan">How long to reserve</param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public async Task<string> ReserveStockAsync(Guid key, int value, TimeSpan timeSpan = default(TimeSpan))
+        public async Task<string> ReserveStockAsync(Guid key, int value, TimeSpan timeSpan = default)
         {
             if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
             if (timeSpan == default(TimeSpan))
@@ -281,7 +338,7 @@ namespace Ekom.API
         /// <param name="timeSpan">How long to reserve</param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <returns>Hangfire Job Id</returns>
-        public async Task<string> ReserveStockAsync(Guid key, string storeAlias, int value, TimeSpan timeSpan = default(TimeSpan))
+        public async Task<string> ReserveStockAsync(Guid key, string storeAlias, int value, TimeSpan timeSpan = default)
         {
             if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
             if (timeSpan == default)
