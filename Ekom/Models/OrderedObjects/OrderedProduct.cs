@@ -106,7 +106,6 @@ namespace Ekom.Models.OrderedObjects
             {
                 return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
             }
-            set { }
         }
 
         public List<IPrice> Prices { get; }
@@ -158,7 +157,7 @@ namespace Ekom.Models.OrderedObjects
             Properties = new Dictionary<string, string>(
                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
-            Price = product.Price.Clone() as IPrice;
+            //Price = product.Price.Clone() as IPrice;
             Prices = product.Prices.ToList();
 
             var productDiscount = product.ProductDiscount(Price.Value.ToString());
@@ -235,7 +234,7 @@ namespace Ekom.Models.OrderedObjects
                 logger.Error<OrderedProduct>(ex,"Failed to construct price. ID: " + Id + " Price Object: " + (priceObj != null ? priceObj.ToString() : "Null") + " Prices Object: " + (pricesObj != null ? pricesObj.ToString() : "Null"));
             }
 
-            Price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
+            //Price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
 
             // Add Variant Group
 

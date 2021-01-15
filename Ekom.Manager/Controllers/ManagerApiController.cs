@@ -1,3 +1,4 @@
+using Ekom.API.Settings;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
@@ -199,7 +200,10 @@ namespace Ekom.Controllers
             {
                 var status = (OrderStatus)orderStatus;
 
-                await _managerRepository.UpdateStatusAsync(orderId, status, notification);
+                await _managerRepository.UpdateStatusAsync(orderId, status, new ChangeOrderSettings
+                {
+                    FireEvents = notification,
+                });
 
                 return true;
             }

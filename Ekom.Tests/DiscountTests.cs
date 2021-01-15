@@ -640,17 +640,16 @@ namespace Ekom.Tests
             var orderSvc = new OrderServiceMocks().orderSvc;
             var oi = orderSvc.AddOrderLineAsync(product, 1, store).Result;
 
+            // To Fix: We will need to mock so getorder returns the oi.
             Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
                 orderDiscount_fixed500,
                 store.Alias,
-                null,
-                oi).Result
+                null).Result
             );
             Assert.IsTrue(orderSvc.ApplyDiscountToOrderAsync(
                 orderDiscount_excl_perc,
                 store.Alias,
-                null,
-                oi).Result
+                null).Result
             );
             Assert.AreEqual(750m, oi.SubTotal.Value);
         }

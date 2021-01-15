@@ -1,3 +1,4 @@
+using Ekom.API.Settings;
 using Ekom.Interfaces;
 using Ekom.Manager.Models;
 using Ekom.Models.Data;
@@ -279,9 +280,9 @@ namespace Ekom.Repository
             });
         }
 
-        public async Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus, bool notification)
+        public async Task UpdateStatusAsync(Guid orderId, OrderStatus orderStatus, ChangeOrderSettings settings)
         {
-            await API.Order.Instance.UpdateStatusAsync(orderStatus, orderId, fireEvents: notification)
+            await API.Order.Instance.UpdateStatusAsync(orderStatus, orderId, settings: settings)
                 .ConfigureAwait(false);
         }
     }

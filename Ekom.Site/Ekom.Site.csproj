@@ -421,9 +421,6 @@
     <Reference Include="Umbraco.NetPayment, Version=11.5.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Umbraco.NetPayment.v8.11.5.1\lib\net472\Umbraco.NetPayment.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment.BorgunGateway">
-      <HintPath>..\..\Umbraco.NetPayment.u8\Umbraco.NetPayment.BorgunGateway\bin\Debug\Umbraco.NetPayment.BorgunGateway.dll</HintPath>
-    </Reference>
     <Reference Include="Umbraco.Web, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.6.1\lib\net472\Umbraco.Web.dll</HintPath>
     </Reference>
