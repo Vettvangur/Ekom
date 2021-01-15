@@ -63,6 +63,7 @@ namespace Ekom.Extensions.Controllers
         {
             try
             {
+                // ToDo: Lock order throughout request
                 var order = Order.Instance.GetOrder();
                 var store = Store.Instance.GetStore();
                 var storeAlias = order.StoreInfo.Alias;
@@ -300,7 +301,6 @@ namespace Ekom.Extensions.Controllers
 
             var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
 
-
             var isOfflinePayment = ekomPP.GetPropertyValue("offlinePayment", storeAlias).IsBoolean();
 
             var orderItems = new List<OrderItem>();
@@ -353,6 +353,10 @@ namespace Ekom.Extensions.Controllers
             }
             else
             {
+                await Order.Instance.UpdateStatusAsync(
+                    Ekom.Utilities.OrderStatus.WaitingForPayment,
+                    order.UniqueId);
+
                 var pp = NetPayment.Instance.GetPaymentProvider(ekomPP.Name);
 
                 var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";

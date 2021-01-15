@@ -131,20 +131,20 @@ namespace Ekom.Services
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            return GetOrder(store, settings);
+            Klara GetOrderAsync refactor og profa svo i ekom budinni ad kaupa, fara a greidslusidu og mixast svo
+
+            return GetOrderAsync(store, settings);
         }
 
-        public OrderInfo GetOrder(IStore store, OrderSettings settings = null)
+        public async Task<OrderInfo> GetOrderAsync(IStore store, OrderSettings settings = null)
         {
             if (Configuration.Current.UserBasket)
             {
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     var orderInfo = GetOrder(_ekmRequest.User.OrderId, settings);
-                    if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
-                    {
-                        return orderInfo;
-                    }
+
+                    return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
                 }
             }
             else
@@ -170,11 +170,62 @@ namespace Ekom.Services
 
                     //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
-                    if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
-                    {
-                        return orderInfo;
-                    }
+                    return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
                 }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Don't return a final order, they are closed for modification and should be viewed as receipts.
+        /// Final orders are retrieved differently.
+        /// 
+        /// Orders while waiting for payment
+        ///	we must stop modification of orders during and after payment
+        ///		Example: User sent to valitor to pay, completes payment, valitor takes an hour to send callback, meanwhile user fiddles with his cart while twiddling his thumb and everything goes to shit non-maliciously
+        ///			this could happen with simple amount validation as well
+        ///	simple validation, compare amount paid and stored order payment amount
+        ///		not good if user changes cart but keeps amount to some unknown gain
+        ///	more complex validation, compare orderinfo objects or hash orderinfo
+        ///		this is more complicated than it sounds, you would need to compare/hash orderlines, payment providers, discounts, coupons, shipping providers and more but not status, not dates........
+        ///			what if we change something, add something, we must make sure to modify validation, this will break, will suck, cities will burn and people will die
+        ///	
+        ///	from my point of view it seems natural to lock the order while we wait for payment.
+        ///		What if the user wants to check payment terms for different loan providers, pressing back button after each one
+        ///			create new order from old one
+        ///
+        /// </summary>
+        /// <param name="orderInfo"></param>
+        /// <returns></returns>
+        private async Task<OrderInfo> ReturnNonFinalOrderAsync(OrderInfo orderInfo)
+        {
+            if (orderInfo?.OrderStatus == OrderStatus.WaitingForPayment)
+            {
+                var newOrder = await CreateEmptyOrderAsync(orderInfo.StoreInfo.Alias)
+                    .ConfigureAwait(false);
+
+                // Prefer this to the other way around since new data added is
+                // less likely to pertain to uniqueness.
+                var oldData = orderInfo.OrderDataClone();
+                oldData.UniqueId = newOrder.UniqueId;
+                oldData.ReferenceId = newOrder.ReferenceId;
+                oldData.OrderStatus = newOrder.OrderStatus;
+                oldData.OrderNumber = newOrder.OrderNumber;
+                oldData.CreateDate = newOrder.CreateDate;
+                oldData.UpdateDate = newOrder.UpdateDate;
+
+                newOrder = new OrderInfo(oldData);
+
+                // Fixes the remaining outdated data
+                await UpdateOrderAndOrderInfoAsync(newOrder, false)
+                    .ConfigureAwait(false);
+                return newOrder;
+            }
+
+            if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
+            {
+                return orderInfo;
             }
 
             return null;
@@ -329,7 +380,7 @@ namespace Ekom.Services
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = GetOrder(store);
+            var orderInfo = GetOrderAsync(store);
 
             if (orderInfo == null)
             {
@@ -516,7 +567,7 @@ namespace Ekom.Services
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
-            var orderInfo = GetOrder(store);
+            var orderInfo = GetOrderAsync(store);
 
             if (orderInfo == null)
             {
@@ -802,6 +853,12 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
+            // Failsafe in case something slips through GetOrder and Order.IsOrderFinal
+            if (Order.IsOrderFinal(orderInfo.OrderStatus))
+            {
+                throw new OrderFinalException();
+            }
+
             VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
 
@@ -924,7 +981,7 @@ namespace Ekom.Services
 
         private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias)
         {
-            _logger.Debug<OrderService>("Add OrderLine ...  Create Empty Order..");
+            _logger.Debug<OrderService>("CreateEmptyOrderAsync..");
 
             Guid orderUniqueId;
             if (Configuration.Current.UserBasket)
@@ -952,7 +1009,7 @@ namespace Ekom.Services
         }
         private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId, IStore store)
         {
-            _logger.Debug<OrderService>("Add OrderLine ...  Create OrderData.. Store: {Store}", store.Alias);
+            _logger.Debug<OrderService>("SaveEmptyOrderDataAsync Store: {Store}", store.Alias);
 
             var orderData = new OrderData
             {

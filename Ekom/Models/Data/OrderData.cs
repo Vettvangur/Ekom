@@ -11,7 +11,7 @@ namespace Ekom.Models.Data
     /// </summary>
     [TableName("EkomOrders")]
     [PrimaryKey("ReferenceId", AutoIncrement = true)]
-    public class OrderData
+    public class OrderData : ICloneable
     {
         /// <summary>
         /// Primary means of identifying orders
@@ -126,5 +126,11 @@ namespace Ekom.Models.Data
         /// </summary>
         [NullSetting(NullSetting = NullSettings.Null)]
         public DateTime? PaidDate { get; set; }
+
+        /// <summary>
+        /// Creates a shallow copy of the current Object.
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() => MemberwiseClone();
     }
 }
