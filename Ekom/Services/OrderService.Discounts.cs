@@ -207,7 +207,6 @@ namespace Ekom.Services
                     orderLine,
                     discount,
                     orderInfo,
-                    coupon,
                     settings
                 ).ConfigureAwait(false);
             }

@@ -208,5 +208,7 @@ namespace Ekom
         }
 
         internal const string DiscountStockTableName = "EkomDiscountStock";
+
+        internal static readonly TimeSpan orderInfoCacheTime = TimeSpan.FromDays(1);
     }
 }

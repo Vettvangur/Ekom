@@ -15,10 +15,20 @@ namespace Ekom.API.Settings
     public class OrderSettings
     {
         /// <summary>
+        /// Master switch for all order events
+        /// </summary>
+        public bool FireEvents { get; set; } = true;
+
+        private bool _fireOnOrderUpdatedEvent = true;
+        /// <summary>
         /// Disable Ekom OnOrderUpdated event, 
         /// useful for event listeners not interested in creating a cascade of events.
         /// </summary>
-        public bool FireOnOrderUpdatedEvent { get; set; } = true;
+        public bool FireOnOrderUpdatedEvent
+        {
+            get => _fireOnOrderUpdatedEvent && FireEvents;
+            set => _fireOnOrderUpdatedEvent = value;
+        }
 
         // Event handlers are called from inside the lock, 
         // at the end of a call to the OrderService, immediately after writing to db.

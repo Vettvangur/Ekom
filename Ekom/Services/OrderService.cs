@@ -127,20 +127,20 @@ namespace Ekom.Services
             _ekmRequest = appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
-        public OrderInfo GetOrder(string storeAlias)
+        public OrderInfo GetOrder(string storeAlias, OrderSettings settings = null)
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            return GetOrder(store);
+            return GetOrder(store, settings);
         }
 
-        public OrderInfo GetOrder(IStore store)
+        public OrderInfo GetOrder(IStore store, OrderSettings settings = null)
         {
             if (Configuration.Current.UserBasket)
             {
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
-                    var orderInfo = GetOrder(_ekmRequest.User.OrderId);
+                    var orderInfo = GetOrder(_ekmRequest.User.OrderId, settings);
                     if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
                     {
                         return orderInfo;
@@ -156,7 +156,7 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-                    var orderInfo = GetOrder(orderUniqueId);
+                    var orderInfo = GetOrder(orderUniqueId, settings);
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
                     //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
@@ -217,22 +217,16 @@ namespace Ekom.Services
             return Task.FromResult<OrderInfo>(null);
         }
 
-        public OrderInfo GetOrder(Guid uniqueId)
+        public OrderInfo GetOrder(Guid uniqueId, OrderSettings settings = null)
         {
             // Check for cache ?
             return _runtimeCache.GetCacheItem(
                 uniqueId.ToString(),
                 () => GetOrderInfoAsync(uniqueId).Result,
-                TimeSpan.FromDays(1));
+                Configuration.orderInfoCacheTime);
         }
 
-        // fills cache for GetOrder
-        public async Task<OrderInfo> GetOrderUpdateCacheAsync(Guid uniqueId)
-        {
-            return await GetOrderInfoAsync(uniqueId).ConfigureAwait(false);
-        }
-
-        public async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId)
+        private async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId)
         {
             var orderData = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
@@ -245,14 +239,21 @@ namespace Ekom.Services
             Guid uniqueId,
             OrderStatus status,
             string userName = null,
-            bool fireEvents = true)
+            ChangeOrderSettings settings = null)
         {
+            // ToDo: Lock
+
+            if (settings == null)
+            {
+                settings = new ChangeOrderSettings();
+            }
+
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             var oldStatus = order.OrderStatus;
 
-            if (fireEvents)
+            if (settings.FireOnOrderStatusChangingEvent)
             {
                 Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
                 {
@@ -290,12 +291,12 @@ namespace Ekom.Services
             await _orderRepository.UpdateOrderAsync(order)
                 .ConfigureAwait(false);
 
-            _runtimeCache.GetCacheItem<OrderInfo>(
+            _runtimeCache.InsertCacheItem<OrderInfo>(
                 uniqueId.ToString(),
                 () => new OrderInfo(order),
-                TimeSpan.FromDays(1));
+                Configuration.orderInfoCacheTime);
 
-            if (fireEvents)
+            if (settings.FireOnOrderStatusChangingEvent)
             {
                 Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
                 {
@@ -376,7 +377,7 @@ namespace Ekom.Services
 
             if (storeCurrency != null)
             {
-
+                // ToDo: Lock
                 var order = await _orderRepository.GetOrderAsync(uniqueId).ConfigureAwait(false);
 
                 var oldCurrency = order.Currency;
@@ -395,10 +396,10 @@ namespace Ekom.Services
 
                     await _orderRepository.UpdateOrderAsync(order).ConfigureAwait(false);
 
-                    _runtimeCache.GetCacheItem<OrderInfo>(
+                    _runtimeCache.InsertCacheItem<OrderInfo>(
                         uniqueId.ToString(),
                         () => new OrderInfo(order),
-                        TimeSpan.FromDays(1));
+                        Configuration.orderInfoCacheTime);
 
                     _logger.Debug<OrderService>(
                         "Change Currency {OldCurrency}  to {Currency}",
@@ -406,11 +407,11 @@ namespace Ekom.Services
                         currency);
                 }
             }
-
         }
 
         public async Task UpdatePaidDate(Guid uniqueId)
         {
+            // ToDo: Lock
             var order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
@@ -418,6 +419,8 @@ namespace Ekom.Services
 
             await _orderRepository.UpdateOrderAsync(order)
                 .ConfigureAwait(false);
+
+            _runtimeCache.Clear(uniqueId.ToString());
 
             _logger.Debug<OrderService>(
                 "Update Paid Date {OrderNumber}",
@@ -852,10 +855,9 @@ namespace Ekom.Services
                 });
             }
 
-            // This way, if an event handler modifies the Order, we return an up to date OrderInfo
-            // In most cases however, this will simply get the same OrderInfo object that was
-            // placed in RuntimeCache a few lines earlier via UpdateOrderInfoInCache
-            return GetOrder(orderInfo.UniqueId);
+            // Regardless of modifications from event handlers,
+            // everybody references the same OrderInfo object
+            return orderInfo;
         }
 
         /// <summary>
@@ -872,7 +874,7 @@ namespace Ekom.Services
             _runtimeCache.InsertCacheItem<OrderInfo>(
                 orderInfo.UniqueId.ToString(),
                 () => orderInfo,
-                TimeSpan.FromDays(1));
+                Configuration.orderInfoCacheTime);
         }
 
         public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)

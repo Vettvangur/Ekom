@@ -81,7 +81,7 @@ namespace Ekom.Tests
             );
 
             reg.Register<Stock>(f => stockSvc);
-            Stock.UpdateStockHangfire(guid, 1);
+            Stock.UpdateStockHangfireAsync(guid, 1);
         }
     }
 }

@@ -264,7 +264,7 @@ namespace Ekom.API
             await IncrementStockAsync(key, value).ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
-                UpdateStockHangfire(key, -value),
+                UpdateStockHangfireAsync(key, -value),
                 timeSpan
             );
 
@@ -293,7 +293,7 @@ namespace Ekom.API
                 .ConfigureAwait(false);
 
             var jobId = Hangfire.BackgroundJob.Schedule(() =>
-                UpdateStockHangfire(key, storeAlias, -value),
+                UpdateStockHangfireAsync(key, storeAlias, -value),
                 timeSpan
             );
 
@@ -408,9 +408,9 @@ namespace Ekom.API
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public static void UpdateStockHangfire(Guid key, int value)
+        public static Task UpdateStockHangfireAsync(Guid key, int value)
         {
-            Instance.IncrementStockAsync(key, value).Wait();
+            return Instance.IncrementStockAsync(key, value);
         }
 
         /// <summary>
@@ -419,9 +419,9 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
-        public static void UpdateStockHangfire(Guid key, string storeAlias, int value)
+        public static Task UpdateStockHangfireAsync(Guid key, string storeAlias, int value)
         {
-            Instance.IncrementStockAsync(key, storeAlias, value).Wait();
+            return Instance.IncrementStockAsync(key, storeAlias, value);
         }
     }
 }

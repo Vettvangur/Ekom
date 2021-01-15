@@ -245,7 +245,7 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, bool fireEvents = true)
+        public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -253,13 +253,13 @@ namespace Ekom.API
             }
 
             var order = _orderService.GetOrder(storeAlias);
-            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null, fireEvents)
+            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null, settings)
                 .ConfigureAwait(false);
         }
 
-        public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, bool fireEvents = true)
+        public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, ChangeOrderSettings settings = null)
         {
-            await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, fireEvents)
+            await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings)
                 .ConfigureAwait(false);
         }
 
