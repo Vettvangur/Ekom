@@ -127,20 +127,20 @@ namespace Ekom.Services
             _ekmRequest = appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
-        public Task<OrderInfo> GetOrderAsync(string storeAlias, OrderSettings settings = null)
+        public Task<OrderInfo> GetOrderAsync(string storeAlias)
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            return GetOrderAsync(store, settings);
+            return GetOrderAsync(store);
         }
 
-        public async Task<OrderInfo> GetOrderAsync(IStore store, OrderSettings settings = null)
+        public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
             if (Configuration.Current.UserBasket)
             {
                 if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
-                    var orderInfo = GetOrder(_ekmRequest.User.OrderId, settings);
+                    var orderInfo = GetOrder(_ekmRequest.User.OrderId);
 
                     return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
                 }
@@ -154,7 +154,9 @@ namespace Ekom.Services
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-                    var orderInfo = GetOrder(orderUniqueId, settings);
+                    var orderInfo = GetOrder(orderUniqueId);
+
+                    _logger.Debug<OrderService>("GetOrderAsync - Found order with {UniqueId}", orderInfo?.UniqueId);
 
                     //// If the cart is not in the session, fetch order from sql and insert to session
                     //if (ApplicationContext.Current.ApplicationCache.RuntimeCache.GetCacheItem(key) == null)
@@ -275,7 +277,7 @@ namespace Ekom.Services
             return Task.FromResult<OrderInfo>(null);
         }
 
-        public OrderInfo GetOrder(Guid uniqueId, OrderSettings settings = null)
+        public OrderInfo GetOrder(Guid uniqueId)
         {
             // Check for cache ?
             return _runtimeCache.GetCacheItem(
