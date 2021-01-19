@@ -127,11 +127,9 @@ namespace Ekom.Services
             _ekmRequest = appCaches.RequestCache.GetCacheItem<ContentRequest>("ekmRequest");
         }
 
-        public OrderInfo GetOrder(string storeAlias, OrderSettings settings = null)
+        public Task<OrderInfo> GetOrderAsync(string storeAlias, OrderSettings settings = null)
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
-
-            Klara GetOrderAsync refactor og profa svo i ekom budinni ad kaupa, fara a greidslusidu og mixast svo
 
             return GetOrderAsync(store, settings);
         }
@@ -380,7 +378,7 @@ namespace Ekom.Services
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = GetOrderAsync(store);
+            var orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
 
             if (orderInfo == null)
             {
@@ -460,7 +458,7 @@ namespace Ekom.Services
             }
         }
 
-        public async Task UpdatePaidDate(Guid uniqueId)
+        public async Task UpdatePaidDateAsync(Guid uniqueId)
         {
             // ToDo: Lock
             var order = await _orderRepository.GetOrderAsync(uniqueId)
@@ -567,7 +565,7 @@ namespace Ekom.Services
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
-            var orderInfo = GetOrderAsync(store);
+            var orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
 
             if (orderInfo == null)
             {
@@ -606,7 +604,7 @@ namespace Ekom.Services
             string storeAlias,
             RemoveOrderSettings settings = null)
         {
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             if (orderInfo == null)
             {
@@ -666,7 +664,7 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             if (orderInfo == null)
             {
@@ -935,7 +933,7 @@ namespace Ekom.Services
 
         public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
         {
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
@@ -958,7 +956,7 @@ namespace Ekom.Services
 
         public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
         {
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
@@ -1047,7 +1045,7 @@ namespace Ekom.Services
             {
                 var storeAlias = form["storeAlias"];
 
-                var orderInfo = GetOrder(storeAlias);
+                var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
                 if (form.ContainsKey("ShippingProvider"))
                 {
@@ -1094,7 +1092,7 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
@@ -1147,7 +1145,7 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();

@@ -378,7 +378,7 @@ namespace Ekom.API
         /// </summary>
         /// <param name="jobId"></param>
         /// <exception cref="StockException"></exception>
-        public async Task RollbackJob(string jobId)
+        public async Task RollbackJobAsync(string jobId)
         {
             await _stockRepo.RollBackJob(jobId).ConfigureAwait(false);
 
@@ -449,6 +449,7 @@ namespace Ekom.API
                 throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));
             }
 
+            // ToDo: refactor as semaphore slim
             lock (stockData)
             {
                 var oldValue = stockData.Stock;

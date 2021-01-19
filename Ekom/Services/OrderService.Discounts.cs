@@ -32,7 +32,7 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -108,7 +108,7 @@ namespace Ekom.Services
                 settings = new OrderSettings();
             }
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -185,7 +185,7 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -236,7 +236,7 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -370,7 +370,7 @@ namespace Ekom.Services
                 settings = new OrderSettings();
             }
 
-            var orderInfo = GetOrder(storeAlias);
+            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)

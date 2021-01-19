@@ -73,40 +73,46 @@ namespace Ekom.API
             _logger = logger;
         }
 
+        public IOrderInfo GetOrder() => GetOrderAsync().Result;
+
         /// <summary>
         /// Get order using cookie data and ekmRequest store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public IOrderInfo GetOrder()
+        public Task<IOrderInfo> GetOrderAsync()
         {
             var store = _storeSvc.GetStoreFromCache();
 
             if (store == null)
             {
-                return null;
+                return Task.FromResult<IOrderInfo>(null);
             }
 
-            return GetOrder(store.Alias);
+            return GetOrderAsync(store.Alias);
         }
+
+        public IOrderInfo GetOrder(string storeAlias) => GetOrderAsync(storeAlias).Result;
 
         /// <summary>
         /// Get order using cookie data and provided store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public IOrderInfo GetOrder(string storeAlias)
+        public async Task<IOrderInfo> GetOrderAsync(string storeAlias)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return _orderService.GetOrder(storeAlias);
+            return await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Get order using <see cref="Guid"/>.
+        /// Get order regardless of status using <see cref="Guid"/>.
+        /// This may return complete / final orders. <br />
+        /// Do not use for cart or checkout display.
         /// </summary>
         /// <returns></returns>
         public IOrderInfo GetOrder(Guid uniqueId)
@@ -119,15 +125,7 @@ namespace Ekom.API
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
         /// <returns></returns>
-        public IOrderInfo GetCompletedOrder(string storeAlias)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
-            }
-
-            return GetCompletedOrderAsync(storeAlias).Result;
-        }
+        public IOrderInfo GetCompletedOrder(string storeAlias) => GetCompletedOrderAsync(storeAlias).Result;
 
         /// <summary>
         /// Get completed order using cookie data and provided store.
@@ -252,7 +250,7 @@ namespace Ekom.API
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            var order = _orderService.GetOrder(storeAlias);
+            var order = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
             await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null, settings)
                 .ConfigureAwait(false);
         }
@@ -434,7 +432,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
-                throw new ArgumentException(nameof(storeAlias));
+                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
             }
 
             await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)

@@ -64,7 +64,7 @@ namespace Ekom.Extensions.Controllers
             try
             {
                 // ToDo: Lock order throughout request
-                var order = Order.Instance.GetOrder();
+                var order = await Order.Instance.GetOrderAsync();
                 var store = Store.Instance.GetStore();
                 var storeAlias = order.StoreInfo.Alias;
 
@@ -79,7 +79,7 @@ namespace Ekom.Extensions.Controllers
                 {
                     foreach (var job in order.HangfireJobs)
                     {
-                        await Stock.Instance.RollbackJob(job);
+                        await Stock.Instance.RollbackJobAsync(job);
                     }
 
                     await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias);
