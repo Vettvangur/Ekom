@@ -112,7 +112,7 @@ namespace Ekom.Controllers
 
             try
             {
-                var order = Order.Instance.GetOrder(storeAlias);
+                var order = Order.Instance.GetOrderAsync(storeAlias);
 
                 if (order == null)
                 {
@@ -367,7 +367,7 @@ namespace Ekom.Controllers
         {
             var store = API.Store.Instance.GetStore();
 
-            var orderInfo = Order.Instance.GetOrder(store.Alias);
+            var orderInfo = await Order.Instance.GetOrderAsync(store.Alias);
 
             if (orderInfo != null)
             {
@@ -378,21 +378,21 @@ namespace Ekom.Controllers
 
             if (cookie == null)
             {
-                cookie = new HttpCookie("EkomCurrency-" + store.Alias);
+                cookie = new HttpCookie("EkomCurrency-" + store.Alias)
+                {
+                    Value = currency,
 
-                cookie.Value = currency;
-
-                cookie.Expires = DateTime.UtcNow.AddDays(360);
+                    Expires = DateTime.UtcNow.AddDays(360),
+                };
 
                 Response.Cookies.Add(cookie);
-
             }
             else
             {
                 Response.Cookies["EkomCurrency-" + store.Alias].Value = currency;
             }
 
-            orderInfo = Order.Instance.GetOrder(store.Alias);
+            orderInfo = await Order.Instance.GetOrderAsync(store.Alias);
 
             return Json(new
             {

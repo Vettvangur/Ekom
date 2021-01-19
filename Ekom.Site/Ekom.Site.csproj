@@ -67,8 +67,8 @@
     <Reference Include="GMO.Vorto, Version=0.3.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\GMO.Vorto.v8.0.3.1\lib\net472\GMO.Vorto.dll</HintPath>
     </Reference>
-    <Reference Include="GMO.Vorto.Web, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GMO.Vorto.Web.v8.0.2.0\lib\net472\GMO.Vorto.Web.dll</HintPath>
+    <Reference Include="GMO.Vorto.Web, Version=0.2.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GMO.Vorto.Web.v8.0.2.1\lib\net472\GMO.Vorto.Web.dll</HintPath>
     </Reference>
     <Reference Include="HtmlAgilityPack, Version=1.8.14.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
       <HintPath>..\packages\HtmlAgilityPack.1.8.14\lib\Net45\HtmlAgilityPack.dll</HintPath>
@@ -151,6 +151,9 @@
     </Reference>
     <Reference Include="MiniProfiler.Shared, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b44f9351044011a3, processorArchitecture=MSIL">
       <HintPath>..\packages\MiniProfiler.Shared.4.0.138\lib\net461\MiniProfiler.Shared.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.9.11.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.6.9.11\lib\net45\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -418,8 +421,14 @@
     <Reference Include="Umbraco.ModelsBuilder.Embedded, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.6.1\lib\net472\Umbraco.ModelsBuilder.Embedded.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=11.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.v8.11.5.1\lib\net472\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=11.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.v8.11.7.0\lib\net472\Umbraco.NetPayment.dll</HintPath>
+    </Reference>
+    <Reference Include="Umbraco.NetPayment.Borgun, Version=11.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.v8.Borgun.11.6.0\lib\net472\Umbraco.NetPayment.Borgun.dll</HintPath>
+    </Reference>
+    <Reference Include="Umbraco.NetPayment.Web, Version=11.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.Web.v8.11.3.0\lib\net472\Umbraco.NetPayment.Web.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Web, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.6.1\lib\net472\Umbraco.Web.dll</HintPath>
@@ -524,6 +533,7 @@
     <Content Include="App_Plugins\EkomManager\js\app.min.js.map" />
     <Content Include="App_Plugins\EkomManager\package.manifest" />
     <Content Include="App_Plugins\EkomManager\EkomRedirect\package.manifest" />
+    <Content Include="App_Plugins\NetPayment\config\PaymentProviders.Release.config" />
     <None Include="packages.config" />
     <Content Include="Views\Masterpage.cshtml" />
     <Content Include="Views\Frontpage.cshtml" />

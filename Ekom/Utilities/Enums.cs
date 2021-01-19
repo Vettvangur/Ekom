@@ -43,8 +43,11 @@ namespace Ekom.Utilities
         /// 
         /// </summary>
         Dispatched,
+        /// <summary>
+        /// Used to lock order for modifications.
+        /// If user requests the order while it is in this state he receives a new one with the old data.
+        /// </summary>
         WaitingForPayment,
-        WaitingForPaymentProvider,
         Returned,
         Wishlist,
     }

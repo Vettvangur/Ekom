@@ -16,7 +16,9 @@ namespace Ekom.Models
     class OrderInfo : IOrderInfo
     {
         public StoreInfo StoreInfo { get; }
+
         private readonly OrderData _orderData;
+        public OrderData OrderDataClone() => _orderData.Clone() as OrderData;
 
         /// <summary>
         /// 

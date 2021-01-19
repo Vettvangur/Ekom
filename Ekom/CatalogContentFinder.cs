@@ -88,7 +88,7 @@ namespace Ekom
                     contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
 
                     var urlArray = path.Split('/');
-                    var categoryUrlArray = urlArray.Take(urlArray.Count() - 2);
+                    var categoryUrlArray = urlArray.Take(urlArray.Length - 2);
                     var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
                     category = _categoryCache.Cache[store.Alias]
