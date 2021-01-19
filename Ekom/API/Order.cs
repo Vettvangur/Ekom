@@ -300,36 +300,44 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> UpdateCustomerInformationAsync(Dictionary<string, string> form)
+        public async Task<IOrderInfo> UpdateCustomerInformationAsync(
+            Dictionary<string, string> form,
+            OrderSettings settings = null)
         {
             if (form == null)
             {
                 throw new ArgumentNullException(nameof(form));
             }
 
-            return await _orderService.UpdateCustomerInformationAsync(form)
+            return await _orderService.UpdateCustomerInformationAsync(form, settings ?? null)
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> UpdateShippingInformationAsync(Guid ShippingProvider, string storeAlias)
+        public async Task<IOrderInfo> UpdateShippingInformationAsync(
+            Guid shippingProvider, 
+            string storeAlias,
+            OrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.UpdateShippingInformationAsync(ShippingProvider, storeAlias)
+            return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, settings)
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> UpdatePaymentInformationAsync(Guid PaymentProvider, string storeAlias)
+        public async Task<IOrderInfo> UpdatePaymentInformationAsync(
+            Guid paymentProvider, 
+            string storeAlias,
+            OrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.UpdatePaymentInformationAsync(PaymentProvider, storeAlias)
+            return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, settings)
                 .ConfigureAwait(false);
         }
 
@@ -375,13 +383,15 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(Guid orderLineId, int quantity, string storeAlias)
+        public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(
+            Guid orderLineId, 
+            int quantity, 
+            string storeAlias,
+            OrderSettings settings = null)
         {
-            return await _orderService.UpdateOrderlineQuantityAsync(orderLineId, quantity, storeAlias)
+            return await _orderService.UpdateOrderlineQuantityAsync(orderLineId, quantity, storeAlias, settings)
                 .ConfigureAwait(false);
         }
-
-
 
         public async Task CompleteOrderAsync(Guid orderId)
         {

@@ -847,7 +847,9 @@ namespace Ekom.Services
             }
         }
 
-        private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(OrderInfo orderInfo, bool fireEvents = true)
+        private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
+            OrderInfo orderInfo, 
+            bool fireOnOrderUpdatedEvents = true)
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
 
@@ -901,7 +903,7 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
             UpdateOrderInfoInCache(orderInfo);
 
-            if (fireEvents)
+            if (fireOnOrderUpdatedEvents)
             {
                 Order.OnOrderUpdated(this, new OrderUpdatedEventArgs
                 {
@@ -1037,7 +1039,9 @@ namespace Ekom.Services
             return orderData;
         }
 
-        public async Task<OrderInfo> UpdateCustomerInformationAsync(Dictionary<string, string> form)
+        public async Task<OrderInfo> UpdateCustomerInformationAsync(
+            Dictionary<string, string> form,
+            OrderSettings settings = null)
         {
             _logger.Debug<OrderService>("UpdateCustomerInformation...");
 
@@ -1051,7 +1055,7 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
                     {
-                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, settings).ConfigureAwait(false);
                     }
                 }
 
@@ -1059,7 +1063,7 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
                     {
-                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias).ConfigureAwait(false);
+                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, settings).ConfigureAwait(false);
                     }
                 }
 
@@ -1076,7 +1080,7 @@ namespace Ekom.Services
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
                 }
 
-                return await UpdateOrderAndOrderInfoAsync(orderInfo)
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                     .ConfigureAwait(false);
             }
 
