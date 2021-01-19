@@ -1,6 +1,7 @@
-nuget restore .
-nuget pack .\Ekom\ -build -Symbols -SymbolPackageFormat snupkg -Properties Configuration=Release
-nuget pack .\Ekom.Web\ -build -Symbols -SymbolPackageFormat snupkg -Properties Configuration=Release
-nuget pack .\Ekom.Extensions\ -build -Symbols -SymbolPackageFormat snupkg -Properties Configuration=Release
+# Don't use - Azure DevOps handles publishing
+dotnet pack .\Ekom\ -c Release --include-symbols -o .
+dotnet pack .\Ekom.Web\ -c Release --include-symbols -o .
+dotnet pack .\Ekom.Extensions\ -c Release --include-symbols -o .
 # $pkg = gci *.nupkg 
 # nuget push $pkg -Source https://www.nuget.org/api/v2/package -NonInteractive
+pause

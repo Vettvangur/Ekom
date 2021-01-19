@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
@@ -58,7 +58,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Umbraco.NetPayment.v8" Version="[11.7.0,12.0.0)" />
+        <PackageReference Include="Umbraco.NetPayment.v8" Version="[11.7.1,12.0.0)" />
         <PackageReference Include="UmbracoCms.Core" Version="[8.6.1,9.0)" />
         <PackageReference Include="UmbracoCms.Web" Version="[8.6.1,9.0)" />
     </ItemGroup>
