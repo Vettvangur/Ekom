@@ -200,6 +200,11 @@ namespace Ekom.Services
         {
             if (orderInfo?.OrderStatus == OrderStatus.WaitingForPayment)
             {
+                _logger.Debug<OrderService>(
+                    "ReturnNonFinalOrderAsync {UniqueId} - OrderStatus == WaitingForPayment - Cloning old orderdata to new",
+                    orderInfo.UniqueId
+                );
+
                 var newOrder = await CreateEmptyOrderAsync(orderInfo.StoreInfo.Alias)
                     .ConfigureAwait(false);
 
@@ -225,6 +230,10 @@ namespace Ekom.Services
             {
                 return orderInfo;
             }
+
+            _logger.Debug<OrderService>(
+                "ReturnNonFinalOrderAsync {UniqueId} - Requested order is final",
+                orderInfo.UniqueId);
 
             return null;
         }

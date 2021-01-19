@@ -31,7 +31,6 @@ namespace Ekom.Models.Behaviors
             return (!string.IsNullOrEmpty(countryCode) ? (!CountriesInZone.Any() || CountriesInZone.Contains(countryCode.ToUpper())) : true)
             && StartRange <= amount
             && (EndRange == 0 || EndRange >= amount);
-
         }
 
         private INodeEntity _node;
