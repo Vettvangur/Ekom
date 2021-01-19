@@ -232,7 +232,7 @@ namespace Ekom.Services
             }
 
             _logger.Debug<OrderService>(
-                "ReturnNonFinalOrderAsync {UniqueId} - Requested order is final",
+                "ReturnNonFinalOrderAsync {UniqueId} - Requested order is final or not found",
                 orderInfo.UniqueId);
 
             return null;
