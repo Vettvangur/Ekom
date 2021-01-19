@@ -386,8 +386,11 @@
     <Reference Include="Umbraco.ModelsBuilder.Embedded, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.6.1\lib\net472\Umbraco.ModelsBuilder.Embedded.dll</HintPath>
     </Reference>
-    <Reference Include="Umbraco.NetPayment, Version=11.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Umbraco.NetPayment.v8.11.5.1\lib\net472\Umbraco.NetPayment.dll</HintPath>
+    <Reference Include="Umbraco.NetPayment, Version=11.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.v8.11.7.0\lib\net472\Umbraco.NetPayment.dll</HintPath>
+    </Reference>
+    <Reference Include="Umbraco.NetPayment.Borgun, Version=11.6.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Umbraco.NetPayment.v8.Borgun.11.6.0\lib\net472\Umbraco.NetPayment.Borgun.dll</HintPath>
     </Reference>
     <Reference Include="Umbraco.Web, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UmbracoCms.Web.8.6.1\lib\net472\Umbraco.Web.dll</HintPath>
@@ -403,6 +406,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="App_Plugins\NetPayment\config\PaymentProviders.config" />
+    <None Include="App_Plugins\NetPayment\config\PaymentProviders.Release.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
