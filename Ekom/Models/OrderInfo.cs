@@ -10,15 +10,13 @@ using System.Linq;
 
 namespace Ekom.Models
 {
-    /// <summary>
-    /// Order/Cart
-    /// </summary>
+    /// <inheritdoc />
     class OrderInfo : IOrderInfo
     {
         public StoreInfo StoreInfo { get; }
 
         private readonly OrderData _orderData;
-        public OrderData OrderDataClone() => _orderData.Clone() as OrderData;
+        internal OrderData OrderDataClone() => _orderData.Clone() as OrderData;
 
         /// <summary>
         /// 
@@ -50,19 +48,12 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Force changes to come through order api, 
-        /// api can then make checks to ensure that a discount is only ever applied to either cart or items, never both.
-        /// </summary>
+        /// <inheritdoc />
         public OrderedDiscount Discount { get; internal set; }
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public string Coupon { get; internal set; }
 
-        /// <summary>
-        /// Order UniqueId
-        /// </summary>
+        /// <inheritdoc />
         public Guid UniqueId
         {
             get
@@ -90,18 +81,13 @@ namespace Ekom.Models
         /// </summary>
         internal List<OrderLine> orderLines = new List<OrderLine>();
 
-        /// <summary>
-        /// Force changes to come through order api, 
-        /// ensuring lines are never changed without passing through the correct channels.
-        /// </summary>
+        /// <inheritdoc />
         public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
 
         public OrderedShippingProvider ShippingProvider { get; set; }
         public OrderedPaymentProvider PaymentProvider { get; set; }
 
-        /// <summary>
-        /// Total count of items and subitems on each order line.
-        /// </summary>
+        /// <inheritdoc />
         public int TotalQuantity
         {
             get
@@ -114,9 +100,7 @@ namespace Ekom.Models
 
         public CustomerInfo CustomerInformation { get; } = new CustomerInfo();
 
-        /// <summary>
-        /// OrderLines with OrderDiscount excluded and VAT included
-        /// </summary>
+        /// <inheritdoc />
         public ICalculatedPrice OrderLineTotal
         {
             get
@@ -137,9 +121,7 @@ namespace Ekom.Models
                 line.Quantity
             );
 
-        /// <summary>
-        /// OrderLines with OrderDiscount included and Vat left as-is
-        /// </summary>
+        /// <inheritdoc />
         public ICalculatedPrice SubTotal
         {
             get
@@ -160,10 +142,7 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Total amount of value added tax in order.
-        /// This counts up all vat whether it's included in item prices or not.
-        /// </summary>
+        /// <inheritdoc />
         public ICalculatedPrice Vat
         {
             get
@@ -174,9 +153,28 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Includes Vat and discounts but without shipping providers and payment providers.
-        /// </summary>
+        /// <inheritdoc />
+        public ICalculatedPrice ChargedVat
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+
+                if (ShippingProvider != null)
+                {
+                    amount += ShippingProvider.Price.Vat.Value;
+                }
+
+                if (PaymentProvider != null)
+                {
+                    amount += PaymentProvider.Price.Vat.Value;
+                }
+
+                return new CalculatedPrice(amount, StoreInfo.Currency);
+            }
+        }
+
+        /// <inheritdoc />
         public ICalculatedPrice GrandTotal
         {
             get
@@ -197,17 +195,13 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Total monetary value of discount in order
-        /// </summary>
+        /// <inheritdoc />
         public ICalculatedPrice DiscountAmount
             => new CalculatedPrice(
                 OrderLineTotal.Value - GrandTotal.Value,
                 StoreInfo.Currency);
 
-        /// <summary>
-        /// The end amount charged for all orderlines, including shipping providers, payment providers and discounts.
-        /// </summary>
+        /// <inheritdoc />
         public ICalculatedPrice ChargedAmount
         {
             get
@@ -244,9 +238,7 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public DateTime CreateDate
         {
             get
@@ -254,9 +246,7 @@ namespace Ekom.Models
                 return _orderData.CreateDate;
             }
         }
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public DateTime UpdateDate
         {
             get
@@ -264,9 +254,7 @@ namespace Ekom.Models
                 return _orderData.UpdateDate;
             }
         }
-        /// <summary>
-        /// Date payment was verified.
-        /// </summary>
+        /// <inheritdoc />
         public DateTime? PaidDate
         {
             get
@@ -275,9 +263,7 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public OrderStatus OrderStatus => _orderData.OrderStatus;
 
         internal List<string> _hangfireJobs { get; set; } = new List<string>();

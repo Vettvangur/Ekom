@@ -56,7 +56,9 @@ namespace Ekom.Interfaces
         /// </summary>
         ICalculatedPrice GrandTotal { get; }
         /// <summary>
-        /// <see cref="Price"/> object for total value of all orderlines.
+        /// The end amount charged for all orderlines, 
+        /// including shipping providers, 
+        /// payment providers and discounts.
         /// </summary>
         ICalculatedPrice ChargedAmount { get; }
         /// <summary>
@@ -68,10 +70,16 @@ namespace Ekom.Interfaces
         /// </summary>
         ICalculatedPrice OrderLineTotal { get; }
         /// <summary>
-        /// Total amount of value added tax in order.
+        /// Total amount of value added tax in order lines.
         /// This counts up all vat whether it's included in item prices or not.
         /// </summary>
         ICalculatedPrice Vat { get; }
+        /// <summary>
+        /// Total amount of value added tax in order.
+        /// This counts up all vat whether it's included in item prices or not.
+        /// Includes Vat from shipping providers and payment providers.
+        /// </summary>
+        ICalculatedPrice ChargedVat { get; }
         /// <summary>
         /// Total monetary value of discount in order
         /// </summary>
