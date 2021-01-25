@@ -16,7 +16,12 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http) {
 
         var temp1 = $scope.model.value.values;
 
-        Object.keys(temp1).forEach(key => temp1[key] = JSON.parse(temp1[key]));
+        // Not sure that this applies to current implementation of SetPriceStoreValue
+        // Wrapping in try-catch
+        try {
+          Object.keys(temp1).forEach(key => temp1[key] = JSON.parse(temp1[key]));
+        }
+        catch { }
 
         $scope.prices = temp1;
 
