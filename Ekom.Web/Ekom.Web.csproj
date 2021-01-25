@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
@@ -7,7 +7,7 @@
 
         <!-- Package properties -->
         <PackageId>Ekom.Web.v8</PackageId>
-        <Version>0.2.0</Version>
+        <Version>0.2.1</Version>
         <Title>Ekom.Web.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -80,7 +80,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Ekom.Core.v8" Version="[0.2.0,1.0)" />
+        <PackageReference Include="Ekom.Core.v8" Version="[0.6.4,1.0)" />
         <PackageReference Include="GMO.Vorto.Web.v8" Version="[0.2.0,1.0)" />
     </ItemGroup>
 
