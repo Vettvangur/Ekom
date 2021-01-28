@@ -1056,6 +1056,11 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("UpdateCustomerInformation...");
 
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+
             if (form.ContainsKey("storeAlias"))
             {
                 var storeAlias = form["storeAlias"];
