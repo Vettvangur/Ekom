@@ -1331,19 +1331,23 @@ namespace Ekom.Services
 
         private Guid GetOrderIdFromCookie(string key)
         {
-            var cookie = _httpCtx.Request.Cookies[key];
+            HttpCookie cookie = null;
 
             // Applicable when the order was created in this request
             // This enables support for event handlers accessing the api and modifying order info
             // during the request that created the OrderInfo
-            if (cookie == null
+            if (_httpCtx.Response.Cookies.AllKeys.Contains(key))
             // The response cookie collection has extremely specific behavior
             // Any key accessed will by default create and return a fresh cookie, 
             // regardless of it existing or not beforehand. (previous cookies are overwritten this way)
             // Therefore we check AllKeys before accessing the collection directly
-            && _httpCtx.Response.Cookies.AllKeys.Contains(key))
             {
                 cookie = _httpCtx.Response.Cookies[key];
+            }
+
+            if (cookie == null)
+            {
+                cookie = _httpCtx.Request.Cookies[key];
             }
 
             if (cookie != null)
