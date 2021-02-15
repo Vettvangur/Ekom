@@ -173,6 +173,12 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Used by MailService, defaults to umbracoSettings.config configured email
+        /// </summary>
+        public virtual string EmailNotifications
+            => ConfigurationManager.AppSettings["Ekom.EmailNotifications"];
+
+        /// <summary>
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// This object is lazy initialized to make sure that all types have been registered with IoC container

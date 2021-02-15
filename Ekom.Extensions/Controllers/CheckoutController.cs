@@ -167,6 +167,7 @@ namespace Ekom.Extensions.Controllers
 
             try
             {
+                // Only validate, remove stock in CheckoutService
                 Stock.Instance.ValidateOrderStock(order);
 
                 // How does this work ? we dont have a coupon per orderline!

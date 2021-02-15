@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Hosting;
 using Umbraco.Core.Logging;
 
 namespace Ekom.Services
@@ -27,7 +28,8 @@ namespace Ekom.Services
             IOrderRepository orderRepo,
             ICouponRepository couponRepo,
             OrderService orderService,
-            IDiscountStockRepository discountStockRepo)
+            IDiscountStockRepository discountStockRepo, 
+            MailService mailService)
         {
             _logger = logger;
             _config = config;
@@ -35,6 +37,7 @@ namespace Ekom.Services
             _couponRepo = couponRepo;
             _orderService = orderService;
             _discountStockRepo = discountStockRepo;
+            _mailService = mailService;
         }
 
         public async Task CompleteAsync(Guid key)
@@ -48,7 +51,7 @@ namespace Ekom.Services
 
                 o = await _orderRepo.GetOrderAsync(key).ConfigureAwait(false);
 
-                if (o == null) return;
+                if (o == null) throw new ArgumentException("Unable to find order with key: " + key, nameof(key));
 
                 oi = new OrderInfo(o);
 
@@ -112,24 +115,48 @@ namespace Ekom.Services
                 await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
                     .ConfigureAwait(false);
             }
-            catch (NotEnoughStockException)
+            catch (NotEnoughStockException ex)
             {
-                _logger.Error<CheckoutService>($"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                _logger.Error<CheckoutService>(ex, $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                     + $"Order id: {oi?.UniqueId}");
 
+                _mailService.Recipient = _config.EmailNotifications ?? _mailService.Recipient;
+                _mailService.Subject = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                    + $"Order id: {oi?.UniqueId}";
+                var body = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}."
+                    + $"Order id: {oi?.UniqueId}\r\n";
+
+                if (ex is NotEnoughLineStockException exl)
+                {
+                    body += $"Line {exl.OrderLineKey} and variant == {exl.Variant == true}";
+                }
+
+                body += ex.ToString();
+                _mailService.Body = body;
+
+                HostingEnvironment.QueueBackgroundWorkItem(
+                    async ct => await _mailService.SendAsync().ConfigureAwait(false));
                 throw;
             }
             catch (Exception ex)
             {
                 _logger.Error<CheckoutService>(ex);
+                _mailService.Recipient = _config.EmailNotifications ?? _mailService.Recipient;
+                _mailService.Subject = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
+                    + $"Order id: {oi?.UniqueId}";
+                _mailService.Body = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}."
+                    + $"Order id: {oi?.UniqueId}\r\n\r\n" + ex.ToString();
+
+                HostingEnvironment.QueueBackgroundWorkItem(
+                    async ct => await _mailService.SendAsync().ConfigureAwait(false));
                 throw;
             }
         }
 
         /// <summary>
-        /// Optionally return an ActionResult to immediately return a specified response
+        /// 
         /// </summary>
-        /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
+        /// <returns></returns>
         private async Task ProcessOrderLinesStockAsync(IOrderInfo order)
         {
             foreach (var line in order.OrderLines)
@@ -144,7 +171,7 @@ namespace Ekom.Services
 
                             if (variantStock >= line.Quantity)
                             {
-                                await Stock.Instance.SetStockAsync(variant.Key, (line.Quantity * -1))
+                                await Stock.Instance.IncrementStockAsync(variant.Key, (line.Quantity * -1))
                                     .ConfigureAwait(false);
                             }
                             else
@@ -172,7 +199,7 @@ namespace Ekom.Services
                             //{
                             //    hangfireJobs.Add(await Stock.Instance.ReserveStockAsync(line.ProductKey, (line.Quantity * -1)));
                             //}
-                            await Stock.Instance.SetStockAsync(line.ProductKey, (line.Quantity * -1))
+                            await Stock.Instance.IncrementStockAsync(line.ProductKey, (line.Quantity * -1))
                                 .ConfigureAwait(false);
                         }
                         else

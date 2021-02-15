@@ -4,7 +4,7 @@ namespace Ekom.Exceptions
 {
     /// <summary>
     /// </summary>
-    public class NotEnoughLineStockException : EkomException
+    public class NotEnoughLineStockException : NotEnoughStockException
     {
         /// <summary>
         /// 

@@ -5,8 +5,10 @@ using Ekom.Models.Data;
 using Hangfire.States;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
@@ -232,27 +234,43 @@ namespace Ekom.API
         /// <exception cref="NotEnoughStockException"></exception>
         public async Task IncrementStockAsync(Guid key, string storeAlias, int value)
         {
+            SemaphoreSlim semaphore = null;
             StockData stockData;
-            if (_config.PerStoreStock)
+
+            try
             {
-                await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                if (_config.PerStoreStock)
+                {
+                    semaphore = GetStockLock(CreateStockUniqueId(key, storeAlias));
+                    await semaphore.WaitAsync().ConfigureAwait(false);
+
+                    await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                        .ConfigureAwait(false);
+
+                    stockData = _stockPerStoreCache.Cache[storeAlias][key];
+                }
+                else
+                {
+                    semaphore = GetStockLock(CreateStockUniqueId(key));
+                    await semaphore.WaitAsync().ConfigureAwait(false);
+
+                    await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
+
+                    stockData = _stockCache.Cache[key];
+                }
+
+                if (stockData.Stock + value < 0)
+                {
+                    throw new NotEnoughStockException($"Not enough stock available for {stockData.UniqueId}.");
+                }
+
+                await SetStockWithLockAsync(stockData, stockData.Stock + value, outerLock: true)
                     .ConfigureAwait(false);
-
-                stockData = _stockPerStoreCache.Cache[storeAlias][key];
             }
-            else
+            finally
             {
-                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
-
-                stockData = _stockCache.Cache[key];
+                semaphore?.Release();
             }
-
-            if (stockData.Stock + value < 0)
-            {
-                throw new NotEnoughStockException($"Not enough stock available for {stockData.UniqueId}.");
-            }
-
-            SetStockWithLock(stockData, stockData.Stock + value);
         }
 
         /// <summary>
@@ -263,7 +281,7 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task<bool> SetStockAsync(Guid key, int value)
+        internal async Task<bool> SetStockAsync(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
@@ -284,7 +302,7 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        public async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
+        internal async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
         {
             StockData stockData;
 
@@ -303,7 +321,7 @@ namespace Ekom.API
                 stockData = _stockCache.Cache[key];
             }
 
-            return SetStockWithLock(stockData, value);
+            return await SetStockWithLockAsync(stockData, value).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -409,7 +427,7 @@ namespace Ekom.API
             if (!_stockCache.Cache.ContainsKey(key))
             {
                 _stockCache.Cache[key]
-                    = await _stockRepo.CreateNewStockRecordAsync(key.ToString())
+                    = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key))
                     .ConfigureAwait(false);
             }
         }
@@ -419,7 +437,7 @@ namespace Ekom.API
             if (!_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
             {
                 _stockPerStoreCache.Cache[storeAlias][key]
-                    = await _stockRepo.CreateNewStockRecordAsync($"{storeAlias}_{key}")
+                    = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key, storeAlias))
                     .ConfigureAwait(false);
             }
         }
@@ -430,11 +448,12 @@ namespace Ekom.API
         /// </summary>
         /// <param name="stockData"></param>
         /// <param name="value"></param>
+        /// <param name="outerLock">True when locking is configured around this method</param>
         /// <exception cref="ArgumentException">
         /// Throws an exception when current value and provided value are equal
         /// </exception>
         /// <exception cref="ArgumentNullException"/>
-        private bool SetStockWithLock(StockData stockData, int value)
+        private async Task<bool> SetStockWithLockAsync(StockData stockData, int value, bool outerLock = false)
         {
             if (stockData == null)
             {
@@ -454,15 +473,26 @@ namespace Ekom.API
                 throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));
             }
 
-            // ToDo: refactor as semaphore slim
-            lock (stockData)
+            var semaphore = GetStockLock(stockData.UniqueId);
+            if (!outerLock)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
             {
                 var oldValue = stockData.Stock;
                 stockData.Stock = value;
 
-                _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).Wait();
+                await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).ConfigureAwait(false);
 
                 return true;
+            }
+            finally
+            {
+                if (!outerLock)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
@@ -486,5 +516,13 @@ namespace Ekom.API
         {
             return Instance.IncrementStockAsync(key, storeAlias, value);
         }
+
+        private string CreateStockUniqueId(Guid key) => key.ToString();
+        private string CreateStockUniqueId(Guid key, string storeAlias) => $"{storeAlias}_{key}";
+
+        private SemaphoreSlim GetStockLock(string stockData)
+            => _stockLocks.GetOrAdd(stockData, new SemaphoreSlim(1, 1));
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _stockLocks
+            = new ConcurrentDictionary<string, SemaphoreSlim>();
     }
 }
