@@ -281,7 +281,8 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal async Task<bool> SetStockAsync(Guid key, int value)
+        [Obsolete("Prefer Increment stock unless you have your own locks in place or are replacing stock without regard for previous state")]
+        public async Task<bool> SetStockAsync(Guid key, int value)
         {
             if (_config.PerStoreStock)
             {
@@ -302,7 +303,8 @@ namespace Ekom.API
         /// <param name="storeAlias"></param>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
+        [Obsolete("Prefer Increment stock unless you have your own locks in place or are replacing stock without regard for previous state")]
+        public async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
         {
             StockData stockData;
 
