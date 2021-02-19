@@ -33,7 +33,15 @@ namespace Ekom.Models
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
         public virtual string Url { get; }
-        public virtual CultureInfo Culture => new CultureInfo(Properties["culture"]);
+        public virtual CultureInfo Culture
+        {
+            get
+            {
+                var ci = new CultureInfo(Properties["culture"]);
+
+                return ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
+            }
+        }
         public virtual CurrencyModel Currency
         {
             get

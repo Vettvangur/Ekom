@@ -61,7 +61,6 @@ namespace Ekom.App_Start
             IContentService cs,
             ContentSavingEventArgs e)
         {
-
             foreach (var content in e.SavedEntities)
             {
                 var alias = content.ContentType.Alias;

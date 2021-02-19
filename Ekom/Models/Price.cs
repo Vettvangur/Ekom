@@ -254,7 +254,9 @@ namespace Ekom.Models
 
             get
             {
-                return Value.ToString(_currencyCulture.CurrencyFormat, new CultureInfo(_currencyCulture.CurrencyValue));
+                var ci = new CultureInfo(_currencyCulture.CurrencyValue);
+                ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
+                return Value.ToString(_currencyCulture.CurrencyFormat, ci);
             }
         }
 

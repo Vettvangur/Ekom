@@ -902,8 +902,12 @@ namespace Ekom.Services
             {
                 var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
 
-                var ri = new RegionInfo(culture.LCID);
-                orderData.Currency = ri.ISOCurrencySymbol;
+                if (culture.TwoLetterISOLanguageName == "is")
+                {
+                    culture = Configuration.IsCultureInfo;
+                }
+
+                orderData.Currency = culture.NumberFormat.CurrencySymbol;
             }
             catch (ArgumentException)
             {

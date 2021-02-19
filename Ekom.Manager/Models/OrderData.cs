@@ -18,8 +18,8 @@ namespace Ekom.Manager.Models
             {
                 var _grandTotal = Orders.Sum(z => z.TotalAmount);
                 var _averageAmount = Orders.Average(a => a.TotalAmount);
-                this.GrandTotal = string.Format(new CultureInfo("is-IS"), "{0:C}", _grandTotal) + "";
-                this.AverageAmount = string.Format(new CultureInfo("is-IS"), "{0:C}", _averageAmount) + "";
+                this.GrandTotal = string.Format(Configuration.IsCultureInfo, "{0:C}", _grandTotal) + "";
+                this.AverageAmount = string.Format(Configuration.IsCultureInfo, "{0:C}", _averageAmount) + "";
             }
 
         }

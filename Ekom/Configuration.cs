@@ -4,6 +4,7 @@ using Ekom.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Globalization;
 using System.Linq;
 using Umbraco.Core;
 using UmbracoCurrent = Umbraco.Core.Composing.Current;
@@ -216,5 +217,18 @@ namespace Ekom
         internal const string DiscountStockTableName = "EkomDiscountStock";
 
         internal static readonly TimeSpan orderInfoCacheTime = TimeSpan.FromDays(1);
+
+        /// <summary>
+        /// Useful for Azure app services which sometimes do not include the correct currency symbol
+        /// </summary>
+        public static CultureInfo IsCultureInfo
+        {
+            get
+            {
+                var ci = new CultureInfo("is-IS");
+                ci.NumberFormat.CurrencySymbol = "kr";
+                return ci;
+            }
+        }
     }
 }

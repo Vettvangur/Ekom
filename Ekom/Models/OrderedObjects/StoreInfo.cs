@@ -104,8 +104,6 @@ namespace Ekom.Models.OrderedObjects
                 {
                     try
                     {
-                        CultureInfo c = new CultureInfo(storeInfoObject["Currency"].Value<string>());
-
                         currencyCulture = storeInfoObject["Currency"].Value<string>();
                     }
                     catch
