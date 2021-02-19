@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Extensions.v8</PackageId>
-        <Version>0.3.7</Version>
+        <Version>0.3.8</Version>
         <Title>Ekom Controllers</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -53,7 +53,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Ekom.Core.v8" Version="[0.6.8,1.0.0)" />
+        <PackageReference Include="Ekom.Core.v8" Version="[0.6.9,1.0.0)" />
         <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.8.55">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
