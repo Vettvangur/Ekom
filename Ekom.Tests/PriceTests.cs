@@ -22,69 +22,69 @@ namespace Ekom.Tests
         /// <summary>
         /// Two products with price of 1500 per item
         /// </summary>
-        [TestMethod]
-        public void CalculatesPriceCorrectly()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(Mock.Of<IProductDiscountService>());
-            Helpers.RegisterUmbracoHelper(reg, fac);
+        //[TestMethod]
+        //public void CalculatesPriceCorrectly()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    reg.Register(Mock.Of<IProductDiscountService>());
+        //    Helpers.RegisterUmbracoHelper(reg, fac);
 
-            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
-            var product = Objects.Objects.Get_Shirt3_Product();
+        //    var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+        //    var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
+        //    var orderSvc = new OrderServiceMocks().orderSvc;
+        //    var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.AreEqual(3300m, oi.OrderLineTotal.Value);
-        }
+        //    Assert.AreEqual(3300m, oi.OrderLineTotal.Value);
+        //}
 
-        [TestMethod]
-        public void CalculatesVatNotIncludedStorePrice()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(Mock.Of<IProductDiscountService>());
-            Helpers.RegisterUmbracoHelper(reg, fac);
+        //[TestMethod]
+        //public void CalculatesVatNotIncludedStorePrice()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    reg.Register(Mock.Of<IProductDiscountService>());
+        //    Helpers.RegisterUmbracoHelper(reg, fac);
 
-            var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
-            var product = Objects.Objects.Get_Shirt3_Product();
+        //    var store = Objects.Objects.Get_IS_Store_Vat_NotIncluded();
+        //    var product = Objects.Objects.Get_Shirt3_Product();
 
-            var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
+        //    var orderSvc = new OrderServiceMocks().orderSvc;
+        //    var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.AreEqual(300m, oi.Vat.Value);
-            Assert.AreEqual(3300m, oi.ChargedAmount.Value);
-        }
+        //    Assert.AreEqual(300m, oi.Vat.Value);
+        //    Assert.AreEqual(3300m, oi.ChargedAmount.Value);
+        //}
 
-        [TestMethod]
-        public void CalculatesVatIncludedStorePrice()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(Mock.Of<IProductDiscountService>());
-            Helpers.RegisterUmbracoHelper(reg, fac);
+        //[TestMethod]
+        //public void CalculatesVatIncludedStorePrice()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    reg.Register(Mock.Of<IProductDiscountService>());
+        //    Helpers.RegisterUmbracoHelper(reg, fac);
 
-            var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.oldjson, store);
+        //    var store = Objects.Objects.Get_IS_Store_Vat_Included();
+        //    var product = new CustomProduct(Shirt_product_3.oldjson, store);
 
-            var orderSvc = new OrderServiceMocks().orderSvc;
-            var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
+        //    var orderSvc = new OrderServiceMocks().orderSvc;
+        //    var oi = orderSvc.AddOrderLineAsync(product, 2, store).Result;
 
-            Assert.AreEqual(500m, oi.Vat.Value);
-            Assert.AreEqual(3000m, oi.ChargedAmount.Value);
-        }
+        //    Assert.AreEqual(500m, oi.Vat.Value);
+        //    Assert.AreEqual(3000m, oi.ChargedAmount.Value);
+        //}
 
-        [TestMethod]
-        public void CanGetWithoutVatFromVatIncluded()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            reg.Register(Mock.Of<IProductDiscountService>());
+        //[TestMethod]
+        //public void CanGetWithoutVatFromVatIncluded()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    reg.Register(Mock.Of<IProductDiscountService>());
 
-            var store = Objects.Objects.Get_IS_Store_Vat_Included();
-            var product = new CustomProduct(Shirt_product_3.oldjson, store);
+        //    var store = Objects.Objects.Get_IS_Store_Vat_Included();
+        //    var product = new CustomProduct(Shirt_product_3.oldjson, store);
 
-            var oi = new OrderInfo(new Models.Data.OrderData(), store);
-            var ol = new OrderLine(product, 1, Guid.NewGuid(), oi, null);
+        //    var oi = new OrderInfo(new Models.Data.OrderData(), store);
+        //    var ol = new OrderLine(product, 1, Guid.NewGuid(), oi, null);
 
-            Assert.AreEqual(1500 / 1.2m, ol.Amount.WithoutVat.Value);
-        }
+        //    Assert.AreEqual(1500 / 1.2m, ol.Amount.WithoutVat.Value);
+        //}
     }
 }

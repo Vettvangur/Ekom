@@ -21,67 +21,67 @@ namespace Ekom.Tests
             Current.Reset();
         }
 
-        [TestMethod]
-        public async Task DoesNotUpdateWithoutStock()
-        {
-            var newGuid = Guid.NewGuid();
+        //[TestMethod]
+        //public async Task DoesNotUpdateWithoutStock()
+        //{
+        //    var newGuid = Guid.NewGuid();
 
-            var stockRepo = new Mock<IStockRepository>();
+        //    var stockRepo = new Mock<IStockRepository>();
 
-            var stockCache = new StockCache(
-                new Configuration(),
-                Mock.Of<ILogger>(),
-                stockRepo.Object
-            );
-            stockCache[newGuid] = new StockData();
+        //    var stockCache = new StockCache(
+        //        new Configuration(),
+        //        Mock.Of<ILogger>(),
+        //        stockRepo.Object
+        //    );
+        //    stockCache[newGuid] = new StockData();
 
-            var stockApi = new Stock(
-                Mock.Of<Configuration>(),
-                Mock.Of<ILogger>(),
-                stockCache,
-                stockRepo.Object,
-                Mock.Of<IDiscountStockRepository>(),
-                Mock.Of<IStoreService>(),
-                Mock.Of<IPerStoreCache<StockData>>()
-            );
+        //    var stockApi = new Stock(
+        //        Mock.Of<Configuration>(),
+        //        Mock.Of<ILogger>(),
+        //        stockCache,
+        //        stockRepo.Object,
+        //        Mock.Of<IDiscountStockRepository>(),
+        //        Mock.Of<IStoreService>(),
+        //        Mock.Of<IPerStoreCache<StockData>>()
+        //    );
 
-            await Assert.ThrowsExceptionAsync<NotEnoughStockException>(
-                () => stockApi.IncrementStockAsync(newGuid, -5));
-        }
+        //    await Assert.ThrowsExceptionAsync<NotEnoughStockException>(
+        //        () => stockApi.IncrementStockAsync(newGuid, -5));
+        //}
 
-        [TestMethod]
-        public void CanCallUpdateStockStaticMethod()
-        {
-            var guid = Guid.NewGuid();
+        //[TestMethod]
+        //public void CanCallUpdateStockStaticMethod()
+        //{
+        //    var guid = Guid.NewGuid();
 
-            var (fac, reg) = Helpers.RegisterAll();
+        //    var (fac, reg) = Helpers.RegisterAll();
 
-            var stockRepo = new Mock<IStockRepository>();
-            stockRepo.Setup(sr => sr.CreateNewStockRecordAsync(It.IsAny<string>()))
-                .Returns(Task.FromResult(new StockData
-                {
-                    UniqueId = guid.ToString(),
-                }));
+        //    var stockRepo = new Mock<IStockRepository>();
+        //    stockRepo.Setup(sr => sr.CreateNewStockRecordAsync(It.IsAny<string>()))
+        //        .Returns(Task.FromResult(new StockData
+        //        {
+        //            UniqueId = guid.ToString(),
+        //        }));
 
-            var stockCache = new StockCache(
-                new Configuration(),
-                Mock.Of<ILogger>(),
-                stockRepo.Object
-            );
-            stockCache[guid] = new StockData();
+        //    var stockCache = new StockCache(
+        //        new Configuration(),
+        //        Mock.Of<ILogger>(),
+        //        stockRepo.Object
+        //    );
+        //    stockCache[guid] = new StockData();
 
-            var stockSvc = new Stock(
-                new Configuration(),
-                Mock.Of<ILogger>(),
-                stockCache,
-                stockRepo.Object,
-                Mock.Of<IDiscountStockRepository>(),
-                Mock.Of<IStoreService>(),
-                Mock.Of<IPerStoreCache<StockData>>()
-            );
+        //    var stockSvc = new Stock(
+        //        new Configuration(),
+        //        Mock.Of<ILogger>(),
+        //        stockCache,
+        //        stockRepo.Object,
+        //        Mock.Of<IDiscountStockRepository>(),
+        //        Mock.Of<IStoreService>(),
+        //        Mock.Of<IPerStoreCache<StockData>>()
+        //    );
 
-            reg.Register<Stock>(f => stockSvc);
-            Stock.UpdateStockHangfireAsync(guid, 1);
-        }
+        //    reg.Register<Stock>(f => stockSvc);
+        //    Stock.UpdateStockHangfireAsync(guid, 1);
+        //}
     }
 }

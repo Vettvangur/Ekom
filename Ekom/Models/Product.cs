@@ -199,7 +199,7 @@ namespace Ekom.Models
         /// <summary>
         /// Get Price by current store currency
         /// </summary>
-        public virtual IPrice Price
+        public IPrice Price
         {
             get
             {

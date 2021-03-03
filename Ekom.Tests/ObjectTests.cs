@@ -33,50 +33,50 @@ namespace Ekom.Tests
             Current.Reset();
         }
 
-        [TestMethod]
-        public void CategoriesCanCallGetPropertyValueWithStoreAlias()
-        {
-            Helpers.RegisterAll();
-            ICategory cat = Objects.Objects.Get_Category_Women();
-            Assert.AreEqual("Konur", cat.GetPropertyValue("title", "IS"));
-        }
+        //[TestMethod]
+        //public void CategoriesCanCallGetPropertyValueWithStoreAlias()
+        //{
+        //    Helpers.RegisterAll();
+        //    ICategory cat = Objects.Objects.Get_Category_Women();
+        //    Assert.AreEqual("Konur", cat.GetPropertyValue("title", "IS"));
+        //}
 
-        [TestMethod]
-        public void StoreFromSearchResult()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            var httpCtx = Helpers.GetSetHttpContext();
+        //[TestMethod]
+        //public void StoreFromSearchResult()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    var httpCtx = Helpers.GetSetHttpContext();
 
-            var examineSvcMock = new Mock<IExamineService>();
-            examineSvcMock.Setup(x => x.GetExamineNode("8cea2a5d-0290-434c-aa98-12850ae4c7d6"))
-                .Returns(new SearchResult("10", 0, () => null));
-            reg.Register(examineSvcMock.Object);
+        //    var examineSvcMock = new Mock<IExamineService>();
+        //    examineSvcMock.Setup(x => x.GetExamineNode("8cea2a5d-0290-434c-aa98-12850ae4c7d6"))
+        //        .Returns(new SearchResult("10", 0, () => null));
+        //    reg.Register(examineSvcMock.Object);
 
-            var publishedSnapshotServiceCreator = new PublishedSnapshotServiceCreator();
-            publishedSnapshotServiceCreator.PublishedContentCacheMock
-                .Setup(x => x.GetById(10))
-                .Returns(Mock.Of<IPublishedContent>(
-                    x => x.ContentType == Mock.Of<IPublishedContentType>()));
+        //    var publishedSnapshotServiceCreator = new PublishedSnapshotServiceCreator();
+        //    publishedSnapshotServiceCreator.PublishedContentCacheMock
+        //        .Setup(x => x.GetById(10))
+        //        .Returns(Mock.Of<IPublishedContent>(
+        //            x => x.ContentType == Mock.Of<IPublishedContentType>()));
 
-            var umbCtxFacCreator = new UmbracoContextFactoryCreator();
-            umbCtxFacCreator.PublishedSnapshotService.Setup(
-                x => x.CreatePublishedSnapshot(It.IsAny<string>()))
-                .Returns(publishedSnapshotServiceCreator.PublishedSnapshotMock.Object);
+        //    var umbCtxFacCreator = new UmbracoContextFactoryCreator();
+        //    umbCtxFacCreator.PublishedSnapshotService.Setup(
+        //        x => x.CreatePublishedSnapshot(It.IsAny<string>()))
+        //        .Returns(publishedSnapshotServiceCreator.PublishedSnapshotMock.Object);
 
-            umbCtxFacCreator.UmbracoSettingsSection.Setup(x => x.WebRouting.UrlProviderMode).Returns("Auto");
-            umbCtxFacCreator.GlobalSettings.Setup(x => x.Path).Returns("/umbraco");
+        //    umbCtxFacCreator.UmbracoSettingsSection.Setup(x => x.WebRouting.UrlProviderMode).Returns("Auto");
+        //    umbCtxFacCreator.GlobalSettings.Setup(x => x.Path).Returns("/umbraco");
 
-            var umbCtxFac = umbCtxFacCreator.Create();
-            reg.Register<IUmbracoContextFactory>(f => umbCtxFac);
+        //    var umbCtxFac = umbCtxFacCreator.Create();
+        //    reg.Register<IUmbracoContextFactory>(f => umbCtxFac);
 
-            reg.Register(f => Mock.Of<IStoreDomainCache>(
-                sd => sd.Cache == new ConcurrentDictionary<Guid, IDomain> { }));
+        //    reg.Register(f => Mock.Of<IStoreDomainCache>(
+        //        sd => sd.Cache == new ConcurrentDictionary<Guid, IDomain> { }));
 
-            var s = new Store(Objects.Objects.StoreResult);
-            Assert.AreEqual(1096, s.Id);
-            Assert.AreEqual(new Guid("9d67c718-a703-4958-8e2d-271670faf207"), s.Key);
-            Assert.AreEqual(10, s.StoreRootNode);
-            Assert.AreEqual(true, s.VatIncludedInPrice);
-        }
+        //    var s = new Store(Objects.Objects.StoreResult);
+        //    Assert.AreEqual(1096, s.Id);
+        //    Assert.AreEqual(new Guid("9d67c718-a703-4958-8e2d-271670faf207"), s.Key);
+        //    Assert.AreEqual(10, s.StoreRootNode);
+        //    Assert.AreEqual(true, s.VatIncludedInPrice);
+        //}
     }
 }
