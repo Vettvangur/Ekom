@@ -48,55 +48,55 @@ namespace Ekom.Tests
         /// <summary>
         /// Unpublished items can't be found in the external examine index
         /// </summary>
-        [TestMethod]
-        public void VariantWithUnpublishedCategoryIsUnpublished()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            var mockExamineSvc = new Mock<IExamineService>();
-            reg.Register(mockExamineSvc.Object);
+        //[TestMethod]
+        //public void VariantWithUnpublishedCategoryIsUnpublished()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    var mockExamineSvc = new Mock<IExamineService>();
+        //    reg.Register(mockExamineSvc.Object);
 
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1179)))
-                .Returns(Objects.Objects.Get_Category_Women_SearchResult());
-            // The missing node, indicating an unpublished item
-            //mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1079)))
-            //    .Returns(Shirt_product_2.SearchResult());
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1195)))
-                .Returns(Objects.Objects.Get_shirt2_blue_variantgroup_SearchResult());
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1200)))
-                .Returns(Objects.Objects.Get_shirt2_blue_S_variant_SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1179)))
+        //        .Returns(Objects.Objects.Get_Category_Women_SearchResult());
+        //    // The missing node, indicating an unpublished item
+        //    //mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1079)))
+        //    //    .Returns(Shirt_product_2.SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1195)))
+        //        .Returns(Objects.Objects.Get_shirt2_blue_variantgroup_SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1200)))
+        //        .Returns(Objects.Objects.Get_shirt2_blue_S_variant_SearchResult());
 
-            Assert.IsTrue(NodeHelper.IsItemUnpublished(
-                Objects.Objects.Get_shirt2_blue_S_variant_SearchResult())
-            );
-        }
+        //    Assert.IsTrue(NodeHelper.IsItemUnpublished(
+        //        Objects.Objects.Get_shirt2_blue_S_variant_SearchResult())
+        //    );
+        //}
 
-        [TestMethod]
-        public void VariantWithDisabledCategoryIsDisabled()
-        {
-            var (fac, reg) = Helpers.RegisterAll();
-            var mockExamineSvc = new Mock<IExamineService>();
-            reg.Register(mockExamineSvc.Object);
+        //[TestMethod]
+        //public void VariantWithDisabledCategoryIsDisabled()
+        //{
+        //    var (fac, reg) = Helpers.RegisterAll();
+        //    var mockExamineSvc = new Mock<IExamineService>();
+        //    reg.Register(mockExamineSvc.Object);
 
-            var isStore = Objects.Objects.Get_IS_Store_Vat_Included();
-            var dkStore = Objects.Objects.Get_DK_Store_Vat_Included();
+        //    var isStore = Objects.Objects.Get_IS_Store_Vat_Included();
+        //    var dkStore = Objects.Objects.Get_DK_Store_Vat_Included();
 
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1179)))
-                .Returns(Objects.Objects.Get_Category_Women_SearchResult());
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1079)))
-                .Returns(Shirt_product_2.SearchResult());
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1195)))
-                .Returns(Objects.Objects.Get_shirt2_blue_variantgroup_SearchResult());
-            mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1200)))
-                .Returns(Objects.Objects.Get_shirt2_blue_S_variant_SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1179)))
+        //        .Returns(Objects.Objects.Get_Category_Women_SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1079)))
+        //        .Returns(Shirt_product_2.SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1195)))
+        //        .Returns(Objects.Objects.Get_shirt2_blue_variantgroup_SearchResult());
+        //    mockExamineSvc.Setup(x => x.GetExamineNode(It.Is<int>(y => y == 1200)))
+        //        .Returns(Objects.Objects.Get_shirt2_blue_S_variant_SearchResult());
 
-            Assert.IsTrue(NodeHelper.IsItemDisabled(
-                Objects.Objects.Get_shirt2_blue_S_variant_SearchResult(),
-                isStore)
-            );
-            Assert.IsFalse(NodeHelper.IsItemDisabled(
-                Objects.Objects.Get_shirt2_blue_S_variant_SearchResult(),
-                dkStore)
-            );
-        }
+        //    Assert.IsTrue(NodeHelper.IsItemDisabled(
+        //        Objects.Objects.Get_shirt2_blue_S_variant_SearchResult(),
+        //        isStore)
+        //    );
+        //    Assert.IsFalse(NodeHelper.IsItemDisabled(
+        //        Objects.Objects.Get_shirt2_blue_S_variant_SearchResult(),
+        //        dkStore)
+        //    );
+        //}
     }
 }
