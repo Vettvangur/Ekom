@@ -69,7 +69,7 @@ namespace Ekom.Utilities
 
         /// <summary>
         /// Build category urls from a collection of parent slugs and the slug of observed category.
-        /// Used f.x. by Wurth
+        /// Used for category creation at runtime f.x.
         /// </summary>
         /// <param name="slug">Short name of category</param>
         /// <param name="hierarchy">Ordered list of slugs for all parents</param>

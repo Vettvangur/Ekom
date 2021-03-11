@@ -20,13 +20,18 @@ namespace Ekom.Utilities
     {
         public static IEnumerable<ISearchResult> GetAllCatalogItemsFromPath(string path)
         {
-            var list = new List<ISearchResult>();
-
             var pathArray = path.Split(',');
 
+            // Skip Root, Ekom container, Catalog container
             var Ids = pathArray.Skip(3);
 
-            foreach (var id in Ids)
+            return GetAllCatalogItemsFromPath(Ids);
+        }
+        public static IEnumerable<ISearchResult> GetAllCatalogItemsFromPath(IEnumerable<string> ids)
+        {
+            var list = new List<ISearchResult>();
+
+            foreach (var id in ids)
             {
                 var examineItem = ExamineService.Instance.GetExamineNode(int.Parse(id));
                 if (examineItem != null)

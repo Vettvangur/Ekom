@@ -188,12 +188,20 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Category(IContent node, IStore store) : base(node, store)
         {
-            var pathField = node.Path;
-            var examineItemsFromPath = NodeHelper.GetAllCatalogItemsFromPath(pathField).ToList();
+            var pathArray = node.Path.Split(',');
+
+            // Skip Root, Ekom container, Catalog container
+            var Ids = pathArray.Skip(3);
+            // Skip this category that's being created
+            Ids = Ids.Take(Ids.Count() - 1);
+
+            var hierarchy = NodeHelper.GetAllCatalogItemsFromPath(Ids)
+                .Select(x => x.GetStoreProperty("slug", store.Alias))
+                .ToList();
 
             ParentId = node.ParentId;
 
-            Urls = UrlHelper.BuildCategoryUrls(examineItemsFromPath, store);
+            Urls = UrlHelper.BuildCategoryUrls(Slug, hierarchy, store);
         }
     }
 }
