@@ -104,7 +104,9 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        contentId = virtualContent.InvariantEquals("true") ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode")) : category.Id;
+                        contentId = virtualContent.InvariantEquals("true") 
+                            ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode")) 
+                            : category.Id;
                     }
                     // else Requesting Neither
                 }

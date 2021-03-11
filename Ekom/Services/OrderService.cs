@@ -1303,7 +1303,6 @@ namespace Ekom.Services
         /// </summary>
         private void VerifyProviders(OrderInfo orderInfo)
         {
-
             if (orderInfo.PaymentProvider != null || orderInfo.ShippingProvider != null)
             {
                 var total = orderInfo.OrderLineTotal.Value;

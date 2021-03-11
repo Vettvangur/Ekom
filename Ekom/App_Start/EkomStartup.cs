@@ -14,18 +14,18 @@ using Umbraco.Web.Routing;
 
 namespace Ekom
 {
+
     /// <summary>
     /// Hooks into the umbraco application startup lifecycle 
     /// </summary>
-    public class EkomComposer : IUserComposer
+    // Public allows consumers to target type with ComposeAfter / ComposeBefore
+    public class EkomComposer : IUserComposer 
     {
         /// <summary>
         /// Umbraco lifecycle method
         /// </summary>
         public void Compose(Composition composition)
         {
-            Registrations.Register(composition);
-
             composition.ContentFinders()
                 .InsertBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
             composition.UrlProviders()

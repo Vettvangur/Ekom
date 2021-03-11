@@ -267,7 +267,6 @@ namespace Ekom.Utilities
             }
             catch
             {
-
                 if (decimal.TryParse(priceJson, out decimal value))
                 {
                     var store = API.Store.Instance.GetStore();
@@ -293,7 +292,6 @@ namespace Ekom.Utilities
             }
             catch
             {
-
                 if (decimal.TryParse(priceJson, out decimal value))
                 {
                     var store = API.Store.Instance.GetStore();

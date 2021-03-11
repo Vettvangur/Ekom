@@ -145,14 +145,14 @@ namespace Ekom.App_Start
 
         private ICache FindMatchingCache(string contentTypeAlias)
         {
-
             if (contentTypeAlias.Contains("netPaymentProvider"))
             {
                 return _config.CacheList.Value.FirstOrDefault(x
                     => !string.IsNullOrEmpty(x.NodeAlias)
                     && contentTypeAlias.StartsWith(x.NodeAlias, StringComparison.InvariantCulture)
                 );
-            } else
+            } 
+            else
             {
                 return _config.CacheList.Value.FirstOrDefault(x
                     => !string.IsNullOrEmpty(x.NodeAlias)

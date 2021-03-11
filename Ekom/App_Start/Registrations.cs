@@ -18,10 +18,11 @@ namespace Ekom.App_Start
     /// <summary>
     /// Registers the Ekom type mappings with Umbraco IoC.
     /// </summary>
-    static class Registrations
+    // Public allows consumers to target type with ComposeAfter / ComposeBefore
+    public class EkomRegistrations : ICoreComposer
     {
         /// <summary>Registers the Ekom type mappings with Umbraco IoC.</summary>
-        public static void Register(Composition composition)
+        public void Compose(Composition composition)
         {
             composition.RegisterUnique<Configuration>();
 
@@ -129,16 +130,16 @@ namespace Ekom.App_Start
                  )
              );
 
-            composition.Register<IObjectFactory<IStore>, StoreFactory>(Lifetime.Transient);
-            composition.Register<IObjectFactory<IZone>, ZoneFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<ICategory>, CategoryFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IDiscount>, DiscountFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IPaymentProvider>, PaymentProviderFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IShippingProvider>, ShippingProviderFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IProduct>, ProductFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IProductDiscount>, ProductDiscountFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IVariant>, VariantFactory>(Lifetime.Transient);
-            composition.Register<IPerStoreFactory<IVariantGroup>, VariantGroupFactory>(Lifetime.Transient);
+            composition.RegisterUnique<IObjectFactory<IStore>, StoreFactory>();
+            composition.RegisterUnique<IObjectFactory<IZone>, ZoneFactory>();
+            composition.RegisterUnique<IPerStoreFactory<ICategory>, CategoryFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IDiscount>, DiscountFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IPaymentProvider>, PaymentProviderFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IShippingProvider>, ShippingProviderFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IProduct>, ProductFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IProductDiscount>, ProductDiscountFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IVariant>, VariantFactory>();
+            composition.RegisterUnique<IPerStoreFactory<IVariantGroup>, VariantGroupFactory>();
         }
     }
 }

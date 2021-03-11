@@ -101,7 +101,6 @@ namespace Ekom.Models.Behaviors
         /// </summary>
         public decimal EndRange
         {
-
             get
             {
                 var httpContext = Current.Factory.GetInstance<HttpContextBase>();
@@ -123,7 +122,7 @@ namespace Ekom.Models.Behaviors
                     }
                 }
 
-                return EndRanges.Any() ? EndRanges.FirstOrDefault().Value : 0;
+                return EndRanges.FirstOrDefault()?.Value ?? 0;
             }
         }
         private List<CurrencyValue> _endRanges;

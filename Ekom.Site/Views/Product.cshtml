@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@inherits Umbraco.Web.Mvc.UmbracoViewPage
 @using Ekom.Utilities;
 
 @{
@@ -88,7 +88,7 @@
                                         <select @(groupSelected ? "name=variantId" : "") data-name="variantId" id="inp_@group.Key">
                                             @foreach (var variant in group.Variants.OrderBy(x => x.SortOrder))
                                             {
-                                                <option value="@variant.Key" data-price="@variant.Price.WithVat.CurrencyString">@variant.Title - @variant.Price.WithVat.CurrencyString</option>
+                                                <option value="@variant.Key" data-price="@variant.Price.WithVat.CurrencyString">@variant.Title - @variant.Price.WithVat.CurrencyString - Stock: @variant.Stock - Type: @variant.GetType()</option>
                                             }
                                         </select>
 
