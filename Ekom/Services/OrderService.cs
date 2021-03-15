@@ -1305,7 +1305,7 @@ namespace Ekom.Services
         {
             if (orderInfo.PaymentProvider != null || orderInfo.ShippingProvider != null)
             {
-                var total = orderInfo.OrderLineTotal.Value;
+                var total = orderInfo.GrandTotal.Value;
                 var countryCode = orderInfo.CustomerInformation.Customer.Country;
 
                 // Verify paymentProvider constraints
@@ -1313,7 +1313,9 @@ namespace Ekom.Services
                 {
                     var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key);
 
-                    if (!paymentProvider.Constraints.IsValid(countryCode, total))
+                    // In case of deletion
+                    if (paymentProvider == null 
+                    || !paymentProvider.Constraints.IsValid(countryCode, total))
                     {
                         orderInfo.PaymentProvider = null;
                     }
@@ -1324,7 +1326,8 @@ namespace Ekom.Services
                 {
                     var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
 
-                    if (!shippingProvider.Constraints.IsValid(countryCode, total))
+                    if (shippingProvider == null 
+                    || !shippingProvider.Constraints.IsValid(countryCode, total))
                     {
                         orderInfo.ShippingProvider = null;
                     }
