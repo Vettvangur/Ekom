@@ -182,7 +182,8 @@ namespace Ekom.Models
             {
                 var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
                 var path = httpCtx.Request.Url.AbsolutePath;
-                var findUrlByPrefix = Urls.FirstOrDefault(x => x.StartsWith(path));
+                var findUrlByPrefix = Urls
+                    .FirstOrDefault(x => x.StartsWith(path));
 
                 return findUrlByPrefix ?? Urls.FirstOrDefault();
             }

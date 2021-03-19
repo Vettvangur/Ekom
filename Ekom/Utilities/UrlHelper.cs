@@ -64,7 +64,7 @@ namespace Ekom.Utilities
                 urls.Add(url);
             }
 
-            return urls.DistinctBy(x => x);
+            return urls.DistinctBy(x => x).OrderBy(x => x.Length);
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Ekom.Utilities
                 }
             }
 
-            return urls;
+            return urls.OrderBy(x => x.Length);
         }
 
         public static IEnumerable<string> BuildProductUrls(string slug, IEnumerable<ICategory> categories, IStore store)
@@ -125,7 +125,7 @@ namespace Ekom.Utilities
                 }
             }
 
-            return urls;
+            return urls.OrderBy(x => x.Length);
         }
 
         public static string GetDomainPrefix(string url)
@@ -148,6 +148,5 @@ namespace Ekom.Utilities
 
             return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
         }
-
     }
 }
