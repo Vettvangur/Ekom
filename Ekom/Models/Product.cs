@@ -14,6 +14,7 @@ using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Models;
+using Umbraco.Web;
 
 namespace Ekom.Models
 {
@@ -180,8 +181,12 @@ namespace Ekom.Models
         {
             get
             {
-                var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
-                var path = httpCtx.Request.Url.AbsolutePath;
+                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
+                var path = umbCtx.PublishedRequest.Domain.Uri
+                            .AbsolutePath
+                            .ToLower()
+                            .AddTrailing();
+
                 var findUrlByPrefix = Urls
                     .FirstOrDefault(x => x.StartsWith(path));
 
