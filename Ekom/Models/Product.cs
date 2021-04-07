@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
 using Ekom.Utilities;
@@ -181,8 +182,21 @@ namespace Ekom.Models
         {
             get
             {
+                // Urls is a list of relative urls.
+                // Umbraco cultures & hostnames can include a prefix
+                // This code matches to find correct prefix,
+                // aside from that, relative urls should be similar between domains
                 var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
-                var path = umbCtx.PublishedRequest.Domain.Uri
+                var pubReq = umbCtx.PublishedRequest;
+
+                if (pubReq == null)
+                {
+                    // Yeah this should probably be a method now.. accessing UmbracoContext as well
+                    throw new MissingUmbracoContextException(
+                        "Missing UmbracoContext, remember to post to SurfaceControllers including the umbCtx form param to include the relevant context when accessing url data"
+                    );
+                }
+                var path = pubReq.Domain.Uri
                             .AbsolutePath
                             .ToLower()
                             .AddTrailing();
