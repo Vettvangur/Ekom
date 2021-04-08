@@ -108,6 +108,8 @@ namespace Ekom.Utilities
                 }
             }
 
+            // ordering by length ensures that publishedRequests with the default / prefix
+            // do not match more specific prefixes such as /is/
             return urls.OrderBy(x => x.Length);
         }
 
@@ -125,7 +127,8 @@ namespace Ekom.Utilities
                 }
             }
 
-            return urls.OrderBy(x => x.Length);
+            // Categories order by length, otherwise we mess up primary category priority
+            return urls /*.OrderBy(x => x.Length) */; 
         }
 
         public static string GetDomainPrefix(string url)
