@@ -40,16 +40,14 @@ namespace Ekom.Extensions.Controllers
         /// </summary>
         protected virtual string ErrorQueryString { get; set; } = "?errorStatus=serverError";
 
-        readonly ILogger _logger;
-        readonly Configuration _config;
-        readonly IScopeProvider _scopeProvider;
+        protected readonly Configuration _config;
+        protected readonly IScopeProvider _scopeProvider;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public CheckoutController(ILogger logger, Configuration config, IScopeProvider scopeProvider)
+        public CheckoutController(Configuration config, IScopeProvider scopeProvider)
         {
-            _logger = logger;
             _config = config;
             _scopeProvider = scopeProvider;
         }
@@ -63,6 +61,8 @@ namespace Ekom.Extensions.Controllers
         {
             try
             {
+                Logger.Debug<CheckoutController>("Pay - Payment request start");
+
                 // ToDo: Lock order throughout request
                 var order = await Order.Instance.GetOrderAsync();
                 var store = Store.Instance.GetStore();
@@ -109,7 +109,7 @@ namespace Ekom.Extensions.Controllers
             catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
             {
-                _logger.Error<CheckoutController>(ex, "Checkout payment failed!");
+                Logger.Error<CheckoutController>(ex, "Checkout payment failed!");
                 return RedirectToCurrentUmbracoPage(ErrorQueryString);
             }
         }
@@ -183,7 +183,7 @@ namespace Ekom.Extensions.Controllers
             }
             catch (NotEnoughLineStockException ex)
             {
-                _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                Logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
                 if (ex.Variant.HasValue && ex.OrderLineKey != default)
                 {
                     var type = ex.Variant.Value ? "variant" : "product";
@@ -195,7 +195,7 @@ namespace Ekom.Extensions.Controllers
             }
             catch (NotEnoughStockException ex)
             {
-                _logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
+                Logger.Error<CheckoutController>(ex, "Not Enough Stock Exception");
                 return RedirectToCurrentUmbracoPage("?errorStatus=stockError&errorType=" + ex.Message);
             }
 
@@ -313,7 +313,7 @@ namespace Ekom.Extensions.Controllers
                 Quantity = 1,
             });
 
-            _logger.Info<CheckoutController>(
+            Logger.Info<CheckoutController>(
                 "Payment Provider: {PaymentProvider} offline: {isOfflinePayment}",
                 paymentRequest.PaymentProvider,
                 isOfflinePayment);
@@ -342,7 +342,7 @@ namespace Ekom.Extensions.Controllers
                 catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    _logger.Error<CheckoutController>(
+                    Logger.Error<CheckoutController>(
                         ex,
                         "Offline Payment Failed. Order: {UniqueId}",
                         order.UniqueId);
