@@ -64,7 +64,7 @@ namespace Ekom.Models
                 {
                     // Yeah this should probably be a method now.. accessing UmbracoContext as well
                     throw new MissingUmbracoContextException(
-                        "Missing UmbracoContext, remember to post to SurfaceControllers including the umbCtx form param to include the relevant context when accessing url data"
+                        "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
                     );
                 }
 
