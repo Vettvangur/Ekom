@@ -291,7 +291,13 @@ namespace Ekom.Services
             var orderData = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
-            return orderData != null ? new OrderInfo(orderData) : null;
+            // Here we check if there is any OrderInfo at all to create an OrderInfo out of
+            // What could happen was that during the first AddOrderLine call, an empty order is created.
+            // Following that an exception is hit during new OrderLine f.x. when calling overridden getters on Products (calling Nav f.x. ?)
+            // This would leave a misshapen OrderData record in sql with OrderInfo null.
+            // for some reason the OrderInfo constructor allows creation despite orderData.OrderInfo == null
+            // so we break here instead (??)
+            return orderData?.OrderInfo != null ? new OrderInfo(orderData) : null;
         }
 
 
