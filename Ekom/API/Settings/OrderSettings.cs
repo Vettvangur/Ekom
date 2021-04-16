@@ -43,6 +43,12 @@ namespace Ekom.API.Settings
         /// locked sections of Order manipulation code.
         /// </summary>
         public bool IsEventHandler { get; set; }
+
+        /// <summary>
+        /// This allows callers to supporting methods to provide a completed order, 
+        /// circumventing our IsOrderFinal logic
+        /// </summary>
+        public IOrderInfo OrderInfo { get; set; }
     }
 
     /// <summary>

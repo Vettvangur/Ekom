@@ -1,5 +1,7 @@
 using Ekom.API;
+using Ekom.API.Settings;
 using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
 using System;
@@ -230,11 +232,23 @@ namespace Ekom.Controllers
         /// Update Shipping Information
         /// </summary>
         /// <returns></returns>
-        public async Task<ActionResult> UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
+        public async Task<ActionResult> UpdateShippingProvider(Guid shippingProvider, string storeAlias, Guid orderUniqueId = default)
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
+                IOrderInfo orderInfo = null;
+                if (orderUniqueId != default)
+                {
+                    orderInfo = Order.Instance.GetOrder(orderUniqueId);
+                }
+
+                orderInfo = await Order.Instance.UpdateShippingInformationAsync(
+                    shippingProvider, 
+                    storeAlias,
+                    new OrderSettings
+                    {
+                        OrderInfo = orderInfo,
+                    });
 
                 return Json(new
                 {
@@ -257,12 +271,30 @@ namespace Ekom.Controllers
         /// <summary>
         /// Update Payment Information
         /// </summary>
+        /// <param name="paymentProvider"></param>
+        /// <param name="storeAlias"></param>
+        /// <param name="orderUniqueId">
+        /// Optionally provide the unique id of an order. 
+        /// This allows modification of orders seen as final
+        /// </param>
         /// <returns></returns>
-        public async Task<ActionResult> UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
+        public async Task<ActionResult> UpdatePaymentProvider(Guid paymentProvider, string storeAlias, Guid orderUniqueId = default)
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
+                IOrderInfo orderInfo = null;
+                if (orderUniqueId != default)
+                {
+                    orderInfo = Order.Instance.GetOrder(orderUniqueId);
+                }
+
+                orderInfo = await Order.Instance.UpdatePaymentInformationAsync(
+                    paymentProvider, 
+                    storeAlias,
+                    new OrderSettings
+                    {
+                        OrderInfo = orderInfo,
+                    });
 
                 return Json(new
                 {
@@ -288,9 +320,13 @@ namespace Ekom.Controllers
         /// <param name="lineId">Guid Key of line to update</param>
         /// <param name="storeAlias"></param>
         /// <param name="quantity"></param>
+        /// <param name="orderUniqueId">
+        /// Optionally provide the unique id of an order. 
+        /// This allows modification of orders seen as final
+        /// </param>
         /// <returns></returns>
         [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
-        public async Task<ActionResult> UpdateOrder(Guid lineId, string storeAlias, int quantity)
+        public async Task<ActionResult> UpdateOrder(Guid lineId, string storeAlias, int quantity, Guid orderUniqueId = default)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -301,12 +337,21 @@ namespace Ekom.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
+            IOrderInfo orderInfo = null;
+            if (orderUniqueId != default)
+            {
+                orderInfo = Order.Instance.GetOrder(orderUniqueId);
+            }
+
             try
             {
-                var orderInfo = await Order.Instance.AddOrderLineAsync(
+                orderInfo = await Order.Instance.AddOrderLineAsync(
                     lineId,
                     quantity,
-                    storeAlias);
+                    storeAlias, new AddOrderSettings
+                    {
+                        OrderInfo = orderInfo,
+                    });
 
                 return Json(new
                 {
@@ -331,17 +376,33 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="lineId">Guid Key of product/line</param>
         /// <param name="storeAlias"></param>
+        /// <param name="orderUniqueId">
+        /// Optionally provide the unique id of an order. 
+        /// This allows modification of orders seen as final
+        /// </param>
         /// <returns></returns>
-        public async Task<ActionResult> RemoveOrderLine(Guid lineId, string storeAlias)
+        public async Task<ActionResult> RemoveOrderLine(Guid lineId, string storeAlias, Guid orderUniqueId = default)
         {
             if (string.IsNullOrEmpty(storeAlias))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
 
+            IOrderInfo orderInfo = null;
+            if (orderUniqueId != default)
+            {
+                orderInfo = Order.Instance.GetOrder(orderUniqueId);
+            }
+
             try
             {
-                var orderInfo = await Order.Instance.RemoveOrderLineAsync(lineId, storeAlias);
+                orderInfo = await Order.Instance.RemoveOrderLineAsync(
+                    lineId,
+                    storeAlias,
+                    new OrderSettings
+                    {
+                        OrderInfo = orderInfo,
+                    });
 
                 return Json(new { orderInfo, date = DateTime.Now });
             }

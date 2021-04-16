@@ -395,16 +395,24 @@ namespace Ekom.Services
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
 
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
-            }
-
-            if (settings == null)
-            {
-                settings = new OrderSettings();
             }
 
             var semaphore = GetOrderLock(orderInfo);
@@ -582,7 +590,15 @@ namespace Ekom.Services
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
-            var orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
 
             if (orderInfo == null)
             {
@@ -621,7 +637,15 @@ namespace Ekom.Services
             string storeAlias,
             RemoveOrderSettings settings = null)
         {
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
 
             if (orderInfo == null)
             {
@@ -681,15 +705,23 @@ namespace Ekom.Services
         {
             _logger.Debug<OrderService>("Remove OrderLine... LineId: " + lineId);
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
 
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
-            }
-            if (settings == null)
-            {
-                settings = new OrderSettings();
             }
 
             var semaphore = GetOrderLock(orderInfo);
@@ -1071,11 +1103,20 @@ namespace Ekom.Services
                 settings = new OrderSettings();
             }
 
+
             if (form.ContainsKey("storeAlias"))
             {
                 var storeAlias = form["storeAlias"];
 
-                var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+                OrderInfo orderInfo;
+                if (settings.OrderInfo == null)
+                {
+                    orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+                }
+                else
+                {
+                    orderInfo = settings.OrderInfo as OrderInfo;
+                }
 
                 if (form.ContainsKey("ShippingProvider"))
                 {
@@ -1122,14 +1163,22 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
-            if (orderInfo == null)
-            {
-                throw new OrderInfoNotFoundException();
-            }
             if (settings == null)
             {
                 settings = new OrderSettings();
+            }
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
             }
 
             var semaphore = GetOrderLock(orderInfo);
@@ -1175,14 +1224,22 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
-            if (orderInfo == null)
-            {
-                throw new OrderInfoNotFoundException();
-            }
             if (settings == null)
             {
                 settings = new OrderSettings();
+            }
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
             }
 
             var semaphore = GetOrderLock(orderInfo);
