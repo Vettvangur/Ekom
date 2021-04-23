@@ -176,7 +176,7 @@ namespace Ekom.Repository
             }
         }
 
-        public async Task<PaymentData> GetPaymentData(Guid orderId)
+        public async Task<PaymentData> GetPaymentData(string orderId)
         {
             try
             {
@@ -195,9 +195,9 @@ namespace Ekom.Repository
 
             }
 
-
             return null;
         }
+
         public async Task<OrderListData> GetAllOrdersAsync(DateTime start, DateTime end)
         {
             var startDate = start.ToString("yyyy-MM-dd 00:00:00");

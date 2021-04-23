@@ -188,7 +188,7 @@ namespace Ekom.Controllers
             }
         }
 
-        public async Task<PaymentData> GetPaymentData([FromUri] Guid orderId)
+        public async Task<PaymentData> GetPaymentData([FromUri] string orderId)
         {
             return await _managerRepository.GetPaymentData(orderId);
         }
