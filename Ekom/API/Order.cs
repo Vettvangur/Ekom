@@ -2,6 +2,7 @@ using Ekom.API.Settings;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
+using Ekom.Models;
 using Ekom.Models.Events;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -250,8 +251,17 @@ namespace Ekom.API
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            var order = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
-            await _orderService.ChangeOrderStatusAsync(order.UniqueId, newStatus, null, settings)
+            OrderInfo orderInfo;
+            if (settings?.OrderInfo == null)
+            {
+                orderInfo = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
+
+            await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings)
                 .ConfigureAwait(false);
         }
 

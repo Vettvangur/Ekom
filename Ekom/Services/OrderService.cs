@@ -742,7 +742,7 @@ namespace Ekom.Services
                     throw new OrderLineNotFoundException("Could not find order line with key: " + lineId);
                 }
 
-                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings?.FireOnOrderUpdatedEvent ?? true)
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                     .ConfigureAwait(false);
             }
             finally
@@ -901,12 +901,6 @@ namespace Ekom.Services
             bool fireOnOrderUpdatedEvents = true)
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
-
-            // Failsafe in case something slips through GetOrder and Order.IsOrderFinal
-            if (Order.IsOrderFinal(orderInfo.OrderStatus))
-            {
-                throw new OrderFinalException();
-            }
 
             VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
