@@ -17,8 +17,6 @@ namespace Ekom
         /// </summary>
         public void Compose(Composition composition)
         {
-            composition.Register<CheckoutControllerService>();
-
             // Hook into NetPayment completion event
 
             LocalCallbacks.Success += CompleteCheckout;
