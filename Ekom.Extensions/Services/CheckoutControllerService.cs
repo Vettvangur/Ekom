@@ -61,7 +61,7 @@ namespace Ekom.Extensions.Services
 
         internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest)
         {
-            Logger.Debug<CheckoutController>("Pay - Payment request start");
+            Logger.Debug<CheckoutControllerService>("Pay - Payment request start");
 
             var res = await PrepareCheckoutAsync(paymentRequest).ConfigureAwait(false);
             if (res != null)

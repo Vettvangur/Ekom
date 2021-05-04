@@ -54,22 +54,40 @@ namespace Ekom.Extensions.Controllers
         /// </summary>
         public virtual async Task<IHttpActionResult> Pay(PaymentRequest paymentRequest)
         {
-            return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest);
+            try
+            {
+                return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest);
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+            {
+                // We can't depend on library consumers configuring exception handling for Web Api controllers
+                Logger.Error<CheckoutApiController>(ex, "Error executing Pay action");
+                throw;
+            }
         }
 
         private IHttpActionResult ResponseHandler(CheckoutResponse checkoutResponse)
         {
-            if (checkoutResponse.HttpStatusCode == 400)
+            if (checkoutResponse != null)
             {
-                return BadRequest();
-            }
-            else if (checkoutResponse.HttpStatusCode == 300)
-            {
-                return Redirect(checkoutResponse.ResponseBody as string);
+                if (checkoutResponse.HttpStatusCode == 400)
+                {
+                    return BadRequest();
+                }
+                else if (checkoutResponse.HttpStatusCode == 300)
+                {
+                    return Redirect(checkoutResponse.ResponseBody as string);
+                }
+                else
+                {
+                    return Content((HttpStatusCode)checkoutResponse.HttpStatusCode, checkoutResponse.ResponseBody);
+                }
             }
             else
             {
-                return Content((HttpStatusCode)checkoutResponse.HttpStatusCode, checkoutResponse.ResponseBody);
+                return Ok();
             }
         }
     }
@@ -119,33 +137,40 @@ namespace Ekom.Extensions.Controllers
 
         private ActionResult ResponseHandler(CheckoutResponse checkoutResponse)
         {
-            if (checkoutResponse.HttpStatusCode == 530 && checkoutResponse.ResponseBody is StockError stockError)
+            if (checkoutResponse != null)
             {
-                if (stockError.OrderLineKey == Guid.Empty)
+                if (checkoutResponse.HttpStatusCode == 530 && checkoutResponse.ResponseBody is StockError stockError)
                 {
-                    return RedirectToCurrentUmbracoPage("stockError&errorType=" + stockError.Exception.Message);
+                    if (stockError.OrderLineKey == Guid.Empty)
+                    {
+                        return RedirectToCurrentUmbracoPage("stockError&errorType=" + stockError.Exception.Message);
+                    }
+                    else
+                    {
+                        var type = stockError.IsVariant ? "variant" : "product";
+                        return RedirectToCurrentUmbracoPage($"stockError&errorType={type}&orderline=" + stockError.OrderLineKey);
+                    }
+                }
+                else if (checkoutResponse.HttpStatusCode == 230)
+                {
+                    return Content(checkoutResponse.ResponseBody as string);
+                }
+                else if (checkoutResponse.HttpStatusCode == 400)
+                {
+                    return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
+                }
+                else if (checkoutResponse.HttpStatusCode == 300)
+                {
+                    return Redirect(checkoutResponse.ResponseBody as string);
                 }
                 else
                 {
-                    var type = stockError.IsVariant ? "variant" : "product";
-                    return RedirectToCurrentUmbracoPage($"stockError&errorType={type}&orderline=" + stockError.OrderLineKey);
+                    return RedirectToCurrentUmbracoPage("?errorStatus=" + checkoutResponse.ResponseBody as string);
                 }
-            }
-            else if (checkoutResponse.HttpStatusCode == 230)
-            {
-                return Content(checkoutResponse.ResponseBody as string);
-            }
-            else if (checkoutResponse.HttpStatusCode == 400)
-            {
-                return RedirectToCurrentUmbracoPage("?errorStatus=invalidData");
-            }
-            else if (checkoutResponse.HttpStatusCode == 300)
-            {
-                return Redirect(checkoutResponse.ResponseBody as string);
             }
             else
             {
-                return RedirectToCurrentUmbracoPage("?errorStatus=" + checkoutResponse.ResponseBody as string);
+                return RedirectToCurrentUmbracoPage("?success=true");
             }
         }
     }
