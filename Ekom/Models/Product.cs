@@ -187,7 +187,7 @@ namespace Ekom.Models
                 // This code matches to find correct prefix,
                 // aside from that, relative urls should be similar between domains
                 var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
-                var pubReq = umbCtx.PublishedRequest;
+                var pubReq = umbCtx?.PublishedRequest;
 
                 if (pubReq == null)
                 {
