@@ -196,15 +196,23 @@ namespace Ekom.Models
                         "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
                     );
                 }
-                var path = pubReq.Domain.Uri
+
+                var path = pubReq.Domain?.Uri
                             .AbsolutePath
                             .ToLower()
                             .AddTrailing();
 
-                var findUrlByPrefix = Urls
-                    .FirstOrDefault(x => x.StartsWith(path));
+                if (path != null)
+                {
+                    var findUrlByPrefix = Urls
+                        .FirstOrDefault(x => x.StartsWith(path));
 
-                return findUrlByPrefix ?? Urls.FirstOrDefault();
+                    return findUrlByPrefix ?? Urls.FirstOrDefault();
+                }
+                else
+                {
+                    return Urls.FirstOrDefault();
+                }
             }
         }
 
