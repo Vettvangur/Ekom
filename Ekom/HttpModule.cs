@@ -1,4 +1,5 @@
 using Ekom.Models;
+using Ekom.Utilities;
 using System;
 using System.Web;
 using Umbraco.Core;
@@ -35,6 +36,39 @@ namespace Ekom
         {
             context.BeginRequest += new EventHandler(Application_BeginRequest);
             context.AuthenticateRequest += new EventHandler(Application_AuthenticateRequest);
+            context.PostRequestHandlerExecute += Context_PostRequestHandlerExecute;
+        }
+
+        /// <summary>
+        /// We store the requests umbraco domain in a cookie
+        /// This ensures that ajax requests with no ufprt form value 
+        /// can still resolve the correct urls for a product.
+        /// See Url property on Product/Category.
+        /// 
+        /// Another option would have been to always return the list of urls for a product/category,
+        /// leaving it to the frontend to match, sub-par solution but simpler?
+        /// </summary>
+        private void Context_PostRequestHandlerExecute(object sender, EventArgs e)
+        {
+            var logger = Current.Factory.GetInstance<ILogger>();
+
+            try
+            {
+                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
+                if (umbCtx?.PublishedRequest?.Domain.Uri != null)
+                {
+                    HttpApplication application = (HttpApplication)sender;
+                    HttpContext httpCtx = application.Context;
+
+                    CookieHelper.SetUmbracoDomain(
+                        httpCtx.Response.Cookies,
+                        umbCtx.PublishedRequest.Domain.Uri);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error<HttpModule>(ex, "Http module PostRequestHandlerExecute failed");
+            }
         }
 
         private void Application_BeginRequest(object source, EventArgs e)
@@ -52,23 +86,13 @@ namespace Ekom
                 // No umbraco context exists for static file requests
                 if (umbCtx != null)
                 {
-                    #region Currency 
-
-                    // Unfinished - move to currency service
-
-                    HttpCookie storeInfo = httpCtx.Request.Cookies["StoreInfo"];
-
-                    object Currency = storeInfo != null ? /* CurrencyHelper.Get(*/storeInfo.Values["Currency"] : null;
-
-                    #endregion
-
                     var appCaches = Current.Factory.GetInstance<AppCaches>();
 
                     appCaches.RequestCache.GetCacheItem("ekmRequest", () =>
                         new ContentRequest(new HttpContextWrapper(httpCtx), logger)
                         {
-                            Currency = Currency,
-                            User = new User()
+                            User = new User(),
+
                         }
                     );
                 }

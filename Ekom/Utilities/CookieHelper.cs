@@ -10,7 +10,7 @@ using Umbraco.Core.Composing;
 
 namespace Ekom.Utilities
 {
-    public class CookieHelper
+    static class CookieHelper
     {
         public static CurrencyModel GetCurrencyCookieValue(List<CurrencyModel> currencies, string storeAlias)
         {
@@ -28,6 +28,17 @@ namespace Ekom.Utilities
             }
 
             return currencies.FirstOrDefault();
+        }
+
+        public static void SetUmbracoDomain(HttpCookieCollection cookieCollection, Uri uri)
+            => cookieCollection[Configuration.Cookie_UmbracoDomain].Value = uri.ToString();
+
+        public static Uri GetUmbracoDomain(HttpCookieCollection cookieCollection)
+        {
+            var umbracoDomain = cookieCollection[Configuration.Cookie_UmbracoDomain];
+            Uri.TryCreate(umbracoDomain?.Value, UriKind.Absolute, out var uri);
+
+            return uri;
         }
     }
 }

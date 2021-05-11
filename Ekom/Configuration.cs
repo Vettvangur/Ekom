@@ -16,6 +16,8 @@ namespace Ekom
     /// </summary>
     public class Configuration
     {
+        internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
+
         /// <summary>
         /// Configuration Singleton
         /// </summary>

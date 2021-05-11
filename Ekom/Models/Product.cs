@@ -177,6 +177,8 @@ namespace Ekom.Models
 
         /// <summary>
         /// Product url in relation to current request.
+        /// This is a getter mostly for serialization purposes
+        /// methods are ofc skipped by JSON.NET
         /// </summary>
         public virtual string Url
         {
@@ -189,17 +191,38 @@ namespace Ekom.Models
                 var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
                 var pubReq = umbCtx?.PublishedRequest;
 
+                Uri uri = null;
                 if (pubReq == null)
                 {
-                    // Yeah this should probably be a method now.. accessing UmbracoContext as well
-                    throw new MissingUmbracoContextException(
-                        "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
-                    );
+                    var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
+
+                    if (httpCtx != null)
+                    {
+                        uri = CookieHelper.GetUmbracoDomain(httpCtx.Request.Cookies);
+                    }
+
+                    if (uri == null)
+                    {
+                        throw new MissingUmbracoContextException(
+                            "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
+                        );
+                    }
                 }
-                var path = pubReq.Domain.Uri
-                            .AbsolutePath
-                            .ToLower()
-                            .AddTrailing();
+                else
+                {
+                    uri = pubReq.Domain?.Uri;
+
+                    // Handle when umbraco couldn't find matching domain for request
+                    if (uri == null)
+                    {
+                        return Urls.FirstOrDefault();
+                    }
+                }
+
+                var path = uri
+                    .AbsolutePath
+                    .ToLower()
+                    .AddTrailing();
 
                 var findUrlByPrefix = Urls
                     .FirstOrDefault(x => x.StartsWith(path));
