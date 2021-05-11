@@ -137,11 +137,17 @@ namespace Ekom.Extensions.Services
 
             if (form.AllKeys.Contains("ekomUpdateInformation"))
             {
-                await Order.Instance.UpdateCustomerInformationAsync(
-                    form.AllKeys.ToDictionary(
+                var formCollection = form.AllKeys.ToDictionary(
                         k => k,
                         v => AntiXssEncoder.HtmlEncode(form.Get(v), false)
-                    )).ConfigureAwait(false);
+                    );
+
+                if (!formCollection.ContainsKey("storeAlias"))
+                {
+                    formCollection.Add("storeAlias", order.StoreInfo.Alias);
+                }
+
+                await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
             }
 
             if (order.PaymentProvider == null)
@@ -181,8 +187,8 @@ namespace Ekom.Extensions.Services
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         protected async virtual Task<CheckoutResponse> ProcessOrderLinesAsync(
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-            PaymentRequest paymentRequest, 
-            IOrderInfo order, 
+            PaymentRequest paymentRequest,
+            IOrderInfo order,
             ICollection<string> hangfireJobs)
         {
             #region Stock
@@ -250,7 +256,7 @@ namespace Ekom.Extensions.Services
         /// </summary>
         /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
         protected virtual Task<CheckoutResponse> ProcessCouponsAsync(
-            PaymentRequest paymentRequest, 
+            PaymentRequest paymentRequest,
             IOrderInfo orderInfo,
             ICollection<string> hangfireJobs)
         {
