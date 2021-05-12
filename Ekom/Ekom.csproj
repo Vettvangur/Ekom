@@ -7,7 +7,7 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Core.v8</PackageId>
-        <Version>0.7.5</Version>
+        <Version>0.7.6</Version>
         <Title>Ekom.Core.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

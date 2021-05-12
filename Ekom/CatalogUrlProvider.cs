@@ -1,6 +1,8 @@
+using Ekom.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
@@ -52,36 +54,36 @@ namespace Ekom
 
                     foreach (var store in stores)
                     {
+                        INodeEntityWithUrl node;
                         if (content.ContentType.Alias == "ekmProduct")
                         {
-                            var product = API.Catalog.Instance.GetProduct(store.Alias, id);
-
-                            if (product != null)
-                            {
-                                list.Add(new UrlInfo(
-                                    product.Url,
-                                    true,
-                                    store.Alias)
-                                );
-                            }
+                            node = API.Catalog.Instance.GetProduct(store.Alias, id);
                         }
                         else
                         {
-                            var category = API.Catalog.Instance.GetCategory(store.Alias, id);
+                            node = API.Catalog.Instance.GetCategory(store.Alias, id);
+                        }
 
-                            if (category != null)
+                        if (node != null)
+                        {
+                            foreach (var url in node.Urls)
                             {
                                 list.Add(new UrlInfo(
-                                    category.Url,
+                                    url,
                                     true,
-                                    store.Alias)
+                                    store.Culture.TwoLetterISOLanguageName)
                                 );
                             }
                         }
                     }
 
-                    return list.Distinct();
+                    _logger.Debug<CatalogUrlProvider>("GetOtherUrls - All urls {@Urls}", list);
 
+                    var distinctUrls = list.Distinct(new UrlInfoComparer());
+
+                    _logger.Debug<CatalogUrlProvider>("GetOtherUrls - Distinct urls {@DistinctUrls}", list);
+
+                    return distinctUrls;
                 }
                 catch (Exception ex)
                 {
@@ -90,6 +92,28 @@ namespace Ekom
 
                 return null;
             });
+        }
+
+        class UrlInfoComparer : EqualityComparer<UrlInfo>
+        {
+            public override bool Equals(UrlInfo b1, UrlInfo b2)
+            {
+                if (b1 == null && b2 == null)
+                    return true;
+                else if (b1 == null || b2 == null)
+                    return false;
+
+                return string.Equals(
+                    b1.Text + b1.Culture,
+                    b2.Text + b2.Culture,
+                    StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            public override int GetHashCode(UrlInfo bx)
+            {
+                string hCode = bx.Text + bx.Culture + bx.IsUrl;
+                return hCode.GetHashCode();
+            }
         }
     }
 }
