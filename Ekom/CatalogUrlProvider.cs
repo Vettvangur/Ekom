@@ -32,6 +32,10 @@ namespace Ekom
             return null;
         }
 
+        /// <summary>
+        /// Our <see cref="CatalogContentFinder"/> takes care of routing, 
+        /// this is mostly used to display URLs in the backoffice.
+        /// </summary>
         public IEnumerable<UrlInfo> GetOtherUrls(UmbracoContext umbracoContext, int id, Uri current)
         {
             return _reqCache.GetCacheItem(
@@ -71,17 +75,13 @@ namespace Ekom
                                 list.Add(new UrlInfo(
                                     url,
                                     true,
-                                    store.Culture.TwoLetterISOLanguageName)
+                                    store.Title)
                                 );
                             }
                         }
                     }
 
-                    _logger.Debug<CatalogUrlProvider>("GetOtherUrls - All urls {@Urls}", list);
-
                     var distinctUrls = list.Distinct(new UrlInfoComparer());
-
-                    _logger.Debug<CatalogUrlProvider>("GetOtherUrls - Distinct urls {@DistinctUrls}", list);
 
                     return distinctUrls;
                 }
