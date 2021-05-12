@@ -64,6 +64,12 @@ namespace Ekom.App_Start
                         throw new EnsureNodesException(
                             "Unable to find Ekom Stock property editor, failed creating Ekom nodes.");
                     }
+                    if (!_propertyEditorCollection.TryGet("Ekom.Cache", out IDataEditor cacheEditor))
+                    {
+                        // Should never happen
+                        throw new EnsureNodesException(
+                            "Unable to find Ekom Cache property editor, failed creating Ekom nodes.");
+                    }
                     if (!_propertyEditorCollection.TryGet("Ekom.Coupon", out IDataEditor couponEditor))
                     {
                         // Should never happen
@@ -249,6 +255,10 @@ namespace Ekom.App_Start
                     var stockDt = EnsureDataTypeExists(new DataType(stockEditor, ekmDtContainer.Id)
                     {
                         Name = "Ekom - Stock",
+                    });
+                    var cacheDt = EnsureDataTypeExists(new DataType(cacheEditor, ekmDtContainer.Id)
+                    {
+                        Name = "Ekom - Cache",
                     });
                     var couponDt = EnsureDataTypeExists(new DataType(couponEditor, ekmDtContainer.Id)
                     {
@@ -1053,6 +1063,22 @@ namespace Ekom.App_Start
                         Name = "Ekom",
                         Alias = "ekom",
                         AllowedAsRoot = true,
+                        PropertyGroups = new PropertyGroupCollection(
+                                new List<PropertyGroup>
+                                {
+                                new PropertyGroup(new PropertyTypeCollection(
+                                    true,
+                                    new List<PropertyType>
+                                    {
+                                        new PropertyType(cacheDt, "Cache")
+                                        {
+                                            Name = "Populate Cache",
+                                        }
+                                    }))
+                                {
+                                    Name = "Ekom",
+                                }
+                                }),
                         AllowedContentTypes = new List<ContentTypeSort>
                     {
                         new ContentTypeSort(storesCt.Id, 1),

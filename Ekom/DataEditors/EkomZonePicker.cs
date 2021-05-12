@@ -9,15 +9,15 @@ namespace Ekom.DataEditors
     /// Umbraco Data Editor for Zone values.
     /// </summary>
     /// <seealso cref="DataEditor" />
-    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/ZonePicker/ekmZone.controller.js", Priority = 1)]
-    [DataEditor("Ekom.Zone", "Ekom Zone Picker", "~/App_Plugins/Ekom/DataTypes/ZonePicker/ekmZone.html", ValueType = ValueTypes.Json)]
-    public class EkomZonePicker : DataEditor
+    [PropertyEditorAsset(ClientDependencyType.Javascript, "~/App_Plugins/Ekom/DataTypes/CacheEditor/ekmCache.controller.js", Priority = 1)]
+    [DataEditor("Ekom.Cache", "Ekom Cache Editor", "~/App_Plugins/Ekom/DataTypes/CacheEditor/ekmCache.html", ValueType = ValueTypes.Json)]
+    public class EkomCacheEditor : DataEditor
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="EkomZonePicker"/> class.
+        /// Initializes a new instance of the <see cref="EkomCacheEditor"/> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        public EkomZonePicker(ILogger logger)
+        public EkomCacheEditor(ILogger logger)
             : base(logger)
         {
         }
