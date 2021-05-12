@@ -28,13 +28,14 @@ namespace Ekom.Controllers
     public class ApiController : UmbracoAuthorizedApiController
     {
         readonly ICountriesRepository _countriesRepo;
-
+        readonly Configuration _config;
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="countriesRepo"></param>
-        public ApiController(ICountriesRepository countriesRepo)
+        public ApiController(Configuration config, ICountriesRepository countriesRepo)
         {
+            _config = config;
             _countriesRepo = countriesRepo;
         }
 
@@ -53,12 +54,27 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Repopulates all Ekom cache
+        /// </summary>
+        /// <returns></returns>
+        public object PopulateCache()
+        {
+            foreach (var cacheEntry in _config.CacheList.Value)
+            {
+                cacheEntry.FillCache();
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Get Config
         /// </summary>
         public object GetConfig()
         {
             return Ekom.Configuration.Current;
         }
+
 
         /// <summary>
         /// Get Stock By Store
