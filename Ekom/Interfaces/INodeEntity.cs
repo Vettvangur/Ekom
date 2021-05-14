@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Ekom.Interfaces
@@ -103,7 +103,9 @@ namespace Ekom.Interfaces
         IEnumerable<string> Urls { get; }
 
         /// <summary>
-        /// Matched entity Url in relation to current request
+        /// Product url in relation to current request.
+        /// This is a getter mostly for serialization purposes
+        /// methods are ofc skipped by JSON.NET
         /// </summary>
         string Url { get; }
 

@@ -1,16 +1,20 @@
 using Ekom.Interfaces;
+using Ekom.Models;
 using Examine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
 using System.Xml.Linq;
 using Umbraco.Core;
 using Umbraco.Core.Cache;
 using Umbraco.Core.Composing;
 using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.IO;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Web;
 
 namespace Ekom.Utilities
 {
@@ -128,7 +132,7 @@ namespace Ekom.Utilities
             }
 
             // Categories order by length, otherwise we mess up primary category priority
-            return urls /*.OrderBy(x => x.Length) */; 
+            return urls /*.OrderBy(x => x.Length) */;
         }
 
         public static string GetDomainPrefix(string url)
@@ -150,6 +154,55 @@ namespace Ekom.Utilities
             var firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
 
             return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
+        }
+
+        internal static string GetNodeEntityUrl(INodeEntityWithUrl node)
+        {
+            // Urls is a list of relative urls.
+            // Umbraco cultures & hostnames can include a prefix
+            // This code matches to find correct prefix,
+            // aside from that, relative urls should be similar between domains
+            var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
+            var pubReq = umbCtx?.PublishedRequest;
+
+            Uri uri = null;
+            if (pubReq == null)
+            {
+                var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
+
+                if (httpCtx != null)
+                {
+                    uri = CookieHelper.GetUmbracoDomain(httpCtx.Request.Cookies);
+                }
+            }
+            else
+            {
+                uri = pubReq.Domain?.Uri;
+
+            }
+
+            if (uri == null)
+            {
+                // Handle when umbraco couldn't find matching domain for request
+                // This can be due to the following error message, or some failure with the cookie solution
+                // Historically this would happen when ajaxing to surface controllers without including the ufprt ctx
+                // today the cookie solution should cover that as well
+                Current.Logger.Error(
+                    node.GetType(),
+                    "Unable to determine umbraco domain, the Url getter is not supported in background services");
+                return node.Urls.FirstOrDefault();
+            }
+
+            var path = uri
+                .AbsolutePath
+                .ToLower()
+                .AddTrailing();
+
+            var findUrlByPrefix = node.Urls
+                .FirstOrDefault(x => x.StartsWith(path));
+
+            return findUrlByPrefix ?? node.Urls.FirstOrDefault();
+
         }
     }
 }

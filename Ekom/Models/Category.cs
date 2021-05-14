@@ -12,6 +12,7 @@ using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -50,61 +51,10 @@ namespace Ekom.Models
                 return Ancestors().FirstOrDefault();
             }
         }
-        /// <summary>
-        /// Category Url
-        /// This is a getter mostly for serialization purposes
-        /// methods are ofc skipped by JSON.NET
-        /// </summary>
-        public string Url
-        {
-            get
-            {
-                // Urls is a list of relative urls.
-                // Umbraco cultures & hostnames can include a prefix
-                // This code matches to find correct prefix,
-                // aside from that, relative urls should be similar between domains
-                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
-                var pubReq = umbCtx?.PublishedRequest;
 
-                Uri uri = null;
-                if (pubReq == null)
-                {
-                    var httpCtx = Current.Factory.GetInstance<HttpContextBase>();
+        /// <inheritdoc/>
+        public virtual string Url => UrlHelper.GetNodeEntityUrl(this);
 
-                    if (httpCtx != null)
-                    {
-                        uri = CookieHelper.GetUmbracoDomain(httpCtx.Request.Cookies);
-                    }
-
-                    if (uri == null)
-                    {
-                        throw new MissingUmbracoContextException(
-                            "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
-                        );
-                    }
-                }
-                else
-                {
-                    uri = pubReq.Domain?.Uri;
-
-                    // Handle when umbraco couldn't find matching domain for request
-                    if (uri == null)
-                    {
-                        return Urls.FirstOrDefault();
-                    }
-                }
-
-                var path = uri
-                    .AbsolutePath
-                    .ToLower()
-                    .AddTrailing();
-
-                var findUrlByPrefix = Urls
-                    .FirstOrDefault(x => x.StartsWith(path));
-
-                return findUrlByPrefix ?? Urls.FirstOrDefault();
-            }
-        }
         /// <summary>
         /// All direct child categories
         /// </summary>
