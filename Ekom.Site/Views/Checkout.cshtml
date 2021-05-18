@@ -1,4 +1,4 @@
-﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@inherits Umbraco.Web.Mvc.UmbracoViewPage
 
 @{
     Layout = "Masterpage.cshtml";
@@ -53,8 +53,9 @@
 
                         <h1 class="checkout__caption">Total</h1>
 
-                        <p>@order.OrderLineTotal.Value</p>
-
+                        <div>
+                            Order Line Total: <strong>@order.OrderLineTotal.CurrencyString</strong>
+                        </div>
                         <div>
                             Subtotal: <strong>@order.SubTotal.CurrencyString</strong>
                         </div>
@@ -74,7 +75,16 @@
                             VAT: <strong>@order.Vat.CurrencyString</strong>
                         </div>
                         <div>
-                            Total: <strong>@order.ChargedAmount.CurrencyString</strong>
+                            Charged VAT: <strong>@order.ChargedVat.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Grand Total: <strong>@order.GrandTotal.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Discount Amount: <strong>@order.DiscountAmount.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Charged Amount: <strong>@order.ChargedAmount.CurrencyString</strong>
                         </div>
 
                         @using (Html.BeginEkomForm(FormType.ApplyCouponToOrder))

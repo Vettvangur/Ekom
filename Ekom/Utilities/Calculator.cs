@@ -3,7 +3,7 @@ using System;
 
 namespace Ekom.Helpers
 {
-    static class VatCalculator
+    static class Calculator
     {
         /// <summary>
         /// Removes VAT from amount.
@@ -13,7 +13,7 @@ namespace Ekom.Helpers
         /// <returns></returns>
         public static decimal WithoutVat(decimal withVatVal, decimal vatVal, string currency)
         {
-            return PerformRounding(withVatVal / (1 + vatVal), currency);
+            return PerformVatRounding(withVatVal / (1 + vatVal), currency);
         }
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Ekom.Helpers
         /// <returns></returns>
         public static decimal WithVat(decimal withoutVatVal, decimal vatVal, string currency)
         {
-            return PerformRounding(withoutVatVal * (1 + vatVal), currency);
+            return PerformVatRounding(withoutVatVal * (1 + vatVal), currency);
         }
 
         /// <summary>
@@ -43,35 +43,39 @@ namespace Ekom.Helpers
             return withoutVatVal - WithoutVat(withoutVatVal, vatVal, currency);
         }
 
-        private static decimal PerformRounding(decimal val, string currency)
+        private static decimal PerformVatRounding(decimal val, string currency)
         {
             if (currency.ToLowerInvariant() == "isk")
             {
-                switch (Configuration.Current.VatCalculationRounding)
-                {
-                    case Rounding.None:
-                        return val;
-
-                    case Rounding.RoundDown:
-                        return Math.Floor(val);
-
-                    case Rounding.RoundUp:
-                        return Math.Ceiling(val);
-
-                    case Rounding.RoundToEven:
-                        return Math.Round(val, MidpointRounding.ToEven);
-
-                    case Rounding.AwayFromZero:
-                        return Math.Round(val, MidpointRounding.AwayFromZero);
-
-                    default:
-                        // impossible
-                        throw new Exception("Unknown rounding specified");
-                }
+                return EkomRounding(val, Configuration.Current.VatCalculationRounding);
             }
 
             return val;
+        }
 
+        public static decimal EkomRounding(decimal val, Rounding rounding)
+        {
+            switch (rounding)
+            {
+                case Rounding.None:
+                    return val;
+
+                case Rounding.RoundDown:
+                    return Math.Floor(val);
+
+                case Rounding.RoundUp:
+                    return Math.Ceiling(val);
+
+                case Rounding.RoundToEven:
+                    return Math.Round(val, MidpointRounding.ToEven);
+
+                case Rounding.AwayFromZero:
+                    return Math.Round(val, MidpointRounding.AwayFromZero);
+
+                default:
+                    // impossible
+                    throw new Exception("Unknown rounding specified");
+            }
         }
     }
 }

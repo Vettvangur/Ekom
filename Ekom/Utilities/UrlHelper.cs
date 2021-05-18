@@ -156,6 +156,11 @@ namespace Ekom.Utilities
             return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
         }
 
+        /// <summary>
+        /// If we need to refactor this further see
+        /// Umbraco.Web.Routing.DomainUtilities.GetCultureFromDomains
+        /// for inspiration
+        /// </summary>
         internal static string GetNodeEntityUrl(INodeEntityWithUrl node)
         {
             // Urls is a list of relative urls.

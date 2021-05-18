@@ -1,3 +1,4 @@
+using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
@@ -107,6 +108,8 @@ namespace Ekom.Models
             {
                 var amount = OrderLines.Sum(line => line.Amount.Value);
 
+                amount = Calculator.EkomRounding(amount, Configuration.Current.OrderVatCalculationRounding);
+
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
@@ -138,6 +141,8 @@ namespace Ekom.Models
                     return line.Amount.AfterDiscount.Value;
                 });
 
+                amount = Calculator.EkomRounding(amount, Configuration.Current.OrderVatCalculationRounding);
+
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
@@ -147,7 +152,8 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+                // This ensures correctness even with per order rounding
+                var amount = SubTotal.Value - OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }
@@ -158,16 +164,18 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.Vat.Value);
+                var amount = ChargedAmount.Value;
+
+                amount -= OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
                 if (ShippingProvider != null)
                 {
-                    amount += ShippingProvider.Price.Vat.Value;
+                    amount -= ShippingProvider.Price.WithoutVat.Value;
                 }
 
                 if (PaymentProvider != null)
                 {
-                    amount += PaymentProvider.Price.Vat.Value;
+                    amount -= PaymentProvider.Price.WithoutVat.Value;
                 }
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
@@ -190,6 +198,8 @@ namespace Ekom.Models
 
                     return line.Amount.Value;
                 });
+
+                amount = Calculator.EkomRounding(amount, Configuration.Current.OrderVatCalculationRounding);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }
@@ -233,6 +243,8 @@ namespace Ekom.Models
                 {
                     amount += PaymentProvider.Price.Value;
                 }
+
+                amount = Calculator.EkomRounding(amount, Configuration.Current.OrderVatCalculationRounding);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }

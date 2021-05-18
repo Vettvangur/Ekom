@@ -49,6 +49,8 @@ namespace Ekom.Site.Extensions.App_Start
         {
         }
 
-        public override int Stock => -5;
+        public override string Title => base.Title + "-VariantOverride";
+
+        //public override int Stock => -5;
     }
 }
