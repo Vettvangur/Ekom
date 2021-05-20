@@ -183,7 +183,8 @@ namespace Ekom.Models
                         Product.Categories.Select(x => x.Id.ToString()).ToArray()
                         );
 
-                foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList()) {
+                foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList())
+                {
                     var index = prices.IndexOf(p);
 
                     prices[index] = Product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
@@ -197,6 +198,11 @@ namespace Ekom.Models
         {
             get
             {
+                if (Properties.HasPropertyValue("vat", Store.Alias))
+                {
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias));
+                }
+
                 return Product.Vat;
             }
         }

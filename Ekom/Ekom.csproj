@@ -7,14 +7,14 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Core.v8</PackageId>
-        <Version>0.7.9</Version>
+        <Version>0.7.10</Version>
         <Title>Ekom.Core.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
         <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Remove redundant Order.IsFinal check in updateOrder, breaks new user supplied OrderInfo functionality</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial support for per Variant Vat</PackageReleaseNotes>
         <Copyright>Copyright 2019</Copyright>
         <PackageTags></PackageTags>
 

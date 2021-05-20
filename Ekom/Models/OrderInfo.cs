@@ -118,7 +118,7 @@ namespace Ekom.Models
             new Price(
                 line.Amount.OriginalValue,
                 StoreInfo.Currency,
-                StoreInfo.Vat,
+                line.Vat,
                 StoreInfo.VatIncludedInPrice,
                 Discount,
                 line.Quantity

@@ -32,8 +32,14 @@ namespace Ekom.Models.OrderedObjects
             variantGroup = variantGroup ?? throw new ArgumentNullException(nameof(variantGroup));
             storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-            Properties = new ReadOnlyDictionary<string, string>(
-                variantGroup.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+            var props
+                = variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            // Prefer properties from variant group
+            variantGroup.Properties
+                .ToList()
+                .ForEach(x => props[x.Key] = x.Value);
+
+            Properties = new ReadOnlyDictionary<string, string>(props);
 
             Id = variantGroup.Id;
             Key = variantGroup.Key;
