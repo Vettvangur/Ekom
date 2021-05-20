@@ -240,7 +240,7 @@ namespace Ekom.Models
             {
                 if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias));
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias)) / 100;
                 }
 
                 return Store.Vat;

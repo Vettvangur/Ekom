@@ -84,7 +84,7 @@ namespace Ekom.Models
                 if (variantGroup != null)
                 {
                     var vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
-                    return Convert.ToDecimal(vatVal);
+                    return Convert.ToDecimal(vatVal) / 100;
                 }
                 else
                 {
