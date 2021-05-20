@@ -603,7 +603,7 @@ namespace Ekom.App_Start
                                             Name = "Enable Backorder",
                                             Description = "If set then the product can be sold indefinitely"
                                         },
-                                        new PropertyType(contentPickerDt, "categories")
+                                        new PropertyType(multinodeProductDt, "categories")
                                         {
                                             Name = "Product Categories",
                                             Description = "Allows a product to belong to categories other than it's umbraco node parent categories. A single product node can therefore belong to multiple logical category tree hierarchies.",
@@ -1206,7 +1206,7 @@ namespace Ekom.App_Start
             if (res.Success)
             {
                 _logger.Info<EnsureNodesExist>(
-                    "Created content {Name}, alias {DocumentTypeAlias}", 
+                    "Created content {Name}, alias {DocumentTypeAlias}",
                     name,
                     documentTypeAlias);
 
