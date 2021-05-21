@@ -14,7 +14,7 @@
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
         <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Initial support for per Variant Vat</PackageReleaseNotes>
+        <PackageReleaseNotes>Vat overriding on products / variants now matches Store and divides by 100</PackageReleaseNotes>
         <Copyright>Copyright 2019</Copyright>
         <PackageTags></PackageTags>
 
@@ -62,12 +62,12 @@
     <ItemGroup>
         <PackageReference Include="GMO.Vorto.v8" Version="0.3.0" />
         <PackageReference Include="Hangfire" Version="1.7.14" />
-        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.8.55">
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.9.60">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
