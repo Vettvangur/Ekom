@@ -1,5 +1,6 @@
 using Ekom.Interfaces;
 using Ekom.Models.OrderedObjects;
+using Ekom.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
@@ -66,12 +67,29 @@ namespace Ekom.Models
                 }
 
                 return new Price(
-                    _price, 
-                    OrderInfo.StoreInfo.Currency, 
-                    OrderInfo.StoreInfo.Vat, 
-                    OrderInfo.StoreInfo.VatIncludedInPrice, 
-                    Discount, 
+                    _price,
+                    OrderInfo.StoreInfo.Currency,
+                    Vat,
+                    OrderInfo.StoreInfo.VatIncludedInPrice,
+                    Discount,
                     Quantity);
+            }
+        }
+
+        public decimal Vat
+        {
+            get
+            {
+                var variantGroup = Product.VariantGroups.FirstOrDefault(x => x.Properties.ContainsKey("vat"));
+                if (variantGroup != null)
+                {
+                    var vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
+                    return Convert.ToDecimal(vatVal) / 100;
+                }
+                else
+                {
+                    return Product.Vat;
+                }
             }
         }
 

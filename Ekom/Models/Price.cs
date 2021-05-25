@@ -137,7 +137,7 @@ namespace Ekom.Models
 
                 if (_storeVatIncludedInPrices)
                 {
-                    price = VatCalculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                    price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
                 }
 
                 return CreateSimplePrice(price * Quantity);
@@ -163,7 +163,7 @@ namespace Ekom.Models
 
                 if (!_storeVatIncludedInPrices)
                 {
-                    price = VatCalculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                    price = Calculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
                 }
 
                 return CreateSimplePrice(price * Quantity);
@@ -196,12 +196,12 @@ namespace Ekom.Models
 
                             if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
                             {
-                                price = VatCalculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                                price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
                             }
                             price -= Discount.Amount;
                             if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
                             {
-                                price = VatCalculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                                price = Calculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
                             }
                             break;
 

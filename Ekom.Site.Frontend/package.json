@@ -5,6 +5,9 @@
     "main": "js/app.ts",
     "author": "Vettvangur",
     "private": true,
+    "engines": {
+        "node": "10.24.1"
+    },
     "dependencies": {
         "@types/node": "^8.0.28",
         "awesome-typescript-loader": "^3.2.3",

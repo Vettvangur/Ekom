@@ -50,7 +50,6 @@ namespace Ekom
                 var umbracoContext = contentRequest.UmbracoContext;
                 var httpContext = umbracoContext.HttpContext;
                 var umbHelper = Current.UmbracoHelper;
-
                 // Allows for configuration of content nodes to use for matching all requests
                 // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
                 var virtualContent = ConfigurationManager.AppSettings["Ekom.VirtualContent"];
@@ -60,7 +59,7 @@ namespace Ekom
                                          .ToLower()
                                          .AddTrailing();
 
-                if (httpContext.Request.Path.StartsWith("/umbraco"))
+                if (contentRequest.Uri.AbsolutePath.StartsWith("/umbraco"))
                 {
                     return false;
                 }
@@ -76,9 +75,9 @@ namespace Ekom
 
                 // Requesting Product?
                 var product = _productCache.Cache[store.Alias]
-                                          .FirstOrDefault(x => x.Value.Urls != null &&
-                                                               x.Value.Urls.Contains(path))
-                                          .Value;
+                                                  .FirstOrDefault(x => x.Value.Urls != null &&
+                                                                       x.Value.Urls.Contains(path))
+                                                  .Value;
 
                 var contentId = 0;
                 ICategory category;
@@ -104,8 +103,8 @@ namespace Ekom
 
                     if (category != null && !string.IsNullOrEmpty(category.Slug))
                     {
-                        contentId = virtualContent.InvariantEquals("true") 
-                            ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode")) 
+                        contentId = virtualContent.InvariantEquals("true")
+                            ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode"))
                             : category.Id;
                     }
                     // else Requesting Neither
@@ -129,7 +128,6 @@ namespace Ekom
                     if (content != null)
                     {
                         contentRequest.PublishedContent = content;
-
                         return true;
                     }
                 }

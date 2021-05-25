@@ -16,6 +16,8 @@ namespace Ekom
     /// </summary>
     public class Configuration
     {
+        internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
+
         /// <summary>
         /// Configuration Singleton
         /// </summary>
@@ -140,8 +142,6 @@ namespace Ekom
             => ConfigurationManager.AppSettings["Ekom.CustomerData"].ConvertToBool();
 
         /// <summary>
-        /// Should Ekom create a ekmCustomerData table and use it to store customer + order data 
-        /// submitted to the checkout controller?
         /// </summary>
         public virtual Rounding VatCalculationRounding
         {
@@ -153,6 +153,25 @@ namespace Ekom
                 {
                     // Default
                     preferredRounding = Rounding.RoundUp;
+                }
+
+                return preferredRounding;
+            }
+        }
+
+        /// <summary>
+        /// Perform rounding on <see cref="IOrderInfo"/> totals. A common configuration with Navision.
+        /// </summary>
+        public virtual Rounding OrderVatCalculationRounding
+        {
+            get
+            {
+                var configVal = ConfigurationManager.AppSettings["Ekom.Order.VatCalcRounding"];
+
+                if (!Enum.TryParse(configVal, out Rounding preferredRounding))
+                {
+                    // Default
+                    preferredRounding = Rounding.None;
                 }
 
                 return preferredRounding;

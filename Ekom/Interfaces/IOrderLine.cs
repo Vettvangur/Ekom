@@ -55,6 +55,6 @@ namespace Ekom.Interfaces
         /// Line quantity, amount of items represented by this order line.
         /// </value>
         int Quantity { get; }
-
+        decimal Vat { get; }
     }
 }

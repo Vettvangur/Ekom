@@ -12,6 +12,7 @@ using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -50,42 +51,10 @@ namespace Ekom.Models
                 return Ancestors().FirstOrDefault();
             }
         }
-        /// <summary>
-        /// Category Url
-        /// </summary>
-        public string Url
-        {
-            get
-            {
-                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
-                var pubReq = umbCtx.PublishedRequest;
 
-                if (pubReq == null)
-                {
-                    // Yeah this should probably be a method now.. accessing UmbracoContext as well
-                    throw new MissingUmbracoContextException(
-                        "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
-                    );
-                }
+        /// <inheritdoc/>
+        public virtual string Url => UrlHelper.GetNodeEntityUrl(this);
 
-                var path = pubReq.Domain?.Uri
-                            .AbsolutePath
-                            .ToLower()
-                            .AddTrailing();
-
-                if (path != null)
-                {
-                    var findUrlByPrefix = Urls
-                        .FirstOrDefault(x => x.StartsWith(path));
-
-                    return findUrlByPrefix ?? Urls.FirstOrDefault();
-                }
-                else
-                {
-                    return Urls.FirstOrDefault();
-                }
-            }
-        }
         /// <summary>
         /// All direct child categories
         /// </summary>

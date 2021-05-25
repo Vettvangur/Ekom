@@ -14,6 +14,7 @@ using System.Web.Script.Serialization;
 using System.Xml.Serialization;
 using Umbraco.Core;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Web;
 
@@ -175,46 +176,8 @@ namespace Ekom.Models
             }
         }
 
-        /// <summary>
-        /// Product url in relation to current request.
-        /// </summary>
-        public virtual string Url
-        {
-            get
-            {
-                // Urls is a list of relative urls.
-                // Umbraco cultures & hostnames can include a prefix
-                // This code matches to find correct prefix,
-                // aside from that, relative urls should be similar between domains
-                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
-                var pubReq = umbCtx?.PublishedRequest;
-
-                if (pubReq == null)
-                {
-                    // Yeah this should probably be a method now.. accessing UmbracoContext as well
-                    throw new MissingUmbracoContextException(
-                        "Missing UmbracoContext, remember to post to SurfaceControllers including the ufprt form param to include the relevant context when accessing url data"
-                    );
-                }
-
-                var path = pubReq.Domain?.Uri
-                            .AbsolutePath
-                            .ToLower()
-                            .AddTrailing();
-
-                if (path != null)
-                {
-                    var findUrlByPrefix = Urls
-                        .FirstOrDefault(x => x.StartsWith(path));
-
-                    return findUrlByPrefix ?? Urls.FirstOrDefault();
-                }
-                else
-                {
-                    return Urls.FirstOrDefault();
-                }
-            }
-        }
+        /// <inheritdoc/>
+        public virtual string Url => UrlHelper.GetNodeEntityUrl(this);
 
         /// <summary>
         /// All product urls, computed from stores and categories.
@@ -277,7 +240,7 @@ namespace Ekom.Models
             {
                 if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias));
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias)) / 100;
                 }
 
                 return Store.Vat;
