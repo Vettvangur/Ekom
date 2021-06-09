@@ -106,6 +106,9 @@ namespace Ekom.Controllers
             {
                 await API.Stock.Instance.IncrementStockAsync(id, stock);
 
+                // ToDo: Log Umbraco user performing the action
+                //Logger.Info<ApiController>("")
+
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
@@ -124,6 +127,8 @@ namespace Ekom.Controllers
             try
             {
                 await API.Stock.Instance.IncrementStockAsync(id, storeAlias, stock);
+
+                // ToDo: Log Umbraco user performing the action
 
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
@@ -145,6 +150,8 @@ namespace Ekom.Controllers
             {
                 await API.Stock.Instance.SetStockAsync(id, stock);
 
+                // ToDo: Log Umbraco user performing the action
+
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             catch (Exception ex)
@@ -163,6 +170,8 @@ namespace Ekom.Controllers
             try
             {
                 await API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
+
+                // ToDo: Log Umbraco user performing the action
 
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }

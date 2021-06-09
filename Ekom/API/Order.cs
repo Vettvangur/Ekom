@@ -324,7 +324,7 @@ namespace Ekom.API
         }
 
         public async Task<IOrderInfo> UpdateShippingInformationAsync(
-            Guid shippingProvider, 
+            Guid shippingProvider,
             string storeAlias,
             OrderSettings settings = null)
         {
@@ -338,7 +338,7 @@ namespace Ekom.API
         }
 
         public async Task<IOrderInfo> UpdatePaymentInformationAsync(
-            Guid paymentProvider, 
+            Guid paymentProvider,
             string storeAlias,
             OrderSettings settings = null)
         {
@@ -394,8 +394,8 @@ namespace Ekom.API
         }
 
         public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(
-            Guid orderLineId, 
-            int quantity, 
+            Guid orderLineId,
+            int quantity,
             string storeAlias,
             OrderSettings settings = null)
         {
@@ -474,6 +474,8 @@ namespace Ekom.API
                 || orderStatus.Value == OrderStatus.Dispatched
                 || orderStatus.Value == OrderStatus.WaitingForPayment
                 || orderStatus.Value == OrderStatus.Returned
+                || orderStatus.Value == OrderStatus.Cancelled
+                || orderStatus.Value == OrderStatus.Closed
                 );
     }
 }

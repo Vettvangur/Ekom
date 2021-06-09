@@ -29,6 +29,9 @@ dotnet_diagnostic.CS1591.severity = suggestion
 # CA1008: Enums should have zero value - This is almost always by design
 dotnet_diagnostic.CA1008.severity = suggestion
 
+# CA1062: Validate arguments of public methods - Not a reusable library
+dotnet_diagnostic.CA1062.severity = none
+
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
 
@@ -159,9 +162,6 @@ dotnet_diagnostic.CA1060.severity = warning
 
 # CA1061: Do not hide base class methods
 dotnet_diagnostic.CA1061.severity = suggestion
-
-# CA1062: Validate arguments of public methods
-dotnet_diagnostic.CA1062.severity = warning
 
 # CA1063: Implement IDisposable Correctly
 dotnet_diagnostic.CA1063.severity = warning
