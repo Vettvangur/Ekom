@@ -133,6 +133,17 @@ namespace Ekom.Utilities
                         return node;
                     }
                 }
+                else if (Udi.TryParse(id, out Udi mediaUdi))
+                {
+                    var umbracoHelper = Current.Factory.GetInstance<UmbracoHelper>();
+
+                    var node = umbracoHelper.Media(mediaUdi);
+
+                    if (node != null)
+                    {
+                        return node;
+                    }
+                }
 
                 return GetMediaByUdi(id);
             }
