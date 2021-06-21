@@ -23,19 +23,21 @@ namespace Ekom.API
         readonly ILogger _logger;
         readonly IStoreService _storeSvc;
         readonly IAppCache _reqCache;
-
+        readonly Configuration _config;
         /// <summary>
         /// ctor
         /// </summary>
         internal Store(
             AppCaches appCaches,
             ILogger logger,
-            IStoreService storeService
+            IStoreService storeService,
+            Configuration config
         )
         {
             _reqCache = appCaches.RequestCache;
             _storeSvc = storeService;
             _logger = logger;
+            _config = config;
         }
 
         /// <summary>
@@ -89,5 +91,14 @@ namespace Ekom.API
 
             return root;
         }
+
+        public void RefreshCache()
+        {
+            foreach (var cacheEntry in _config.CacheList.Value)
+            {
+                cacheEntry.FillCache();
+            }
+        }
+
     }
 }

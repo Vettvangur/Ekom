@@ -118,7 +118,8 @@ namespace Ekom.App_Start
                 new Store(
                     f.GetInstance<AppCaches>(),
                     f.GetInstance<ILogger>(),
-                    f.GetInstance<IStoreService>()
+                    f.GetInstance<IStoreService>(),
+                    f.GetInstance<Configuration>()
                 )
             );
             composition.Register<Discounts>(f =>
