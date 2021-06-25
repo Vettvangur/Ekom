@@ -117,9 +117,9 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public VariantGroup(IContent node, IStore store) : base(node, store)
         {
-            var publishedContent = Current.Factory.GetInstance<UmbracoHelper>().Content(node.Id);
-            var publishedParentProduct = NodeHelper.GetFirstParentWithDocType(publishedContent, "ekmProduct");
-            var parentProduct = Catalog.Instance.GetProduct(store.Alias, publishedParentProduct.Id);
+            var pathArray = Path.Split(',');
+            var productId = pathArray[pathArray.Count() - 2];
+            var parentProduct = Catalog.Instance.GetProduct(store.Alias, Convert.ToInt32(productId));
             Product = parentProduct;
         }
     }
