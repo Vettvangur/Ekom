@@ -7,14 +7,14 @@
         
         <!-- Package properties -->
         <PackageId>Ekom.Extensions.v8</PackageId>
-        <Version>0.4.3</Version>
+        <Version>0.4.4</Version>
         <Title>Ekom Controllers</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
         <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Add Web Api checkout controller</PackageReleaseNotes>
+        <PackageReleaseNotes>Add culture to CheckoutControllerService</PackageReleaseNotes>
         <Copyright>Copyright 2017</Copyright>
         <PackageTags></PackageTags>
 

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -52,11 +53,11 @@ namespace Ekom.Extensions.Controllers
         /// <summary>
         /// Complete payment using the Standard Ekom checkout controller
         /// </summary>
-        public virtual async Task<IHttpActionResult> Pay(PaymentRequest paymentRequest)
+        public virtual async Task<IHttpActionResult> Pay(PaymentRequest paymentRequest, string culture = "en-US")
         {
             try
             {
-                return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest);
+                return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest, culture);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)
@@ -124,7 +125,8 @@ namespace Ekom.Extensions.Controllers
         {
             try
             {
-                return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest);
+                var culture = Thread.CurrentThread.CurrentCulture.Name;
+                return await _checkoutControllerService.Value.PayAsync(ResponseHandler, paymentRequest, culture);
             }
 #pragma warning disable CA1031 // Do not catch general exception types
             catch (Exception ex)

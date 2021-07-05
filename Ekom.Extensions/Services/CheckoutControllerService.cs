@@ -43,6 +43,8 @@ namespace Ekom.Extensions.Services
         protected readonly UmbracoHelper UmbracoHelper;
         protected readonly MembershipHelper MembershipHelper;
 
+        protected string Culture;
+
         public CheckoutControllerService(
             ILogger logger,
             Configuration config,
@@ -59,9 +61,11 @@ namespace Ekom.Extensions.Services
             HttpContext = httpContext;
         }
 
-        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest)
+        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
         {
             Logger.Debug<CheckoutControllerService>("Pay - Payment request start");
+
+            Culture = culture;
 
             var res = await PrepareCheckoutAsync(paymentRequest).ConfigureAwait(false);
             if (res != null)
