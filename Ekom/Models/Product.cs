@@ -82,7 +82,7 @@ namespace Ekom.Models
 
                 var backOrderValue = Properties.GetPropertyValue("enableBackorder", Store.Alias);
 
-                return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
+                return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBooleanTrue();
             }
         }
 

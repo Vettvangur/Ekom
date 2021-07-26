@@ -338,7 +338,7 @@ namespace Ekom.Utilities
 
             if (!string.IsNullOrEmpty(selfDisableField))
             {
-                if (selfDisableField.IsBoolean())
+                if (selfDisableField.IsBooleanTrue())
                 {
                     return true;
                 }
@@ -356,7 +356,7 @@ namespace Ekom.Utilities
 
                     if (!string.IsNullOrEmpty(disableField))
                     {
-                        if (disableField.IsBoolean())
+                        if (disableField.IsBooleanTrue())
                         {
                             return true;
                         }

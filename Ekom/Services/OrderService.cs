@@ -429,6 +429,22 @@ namespace Ekom.Services
                     throw new OrderLineNotFoundException("Could not find order line with key: " + orderLineId);
                 }
 
+                int existingStock;
+                var product = Catalog.Instance.GetProduct(orderline.Key);
+                IVariant variant = null;
+                if (orderline.Product.VariantGroups.Any(g => g.Variants.Any())) 
+                {
+                    var orderedVariant = orderline.Product.VariantGroups.First().Variants.First();
+                    variant = Catalog.Instance.GetVariant(orderedVariant.Key);
+                    existingStock = variant.Stock;
+                }
+                else
+                {
+                    existingStock = product.Stock;
+                }
+
+                VerifyStock(quantity + orderline.Quantity, existingStock, product, variant);
+
                 orderline.Quantity = quantity;
 
                 return await UpdateOrderAndOrderInfoAsync(orderInfo)
@@ -523,18 +539,9 @@ namespace Ekom.Services
 
             var product = Catalog.Instance.GetProduct(productKey);
 
-            var disableStock = ConfigurationManager.AppSettings["ekmCustomDisableStock"];
-
             if (product == null)
             {
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
-            }
-            else
-            {
-                if (settings?.VariantKey == null && !product.Backorder && product.Stock < quantity && (disableStock == "true" ? false : true))
-                {
-                    throw new NotEnoughStockException("Stock not available for product " + product.Key);
-                }
             }
 
             IVariant variant = null;
@@ -545,14 +552,6 @@ namespace Ekom.Services
                 if (variant == null)
                 {
                     throw new VariantNotFoundException("Unable to find variant with key " + settings.VariantKey);
-                }
-                else
-                {
-                    if ((!product.Backorder && variant.Stock < quantity)
-                    && (disableStock == "true" ? false : true))
-                    {
-                        throw new NotEnoughStockException("Stock not available for variant " + settings.VariantKey);
-                    }
                 }
             }
 
@@ -800,30 +799,32 @@ namespace Ekom.Services
                     action);
 
                 OrderLine existingOrderLine = null;
+                int existingStock;
 
-                if (orderInfo.OrderLines != null)
+                if (variant != null)
                 {
-                    if (variant != null)
-                    {
-                        existingOrderLine
-                            = orderInfo.OrderLines
-                                .FirstOrDefault(
-                                    x => x.Product.Key == product.Key
-                                    && x.Product.VariantGroups
-                                        .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
-                                as OrderLine;
-                    }
-                    else
-                    {
-                        existingOrderLine
-                            = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
+                    existingStock = variant.Stock;
+                    existingOrderLine
+                        = orderInfo.OrderLines
+                            .FirstOrDefault(
+                                x => x.Product.Key == product.Key
+                                && x.Product.VariantGroups
+                                    .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
                             as OrderLine;
-                    }
+                }
+                else
+                {
+                    existingStock = product.Stock;
+                    existingOrderLine
+                        = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
+                        as OrderLine;
                 }
 
                 if (existingOrderLine != null)
                 {
                     _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
+
+                    VerifyStock(quantity + existingOrderLine.Quantity, existingStock, product, variant);
 
                     // Update orderline quantity with value
                     if (action == OrderAction.Set)
@@ -852,6 +853,8 @@ namespace Ekom.Services
                     {
                         throw new OrderLineNegativeException("OrderLines cannot be created with negative quantity");
                     }
+
+                    VerifyStock(quantity, existingStock, product, variant);
 
                     // Update orderline when adding product to orderline
 
@@ -897,7 +900,7 @@ namespace Ekom.Services
         }
 
         private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
-            OrderInfo orderInfo, 
+            OrderInfo orderInfo,
             bool fireOnOrderUpdatedEvents = true)
         {
             _logger.Debug<OrderService>("Update Order with new OrderInfo");
@@ -1318,7 +1321,9 @@ namespace Ekom.Services
             return orders.Select(x => new OrderInfo(x)).ToList();
         }
 
-        public bool CheckStockAvailability(IOrderInfo orderInfo)
+        [Obsolete("This assumes the OrderInfo has been modified already, " +
+            "not useful for order modifications since on errors you would have to roll back")]
+        private bool CheckStockAvailability(IOrderInfo orderInfo)
         {
             foreach (var line in orderInfo.OrderLines)
             {
@@ -1335,7 +1340,6 @@ namespace Ekom.Services
                                 return false;
                             }
                         }
-
                     }
                     else
                     {
@@ -1350,6 +1354,17 @@ namespace Ekom.Services
             }
 
             return true;
+        }
+
+        private void VerifyStock(int quantity, int existingStock, IProduct product, IVariant variant = null)
+        {
+            if (!Configuration.Current.DisableStock
+            && !product.Backorder
+            && existingStock < quantity)
+            {
+                throw new NotEnoughStockException(
+                    $"Stock not available for product {product.Key} and variant {variant?.Key}");
+            }
         }
 
         /// <summary>
@@ -1371,7 +1386,7 @@ namespace Ekom.Services
                     var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key);
 
                     // In case of deletion
-                    if (paymentProvider == null 
+                    if (paymentProvider == null
                     || !paymentProvider.Constraints.IsValid(countryCode, total))
                     {
                         orderInfo.PaymentProvider = null;
@@ -1383,7 +1398,7 @@ namespace Ekom.Services
                 {
                     var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key);
 
-                    if (shippingProvider == null 
+                    if (shippingProvider == null
                     || !shippingProvider.Constraints.IsValid(countryCode, total))
                     {
                         orderInfo.ShippingProvider = null;

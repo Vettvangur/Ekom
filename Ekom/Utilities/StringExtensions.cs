@@ -360,7 +360,7 @@ namespace Ekom.Utilities
             return Enumerable.Empty<Image>();
         }
 
-        internal static bool IsBoolean(this string value)
+        internal static bool IsBooleanTrue(this string value)
         {
             if (value == "1" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase))
             {

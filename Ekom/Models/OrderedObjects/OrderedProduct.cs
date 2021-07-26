@@ -77,7 +77,7 @@ namespace Ekom.Models.OrderedObjects
         [JsonIgnore]
         [XmlIgnore]
         //TODO Store default setup!
-        public bool Backorder => Properties.GetPropertyValue("enableBackorder", StoreInfo.Alias).IsBoolean();
+        public bool Backorder => Properties.GetPropertyValue("enableBackorder", StoreInfo.Alias).IsBooleanTrue();
 
         [ScriptIgnore]
         [JsonIgnore]

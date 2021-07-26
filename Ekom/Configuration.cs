@@ -199,6 +199,11 @@ namespace Ekom
             => ConfigurationManager.AppSettings["Ekom.EmailNotifications"];
 
         /// <summary>
+        /// </summary>
+        public virtual bool DisableStock
+            => ConfigurationManager.AppSettings["Ekom.DisableStock"].ConvertToBool();
+
+        /// <summary>
         /// Lists in initialization order all caches and the document type alias of
         /// the object they cache.
         /// This object is lazy initialized to make sure that all types have been registered with IoC container
