@@ -116,7 +116,7 @@ namespace Ekom.Models.OrderedObjects
             {
                 if (Properties.HasPropertyValue("vat", StoreInfo.Alias))
                 {
-                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", StoreInfo.Alias));
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", StoreInfo.Alias)) / 100;
                 }
 
                 return StoreInfo.Vat;

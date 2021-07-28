@@ -111,7 +111,19 @@ namespace Ekom.Models.OrderedObjects
 
         public List<IPrice> Prices { get; }
 
-        public decimal Vat { get; }
+        public decimal ProductVat { get; set; }
+        public decimal Vat 
+        {
+            get
+            {
+                if (Properties.HasPropertyValue("vat", StoreInfo.Alias))
+                {
+                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", StoreInfo.Alias)) / 100;
+                }
+
+                return ProductVat;
+            }
+        }
 
         [ScriptIgnore]
         [JsonIgnore]
@@ -142,7 +154,7 @@ namespace Ekom.Models.OrderedObjects
             variant = variant ?? throw new ArgumentNullException(nameof(variant));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-            Vat = productVat;
+            ProductVat = productVat;
             Prices = variant.Prices.ToList();
 
             Properties = new ReadOnlyDictionary<string, string>(
@@ -157,6 +169,7 @@ namespace Ekom.Models.OrderedObjects
             this.variantObject = variantObject;
             StoreInfo = storeInfo;
 
+            ProductVat = (decimal)variantObject["ProductVat"];
             var pricesObj = variantObject["Prices"];
             var priceObj = variantObject["Price"];
 
