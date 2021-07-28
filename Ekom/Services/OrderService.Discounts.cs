@@ -34,6 +34,16 @@ namespace Ekom.Services
 
             var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
+            if (orderInfo.Discount?.Key == discount.Key)
+            {
+                // throwing an exception allows callers to differentiate between an attempt to apply a worse discount
+                // and a duplicate discount application
+                // This can then be handled in api controllers or frontend code to display the appropriate error.
+
+                // This was previously inside IsBetterDiscount which is incompatible with automatic global discounts
+                throw new DiscountDuplicateException($"Can't add the same discount to order twice.");
+            }
+
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
@@ -83,7 +93,7 @@ namespace Ekom.Services
                 );
             }
 
-            if (IsBetterDiscount(orderInfo, discount) && IsDiscountApplicable(orderInfo, discount))
+            if (IsDiscountApplicable(orderInfo, discount) && IsBetterDiscount(orderInfo, discount))
             {
                 // Remove worse coupons from orderlines
                 foreach (OrderLine line in orderInfo.OrderLines.Where(line => line.Discount != null))
@@ -93,18 +103,10 @@ namespace Ekom.Services
                         line.Discount = null;
                         line.Coupon = null;
                     }
-
-                    if (discount.GlobalDiscount)
-                    {
-                        line.Discount = new OrderedDiscount(discount);
-                    }
                 }
 
-                if (!discount.GlobalDiscount)
-                {
-                    orderInfo.Discount = new OrderedDiscount(discount);
-                    orderInfo.Coupon = settings.Coupon;
-                }
+                orderInfo.Discount = new OrderedDiscount(discount);
+                orderInfo.Coupon = settings.Coupon;
 
                 return true;
             }
@@ -385,7 +387,7 @@ namespace Ekom.Services
         /// <exception cref="OrderLineNotFoundException"></exception>
         /// <returns></returns>
         public async Task RemoveDiscountFromOrderLineAsync(
-            Guid productKey, 
+            Guid productKey,
             string storeAlias,
             DiscountOrderSettings settings = null)
         {
@@ -403,7 +405,7 @@ namespace Ekom.Services
             }
             try
             {
-                var orderLine 
+                var orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                     as OrderLine;
 
@@ -441,7 +443,10 @@ namespace Ekom.Services
 
         private bool IsBetterDiscount(OrderInfo orderInfo, IDiscount discount)
         {
-            if (orderInfo.Discount == null && !discount.Stackable)
+            // Why don't we assume something is better than nothing ?
+            // Possibly for orders where all OrderLine have ProductDiscount,
+            // in those cases the ChargedAmount will stay the same.
+            if (orderInfo.Discount == null && !discount.Stackable && !discount.GlobalDiscount)
             {
                 var oldTotal = orderInfo.ChargedAmount.Value;
 
@@ -457,14 +462,6 @@ namespace Ekom.Services
             if (orderInfo.Discount == null)
             {
                 return true;
-            }
-
-            if (orderInfo.Discount.Key == discount.Key)
-            {
-                // throwing an exception allows callers to differentiate between an attempt to apply a worse discount
-                // and a duplicate discount application
-                // This can then be handled in api controllers or frontend code to display the appropriate error.
-                throw new DiscountNotFoundException($"Can't add the same discount to order twice.");
             }
 
             if (discount is IProductDiscount productDiscount)
@@ -571,19 +568,18 @@ namespace Ekom.Services
         /// </summary>
         /// <param name="orderInfo"></param>
         /// <returns></returns>
-        private async Task AddGlobalDiscountsAsync(OrderInfo orderInfo)
+        private void AddGlobalDiscounts(OrderInfo orderInfo)
         {
             var discounts = Discounts.Instance.GetGlobalDiscounts(orderInfo.StoreInfo.Alias);
             foreach (var discount in discounts)
             {
-                await ApplyDiscountToOrderAsync(
+                ApplyDiscountToOrder(
                     discount,
-                    orderInfo.StoreInfo.Alias,
+                    orderInfo,
                     new DiscountOrderSettings
                     {
-                        UpdateOrder = false,
-
-                    }).ConfigureAwait(false);
+                        //UpdateOrder = false, // not technically needed for this method
+                    });
             }
         }
 
@@ -650,7 +646,7 @@ namespace Ekom.Services
         /// <param name="orderLine"></param>
         /// <param name="discount"></param>
         /// <returns></returns>
-        private bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
+        public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
         {
             return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
                 && (discount.DiscountItems.Count == 0

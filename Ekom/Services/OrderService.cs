@@ -914,7 +914,7 @@ namespace Ekom.Services
 
             VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
-            await AddGlobalDiscountsAsync(orderInfo).ConfigureAwait(false);
+            AddGlobalDiscounts(orderInfo);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 

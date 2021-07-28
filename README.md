@@ -47,7 +47,12 @@ Some day we might want to allow a type that applies manually to OrderLine's with
 We make sure that the current OrderInfo discount, if there is one, allows stacking
 	
 ##### What is stacking
-Applying discounts to specific OrderLine's while applying a seperate discount to the order and general order items
+Applying discounts to specific OrderLine's while applying a seperate discount to the order and general order items.
+This means when calculating totals at the order level, 
+ - if a line has no discount it uses the stackable order discount
+ - if a line has a line discount, it uses the line discount (code inside OrderService.Discounts makes sure to keep only line discounts that offer an advantage over the stackable order discount)
+
+Ekom does not currently support multiple discounts on a single order line, (f.x. first -1000 then -20%)
 
 ##### ProductDiscount should only apply to applicable OrderLine's - OrderInfo never has a ProductDiscount
 ApplyDiscountToOrder does not accept IProductDiscount currently
@@ -65,3 +70,4 @@ ekmDiscount do not currently support DiscountItems. If you successfully apply a 
 			
 This means there is no current way to apply a coupon to an order and get a discount for only select items.
 Either all items get the discount or the discount is not coupon based and got auto-applied to OrderLines if applicable
+

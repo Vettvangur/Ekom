@@ -2,6 +2,7 @@ using Ekom.Helpers;
 using Ekom.Interfaces;
 using Ekom.Models.Data;
 using Ekom.Models.OrderedObjects;
+using Ekom.Services;
 using Ekom.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -114,15 +115,27 @@ namespace Ekom.Models
             }
         }
 
-        private Price LinePriceWithOrderDiscount(IOrderLine line) =>
-            new Price(
+        private Price LinePriceWithOrderDiscount(IOrderLine line)
+        {
+            var discount = Discount;
+            if (discount?.DiscountItems.Any() == true)
+            {
+                // Filters order discounts to their applicable DiscountItems
+                if (!OrderService.IsDiscountApplicable(this, line, discount))
+                {
+                    discount = null;
+                }
+            }
+
+            return new Price(
                 line.Amount.OriginalValue,
                 StoreInfo.Currency,
                 line.Vat,
                 StoreInfo.VatIncludedInPrice,
-                Discount,
+                discount,
                 line.Quantity
             );
+        }
 
         /// <inheritdoc />
         public ICalculatedPrice SubTotal
