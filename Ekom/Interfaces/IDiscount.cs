@@ -48,5 +48,6 @@ namespace Ekom.Interfaces
         /// The unique key identifier.
         /// </value>
         Guid Key { get; }
+        bool GlobalDiscount { get; }
     }
 }

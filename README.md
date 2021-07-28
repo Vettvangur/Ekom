@@ -14,7 +14,7 @@ and create the uwbsRequest object with store domainprefix and currency if applic
 ## Discount Notes
 
 #### Terminology
-1. Order discounts, applied to OrderInfo, can have coupons, can be inclusive/exclusive (meaning they can or cant be applied at the same time as product discounts in the same order)
+1. Order discounts, applied to OrderInfo, can have coupons, can be stackable (meaning they can or cant be applied at the same time as product discounts in the same order)
   - When applying order discounts, we test constraints. We do not check discountItems.
   - Checking discount items for order discounts would not be a stand-in for complex checks such as "minimum of 3 pants".
   - It would also not make the order discount magically apply only to select order lines, we use product discounts for that
@@ -54,7 +54,7 @@ ApplyDiscountToOrder does not accept IProductDiscount currently
  * we always apply IProductDiscount straight to OrderLines
 Points to consider for allowing OrderInfo to have ProductDiscounts
  * We could also create a ApplyDiscountToOrder accepting IProductDiscount. It would then apply the ProductDiscount straight to applicable OrderLine's
- * If we push the discount from OrderInfo to OrderLine on creation of line, how would 'exclusive' work
+ * If we push the discount from OrderInfo to OrderLine on creation of line, how would 'stackable' work
  * Example: OrderInfo has ProductDiscount, applicable line gets discount. An inclusive global discount is applied to Order, old OrderLine keeps product discount. Now new OrderLine's do not get the initial ProductDiscount !!
 
 ##### Caveats:

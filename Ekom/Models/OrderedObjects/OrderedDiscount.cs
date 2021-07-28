@@ -25,7 +25,8 @@ namespace Ekom.Models.OrderedObjects
             DiscountType type,
             List<string> discountItems,
             Constraints constraints,
-            bool hasMasterStock)
+            bool hasMasterStock,
+            bool globalDiscount)
         {
             Key = key;
             Stackable = stackable;
@@ -34,6 +35,7 @@ namespace Ekom.Models.OrderedObjects
             Type = type;
             Constraints = constraints;
             HasMasterStock = hasMasterStock;
+            GlobalDiscount = globalDiscount;
         }
 
         /// <summary>
@@ -49,6 +51,7 @@ namespace Ekom.Models.OrderedObjects
             Type = discount.Type;
             Constraints = new Constraints(discount.Constraints);
             HasMasterStock = discount.HasMasterStock;
+            GlobalDiscount = discount.GlobalDiscount;
         }
 
         /// <summary>
@@ -74,6 +77,8 @@ namespace Ekom.Models.OrderedObjects
         /// Coupon code activations left
         /// </summary>
         public bool HasMasterStock { get; internal set; }
+
+        public bool GlobalDiscount { get; set; }
 
         /// <summary>
         /// <see cref="IComparable{T}"/> implementation

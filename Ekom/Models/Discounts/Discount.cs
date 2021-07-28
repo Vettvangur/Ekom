@@ -18,7 +18,7 @@ using Umbraco.Web.Composing;
 namespace Ekom.Models.Discounts
 {
     /// <summary>
-    /// Umbraco discount node with coupons and <see cref="DiscountAmount"/>
+    /// Umbraco order discount node
     /// </summary>
     public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNodeEntity
     {
@@ -39,7 +39,6 @@ namespace Ekom.Models.Discounts
                     // FIX: verify
                     typeValue = dt.ConfigurationAs<string>();
                 }
-
 
                 typeValue = typeValue.Contains('[') ? JsonConvert.DeserializeObject<string[]>(typeValue).FirstOrDefault() : typeValue;
 
@@ -109,6 +108,12 @@ namespace Ekom.Models.Discounts
                 return returnList.AsReadOnly();
             }
         }
+
+        /// <summary>
+        /// Means this couponless discount will be automatically applied to orders that match it's constraints
+        /// We can not currently filter by discounts without a coupon since the linking is from Coupon -> Order.
+        /// </summary>
+        public bool GlobalDiscount => Properties.GetPropertyValue("globalDiscount").ConvertToBool();
 
         /// <summary>
         /// Coupon code activations left

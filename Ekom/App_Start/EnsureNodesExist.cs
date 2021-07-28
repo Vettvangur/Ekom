@@ -506,6 +506,20 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Stock",
                                         },
+                                        new PropertyType(booleanDt, "stock")
+                                        {
+                                            Name = "Stock",
+                                        },
+                                        new PropertyType(booleanDt, "enableBackorder")
+                                        {
+                                            Name = "Enable Backorder",
+                                            Description = "If set then the variant can be sold indefinitely"
+                                        },
+                                        new PropertyType(numericDt, "vat")
+                                        {
+                                            Name = "VAT",
+                                            Description = "%, override store VAT."
+                                        },
                                     }))
                                 {
                                     Name = "Variant",
@@ -602,6 +616,11 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Enable Backorder",
                                             Description = "If set then the product can be sold indefinitely"
+                                        },
+                                        new PropertyType(numericDt, "vat")
+                                        {
+                                            Name = "VAT",
+                                            Description = "%, override store VAT."
                                         },
                                         new PropertyType(multinodeProductDt, "categories")
                                         {
@@ -711,7 +730,6 @@ namespace Ekom.App_Start
 
                     #region Discounts
 
-
                     var orderDiscountCt = EnsureContentTypeExists(new ContentType(discountsContainer.Id)
                     {
                         Name = "Order Discount",
@@ -745,11 +763,18 @@ namespace Ekom.App_Start
                                             {
                                                 Name = "Discount Items",
                                                 SortOrder = 7,
+                                                Description = "Controls what items in the order receive the discount. (In contrast to product discount, discount items, where it is used as a constraint)"
                                             },
                                             new PropertyType(booleanDt, "stackable")
                                             {
                                                 Name = "Stackable",
                                                 SortOrder = 8,
+                                            },
+                                            new PropertyType(booleanDt, "globalDiscount")
+                                            {
+                                                Name = "Global Discount",
+                                                SortOrder = 9,
+                                                Description = "This couponless discount will be automatically applied to orders that match it's constraints"
                                             },
                                         }))
                                     {
@@ -815,7 +840,8 @@ namespace Ekom.App_Start
                                             {
                                                 Name = "Discount Items",
                                                 SortOrder = 7,
-                                            }
+                                                Description = "Discount is automatically applied to selected items if the other constraints are valid.",
+                                            },
                                         }))
                                     {
                                         Name = "Settings",

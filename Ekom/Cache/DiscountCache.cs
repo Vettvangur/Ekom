@@ -50,13 +50,10 @@ namespace Ekom.Cache
                     {
                         var item = _objFac?.Create(r, store) ?? new Discount(r, store);
 
-                        if (item != null)
-                        {
-                            count++;
+                        count++;
 
-                            var itemKey = Guid.Parse(r.Key());
-                            curStoreCache[itemKey] = item;
-                        }
+                        var itemKey = Guid.Parse(r.Key());
+                        curStoreCache[itemKey] = item;
                     }
                 }
                 catch (Exception ex)
@@ -88,10 +85,7 @@ namespace Ekom.Cache
                         var item = _objFac?.Create(node, store.Value)
                             ?? new Discount(node, store.Value);
 
-                        if (item != null)
-                        {
-                            Cache[store.Value.Alias][node.Key] = item;
-                        }
+                        Cache[store.Value.Alias][node.Key] = item;
                     }
                 }
                 catch (Exception ex) // Skip on fail
