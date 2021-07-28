@@ -798,13 +798,13 @@ namespace Ekom.Services
                     variant?.Key,
                     action);
 
-                OrderLine existingOrderLine = null;
+                OrderLine orderLine = null;
                 int existingStock;
 
                 if (variant != null)
                 {
                     existingStock = variant.Stock;
-                    existingOrderLine
+                    orderLine
                         = orderInfo.OrderLines
                             .FirstOrDefault(
                                 x => x.Product.Key == product.Key
@@ -815,35 +815,35 @@ namespace Ekom.Services
                 else
                 {
                     existingStock = product.Stock;
-                    existingOrderLine
+                    orderLine
                         = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
                         as OrderLine;
                 }
 
-                if (existingOrderLine != null)
+                if (orderLine != null)
                 {
                     _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
 
-                    VerifyStock(quantity + existingOrderLine.Quantity, existingStock, product, variant);
+                    VerifyStock(quantity + orderLine.Quantity, existingStock, product, variant);
 
                     // Update orderline quantity with value
                     if (action == OrderAction.Set)
                     {
-                        existingOrderLine.Quantity = quantity;
+                        orderLine.Quantity = quantity;
                     }
                     else
                     {
-                        if (existingOrderLine.Quantity + quantity < 0)
+                        if (orderLine.Quantity + quantity < 0)
                         {
                             throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
                         }
 
-                        existingOrderLine.Quantity += quantity;
+                        orderLine.Quantity += quantity;
 
                         // If the update action ends up setting quantity to zero we remove the order line
-                        if (existingOrderLine.Quantity == 0)
+                        if (orderLine.Quantity == 0)
                         {
-                            RemoveOrderLine(orderInfo, existingOrderLine);
+                            RemoveOrderLine(orderInfo, orderLine);
                         }
                     }
                 }
@@ -860,7 +860,7 @@ namespace Ekom.Services
 
                     _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Not Found");
 
-                    var orderLine = new OrderLine(
+                    orderLine = new OrderLine(
                         product,
                         quantity,
                         lineId,
@@ -870,6 +870,8 @@ namespace Ekom.Services
 
                     orderInfo.orderLines.Add(orderLine);
 
+                    // Product discounts do not contain constraints that change with quantity updates or order modifications
+                    // It's therefore enough to only check on OrderLine creation
                     if (product.ProductDiscount() != null
                     // Make sure that the current OrderInfo discount, if there is one, is inclusive
                     // Meaning you can apply this discount while having a separate discount 
@@ -882,9 +884,14 @@ namespace Ekom.Services
                         await ApplyDiscountToOrderLineAsync(
                             orderLine,
                             product.ProductDiscount(),
-                            orderInfo
+                            orderInfo,
+                            new DiscountOrderSettings
+                            {
+                                UpdateOrder = false,
+                            }
                         ).ConfigureAwait(false);
                     }
+
                 }
 
                 return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
@@ -907,6 +914,7 @@ namespace Ekom.Services
 
             VerifyProviders(orderInfo);
             VerifyDiscounts(orderInfo);
+            await AddGlobalDiscountsAsync(orderInfo).ConfigureAwait(false);
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
 

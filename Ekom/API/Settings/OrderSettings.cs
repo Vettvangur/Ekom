@@ -103,5 +103,12 @@ namespace Ekom.API.Settings
         /// Target a specific Variant under the given product
         /// </summary>
         public string Coupon { get; set; }
+
+        /// <summary>
+        /// Disables calls to UpdateOrderAndOrderInfoAsync from discount code. <br />
+        /// Allows OrderService methods to skip updating order twice. <br />
+        /// When disabled, order update events will of course not fire from these discount changes.
+        /// </summary>
+        internal bool UpdateOrder { get; set; } = true;
     }
 }

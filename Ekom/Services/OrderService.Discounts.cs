@@ -43,8 +43,11 @@ namespace Ekom.Services
             {
                 if (ApplyDiscountToOrder(discount, orderInfo, settings))
                 {
-                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                        .ConfigureAwait(false);
+                    if (settings.UpdateOrder)
+                    {
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                            .ConfigureAwait(false);
+                    }
 
                     return true;
                 }
@@ -90,10 +93,18 @@ namespace Ekom.Services
                         line.Discount = null;
                         line.Coupon = null;
                     }
+
+                    if (discount.GlobalDiscount)
+                    {
+                        line.Discount = new OrderedDiscount(discount);
+                    }
                 }
 
-                orderInfo.Discount = new OrderedDiscount(discount);
-                orderInfo.Coupon = settings.Coupon;
+                if (!discount.GlobalDiscount)
+                {
+                    orderInfo.Discount = new OrderedDiscount(discount);
+                    orderInfo.Coupon = settings.Coupon;
+                }
 
                 return true;
             }
@@ -101,11 +112,14 @@ namespace Ekom.Services
             return false;
         }
 
-        public async Task RemoveDiscountFromOrderAsync(string storeAlias, OrderSettings settings = null)
+        /// <summary>
+        /// Does not remove global discounts currently
+        /// </summary>
+        public async Task RemoveDiscountFromOrderAsync(string storeAlias, DiscountOrderSettings settings = null)
         {
             if (settings == null)
             {
-                settings = new OrderSettings();
+                settings = new DiscountOrderSettings();
             }
 
             var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -118,7 +132,11 @@ namespace Ekom.Services
             try
             {
                 RemoveDiscountFromOrder(orderInfo);
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent).ConfigureAwait(false);
+                if (settings.UpdateOrder)
+                {
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+                }
             }
             finally
             {
@@ -301,8 +319,11 @@ namespace Ekom.Services
                         orderLine.Discount = new OrderedDiscount(discount);
                         orderLine.Coupon = settings.Coupon;
 
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                            .ConfigureAwait(false);
+                        if (settings.UpdateOrder)
+                        {
+                            await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                                .ConfigureAwait(false);
+                        }
 
                         _logger.Debug<OrderService>("Successfully applied discount to orderline");
                         return true;
@@ -320,8 +341,11 @@ namespace Ekom.Services
                         orderLine.Discount = new OrderedDiscount(discount);
                         orderLine.Coupon = settings.Coupon;
 
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                            .ConfigureAwait(false);
+                        if (settings.UpdateOrder)
+                        {
+                            await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                                .ConfigureAwait(false);
+                        }
 
                         _logger.Debug<OrderService>("Successfully applied discount to orderline");
                         return true;
@@ -363,11 +387,11 @@ namespace Ekom.Services
         public async Task RemoveDiscountFromOrderLineAsync(
             Guid productKey, 
             string storeAlias,
-            OrderSettings settings = null)
+            DiscountOrderSettings settings = null)
         {
             if (settings == null)
             {
-                settings = new OrderSettings();
+                settings = new DiscountOrderSettings();
             }
 
             var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -390,8 +414,11 @@ namespace Ekom.Services
 
                 RemoveDiscountFromOrderLine(orderLine);
 
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                    .ConfigureAwait(false);
+                if (settings.UpdateOrder)
+                {
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+                }
             }
             finally
             {
@@ -501,6 +528,13 @@ namespace Ekom.Services
                 return true;
             }
 
+            // This shouldn't really hit, we are probably checking for stackable before and
+            // it's hard to see global discounts supporting stackable.
+            if (discount.GlobalDiscount && IsDiscountApplicable(orderLine.OrderInfo, orderLine, discount))
+            {
+                return false;
+            }
+
             if (orderLine.Discount.Type == discount.Type)
             {
                 return discount.CompareTo(orderLine.Discount) > 0;
@@ -529,6 +563,28 @@ namespace Ekom.Services
             var discount = _discountCache[defStore.Alias][Key];
 
             (discount as Discount)?.OnCouponApply();
+        }
+
+        /// <summary>
+        /// Finds Global discounts that apply to order, 
+        /// checks constraints and applies automatically if applicable.
+        /// </summary>
+        /// <param name="orderInfo"></param>
+        /// <returns></returns>
+        private async Task AddGlobalDiscountsAsync(OrderInfo orderInfo)
+        {
+            var discounts = Discounts.Instance.GetGlobalDiscounts(orderInfo.StoreInfo.Alias);
+            foreach (var discount in discounts)
+            {
+                await ApplyDiscountToOrderAsync(
+                    discount,
+                    orderInfo.StoreInfo.Alias,
+                    new DiscountOrderSettings
+                    {
+                        UpdateOrder = false,
+
+                    }).ConfigureAwait(false);
+            }
         }
 
         /// <summary>

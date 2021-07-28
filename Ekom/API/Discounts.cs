@@ -65,5 +65,31 @@ namespace Ekom.API
         {
             return _discountCache.Cache[storeAlias].Select(x => x.Value);
         }
+
+
+        /// <summary>
+        /// Gets all discounts
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<IDiscount> GetGlobalDiscounts()
+        {
+            var store = _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                return GetGlobalDiscounts(store.Alias);
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Gets all discounts
+        /// </summary>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        public IEnumerable<IDiscount> GetGlobalDiscounts(string storeAlias)
+        {
+            return GetDiscounts(storeAlias).Where(d => d.GlobalDiscount);
+        }
     }
 }
