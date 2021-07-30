@@ -144,7 +144,7 @@ namespace Ekom.API
                 return products;
             }
 
-            return null;
+            return Enumerable.Empty<IProduct>();
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Ekom.API
                 return products;
             }
 
-            return null;
+            return Enumerable.Empty<IProduct>();
         }
 
         /// <summary>
@@ -218,7 +218,7 @@ namespace Ekom.API
                 return products;
             }
 
-            return null;
+            return Enumerable.Empty<IProduct>();
         }
 
         /// <summary>
@@ -360,7 +360,7 @@ namespace Ekom.API
                 return categories;
             }
 
-            return null;
+            return Enumerable.Empty<ICategory>();
         }
 
         public IEnumerable<ICategory> GetRootCategories(string storeAlias)
@@ -387,7 +387,7 @@ namespace Ekom.API
                 return categories;
             }
 
-            return null;
+            return Enumerable.Empty<ICategory>();
         }
 
         public IEnumerable<ICategory> GetAllCategories(string storeAlias)

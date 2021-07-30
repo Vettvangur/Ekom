@@ -53,7 +53,7 @@ namespace Ekom.API
                 return GetDiscounts(store.Alias);
             }
 
-            return null;
+            return Enumerable.Empty<IDiscount>();
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Ekom.API
                 return GetGlobalDiscounts(store.Alias);
             }
 
-            return null;
+            return Enumerable.Empty<IDiscount>();
         }
         /// <summary>
         /// Gets all discounts
