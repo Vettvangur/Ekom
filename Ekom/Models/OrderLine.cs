@@ -66,6 +66,14 @@ namespace Ekom.Models
                     }
                 }
 
+                var discount = Discount;
+                // This allows us to display discounted prices of orderlines
+                // when the order has a global discount applying only to specific DiscountItems
+                if (discount == null && OrderInfo.Discount?.DiscountItems.Any() == true)
+                {
+                    discount = OrderInfo.Discount;
+                }
+
                 return new Price(
                     _price,
                     OrderInfo.StoreInfo.Currency,
