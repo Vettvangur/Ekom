@@ -173,6 +173,9 @@ namespace Ekom.Models.OrderedObjects
             var pricesObj = variantObject["Prices"];
             var priceObj = variantObject["Price"];
 
+            Properties = new ReadOnlyDictionary<string, string>(
+                variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+
             try
             {
                 if (pricesObj != null && !string.IsNullOrEmpty(pricesObj.ToString()))

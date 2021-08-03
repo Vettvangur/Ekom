@@ -128,7 +128,7 @@ namespace Ekom.Models.OrderedObjects
         [XmlIgnore]
         private StoreInfo StoreInfo { get; }
 
-        public Dictionary<string, string> Properties;
+        public IReadOnlyDictionary<string, string> Properties;
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
@@ -154,7 +154,7 @@ namespace Ekom.Models.OrderedObjects
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-            Properties = new Dictionary<string, string>(
+            Properties = new ReadOnlyDictionary<string, string>(
                product.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 
             //Price = product.Price.Clone() as IPrice;
@@ -196,7 +196,7 @@ namespace Ekom.Models.OrderedObjects
             ProductDiscount = productPropertiesObject[nameof(ProductDiscount)]?
                 .ToObject<IDiscount>(EkomJsonDotNet.serializer);
 
-            Properties = new Dictionary<string, string>(
+            Properties = new ReadOnlyDictionary<string, string>(
                 productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
 
             var pricesObj = productPropertiesObject[nameof(Prices)];
