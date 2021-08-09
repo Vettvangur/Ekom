@@ -10,7 +10,7 @@ namespace Ekom.Tests.Objects
 {
     class CustomProduct : Product
     {
-        public override IPrice Price { get; }
+        public override List<IPrice> Prices { get; }
 
         public override IEnumerable<string> Urls { get; internal set; }
         public CustomProduct(
@@ -23,22 +23,27 @@ namespace Ekom.Tests.Objects
         {
             _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
 
-            Price = price ?? new Price(
-                Properties.GetPropertyValue("price", Store.Alias),
-                Store.Currency,
-                Store.Vat,
-                Store.VatIncludedInPrice);
+            Prices = new List<IPrice> { 
+                price ?? new Price(
+                    Properties.GetPropertyValue("price", Store.Alias),
+                    Store.Currency,
+                    Store.Vat,
+                    Store.VatIncludedInPrice) 
+            };
 
             var discount = ProductDiscount();
 
             if (price == null && discount != null)
             {
-                Price = new Price(
-                    Properties.GetPropertyValue("price", Store.Alias),
-                    Store.Currency,
-                    Store.Vat,
-                    Store.VatIncludedInPrice,
-                    new OrderedDiscount(discount));
+                Prices = new List<IPrice>
+                {
+                    new Price(
+                        Properties.GetPropertyValue("price", Store.Alias),
+                        Store.Currency,
+                        Store.Vat,
+                        Store.VatIncludedInPrice,
+                        new OrderedDiscount(discount))
+                };
             }
 
             Urls = urls ?? Enumerable.Empty<string>();

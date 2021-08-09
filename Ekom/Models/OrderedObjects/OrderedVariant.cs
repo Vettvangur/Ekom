@@ -169,7 +169,7 @@ namespace Ekom.Models.OrderedObjects
             this.variantObject = variantObject;
             StoreInfo = storeInfo;
 
-            ProductVat = (decimal)variantObject["ProductVat"];
+            ProductVat = (decimal)(variantObject["ProductVat"] ?? 0);
             var pricesObj = variantObject["Prices"];
             var priceObj = variantObject["Price"];
 
