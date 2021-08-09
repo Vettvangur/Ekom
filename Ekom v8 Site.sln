@@ -11,6 +11,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		release-build.ps1 = release-build.ps1
 	EndProjectSection
 EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Site.Frontend", "Ekom.Site.Frontend\", "{DE7EE780-49D5-42CB-9533-FAC350B8A0FA}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_6422"
+		Debug.AspNetCompiler.PhysicalPath = "Ekom.Site.Frontend\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6422\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_6422"
+		Release.AspNetCompiler.PhysicalPath = "Ekom.Site.Frontend\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_6422\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "6422"
+		SlnRelativePath = "Ekom.Site.Frontend\"
+	EndProjectSection
+EndProject
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ekom.Manager.Frontend\", "{A8E76D41-1323-4B00-A441-8422D89AEF21}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
@@ -32,6 +53,12 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Ekom.Manager.Frontend", "Ek
 		SlnRelativePath = "Ekom.Manager.Frontend\"
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site.Extensions", "Ekom.Site.Extensions\Ekom.Site.Extensions.csproj", "{C8D798CD-9D24-444E-A7FC-9CDB0816669F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Site", "Ekom.Site\Ekom.Site.csproj", "{5D2C9436-E0DC-426E-A628-057D404540D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ekom.Site", "Ekom.Site", "{DF27F93B-AB87-40DA-A6AF-5BA99998EEAE}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ekom.Manager", "Ekom.Manager", "{90B610CF-70A2-45E1-9C57-3DAC701DFE1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ekom", "Ekom", "{D227EB57-105D-4787-8284-F4E89D1729C4}"
@@ -52,8 +79,16 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE7EE780-49D5-42CB-9533-FAC350B8A0FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE7EE780-49D5-42CB-9533-FAC350B8A0FA}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A8E76D41-1323-4B00-A441-8422D89AEF21}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D2C9436-E0DC-426E-A628-057D404540D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D2C9436-E0DC-426E-A628-057D404540D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D2C9436-E0DC-426E-A628-057D404540D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{709AE7EC-3BB7-4D90-8274-DB2205E48214}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{709AE7EC-3BB7-4D90-8274-DB2205E48214}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{709AE7EC-3BB7-4D90-8274-DB2205E48214}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -79,7 +114,10 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{DE7EE780-49D5-42CB-9533-FAC350B8A0FA} = {DF27F93B-AB87-40DA-A6AF-5BA99998EEAE}
 		{A8E76D41-1323-4B00-A441-8422D89AEF21} = {90B610CF-70A2-45E1-9C57-3DAC701DFE1B}
+		{C8D798CD-9D24-444E-A7FC-9CDB0816669F} = {DF27F93B-AB87-40DA-A6AF-5BA99998EEAE}
+		{5D2C9436-E0DC-426E-A628-057D404540D1} = {DF27F93B-AB87-40DA-A6AF-5BA99998EEAE}
 		{709AE7EC-3BB7-4D90-8274-DB2205E48214} = {D227EB57-105D-4787-8284-F4E89D1729C4}
 		{3F704EE7-5EDF-41BE-88DA-65192FA6240E} = {D227EB57-105D-4787-8284-F4E89D1729C4}
 		{5CD62D25-9988-4DC4-B636-AC69DA87AE9A} = {D227EB57-105D-4787-8284-F4E89D1729C4}
