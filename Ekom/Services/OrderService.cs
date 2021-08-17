@@ -430,7 +430,7 @@ namespace Ekom.Services
                 }
 
                 int existingStock;
-                var product = Catalog.Instance.GetProduct(orderline.Key);
+                var product = Catalog.Instance.GetProduct(storeAlias, orderline.ProductKey);
                 IVariant variant = null;
                 if (orderline.Product.VariantGroups.Any(g => g.Variants.Any())) 
                 {
