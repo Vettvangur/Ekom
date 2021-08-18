@@ -23,13 +23,14 @@ namespace Ekom.Tests.Objects
         {
             _properties = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
 
-            Prices = new List<IPrice> { 
+            Prices = new List<IPrice>
+            {
                 price ?? new Price(
-                    Properties.GetPropertyValue("price", Store.Alias),
-                    Store.Currency,
-                    Store.Vat,
-                    Store.VatIncludedInPrice) 
-            };
+                Properties.GetPropertyValue("price", Store.Alias),
+                Store.Currency,
+                Store.Vat,
+                Store.VatIncludedInPrice
+            ) };
 
             var discount = ProductDiscount();
 
@@ -38,11 +39,11 @@ namespace Ekom.Tests.Objects
                 Prices = new List<IPrice>
                 {
                     new Price(
-                        Properties.GetPropertyValue("price", Store.Alias),
-                        Store.Currency,
-                        Store.Vat,
-                        Store.VatIncludedInPrice,
-                        new OrderedDiscount(discount))
+                    Properties.GetPropertyValue("price", Store.Alias),
+                    Store.Currency,
+                    Store.Vat,
+                    Store.VatIncludedInPrice,
+                    new OrderedDiscount(discount))
                 };
             }
 
