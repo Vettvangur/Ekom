@@ -244,6 +244,11 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="OrderInfoNotFoundException"></exception>
         public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
@@ -261,10 +266,19 @@ namespace Ekom.API
                 orderInfo = settings.OrderInfo as OrderInfo;
             }
 
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
+
             await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings)
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <exception cref="OrderInfoNotFoundException">OrderData not found for given OrderId</exception>
         public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, ChangeOrderSettings settings = null)
         {
             await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings)

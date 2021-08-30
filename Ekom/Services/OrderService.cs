@@ -300,7 +300,6 @@ namespace Ekom.Services
             return orderData?.OrderInfo != null ? new OrderInfo(orderData) : null;
         }
 
-
         public async Task ChangeOrderStatusAsync(
             Guid uniqueId,
             OrderStatus status,
@@ -315,7 +314,12 @@ namespace Ekom.Services
             }
 
             var order = await _orderRepository.GetOrderAsync(uniqueId)
-                .ConfigureAwait(false);
+                    .ConfigureAwait(false);
+
+            if (order == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
 
             var oldStatus = order.OrderStatus;
 
