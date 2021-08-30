@@ -1,5 +1,15 @@
 ## Ekom
 
+## Installing as submodule
+Run the following inside your repo
+
+```git submodule add -b master-u8 https://github.com/Vettvangur/Ekom EkomU8```
+
+##### Initialize for others
+git submodule update --init --recursive
+
+Remember to install Ekom.Web NuGet
+ _
 ## Ekom request in surface controllers / api controllers
 
 We register an IHttpModule to ensure creation of an uwbsRequest entry in the runtimeCache.

@@ -7,14 +7,14 @@
 
         <!-- Package properties -->
         <PackageId>Ekom.Web.v8</PackageId>
-        <Version>0.2.2</Version>
+        <Version>0.3.0</Version>
         <Title>Ekom.Web.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
-        <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+        <Description>App_Plugins and web.config transform</Description>
+        <PackageReleaseNotes>Updated for submodule usage</PackageReleaseNotes>
         <Copyright>Copyright 2019</Copyright>
         <PackageTags></PackageTags>
 
@@ -82,11 +82,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Ekom.Core.v8" Version="[0.6.9,1.0)" />
         <PackageReference Include="GMO.Vorto.Web.v8" Version="[0.2.0,1.0)" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Ekom\Ekom.csproj" />
     </ItemGroup>
 </Project>
