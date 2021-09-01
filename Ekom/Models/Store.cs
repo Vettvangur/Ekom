@@ -127,6 +127,7 @@ namespace Ekom.Models
                 else
                 {
                     var guid = GuidUdiHelper.GetGuid(item.Values["storeRootNode"]);
+
                     var rootNode = ExamineService.Instance.GetExamineNode(guid.ToString());
                     if (rootNode != null
                     && int.TryParse(rootNode.Id, out var id))
@@ -135,7 +136,7 @@ namespace Ekom.Models
                     }
                     else
                     {
-                        throw new StoreConstructorException("Error creating store, Unable to get store root node");
+                        throw new StoreConstructorException("Error creating store, Unable to get store root node. Guid: " + guid + " " + (rootNode == null ? "Root node not found in examine. Republish or Rebuild index." : ""));
                     }
                 }
 

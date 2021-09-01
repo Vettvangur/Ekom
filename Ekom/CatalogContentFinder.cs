@@ -66,11 +66,6 @@ namespace Ekom
 
                 var store = _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name);
 
-                if (store == null)
-                {
-                    throw new Exception("No store found.");
-                }
-
                 #region Product and/or Category
 
                 // Requesting Product?

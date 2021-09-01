@@ -2,6 +2,7 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core;
@@ -59,7 +60,12 @@ namespace Ekom.Services
 
             if (store == null)
             {
-                store = GetAllStores().First();
+                store = GetAllStores().FirstOrDefault();
+            }
+
+            if (store == null)
+            {
+                throw new Exception("No store found in cache.");
             }
 
             return store;
