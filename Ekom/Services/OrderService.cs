@@ -828,11 +828,10 @@ namespace Ekom.Services
                 {
                     _logger.Debug<OrderService>("AddOrderLineToOrderInfo: existingOrderLine Found");
 
-                    VerifyStock(quantity + orderLine.Quantity, existingStock, product, variant);
-
                     // Update orderline quantity with value
                     if (action == OrderAction.Set)
                     {
+                        VerifyStock(quantity, existingStock, product, variant);
                         orderLine.Quantity = quantity;
                     }
                     else
@@ -841,6 +840,8 @@ namespace Ekom.Services
                         {
                             throw new OrderLineNegativeException("OrderLines cannot be updated to negative quantity");
                         }
+
+                        VerifyStock(quantity + orderLine.Quantity, existingStock, product, variant);
 
                         orderLine.Quantity += quantity;
 
