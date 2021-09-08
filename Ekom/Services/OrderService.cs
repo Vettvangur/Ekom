@@ -447,7 +447,7 @@ namespace Ekom.Services
                     existingStock = product.Stock;
                 }
 
-                VerifyStock(quantity + orderline.Quantity, existingStock, product, variant);
+                VerifyStock(quantity, existingStock, product, variant);
 
                 orderline.Quantity = quantity;
 

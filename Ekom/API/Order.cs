@@ -407,6 +407,17 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Sets quantity to specified amount
+        /// </summary>
+        /// <param name="orderLineId"></param>
+        /// <param name="quantity"></param>
+        /// <param name="storeAlias"></param>
+        /// <param name="settings"></param>
+        /// <exception cref="OrderInfoNotFoundException"></exception>
+        /// <exception cref="OrderLineNotFoundException"></exception>
+        /// <exception cref="NotEnoughStockException"></exception>
+        /// <returns></returns>
         public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(
             Guid orderLineId,
             int quantity,
