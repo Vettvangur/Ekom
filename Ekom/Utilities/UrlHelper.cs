@@ -183,7 +183,6 @@ namespace Ekom.Utilities
             else
             {
                 uri = pubReq.Domain?.Uri;
-
             }
 
             if (uri == null)
@@ -194,7 +193,7 @@ namespace Ekom.Utilities
                 // today the cookie solution should cover that as well
                 Current.Logger.Error(
                     node.GetType(),
-                    "Unable to determine umbraco domain, the Url getter is not supported in background services");
+                    "Unable to determine umbraco domain, the Url getter is not supported in background services. This could also happen if the domain is not set on the store root node." + new System.Diagnostics.StackTrace());
                 return node.Urls.FirstOrDefault();
             }
 

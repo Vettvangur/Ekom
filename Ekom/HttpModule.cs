@@ -54,10 +54,12 @@ namespace Ekom
 
             try
             {
-                var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
+               var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
                 if (umbCtx?.PublishedRequest?.Domain.Uri != null)
                 {
+
                     HttpApplication application = (HttpApplication)sender;
+
                     HttpContext httpCtx = application.Context;
 
                     CookieHelper.SetUmbracoDomain(
@@ -67,7 +69,7 @@ namespace Ekom
             }
             catch (Exception ex)
             {
-                logger.Error<HttpModule>(ex, "Http module PostRequestHandlerExecute failed");
+                logger.Error<HttpModule>(ex, "Http module PostRequestHandlerExecute failed, make sure to have domain set on the store root node.");
             }
         }
 
