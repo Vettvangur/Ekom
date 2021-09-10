@@ -169,7 +169,7 @@ namespace Ekom.Utilities
             // aside from that, relative urls should be similar between domains
             var umbCtx = Current.Factory.GetInstance<UmbracoContext>();
             var pubReq = umbCtx?.PublishedRequest;
-
+            var debugLogging = false;
             Uri uri = null;
             if (pubReq == null)
             {
@@ -178,6 +178,15 @@ namespace Ekom.Utilities
                 if (httpCtx != null)
                 {
                     uri = CookieHelper.GetUmbracoDomain(httpCtx.Request.Cookies);
+
+                    // This could happen when background service calls an api on the store end.
+                    // Cookie needs to be sent with the api request.
+
+                    if (uri == null)
+                    {
+                        debugLogging = true;
+                    }
+                    
                 }
             }
             else
@@ -187,13 +196,26 @@ namespace Ekom.Utilities
 
             if (uri == null)
             {
+                var message = "Unable to determine umbraco domain." + (umbCtx == null ? "Umbraco Context is null, the Url getter is not supported in background services." : "") + (pubReq != null && pubReq.Domain == null ? "Domain is not found in context. Check if domain is set in culture and hostnames under the store root node" : "") + (pubReq == null ? "Publish request is null. Fallbacking to cookie did not work." : "") + " - " + new System.Diagnostics.StackTrace();
+
                 // Handle when umbraco couldn't find matching domain for request
                 // This can be due to the following error message, or some failure with the cookie solution
                 // Historically this would happen when ajaxing to surface controllers without including the ufprt ctx
                 // today the cookie solution should cover that as well
-                Current.Logger.Error(
-                    node.GetType(),
-                    "Unable to determine umbraco domain, the Url getter is not supported in background services. This could also happen if the domain is not set on the store root node." + new System.Diagnostics.StackTrace());
+
+                if (debugLogging)
+                {
+                    Current.Logger.Debug(
+                        node.GetType(),
+                        message);
+                } else
+                {
+                    Current.Logger.Error(
+                        node.GetType(),
+                        message);
+                }
+
+
                 return node.Urls.FirstOrDefault();
             }
 
