@@ -14,5 +14,7 @@ namespace Ekom.Interfaces
         /// Builds and runS the Lucene query.
         /// </summary>
         ISearchResults SearchResult(string query, string examineIndex, out long total);
+
+        void Rebuild();
     }
 }

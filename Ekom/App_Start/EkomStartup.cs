@@ -52,6 +52,7 @@ namespace Ekom
         readonly ILogger _logger;
         readonly IFactory _factory;
         readonly IUmbracoDatabaseFactory _databaseFactory;
+        readonly IExamineService _es;
 
         BackgroundJobServer _hangfireServer;
 
@@ -62,12 +63,14 @@ namespace Ekom
             Configuration config,
             ILogger logger,
             IFactory factory,
-            IUmbracoDatabaseFactory databaseFactory)
+            IUmbracoDatabaseFactory databaseFactory,
+            IExamineService es)
         {
             _config = config;
             _logger = logger;
             _factory = factory;
             _databaseFactory = databaseFactory;
+            _es = es;
         }
 
         /// <summary>
@@ -76,6 +79,8 @@ namespace Ekom
         public void Initialize()
         {
             _logger.Info<EkomStartup>("Initializing...");
+
+            _es.Rebuild();
 
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)

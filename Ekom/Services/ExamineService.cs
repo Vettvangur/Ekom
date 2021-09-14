@@ -19,6 +19,7 @@ namespace Ekom.Services
         /// </summary>
         public static IExamineService Instance => Current.Factory.GetInstance<IExamineService>();
 
+
         public static DateTime ConvertToDatetime(string value)
         {
             try
@@ -34,6 +35,7 @@ namespace Ekom.Services
         readonly ILogger _logger;
         readonly Configuration _config;
         readonly IExamineManager _examineMgr;
+        readonly IndexRebuilder _rebuilder;
         /// <summary>
         /// Initializes a new instance of the <see cref="ExamineService"/> class.
         /// </summary>
@@ -43,11 +45,13 @@ namespace Ekom.Services
         public ExamineService(
             ILogger logger,
             Configuration config,
-            IExamineManager examineMgr)
+            IExamineManager examineMgr,
+            IndexRebuilder rebuilder)
         {
             _logger = logger;
             _config = config;
             _examineMgr = examineMgr;
+            _rebuilder = rebuilder;
         }
 
         public ISearchResult GetExamineNode(int Id)
@@ -152,6 +156,44 @@ namespace Ekom.Services
 
                 return null;
             }
+        }
+
+        public void Rebuild()
+        {
+            try
+            {
+                _logger.Info<ExamineService>("Trying to rebuild indexes if they are empty.");
+
+                foreach (var index in _examineMgr.Indexes)
+                {
+                    var searcher = index.GetSearcher();
+
+                    string category = "content";
+
+                    if (index.Name.StartsWith("Member"))
+                    {
+                        category = "members";
+                    }
+
+                    var results = searcher.CreateQuery(category).All().Execute();
+
+                    var count = results.Count();
+                    var canRebuild = _rebuilder.CanRebuild(index);
+
+                    _logger.Info<ExamineService>("Examine Index '" + index.Name + "' Status:  Count:" + count + " CanRebuild:" + canRebuild);
+
+                    if (count <= 1 && canRebuild)
+                    {
+                        _logger.Info<ExamineService>("Index rebuild on startup.  Index:" + index.Name + " Category:" + category);
+                        _rebuilder.RebuildIndex(index.Name);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error<ExamineService>(ex, "Could not rebuild indexes on startup");
+            }
+
         }
     }
 }
