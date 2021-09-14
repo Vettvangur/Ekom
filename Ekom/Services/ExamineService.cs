@@ -186,6 +186,7 @@ namespace Ekom.Services
                     {
                         _logger.Info<ExamineService>("Index rebuild on startup.  Index:" + index.Name + " Category:" + category);
                         _rebuilder.RebuildIndex(index.Name);
+                        _logger.Info<ExamineService>("Index rebuild on startup.  Index:" + index.Name + " Finished.");
                     }
                 }
             }
