@@ -172,7 +172,7 @@ namespace Ekom.Services
 
                     if (index.Name.StartsWith("Member"))
                     {
-                        category = "members";
+                        continue;
                     }
 
                     var results = searcher.CreateQuery(category).All().Execute();
