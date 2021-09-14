@@ -106,8 +106,8 @@
       },
       "Examine": {
         "type": "Transitive",
-        "resolved": "1.0.2",
-        "contentHash": "tpikEhEP+YUi0z6h0XWlh96YTcrZvfTaLAZRP0M5LWMVtN/khr1u3qaKnhwgFUWrehfqIF7VGKwZ2IcOjD0tqg==",
+        "resolved": "1.2.2",
+        "contentHash": "HdpECa0qKu64lgowpm6JdQWHrD1GkMkodfS7Adossm2Tlv1f0FXh3dZuvOdeMk/+ecgDpM3n6dsFzDbHStVTYg==",
         "dependencies": {
           "Lucene.Net": "[3.0.3, 4.0.0)"
         }
@@ -528,6 +528,7 @@
       "Ekom.Core.v8": {
         "type": "Project",
         "dependencies": {
+          "Examine": "1.2.2",
           "GMO.Vorto.v8": "0.3.0",
           "Hangfire": "1.7.14",
           "Microsoft.Web.Infrastructure": "1.0.0",

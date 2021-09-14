@@ -2,6 +2,15 @@
   "version": 1,
   "dependencies": {
     ".NETFramework,Version=v4.7.2": {
+      "Examine": {
+        "type": "Direct",
+        "requested": "[1.2.2, )",
+        "resolved": "1.2.2",
+        "contentHash": "HdpECa0qKu64lgowpm6JdQWHrD1GkMkodfS7Adossm2Tlv1f0FXh3dZuvOdeMk/+ecgDpM3n6dsFzDbHStVTYg==",
+        "dependencies": {
+          "Lucene.Net": "[3.0.3, 4.0.0)"
+        }
+      },
       "GMO.Vorto.v8": {
         "type": "Direct",
         "requested": "[0.3.0, )",
@@ -141,14 +150,6 @@
         "type": "Transitive",
         "resolved": "14.906.1403.1082",
         "contentHash": "31Pu0wcHG2c814AUVPSzyL/ijcfyvu4S524+uxOhx2d1dRiIJ9eMLLvRWUhhP7F0Q17cvQpnGnZk8+4DhdJPgg=="
-      },
-      "Examine": {
-        "type": "Transitive",
-        "resolved": "1.0.2",
-        "contentHash": "tpikEhEP+YUi0z6h0XWlh96YTcrZvfTaLAZRP0M5LWMVtN/khr1u3qaKnhwgFUWrehfqIF7VGKwZ2IcOjD0tqg==",
-        "dependencies": {
-          "Lucene.Net": "[3.0.3, 4.0.0)"
-        }
       },
       "Hangfire.Core": {
         "type": "Transitive",

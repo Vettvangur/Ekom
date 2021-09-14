@@ -4,17 +4,17 @@
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>Ekom</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        
+
         <!-- Package properties -->
         <PackageId>Ekom.Core.v8</PackageId>
-        <Version>0.7.30</Version>
+        <Version>0.7.31</Version>
         <Title>Ekom.Core.v8</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
         <Description>Ekom - Vettvangur E-Commerce solution</Description>
-        <PackageReleaseNotes>Fix stock check in UpdateOrderlineQuantityAsync</PackageReleaseNotes>
+        <PackageReleaseNotes>Update Examine</PackageReleaseNotes>
         <Copyright>Copyright 2019</Copyright>
         <PackageTags></PackageTags>
 
@@ -62,6 +62,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Examine" Version="1.2.2" />
         <PackageReference Include="GMO.Vorto.v8" Version="0.3.0" />
         <PackageReference Include="Hangfire" Version="1.7.14" />
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
