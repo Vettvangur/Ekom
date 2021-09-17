@@ -557,6 +557,11 @@ namespace Ekom.Services
                 {
                     throw new VariantNotFoundException("Unable to find variant with key " + settings.VariantKey);
                 }
+
+                if (variant.ProductKey != productKey)
+                {
+                    throw new EkomException("Mismatch between product and variant. Ensure chosen variant is a child of given Product");
+                }
             }
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);

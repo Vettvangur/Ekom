@@ -9,7 +9,7 @@ namespace Ekom.Exceptions
     /// <summary>
     /// Common base type for all exceptions thrown by Ekom
     /// </summary>
-    public abstract class EkomException : Exception
+    public class EkomException : Exception
     {
         public EkomException()
         {
