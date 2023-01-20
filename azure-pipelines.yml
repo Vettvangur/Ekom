@@ -53,10 +53,17 @@ steps:
     includesymbols: true
     versioningScheme: 'byBuildNumber'
 
-- task: DotNetCoreCLI@2
+# - task: DotNetCoreCLI@2
+#   inputs:
+#     command: 'push'
+#     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;$(Build.ArtifactStagingDirectory)/**/*.snupkg'
+#     nuGetFeedType: 'external'
+#     publishFeedCredentials: 'VV Public NuGet'
+
+- task: NuGetCommand@2
   inputs:
     command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.snupkg'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;$(Build.ArtifactStagingDirectory)/**/*.snupkg'
     nuGetFeedType: 'external'
     publishFeedCredentials: 'VV Public NuGet'
 
