@@ -1,0 +1,47 @@
+<div ng-controller="Ekom.Metafield">
+
+  <div ng-if="loading">Loading...</div>
+
+  <div ng-if="fields.length <= 0 && !loading">No metafields exist. You can create them under Metafields in Ekom</div>
+
+  <div class="metafields" ng-if="!loading"
+       ng-repeat="field in fields track by $index" style="margin-bottom: 20px;">
+    <label for="metafield_{{$index}}" style="display:block;">
+      {{ field.Name }}
+      <button type="button" ng-click="Reset($index)" class="btn" style="float:right; margin-bottom: 10px;">Clear</button>
+      <small ng-if="field.Description.length > 0">{{ field.Description }}</small>
+    </label>
+    <div class="metafields__input">
+      <div ng-if="field.Values.length > 0">
+
+        <div ng-if="field.EnableMultipleChoice">
+          <select chosen
+                  multiple
+                  options=""
+                  ng-model="values[$index]"
+                  ng-options="option.Values[languages[0].IsoCode] for option in field.Values track by option.Id">
+          </select>
+        </div>
+
+        <div ng-if="!field.EnableMultipleChoice">
+          <select chosen
+                  options=""
+                  ng-model="values[$index]"
+                  ng-options="option.Values[languages[0].IsoCode] for option in field.Values track by option.Id">
+          </select>
+        </div>
+
+
+        <!--<select ng-model="model.value[$index]" ng-options="option.Values[languages[0].IsoCode] for option in field.Values track by option.Id">
+          <option value="">Select value</option>
+        </select>-->
+      </div>
+      <div ng-if="field.Values.length <= 0">
+        <input name="metafield_{{$index}}"
+               id="metafield_{{$index}}"
+               type="text"
+               ng-model="values[$index]" />
+      </div>
+    </div>
+  </div>
+</div>

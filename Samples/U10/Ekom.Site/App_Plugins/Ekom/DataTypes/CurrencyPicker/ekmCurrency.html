@@ -1,0 +1,22 @@
+﻿<div ng-controller="Ekom.Currency">
+  <table>
+    <tr>
+      <td valign="top">
+        <label for="currencyCulture">Currency Culture:</label><br />
+        <input type="text" name="currencyCulture" ng-model="currencyCulture" />
+      </td>
+      <td class="text-center" valign="top">
+        <label for="currencyFormat">Currency Format:</label><br />
+        <input type="text" name="currencyFormat" ng-model="currencyFormat" />
+      </td>
+      <td>
+        <button class="btn btn-success" ng-click="addCurrency()" style="margin-top: 24px;">Add</button>
+      </td>
+    </tr>
+  </table>
+  <br />
+  <label class="text-right" for="selectedCurrencies">Current Currencies:</label><br />
+  <select size="7" data-ng-options="item as combine(item) for item in currencies | orderBy:'Sort'" ng-model="currencySelected"></select>
+  <br />
+  <button class="btn btn-danger" ng-click="removeCurrency(currencySelected)">Remove</button>
+</div>

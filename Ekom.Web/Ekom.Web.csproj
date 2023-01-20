@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+      <TargetFrameworks>net461;net6.0</TargetFrameworks>
+      <ContentTargetFolders>.</ContentTargetFolders>
+
+      <!-- Package properties -->
+      <PackageId>EkomCore.Web</PackageId>
+      <Version>0.0.9</Version>
+      <Title>Ekom.Web</Title>
+      <Authors>Vettvangur</Authors>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+      <PackageIcon>images\VV_Logo.png</PackageIcon>
+      <Description>Ekom Web. This Package has all the web files that Ekom requires.</Description>
+      <PackageReleaseNotes>Create nuget package</PackageReleaseNotes>
+      <Copyright>Copyright 2022</Copyright>
+      <PackageTags>umbraco</PackageTags>
+
+      <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+      <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+      <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+      <!-- Enable NuGet package caching -->
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <!-- Package icon -->
+    <ItemGroup>
+        <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+
+  <ItemGroup>
+      <Content Include="App_Plugins\Ekom\**" ExcludeFromSingleFile="true" CopyToPublishDirectory="Always" />
+      <None Include="buildTransitive\**" Pack="true" PackagePath="buildTransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ekom\EkomCore.csproj" />
+  </ItemGroup>
+</Project>

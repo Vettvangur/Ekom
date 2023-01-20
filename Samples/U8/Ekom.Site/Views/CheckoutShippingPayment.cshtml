@@ -1,0 +1,54 @@
+﻿@inherits Umbraco.Web.Mvc.UmbracoViewPage
+@{
+    Layout = "Masterpage.cshtml";
+
+    var country = Request["customerCountry"];
+    var order = Order.Instance.GetOrder();
+}
+
+@section Main {
+
+    @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay)) {
+        <div class="row column">
+
+            <h3>Payment Providers</h3>
+            <ul>
+                @foreach (var paymentProvider in Providers.Instance.GetPaymentProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@paymentProvider.Key">
+                            @paymentProvider.Title
+                            <input id="@paymentProvider.Key" type="radio" name="paymentProvider" value="@paymentProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            <h3>Shipping Providers</h3>
+            <ul>
+                @foreach (var shippingProvider in Providers.Instance.GetShippingProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@shippingProvider.Key">
+                            @shippingProvider.Title - @shippingProvider.Price.Value
+                            <input id="@shippingProvider.Key" type="radio" name="shippingProvider" value="@shippingProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            @foreach (string param in Request.Form)
+            {
+                <input name="@param" value="@Request.Form[param]" hidden />
+            }
+
+            <button class="button">Klára</button>
+        </div>
+    }
+}

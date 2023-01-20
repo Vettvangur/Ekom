@@ -1,0 +1,11 @@
+﻿.featured {
+
+    &__caption {
+        font-size: rem-calc(24);
+        text-align:center;
+        padding: 44px 0;
+        border-bottom:1px solid $border-color;
+        margin-bottom:48px;
+        font-weight:700;
+    }
+}

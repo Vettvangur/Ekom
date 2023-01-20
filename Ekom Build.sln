@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{486CD777-F50E-4422-9058-A981A489D843}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		README.md = README.md
+		release-build.ps1 = release-build.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ekom", "Ekom", "{B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom", "Ekom\Ekom.csproj", "{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AspNetCore", "AspNetCore", "{90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.AspNetCore", "AspNetCore\Ekom.AspNetCore\Ekom.AspNetCore.csproj", "{14B44BFE-58B1-4653-B4FC-2C99B64A9336}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.U9", "AspNetCore\Ekom.U9\Ekom.U9.csproj", "{805379DC-7D41-4E5E-846E-454BCF632B28}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.U10", "AspNetCore\Ekom.U10\Ekom.U10.csproj", "{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Web", "Ekom.Web\Ekom.Web.csproj", "{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14B44BFE-58B1-4653-B4FC-2C99B64A9336}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14B44BFE-58B1-4653-B4FC-2C99B64A9336}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14B44BFE-58B1-4653-B4FC-2C99B64A9336}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14B44BFE-58B1-4653-B4FC-2C99B64A9336}.Release|Any CPU.Build.0 = Release|Any CPU
+		{805379DC-7D41-4E5E-846E-454BCF632B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{805379DC-7D41-4E5E-846E-454BCF632B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{805379DC-7D41-4E5E-846E-454BCF632B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{805379DC-7D41-4E5E-846E-454BCF632B28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EBA991EB-CDAA-4939-B22D-8C8CCF8ED470} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
+		{90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
+		{14B44BFE-58B1-4653-B4FC-2C99B64A9336} = {90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB}
+		{805379DC-7D41-4E5E-846E-454BCF632B28} = {90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB}
+		{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2} = {90A9A2E7-EAB5-40FA-AB46-6701D7A6B9FB}
+		{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}
+	EndGlobalSection
+EndGlobal

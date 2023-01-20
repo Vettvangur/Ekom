@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net472</TargetFramework>
+        <AssemblyName>Ekom.Extensions</AssemblyName>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        
+        <!-- Package properties -->
+        <PackageId>Ekom.Extensions.v8</PackageId>
+        <Version>0.4.8</Version>
+        <Title>Ekom Extensions</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images\VV_Logo.png</PackageIcon>
+        <Description>Ekom checkout extensions</Description>
+        <PackageReleaseNotes>Initial</PackageReleaseNotes>
+        <Copyright>Copyright 2021</Copyright>
+        <PackageTags></PackageTags>
+
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <!-- Enable NuGet package caching -->
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <RootNamespace>Ekom.Extensions</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <!-- Package icon -->
+      <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="Views\web.config.transform" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Ekom.Core" Version="[0.0.1,1.0.0)" />
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.10.56">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Umbraco.NetPayment.v8" Version="[11.7.1,12.0.0)" />
+        <PackageReference Include="UmbracoCms.Core" Version="[8.6.1,9.0)" />
+        <PackageReference Include="UmbracoCms.Web" Version="[8.6.1,9.0)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Ekom\Ekom.Core.csproj" />
+    </ItemGroup>
+</Project>

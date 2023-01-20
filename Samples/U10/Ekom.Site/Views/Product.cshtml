@@ -1,0 +1,29 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+	Layout = "Master.cshtml";
+
+    var product = Catalog.Instance.GetProduct();
+}
+<h1>@product.Title</h1>
+
+<p>@product.Price.WithVat.CurrencyString</p>
+
+@if (product.Stock > 0 || product.Backorder) 
+{
+    @using (Html.BeginEkomForm(FormType.AddToOrderProduct, "product__add-form"))
+    {
+        <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
+        <input type="hidden" name="productId" value="@product.Key" />
+        <input type="hidden" name="quantity" value="1" />
+        <input type="hidden" name="action" value="AddOrUpdate" />
+
+        <button type="submit">
+            <span class="button__text">Bæta við körfu</span>
+        </button>
+    }
+} else
+{
+    <div>
+        Product out of stock
+    </div>
+}

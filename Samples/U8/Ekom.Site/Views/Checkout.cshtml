@@ -1,0 +1,112 @@
+@inherits Umbraco.Web.Mvc.UmbracoViewPage
+
+@{
+    Layout = "Masterpage.cshtml";
+    var order = Order.Instance.GetOrder();
+}
+
+@section Main {
+
+    <div class="grid-container">
+
+        <div class="checkout">
+
+            @if (order != null && order.TotalQuantity > 0)
+            {
+                <div class="grid-x grid-margin-x">
+
+                    <div class="cell medium-8">
+
+                        <h1 class="checkout__caption">Checkout</h1>
+
+                        <div class="checkoutCart">
+                            @Html.Partial("Store/Checkout/_Cart", new ViewDataDictionary {
+                                { "order", order }
+                            })
+                        </div>
+
+                        <div class="checkout__container">
+
+                            <div class="checkoutInformation">
+                                @Html.Partial("Store/Checkout/_Information", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                            <div class="checkoutShipping">
+                                @Html.Partial("Store/Checkout/_Shipping", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                            <div class="checkoutPayment">
+                                @Html.Partial("Store/Checkout/_Payment", new ViewDataDictionary {
+                                    { "order", order }
+                                })
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="cell medium-4">
+
+                        <h1 class="checkout__caption">Total</h1>
+
+                        <div>
+                            Order Line Total: <strong>@order.OrderLineTotal.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Subtotal: <strong>@order.SubTotal.CurrencyString</strong>
+                        </div>
+                        @if (order.ShippingProvider != null && order.ShippingProvider.Price.Value > 0)
+                        {
+                            <div>
+                                Shipping: <strong>@order.ShippingProvider.Price.WithVat.CurrencyString</strong>
+                            </div>
+                        }
+                        @if (order.PaymentProvider != null && order.PaymentProvider.Price.Value > 0)
+                        {
+                            <div>
+                                Payment: <strong>@order.PaymentProvider.Price.WithVat.CurrencyString</strong>
+                            </div>
+                        }
+                        <div>
+                            VAT: <strong>@order.Vat.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Charged VAT: <strong>@order.ChargedVat.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Grand Total: <strong>@order.GrandTotal.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Discount Amount: <strong>@order.DiscountAmount.CurrencyString</strong>
+                        </div>
+                        <div>
+                            Charged Amount: <strong>@order.ChargedAmount.CurrencyString</strong>
+                        </div>
+
+                        @using (Html.BeginEkomForm(FormType.ApplyCouponToOrder))
+                        {
+                            <label for="coupon">
+                                Coupon name
+                                <input type="text" id="coupon" name="coupon" value="" required />
+                            </label>
+                            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                            <button type="submit" class="button small">Apply</button>
+                        }
+
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="checkout__empty">
+                    <h2>Engar vörur fundust í körfu</h2>
+                </div>
+            }
+        </div>
+    </div>
+}

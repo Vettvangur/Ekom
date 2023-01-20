@@ -1,0 +1,70 @@
+@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+
+    var category = _catalog.GetCategory();
+
+    var searchQuery = Context.Request.Query["q"];
+
+    var productResponse = category.ProductsRecursive(
+        new ProductQuery() { 
+            Page = 1, 
+            PageSize = 10,
+            SearchQuery = searchQuery,
+            PropertyFilters = new Dictionary<string, List<string>>
+            {
+                { "test2", new List<string>() { "umb://document/94f72228719441d78bd781fd32860184", "umb://document/dfc9fb993db2443ea2feaa15b6ba540d" }  }
+            }
+        });
+
+    var culture = "en-US";
+
+    var filters = productResponse.Filters();
+}
+
+<h1>@category.Title</h1>
+
+<h2>Products</h2>
+
+<ul>
+    @foreach (var prod in productResponse.Products)
+    {
+        <li>@prod.Title</li>
+    }
+</ul>
+
+<h2>Filters</h2>
+
+<form method="get" action="@Model.Url()">
+
+    <label>Search:</label>
+    <input type="search" value="@searchQuery" name="q" />
+    <ol>
+        @foreach (var filter in filters)
+        {
+
+            <li>
+                @filter.Field.Title.GetValue(culture)
+
+                <ul>
+                    @foreach (var val in filter.Values)
+                    {
+                        var query = Context.Request.Query["filter_" + filter.Field.Id];
+
+                        var value = val.GetValue(culture);
+
+                        <li>
+                            <label>
+                                <input type="checkbox" value="@value" name="filter_@filter.Field.Id" @(query.Contains(value) ? "checked" : "") /> @value
+                            </label>
+
+                        </li>
+                    }
+                </ul>
+            </li>
+        }
+    </ol>
+    <button type="submit">Filter</button>
+</form>
+

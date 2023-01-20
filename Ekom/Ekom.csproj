@@ -1,0 +1,127 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net461;net6.0</TargetFrameworks>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+      <!-- Package properties -->
+      <PackageId>EkomCore</PackageId>
+      <Version>0.0.1</Version>
+      <Title>Ekom</Title>
+      <Authors>Vettvangur</Authors>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+      <PackageIcon>images\VV_Logo.png</PackageIcon>
+      <Description>Ekom - Vettvangur E-Commerce solution</Description>
+      <PackageReleaseNotes></PackageReleaseNotes>
+      <Copyright>Copyright 2022</Copyright>
+      <PackageTags></PackageTags>
+
+      <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+      <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+      <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+      <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+      <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+      <!-- Enable NuGet package caching -->
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+      <RootNamespace>Ekom</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Package icon -->
+        <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Umbraco.Tests</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.Extensions</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.Manager</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.AspNetFramework</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.AspNetCore</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U7</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U8</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U9</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U10</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U11</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>EkomCore.U12</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommonServiceLocator" Version="2.0.6" />
+        <PackageReference Include="Hangfire" Version="1.7.32" />
+        <PackageReference Include="linq2db" Version="4.3.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.10.56">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461'">
+        <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+        <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.9" />
+        <Reference Include="System" />
+        <Reference Include="System.ComponentModel.DataAnnotations" />
+        <Reference Include="System.Web" />
+        <Reference Include="System.Web.Http" />
+        <Reference Include="System.Web.Extensions">
+            <HintPath>..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.Extensions.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+</Project>

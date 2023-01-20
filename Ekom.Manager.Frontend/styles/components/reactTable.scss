@@ -1,0 +1,80 @@
+@import '~variables';
+.CustomReactTable {
+  padding: 47px 110px;
+}
+
+.reactTable {
+  &__payStatus {
+    display:flex;
+    align-items: center;
+    font-size: 14px;
+    border-radius: 10px;
+    max-width: 115px;
+    padding: 5px 7px;
+    span {
+      font-weight:600;
+      margin: 0 5px;
+    }
+    &-close {
+      background: #FEEEEE;
+      color: #F25555;
+    }
+    &-check {
+      background: #EEF8EE;
+      color: #53BC50;
+    }
+  }
+}
+.ReactTable .rt-tbody .rt-tr-group {
+  border-bottom:0!important;
+}
+
+.rt-td {
+  font-size: 16px;
+  &:first-child {
+    padding:0!important;
+    display: flex;
+  }
+}
+.rt-th {
+  &:first-child {
+    padding:0!important;
+  }
+}
+.rt-th {
+  &:first-child {
+    display: flex;
+  }
+}
+.pagination-bottom {
+  font-size: 16px;
+}
+
+.rt-tr-group {
+  border-bottom: none;
+}
+.rt-tr-group__empty {
+  display:none!important;
+}
+.rt-tr {
+  border-bottom: solid 1px #E5E5E5;
+  padding: 0 30px;
+}
+
+
+.rt-tr-group__selected {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top:0;
+    left:0;
+    width:3px;
+    height: 100%;
+    background-color: $ekomBlue;
+  }
+}
+
+.ReactTable .rt-tbody {
+  overflow: unset!important;
+}

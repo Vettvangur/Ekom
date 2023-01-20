@@ -1,0 +1,28 @@
+<ng-form name="ekomPropertyForm">
+  <div id="ekom-{{model.id}}" class="ekomProperty" ng-controller="Ekom.PropertyEditor">
+
+    <ul class="ekom-tabs umb-tabs-nav">
+      <li class="ekom-tabs__item umb-tab"
+          ng-class="tab.value == currentTab.value ? 'ekom-tabs__item--active umb-tab--active' : ''"
+          ng-repeat="tab in tabs"
+          ng-click="setCurrentTab(tab, true);">
+        <button class="btn-reset umb-tab-button" type="button">
+          {{tab.text}}
+        </button>
+      </li>
+    </ul>
+    <div ng-if="failed">Error! Could not render the property</div>
+    <div ng-if="loading && !failed">Loading...</div>
+    <div class="ekom-property" ng-repeat="tab in tabs" ng-show="currentTab.value == tab.value">
+      <div id="ekom-property__{{model.alias}}.{{tab.value}}">
+        <ekom-property view="property.viewPath"
+                       config="property.config"
+                       tab="tab.value"
+                       property-alias="model.alias"
+                       value="model.value">
+        </ekom-property>
+      </div>
+    </div>
+
+  </div>
+</ng-form>

@@ -1,0 +1,169 @@
+@using Newtonsoft.Json
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+
+    var categories = _catalog.GetAllCategories();
+    var store = _store.GetStore();
+    var allStores = _store.GetAllStores();
+    var allProducts = _catalog.GetAllProducts();
+
+    var o = _order.GetOrder();
+}
+
+<h2>Total Categories (@categories.Count())</h2>
+<h2>Total Products (@allProducts.Products.Count())</h2>
+<h3>Culture: @Model.GetCultureFromDomains()</h3>
+<h3>Store: @store.Alias</h3>
+
+<div>
+    <a href="/checkout">Checkout</a>
+</div>
+
+<div style="margin-left:40px; border-top:1px solid #ccc;">
+    @foreach (var cat in categories)
+    {
+        <h4>
+            <a href="@cat.Url">Title: @cat.Title</a>
+        </h4>
+        <p>Key: @cat.Key</p>
+        <p>Id: @cat.Id</p>
+
+        <h4>Category properties</h4>
+
+        <ul>
+            @foreach (var prop in cat.Properties)
+            {
+                <li>
+                    @prop.Key: @prop.Value
+                </li>
+            }
+        </ul>
+
+        <h4>Sub Categories</h4>
+
+        <ul>
+            @foreach (var sub in cat.SubCategories)
+            {
+                <li>
+                    <a href="@sub.Url">Title: @sub.Title</a>
+                </li>
+            }
+        </ul>
+
+        <h4>Products</h4>
+
+        <ul>
+            @foreach (var product in cat.ProductsRecursive().Products)
+            {
+
+                var metaJson = JsonConvert.SerializeObject(product.Metafields);
+
+                var testContent = product.GetValue<IPublishedContent>("test");
+
+                <li>
+                    <a href="@product.Url">
+
+                        <p>Title: @product.Title</p>
+                        <p>SKU: @product.SKU</p>
+                        <p>Price: @product.Price.WithVat.CurrencyString</p>
+                    </a>
+                    <p>
+                        <strong>Test - @(product.GetValue<string>("test"))</strong>
+                        <ul>
+                            <li>@(testContent != null ? testContent.Name : "")</li>
+                        </ul>
+                    </p>
+                    <p>
+                        <strong>Test2 - @product.GetValue("test2")</strong>
+                        <ul>
+                            @foreach (var item in product.GetValue<IEnumerable<IPublishedContent>>("test2"))
+                            {
+                                <li>@item.Name</li>
+                            }
+                        </ul>
+                    </p>
+                    <p>
+                        <strong>Test3 - @(product.GetValue<bool>("test3"))</strong>
+                    </p>
+
+                    @if (product.Images.Any()) {
+                        <p>
+                            <strong>Images</strong>
+                            <ul>
+                                @foreach (var img in product.Images)
+                                {
+                                    <li>
+                                        <img src="@img.Url" />
+                                    </li>
+                                }
+                            </ul>
+                        </p>
+                    }
+
+                    <ul>
+                        @foreach (var prop in product.Properties)
+                        {
+                            <li>
+                                @prop.Key: @prop.Value
+                            </li>
+                        }
+                    </ul>
+
+                    <h4>Metafields</h4>
+
+                    @if (product.Metafields != null)  {
+                        foreach (var field in product.Metafields) {
+                            <p>
+                                @field.Field.Title.GetValue("is-IS") - @(string.Join(",", field.Values))
+                            </p>
+                        }
+                    }
+
+                    <p>*@metaJson*</p>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<div style="margin-left:40px; border-top:1px solid #ccc;">
+    @foreach (var s in allStores)
+    {
+        <h4>
+            <a href="@s.Url">
+                Alias: @s.Title
+            </a>
+        </h4>
+        <p>Key: @s.Key</p>
+        <p>Id: @s.Id</p>
+        <p>Root Id: @s.StoreRootNode</p>
+        <p>RootNode: @s.GetRootNode().Name</p>
+
+        <h4>Store Domains</h4>
+
+        @if (s.Domains != null)
+        {
+            <ul>
+                @foreach (var prop in s.Domains)
+                {
+                    <li>
+                        @prop.Key: @prop.DomainName
+                    </li>
+                }
+            </ul>
+        }
+
+
+        <h4>All Domains</h4>
+
+        <ul>
+            @foreach (var prop in _store.GetDomains())
+            {
+                <li>
+                    @prop.Key: @prop.DomainName - @prop.RootContentId
+                </li>
+            }
+        </ul>
+    }
+</div>

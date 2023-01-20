@@ -1,0 +1,73 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+name: $(majorMinorVersion).$(semanticVersion) # $(rev:r) # NOTE: rev resets when the default retention period expires
+
+trigger:
+  branches:
+    include:
+      - Ekom
+  paths:
+    exclude:
+      - README.md
+pr: none
+
+pool: HAWKEYE
+
+variables:
+  majorMinorVersion: 0.1
+  # semanticVersion counter is automatically incremented by one in each execution of pipeline
+  # second parameter is seed value to reset to every time the referenced majorMinorVersion is changed
+  semanticVersion: $[counter(variables['majorMinorVersion'], 0)]
+  solution: '**/Ekom Build.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+steps:
+- task: NuGetToolInstaller@1
+  inputs:
+    versionSpec: '6.x'
+
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(solution)'
+    feedsToUse: 'select'
+    vstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '6.0.x'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'pack'
+    packagesToPack: '**/Ekom.csproj;**/Ekom.AspNetCore.csproj;**/Ekom.U10.csproj;**/Ekom.Web.csproj'
+    includesymbols: true
+    versioningScheme: 'byBuildNumber'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.snupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
+
+- task: PublishSymbols@2
+  inputs:
+    SearchPattern: '**/bin/**/*.pdb'
+    SymbolServerType: 'TeamServices'
+
+# - task: VSTest@2
+#   inputs:
+#     platform: '$(buildPlatform)'
+#     configuration: '$(buildConfiguration)'

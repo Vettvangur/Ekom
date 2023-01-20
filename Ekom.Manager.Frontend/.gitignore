@@ -1,0 +1,10 @@
+\.DS_Store
+\.awcache
+build
+bower_components
+node_modules
+npm-debug\.log
+css
+yarn\.lock
+
+package_old.json

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+      <AssemblyName>Ekom.AspNetFramework</AssemblyName>
+      <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+      <!-- Enable NuGet package caching -->
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.U7</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.U8</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Ekom\Ekom.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="System.Web">
+        <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>

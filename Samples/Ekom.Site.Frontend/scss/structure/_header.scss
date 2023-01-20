@@ -1,0 +1,129 @@
+﻿.header {
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 50px;
+
+    &--no-margin {
+        margin-bottom: 0;
+    }
+
+    &__top {
+        height: 48px;
+        border-bottom: 1px solid $border-color;
+        font-size: rem-calc(13);
+
+        &__link, .select__value {
+            color: $secondary-color;
+            line-height: 48px;
+            padding: 0 20px;
+            text-transform: uppercase;
+            display: inline-block;
+
+            &:hover {
+                color: darken($secondary-color, 20%);
+            }
+        }
+    }
+
+    &__bottom {
+        height: 112px;
+    }
+
+    &__wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &--bottom {
+            height: 112px;
+        }
+    }
+
+    &__divider {
+        display: inline-block;
+        height: 48px;
+        background-color: $border-color;
+        width: 1px;
+        vertical-align: top;
+    }
+
+    &__left {
+        flex: 1;
+    }
+
+    &__right {
+        flex: 1;
+        text-align: right;
+    }
+
+    &__center {
+        flex: 1;
+        text-align: center;
+    }
+
+    &__categories {
+        > ul {
+            list-style: none;
+            margin: 0;
+
+            > li {
+                float: left;
+                margin-left: 40px;
+
+                &:first-child {
+                    margin-left: 0;
+                }
+
+                > a {
+                    font-weight: 600;
+                    display: block;
+                    color: $medium-gray;
+                    text-transform: uppercase;
+                }
+
+                &.header__navItem--is-selected > a, > a:hover {
+                    color: $dark-gray;
+                }
+            }
+        }
+    }
+
+    &__brand {
+        font-weight: 700;
+        font-size: rem-calc(27);
+
+        > a {
+            color: $dark-gray;
+        }
+    }
+
+    &__cart {
+
+        &:hover {
+
+            .header__cart__qty {
+                background-color: darken($primary-color, 5%);
+            }
+        }
+
+        &__text {
+            text-transform: uppercase;
+            font-weight: 600;
+            color: $dark-gray;
+            font-size: rem-calc(13);
+        }
+
+        &__qty {
+            background-color: $primary-color;
+            width: 32px;
+            height: 32px;
+            display: inline-block;
+            margin-left: 5px;
+            color: $white;
+            text-align: center;
+            line-height: 32px;
+            font-weight: 600;
+            border-radius: 4px;
+            transition: all .2s ease-in-out;
+        }
+    }
+}

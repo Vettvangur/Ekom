@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>Ekom.Extensions</AssemblyName>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <!-- Package properties -->
+        <PackageId>Ekom.Extensions.v9</PackageId>
+        <Version>0.0.1</Version>
+        <Title>Ekom Extensions</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images\VV_Logo.png</PackageIcon>
+        <Description>Ekom checkout extensions</Description>
+        <PackageReleaseNotes>Initial</PackageReleaseNotes>
+        <Copyright>Copyright 2021</Copyright>
+        <PackageTags></PackageTags>
+
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <!-- Enable NuGet package caching -->
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <RootNamespace>Ekom.Extensions</RootNamespace>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <!-- Package icon -->
+      <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="Views\web.config.transform" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Ekom.Core" Version="[0.0.1,1.0.0)" />
+        <PackageReference Include="Umbraco.NetPayment.v9" Version="[0.0.1,1.0.0)" />
+        <PackageReference Include="Umbraco.Cms.Core" Version="9.0.0" />
+        <PackageReference Include="Umbraco.Cms.Examine.Lucene" Version="9.0.0" />
+        <PackageReference Include="Umbraco.Cms.Web.Common" Version="9.0.0" />
+        <PackageReference Include="Umbraco.Cms.Web.Website" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Ekom\Ekom.Core.csproj" />
+    </ItemGroup>
+</Project>

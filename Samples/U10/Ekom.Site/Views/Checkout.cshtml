@@ -1,0 +1,82 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    Layout = null;
+
+    var order = Order.Instance.GetOrder();
+
+    if (order == null || order.TotalQuantity <= 0)
+    {
+        <div>
+            <h1>Cart is empty</h1>
+        </div>
+        return;
+    }
+
+    <div class="cart">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var orderline in order.OrderLines)
+                {
+                    <tr class="orderline">
+                        <td>@orderline.Product.Title</td>
+                        <td>@orderline.Product.SKU</td>
+                        <td>@orderline.Product.Price.WithVat.CurrencyString</td>
+                        <td>
+                            @using (Html.BeginEkomForm(FormType.AddToOrderCart, "orderline__update-form"))
+                            {
+                                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                                <input type="number" name="quantity" value="@orderline.Quantity" />
+                                <input type="hidden" name="productId" value="@orderline.ProductKey" />
+                                <input type="hidden" name="action" value="@OrderAction.Set" />
+                                <button type="submit">Update</button>
+                            }
+                        </td>
+                        <td>@orderline.Amount.WithVat.CurrencyString</td>
+                        <td>
+                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, "orderline__remove-form"))
+                            {
+                                <input type="hidden" name="lineId" value="@orderline.Key" />
+                                <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
+
+                                <button type="submit">
+                                    Remove
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">
+                    
+                    </td>
+                    <td>
+                        <strong>
+                            @order.TotalQuantity
+                        </strong>
+                    </td>
+                    <td>
+                        <strong>@order.ChargedAmount.CurrencyString</strong>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+
+    </div>
+
+}

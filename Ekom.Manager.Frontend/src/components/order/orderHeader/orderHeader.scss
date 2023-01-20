@@ -1,0 +1,58 @@
+.container {
+  max-width: 65%;
+}
+
+.header {
+  background-color: rgba(224, 234, 237, 0.5);
+  width:100%;
+  min-height: 100px;
+  padding:26px 100px;
+  position:relative;
+}
+.column {
+  margin-right: 60px;
+  color: rgba(44, 56, 44, 0.9);
+  font-size: 24px;
+  & > div:last-child {
+    color: rgba(44, 56, 44, 0.5);
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+}
+
+.updateStatusForm {
+  & > form {
+    & > div {
+      margin-right: 15px;
+    }
+  }
+}
+.refundForm {
+  & > form {
+    & > input {
+      margin-right: 15px;
+    }
+  }
+}
+
+.billing {
+  background-color: rgba(224, 234, 237, 0.7);
+  min-height: 360px;
+  padding: 60px 100px 60px 178px;
+}
+.billingColumn {
+  position: relative;
+  min-width: 370px;
+}
+.billingIcon {
+  position: absolute;
+  top:15px;
+  left:-70px;
+  width: 48px;
+  height: 48px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+}

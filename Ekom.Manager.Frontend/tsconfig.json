@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+      "module": "commonjs",
+      "jsx": "react",
+      "experimentalDecorators": true,
+      "allowJs": true,
+      "target": "es5",
+      "lib": [
+          "es7",
+          "dom"
+      ],
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": ".",
+      "forceConsistentCasingInFileNames": false,
+      "noUnusedLocals": true,
+      "paths": {
+            "components/*": [
+                "./src/components/*"
+            ],
+            "containers/*": [
+                "./src/containers/*"
+            ],
+            "utilites/*": [
+                "./src/utilites/*"
+            ],
+            "styledComponents/*": [
+                "./src/styledComponents/*"
+            ],
+            "stores/*": [
+                "./src/stores/*"
+            ],
+            "data/*": [
+                "./src/data/*"
+            ],
+            "models/*": [
+                "./src/models/*"
+            ],
+            "pages/*": [
+                "./src/pages/*"
+            ],
+            "utilities/*": [
+                "./src/utilities/*"
+            ],
+            "reusableComponents/*": [
+                "./src/reusableComponents/*"
+            ],
+            "assets/*": [
+                "./assets/*"
+            ],
+      }
+  },
+  "exclude": [
+      "bower_components",
+      "node_modules"
+  ]
+}

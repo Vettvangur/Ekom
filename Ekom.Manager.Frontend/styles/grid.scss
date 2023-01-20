@@ -1,0 +1,76 @@
+$grid-columns:      12;
+$grid-gutter-width: 40px;
+
+$xs: 0px;
+$small: 576px;
+$medium: 768px;
+$large: 992px;
+$x-large: 1200px;
+
+/**
+** Grid breakpoints to be introduced later.
+*/
+$grid-breakpoints: (
+  // Extra small screen / phone
+  xs: 0,
+  // Small screen / phone
+  sm: 576px,
+  // Medium screen / tablet
+  md: 768px,
+  // Large screen / desktop
+  lg: 992px,
+  // Extra large screen / wide desktop
+  xl: 1200px
+);
+
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px
+);
+.row {
+  display:flex;
+  flex-wrap: wrap;
+  margin: 0 $grid-gutter-width;
+}
+@for $i from 1 through $grid-columns {
+  .col-xs-#{$i} {
+    @media screen and (min-width: $xs) {
+      width: calc((100% / #{$i}) - #{$grid-gutter-width});
+      flex-basis: calc((100% / #{$i}) - #{$grid-gutter-width});
+    }
+  }
+}
+@for $i from 1 through $grid-columns {
+  @media screen and (min-width: $small) {
+    .col-sm-#{$i} {
+      width: calc((100% / #{$i}) - #{$grid-gutter-width});
+      flex-basis: calc((100% / #{$i}) - #{$grid-gutter-width});
+    }
+  }
+}
+@for $i from 1 through $grid-columns {
+  @media screen and (min-width: $medium) {
+    .col-md-#{$i} {
+      width: calc((100% / #{$i}) - #{$grid-gutter-width});
+      flex-basis: calc((100% / #{$i}) - #{$grid-gutter-width});
+    }
+  }
+}
+@for $i from 1 through $grid-columns {
+  .col-lg-#{$i} {
+    @media screen and (min-width: $large) {
+      width: calc((100% / #{$i}) - #{$grid-gutter-width});
+      flex-basis: calc((100% / #{$i}) - #{$grid-gutter-width});
+    }
+  }
+}
+@for $i from 1 through $grid-columns {
+  .col-xl-#{$i} {
+    @media screen and (min-width: $x-large) {
+      width: calc((100% / #{$i}) - #{$grid-gutter-width});
+      flex-basis: calc((100% / #{$i}) - #{$grid-gutter-width});
+    }
+  }
+}

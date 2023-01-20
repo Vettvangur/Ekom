@@ -1,0 +1,87 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\css\ekomProperty.css" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\js\ekmPropertyEditor.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditor.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditorPicker.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\Extensions\ekmUtility.js" />
+      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\package.manifest" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\MetaValueEditor\ekmMetavalue.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\MetaFieldPicker\ekmMetafield.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\PropertyEditor\css\ekomProperty.css" />
+      <Content Include="App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditor.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditorPicker.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
+      <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen-sprite.png" />
+      <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen-sprite@2x.png" />
+      <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen.css" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\MetaValueEditor\ekmMetavalue.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\MetaFieldPicker\ekmMetafield.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\PropertyEditor\js\ekmPropertyEditor.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
+      <None Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+      <None Include="App_Plugins\Ekom\Shared\Chosen\angular-chosen.min.js" />
+      <None Include="App_Plugins\Ekom\Shared\Chosen\chosen.jquery.min.js" />
+      <None Include="App_Plugins\Ekom\Shared\ekmUtility.js" />
+      <None Include="App_Plugins\Ekom\package.manifest" />
+      <None Include="App_Plugins\Ekom\Shared\ekmResources.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Umbraco.Cms" Version="10.3.2" />
+    </ItemGroup>
+
+    <!-- Force Windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older Windows 10 and most, if not all, Windows Server editions will run NLS -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Identity.Web" Version="1.15.2" />
+        <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+        <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
+        <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
+    </PropertyGroup>
+
+    <!-- Keep this as false if ModelsBuilder mode is InMemoryAuto -->
+    <PropertyGroup>
+        <RazorCompileOnBuild>false</RazorCompileOnBuild>
+        <RazorCompileOnPublish>false</RazorCompileOnPublish>
+    </PropertyGroup>
+</Project>

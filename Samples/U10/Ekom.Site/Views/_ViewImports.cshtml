@@ -1,0 +1,17 @@
+@using Umbraco.Extensions
+@using Umbraco.Cms.Web.Common.PublishedModels
+@using Umbraco.Cms.Web.Common.Views
+@using Umbraco.Cms.Core.Models.PublishedContent
+@using Microsoft.AspNetCore.Html
+@using Ekom.Interfaces
+@using Ekom.Utilities
+@using Ekom.API
+@using Ekom
+@using Ekom.Models;
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, Smidge
+@inject Smidge.SmidgeHelper SmidgeHelper
+@inject Order _order;
+@inject Catalog _catalog;
+@inject global::Ekom.API.Store _store;

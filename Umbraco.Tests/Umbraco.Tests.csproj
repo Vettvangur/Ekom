@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+      <!-- Enable NuGet package caching -->
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpTest.Net.Collections" Version="14.906.1403.1082" />
+    <PackageReference Include="Moq" Version="4.16.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.5" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.5" />
+
+    <PackageReference Include="UmbracoCms.Core" Version="[8.6.1,9.0)" />
+    <PackageReference Include="UmbracoCms.Web" Version="[8.6.1,9.0)" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+      <Reference Include="System.Web.ApplicationServices" />
+  </ItemGroup>
+
+</Project>

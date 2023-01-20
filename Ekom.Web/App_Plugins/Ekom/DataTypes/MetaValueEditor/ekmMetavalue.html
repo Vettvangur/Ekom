@@ -1,0 +1,41 @@
+<div ng-controller="Ekom.Metavalue">
+
+  <div class="ekmMetaValues" style="max-width:800px;">
+
+    <div class="ekmMetaValues__header" style="display:flex; margin-bottom: 15px;" ng-if="model.value.length > 0">
+      <div ng-repeat="lang in languages" style="flex:0 0 220px;">
+        {{ lang.CultureName}}
+      </div>
+    </div>
+
+    <ul ui-sortable="sortableOptions" style="margin:0;" ng-model="model.value">
+      <li ng-repeat="value in model.value track by $index" style="display:flex; position:relative; margin-bottom: 10px;">
+
+
+        <div ng-repeat="language in languages" style="flex:0 0 200px; margin-right: 10px;">
+
+          <input type="text" name="item_{{$index}}" ng-model="value.values[language.IsoCode]" />
+
+        </div>
+
+        <umb-icon icon="icon-navigation" class="icon handle" style="margin-right: 10px; margin-top: 6px;" localize="title" title="@general_move"></umb-icon>
+
+        <button type="button" class="umb-multiple-textbox__confirm-action" ng-click="showPrompt($index, value)" localize="title" title="@content_removeTextBox">
+          <umb-icon icon="icon-trash"></umb-icon>
+        </button>
+
+        <umb-confirm-action ng-if="promptIsVisible === $index"
+                            direction="left"
+                            on-confirm="remove($index)"
+                            on-cancel="hidePrompt()">
+        </umb-confirm-action>
+
+      </li>
+    </ul>
+
+    <uui-button label="Add" look="placeholder" color="default" typeof="button" style="width:100%;" ng-click="Add();">Add</uui-button>
+
+  </div>
+
+
+</div>
