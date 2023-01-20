@@ -34,8 +34,6 @@ steps:
   inputs:
     command: 'restore'
     restoreSolution: '$(solution)'
-    feedsToUse: 'select'
-    vstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
 
 - task: VSBuild@1
   inputs:
@@ -59,8 +57,8 @@ steps:
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.snupkg'
-    nuGetFeedType: 'internal'
-    publishVstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
+    nuGetFeedType: 'external'
+    publishFeedCredentials: 'VV Public NuGet'
 
 - task: PublishSymbols@2
   inputs:
