@@ -399,7 +399,7 @@ namespace Ekom.Models
 
                     foreach (var id in guids.Take(count))
                     {
-                        var product = API.Catalog.Instance.GetProduct(Store.Alias, id);
+                        var product = Catalog.Instance.GetProduct(Store.Alias, id);
 
                         if (product != null)
                         {

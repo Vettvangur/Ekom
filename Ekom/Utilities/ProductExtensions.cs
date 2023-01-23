@@ -1,7 +1,7 @@
+using Ekom.API;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
 
 namespace Ekom.Utilities
 {
