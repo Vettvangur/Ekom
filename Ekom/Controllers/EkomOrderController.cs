@@ -2,23 +2,14 @@
 using System.Web.Http;
 using System.Web.Security.AntiXss;
 #else
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 #endif
 using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Utilities;
-using System;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using Newtonsoft.Json;
 
 namespace Ekom.Controllers
 {

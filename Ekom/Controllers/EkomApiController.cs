@@ -1,15 +1,11 @@
 #if NETFRAMEWORK
 using System.Web.Http;
 #else
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 #endif
 
 using Ekom.Domain.Repositories;
 using Ekom.Models;
-using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 
 namespace Ekom.Controllers
 {
