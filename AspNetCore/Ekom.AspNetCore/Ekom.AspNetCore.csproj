@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-      <AssemblyName>EkomCore.AspNetCore</AssemblyName>
+      <AssemblyName>Ekom.Core.AspNetCore</AssemblyName>
       <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 
       <ImplicitUsings>enable</ImplicitUsings>
@@ -51,10 +51,16 @@
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>EkomCore.U9</_Parameter1>
+            <_Parameter1>Ekom.Core.U9</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>EkomCore.U10</_Parameter1>
+            <_Parameter1>Ekom.Core.U10</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.Core.U11</_Parameter1>
+        </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Ekom.Core.U12</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
 

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <AssemblyName>EkomCore.U10</AssemblyName>
+        <AssemblyName>Ekom.Core.U10</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <RootNamespace>Ekom.Umb</RootNamespace>
 

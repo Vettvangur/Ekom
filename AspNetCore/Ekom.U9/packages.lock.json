@@ -1883,7 +1883,7 @@
           "Umbraco.Cms.PublishedCache.NuCache": "9.2.0"
         }
       },
-      "ekomcore": {
+      "Ekom.Core": {
         "type": "Project",
         "dependencies": {
           "CommonServiceLocator": "[2.0.6, )",
@@ -1899,10 +1899,10 @@
           "linq2db": "[4.3.0, )"
         }
       },
-      "ekomcore.aspnetcore": {
+      "EkomCore.AspNetCore": {
         "type": "Project",
         "dependencies": {
-          "EkomCore": "[0.0.1, )"
+          "Ekom.Core": "[0.0.1, )"
         }
       }
     }

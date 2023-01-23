@@ -557,7 +557,7 @@
           "System.Drawing.Common": "5.0.0"
         }
       },
-      "ekomcore": {
+      "Ekom.Core": {
         "type": "Project",
         "dependencies": {
           "CommonServiceLocator": "[2.0.6, )",
