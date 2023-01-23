@@ -258,16 +258,16 @@ namespace Ekom.Controllers
 
 
         /// <summary>
-        /// Get Featured Products
+        /// Get Related Products
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("featuredproducts/{id:Guid}/{count:Int}")]
-        public IEnumerable<IProduct> GetFeaturedProducts(Guid id, int count = 4)
+        [Route("relatedproducts/{id:Guid}/{count:Int}")]
+        public IEnumerable<IProduct> GetRelatedProducts(Guid id, int count = 4)
         {
             try
             {
-                var products = API.Catalog.Instance.GetFeaturedProducts(id, count);
+                var products = API.Catalog.Instance.GetRelatedProducts(id, count);
 
                 return products;
             }

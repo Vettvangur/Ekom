@@ -1,3 +1,4 @@
+@using Ekom.Services;
 @using Newtonsoft.Json
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
@@ -57,36 +58,15 @@
             @foreach (var product in cat.ProductsRecursive().Products)
             {
 
-                var metaJson = JsonConvert.SerializeObject(product.Metafields);
-
-                var testContent = product.GetValue<IPublishedContent>("test");
+                var relatedProducts = product.RelatedProducts();
 
                 <li>
                     <a href="@product.Url">
-
                         <p>Title: @product.Title</p>
                         <p>SKU: @product.SKU</p>
                         <p>Price: @product.Price.WithVat.CurrencyString</p>
                     </a>
-                    <p>
-                        <strong>Test - @(product.GetValue<string>("test"))</strong>
-                        <ul>
-                            <li>@(testContent != null ? testContent.Name : "")</li>
-                        </ul>
-                    </p>
-                    <p>
-                        <strong>Test2 - @product.GetValue("test2")</strong>
-                        <ul>
-                            @foreach (var item in product.GetValue<IEnumerable<IPublishedContent>>("test2"))
-                            {
-                                <li>@item.Name</li>
-                            }
-                        </ul>
-                    </p>
-                    <p>
-                        <strong>Test3 - @(product.GetValue<bool>("test3"))</strong>
-                    </p>
-
+                    
                     @if (product.Images.Any()) {
                         <p>
                             <strong>Images</strong>
@@ -110,17 +90,15 @@
                         }
                     </ul>
 
-                    <h4>Metafields</h4>
-
-                    @if (product.Metafields != null)  {
-                        foreach (var field in product.Metafields) {
-                            <p>
-                                @field.Field.Title.GetValue("is-IS") - @(string.Join(",", field.Values))
-                            </p>
+                    <h4>Related</h4>
+                    <ul>
+                        @foreach (var related in relatedProducts)
+                        {
+                            <li>
+                                @related.Title - @related.SKU
+                            </li>
                         }
-                    }
-
-                    <p>*@metaJson*</p>
+                    </ul>
                 </li>
             }
         </ul>

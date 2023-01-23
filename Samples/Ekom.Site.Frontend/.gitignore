@@ -1,7 +1,0 @@
-﻿\.DS_Store
-\.awcache
-bower_components
-node_modules
-npm-debug\.log
-css
-yarn\.lock

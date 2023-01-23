@@ -443,15 +443,9 @@ namespace Ekom.API
                 return null;
             }
 
-
-            if (Id.Contains("umb"))
+            if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
             {
-                var value = Id.Substring(Id.LastIndexOf('/') + 1);
-
-                if (Guid.TryParse(value, out Guid guid))
-                {
-                    return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == guid).Value;
-                }
+                return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == guid).Value;
             }
 
             if (Guid.TryParse(Id, out Guid _guid))
@@ -641,10 +635,8 @@ namespace Ekom.API
             {
                 throw new ArgumentNullException(nameof(product));
             }
-
-            var relatedProducts = 
-
-            return null;
+            
+            return product.RelatedProducts(count);
         }
 
     }

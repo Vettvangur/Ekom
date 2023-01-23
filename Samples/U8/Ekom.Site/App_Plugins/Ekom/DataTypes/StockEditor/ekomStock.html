@@ -1,9 +1,0 @@
-﻿<div ng-controller="Ekom.Stock">
-  <input type="number" ng-model="stockValue">
-
-  <select ng-class="{'hide':!perStoreStock}" data-ng-options="item.Alias as item.Alias for item in storeList" data-ng-model="storeSelected" ng-change="UpdateStore()"></select>
-
-  <div class="btn-group">
-    <a class="btn btn-success" ng-click="UpdateStock()">Update</a>
-  </div>
-</div>

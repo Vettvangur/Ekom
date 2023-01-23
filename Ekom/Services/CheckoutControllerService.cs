@@ -1,10 +1,8 @@
-using Ekom;
 using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Extensions.Models;
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
 using Ekom.Utilities;
 using LinqToDB;
 #if NETCOREAPP
@@ -15,12 +13,6 @@ using System.Web;
 using System.Web.Security.AntiXss;
 #endif
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Net.Http;
 
 namespace Ekom.Services
 {

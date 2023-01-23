@@ -105,6 +105,6 @@ namespace Ekom.Models
         /// <summary>
         /// Get related products
         /// </summary>
-        IEnumerable<IProduct> RelatedProducts();
+        IEnumerable<IProduct> RelatedProducts(int count = 4);
     }
 }

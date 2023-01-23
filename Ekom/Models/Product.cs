@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
 using Ekom.Utilities;
+using Ekom.API;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
 #else
@@ -384,9 +385,42 @@ namespace Ekom.Models
             }
         }
 
-        public IEnumerable<IProduct> RelatedProducts()
+        public IEnumerable<IProduct> RelatedProducts(int count = 4)
         {
+            var relatedProducts = new List<IProduct>();
 
+            if (Properties.HasPropertyValue("relatedProducts"))
+            {
+                var val = GetValue("relatedProducts");
+
+                if (!string.IsNullOrEmpty(val))
+                {
+                    var relatedProductIds = UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
+
+                    foreach (var id in guids.Take(count))
+                    {
+                        var product = API.Catalog.Instance.GetProduct(Store.Alias, id);
+
+                        if (product != null)
+                        {
+                            relatedProducts.Add(product);
+                        }
+                    }
+                }
+            }
+            
+            if (!relatedProducts.Any())
+            {
+                var category = Catalog.Instance.GetCategory(ParentId);
+
+                if (category != null)
+                {
+                    relatedProducts = category.Products().Products.Where(x => x.Id != Id).Take(count).ToList();
+                }
+
+            }
+
+            return relatedProducts;
         }
     }
 }
