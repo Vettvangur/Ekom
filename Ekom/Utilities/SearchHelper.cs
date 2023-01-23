@@ -41,14 +41,14 @@ namespace Ekom.Utilities
             { ".", "" },
             { "&", "" },
         };
-        internal class SearchField
+        internal class EkomSearchField
         {
             public string Name { get; set; }
-            public SearchType SearchType { get; set; } = SearchType.FuzzyAndWilcard;
+            public EkomSearchType SearchType { get; set; } = EkomSearchType.FuzzyAndWilcard;
             public string FuzzyConfiguration { get; set; } = "0.5";
             public string Booster { get; set; }
         }
-        internal enum SearchType
+        internal enum EkomSearchType
         {
             Exact,
             Wildcard,

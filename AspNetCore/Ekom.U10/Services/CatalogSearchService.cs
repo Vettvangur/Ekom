@@ -36,29 +36,29 @@ namespace Ekom.Umb.Services
             {
                 if (_examineManager.TryGetIndex("InternalIndex", out var index) || !(index is IUmbracoIndex umbIndex))
                 {
-                    var fields = new List<SearchField>()
+                    var fields = new List<EkomSearchField>()
                     {
-                        new SearchField()
+                        new EkomSearchField()
                         {
                             Name = "nodeName",
                             Booster = "^2.0"
                         },
-                        new SearchField()
+                        new EkomSearchField()
                         {
                             Name = "sku",
                             Booster = "^5.0",
-                            SearchType = SearchType.Wildcard
+                            SearchType = EkomSearchType.Wildcard
                         },
-                        new SearchField()
+                        new EkomSearchField()
                         {
                             Name = "title",
                             Booster = "^2.0"
                         },
-                        new SearchField()
+                        new EkomSearchField()
                         {
                             Name = "id",
                             Booster = "^10.0",
-                            SearchType = SearchType.Exact
+                            SearchType = EkomSearchType.Exact
                         }
                     };
 
@@ -104,17 +104,17 @@ namespace Ekom.Umb.Services
                             foreach (var field in fields)
                             {
                                 luceneQuery.Append(" (");
-                                if (field.SearchType == SearchType.Wildcard || field.SearchType == SearchType.FuzzyAndWilcard)
+                                if (field.SearchType == EkomSearchType.Wildcard || field.SearchType == EkomSearchType.FuzzyAndWilcard)
                                 {
                                     luceneQuery.Append("(" + FieldCultureName(field.Name) + ": " + "*" + term + "*" + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                                 }
 
-                                if (field.SearchType == SearchType.Fuzzy || field.SearchType == SearchType.FuzzyAndWilcard)
+                                if (field.SearchType == EkomSearchType.Fuzzy || field.SearchType == EkomSearchType.FuzzyAndWilcard)
                                 {
                                     luceneQuery.Append(" (" + FieldCultureName(field.Name) + ": " + term + "~" + field.FuzzyConfiguration + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                                 }
 
-                                if (field.SearchType == SearchType.Exact)
+                                if (field.SearchType == EkomSearchType.Exact)
                                 {
                                     luceneQuery.Append(" (" + FieldCultureName(field.Name) + ": " + term + ") " + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                                 }

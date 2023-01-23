@@ -1,5 +1,4 @@
 using Ekom.Utilities;
-using System.Collections.Generic;
 
 namespace Ekom.Models
 {
@@ -10,7 +9,7 @@ namespace Ekom.Models
 
             get
             {
-                return (string.IsNullOrEmpty(Properties.GetPropertyValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetPropertyValue("customerName"))?.Trim();
+                return (string.IsNullOrEmpty(Properties.GetValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetValue("customerName"))?.Trim();
             }
         }
         public string FirstName
@@ -18,7 +17,7 @@ namespace Ekom.Models
 
             get
             {
-                return Properties.GetPropertyValue("customerFirstName");
+                return Properties.GetValue("customerFirstName");
             }
         }
         public string LastName
@@ -26,56 +25,56 @@ namespace Ekom.Models
 
             get
             {
-                return Properties.GetPropertyValue("customerLastName");
+                return Properties.GetValue("customerLastName");
             }
         }
         public string Email
         {
             get
             {
-                return Properties.GetPropertyValue("customerEmail");
+                return Properties.GetValue("customerEmail");
             }
         }
         public string Address
         {
             get
             {
-                return Properties.GetPropertyValue("customerAddress");
+                return Properties.GetValue("customerAddress");
             }
         }
         public string City
         {
             get
             {
-                return Properties.GetPropertyValue("customerCity");
+                return Properties.GetValue("customerCity");
             }
         }
         public string Apartment
         {
             get
             {
-                return Properties.GetPropertyValue("customerApartment");
+                return Properties.GetValue("customerApartment");
             }
         }
         public string Country
         {
             get
             {
-                return Properties.GetPropertyValue("customerCountry");
+                return Properties.GetValue("customerCountry");
             }
         }
         public string ZipCode
         {
             get
             {
-                return Properties.GetPropertyValue("customerZipCode");
+                return Properties.GetValue("customerZipCode");
             }
         }
         public string Phone
         {
             get
             {
-                return Properties.GetPropertyValue("customerPhone");
+                return Properties.GetValue("customerPhone");
             }
         }
         public int UserId { get; set; }
