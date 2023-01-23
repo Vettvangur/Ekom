@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <AssemblyName>Ekom.Core.U9</AssemblyName>
+        <AssemblyName>Ekom.U9</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <RootNamespace>Ekom.Umb</RootNamespace>
 
@@ -10,7 +10,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Package properties -->
-        <PackageId>EkomCore.U9</PackageId>
+        <PackageId>Ekom.U9</PackageId>
         <Version>1.0.0</Version>
         <Title>Ekom.Umb</Title>
         <Authors>Vettvangur</Authors>

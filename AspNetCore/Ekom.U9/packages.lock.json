@@ -1883,6 +1883,12 @@
           "Umbraco.Cms.PublishedCache.NuCache": "9.2.0"
         }
       },
+      "ekom.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.Core": "[0.0.1, )"
+        }
+      },
       "Ekom.Core": {
         "type": "Project",
         "dependencies": {
@@ -1897,12 +1903,6 @@
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
           "Newtonsoft.Json": "[12.0.3, )",
           "linq2db": "[4.3.0, )"
-        }
-      },
-      "EkomCore.AspNetCore": {
-        "type": "Project",
-        "dependencies": {
-          "Ekom.Core": "[0.0.1, )"
         }
       }
     }

@@ -10,7 +10,7 @@
         <!-- Package properties -->
       <PackageId>Ekom.Core</PackageId>
       <Version>0.0.1</Version>
-      <Title>Ekom</Title>
+      <Title>Ekom Core Library</Title>
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
@@ -55,37 +55,37 @@
             <_Parameter1>Umbraco.Tests</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.Extensions</_Parameter1>
+            <_Parameter1>Ekom.Extensions</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.Manager</_Parameter1>
+            <_Parameter1>Ekom.Manager</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.AspNetFramework</_Parameter1>
+            <_Parameter1>Ekom.AspNetFramework</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.AspNetCore</_Parameter1>
+            <_Parameter1>Ekom.AspNetCore</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U7</_Parameter1>
+            <_Parameter1>Ekom.U7</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U8</_Parameter1>
+            <_Parameter1>Ekom.U8</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U9</_Parameter1>
+            <_Parameter1>Ekom.U9</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U10</_Parameter1>
+            <_Parameter1>Ekom.U10</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U11</_Parameter1>
+            <_Parameter1>Ekom.U11</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Ekom.Core.U12</_Parameter1>
+            <_Parameter1>Ekom.U12</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
 

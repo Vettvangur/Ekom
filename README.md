@@ -3,6 +3,10 @@
 
 Supports Umbraco version 8+
 
+## Installation
+Install the appropriate Umbraco versioned package to your solution (f.x. Ekom.U10)
+Install the Ekom.Web package into your sites main project (contains wwwroot)
+
 ## Features
 
 - B2B and B2C support

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <AssemblyName>Ekom.Core.U10</AssemblyName>
+        <AssemblyName>Ekom.U10</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <RootNamespace>Ekom.Umb</RootNamespace>
 
@@ -10,7 +10,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Package properties -->
-        <PackageId>EkomCore.U10</PackageId>
+        <PackageId>Ekom.U10</PackageId>
         <Version>0.0.1</Version>
         <Title>Ekom Umbraco 10</Title>
         <Authors>Vettvangur</Authors>

@@ -4,7 +4,7 @@
       <ContentTargetFolders>.</ContentTargetFolders>
 
       <!-- Package properties -->
-      <PackageId>Ekom.Core.Web</PackageId>
+      <PackageId>Ekom.Web</PackageId>
       <Version>0.0.9</Version>
       <Title>Ekom.Web</Title>
       <Authors>Vettvangur</Authors>
