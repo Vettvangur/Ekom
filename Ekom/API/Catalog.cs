@@ -631,9 +631,9 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get featured products
+        /// Get Related Products
         /// </summary>
-        public IEnumerable<IProduct> GetFeaturedProducts(Guid productId, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4)
         {            
             var product = GetProduct(productId);
 
@@ -641,6 +641,8 @@ namespace Ekom.API
             {
                 throw new ArgumentNullException(nameof(product));
             }
+
+            var relatedProducts = 
 
             return null;
         }
