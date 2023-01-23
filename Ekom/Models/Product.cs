@@ -2,9 +2,6 @@ using Ekom.Cache;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Serialization;
 using Ekom.Utilities;
 #if NETCOREAPP
@@ -385,6 +382,11 @@ namespace Ekom.Models
                     categoryAncestors.Add(c);
                 }
             }
+        }
+
+        public IEnumerable<IProduct> RelatedProducts()
+        {
+
         }
     }
 }

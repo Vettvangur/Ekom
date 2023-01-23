@@ -256,5 +256,26 @@ namespace Ekom.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Get Featured Products
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("featuredproducts/{id:Guid}/{count:Int}")]
+        public IEnumerable<IProduct> GetFeaturedProducts(Guid id, int count = 4)
+        {
+            try
+            {
+                var products = API.Catalog.Instance.GetFeaturedProducts(id, count);
+
+                return products;
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
     }
 }

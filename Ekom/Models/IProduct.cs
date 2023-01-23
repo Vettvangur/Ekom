@@ -101,5 +101,10 @@ namespace Ekom.Models
         /// A discount specific to this product populated after product discount cache is filled.
         /// </summary>
         IDiscount ProductDiscount(string price = null);
+
+        /// <summary>
+        /// Get related products
+        /// </summary>
+        IEnumerable<IProduct> RelatedProducts();
     }
 }

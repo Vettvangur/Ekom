@@ -630,5 +630,20 @@ namespace Ekom.API
             return _metafieldService.GetMetafields();
         }
 
+        /// <summary>
+        /// Get featured products
+        /// </summary>
+        public IEnumerable<IProduct> GetFeaturedProducts(Guid productId, int count = 4)
+        {            
+            var product = GetProduct(productId);
+
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            return null;
+        }
+
     }
 }
