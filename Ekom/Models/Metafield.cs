@@ -1,9 +1,5 @@
-using Ekom.Models;
 using Ekom.Utilities;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {

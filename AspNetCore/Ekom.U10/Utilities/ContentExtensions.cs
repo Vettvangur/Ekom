@@ -115,7 +115,31 @@ namespace Ekom.Utilities
 
             SetProperty(content, "slug", dict, type);
         }
-        public static void SetOrUpdateMetafield(this IContent content, Guid metafield, Dictionary<string, string> values, PropertyEditorType type = PropertyEditorType.Empty)
+        public static void SetOrUpdateMetafield(this IContent content, string metafieldAlias, List<MetafieldValues> values = null, string value = null)
+        {
+            if (content == null)
+            {
+                throw new ArgumentNullException("content");
+            }
+
+            if (values == null && string.IsNullOrEmpty(value))
+            {
+                throw new ArgumentNullException("values");
+            }
+
+            if (content.ContentType.Alias != "ekmProduct")
+            {
+                throw new ArgumentNullException("Metafield can only be set on ekom product");
+            }
+
+            var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
+
+            var metaValue = _metaService.AddOrUpdateMetaField(content.GetValue<string>("metafields"), metafieldAlias, values, value);
+
+            SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
+        }
+        
+        public static void SetOrUpdateMetafield(this IContent content, Guid metafieldKey, List<MetafieldValues> values = null, string value = null)
         {
             if (content == null)
             {
@@ -132,16 +156,33 @@ namespace Ekom.Utilities
                 throw new ArgumentNullException("Metafield can only be set on ekom product");
             }
 
-            var dict = new Dictionary<string, object>();
+            var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
-            var _umbService = Configuration.Resolver.GetService<IUmbracoService>();
+            var metaValue = _metaService.AddOrUpdateMetaField(content.GetValue<string>("metafields"), metafieldKey, values, value);
 
-            foreach (var value in values)
+            SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
+        }
+
+        public static List<Dictionary<string,string>> GetMetafieldValue(this IContent content, string metafieldAlias)
+        {
+            if (content == null)
             {
-                dict.Add(value.Key, value.Value);
+                throw new ArgumentNullException(nameof(content));
             }
 
-            SetProperty(content, "metafields", dict, type);
+            if (string.IsNullOrEmpty(metafieldAlias))
+            {
+                throw new ArgumentNullException(nameof(metafieldAlias));
+            }
+
+            if (content.ContentType.Alias != "ekmProduct")
+            {
+                throw new ArgumentNullException("Metafield can only get value on ekom product");
+            }
+
+            var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
+
+            return _metaService.GetMetaFieldValue(content.GetValue<string>("metaFields"), metafieldAlias);
         }
 
         internal static void SetProperty(this IContent content, string alias, string key, object value)

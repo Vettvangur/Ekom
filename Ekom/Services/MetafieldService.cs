@@ -1,6 +1,8 @@
 using Ekom.Models;
 using Ekom.Services;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace EkomCore.Services
 {
@@ -109,9 +111,29 @@ namespace EkomCore.Services
 
             return list;
         }
-        
-        public void AddOrUpdateMetaField(Guid metafieldKey, MetafieldValues fieldValue, string json)
+
+        public JArray AddOrUpdateMetaField(string json, string metaFieldAlias, List<MetafieldValues> values = null, string value = null)
+        {           
+            var metaFields = GetMetafields();
+
+            var field = metaFields.FirstOrDefault(x => x.Alias.Equals(metaFieldAlias, StringComparison.InvariantCultureIgnoreCase));
+
+            if (field == null)
+            {
+                throw new Exception("Could not add or update metafield. Metafield not found. " + metaFieldAlias);
+            }
+
+            return AddOrUpdateMetaField(json, field.Key, values, value);
+        }
+
+        public JArray AddOrUpdateMetaField(string json, Guid metafieldKey, List<MetafieldValues> values = null, string value = null)
         {
+
+            if (values == null && value == null)
+            {
+                throw new Exception("Could not add or update metafield. Any value is missing.");
+            }
+
             var metaFields = GetMetafields();
 
             var field = metaFields.FirstOrDefault(x => x.Key == metafieldKey);
@@ -121,6 +143,73 @@ namespace EkomCore.Services
                 throw new Exception("Could not add or update metafield. Metafield not found. " + metafieldKey);
             }
 
+            JArray jArrayValue = values != null ? JArray.FromObject(values) : null;
+
+            if (string.IsNullOrEmpty(json))
+            {
+                // Add
+
+                var newArray = new JArray();
+                var newObject = new JObject
+                {
+                    { "Key", new JValue(field.Key.ToString()) },
+                    { "Values", string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value) }
+                };
+
+                newArray.Add(newObject);
+
+                return newArray;
+            }
+            else
+            {
+                var jArray = JArray.Parse(json);
+                var found = false;
+
+                foreach (JObject item in jArray)
+                {
+                    if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
+                    {
+                        if (_metaFieldKey == field.Key)
+                        {
+                            found = true;
+
+                            // Update
+                            item["Values"] = string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value);
+                            break;
+                        }
+                    }
+                }
+
+                // Append
+                if (!found)
+                {
+                    var newObject = new JObject
+                    {
+                        { "Key", new JValue(field.Key.ToString()) },
+                        { "Values", string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value) }
+                    };
+
+                    jArray.Append(newObject);
+                }
+
+                return jArray;
+
+            }
+
+        }
+        
+        public List<Dictionary<string,string>> GetMetaFieldValue(string json, string metafieldAlias)
+        {
+            var nodeMetaFields = SerializeMetafields(json);
+
+            var metaField = nodeMetaFields.FirstOrDefault(x => x.Field.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
+
+            if (metaField == null)
+            {
+                throw new Exception("Metafield does not have an property with the alias: " + metafieldAlias);
+            }
+
+            return metaField.Values;
         }
 
         public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true) {
