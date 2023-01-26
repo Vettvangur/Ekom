@@ -17,11 +17,12 @@ namespace Ekom.Models
             Id = x.Id;
             Key = x.Key;
             Title = titleValues.Values.ToDictionary(z => z.Key, z => z.Value.ToString());
+            Alias = string.IsNullOrEmpty(x.GetValue("alias")) ? x.Name.ToCamelCase() : x.GetValue("alias");
             Description = x.GetValue("description");
             Name = x.Name;
-            Required = x.Properties.GetPropertyValue("required").ConvertToBool();
-            Filterable = x.Properties.GetPropertyValue("filterable").ConvertToBool();
-            EnableMultipleChoice = x.Properties.GetPropertyValue("enableMultipleChoice").ConvertToBool();
+            Required = x.GetValue("required").ConvertToBool();
+            Filterable = x.GetValue("filterable").ConvertToBool();
+            EnableMultipleChoice = x.GetValue("enableMultipleChoice").ConvertToBool();
 
             if (!string.IsNullOrEmpty(values))
             {
@@ -32,6 +33,7 @@ namespace Ekom.Models
         public int Id { get; set; }
         public Guid Key { get; set; }
         public string Name { get; set; }
+        public string Alias { get; set; }
         public Dictionary<string, string> Title { get; set; } = new Dictionary<string, string>();
         public string Description { get; set; }
         public bool Filterable { get; set; }

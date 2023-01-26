@@ -115,6 +115,34 @@ namespace Ekom.Utilities
 
             SetProperty(content, "slug", dict, type);
         }
+        public static void SetOrUpdateMetafield(this IContent content, Guid metafield, Dictionary<string, string> values, PropertyEditorType type = PropertyEditorType.Empty)
+        {
+            if (content == null)
+            {
+                throw new ArgumentNullException("content");
+            }
+
+            if (values == null)
+            {
+                throw new ArgumentNullException("values");
+            }
+
+            if (content.ContentType.Alias != "ekmProduct")
+            {
+                throw new ArgumentNullException("Metafield can only be set on ekom product");
+            }
+
+            var dict = new Dictionary<string, object>();
+
+            var _umbService = Configuration.Resolver.GetService<IUmbracoService>();
+
+            foreach (var value in values)
+            {
+                dict.Add(value.Key, value.Value);
+            }
+
+            SetProperty(content, "metafields", dict, type);
+        }
 
         internal static void SetProperty(this IContent content, string alias, string key, object value)
         {

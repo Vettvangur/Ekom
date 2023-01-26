@@ -12,6 +12,8 @@ var bind = function (data, eventsService) {
         alias: data.alias,
         all: true
       };
+      
+      let inputValue = nameInput.value;
 
       data.tabs.forEach((tab) => {
 
@@ -24,8 +26,6 @@ var bind = function (data, eventsService) {
         var slugInput = document.getElementById('slug.' + tab.value);
 
         if (slugInput) {
-
-          let inputValue = nameInput.value;
 
           Umbraco.Sys.ServerVariables.ekom.charCollections.forEach((char) => {
             inputValue = inputValue.replace(char.Char, char.Replacement);

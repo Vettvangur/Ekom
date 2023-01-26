@@ -12,6 +12,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Ekom.Services;
 using Ekom.Authorization;
+using Ekom.Models;
 
 namespace Ekom.Controllers
 {
@@ -79,7 +80,7 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Metafields")]
         [UmbracoUserAuthorize]
-        public object GetMetafields()
+        public IEnumerable<Metafield> GetMetafields()
     => _metafieldService.GetMetafields();
 
         [HttpGet]

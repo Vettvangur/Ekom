@@ -1,9 +1,6 @@
 using Ekom.Models;
 using Ekom.Services;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EkomCore.Services
 {
@@ -111,6 +108,19 @@ namespace EkomCore.Services
             }
 
             return list;
+        }
+        
+        public void AddOrUpdateMetaField(Guid metafieldKey, MetafieldValues fieldValue, string json)
+        {
+            var metaFields = GetMetafields();
+
+            var field = metaFields.FirstOrDefault(x => x.Key == metafieldKey);
+
+            if (field == null)
+            {
+                throw new Exception("Could not add or update metafield. Metafield not found. " + metafieldKey);
+            }
+
         }
 
         public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true) {

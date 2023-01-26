@@ -1166,6 +1166,11 @@ namespace Ekom.App_Start
                                         Name = "Title",
                                         Mandatory = true
                                     },
+                                    new PropertyType(_shortStringHelper, textstringDt, "alias")
+                                    {
+                                        Name = "Alias",
+                                        Mandatory = true
+                                    },
                                     new PropertyType(_shortStringHelper, textstringDt, "description")
                                     {
                                         Name = "Description",

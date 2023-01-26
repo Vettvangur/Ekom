@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Ekom.Models
 {
     public class Metavalue
