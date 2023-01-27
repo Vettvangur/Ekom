@@ -245,18 +245,18 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple products by id from store in ekmRequest
         /// </summary>
-        public ProductResponse GetProductsByIds(IEnumerable<int> productIds, ProductQuery query = null)
+        public ProductResponse GetProductsByIds(ProductQuery query = null)
         {
-            if (productIds == null)
+            if (query == null)
             {
-                throw new ArgumentNullException(nameof(productIds));
+                throw new ArgumentNullException(nameof(query));
             }
 
             var store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                return GetProductsByIds(productIds, store.Alias, query);
+                return GetProductsByIds(store.Alias, query);
             }
 
             return new ProductResponse(Enumerable.Empty<IProduct>(), query);
@@ -265,11 +265,11 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple products by id from specific store
         /// </summary>
-        public ProductResponse GetProductsByIds(IEnumerable<int> productIds, string storeAlias, ProductQuery query = null)
+        public ProductResponse GetProductsByIds(string storeAlias, ProductQuery query = null)
         {
-            if (productIds == null)
+            if (query == null)
             {
-                throw new ArgumentNullException(nameof(productIds));
+                throw new ArgumentNullException(nameof(query));
             }
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -278,7 +278,7 @@ namespace Ekom.API
 
             var products = new List<IProduct>();
 
-            foreach (var id in productIds)
+            foreach (var id in query.Ids)
             {
                 var product = _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == id).Value;
 
@@ -296,18 +296,18 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple products by key from store in ekmRequest
         /// </summary>
-        public ProductResponse GetProductsByKeys(IEnumerable<Guid> productKeys, ProductQuery query = null)
+        public ProductResponse GetProductsByKeys(ProductQuery query = null)
         {
-            if (productKeys == null)
+            if (query == null)
             {
-                throw new ArgumentNullException(nameof(productKeys));
+                throw new ArgumentNullException(nameof(query));
             }
 
             var store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-               return GetProductsByKeys(productKeys, store.Alias);
+               return GetProductsByKeys(store.Alias, query);
             }
 
             return new ProductResponse(Enumerable.Empty<IProduct>(), query);
@@ -316,11 +316,11 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple products by key from specific store
         /// </summary>
-        public ProductResponse GetProductsByKeys(IEnumerable<Guid> productKeys, string storeAlias, ProductQuery query = null)
+        public ProductResponse GetProductsByKeys(string storeAlias, ProductQuery query = null)
         {
-            if (productKeys == null)
+            if (query == null)
             {
-                throw new ArgumentNullException(nameof(productKeys));
+                throw new ArgumentNullException(nameof(query));
             }
             if (string.IsNullOrEmpty(storeAlias))
             {
@@ -328,7 +328,7 @@ namespace Ekom.API
             }
 
             var products = new List<IProduct>();
-            foreach (var id in productKeys)
+            foreach (var id in query.Keys)
             {
                 if (_productCache.Cache[storeAlias].ContainsKey(id))
                 {

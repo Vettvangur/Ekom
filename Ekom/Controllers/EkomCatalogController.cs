@@ -99,16 +99,15 @@ namespace Ekom.Controllers
         /// <summary>
         /// Get Products By Ids
         /// </summary>
-        /// <param name="productIds">Ids of products</param>
         /// <param name="query">Product Query</param>
         /// <returns></returns>
         [HttpPost]
         [Route("productsbyids")]
-        public ProductResponse GetProductsByIds([FromBody] IEnumerable<int> productIds, [FromBody] ProductQuery query = null)
+        public ProductResponse GetProductsByIds([FromBody] ProductQuery query = null)
         {
             try
-            {
-                return API.Catalog.Instance.GetProductsByIds(productIds,query);
+            {                
+                return API.Catalog.Instance.GetProductsByIds(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -119,16 +118,15 @@ namespace Ekom.Controllers
         /// <summary>
         /// Get Products By Keys
         /// </summary>
-        /// <param name="productKeys">Keys of products</param>
         /// <param name="query">Product Query</param>
         /// <returns></returns>
         [HttpPost]
         [Route("productsbykeys")]
-        public ProductResponse GetProductsByKeys([FromBody] IEnumerable<Guid> productKeys, [FromBody] ProductQuery query = null)
+        public ProductResponse GetProductsByKeys([FromBody] ProductQuery query = null)
         {
             try
             {
-                return API.Catalog.Instance.GetProductsByKeys(productKeys, query);
+                return API.Catalog.Instance.GetProductsByKeys(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
