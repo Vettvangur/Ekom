@@ -23,6 +23,14 @@ namespace Ekom.Models
         /// The price.
         /// </value>
         List<IPrice> Prices { get; }
+        
+        /// <summary>
+        /// Gets the orignal price.
+        /// </summary>
+        /// <value>
+        /// The original price.
+        /// </value>
+        IPrice OriginalPrice { get; }
 
         /// <summary>
         /// Gets the Vat.

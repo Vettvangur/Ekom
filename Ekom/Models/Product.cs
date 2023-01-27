@@ -234,6 +234,20 @@ namespace Ekom.Models
             }
         }
 
+        public virtual IPrice OriginalPrice
+        {
+            get
+            {                
+                var priceJson = GetValue("price", Store.Alias);
+
+                var currencyValues = priceJson.GetCurrencyValues();
+
+                var value = currencyValues.Any() ? currencyValues.FirstOrDefault().Value : 0;
+
+                return new Price(value, Store.Currency, Store.Vat, true);
+            }
+        }
+
         public virtual decimal Vat
         {
             get

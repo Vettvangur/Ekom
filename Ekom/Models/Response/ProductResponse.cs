@@ -35,6 +35,8 @@ namespace Ekom.Models
 
             ProductCount = products.Count();
 
+            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+
             if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
             {
                 Page = query.Page;
@@ -55,5 +57,32 @@ namespace Ekom.Models
         public int? PageSize { get; set; }
         public int? Page { get; set; }
         public int ProductCount { get; set; }
+        
+        private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
+        {
+            
+            if (orderBy == Utilities.OrderBy.TitleDesc)
+            {
+                return products.OrderByDescending(x => x.Title);
+            }
+            else if (orderBy == Utilities.OrderBy.PriceAsc)
+            {
+                return products.OrderBy(x => x.OriginalPrice.Value);
+            }
+            else if (orderBy == Utilities.OrderBy.PriceDesc)
+            {
+                return products.OrderByDescending(x => x.OriginalPrice.Value);
+            }
+            else if (orderBy == Utilities.OrderBy.DateAsc)
+            {
+                return products.OrderBy(x => x.CreateDate);
+            }
+            else if (orderBy == Utilities.OrderBy.DateDesc)
+            {
+                return products.OrderByDescending(x => x.CreateDate);
+            }
+
+            return products.OrderBy(x => x.Title);
+        } 
     }
 }

@@ -162,4 +162,16 @@ namespace Ekom.Utilities
         Store,
         Language
     }
+    /// <summary>
+    /// Ekom Order By Query
+    /// </summary>
+    public enum OrderBy
+    {
+        TitleAsc,
+        TitleDesc,
+        PriceAsc,
+        PriceDesc,
+        DateAsc,
+        DateDesc
+    }
 }

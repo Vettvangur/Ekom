@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-using System.Web;
+using Ekom.Utilities;
 
 namespace Ekom.Models
 {
@@ -14,6 +13,7 @@ namespace Ekom.Models
         public int? Page { get; set; }
         public int? PageSize { get; set; }
         public string SearchQuery { get; set; }
+        public OrderBy OrderBy { get; set; }
         public IEnumerable<int> Ids { get; set; }
         public IEnumerable<Guid> Keys { get; set; }
     }
