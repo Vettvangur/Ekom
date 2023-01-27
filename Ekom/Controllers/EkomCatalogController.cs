@@ -97,6 +97,46 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Get Products By Ids
+        /// </summary>
+        /// <param name="productIds">Ids of products</param>
+        /// <param name="query">Product Query</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productsbyids")]
+        public ProductResponse GetProductsByIds([FromBody] IEnumerable<int> productIds, [FromBody] ProductQuery query = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetProductsByIds(productIds,query);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Products By Keys
+        /// </summary>
+        /// <param name="productKeys">Keys of products</param>
+        /// <param name="query">Product Query</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productsbykeys")]
+        public ProductResponse GetProductsByKeys([FromBody] IEnumerable<Guid> productKeys, [FromBody] ProductQuery query = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetProductsByKeys(productKeys, query);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
         /// Get Recursive Products Of A Category
         /// </summary>
         /// <param name="categoryId">Id of category</param>

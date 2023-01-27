@@ -1,8 +1,6 @@
 using Ekom.Models;
 using Ekom.Services;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Text.Json.Nodes;
 
 namespace EkomCore.Services
 {
