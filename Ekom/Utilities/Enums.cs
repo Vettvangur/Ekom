@@ -172,6 +172,8 @@ namespace Ekom.Utilities
         PriceAsc,
         PriceDesc,
         DateAsc,
-        DateDesc
+        DateDesc,
+        UmbracoSortOrderAsc,
+        UmbracoSortOrderDesc
     }
 }

@@ -81,6 +81,14 @@ namespace Ekom.Models
             {
                 return products.OrderByDescending(x => x.CreateDate);
             }
+            else if (orderBy == Utilities.OrderBy.UmbracoSortOrderAsc)
+            {
+                return products.OrderBy(x => x.SortOrder);
+            }
+            else if (orderBy == Utilities.OrderBy.UmbracoSortOrderDesc)
+            {
+                return products.OrderByDescending(x => x.SortOrder);
+            }
 
             return products.OrderBy(x => x.Title);
         } 
