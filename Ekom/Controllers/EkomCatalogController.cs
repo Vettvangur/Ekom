@@ -236,7 +236,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("subcategories/{id:Int}")]
-        public IEnumerable<ICategory> GetSubCategories(int id, string culture, string storeAlias)
+        public IEnumerable<ICategory> GetSubCategories(int id, string storeAlias = null)
         {
             try
             {
