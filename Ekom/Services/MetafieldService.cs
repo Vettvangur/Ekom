@@ -110,83 +110,59 @@ namespace EkomCore.Services
             return list;
         }
 
-        public JArray SetMetafield(string json, string metaFieldAlias, List<MetafieldValues> values = null, string value = null)
-        {           
+        public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
+        {
             var metaFields = GetMetafields();
 
-            var field = metaFields.FirstOrDefault(x => x.Alias.Equals(metaFieldAlias, StringComparison.InvariantCultureIgnoreCase));
+            var newArray = new JArray();
 
-            if (field == null)
+            if (!string.IsNullOrEmpty(json))
             {
-                throw new Exception("Could not add or update metafield. Metafield not found. " + metaFieldAlias);
+                newArray = JArray.Parse(json);
             }
 
-            return SetMetafield(json, field, values, value);
-        }
-
-        public JArray SetMetafield(string json, Metafield field, List<MetafieldValues> values = null, string value = null)
-        {
-            if (field == null)
+            foreach (var value in values)
             {
-                throw new Exception("Could not add or update metafield. Metafield not found. " + field.Alias);
-            }
+                var field = metaFields.FirstOrDefault(x => x.Alias == value.Key);
 
-            JArray? jArrayValue = values != null ? JArray.FromObject(values) : null;
-
-            if (string.IsNullOrEmpty(json))
-            {
-                // Add
-
-                var newArray = new JArray();
-                var newObject = new JObject
+                if (field != null)
                 {
-                    { "Key", new JValue(field.Key.ToString()) },
-                    { "Values", string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value) }
-                };
+                    var multipleValues = field.Values.Any();
 
-                newArray.Add(newObject);
+                    JArray? jArrayValue = multipleValues ? JArray.FromObject(value) : null;
 
-                return newArray;
-            }
-            else
-            {
-                var jArray = JArray.Parse(json);
-                var found = false;
-
-                foreach (JObject item in jArray)
-                {
-                    if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
-                    {
-                        if (_metaFieldKey == field.Key)
-                        {
-                            found = true;
-
-                            // Update
-                            item["Values"] = string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value);
-                            break;
-                        }
-                    }
-                }
-
-                // Append
-                if (!found)
-                {
                     var newObject = new JObject
                     {
                         { "Key", new JValue(field.Key.ToString()) },
-                        { "Values", string.IsNullOrEmpty(value) ? jArrayValue : new JValue(value) }
+                        { "Values", jArrayValue != null ? jArrayValue : new JValue(value.Value.FirstOrDefault()?.Values.FirstOrDefault().Value) }
                     };
 
-                    jArray.Append(newObject);
+                    // Append
+                    foreach (JObject item in newArray)
+                    {
+                        if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
+                        {
+                            if (field.Key == _metaFieldKey)
+                            {
+                                item["Values"] = newObject["Values"];
+                                continue;
+                            }
+
+                        } else
+                        {
+                            newArray.Append(newObject);
+                            continue;
+                        }
+                    }
+
+                    newArray.Add(newObject);
                 }
-
-                return jArray;
-
             }
 
+            return newArray;
         }
-        
-        public List<Dictionary<string,string>> GetMetaFieldValue(string json, string metafieldAlias)
+
+        public List<Dictionary<string, string>> GetMetaFieldValue(string json, string metafieldAlias)
         {
             var nodeMetaFields = SerializeMetafields(json);
 
@@ -205,7 +181,8 @@ namespace EkomCore.Services
             return metaField.Values;
         }
 
-        public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true) {
+        public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)
+        {
 
             var list = new List<MetafieldGrouped>();
 
@@ -231,7 +208,7 @@ namespace EkomCore.Services
             return list;
         }
 
-        public IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query) 
+        public IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query)
         {
 
             if (query?.MetaFilters?.Any() == true)
@@ -249,9 +226,9 @@ namespace EkomCore.Services
 
             if (query?.PropertyFilters?.Any() == true)
             {
-                products = products.Where(x => 
-                x.Properties.Any(p => 
-                    query.PropertyFilters.Where(f => 
+                products = products.Where(x =>
+                x.Properties.Any(p =>
+                    query.PropertyFilters.Where(f =>
                         !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).Any(filter =>
                         filter.Key == p.Key &&
                         filter.Value.Any(d => p.Value.Contains(d))))
@@ -259,6 +236,6 @@ namespace EkomCore.Services
             }
 
             return products;
-        } 
+        }
     }
 }

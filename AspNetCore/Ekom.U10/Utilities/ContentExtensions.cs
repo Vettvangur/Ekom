@@ -115,7 +115,7 @@ namespace Ekom.Utilities
 
             SetProperty(content, "slug", dict, type);
         }
-        public static void SetMetafield(this IContent content, string metafieldAlias, List<MetafieldValues> values = null, string value = null)
+        public static void SetMetafield(this IContent content, Dictionary<string, List<MetafieldValues>> values)
         {
             if (content == null)
             {
@@ -129,7 +129,7 @@ namespace Ekom.Utilities
 
             var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
-            var metaValue = _metaService.SetMetafield(content.GetValue<string>("metafields"), metafieldAlias, values, value);
+            var metaValue = _metaService.SetMetafield(content.GetValue<string>("metafields"), values);
 
             SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
         }

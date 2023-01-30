@@ -26,62 +26,31 @@ namespace Ekom.Site.Controllers
         {
             var node = _cs.GetById(1166);
 
-            node.SetMetafield("size", value: "99");
-            
-            if (node.Published)
+            var metafieldValues = new Dictionary<string, List<Models.MetafieldValues>>
             {
-                _cs.SaveAndPublish(node);
-            } else
-            {
-                _cs.Save(node);
-            }
-
-            return "Success";
-        }
-
-        [HttpGet]
-        public List<string> UpdateMetafield2()
-        {
-            var list = new List<string>();
-            var node = _cs.GetById(1208);
-
-            var unitValue = "pokar32";
-
-            var unit = node.GetMetafieldValue("hallo");
-
-            list.Add(string.Join(",", unit.SelectMany(x => x.Values)));
-
-            if (unit != null && !unit.SelectMany(x => x.Values).Any(z => z == unitValue))
-            {
-                node.SetMetafield("hallo", value: unitValue);
-
-                if (node.Published)
                 {
-                    _cs.SaveAndPublish(node);
-                    list.Add("published");
+                    "size",
+                    new List<Models.MetafieldValues>() {
+                    new Models.MetafieldValues() {
+                        Values = new Dictionary<string, string>() {
+                            { "", "size test" }
+                        }
+                    }
                 }
-                else
+                },
                 {
-                    _cs.Save(node);
-                    list.Add("saved");
+                    "hallo",
+                    new List<Models.MetafieldValues>() {
+                    new Models.MetafieldValues() {
+                        Values = new Dictionary<string, string>() {
+                            { "asd", "hallo test" }
+                        }
+                    }
                 }
+                }
+            };
 
-            }
-
-            return list;
-        }
-
-        public string UpdateMetafields()
-        {
-            var metaFields = _ms.GetMetafields();
-
-            var metaField = metaFields.FirstOrDefault(x => x.Alias == "productFit");
-
-            var values = metaField.Values.Take(2);
-
-            var node = _cs.GetById(1207);
-            
-            node.SetMetafield("productFit", values: values.ToList());
+            node.SetMetafield(metafieldValues);
 
             if (node.Published)
             {
@@ -94,6 +63,62 @@ namespace Ekom.Site.Controllers
 
             return "Success";
         }
+
+        //[HttpGet]
+        //public List<string> UpdateMetafield2()
+        //{
+        //    var list = new List<string>();
+        //    var node = _cs.GetById(1208);
+
+        //    var unitValue = "pokar32";
+
+        //    var unit = node.GetMetafieldValue("hallo");
+
+        //    list.Add(string.Join(",", unit.SelectMany(x => x.Values)));
+
+        //    if (unit != null && !unit.SelectMany(x => x.Values).Any(z => z == unitValue))
+        //    {
+        //        node.SetMetafield("hallo", value: unitValue);
+
+        //        if (node.Published)
+        //        {
+        //            _cs.SaveAndPublish(node);
+        //            list.Add("published");
+        //        }
+        //        else
+        //        {
+        //            _cs.Save(node);
+        //            list.Add("saved");
+        //        }
+
+        //    }
+
+        //    return list;
+        //}
+
+        //public string UpdateMetafields()
+        //{
+        //    var metaFields = _ms.GetMetafields();
+
+        //    var metaField = metaFields.FirstOrDefault(x => x.Alias == "productFit");
+
+        //    var values = metaField.Values.Take(2);
+
+        //    var node = _cs.GetById(1207);
+
+        //    node.SetMetafield("productFit", values: values.ToList());
+
+        //    if (node.Published)
+        //    {
+        //        _cs.SaveAndPublish(node);
+        //    }
+        //    else
+        //    {
+        //        _cs.Save(node);
+        //    }
+
+        //    return "Success";
+        //}
 
     }
 }
