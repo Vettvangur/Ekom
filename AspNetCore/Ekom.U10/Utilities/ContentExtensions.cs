@@ -129,7 +129,7 @@ namespace Ekom.Utilities
 
             var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
-            var metaValue = _metaService.AddOrUpdateMetaField(content.GetValue<string>("metafields"), metafieldAlias, values, value);
+            var metaValue = _metaService.SetMetafield(content.GetValue<string>("metafields"), metafieldAlias, values, value);
 
             SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
         }

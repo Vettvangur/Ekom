@@ -110,7 +110,7 @@ namespace EkomCore.Services
             return list;
         }
 
-        public JArray AddOrUpdateMetaField(string json, string metaFieldAlias, List<MetafieldValues> values = null, string value = null)
+        public JArray SetMetafield(string json, string metaFieldAlias, List<MetafieldValues> values = null, string value = null)
         {           
             var metaFields = GetMetafields();
 
@@ -121,10 +121,10 @@ namespace EkomCore.Services
                 throw new Exception("Could not add or update metafield. Metafield not found. " + metaFieldAlias);
             }
 
-            return AddOrUpdateMetaField(json, field, values, value);
+            return SetMetafield(json, field, values, value);
         }
 
-        public JArray AddOrUpdateMetaField(string json, Metafield field, List<MetafieldValues> values = null, string value = null)
+        public JArray SetMetafield(string json, Metafield field, List<MetafieldValues> values = null, string value = null)
         {
             if (field == null)
             {

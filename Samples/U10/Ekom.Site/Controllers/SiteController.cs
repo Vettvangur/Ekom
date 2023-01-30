@@ -2,6 +2,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.BackOffice.Controllers;
 using Ekom.Utilities;
 using Ekom.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Site.Controllers
 {
@@ -36,6 +37,38 @@ namespace Ekom.Site.Controllers
             }
 
             return "Success";
+        }
+
+        [HttpGet]
+        public List<string> UpdateMetafield2()
+        {
+            var list = new List<string>();
+            var node = _cs.GetById(1208);
+
+            var unitValue = "pokar32";
+
+            var unit = node.GetMetafieldValue("hallo");
+
+            list.Add(string.Join(",", unit.SelectMany(x => x.Values)));
+
+            if (unit != null && !unit.SelectMany(x => x.Values).Any(z => z == unitValue))
+            {
+                node.SetMetafield("hallo", value: unitValue);
+
+                if (node.Published)
+                {
+                    _cs.SaveAndPublish(node);
+                    list.Add("published");
+                }
+                else
+                {
+                    _cs.Save(node);
+                    list.Add("saved");
+                }
+
+            }
+
+            return list;
         }
 
         public string UpdateMetafields()
