@@ -25,7 +25,7 @@ namespace Ekom.Site.Controllers
         {
             var node = _cs.GetById(1166);
 
-            node.SetOrUpdateMetafield("size", value: "99");
+            node.SetMetafield("size", value: "99");
             
             if (node.Published)
             {
@@ -48,7 +48,7 @@ namespace Ekom.Site.Controllers
 
             var node = _cs.GetById(1207);
             
-            node.SetOrUpdateMetafield("productFit", values: values.ToList());
+            node.SetMetafield("productFit", values: values.ToList());
 
             if (node.Published)
             {

@@ -115,7 +115,7 @@ namespace Ekom.Utilities
 
             SetProperty(content, "slug", dict, type);
         }
-        public static void SetOrUpdateMetafield(this IContent content, string metafieldAlias, List<MetafieldValues> values = null, string value = null)
+        public static void SetMetafield(this IContent content, string metafieldAlias, List<MetafieldValues> values = null, string value = null)
         {
             if (content == null)
             {
