@@ -205,7 +205,7 @@ namespace EkomCore.Services
 
             if (metaField == null)
             {
-                throw new Exception("Metafield does not have an property with the alias: " + metafieldAlias);
+                return new List<Dictionary<string, string>>();
             }
 
             return metaField.Values;
