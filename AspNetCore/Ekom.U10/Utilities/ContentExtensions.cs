@@ -122,11 +122,6 @@ namespace Ekom.Utilities
                 throw new ArgumentNullException("content");
             }
 
-            if (values == null && string.IsNullOrEmpty(value))
-            {
-                throw new ArgumentNullException("values");
-            }
-
             if (content.ContentType.Alias != "ekmProduct")
             {
                 throw new ArgumentNullException("Metafield can only be set on ekom product");

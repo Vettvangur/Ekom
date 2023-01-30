@@ -126,12 +126,6 @@ namespace EkomCore.Services
 
         public JArray AddOrUpdateMetaField(string json, Metafield field, List<MetafieldValues> values = null, string value = null)
         {
-
-            if (values == null && value == null)
-            {
-                throw new Exception("Could not add or update metafield. Any value is missing.");
-            }
-
             if (field == null)
             {
                 throw new Exception("Could not add or update metafield. Metafield not found. " + field.Alias);

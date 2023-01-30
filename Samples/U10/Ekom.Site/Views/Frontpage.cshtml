@@ -57,7 +57,6 @@
         <ul>
             @foreach (var product in cat.ProductsRecursive().Products)
             {
-
                 var relatedProducts = product.RelatedProducts();
 
                 <li>
@@ -65,6 +64,9 @@
                         <p>Title: @product.Title</p>
                         <p>SKU: @product.SKU</p>
                         <p>Price: @product.Price.WithVat.CurrencyString</p>
+                        <strong>
+                        Size
+                        </strong><br>
                     </a>
                     
                     @if (product.Images.Any()) {
