@@ -236,12 +236,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("subcategories/{id:Int}")]
-        public IEnumerable<ICategory> GetSubCategories(int id, string storeAlias = null)
+        public IEnumerable<ICategory> GetSubCategories(int id)
         {
             try
             {
-
-                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
+                var category = API.Catalog.Instance.GetCategory(id);
 
                 return category.SubCategories;
             }
@@ -250,8 +249,7 @@ namespace Ekom.Controllers
                 throw ExceptionHandler.Handle<HttpResponseException>(ex);
             }
         }
-
-        
+ 
 
         /// <summary>
         /// Get Sub Categories Recursive
