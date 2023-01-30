@@ -138,30 +138,6 @@ namespace Ekom.Utilities
 
             SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
         }
-        
-        public static void SetOrUpdateMetafield(this IContent content, Guid metafieldKey, List<MetafieldValues> values = null, string value = null)
-        {
-            if (content == null)
-            {
-                throw new ArgumentNullException("content");
-            }
-
-            if (values == null)
-            {
-                throw new ArgumentNullException("values");
-            }
-
-            if (content.ContentType.Alias != "ekmProduct")
-            {
-                throw new ArgumentNullException("Metafield can only be set on ekom product");
-            }
-
-            var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
-
-            var metaValue = _metaService.AddOrUpdateMetaField(content.GetValue<string>("metafields"), metafieldKey, values, value);
-
-            SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
-        }
 
         public static List<Dictionary<string,string>> GetMetafieldValue(this IContent content, string metafieldAlias)
         {

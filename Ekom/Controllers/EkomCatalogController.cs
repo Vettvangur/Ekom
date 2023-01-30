@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Ekom.Utilities;
 using Ekom.Models;
 using Ekom.Exceptions;
+using System.ComponentModel.DataAnnotations;
 
 namespace Ekom.Controllers
 {
@@ -235,12 +236,12 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("subcategories/{id:Int}")]
-        public IEnumerable<ICategory> GetSubCategories(int id)
+        public IEnumerable<ICategory> GetSubCategories(int id, string culture, string storeAlias)
         {
             try
             {
 
-                var category = API.Catalog.Instance.GetCategory(id);
+                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
 
                 return category.SubCategories;
             }

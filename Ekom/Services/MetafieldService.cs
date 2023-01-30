@@ -121,10 +121,10 @@ namespace EkomCore.Services
                 throw new Exception("Could not add or update metafield. Metafield not found. " + metaFieldAlias);
             }
 
-            return AddOrUpdateMetaField(json, field.Key, values, value);
+            return AddOrUpdateMetaField(json, field, values, value);
         }
 
-        public JArray AddOrUpdateMetaField(string json, Guid metafieldKey, List<MetafieldValues> values = null, string value = null)
+        public JArray AddOrUpdateMetaField(string json, Metafield field, List<MetafieldValues> values = null, string value = null)
         {
 
             if (values == null && value == null)
@@ -132,16 +132,12 @@ namespace EkomCore.Services
                 throw new Exception("Could not add or update metafield. Any value is missing.");
             }
 
-            var metaFields = GetMetafields();
-
-            var field = metaFields.FirstOrDefault(x => x.Key == metafieldKey);
-
             if (field == null)
             {
-                throw new Exception("Could not add or update metafield. Metafield not found. " + metafieldKey);
+                throw new Exception("Could not add or update metafield. Metafield not found. " + field.Alias);
             }
 
-            JArray jArrayValue = values != null ? JArray.FromObject(values) : null;
+            JArray? jArrayValue = values != null ? JArray.FromObject(values) : null;
 
             if (string.IsNullOrEmpty(json))
             {
@@ -199,6 +195,11 @@ namespace EkomCore.Services
         public List<Dictionary<string,string>> GetMetaFieldValue(string json, string metafieldAlias)
         {
             var nodeMetaFields = SerializeMetafields(json);
+
+            if (nodeMetaFields == null || !nodeMetaFields.Any())
+            {
+                return new List<Dictionary<string, string>>();
+            }
 
             var metaField = nodeMetaFields.FirstOrDefault(x => x.Field.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
 
