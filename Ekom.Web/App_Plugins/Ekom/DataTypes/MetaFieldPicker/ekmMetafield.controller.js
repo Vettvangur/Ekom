@@ -17,7 +17,6 @@
       $scope.languages = [];
       $scope.loading = true;
 
-
       ekmResources.getLanguages().then(function (languages) {
 
         $scope.languages = languages;
@@ -27,26 +26,26 @@
           $scope.fields = fields;
 
           $scope.fields.forEach(function (item, index) {
+
+            var currentValue = $scope.model.value.filter(field => {
+              return field.Key === item.Key
+            })
+
             if (item.Values.length > 0) {
-              $scope.values.push([]);
+              if (currentValue.length > 0) {
+                $scope.values.push(currentValue[0].Values);
+              } else {
+                $scope.values.push([]);
+              }
+
             } else {
-              $scope.values.push("");
+              if (currentValue.length > 0) {
+                $scope.values.push(currentValue[0].Values);
+              } else {
+                $scope.values.push('');
+              }
             }
           });
-
-          if ($scope.model.value.length > 0) {
-            $scope.model.value.forEach(function (item, index) {
-
-              var fieldExist = $scope.fields.filter(field => {
-                return field.Key === item.Key
-              })
-
-              if (fieldExist.length > 0) {
-                $scope.values[index] = item.Values;
-              }  
-
-            });
-          }
 
           $scope.loading = false;
 
@@ -57,7 +56,7 @@
       $scope.Reset = function (index) {
 
         $scope.values[index] = "";
-        
+
       };
 
       $scope.$on("formSubmitting", function (ev, args) {
@@ -65,7 +64,7 @@
 
         $scope.values.forEach(function (item, index) {
 
-          var field = $scope.fields[index]; 
+          var field = $scope.fields[index];
 
           modifiedValues.push({
             Key: field.Key,
