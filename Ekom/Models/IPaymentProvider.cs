@@ -6,7 +6,7 @@ namespace Ekom.Models
     {
         string Name { get; }
         IPrice Price { get; }
-        string Description { get; set; }
+        string Description { get; }
         List<IPrice> Prices { get; }
     }
 }
