@@ -1,12 +1,9 @@
 
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
 
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 #else
 using System.Web;
 #endif
@@ -22,7 +19,12 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public virtual string Name => Properties["nodeName"];
-
+        
+        /// <summary>
+        /// Description
+        /// </summary>
+        public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
+        
         /// <summary>
         /// Ranges and zones
         /// </summary>
