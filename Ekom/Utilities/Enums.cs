@@ -154,6 +154,17 @@ namespace Ekom.Utilities
     }
 
     /// <summary>
+    /// Form controller action to render
+    /// </summary>
+    public enum CheckoutFormType
+    {
+        /// <summary>
+        /// Pay
+        /// </summary>
+        Pay,
+    }
+
+    /// <summary>
     /// Ekom Property Editor Type
     /// </summary>
     public enum PropertyEditorType

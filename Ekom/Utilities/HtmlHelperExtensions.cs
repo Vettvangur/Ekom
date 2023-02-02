@@ -1,10 +1,4 @@
-#if NETFRAMEWORK
-using System.Web.Mvc;
-using System.Web.Mvc.Html;
-#else
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-#endif
 
 namespace Ekom.Utilities
 {
@@ -25,11 +19,7 @@ namespace Ekom.Utilities
         ///     <button type = "submit" class="button">Submit</button>            
         /// }
         /// </example>
-#if NETFRAMEWORK
-        public static MvcForm BeginEkomForm(this HtmlHelper htmlHelper, FormType formType, string className = null, string Id = null)
-#else
         public static MvcForm BeginEkomForm(this IHtmlHelper htmlHelper, FormType formType, string className = null, string Id = null)
-#endif
         {
             var actionName = formType.ToString();
             var defaultClassName = "";
@@ -77,11 +67,44 @@ namespace Ekom.Utilities
             }
 
             className = className ?? defaultClassName;
-#if NETFRAMEWORK
-            return htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, new { @class = className, @id = Id });
-#else
+            
             return htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
-#endif
+        }
+
+        /// <summary>
+        /// Render an Ekom checkout form that submits to the <see cref="CheckoutApiController"/>
+        /// Placing html inside using construct.
+        /// </summary>
+        /// <param name="htmlHelper"></param>
+        /// <param name="formType"></param>
+        /// <param name="className">Override the default Ekom classnames</param>
+        /// <returns></returns>
+        /// <example>
+        /// using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay)) 
+        /// {
+        ///     <input type="hidden" name="input" value="value" />
+        ///     <button type = "submit" class="button">Submit</button>            
+        /// }
+        /// </example>
+        public static MvcForm BeginEkomCheckoutForm(this IHtmlHelper htmlHelper, CheckoutFormType formType, string className = null, string Id = null)
+
+        {
+            var actionName = formType.ToString();
+            var defaultClassName = "";
+
+            switch (formType)
+            {
+                case CheckoutFormType.Pay:
+
+                    actionName = "Pay";
+                    defaultClassName = "checkout__form";
+                    break;
+            }
+
+            className = className ?? defaultClassName;
+
+            return htmlHelper.BeginForm(actionName, "EkomCheckoutApi", null, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
         }
     }
 }
+
