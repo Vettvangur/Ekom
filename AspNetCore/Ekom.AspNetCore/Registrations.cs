@@ -57,6 +57,7 @@ namespace Ekom.AspNetCore
 
             services.AddTransient<IStoreService, StoreService>();
             services.AddTransient<OrderService>();
+            services.AddTransient<CheckoutControllerService>();
             services.AddTransient<CheckoutService>();
             services.AddTransient<IMailService, MailService>();
             services.AddTransient<DatabaseService>();
