@@ -57,7 +57,7 @@ namespace Ekom.AspNetCore
 
             services.AddTransient<IStoreService, StoreService>();
             services.AddTransient<OrderService>();
-            services.AddTransient<CheckoutControllerService>();
+
             services.AddTransient<CheckoutService>();
             services.AddTransient<IMailService, MailService>();
             services.AddTransient<DatabaseService>();
@@ -102,6 +102,18 @@ namespace Ekom.AspNetCore
             services.AddTransient<ProductDiscountService>(f =>
                 new ProductDiscountService(
                     f.GetService<IPerStoreCache<IProductDiscount>>()
+                )
+            );
+
+            services.AddTransient<CheckoutControllerService>(f =>
+                new CheckoutControllerService(
+                    f.GetService<ILogger<CheckoutControllerService>>(),
+                    f.GetService<Configuration>(),
+                    f.GetService<DatabaseFactory>(),
+                    f.GetService<IUmbracoService>(),
+                    f.GetService<IMemberService>(),
+                    f.GetService<IHttpContextAccessor>(),
+                    f.GetService<INetPaymentService>()
                 )
             );
 
