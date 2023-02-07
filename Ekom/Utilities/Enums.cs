@@ -178,13 +178,13 @@ namespace Ekom.Utilities
     /// </summary>
     public enum OrderBy
     {
+        UmbracoSortOrderAsc,
+        UmbracoSortOrderDesc,
         TitleAsc,
         TitleDesc,
         PriceAsc,
         PriceDesc,
         DateAsc,
-        DateDesc,
-        UmbracoSortOrderAsc,
-        UmbracoSortOrderDesc
+        DateDesc
     }
 }

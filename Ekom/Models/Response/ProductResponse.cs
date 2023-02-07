@@ -90,7 +90,7 @@ namespace Ekom.Models
                 return products.OrderByDescending(x => x.SortOrder);
             }
 
-            return products.OrderBy(x => x.Title);
+            return products.OrderBy(x => x.SortOrder);
         } 
     }
 }
