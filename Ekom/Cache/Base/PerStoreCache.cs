@@ -85,7 +85,7 @@ namespace Ekom.Cache
 
                 try
                 {
-                    var results = nodeService.NodesByTypes(NodeAlias).ToList();
+                    var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished()).ToList();
 
                     if (storeParam == null) // Startup initialization
                     {

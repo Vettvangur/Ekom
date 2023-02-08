@@ -171,9 +171,16 @@ namespace Ekom.API
 
                 if (orderLine.Product.VariantGroups.Any())
                 {
-                    foreach (var variant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
+                    foreach (var orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        var variantStock = GetStock(variant.Key);
+                        var variant = Catalog.Instance.GetVariant(orderedVariant.Key);
+
+                        if (variant == null)
+                        {
+                            throw new ArgumentNullException(nameof(variant));
+                        }
+
+                        var variantStock = variant.Stock;
 
                         if (variantStock < orderLine.Quantity)
                         {
@@ -187,7 +194,14 @@ namespace Ekom.API
                 }
                 else
                 {
-                    var productStock = GetStock(orderLine.ProductKey);
+                    var product = Catalog.Instance.GetProduct(orderLine.ProductKey);
+
+                    if (product == null)
+                    {
+                        throw new ArgumentNullException(nameof(product));
+                    }
+
+                    var productStock = product.Stock;
 
                     if (productStock < orderLine.Quantity)
                     {

@@ -39,7 +39,7 @@ namespace Ekom.Cache
                 _logger.LogDebug("Starting to fill store cache...");
                 int count = 0;
 
-                var results = nodeService.NodesByTypes(NodeAlias).ToList();
+                var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished()).ToList();
 
                 foreach (var r in results)
                 {

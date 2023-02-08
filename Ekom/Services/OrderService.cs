@@ -344,36 +344,24 @@ namespace Ekom.Services
 
             var oldStatus = order.OrderStatus;
 
+            var OrderStatusEventModel = new OrderStatusEventArgs()
+            {
+                OrderUniqueId = uniqueId,
+                PreviousStatus = oldStatus,
+                Status = status,
+                ClearCustomerOrderReference = true
+            };
+
             if (settings.FireOnOrderStatusChangingEvent)
             {
-                OrderEvents.OnOrderStatusChanging(this, new OrderStatusEventArgs
-                {
-                    OrderUniqueId = uniqueId,
-                    PreviousStatus = oldStatus,
-                    Status = status,
-                });
+                OrderEvents.OnOrderStatusChanging(this, OrderStatusEventModel);
             }
 
             order.OrderStatus = status;
 
-            // Create function for this, For completed orders
-            if (Order.IsOrderFinal(order.OrderStatus))
+            if (OrderStatusEventModel.ClearCustomerOrderReference)
             {
-                if (status == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue)
-                {
-                    order.PaidDate = DateTime.Now;
-                }
-
-                if (_config.UserBasket)
-                {
-                    _memberService.Save(new Dictionary<string, object>() {
-                        { "orderId", "" }
-                    }, _httpCtx.User.Identity.Name);
-                }
-                else
-                {
-                    _memoryCache.Remove(uniqueId.ToString());
-                }
+                ClearCustomerOrderReference(order);
             }
 
             await _orderRepository.UpdateOrderAsync(order)
@@ -406,6 +394,28 @@ namespace Ekom.Services
                 "Change Order {OrderNumber} status to {Status}",
                 order.OrderNumber,
                 status);
+        }
+
+        public void ClearCustomerOrderReference(OrderData order)
+        {
+            if (Order.IsOrderFinal(order.OrderStatus))
+            {
+                if (order.OrderStatus == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue)
+                {
+                    order.PaidDate = DateTime.Now;
+                }
+
+                if (_config.UserBasket)
+                {
+                    _memberService.Save(new Dictionary<string, object>() {
+                        { "orderId", "" }
+                    }, !string.IsNullOrEmpty(order.CustomerUsername) ? order?.CustomerUsername  : _httpCtx.User.Identity.Name);
+                }
+                else
+                {
+                    _memoryCache.Remove(order.UniqueId.ToString());
+                }
+            }
         }
 
         public async Task<OrderInfo> UpdateOrderLineQuantityAsync(

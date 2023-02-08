@@ -125,7 +125,8 @@ namespace Ekom.AspNetCore
                     f.GetService<ICouponCache>(),
                     f.GetService<OrderService>(),
                     f.GetService<CheckoutService>(),
-                    f.GetService<IStoreService>()
+                    f.GetService<IStoreService>(),
+                    f.GetService<OrderRepository>()
                 )
             );
             services.AddTransient<Providers>(f =>

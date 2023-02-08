@@ -2,6 +2,7 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,7 @@ namespace Ekom.API
         readonly OrderService _orderService;
         readonly CheckoutService _checkoutService;
         readonly IStoreService _storeSvc;
+        readonly OrderRepository _orderRepo;
 
         /// <summary>
         /// ctor
@@ -36,7 +38,8 @@ namespace Ekom.API
             ICouponCache couponCache,
             OrderService orderService,
             CheckoutService checkoutService,
-            IStoreService storeService
+            IStoreService storeService,
+            OrderRepository orderRepo
         )
         {
             _discountCache = discountCache;
@@ -46,6 +49,7 @@ namespace Ekom.API
             _couponCache = couponCache;
             _config = config;
             _logger = logger;
+            _orderRepo = orderRepo;
         }
 
         public IOrderInfo GetOrder() => GetOrderAsync().Result;
@@ -424,6 +428,13 @@ namespace Ekom.API
         {
             await _checkoutService.CompleteAsync(orderId)
                 .ConfigureAwait(false);
+        }
+
+        public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData order = null)
+        {
+            order = order == null ? await _orderRepo.GetOrderAsync(orderId).ConfigureAwait(false) : order;
+
+            _orderService.ClearCustomerOrderReference(order);
         }
 
         /// <summary>

@@ -34,6 +34,7 @@ namespace Ekom.Events
         public OrderStatus PreviousStatus { get; set; }
 
         public OrderStatus Status { get; set; }
+        public bool ClearCustomerOrderReference { get; set; } = true;
     }
 
     public class OrderUpdatedEventArgs : EventArgs
