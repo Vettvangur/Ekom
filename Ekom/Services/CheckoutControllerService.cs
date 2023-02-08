@@ -1,6 +1,6 @@
 using Ekom.API;
+using Ekom.Events;
 using Ekom.Exceptions;
-using Ekom.Extensions.Models;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
@@ -68,14 +68,6 @@ namespace Ekom.Services
             this.netPaymentService = netPaymentService;
             //HttpContext = httpContext;
         }
-
-        public static event EventHandler<PayEventArgs> PayEvent;
-        internal static void OnPay(object sender, PayEventArgs args)
-            => PayEvent?.Invoke(sender, args);
-
-        public static event EventHandler<ProcessingEventArgs> ProcessingEvent;
-        internal static void OnProcessing(object sender, ProcessingEventArgs args)
-            => ProcessingEvent?.Invoke(sender, args);
 
         internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
         {
@@ -270,7 +262,7 @@ namespace Ekom.Services
         {
             #region Stock
 
-            OnProcessing(this, new ProcessingEventArgs
+            CheckoutEvents.OnProcessing(this, new ProcessingEventArgs
             {
                 OrderInfo = order
             });
@@ -553,7 +545,7 @@ namespace Ekom.Services
                 //    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
                 //};
 
-                //OnPay(this, new PayEventArgs
+                //CheckoutEvents.OnPay(this, new PayEventArgs
                 //{
                 //    OrderInfo = order,
                 //    PaymentSettings = paymentSettings

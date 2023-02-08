@@ -189,7 +189,6 @@ namespace Ekom.App_Start
 
                 var titlePropertyValue = JsonConvert.DeserializeObject<PropertyValue>(content.GetValue<string>("title"));
 
-
                 if (titlePropertyValue.Type == "Language")
                 {
                     var languages = _umbracoService.GetLanguages();

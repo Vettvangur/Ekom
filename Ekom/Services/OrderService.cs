@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.JsonDotNet;
 using Ekom.Models;
@@ -345,7 +346,7 @@ namespace Ekom.Services
 
             if (settings.FireOnOrderStatusChangingEvent)
             {
-                Order.OnOrderStatusChanging(this, new OrderStatusEventArgs
+                OrderEvents.OnOrderStatusChanging(this, new OrderStatusEventArgs
                 {
                     OrderUniqueId = uniqueId,
                     PreviousStatus = oldStatus,
@@ -385,7 +386,7 @@ namespace Ekom.Services
 
             if (settings.FireOnOrderStatusChangingEvent)
             {
-                Order.OnOrderStatusChanged(this, new OrderStatusEventArgs
+                OrderEvents.OnOrderStatusChanged(this, new OrderStatusEventArgs
                 {
                     OrderUniqueId = uniqueId,
                     PreviousStatus = oldStatus,
@@ -990,7 +991,7 @@ namespace Ekom.Services
 
             if (fireOnOrderUpdatedEvents)
             {
-                Order.OnOrderUpdateing(this, new OrderUpdatingEventArgs
+                OrderEvents.OnOrderUpdateing(this, new OrderUpdatingEventArgs
                 {
                     OrderInfo = orderInfo,
                 });
@@ -1024,7 +1025,7 @@ namespace Ekom.Services
 
             if (fireOnOrderUpdatedEvents)
             {
-                Order.OnOrderUpdated(this, new OrderUpdatedEventArgs
+                OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
                 {
                     OrderInfo = orderInfo,
                 });

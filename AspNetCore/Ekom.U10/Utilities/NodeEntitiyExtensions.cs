@@ -14,7 +14,6 @@ namespace Ekom.Utilities
             string val = node.GetValue(propAlias, alias);
 
             return GetValue<T>(val);
-            return (T)(object)val;
         }
         public static T GetValue<T>(this ICategory node, string propAlias, string alias = null)
         {

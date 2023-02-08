@@ -6,10 +6,6 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 namespace Ekom.API
 {
     /// <summary>
@@ -21,28 +17,6 @@ namespace Ekom.API
         /// Order Instance
         /// </summary>
         public static Order Instance => Configuration.Resolver.GetService<Order>();
-
-        #region Events
-
-        /// <summary>
-        /// Event to fire on <see cref="IOrderInfo"/> updates
-        /// </summary>
-        public static event EventHandler<OrderUpdatedEventArgs> OrderUpdated;
-        internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args)
-            => OrderUpdated?.Invoke(sender, args);
-
-        public static event EventHandler<OrderUpdatingEventArgs> OrderUpdateing;
-        internal static void OnOrderUpdateing(object sender, OrderUpdatingEventArgs args)
-            => OrderUpdateing?.Invoke(sender, args);
-
-        public static event EventHandler<OrderStatusEventArgs> OrderStatusChanging;
-        internal static void OnOrderStatusChanging(object sender, OrderStatusEventArgs args)
-            => OrderStatusChanging?.Invoke(sender, args);
-        public static event EventHandler<OrderStatusEventArgs> OrderStatusChanged;
-        internal static void OnOrderStatusChanged(object sender, OrderStatusEventArgs args)
-            => OrderStatusChanged?.Invoke(sender, args);
-
-        #endregion
 
         readonly ILogger<Order> _logger;
         readonly Configuration _config;
