@@ -216,7 +216,7 @@ namespace EkomCore.Services
                 products = products
                     .Where(x =>
                         x.Metafields.Any(metaField =>
-                            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any()).Any(filter =>
+                            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any()).All(filter =>
                                 filter.Key == metaField.Field.Id.ToString() &&
                                 filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
                                 )
@@ -229,7 +229,7 @@ namespace EkomCore.Services
                 products = products.Where(x =>
                 x.Properties.Any(p =>
                     query.PropertyFilters.Where(f =>
-                        !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).Any(filter =>
+                        !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).All(filter =>
                         filter.Key == p.Key &&
                         filter.Value.Any(d => p.Value.Contains(d))))
                 );

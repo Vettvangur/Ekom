@@ -1,8 +1,6 @@
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -10,7 +8,9 @@ namespace Ekom.Models
     {
         public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
         {
-            
+
+            Filters = products.Filters();
+
             if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
             {
                 products = products.Filter(query);
@@ -57,7 +57,8 @@ namespace Ekom.Models
         public int? PageSize { get; set; }
         public int? Page { get; set; }
         public int ProductCount { get; set; }
-        
+        public IEnumerable<MetafieldGrouped> Filters { get; set; }
+
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
             

@@ -139,7 +139,7 @@ namespace Ekom.Models
 
         
         public IEnumerable<MetafieldGrouped> Filters(bool filterable = true) {
-            return ProductsRecursive().Filters();
+            return ProductsRecursive().Products.Filters();
         }
 
         /// <summary>
