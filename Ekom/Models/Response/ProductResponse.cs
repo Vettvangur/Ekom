@@ -51,14 +51,12 @@ namespace Ekom.Models
             }
 
         }
-
         public IEnumerable<IProduct> Products { get; set; }
         public int? PageCount { get; set; }
         public int? PageSize { get; set; }
         public int? Page { get; set; }
         public int ProductCount { get; set; }
         public IEnumerable<MetafieldGrouped> Filters { get; set; }
-
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
             

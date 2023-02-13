@@ -229,7 +229,7 @@ namespace EkomCore.Services
                 products = products.Where(x =>
                 x.Properties.Any(p =>
                     query.PropertyFilters.Where(f =>
-                        !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).All(filter =>
+                        !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).Any(filter =>
                         filter.Key == p.Key &&
                         filter.Value.Any(d => p.Value.Contains(d))))
                 );
