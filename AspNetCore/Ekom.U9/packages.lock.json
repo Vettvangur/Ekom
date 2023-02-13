@@ -1889,10 +1889,17 @@
           "Ekom.Core": "[0.0.1, )"
         }
       },
+      "ekom.common": {
+        "type": "Project",
+        "dependencies": {
+          "Newtonsoft.Json": "[12.0.3, )"
+        }
+      },
       "Ekom.Core": {
         "type": "Project",
         "dependencies": {
           "CommonServiceLocator": "[2.0.6, )",
+          "Ekom.Common": "[1.0.0, )",
           "Hangfire": "[1.7.32, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.2.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",

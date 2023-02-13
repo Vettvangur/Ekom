@@ -127,4 +127,8 @@
             <HintPath>..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Web.Extensions.dll</HintPath>
         </Reference>
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ekom.Common\Ekom.Common.csproj" />
+    </ItemGroup>
 </Project>

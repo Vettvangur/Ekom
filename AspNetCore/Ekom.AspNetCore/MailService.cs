@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using System.Configuration;
+using LinqToDB.Common;
 
 namespace Ekom.AspNetCore.Services
 {
@@ -21,7 +22,6 @@ namespace Ekom.AspNetCore.Services
         private readonly int _port;
         private readonly string _user;
         private readonly string _pass;
-        private readonly bool _ssl;
 
         private string _sender;
         private string _recipient;
@@ -33,28 +33,24 @@ namespace Ekom.AspNetCore.Services
         {
             _recipient = Configuration.Instance.EmailNotifications;
 
-            //MailServer - Represents the SMTP Server
-            _host = config["Smtp:Host"];
-            //Port- Represents the port number
-            _port = 25; 
+            var cmsSection = config.GetSection("Umbraco:CMS");
+            var smtpSection = cmsSection.GetSection("Global:Smtp");
 
-            if (int.TryParse(config["Smtp:Port"], out int port))
+            //MailServer - Represents the SMTP Server
+            _host = smtpSection["Host"];
+            //Port- Represents the port number
+            _port = 587; 
+
+            if (int.TryParse(smtpSection["Port"], out int port))
             {
                 _port = port;
             }
 
             //MailAuthUser and MailAuthPass - Used for Authentication for sending email
-            _user = config["Smtp:UserName"];
-            _pass = config["Smtp:Password"];
+            _user = smtpSection["Username"];
+            _pass = smtpSection["Password"];
 
-            _ssl = false;
-
-            if (bool.TryParse(config["Smtp:EnableSsl"], out bool ssl))
-            {
-                _ssl = ssl;
-            }
-
-            _sender = config["Smtp:FromAddress"];
+            _sender = smtpSection["From"];
         }
 
         /// <summary>
@@ -68,7 +64,7 @@ namespace Ekom.AspNetCore.Services
         {
             if (string.IsNullOrEmpty(_host))
             {
-                throw new Exception("Smtp:Host is not configured");
+                throw new Exception("Umbraco:CMS:Global:Smtp:Host is not configured");
             }
             
             // We do not catch the error here... let it pass direct to the caller
@@ -85,7 +81,7 @@ namespace Ekom.AspNetCore.Services
                     smtp.Timeout = Timeout;
                     smtp.UseDefaultCredentials = false;
                     smtp.Credentials = new NetworkCredential(_user, _pass);
-                    smtp.EnableSsl = _ssl;
+                    smtp.EnableSsl = true;
                 }
 
                 await smtp.SendMailAsync(message).ConfigureAwait(false);

@@ -6,7 +6,7 @@ using Umbraco.Extensions;
 
 namespace Ekom.Utilities
 {
-    public static class NodeEntitiyExtensions
+    public static class NodeEntityExtensions
     {
 
         public static T GetValue<T>(this IProduct node, string propAlias, string alias = null)

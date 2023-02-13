@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>Ekom.Payments.U10</AssemblyName>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <RootNamespace>Ekom.Payments.Umb</RootNamespace>
+
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <!-- Package properties -->
+        <PackageId>Ekom.Payments.U10</PackageId>
+        <Version>0.0.1</Version>
+        <Title>Ekom Payments Umbraco 10</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images\VV_Logo.png</PackageIcon>
+        <Description>Ekom Payments Umbraco 10 - Vettvangur E-Commerce solution</Description>
+        <PackageReleaseNotes></PackageReleaseNotes>
+        <Copyright>Copyright 2022</Copyright>
+        <PackageTags></PackageTags>
+
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <!-- Enable NuGet package caching -->
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Package icon -->
+        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Umbraco.Cms.Core" Version="10.3.2" />
+        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.3.2" />
+        <PackageReference Include="Umbraco.Cms.Web.Website" Version="10.3.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
+      <ProjectReference Include="..\Ekom.Payments.AspNetCore\Ekom.Payments.AspNetCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\" />
+      <Folder Include="Utilities\" />
+    </ItemGroup>
+</Project>

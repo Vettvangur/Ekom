@@ -1,16 +1,22 @@
-using Ekom.Repositories;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
-namespace Ekom.Services;
+namespace Ekom.Payments;
 
-public class DatabaseFactory
+public interface IDatabaseFactory
+{
+    DbContext GetDatabase();
+    SqlConnection GetSqlConnection();
+}
+
+class DatabaseFactory : IDatabaseFactory
 {
     readonly string _connectionString;
 
     public DatabaseFactory(IConfiguration configuration)
     {
-        var connectionStringName = "umbracoDbDSN";
+        var connectionStringName
+            = "umbracoDbDSN";
         _connectionString = configuration.GetConnectionString(connectionStringName);
     }
 

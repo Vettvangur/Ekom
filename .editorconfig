@@ -29,21 +29,26 @@ dotnet_diagnostic.CS1591.severity = suggestion
 # CA1008: Enums should have zero value - This is almost always by design
 dotnet_diagnostic.CA1008.severity = suggestion
 
-# CA1062: Validate arguments of public methods - Not a reusable library
-dotnet_diagnostic.CA1062.severity = none
+# CA1062: Validate arguments of public methods - Mostly applies to library authors
+dotnet_diagnostic.CA1062.severity = suggestion
 
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
 
-dotnet_code_quality.CA2000.excluded_type_names_with_derived_types = HttpRequestMessage
+# CA1812: Avoid uninstantiated internal classes
+# dotnet_diagnostic.CA1812.severity = none
+
+# CA2000: Dispose objects before losing scope
+dotnet_code_quality.CA2000.excluded_type_names_with_derived_types = HttpClient|HttpRequestMessage
+
+# CA2007: Consider calling ConfigureAwait on the awaited task - aspnetcore has no synchronization context
+dotnet_diagnostic.CA2007.severity = none
 
 # CA2237: Mark ISerializable types with SerializableAttribute
 dotnet_diagnostic.CA2237.severity = none
 
-# CA3147: Mark Verb Handlers With Validate Antiforgery Token - Not applicable in this project.
-dotnet_diagnostic.CA3147.severity = none
-
-# VSTHRD002: Avoid problematic synchronous waits
+# There is no concrete answer from dev team on usage with AspNet, possible JTF is fine if JT context is created per request but whatevs..
+# VSTHRD002: Avoid problematic synchronous waits - https://github.com/microsoft/vs-threading/issues/473
 dotnet_diagnostic.VSTHRD002.severity = suggestion
 
 # All Rules Enabled with default severity

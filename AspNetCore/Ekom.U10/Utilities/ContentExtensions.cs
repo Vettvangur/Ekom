@@ -1,3 +1,4 @@
+using Ekom.Common;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.DataEditors;
@@ -66,9 +67,9 @@ namespace Ekom.Utilities
                     {
                         DtdGuid = dataType.Key,
                         Values = values,
-                        Type = type.ToString()
+                        Type = type,
                     });
-
+                    
                     content.SetValue(alias, value);
 
                     return;
