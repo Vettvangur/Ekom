@@ -11,6 +11,7 @@ namespace Ekom.Models
         public string Path { get; set; }
         public string DocType { get; set; }
         public string ParentName { get; set; }
+        public int ParentId { get; set; }
         public string SKU { get; set; }
         public string Url { get; set; }
     }

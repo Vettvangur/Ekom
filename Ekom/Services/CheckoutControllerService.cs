@@ -421,7 +421,7 @@ namespace Ekom.Services
             {
                 try
                 {
-                    var successUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
+                    var successUrl = Utilities.UriHelper.EnsureFullUri(
                         ekomPP.GetValue("successUrl", storeAlias),
                         new Uri(_httpCtx.Request.GetEncodedUrl()))
                     + "?orderId=" + order.UniqueId;

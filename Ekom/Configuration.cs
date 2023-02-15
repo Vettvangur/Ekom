@@ -3,10 +3,7 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 namespace Ekom
 {
     /// <summary>
@@ -82,20 +79,6 @@ namespace Ekom
         {
             public string Char { get; set; }
             public string Replacement { get; set; }
-        }
-
-        /// <summary>
-        /// Ekom:CustomIndex
-        /// This will create an custom examine index that can be used for faster lookup or search named EkomIndex
-        /// </summary>
-        public virtual bool CustomIndex
-        {
-            get
-            {
-                var value = _configuration["Ekom:CustomIndex"];
-
-                return value.ConvertToBool();
-            }
         }
 
         /// <summary>

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Ekom.Utilities
 {
-    class SearchHelper
+    internal static class SearchHelper
     {
         internal static string RemoveDiacritics(string text)
         {
@@ -41,21 +41,8 @@ namespace Ekom.Utilities
             { ".", "" },
             { "&", "" },
         };
-        internal class EkomSearchField
-        {
-            public string Name { get; set; }
-            public EkomSearchType SearchType { get; set; } = EkomSearchType.FuzzyAndWilcard;
-            public string FuzzyConfiguration { get; set; } = "0.5";
-            public string Booster { get; set; }
-        }
-        internal enum EkomSearchType
-        {
-            Exact,
-            Wildcard,
-            Fuzzy,
-            FuzzyAndWilcard
-        }
-        internal static string FieldCultureName(string fieldName, string culture = null)
+
+        public static string FieldCultureName(this string fieldName, string culture = null)
         {
             return string.IsNullOrEmpty(culture) ? fieldName : fieldName + "_" + culture.ToLowerInvariant();
         }

@@ -36,6 +36,7 @@ static class ApplicationBuilderExtensions
 
     public static IApplicationBuilder UseEkomMiddleware(this IApplicationBuilder builder)
     {
+
         return builder.UseMiddleware<EkomMiddleware>();
     }
 }

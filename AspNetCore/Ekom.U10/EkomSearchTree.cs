@@ -1,5 +1,5 @@
+using Ekom.Models;
 using Ekom.Services;
-using Ekom.Umb.Services;
 using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Core.Trees;
 
@@ -15,14 +15,16 @@ namespace Ekom.Tree
         {
             _searchService = searchService;
         }
-
+        
         public Task<EntitySearchResults> SearchAsync(string query, int pageSize, long pageIndex, string? searchFrom = null)
         {
             long totalFound = 0;
-            var searchResults = new List<SearchResultEntity?>();
+            var searchResults = new List<Umbraco.Cms.Core.Models.ContentEditing.SearchResultEntity?>();
             if (!string.IsNullOrEmpty(query) && query.Length > 2)
             {
-                var results = _searchService.QueryCatalog(query, out totalFound);
+                var results = _searchService.Query(new SearchRequest() {
+                    SearchQuery = query
+                }, out _);
 
                 foreach (var result in results)
                 {
@@ -43,7 +45,7 @@ namespace Ekom.Tree
                         icon = "icon-layers-alt";
                     }
 
-                    var item = new SearchResultEntity()
+                    var item = new Umbraco.Cms.Core.Models.ContentEditing.SearchResultEntity()
                     {
                         Name = name,
                         Id = result.Id,

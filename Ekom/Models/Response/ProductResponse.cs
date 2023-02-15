@@ -20,7 +20,12 @@ namespace Ekom.Models
             {
                 var scope = Configuration.Resolver.CreateScope();
                 var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                var searchResults = _searhService.QueryCatalog(query.SearchQuery, out long total, int.MaxValue);
+                var searchResults = _searhService.Query(new SearchRequest() {
+                    SearchQuery = query.SearchQuery,
+                    NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+                    SearchFields = query.SearchFields,
+                }, out long total);
+                
                 scope.Dispose();
 
                 if (searchResults == null || total <= 0)

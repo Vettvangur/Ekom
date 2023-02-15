@@ -1,12 +1,7 @@
-#if NETFRAMEWORK
-using System.Web.Http;
-#else
-using Microsoft.AspNetCore.Mvc;
-#endif
-using Ekom.Utilities;
-using Ekom.Models;
 using Ekom.Exceptions;
-using System.ComponentModel.DataAnnotations;
+using Ekom.Models;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Controllers
 {
@@ -21,16 +16,9 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
-    public class EkomCatalogController : ApiController
-    {
-#else
     [Route("ekom/catalog")]
     public class EkomCatalogController : ControllerBase
     {
-
-#endif
-
         /// <summary>
         /// ctor
         /// </summary>
@@ -305,6 +293,26 @@ namespace Ekom.Controllers
             try
             {
                 var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+
+                return products;
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Product Search
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productsearch")]
+        public ProductResponse ProductSearch([FromBody] SearchRequest req)
+        {
+            try
+            {                
+                var products = API.Catalog.Instance.ProductSearch(req);
 
                 return products;
             }

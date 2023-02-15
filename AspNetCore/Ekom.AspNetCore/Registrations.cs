@@ -97,6 +97,7 @@ namespace Ekom.AspNetCore
                     f.GetService<IPerStoreCache<IVariantGroup>>(),
                     f.GetService<IStoreService>(),
                     f.GetService<IHttpContextAccessor>()
+
                 )
             );
             services.AddTransient<ProductDiscountService>(f =>

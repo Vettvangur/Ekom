@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Ekom.Models
 {
-    public class ProductQuery
+    public class ProductQuery : ProductQueryBase
     {
         public ProductQuery()
         {
@@ -28,12 +28,9 @@ namespace Ekom.Models
         
         public Dictionary<string, List<string>> MetaFilters { get; set; }
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
-        public int? Page { get; set; }
-        public int? PageSize { get; set; }
-        public string SearchQuery { get; set; }
         public OrderBy OrderBy { get; set; }
-        public IEnumerable<int> Ids { get; set; }
-        public IEnumerable<Guid> Keys { get; set; }
+
+
 
     }
 }
