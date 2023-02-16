@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Data;
+using System.Globalization;
 
 namespace Ekom.API
 {
@@ -194,6 +195,8 @@ namespace Ekom.API
         {
             var store = _storeSvc.GetStoreFromCache();
 
+            SetCulture(query?.Culture);
+
             if (store != null)
             {
                 var products = GetAllProducts(store.Alias, query);
@@ -216,8 +219,10 @@ namespace Ekom.API
 
             if (!_productCache.Cache.ContainsKey(storeAlias))
             {
-                return null;
+                return new ProductResponse();
             }
+
+            SetCulture(query?.Culture);
 
             var products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
             
@@ -235,6 +240,11 @@ namespace Ekom.API
             }
 
             var store = _storeSvc.GetStoreFromCache();
+
+            if (store == null && !string.IsNullOrEmpty(query.StoreAlias))
+            {
+                store = _storeSvc.GetStoreByAlias(query.StoreAlias);
+            }
 
             if (store != null)
             {
@@ -257,6 +267,8 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
+
+            SetCulture(query.Culture);
 
             var products = new List<IProduct>();
 
@@ -287,6 +299,8 @@ namespace Ekom.API
 
             var store = _storeSvc.GetStoreFromCache();
 
+            SetCulture(query.Culture);
+            
             if (store != null)
             {
                return GetProductsByKeys(store.Alias, query);
@@ -308,6 +322,8 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
+
+            SetCulture(query.Culture);
 
             var products = new List<IProduct>();
             foreach (var id in query.Keys)
@@ -642,13 +658,22 @@ namespace Ekom.API
             var productQuery = new ProductQuery();
 
             productQuery.Ids = result.Select(x => x.ParentId);
-
-            var products = GetProductsByIds(new ProductQuery()
-            {
-                Ids = result.Select(x => x.ParentId)
-            });
+            productQuery.Culture = req.Culture;
+            
+            var products = GetProductsByIds(productQuery);
 
             return products;
+        }
+
+        private void SetCulture(string culture)
+        {
+            if (!string.IsNullOrEmpty(culture))
+            {
+                var cultureInfo = new CultureInfo(culture);
+
+                CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+                CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+            }
         }
 
 

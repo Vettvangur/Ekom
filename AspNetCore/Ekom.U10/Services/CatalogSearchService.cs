@@ -111,17 +111,17 @@ namespace Ekom.Umb.Services
 
                             if (field.SearchType == EkomSearchType.Wildcard || field.SearchType == EkomSearchType.FuzzyAndWilcard)
                             {
-                                luceneQuery.Append("(" + field.Name.FieldCultureName(req.Culture ?? req.Culture) + ": " + "*" + term + "*" + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                                luceneQuery.Append("(" + field.Name + ": " + "*" + term + "*" + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                             }
 
                             if (field.SearchType == EkomSearchType.Fuzzy || field.SearchType == EkomSearchType.FuzzyAndWilcard)
                             {
-                                luceneQuery.Append(" (" + field.Name.FieldCultureName(req.Culture ?? req.Culture) + ": " + term + "~" + field.FuzzyConfiguration + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                                luceneQuery.Append(" (" + field.Name + ": " + term + "~" + field.FuzzyConfiguration + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                             }
 
                             if (field.SearchType == EkomSearchType.Exact)
                             {
-                                luceneQuery.Append(" (" + field.Name.FieldCultureName(req.Culture ?? req.Culture) + ": " + term + ") " + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                                luceneQuery.Append(" (" + field.Name + ": " + term + ") " + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
                             }
 
                             luceneQuery.Append(")");

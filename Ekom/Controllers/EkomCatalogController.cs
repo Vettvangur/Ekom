@@ -95,7 +95,7 @@ namespace Ekom.Controllers
         public ProductResponse GetProductsByIds([FromBody] ProductQuery query = null)
         {
             try
-            {                
+            {
                 return API.Catalog.Instance.GetProductsByIds(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
