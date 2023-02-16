@@ -73,15 +73,13 @@ namespace Ekom.Umb.Services
 
             try
             {
-                var ix = string.IsNullOrEmpty(req.Indexer) ? _config.ExamineIndex : req.Indexer;
-
-                if (_examineManager.TryGetIndex(ix, out var index) || !(index is IUmbracoIndex umbIndex))
+                if (_examineManager.TryGetIndex(_config.ExamineIndex, out var index) || !(index is IUmbracoIndex umbIndex))
                 {
                     var searcher = index.Searcher;
 
                     if (searcher == null)
                     {
-                        throw new Exception("Searcher not found. " + ix);
+                        throw new Exception("Searcher not found. " + _config.ExamineIndex);
                     }
 
                     var queryWithOutStopWords = req.SearchQuery.RemoveStopWords();

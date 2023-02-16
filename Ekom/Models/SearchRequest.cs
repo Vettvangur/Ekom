@@ -2,7 +2,6 @@ namespace Ekom.Models
 {
     public class SearchRequest : ProductQueryBase
     {
-        public string Indexer { get; set; }
         public string Culture { get; set; } = null;
         public string SearchNodeById { get; set; } = "";
         public string[] NodeTypeAlias { get; set; } = null;
