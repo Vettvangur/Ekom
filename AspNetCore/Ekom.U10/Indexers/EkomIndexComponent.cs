@@ -48,14 +48,7 @@ namespace Ekom.Umb.Indexers
 
                 var updatedValues = e.ValueSet.Values.ToDictionary(x => x.Key, x => x.Value.ToList());
 
-                if (updatedValues.ContainsKey("searchPath"))
-                {
-                    updatedValues.FirstOrDefault(x => x.Key == "searchPath").Value.Add(searchablePath);
-                } else
-                {
-                    updatedValues.Add("searchPath", new List<object> { searchablePath });
-                }
-
+                updatedValues.Add("searchPath", new List<object> { searchablePath });
                
                 e.SetValues(updatedValues.ToDictionary(x => x.Key, x => (IEnumerable<object>)x.Value));
             }

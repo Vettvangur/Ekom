@@ -11,7 +11,7 @@ public class EkomIndexComposer: IComposer
         //composition.Services.ConfigureOptions<ConfigureEkomIndexOptions>();
         //composition.Services.AddSingleton<EkomIndexValueSetBuilder>();
         //composition.Services.AddSingleton<EkomIndexPopulator>();
-        builder.Services.ConfigureOptions<ConfigureExternalIndexOptions>();
+        //builder.Services.ConfigureOptions<ConfigureExternalIndexOptions>();
         builder.Components().Insert<EkomIndexComponent>();
     }
 }
