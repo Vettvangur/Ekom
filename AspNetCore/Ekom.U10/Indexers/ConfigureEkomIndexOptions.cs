@@ -11,7 +11,7 @@ namespace Ekom.Umb.Indexers
         {
             if (name.Equals(Constants.UmbracoIndexes.ExternalIndexName))
             {
-                options.FieldDefinitions.AddOrUpdate(new FieldDefinition("searchPath", FieldDefinitionTypes.FullText));
+                options.FieldDefinitions.AddOrUpdate(new FieldDefinition("ekmSearchPath", FieldDefinitionTypes.FullText));
             }
         }
 

@@ -147,7 +147,7 @@ namespace Ekom.Umb.Services
 
                     if (!string.IsNullOrEmpty(req.SearchNodeById))
                     {
-                        booleanOperation = booleanOperation.And().Field("searchPath", "|" + req.SearchNodeById + "|");
+                        booleanOperation = booleanOperation.And().Field("ekmSearchPath", "|" + req.SearchNodeById + "|");
                     }
 
                     var results = _query.Search(booleanOperation, req.Page.HasValue ? req.Page.Value : 0, req.PageSize.HasValue ? req.PageSize.Value : int.MaxValue, out total).OrderByDescending(x => x.Score);
