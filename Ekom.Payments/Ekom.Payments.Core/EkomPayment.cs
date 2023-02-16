@@ -15,7 +15,6 @@ namespace Ekom.Payments;
 public class EkomPayments
 {
     private readonly ILogger<EkomPayments> _logger;
-    private readonly IUmbracoService _uService;
     private readonly PaymentsConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
 
@@ -24,12 +23,10 @@ public class EkomPayments
     /// </summary>
     internal EkomPayments(
         ILogger<EkomPayments> logger,
-        IUmbracoService uService,
         PaymentsConfiguration configuration,
         IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _uService = uService;
         _configuration = configuration;
         _serviceProvider = serviceProvider;
     }
@@ -82,7 +79,7 @@ public class EkomPayments
         {
             var ppType = paymentProviders[normalizedPPName];
 
-            var pp = Activator.CreateInstance(ppType) as IPaymentProvider;
+            var pp = ActivatorUtilities.CreateInstance(_serviceProvider, ppType) as IPaymentProvider;
 
             return pp;
         }

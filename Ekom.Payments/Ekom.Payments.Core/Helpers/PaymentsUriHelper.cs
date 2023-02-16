@@ -15,7 +15,7 @@ public static class PaymentsUriHelper
     /// <param name="uri">absolute or relative uri</param>
     /// <param name="Request"></param>
     /// <returns></returns>
-    public static Uri EnsureFullUri(string uri, HttpRequest Request)
+    public static Uri EnsureFullUri(string? uri, HttpRequest Request)
     {
         if (Uri.IsWellFormedUriString(uri, UriKind.Absolute))
         {
@@ -31,7 +31,7 @@ public static class PaymentsUriHelper
         throw new ArgumentException($"Uri \"{uri}\" is not a well formed Uri, please ensure correct configuration of urls used for success/error/cancel...", nameof(uri));
     }
 
-    public static string AddQueryString(string uri, string queryString = "")
+    public static string AddQueryString(string? uri, string? queryString = "")
     {
         if (uri == null)
         {
@@ -54,7 +54,7 @@ public static class PaymentsUriHelper
             var qsOld = HttpUtility.ParseQueryString(u.Query);
             foreach (var queryKey in qsOld.AllKeys)
             {
-                foreach (var val in qsOld.GetValues(queryKey))
+                foreach (var val in qsOld.GetValues(queryKey) ?? Array.Empty<string>())
                 {
                     qsNew.Add(queryKey, val);
                 }

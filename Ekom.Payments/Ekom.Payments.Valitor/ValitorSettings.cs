@@ -1,17 +1,9 @@
-using Ekom.Common;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Umbraco.NetPayment.Valitor;
-
-namespace Ekom.Payments.ValitorPay;
+namespace Ekom.Payments.Valitor;
 
 public class ValitorSettings : PaymentSettingsBase<ValitorSettings>
 {
+    public string ReportUrl { get; set; }
+    
     [EkomProperty]
     public string MerchantId { get; set; }
 
@@ -46,5 +38,6 @@ public class ValitorSettings : PaymentSettingsBase<ValitorSettings>
     /// </summary>
     public Uri PaymentPageUrl { get; set; }
 
+    [EkomProperty]
     public Uri TimeoutRedirectURL { get; set; }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Umbraco.NetPayment.Valitor;
+namespace Ekom.Payments.Valitor;
 
 /// <summary>
 /// Response data from Borgun Server

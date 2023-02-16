@@ -1,104 +1,72 @@
-﻿using System;
-using System.Web;
-using System.Web.Mvc;
-using Umbraco.Core;
-using Umbraco.Core.Composing;
-using Umbraco.Core.Logging;
-using Umbraco.NetPayment.Exceptions;
-using Umbraco.NetPayment.Helpers;
+using Ekom.Payments.Exceptions;
+using Ekom.Payments.Helpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
-namespace Umbraco.NetPayment.Valitor
+namespace Ekom.Payments.Valitor;
+
+/// <summary>
+/// An alternative to subscribing to the valitor callback event.
+/// This helper can be invoked in the view or controller that receives the redirect from Valitor.
+/// Only returns <see cref="OrderStatus"/> on successful verification
+/// </summary>
+public class ValitorResponseHelper
 {
+    readonly ILogger<ValitorResponseHelper> _logger;
+    readonly IConfiguration _configuration;
+    readonly IOrderService _orderSvc;
+
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public ValitorResponseHelper(
+        ILogger<ValitorResponseHelper> logger,
+        IOrderService orderSvc,
+        IConfiguration configuration)
+    {
+        _logger = logger;
+        _orderSvc = orderSvc;
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// Gets Order
+    /// Only returns <see cref="OrderStatus"/> on successful verification
+    /// </summary>
+    public OrderStatus GetOrder(string reference)
+    {
+        if (!string.IsNullOrEmpty(reference)
+        && Guid.TryParse(reference, out var guid))
+        {
+            return _orderSvc.GetAsync(guid).Result;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// An alternative to subscribing to the valitor callback event.
     /// This helper can be invoked in the view or controller that receives the redirect from Valitor.
     /// Only returns <see cref="OrderStatus"/> on successful verification
     /// </summary>
-    public class ValitorResponseHelper
+    public async Task<OrderStatus?> Verify(
+        Response valitorResp, 
+        string verificationcode = null)
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public static ValitorResponseHelper Instance =>
-            Current.Factory.GetInstance<ValitorResponseHelper>();
+        verificationcode ??= _configuration["Ekom:Payments:Valitor:VerificationCode"];
+        string DigitalSignature = CryptoHelpers.GetMD5StringSum(verificationcode + valitorResp.ReferenceNumber);
 
-        readonly ILogger _logger;
-        readonly Settings _settings;
-        readonly IDatabaseFactory _dbFac;
-        readonly IXMLConfigurationService _xmlSvc;
-        readonly HttpRequestBase _req;
-        readonly IOrderService _orderSvc;
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public ValitorResponseHelper(
-            ILogger logger,
-            Settings settings,
-            IDatabaseFactory dbFac,
-            IXMLConfigurationService xmlSvc,
-            HttpRequestBase req,
-            IOrderService orderSvc)
+        if (valitorResp.DigitalSignatureResponse.Equals(DigitalSignature, StringComparison.InvariantCultureIgnoreCase))
         {
-            _logger = logger;
-            _settings = settings;
-            _dbFac = dbFac;
-            _xmlSvc = xmlSvc;
-            _req = req;
-            _orderSvc = orderSvc;
-        }
-
-        /// <summary>
-        /// Unfinished - don't use
-        /// </summary>
-        /// <param name="viewContext"></param>
-        /// <returns></returns>
-        [Obsolete("Unfinished!")]
-        public OrderStatus Verify(ViewContext viewContext)
-        {
-            return null;
-            // Map from HttpContext to valitor response object
-            //Verify(responseobj);
-        }
-
-        /// <summary>
-        /// Gets Order
-        /// Only returns <see cref="OrderStatus"/> on successful verification
-        /// </summary>
-        public OrderStatus GetOrder(string reference)
-        {
-            if (!string.IsNullOrEmpty(reference)
-            && Guid.TryParse(reference, out var guid))
+            if (Guid.TryParse(valitorResp.ReferenceNumber, out var guid))
             {
-                return _orderSvc.GetAsync(guid).Result;
-            }
-            else
-            {
-                return null;
+                return await _orderSvc.GetAsync(guid);
             }
         }
 
-        /// <summary>
-        /// An alternative to subscribing to the valitor callback event.
-        /// This helper can be invoked in the view or controller that receives the redirect from Valitor.
-        /// Only returns <see cref="OrderStatus"/> on successful verification
-        /// </summary>
-        public OrderStatus Verify(Response valitorResp, string ppNameOverride = null)
-        {
-            var xmlConfig = _xmlSvc.GetConfigForPP(ppNameOverride ?? Payment._ppNodeName, Payment._ppNodeName);
-            if (xmlConfig == null) throw new XmlConfigurationNotFoundException(ppNameOverride ?? Payment._ppNodeName);
-
-            string DigitalSignature = CryptoHelpers.GetMD5StringSum(xmlConfig["verificationcode"] + valitorResp.ReferenceNumber);
-
-            if (valitorResp.DigitalSignatureResponse.Equals(DigitalSignature, StringComparison.InvariantCultureIgnoreCase))
-            {
-                if (Guid.TryParse(valitorResp.ReferenceNumber, out var guid))
-                {
-                    return _orderSvc.GetAsync(guid).Result;
-                }
-            }
-
-            return null;
-        }
+        return null;
     }
 }

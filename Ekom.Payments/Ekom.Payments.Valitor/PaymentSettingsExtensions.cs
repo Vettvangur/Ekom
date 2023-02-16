@@ -1,4 +1,4 @@
-using Ekom.Payments.ValitorPay;
+using Ekom.Payments.Valitor;
 using System;
 using System.Collections.Generic;
 using System.Linq;

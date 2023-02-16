@@ -1,4 +1,4 @@
-namespace Umbraco.NetPayment.Valitor;
+namespace Ekom.Payments.Valitor;
 
 /// <summary>
 /// Custom LoanType specification for Valitor, allows Valitor PP to approximate how Borgun specifies their loans.

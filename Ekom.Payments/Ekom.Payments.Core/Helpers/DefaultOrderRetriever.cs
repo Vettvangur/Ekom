@@ -32,9 +32,10 @@ class DefaultOrderRetriever : IOrderRetriever
     public OrderStatus? Get(HttpRequest request, string ppNameOverride = null)
     {
         // These two work for Borgun, BorgunLoans, BorgunGateway w/ 3dsecure
-        string reference = request["reference"]
+        string reference = request.Form.ContainsKey("reference")
+            ? request.Form["reference"]
             // Valitor, Netgiro
-            ?? request.QueryString["ReferenceNumber"];
+            : request.Query["ReferenceNumber"];
 
         if (Guid.TryParse(reference, out var guid))
         {

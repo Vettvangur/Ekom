@@ -1,6 +1,6 @@
 using Ekom.Payments;
 using Ekom.Payments.Helpers;
-using Ekom.Payments.ValitorPay;
+using Ekom.Payments.Valitor;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace Umbraco.NetPayment.Valitor;
+namespace Ekom.Payments.Valitor;
 
 /// <summary>
 /// Initiate a payment request with Valitor
@@ -20,15 +20,15 @@ public class Payment : IPaymentProvider
 {
     internal const string _ppNodeName = "valitor";
     /// <summary>
-    /// Umbraco.NetPayment ResponseController
+    /// Ekom.Payments ResponseController
     /// </summary>
-    const string reportPath = "/umbraco/NetPayment/valitorresponse/post";
+    const string reportPath = "/ekom/payments/valitorresponse";
 
     readonly ILogger<Payment> _logger;
     readonly PaymentsConfiguration _settings;
     readonly IUmbracoService _uService;
     readonly IOrderService _orderService;
-    readonly HttpRequest _req;
+    readonly HttpContext _httpCtx;
 
     /// <summary>
     /// ctor for Unit Tests
@@ -44,7 +44,7 @@ public class Payment : IPaymentProvider
         _settings = settings;
         _uService = uService;
         _orderService = orderService;
-        _req = httpContext.HttpContext?.Request ?? throw new NotSupportedException("Payment requests require an httpcontext");
+        _httpCtx = httpContext.HttpContext ?? throw new NotSupportedException("Payment requests require an httpcontext");
     }
 
     /// <summary>
@@ -95,9 +95,11 @@ public class Payment : IPaymentProvider
                 total,
                 paymentSettings,
                 null,
-                _req
+                _httpCtx
             ).ConfigureAwait(false);
 
+            var reportUrl = PaymentsUriHelper.EnsureFullUri(reportPath, _httpCtx.Request);
+            
             // Begin populating form values to be submitted
             var formValues = new Dictionary<string, string>
             {
@@ -113,7 +115,7 @@ public class Payment : IPaymentProvider
                 { "PaymentSuccessfulURLText", valitorSettings.PaymentSuccessfulURLText },
                 { "PaymentSuccessfulAutomaticRedirect", valitorSettings.SkipReceipt ? "1" : "0" },
                 { "PaymentCancelledURL", paymentSettings.CancelUrl.ToString() },
-                { "PaymentSuccessfulServerSideURL", paymentSettings.ReportUrl.ToString() },
+                { "PaymentSuccessfulServerSideURL", reportUrl.ToString() },
             };
 
             if (valitorSettings.CheckoutTimeoutMinutes != 0
@@ -147,7 +149,7 @@ public class Payment : IPaymentProvider
             sb.Append(valitorSettings.MerchantId);
             sb.Append(orderStatus.UniqueId.ToString());
             sb.Append(paymentSettings.SuccessUrl);
-            sb.Append(paymentSettings.ReportUrl);
+            sb.Append(reportUrl);
             sb.Append(paymentSettings.Currency);
 
             if (valitorSettings.LoanType != LoanType.Disabled)
@@ -155,12 +157,12 @@ public class Payment : IPaymentProvider
                 formValues.Add("IsCardLoan", "1");
                 formValues.Add("MerchantName", valitorSettings.MerchantName);
 
-                if (valitorSettings.LoanType == 1)
+                if (valitorSettings.LoanType == LoanType.IsLoan)
                 {
                     formValues.Add("IsInterestFree", "0");
                     sb.Append(0);
                 }
-                else if (valitorSettings.LoanType == 2)
+                else if (valitorSettings.LoanType == LoanType.IsInterestFreeLoan)
                 {
                     formValues.Add("IsInterestFree", "1");
                     sb.Append(1);

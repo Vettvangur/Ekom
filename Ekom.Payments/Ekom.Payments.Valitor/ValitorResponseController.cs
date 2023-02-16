@@ -2,6 +2,7 @@ using Ekom.Payments;
 using Ekom.Payments.Helpers;
 using LinqToDB;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -9,7 +10,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Umbraco.NetPayment.Valitor;
+namespace Ekom.Payments.Valitor;
 
 /// <summary>
 /// Receives a callback from Valitor when customer completes payment.
@@ -50,6 +51,8 @@ public class ValitorResponseController : ControllerBase
     /// Changes order status and optionally runs a custom callback provided by the application consuming this library.
     /// </summary>
     /// <param name="valitorResp">Valitor querystring parameters</param>
+    [HttpPost]
+    [Route("")]
     public async Task<IActionResult> Post([FromQuery]Response valitorResp)
     {
         _logger.LogInformation("Valitor Payment Response - Start");
@@ -60,7 +63,7 @@ public class ValitorResponseController : ControllerBase
         {
             try
             {
-                _logger.LogDebug("ModelState.IsValid");
+                _logger.LogDebug("Valitor Payment Response - ModelState.IsValid");
 
                 if (!Guid.TryParse(valitorResp.ReferenceNumber, out var orderId))
                 {
@@ -69,9 +72,16 @@ public class ValitorResponseController : ControllerBase
 
                 _logger.LogInformation("Valitor Payment Response - OrderID: " + orderId);
 
-                OrderStatus order = await _orderService.GetAsync(orderId);
+                OrderStatus? order = await _orderService.GetAsync(orderId);
+                if (order == null)
+                {
+                    _logger.LogWarning("Valitor Payment Response - Unable to find order {OrderId}", orderId);
 
-                string digitalSignature = CryptoHelpers.GetSHA256HexStringSum(xmlConfig["verificationcode"] + valitorResp.ReferenceNumber);
+                    return NotFound();
+                }
+                var valitorSettings = JsonConvert.DeserializeObject<ValitorSettings>(order.EkomPaymentProviderData);
+
+                string digitalSignature = CryptoHelpers.GetSHA256HexStringSum(valitorSettings.VerificationCode + valitorResp.ReferenceNumber);
 
                 if (valitorResp.DigitalSignatureResponse.Equals(digitalSignature, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -83,30 +93,13 @@ public class ValitorResponseController : ControllerBase
                         {
                             Id = order.UniqueId,
                             Date = DateTime.Now,
-                            PaymentDate = valitorResp.Date,
-                            AuthorizationNumber = valitorResp.AuthorizationNumber.ToString(),
                             CardNumber = valitorResp.CardNumberMasked,
-                            CardType = valitorResp.CardType,
+                            CustomData = JsonConvert.SerializeObject(valitorResp),
                             Amount = order.Amount.ToString(),
                         };
 
-                        PaymentData prevPaymentData;
-                        using (var db = _dbFac.GetDatabase())
-                        {
-                            prevPaymentData = await db.PaymentData.SingleOrDefaultAsync(x => x.Id == paymentData.Id);
-                        }
-
-                        using (var db = _dbFac.GetDatabase())
-                        {
-                            if (prevPaymentData == null)
-                            {
-                                await db.InsertAsync(paymentData);
-                            }
-                            else
-                            {
-                                await db.UpdateAsync(paymentData);
-                            }
-                        }
+                        using var db = _dbFac.GetDatabase();
+                        await db.InsertOrReplaceAsync(paymentData);
                     }
                     catch (Exception ex)
                     {
@@ -115,31 +108,43 @@ public class ValitorResponseController : ControllerBase
 
                     order.Paid = true;
 
-                    using (var db = _dbFac.GetDb())
+                    using (var db = _dbFac.GetDatabase())
                     {
                         await db.UpdateAsync(order);
                     }
 
-                    Events.OnSuccess(order);
+                    Events.OnSuccess(this, new SuccessEventArgs
+                    {
+                        OrderStatus = order,
+                    });
                     _logger.LogInformation($"Valitor Payment Response - SUCCESS - Order ID: {order.UniqueId}");
-                    return new HttpStatusCodeResult(HttpStatusCode.OK);
+                    return StatusCode((int)HttpStatusCode.OK);
                 }
                 else
                 {
                     _logger.LogInformation($"Valitor Payment Response - Verification Error - Order ID: {order.UniqueId}");
-                    Events.OnError(order, null);
+                    Events.OnError(this, new ErrorEventArgs
+                    {
+                        OrderStatus = order, 
+                    });
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Valitor Payment Response - Failed");
-                Events.OnError(null, ex);
+                Events.OnError(this, new ErrorEventArgs 
+                {
+                    Exception = ex,
+                });
 
                 if (_settings.SendEmailAlerts)
                 {
-                    _mailSvc.Subject = "Valitor Payment Response - Failed";
-                    _mailSvc.Body = $"<p>Valitor Payment Response - Failed<p><br />{_req?.Url}<br />" + ex.ToString();
-                    await _mailSvc.SendAsync();
+                    await _mailSvc.SendAsync(new System.Net.Mail.MailMessage
+                    {
+                        Subject = "Valitor Payment Response - Failed",
+                        Body = $"<p>Valitor Payment Response - Failed<p><br />{_req?.GetDisplayUrl()}<br />" + ex.ToString(),
+                        IsBodyHtml = true,
+                    });
                 }
 
                 throw;
@@ -147,6 +152,6 @@ public class ValitorResponseController : ControllerBase
         }
 
         _logger.LogDebug(JsonConvert.SerializeObject(ModelState));
-        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        return StatusCode((int)HttpStatusCode.BadRequest);
     }
 }

@@ -6,14 +6,14 @@ namespace Ekom.Payments;
 /// <summary>
 /// Saves payment information for transactions
 /// </summary>
-[Table(Name = "NetPayments")]
+[Table(Name = "EkomPayments")]
 public class PaymentData
 {
     /// <summary>
     /// SQL entry Id
     /// </summary>
-    [PrimaryKey, Identity, NotNull]
-    public long Id { get; set; }
+    [PrimaryKey, NotNull]
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Masked credit card number
@@ -37,7 +37,7 @@ public class PaymentData
     /// Total
     /// </summary>
     [Column, NotNull]
-    public decimal Amount { get; set; }
+    public string Amount { get; set; }
 
     /// <summary>
     /// SQL entry creation date

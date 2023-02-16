@@ -1,4 +1,5 @@
 using LinqToDB.Mapping;
+using Newtonsoft.Json;
 using System;
 
 namespace Ekom.Payments;
@@ -6,7 +7,7 @@ namespace Ekom.Payments;
 /// <summary>
 /// Generalized object storing basic information on orders and their status
 /// </summary>
-[Table(Name = "NetPaymentOrder")]
+[Table(Name = "EkomPaymentOrders")]
 public class OrderStatus
 {
     /// <summary>
@@ -17,7 +18,7 @@ public class OrderStatus
     /// <summary>
     /// Order SQL unique Id
     /// </summary>
-    [PrimaryKey, NotNull]
+    [NotNull]
     public Guid UniqueId { get; set; }
 
     /// <summary>
@@ -25,7 +26,6 @@ public class OrderStatus
     /// Is trimmed to 12 characters, this gives us a maximum order count of 10^12
     /// </summary>
     [Identity, NotNull]
-    [Unique index]
     public long ReferenceId { get; set; }
 
     /// <summary>
@@ -84,14 +84,30 @@ public class OrderStatus
     public Guid PaymentProviderKey { get; set; }
 
     /// <summary>
-    /// Store custom order data here
+    /// For netpayment internal usage
     /// </summary>
-    [Column(Length = 255)]
-    public string Custom { get; set; }
+    [Column, NotNull]
+    public string EkomPaymentSettingsData { get; set; }
+
+    public PaymentSettings EkomPaymentSettings 
+    { 
+        get
+        {
+            return JsonConvert.DeserializeObject<PaymentSettings>(EkomPaymentSettingsData);
+        }
+        set
+        {
+            EkomPaymentSettingsData = JsonConvert.SerializeObject(value);
+        }
+    }
 
     /// <summary>
     /// For netpayment internal usage
     /// </summary>
-    [Column(Length = 200), NotNull]
-    public string NetPaymentData { get; set; }
+    [Column]
+    public string EkomPaymentProviderData { get; set; }
+
+
+    [Column(SkipOnInsert = true, SkipOnUpdate = true)]
+    public string PaymentProviderName { get; set; }
 }

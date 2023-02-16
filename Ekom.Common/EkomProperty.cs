@@ -1,4 +1,4 @@
-namespace Ekom.Common;
+namespace Ekom;
 
 /// <summary>
 /// Indicates a json property containing store specific values

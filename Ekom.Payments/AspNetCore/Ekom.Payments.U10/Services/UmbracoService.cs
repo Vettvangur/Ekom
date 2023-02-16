@@ -17,7 +17,6 @@ using static Umbraco.Cms.Core.Constants;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Ekom.Common;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using System.Linq.Expressions;
@@ -205,7 +204,7 @@ class UmbracoService : IUmbracoService
     private void DoPopulatePaymentProviderProperties(
         PaymentSettings settings,
         string ppNodeName,
-        IPublishedContent ppNode,
+        object ppNode,
         object? customProperties,
         IEnumerable<PropertyInfo>? customPropertyList)
     {
@@ -235,7 +234,7 @@ class UmbracoService : IUmbracoService
     }
 
     private void PopulateProperties(
-        IPublishedContent ppNode,
+        object ppNode,
         string ppNodeName,
         object o,
         IEnumerable<PropertyInfo> properties,
@@ -254,7 +253,7 @@ class UmbracoService : IUmbracoService
     }
 
     private void PopulateProperty(
-        IPublishedContent ppNode,
+        object ppNode,
         object o,
         PropertyInfo property,
         string ekomPropertyKey,
@@ -284,6 +283,8 @@ class UmbracoService : IUmbracoService
                         camelCaseName,
                         null,
                         null,
+                        // ToDo: If we use some reflection magic here as well or refactor this to a dedicated method
+                        // we could have this whole monster of a method and it's friends in the core library
                         default(Fallback),
                         null
                     })

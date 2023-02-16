@@ -15,8 +15,7 @@ class DatabaseFactory : IDatabaseFactory
 
     public DatabaseFactory(IConfiguration configuration)
     {
-        var connectionStringName
-            = "umbracoDbDSN";
+        var connectionStringName = "umbracoDbDSN";
         _connectionString = configuration.GetConnectionString(connectionStringName);
     }
 

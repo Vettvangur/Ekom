@@ -1,4 +1,4 @@
-using Ekom.Common;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -73,19 +73,13 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     public string OrderCustomString { get; set; }
 
     /// <summary>
-    /// Override umbraco configured success url. Used by NetPayment to forward user to f.x. receipt page.
+    /// Override umbraco configured success url. Used by Ekom Payments to forward user to f.x. receipt page.
     /// When using umbraco value, netPayment adds reference to queryString to use with OrderRetriever on return.
     /// Commonly overriden in consumers checkout 
     /// to provide an url that also contains a queryString with the orderId to use on receipt page.
     /// </summary>
     [EkomProperty]
     public Uri SuccessUrl { get; set; }
-
-    /// <summary>
-    /// Receives notifications on successful payment.
-    /// </summary>
-    [EkomProperty]
-    public Uri ReportUrl { get; set; }
 
     /// <summary>
     /// Control cancel url when supported
@@ -171,5 +165,6 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     //#endregion
 
     [PaymentSettingsIgnore]
+    [JsonIgnore]
     public Dictionary<Type, object> CustomSettings { get; } = new Dictionary<Type, object>();
 }

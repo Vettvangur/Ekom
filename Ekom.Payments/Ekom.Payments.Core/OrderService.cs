@@ -66,16 +66,12 @@ class OrderService : IOrderService
         var orderStatus = new OrderStatus
         {
             UniqueId = orderid,
-            Name = paymentSettings.OrderName,
             Member = paymentSettings.Member,
             Amount = total,
             Date = DateTime.Now,
             IPAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
             UserAgent = httpContext.Request.Headers["User-Agent"].ToString().Substring(0, 4000),
-            PaymentProvider = paymentSettings.PaymentProviderName.ToLower(),
-            PaymentProviderKey = paymentSettings.PaymentProviderKey,
-            Custom = paymentSettings.OrderCustomString,
-            NetPaymentData = netPaymentData,
+            EkomPaymentSettings = paymentSettings,
         };
 
         using (var db = _dbFac.GetDatabase())

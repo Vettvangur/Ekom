@@ -1,41 +1,22 @@
-using Ekom.AspNetCore;
-using Ekom.Services;
-using Ekom.Umb.Services;
-using EkomCore.Services;
+using Ekom.Payments.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Serialization;
 
-namespace Ekom.Umb;
+namespace Ekom.Payments.Umb;
 
 static class ApplicationBuilderExtensions
 {
-    public static IServiceCollection AddEkom(this IServiceCollection services)
+    public static IServiceCollection AddEkomPayments(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<IStartupFilter, StartupFilter>();
+        services.AddSingleton<IStartupFilter, EkomPaymentsStartupFilter>();
 
-        services.AddAspNetCoreEkom();
+        services.AddAspNetCoreEkomPayments(configuration);
 
-        services.AddControllers()
-            .AddNewtonsoftJson(option => option.SerializerSettings.ContractResolver = new DefaultContractResolver());
-
-        services.AddTransient<IMemberService, MemberService>();
-        services.AddTransient<INodeService, NodeService>();
-        services.AddTransient<NodeService>();
-        services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
-        services.AddTransient<IUrlService, UrlService>();
-        services.AddTransient<ExamineService>();
-        services.AddScoped<BackofficeUserAccessor>();
-        services.AddScoped<ISecurityService, SecurityService>();
-        services.AddScoped<ICatalogSearchService, CatalogSearchService>();
 
         return services;
-    }
-
-    public static IApplicationBuilder UseEkomMiddleware(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<EkomMiddleware>();
     }
 }

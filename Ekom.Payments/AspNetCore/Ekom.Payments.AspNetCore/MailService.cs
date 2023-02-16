@@ -1,16 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
-using System.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Linq;
-using Microsoft.Extensions.Configuration;
-using Ekom.Payments;
 
-namespace Vettvangur.OrganisationManagement;
+namespace Ekom.Payments;
 
 /// <summary>
 /// Handles creation and sending of emails, uses defaults from configuration when possible.
