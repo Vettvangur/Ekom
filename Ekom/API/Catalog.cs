@@ -624,7 +624,7 @@ namespace Ekom.API
         {
             if (string.IsNullOrEmpty(req?.SearchQuery))
             {
-                return null;
+                return new ProductResponse();
             }
 
             if (req.NodeTypeAlias == null || !req.NodeTypeAlias.Any())

@@ -6,6 +6,13 @@ namespace Ekom.Models
 {
     public class ProductResponse
     {
+        public ProductResponse()
+        {
+            Products = Enumerable.Empty<IProduct>();
+            ProductCount = 0;
+            Filters = Enumerable.Empty<MetafieldGrouped>();
+        }
+
         public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
         {
 
