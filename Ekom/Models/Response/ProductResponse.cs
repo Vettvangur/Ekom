@@ -42,12 +42,15 @@ namespace Ekom.Models
                 {
                     products = products.Where(x => searchResults.Any(y => y.Id == x.Id));
                 }
-                
             }
 
             ProductCount = products.Count();
 
-            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            if (query?.OrderBy != Utilities.OrderBy.NoOrder)
+            {
+
+                products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            }
 
             if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
             {

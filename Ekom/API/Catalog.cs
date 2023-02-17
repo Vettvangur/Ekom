@@ -1,6 +1,7 @@
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -659,6 +660,9 @@ namespace Ekom.API
 
             productQuery.Ids = result.Select(x => x.ParentId);
             productQuery.Culture = req.Culture;
+            productQuery.MetaFilters = req.MetaFilters;
+            productQuery.PropertyFilters = req.PropertyFilters;
+            productQuery.OrderBy = req.OrderBy;
             
             var products = GetProductsByIds(productQuery);
 

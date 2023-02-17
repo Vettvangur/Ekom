@@ -185,6 +185,7 @@ namespace Ekom.Utilities
         PriceAsc,
         PriceDesc,
         DateAsc,
-        DateDesc
+        DateDesc,
+        NoOrder
     }
 }
