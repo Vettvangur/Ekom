@@ -16,8 +16,8 @@ namespace Ekom.Models
                 return;
             }
 
-            MetaFilters = MetaFilters == null || !MetaFilters.Any() ? query.Where(x => x.Key.StartsWith("filter_", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key.Replace("filter_", "", StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : MetaFilters;
-            PropertyFilters = PropertyFilters == null || !PropertyFilters.Any() ?  query.Where(x => x.Key.StartsWith("property_", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(x => x.Key.Replace("property_", "",  StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : PropertyFilters;
+            MetaFilters = MetaFilters == null || !MetaFilters.Any() ? query.Where(x => x.Key.StartsWith("filter_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("filter_", "", StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : MetaFilters;
+            PropertyFilters = PropertyFilters == null || !PropertyFilters.Any() ?  query.Where(x => x.Key.StartsWith("property_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("property_", "",  StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : PropertyFilters;
 
             SearchQuery = string.IsNullOrEmpty(SearchQuery) ? query.ContainsKey("q") ? query["q"] : "" : SearchQuery;
 
@@ -29,8 +29,5 @@ namespace Ekom.Models
         public Dictionary<string, List<string>> MetaFilters { get; set; }
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
         public OrderBy OrderBy { get; set; }
-
-
-
     }
 }

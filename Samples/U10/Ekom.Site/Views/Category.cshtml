@@ -6,7 +6,8 @@
     var category = _catalog.GetCategory();
 
     var searchQuery = Context.Request.Query["q"];
-
+    var propertyQuery = Context.Request.Query["property_customPropertyFilter"];
+    var propertyQuery2 = Context.Request.Query["property_customPropertyFilter2"];
     var productResponse = category.ProductsRecursive(
         new ProductQuery(Context.Request.Query) { 
             Page = 1, 
@@ -60,6 +61,18 @@
             </li>
         }
     </ol>
+    <label>Property Filter</label>
+    <select name="property_customPropertyFilter">
+        <option value=""></option>
+        <option value="Filter1" selected="@(propertyQuery.Contains("Filter1"))">Filter1</option>
+        <option value="Filter2" selected="@(propertyQuery.Contains("Filter2"))">Filter2</option>
+    </select>
+    <label>Property Filter2</label>
+    <select name="property_customPropertyFilter2">
+        <option value=""></option>
+        <option value="Filter1" selected="@(propertyQuery2.Contains("Filter1"))">Filter1</option>
+        <option value="Filter2" selected="@(propertyQuery2.Contains("Filter2"))">Filter2</option>
+    </select>
     <button type="submit">Filter</button>
 </form>
 

@@ -16,7 +16,10 @@ namespace Ekom.Models
         public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
         {
 
-            Filters = products.Filters();
+            if (query?.AllFiltersVisible == true)
+            {
+                Filters = products.Filters();
+            }
 
             if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
             {
@@ -44,11 +47,15 @@ namespace Ekom.Models
                 }
             }
 
+            if (query?.AllFiltersVisible == false)
+            {
+                Filters = products.Filters();
+            }
+
             ProductCount = products.Count();
 
             if (query?.OrderBy != Utilities.OrderBy.NoOrder)
             {
-
                 products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
             }
 
