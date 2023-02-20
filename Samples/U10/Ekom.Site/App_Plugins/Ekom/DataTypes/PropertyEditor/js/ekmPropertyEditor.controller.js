@@ -89,7 +89,7 @@
 
             ekmResources.getLanguages().then(function (languages) {
 
-              $scope.tabs = languages.map(x => ({ value: x.IsoCode, text: x.CultureName }));
+              $scope.tabs = languages.map(x => ({ value: x.isoCode, text: x.cultureName }));
 
               $scope.loading = false;
 
@@ -115,7 +115,7 @@
 
               $scope.loading = false;
 
-              $scope.tabs = stores.map(x => ({ value: x.Alias, text: x.Title }));
+              $scope.tabs = stores.map(x => ({ value: x.alias, text: x.title }));
 
               setValues();
 

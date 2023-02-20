@@ -41,13 +41,13 @@ angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
 
         let store = $scope.stores[s];
 
-        $scope.ranges[store.Alias] = [];
+        $scope.ranges[store.alias] = [];
 
-        for (c = 0; store.Currencies.length > c; c += 1) {
+        for (c = 0; store.currencies.length > c; c += 1) {
 
-          $scope.ranges[store.Alias].push({
-            Currency: store.Currencies[c].CurrencyValue,
-            Value: parseFloat($scope.model.value.replace(/,/g, '.'))
+          $scope.ranges[store.alias].push({
+            currency: store.currencies[c].currencyValue,
+            value: parseFloat($scope.model.value.replace(/,/g, '.'))
           });
 
         }
@@ -64,13 +64,13 @@ angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
 
         let store = $scope.stores[s];
 
-        $scope.ranges[store.Alias] = [];
+        $scope.ranges[store.alias] = [];
 
-        for (c = 0; store.Currencies.length > c; c += 1) {
+        for (c = 0; store.currencies.length > c; c += 1) {
 
-          $scope.ranges[store.Alias].push({
-            Currency: store.Currencies[c].CurrencyValue,
-            Value: 0
+          $scope.ranges[store.alias].push({
+            currency: store.currencies[c].currencyValue,
+            value: 0
           });
 
         }

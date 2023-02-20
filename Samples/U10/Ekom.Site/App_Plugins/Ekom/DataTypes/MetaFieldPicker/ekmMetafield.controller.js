@@ -31,7 +31,7 @@
               return field.Key === item.Key
             })
 
-            if (item.Values.length > 0) {
+            if (item.values.length > 0) {
               if (currentValue.length > 0) {
                 $scope.values.push(currentValue[0].Values);
               } else {
@@ -67,7 +67,7 @@
           var field = $scope.fields[index];
 
           modifiedValues.push({
-            Key: field.Key,
+            Key: field.key,
             Values: item
           });
         });
