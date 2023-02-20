@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 
 namespace Ekom.Umb;
 
@@ -18,7 +19,14 @@ static class ApplicationBuilderExtensions
         services.AddAspNetCoreEkom();
 
         services.AddControllers()
-            .AddNewtonsoftJson(option => option.SerializerSettings.ContractResolver = new DefaultContractResolver());
+            .AddNewtonsoftJson(option => 
+            option.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver()
+            )
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+
+            });
 
         services.AddTransient<IMemberService, MemberService>();
         services.AddTransient<INodeService, NodeService>();

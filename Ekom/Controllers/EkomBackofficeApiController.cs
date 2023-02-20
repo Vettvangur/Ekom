@@ -1,18 +1,10 @@
-#if NETFRAMEWORK
-using System.Web.Http;
-#else
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-#endif
-using Ekom.Exceptions;
-using Ekom.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
-using Ekom.Services;
 using Ekom.Authorization;
+using Ekom.Exceptions;
 using Ekom.Models;
+using Ekom.Services;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Ekom.Controllers
 {
@@ -27,17 +19,7 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
 
-    public class EkomBackofficeApiController : ApiController
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService)
-        {
-        }
-#else
     [Route("ekom/backoffice")]
     public class EkomBackofficeApiController : ControllerBase
     {
@@ -50,8 +32,6 @@ namespace Ekom.Controllers
             _umbracoService = umbracoService;
             _metafieldService = metafieldService;
         }
-#endif
-
         readonly Configuration _config;
         readonly IUmbracoService _umbracoService;
         readonly IMetafieldService _metafieldService;
