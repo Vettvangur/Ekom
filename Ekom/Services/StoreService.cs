@@ -87,11 +87,8 @@ namespace Ekom.Services
         public IStore GetStoreFromCache()
         {
             ContentRequest contentRequest = null;
-#if NETFRAMEWORK
-            if (_httpContext.Items.Contains("ekmRequest"))
-#else
+
             if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
-#endif
             {
                 var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
                 contentRequest = r.Value as ContentRequest;

@@ -11,6 +11,7 @@ using Ekom.Services;
 using EkomCore.Services;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -166,8 +167,10 @@ namespace Ekom.AspNetCore
                     f.GetService<ILogger<Discounts>>(),
                     f.GetService<IPerStoreCache<IDiscount>>(),
                     f.GetService<IStoreService>()
-                 )
-             );
+            )
+            );
+
+            services.ConfigureOptions<EkomRequestLocalizationOptions>();
 
             services.AddSingleton<DatabaseFactory>();
 

@@ -17,18 +17,6 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
-    public partial class EkomCheckoutApiController : ApiController
-    {
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public EkomCheckoutApiController()
-        {
-            _logger = Ekom.Configuration.Resolver.GetService<ILogger<EkomOrderController>>();
-            _checkoutControllerService = Ekom.Configuration.Resolver.GetService<CheckoutControllerService>();
-        }
-#else
     [Route("ekom/checkout")]
     public partial class EkomCheckoutApiController : ControllerBase
     {
@@ -40,8 +28,6 @@ namespace Ekom.Controllers
             _logger = logger;
             _checkoutControllerService = checkoutControllerService;
         }
-#endif
-
         private readonly ILogger _logger;
         private readonly CheckoutControllerService _checkoutControllerService;
 

@@ -1,9 +1,4 @@
-#if NETFRAMEWORK
-using System.Web.Http;
-using System.Web.Security.AntiXss;
-#else
 using Microsoft.AspNetCore.Mvc;
-#endif
 using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models;
@@ -25,17 +20,7 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
-    public partial class EkomOrderController : ApiController
-    {
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public EkomOrderController()
-        {
-            _logger = Ekom.Configuration.Resolver.GetService<ILogger<EkomOrderController>>();
-        }
-#else
+
     [Route("ekom/order")]
     public partial class EkomOrderController : ControllerBase
     {
@@ -46,7 +31,6 @@ namespace Ekom.Controllers
         {
             _logger = logger;
         }
-#endif
 
         readonly ILogger _logger;
 
@@ -212,22 +196,13 @@ namespace Ekom.Controllers
         {
             try
             {
-#if NETCOREAPP
                 var form = Request.Form;
                 var keys = form.Keys;
-#else
-                var form = await Request.Content.ReadAsFormDataAsync();
-                var keys = form.AllKeys;
-#endif
 
                 var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
                     keys.ToDictionary(
                         k => k,
-#if NETCOREAPP
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-#else
-                        v => AntiXssEncoder.HtmlEncode(form.Get(v), false)
-#endif
                 ));
 
                 return orderInfo;
@@ -389,22 +364,6 @@ namespace Ekom.Controllers
                 orderInfo = await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias).ConfigureAwait(false);
             }
 
-#if NETFRAMEWORK
-            var resp = new HttpResponseMessage
-            {
-                Content = new StringContent(
-                    JsonConvert.SerializeObject(orderInfo), 
-                    Encoding.UTF8, 
-                    "application/json")
-            };
-
-            var cookie = new CookieHeaderValue("EkomCurrency-" + store.Alias, currency);
-            cookie.Expires = DateTimeOffset.UtcNow.AddDays(360);
-
-            resp.Headers.AddCookies(new CookieHeaderValue[] { cookie });
-
-            return resp;
-#else
             // ToDo: Verify this works correctly
             Response.Cookies.Append("EkomCurrency-" + store.Alias, currency, new Microsoft.AspNetCore.Http.CookieOptions
             {
@@ -412,8 +371,6 @@ namespace Ekom.Controllers
             });
 
             return orderInfo;
-#endif
-
 
         }
 

@@ -21,8 +21,8 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
+        //app.UseMiddleware<ControllerMiddleware>();
         app.UseEkomMiddleware();
-
         next(app);
     };
 }

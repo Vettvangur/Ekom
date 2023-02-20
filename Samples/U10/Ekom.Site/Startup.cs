@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Localization;
 using Newtonsoft.Json.Serialization;
 using Vettvangur.Shared;
 
@@ -31,7 +32,7 @@ namespace Ekom.Site
         /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940.
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
-        {
+        {            
             services
                 // https://docs.microsoft.com/en-us/aspnet/core/performance/response-compression?view=aspnetcore-5.0#compression-with-secure-protocol
                 .AddResponseCompression(options => options.EnableForHttps = true)
@@ -72,6 +73,8 @@ namespace Ekom.Site
         /// <param name="env">The web hosting environment.</param>
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseRequestLocalization();
+            
             app.UseVettvangurDefaults(
                 env,
                 _config,

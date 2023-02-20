@@ -8,7 +8,6 @@ namespace Ekom.Models
         public IEnumerable<int> Ids { get; set; }
         public IEnumerable<Guid> Keys { get; set; }
         public List<EkomSearchField> SearchFields { get; set; } = null; 
-        public string Culture { get; set; } = null;
         public string StoreAlias { get; set; } = null;
         public bool AllFiltersVisible { get; set; } = false;
     }

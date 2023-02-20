@@ -196,8 +196,6 @@ namespace Ekom.API
         {
             var store = _storeSvc.GetStoreFromCache();
 
-            SetCulture(query?.Culture);
-
             if (store != null)
             {
                 var products = GetAllProducts(store.Alias, query);
@@ -222,8 +220,6 @@ namespace Ekom.API
             {
                 return new ProductResponse();
             }
-
-            SetCulture(query?.Culture);
 
             var products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
             
@@ -269,8 +265,6 @@ namespace Ekom.API
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            SetCulture(query.Culture);
-
             var products = new List<IProduct>();
 
             foreach (var id in query.Ids)
@@ -299,8 +293,6 @@ namespace Ekom.API
             }
 
             var store = _storeSvc.GetStoreFromCache();
-
-            SetCulture(query.Culture);
             
             if (store != null)
             {
@@ -323,8 +315,6 @@ namespace Ekom.API
             {
                 throw new ArgumentException(nameof(storeAlias));
             }
-
-            SetCulture(query.Culture);
 
             var products = new List<IProduct>();
             foreach (var id in query.Keys)
@@ -659,7 +649,6 @@ namespace Ekom.API
             var productQuery = new ProductQuery();
 
             productQuery.Ids = result.Select(x => x.ParentId);
-            productQuery.Culture = req.Culture;
             productQuery.MetaFilters = req.MetaFilters;
             productQuery.PropertyFilters = req.PropertyFilters;
             productQuery.OrderBy = req.OrderBy;
@@ -668,18 +657,6 @@ namespace Ekom.API
 
             return products;
         }
-
-        private void SetCulture(string culture)
-        {
-            if (!string.IsNullOrEmpty(culture))
-            {
-                var cultureInfo = new CultureInfo(culture);
-
-                CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
-                CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
-            }
-        }
-
 
     }
 }
