@@ -57,7 +57,7 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     /// </summary>
     [PaymentSettingsIgnore]
     //[EkomProperty]
-    public string EkomPropertyKey { get; set; }
+    public Dictionary<PropertyEditorType, string> EkomPropertyKey { get; set; }
 
     /// <summary>
     /// Optionally store umbraco member id in persisted order

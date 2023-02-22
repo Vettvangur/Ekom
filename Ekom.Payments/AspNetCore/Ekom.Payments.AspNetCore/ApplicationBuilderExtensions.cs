@@ -12,6 +12,7 @@ static class ApplicationBuilderExtensions
     {
         var config = new PaymentsConfiguration();
         configuration.Bind("Ekom:Payments", config);
+        
         services.AddSingleton(config);
         services.AddSingleton<IDatabaseFactory, DatabaseFactory>();
 

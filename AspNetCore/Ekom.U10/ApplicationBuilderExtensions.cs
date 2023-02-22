@@ -17,7 +17,7 @@ static class ApplicationBuilderExtensions
 
         services.AddAspNetCoreEkom();
 
-        services.AddControllers()
+        Nope ! services.AddControllers()
             .AddNewtonsoftJson(option => option.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
         services.AddTransient<IMemberService, MemberService>();

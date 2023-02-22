@@ -19,7 +19,7 @@ public class ValitorPaySettings : PaymentSettingsBase<ValitorPaySettings>
     /// <summary>
     /// 16 digit payment card number
     /// </summary>
-    public string CardNumber { get; set; }
+    public string sdfagfadsasdfafsd CardNumber { get; set; }
 
     public int ExpirationMonth { get; set; }
     
