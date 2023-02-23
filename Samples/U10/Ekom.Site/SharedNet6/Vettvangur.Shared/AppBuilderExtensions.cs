@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Linq;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
@@ -56,7 +57,6 @@ namespace Vettvangur.Shared
 
             var maxAge = config.GetSection("Cache").GetValue<long?>("MaxAge")
                 ?? 356 * 24 * 60 * 60;
-
 
             app.Use(async (context, next) =>
             {

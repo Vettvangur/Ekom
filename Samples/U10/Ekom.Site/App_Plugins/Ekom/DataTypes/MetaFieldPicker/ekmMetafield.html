@@ -7,27 +7,27 @@
   <div class="metafields" ng-if="!loading"
        ng-repeat="field in fields track by $index" style="margin-bottom: 20px;">
     <label for="metafield_{{$index}}" style="display:block;">
-      {{ field.Name }}
+      {{ field.name }}
       <button type="button" ng-click="Reset($index)" class="btn" style="float:right; margin-bottom: 10px;">Clear</button>
-      <small ng-if="field.Description.length > 0">{{ field.Description }}</small>
+      <small ng-if="field.description.length > 0">{{ field.description }}</small>
     </label>
     <div class="metafields__input">
-      <div ng-if="field.Values.length > 0">
+      <div ng-if="field.values.length > 0">
 
-        <div ng-if="field.EnableMultipleChoice">
+        <div ng-if="field.enableMultipleChoice">
           <select chosen
                   multiple
                   options=""
                   ng-model="values[$index]"
-                  ng-options="option.Values[languages[0].IsoCode] for option in field.Values track by option.Id">
+                  ng-options="option.values[languages[0].isoCode] for option in field.values track by option.Id">
           </select>
         </div>
 
-        <div ng-if="!field.EnableMultipleChoice">
+        <div ng-if="!field.enableMultipleChoice">
           <select chosen
                   options=""
                   ng-model="values[$index]"
-                  ng-options="option.Values[languages[0].IsoCode] for option in field.Values track by option.Id">
+                  ng-options="option.values[languages[0].isoCode] for option in field.values track by option.Id">
           </select>
         </div>
 
@@ -36,7 +36,7 @@
           <option value="">Select value</option>
         </select>-->
       </div>
-      <div ng-if="field.Values.length <= 0">
+      <div ng-if="field.values.length <= 0">
         <input name="metafield_{{$index}}"
                id="metafield_{{$index}}"
                type="text"

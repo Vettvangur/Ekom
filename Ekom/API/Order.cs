@@ -2,14 +2,11 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 namespace Ekom.API
 {
     /// <summary>
@@ -22,28 +19,6 @@ namespace Ekom.API
         /// </summary>
         public static Order Instance => Configuration.Resolver.GetService<Order>();
 
-        #region Events
-
-        /// <summary>
-        /// Event to fire on <see cref="IOrderInfo"/> updates
-        /// </summary>
-        public static event EventHandler<OrderUpdatedEventArgs> OrderUpdated;
-        internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args)
-            => OrderUpdated?.Invoke(sender, args);
-
-        public static event EventHandler<OrderUpdatingEventArgs> OrderUpdateing;
-        internal static void OnOrderUpdateing(object sender, OrderUpdatingEventArgs args)
-            => OrderUpdateing?.Invoke(sender, args);
-
-        public static event EventHandler<OrderStatusEventArgs> OrderStatusChanging;
-        internal static void OnOrderStatusChanging(object sender, OrderStatusEventArgs args)
-            => OrderStatusChanging?.Invoke(sender, args);
-        public static event EventHandler<OrderStatusEventArgs> OrderStatusChanged;
-        internal static void OnOrderStatusChanged(object sender, OrderStatusEventArgs args)
-            => OrderStatusChanged?.Invoke(sender, args);
-
-        #endregion
-
         readonly ILogger<Order> _logger;
         readonly Configuration _config;
         readonly DiscountCache _discountCache;
@@ -51,6 +26,7 @@ namespace Ekom.API
         readonly OrderService _orderService;
         readonly CheckoutService _checkoutService;
         readonly IStoreService _storeSvc;
+        readonly OrderRepository _orderRepo;
 
         /// <summary>
         /// ctor
@@ -62,7 +38,8 @@ namespace Ekom.API
             ICouponCache couponCache,
             OrderService orderService,
             CheckoutService checkoutService,
-            IStoreService storeService
+            IStoreService storeService,
+            OrderRepository orderRepo
         )
         {
             _discountCache = discountCache;
@@ -72,6 +49,7 @@ namespace Ekom.API
             _couponCache = couponCache;
             _config = config;
             _logger = logger;
+            _orderRepo = orderRepo;
         }
 
         public IOrderInfo GetOrder() => GetOrderAsync().Result;
@@ -450,6 +428,13 @@ namespace Ekom.API
         {
             await _checkoutService.CompleteAsync(orderId)
                 .ConfigureAwait(false);
+        }
+
+        public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData order = null)
+        {
+            order = order == null ? await _orderRepo.GetOrderAsync(orderId).ConfigureAwait(false) : order;
+
+            _orderService.ClearCustomerOrderReference(order);
         }
 
         /// <summary>

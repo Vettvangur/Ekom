@@ -1,17 +1,12 @@
 using Ekom.API;
+using Ekom.Events;
 using Ekom.Exceptions;
-using Ekom.Extensions.Models;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
 using LinqToDB;
-#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-#else
-using System.Web;
-using System.Web.Security.AntiXss;
-#endif
 using Microsoft.Extensions.Logging;
 
 namespace Ekom.Services
@@ -34,11 +29,7 @@ namespace Ekom.Services
         protected readonly ILogger Logger;
         protected readonly Configuration Config;
         protected readonly INetPaymentService netPaymentService;
-#if NETCOREAPP
         readonly HttpContext _httpCtx;
-#else
-        readonly HttpContextBase _httpCtx;
-#endif
         protected string Culture;
 
         public CheckoutControllerService(
@@ -47,18 +38,10 @@ namespace Ekom.Services
             DatabaseFactory databaseFactory,
             IUmbracoService umbracoService,
             IMemberService memberService,
-#if NETCOREAPP
             IHttpContextAccessor httpContextAccessor,
-#else
-            HttpContextBase httpCtx,
-#endif
             INetPaymentService netPaymentService)
         {
-#if NETCOREAPP
             _httpCtx = httpContextAccessor.HttpContext;
-#else
-            _httpCtx = httpCtx;
-#endif
 
             Logger = logger;
             Config = config;
@@ -68,14 +51,6 @@ namespace Ekom.Services
             this.netPaymentService = netPaymentService;
             //HttpContext = httpContext;
         }
-
-        public static event EventHandler<PayEventArgs> PayEvent;
-        internal static void OnPay(object sender, PayEventArgs args)
-            => PayEvent?.Invoke(sender, args);
-
-        public static event EventHandler<ProcessingEventArgs> ProcessingEvent;
-        internal static void OnProcessing(object sender, ProcessingEventArgs args)
-            => ProcessingEvent?.Invoke(sender, args);
 
         internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
         {
@@ -152,11 +127,7 @@ namespace Ekom.Services
         protected virtual async Task<CheckoutResponse> ValidationAndOrderUpdatesAsync(
             PaymentRequest paymentRequest,
             IOrderInfo order,
-#if NETCOREAPP
             IFormCollection form)
-#else
-            NameValueCollection form)
-#endif
         {
             if (paymentRequest == null)
             {
@@ -169,28 +140,22 @@ namespace Ekom.Services
                 };
             }
 
-#if NETCOREAPP
             var keys = form.Keys;
-#else
-            var keys = form.AllKeys;
-#endif
 
             if (keys.Contains("ekomUpdateInformation"))
             {
-                var save = false;
+                var saveCustomerData = false;
                 var formCollection = keys.ToDictionary(
                         k => k,
-#if NETCOREAPP
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-#else
-                        v => AntiXssEncoder.HtmlEncode(form.Get(v), false)
-#endif
                     );
+                
                 if (!formCollection.ContainsKey("storeAlias"))
                 {
                     formCollection.Add("storeAlias", order.StoreInfo.Alias);
-                    save = true;
+                    saveCustomerData = true;
                 }
+
                 if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
                 {
                     var member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
@@ -200,20 +165,22 @@ namespace Ekom.Services
                         if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name))
                         {
                             formCollection.Add("customerName", member.Name);
-                            save = true;
                         }
                         if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email))
                         {
                             formCollection.Add("customerEmail", member.Email);
-                            save = true;
                         }
 
                     }
                 }
 
-                if (save)
+                if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
                 {
-                    Logger.LogInformation("Saving member data to customer data in orderinfo. " + order.UniqueId);
+                    saveCustomerData = true;
+                }
+
+                if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
+                {
                     order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
                 }
             }
@@ -270,7 +237,7 @@ namespace Ekom.Services
         {
             #region Stock
 
-            OnProcessing(this, new ProcessingEventArgs
+            CheckoutEvents.OnProcessing(this, new ProcessingEventArgs
             {
                 OrderInfo = order
             });
@@ -431,6 +398,7 @@ namespace Ekom.Services
             var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
             var orderItems = new List<OrderInfo>();
+            
             //orderItems.Add(new OrderInfo
             //{
             //    GrandTotal = order.ChargedAmount.Value,
@@ -445,29 +413,38 @@ namespace Ekom.Services
                 ekomPP.Name,
                 isOfflinePayment);
 
+            var errorUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
+            ekomPP.GetValue("errorUrl", storeAlias),
+            new Uri(_httpCtx.Request.GetEncodedUrl()));
+
             if (isOfflinePayment)
             {
                 try
                 {
-                    var successUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
+                    var successUrl = Utilities.UriHelper.EnsureFullUri(
                         ekomPP.GetValue("successUrl", storeAlias),
-#if NETCOREAPP
                         new Uri(_httpCtx.Request.GetEncodedUrl()))
-#else
-                        new Uri(_httpCtx.Request.Url.AbsolutePath))
-#endif
                     + "?orderId=" + order.UniqueId;
 
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
-
-                    netPaymentService.OnSuccess(
-                        ekomPP.Key,
-                        ekomPP.Name,
-                        (MemberService.GetCurrentMember()).Key.ToString(),
-                        order.UniqueId.ToString());
-
+                    
+                    try
+                    {
+                        netPaymentService.OnSuccess(
+                            ekomPP.Key,
+                            ekomPP.Name,
+                            (MemberService.GetCurrentMember()).Key.ToString(),
+                            order.UniqueId.ToString());
+                    }
+                    catch
+                    {
+                        //TODO: We need to get the error url from the OnSuccess event to override it
+                        //errorUrl = status.ErrorUrl;
+                        throw;
+                    }
+                    
                     return new CheckoutResponse
                     {
                         ResponseBody = successUrl,
@@ -478,18 +455,14 @@ namespace Ekom.Services
                 catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
+                    await Order.Instance.UpdateStatusAsync(
+                    OrderStatus.PaymentFailed,
+                    order.UniqueId).ConfigureAwait(false);
+                    
                     Logger.LogError(
                         ex,
                         "Offline Payment Failed. Order: {UniqueId}",
                         order.UniqueId);
-
-                    var errorUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
-                        ekomPP.GetValue("errorUrl", storeAlias),
-#if NETCOREAPP
-                        new Uri(_httpCtx.Request.GetEncodedUrl()));
-#else
-                        new Uri(_httpCtx.Request.Url.AbsolutePath));
-#endif
 
                     return new CheckoutResponse
                     {
@@ -553,7 +526,7 @@ namespace Ekom.Services
                 //    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
                 //};
 
-                //OnPay(this, new PayEventArgs
+                //CheckoutEvents.OnPay(this, new PayEventArgs
                 //{
                 //    OrderInfo = order,
                 //    PaymentSettings = paymentSettings

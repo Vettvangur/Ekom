@@ -25,5 +25,5 @@ public enum PropertyEditorType
 {
     Empty,
     Store,
-    Language
+    Language,
 }

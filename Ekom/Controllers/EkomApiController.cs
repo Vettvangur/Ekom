@@ -1,9 +1,4 @@
-#if NETFRAMEWORK
-using System.Web.Http;
-#else
 using Microsoft.AspNetCore.Mvc;
-#endif
-
 using Ekom.Domain.Repositories;
 using Ekom.Models;
 
@@ -21,18 +16,7 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
-    public class EkomApiController : ApiController
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public EkomApiController()
-        {
-            _config = Ekom.Configuration.Resolver.GetService<Configuration>();
-            _countriesRepo = Ekom.Configuration.Resolver.GetService<CountriesRepository>();
-        }
-#else
+
     [Route("ekom/api")]
     public class EkomApiController : ControllerBase
     {
@@ -44,8 +28,6 @@ namespace Ekom.Controllers
             _config = config;
             _countriesRepo = countriesRepo;
         }
-
-#endif
 
         readonly CountriesRepository _countriesRepo;
         readonly Configuration _config;

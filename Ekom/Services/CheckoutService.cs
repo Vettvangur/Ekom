@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
@@ -58,13 +59,27 @@ namespace Ekom.Services
 
                 oi = new OrderInfo(o);
 
+                var model = new CompleteCheckoutEventArgs()
+                {
+                    OrderInfo = oi,
+                    StockValidation = true,
+                    UpdateOrderStatus = true,
+                    OrderData = o
+                };
+
+                CheckoutEvents.OnCompleteCheckout(this, model);
+
                 // Currently unused
                 foreach (var job in oi.HangfireJobs)
                 {
                     Stock.Instance.CancelRollback(job);
                 }
 
-                await ProcessOrderLinesStockAsync(oi).ConfigureAwait(false);
+                if (model.StockValidation)
+                {
+                    await ProcessOrderLinesStockAsync(oi).ConfigureAwait(false);
+                }
+
 
                 if (oi.Discount != null)
                 {
@@ -114,9 +129,11 @@ namespace Ekom.Services
                         //_logger.LogError(ex);
                     }
                 }
-
-                await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
+                if (model.UpdateOrderStatus)
+                {
+                    await _orderService.ChangeOrderStatusAsync(o.UniqueId, OrderStatus.ReadyForDispatch)
                     .ConfigureAwait(false);
+                }
             }
             catch (NotEnoughStockException ex)
             {

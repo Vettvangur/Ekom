@@ -13,8 +13,8 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsServi
       $scope.storeList = results.data;
 
       if ($scope.storeList.length > 0) {
-        $scope.storeSelected = $scope.storeList[0].Alias;
-        $scope.GetStock($scope.storeList[0].Alias);
+        $scope.storeSelected = $scope.storeList[0].alias;
+        $scope.GetStock($scope.storeList[0].alias);
       }
 
     });

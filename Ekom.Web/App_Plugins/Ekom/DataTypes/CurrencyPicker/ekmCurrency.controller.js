@@ -15,7 +15,7 @@ angular.module("umbraco").controller("Ekom.Currency", function ($scope, assetsSe
 
     if ($scope.currencyCulture !== '' && $scope.currencyFormat !== '') {
 
-      var currencyItem = { "CurrencyFormat": $scope.currencyFormat, "CurrencyValue": $scope.currencyCulture, "Sort": $scope.currencies.length };
+      var currencyItem = { "currencyFormat": $scope.currencyFormat, "currencyValue": $scope.currencyCulture, "sort": $scope.currencies.length };
 
       $scope.currencies.push(currencyItem);
     }
@@ -23,7 +23,7 @@ angular.module("umbraco").controller("Ekom.Currency", function ($scope, assetsSe
   };
 
   $scope.combine = function (item) {
-    return "Culture: " + item.CurrencyValue + " Format: " + item.CurrencyFormat;
+    return "Culture: " + item.currencyValue + " Format: " + item.currencyFormat;
   };
 
   $scope.removeCurrency = function (itemToRemove) {

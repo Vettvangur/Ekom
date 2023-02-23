@@ -73,8 +73,7 @@ namespace Ekom.Cache
             else
             {
                 _logger.LogError(
-                    "No examine search found with the name {ExamineIndex}, Can not fill cache.",
-                    _config.ExamineIndex
+                    "No NodeAlias, Can not fill cache."
                 );
             }
         }

@@ -1,16 +1,26 @@
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {
     public class ProductResponse
     {
+        public ProductResponse()
+        {
+            Products = Enumerable.Empty<IProduct>();
+            ProductCount = 0;
+            Filters = Enumerable.Empty<MetafieldGrouped>();
+        }
+
         public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
         {
-            
+
+            if (query?.AllFiltersVisible == true)
+            {
+                Filters = products.Filters();
+            }
+
             if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
             {
                 products = products.Filter(query);
@@ -20,9 +30,14 @@ namespace Ekom.Models
             {
                 var scope = Configuration.Resolver.CreateScope();
                 var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                var searchResults = _searhService.QueryCatalog(query.SearchQuery, out long total, int.MaxValue);
+                var searchResults = _searhService.Query(new SearchRequest() {
+                    SearchQuery = query.SearchQuery,
+                    NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+                    SearchFields = query.SearchFields,
+                }, out long total);
                 
                 scope.Dispose();
+
                 if (searchResults == null || total <= 0)
                 {
                     products = Enumerable.Empty<IProduct>();
@@ -30,12 +45,19 @@ namespace Ekom.Models
                 {
                     products = products.Where(x => searchResults.Any(y => y.Id == x.Id));
                 }
-                
+            }
+
+            if (query?.AllFiltersVisible == false)
+            {
+                Filters = products.Filters();
             }
 
             ProductCount = products.Count();
 
-            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            if (query?.OrderBy != Utilities.OrderBy.NoOrder)
+            {
+                products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            }
 
             if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
             {
@@ -51,13 +73,12 @@ namespace Ekom.Models
             }
 
         }
-
         public IEnumerable<IProduct> Products { get; set; }
         public int? PageCount { get; set; }
         public int? PageSize { get; set; }
         public int? Page { get; set; }
         public int ProductCount { get; set; }
-        
+        public IEnumerable<MetafieldGrouped> Filters { get; set; }
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
             

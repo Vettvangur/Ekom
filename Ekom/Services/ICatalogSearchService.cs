@@ -4,6 +4,6 @@ namespace Ekom.Services
 {
     interface ICatalogSearchService
     {
-        IEnumerable<SearchResultEntity> QueryCatalog(string query, out long totalRecords, int take = 30);
+        IEnumerable<SearchResultEntity> Query(SearchRequest req, out long total);
     }
 }

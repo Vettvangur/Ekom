@@ -12,8 +12,6 @@ namespace Ekom.Models
     {
 
         private IStore _store;
-
-#if NETCOREAPP
         private readonly HttpContext _httpCtx;
         public ContentRequest(HttpContext httpResponse)
         {
@@ -33,23 +31,6 @@ namespace Ekom.Models
 
                 _store = value;
             }
-#else
-        private readonly HttpContextBase _httpCtx;
-        public ContentRequest(HttpContextBase httpResponse)
-        {
-            _httpCtx = httpResponse;
-        }
-        public string IPAddress => _httpCtx.Request.UserHostAddress;
-        public IStore Store
-        {
-            set
-            {
-                // Make sure to update users cookies on store change
-                _httpCtx.Response.Cookies["StoreInfo"].Values["StoreAlias"] = value.Alias;
-
-                _store = value;
-            }
-#endif
 
             get { return _store; }
         }

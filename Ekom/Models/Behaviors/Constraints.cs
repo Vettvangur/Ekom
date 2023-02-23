@@ -1,17 +1,10 @@
 using Ekom.Cache;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Ekom.Utilities;
-#if NETCOREAPP
-using Microsoft.AspNetCore.Http;
-#else
-using Microsoft.Identity.Client;
-using System.Web;
-#endif
+
 
 namespace Ekom.Models
 {
@@ -46,43 +39,48 @@ namespace Ekom.Models
         {
             get
             {
+
+                IStore store = null;
+
                 try
                 {
-#if NETCOREAPP
-                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
-#else
-                    var httpContext = Configuration.Resolver.GetService<HttpContextBase>();
-#endif
+                    store = _node is PerStoreNodeEntity perStoreNode
+                    ? perStoreNode.Store
+                    : API.Store.Instance.GetStore();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Provider constraints for StartRange could not get store.");
+                }
 
-                    if (httpContext?.Request != null)
+                if (store != null && store.Currencies.Count() > 1)
+                {
+                    try
                     {
-                        var store = _node is PerStoreNodeEntity perStoreNode
-                            ? perStoreNode.Store
-                            : API.Store.Instance.GetStore();
+                        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
 
-                        var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
+                        if (httpContext?.Request != null)
+                        {
+                            var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
 
-#if NETCOREAPP
-                        if (cookie != null && !string.IsNullOrEmpty(cookie))
-                        {
-                            var price = StartRanges.FirstOrDefault(x => x.Currency == cookie);
-#else
-                        if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
-                        {
-                            var price = StartRanges.FirstOrDefault(x => x.Currency == cookie.Value);
-#endif
-                            if (price != null)
+                            if (cookie != null && !string.IsNullOrEmpty(cookie))
                             {
-                                return price.Value;
+                                var price = StartRanges.FirstOrDefault(x => x.Currency == cookie);
+
+                                if (price != null)
+                                {
+                                    return price.Value;
+                                }
                             }
                         }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Failed get StartRange from httpContext. Node: " + _node?.Id);
                     }
                 }
-                catch (ArgumentNullException ex)
-                {
-                    Logger.LogError(ex, "Failed get start range from httpContext. Node: " + _node?.Id);
-                }
-
+                
                 return StartRanges.FirstOrDefault()?.Value ?? 0;
             }
         }
@@ -123,40 +121,48 @@ namespace Ekom.Models
         {
             get
             {
+
+                IStore store = null;
+
                 try
                 {
-#if NETCOREAPP
-                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
-#else
-                    var httpContext = Configuration.Resolver.GetService<HttpContextBase>();
-#endif
+                    store = _node is PerStoreNodeEntity perStoreNode
+                    ? perStoreNode.Store
+                    : API.Store.Instance.GetStore();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Provider constraints for EndRange could not get store.");
+                }
 
-                    if (httpContext?.Request != null)
+                if (store != null && store.Currencies.Count() > 1)
+                {
+                    try
                     {
-                        var store = _node is PerStoreNodeEntity perStoreNode ? perStoreNode.Store : API.Store.Instance.GetStore();
+                        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
 
-                        var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
+                        if (httpContext?.Request != null)
+                        {
+                            var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
 
-#if NETCOREAPP
-                        if (cookie != null && !string.IsNullOrEmpty(cookie))
-                        {
-                            var price = EndRanges.FirstOrDefault(x => x.Currency == cookie);
-#else
-                        if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
-                        {
-                            var price = EndRanges.FirstOrDefault(x => x.Currency == cookie.Value);
-#endif
-                            if (price != null)
+                            if (cookie != null && !string.IsNullOrEmpty(cookie))
                             {
-                                return price.Value;
+                                var price = EndRanges.FirstOrDefault(x => x.Currency == cookie);
+
+                                if (price != null)
+                                {
+                                    return price.Value;
+                                }
                             }
                         }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Failed get EndRange from httpContext. Node: " + _node?.Id);
                     }
                 }
-                catch (ArgumentNullException ex)
-                {
-                    Logger.LogError(ex, "Failed get end range from httpContext. Node: " + _node?.Id);
-                }
+
                 return EndRanges.FirstOrDefault()?.Value ?? 0;
             }
         }

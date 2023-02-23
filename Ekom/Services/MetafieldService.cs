@@ -216,23 +216,23 @@ namespace EkomCore.Services
                 products = products
                     .Where(x =>
                         x.Metafields.Any(metaField =>
-                            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any()).Any(filter =>
+                            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
+                            .All(filter =>
                                 filter.Key == metaField.Field.Id.ToString() &&
                                 filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
-                                )
+                            )
                         )
                 );
             }
 
             if (query?.PropertyFilters?.Any() == true)
             {
-                products = products.Where(x =>
-                x.Properties.Any(p =>
-                    query.PropertyFilters.Where(f =>
-                        !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any() && !string.IsNullOrEmpty(p.Value)).Any(filter =>
-                        filter.Key == p.Key &&
-                        filter.Value.Any(d => p.Value.Contains(d))))
-                );
+
+                products = products.Where(product => 
+                    query.PropertyFilters
+                    .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
+                    .All(f =>product.Properties.Any(p => p.Key == f.Key && 
+                        f.Value.Any(d => p.Value != null && p.Value.Contains(d, StringComparison.InvariantCultureIgnoreCase)))));
             }
 
             return products;

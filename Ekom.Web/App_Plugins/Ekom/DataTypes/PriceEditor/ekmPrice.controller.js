@@ -51,13 +51,13 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
         let store = $scope.stores[s];
 
-        $scope.prices[store.Alias] = [];
+        $scope.prices[store.alias] = [];
 
-        for (c = 0; store.Currencies.length > c; c += 1) {
+        for (c = 0; store.currencies.length > c; c += 1) {
 
-          $scope.prices[store.Alias].push({
-            Currency: store.Currencies[c].CurrencyValue,
-            Price: parseFloat($scope.model.value.replace(/,/g, '.'))
+          $scope.prices[store.alias].push({
+            currency: store.currencies[c].currencyValue,
+            price: parseFloat($scope.model.value.replace(/,/g, '.'))
           });
 
         }

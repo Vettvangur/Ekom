@@ -35,7 +35,7 @@ angular.module("umbraco").controller("Ekom.Zone", function ($scope, assetsServic
       $(itemsToMove).each(function () {
 
         for (i = 0; sourceList.length > i; i += 1) {
-          if (sourceList[i].Code == this) {
+          if (sourceList[i].code == this) {
 
             targetList.push(sourceList[i]);
 

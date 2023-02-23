@@ -176,5 +176,6 @@ public enum OrderBy
     PriceAsc,
     PriceDesc,
     DateAsc,
-    DateDesc
+    DateDesc,
+    NoOrder,
 }

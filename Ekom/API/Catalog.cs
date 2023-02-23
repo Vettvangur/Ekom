@@ -1,18 +1,13 @@
-#if NETFRAMEWORK
-using System.Web;
-using System.Web.Http;
-#else
-using Microsoft.AspNetCore.Http;
-#endif
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Data;
+using System.Globalization;
 
 namespace Ekom.API
 {
@@ -49,10 +44,8 @@ namespace Ekom.API
             IPerStoreCache<IProductDiscount> productDiscountCache,
             IPerStoreCache<IVariant> variantCache,
             IPerStoreCache<IVariantGroup> variantGroupCache,
-            IStoreService storeService
-#if NETCOREAPP
-            ,IHttpContextAccessor httpContextAccessor
-#endif
+            IStoreService storeService,
+            IHttpContextAccessor httpContextAccessor
         )
         {
             _config = config;
@@ -64,12 +57,7 @@ namespace Ekom.API
             _productDiscountCache = productDiscountCache;
             _storeSvc = storeService;
             _metafieldService = metafieldService;
-
-#if NETFRAMEWORK
-            _httpContext = HttpContext.Current;
-#else
             _httpContext = httpContextAccessor.HttpContext;
-#endif
         }
 
         /// <summary>
@@ -79,11 +67,7 @@ namespace Ekom.API
         public IProduct GetProduct()
         {
             ContentRequest contentRequest = null;
-#if NETFRAMEWORK
-            if (_httpContext.Items.Contains("ekmRequest"))
-#else
             if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
-#endif
             {
                 var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
                 contentRequest = r.Value as ContentRequest;
@@ -234,7 +218,7 @@ namespace Ekom.API
 
             if (!_productCache.Cache.ContainsKey(storeAlias))
             {
-                return null;
+                return new ProductResponse();
             }
 
             var products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
@@ -253,6 +237,11 @@ namespace Ekom.API
             }
 
             var store = _storeSvc.GetStoreFromCache();
+
+            if (store == null && !string.IsNullOrEmpty(query.StoreAlias))
+            {
+                store = _storeSvc.GetStoreByAlias(query.StoreAlias);
+            }
 
             if (store != null)
             {
@@ -304,7 +293,7 @@ namespace Ekom.API
             }
 
             var store = _storeSvc.GetStoreFromCache();
-
+            
             if (store != null)
             {
                return GetProductsByKeys(store.Alias, query);
@@ -347,11 +336,7 @@ namespace Ekom.API
         /// <returns></returns>
         public ICategory GetCategory()
         {
-#if NETFRAMEWORK
-            if (_httpContext.Items.Contains("ekmRequest"))
-#else
             if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
-#endif
             {
                 var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
                 var contentRequest = r.Value as ContentRequest;
@@ -637,6 +622,40 @@ namespace Ekom.API
             }
             
             return product.RelatedProducts(count);
+        }
+        
+        /// <summary>
+        /// Search Products
+        /// </summary>
+        public ProductResponse ProductSearch(SearchRequest req)
+        {
+            if (string.IsNullOrEmpty(req?.SearchQuery))
+            {
+                return new ProductResponse();
+            }
+
+            if (req.NodeTypeAlias == null || !req.NodeTypeAlias.Any())
+            {
+                req.NodeTypeAlias = new string[] { "ekmProduct", "ekmVariant" };
+            }
+
+            var scope = Configuration.Resolver.CreateScope();
+            var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+
+            var result = _searhService.Query(req, out long total);
+
+            scope.Dispose();
+
+            var productQuery = new ProductQuery();
+
+            productQuery.Ids = result.Select(x => x.ParentId);
+            productQuery.MetaFilters = req.MetaFilters;
+            productQuery.PropertyFilters = req.PropertyFilters;
+            productQuery.OrderBy = req.OrderBy;
+            
+            var products = GetProductsByIds(productQuery);
+
+            return products;
         }
 
     }

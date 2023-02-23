@@ -85,7 +85,7 @@ namespace Ekom.Cache
 
                 try
                 {
-                    var results = nodeService.NodesByTypes(NodeAlias).ToList();
+                    var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished()).ToList();
 
                     if (storeParam == null) // Startup initialization
                     {
@@ -115,8 +115,7 @@ namespace Ekom.Cache
             else
             {
                 _logger.LogError(
-                    "No examine search found with the name {ExamineIndex}, Can not fill cache.",
-                    _config.ExamineIndex
+                    "No NodeAlias, Can not fill cache."
                 );
             }
         }

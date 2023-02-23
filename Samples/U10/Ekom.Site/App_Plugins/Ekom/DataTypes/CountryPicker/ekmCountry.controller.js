@@ -5,7 +5,7 @@ angular.module("umbraco").controller("Ekom.Country", function ($scope, assetsSer
     $scope.ItemArray = res.data;
 
     $scope.combined = function (country) {
-      return country.Name + " (" + country.Code + ")";
+      return country.Name + " (" + country.code + ")";
     };
 
     if ($scope.model.value != '') {
@@ -26,11 +26,11 @@ angular.module("umbraco").controller("Ekom.Country", function ($scope, assetsSer
     }
 
     $scope.update = function () {
-      $scope.model.value = $scope.selectedOption.Code;
+      $scope.model.value = $scope.selectedOption.code;
     };
 
     $scope.$on("formSubmitting", function () {
-      $scope.model.value = $scope.selectedOption.Code;
+      $scope.model.value = $scope.selectedOption.code;
     });
   });
 });

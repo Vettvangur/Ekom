@@ -1,15 +1,14 @@
-﻿<div ng-controller="Ekom.Range">
+<div ng-controller="Ekom.Range">
 
   <fieldset ng-repeat="store in stores">
-    <legend style="font-size: 18px; font-weight:bold;">{{ store.Alias }}</legend>
-    <div ng-repeat="currency in store.Currencies">
+    <legend style="font-size: 18px; font-weight:bold;">{{ store.alias }}</legend>
+    <div ng-repeat="currency in store.currencies">
       <div style="margin-bottom:10px;">
-        <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="range_{{ currency.ISOCurrencySymbol }}_{{ fieldAlias }}_{{ store.Alias }}">
-          {{ currency.ISOCurrencySymbol }}
+        <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="range_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">
+          {{ currency.isoCurrencySymbol }}
         </label>
-        <input type="number" min="0" step="any" id="range_{{ currency.ISOCurrencySymbol }}_{{ fieldAlias }}_{{ store.Alias }}" ng-model="ranges[store.Alias][$index].Value" />
+        <input type="number" min="0" step="any" id="range_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="ranges[store.alias][$index].Value" />
       </div>
     </div>
-    <fieldset />
-
+    </fieldset>
 </div>

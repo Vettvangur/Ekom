@@ -229,7 +229,14 @@ namespace Ekom.Utilities
 
             if (property.GetValue() != null)
             {
-                return JsonConvert.DeserializeObject<PropertyValue>(property.GetValue().ToString());
+                try
+                {
+                    return JsonConvert.DeserializeObject<PropertyValue>(property.GetValue().ToString());
+                } catch(JsonException ex)
+                {
+                    return null;
+                   
+                }
             }
 
             return null;

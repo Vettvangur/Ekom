@@ -1,12 +1,7 @@
-#if NETFRAMEWORK
-using System.Web.Http;
-#else
-using Microsoft.AspNetCore.Mvc;
-#endif
-using Ekom.Utilities;
-using Ekom.Models;
 using Ekom.Exceptions;
-using System.ComponentModel.DataAnnotations;
+using Ekom.Models;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Controllers
 {
@@ -21,16 +16,9 @@ namespace Ekom.Controllers
         "Style",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
-#if NETFRAMEWORK
-    public class EkomCatalogController : ApiController
-    {
-#else
     [Route("ekom/catalog")]
     public class EkomCatalogController : ControllerBase
     {
-
-#endif
-
         /// <summary>
         /// ctor
         /// </summary>
@@ -43,7 +31,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Guid Key of product</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("product/{id:Guid}")]
         public IProduct GetProduct(Guid Id)
         {
@@ -62,7 +50,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Int Id of product</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("product/{id:Int}")]
         public IProduct GetProduct(int Id)
         {
@@ -107,7 +95,7 @@ namespace Ekom.Controllers
         public ProductResponse GetProductsByIds([FromBody] ProductQuery query = null)
         {
             try
-            {                
+            {
                 return API.Catalog.Instance.GetProductsByIds(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
@@ -161,7 +149,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Int Id of category</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("category/{id:Int}")]
         public ICategory GetCategory(int Id)
         {
@@ -180,7 +168,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Int Id of category</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("category/{id:Guid}")]
         public ICategory GetCategory(Guid Id)
         {
@@ -198,7 +186,7 @@ namespace Ekom.Controllers
         /// Get Root Categories
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("rootcategories")]
         public IEnumerable<ICategory> GetRootCategories()
         {
@@ -216,7 +204,7 @@ namespace Ekom.Controllers
         /// Get All Categories
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("allcategories")]
         public IEnumerable<ICategory> GetAllCategories()
         {
@@ -234,7 +222,7 @@ namespace Ekom.Controllers
         /// Get Sub Categories
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("subcategories/{id:Int}")]
         public IEnumerable<ICategory> GetSubCategories(int id)
         {
@@ -255,7 +243,7 @@ namespace Ekom.Controllers
         /// Get Sub Categories Recursive
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("subcategoriesrecursive/{id:Int}")]
         public IEnumerable<ICategory> GetSubCategoriesRecurisve(int id)
         {
@@ -277,7 +265,7 @@ namespace Ekom.Controllers
         /// Get Category Filters
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("categoryfilters/{id:Int}")]
         public IEnumerable<MetafieldGrouped> GetCategoryFilters(int id)
         {
@@ -298,13 +286,33 @@ namespace Ekom.Controllers
         /// Get Related Products
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost, HttpGet]
         [Route("relatedproducts/{id:Guid}/{count:Int}")]
         public IEnumerable<IProduct> GetRelatedProducts(Guid id, int count = 4)
         {
             try
             {
                 var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+
+                return products;
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Product Search
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productsearch")]
+        public ProductResponse ProductSearch([FromBody] SearchRequest req)
+        {
+            try
+            {                
+                var products = API.Catalog.Instance.ProductSearch(req);
 
                 return products;
             }

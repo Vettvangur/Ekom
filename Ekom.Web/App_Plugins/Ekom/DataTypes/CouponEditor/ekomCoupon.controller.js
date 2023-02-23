@@ -2,19 +2,19 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
   $scope.model.hideLabel = false;
   var key = editorState.current.key;
 
-  $scope.Coupons = [];
-  $scope.CouponCode = '';
-  $scope.NumberAvailable = 1;
+  $scope.coupons = [];
+  $scope.couponCode = '';
+  $scope.numberAvailable = 1;
 
   $scope.Init = function () {
 
     $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'GetCouponsForDiscount?discountId=' + key)
       .then(function (result) {
 
-        $scope.Coupons = result;
+        $scope.coupons = result;
 
-        if ($scope.Coupons.length > 0) {
-          $scope.Selected = $scope.Coupons[0].CouponCode;
+        if ($scope.coupons.length > 0) {
+          $scope.Selected = $scope.coupons[0].couponCode;
         }
 
       });
@@ -23,7 +23,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Insert = function () {
 
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'InsertCoupon?discountId=' + key + '&couponCode=' + $scope.CouponCode + '&numberAvailable=' + $scope.NumberAvailable)
+    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'InsertCoupon?discountId=' + key + '&couponCode=' + $scope.couponCode + '&numberAvailable=' + $scope.numberAvailable)
       .then(function () {
 
         $scope.Init();

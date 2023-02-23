@@ -4,64 +4,68 @@ using Umbraco.Cms.Infrastructure.Examine;
 
 namespace Ekom.Umb.Indexers
 {
+
     public class EkomIndexComponent : IComponent
     {
         private readonly IExamineManager _examineManager;
-        private readonly EkomIndexCreator _productIndexCreator;
-        private readonly Configuration _config;
-        public EkomIndexComponent(IExamineManager examineManager, EkomIndexCreator productIndexCreator, Configuration config)
+
+        public EkomIndexComponent(IExamineManager examineManager)
         {
             _examineManager = examineManager;
-            _productIndexCreator = productIndexCreator;
-            _config = config;
         }
 
         public void Initialize()
         {
-            //    if (_config.CustomIndex)
-            //    {
-            //        foreach (var index in _productIndexCreator.Create())
-            //        {
-            //            ((BaseIndexProvider)index).TransformingIndexValues += IndexerComponent_TransformingIndexValues;
+            foreach (var index in _examineManager.Indexes)
+            {
+                if (!(index is UmbracoExamineIndex umbracoIndex))
+                {
+                    continue;
+                }
 
-            //            _examineManager.GetIndex(index.ToString());
-            //        }
-            //    }
-            //}
-            //private void IndexerComponent_TransformingIndexValues(object sender, IndexingItemEventArgs e)
-            //{
-            //    if (e.ValueSet.Category == IndexTypes.Content)
-            //    {
-            //        string searchablePath = "";
-            //        foreach (var fieldValues in e.ValueSet.Values)
-            //        {
-            //            if (fieldValues.Key == "path")
-            //            {
-            //                foreach (var value in fieldValues.Value)
-            //                {
-            //                    var path = value.ToString().Replace(",", " ");
+                ((BaseIndexProvider)index).TransformingIndexValues += IndexerComponent_TransformingIndexValues;
 
-            //                    searchablePath = string.Join(" ", path.Split(',').Select(x => string.Format("{1}{0}{1}", x.Replace(" ", "|").ToLower(), '|')));
-            //                }
-            //            }
-            //        }
+            }
+        }
 
-            //        e.ValueSet.TryAdd("searchPath", searchablePath);
-            //    }
+        private void IndexerComponent_TransformingIndexValues(object sender, IndexingItemEventArgs e)
+        {
+            if (e.ValueSet.Category == IndexTypes.Content)
+            {
+                string searchablePath = "";
+                foreach (var fieldValues in e.ValueSet.Values)
+                {
+                    if (fieldValues.Key == "path")
+                    {
+                        foreach (var value in fieldValues.Value)
+                        {
+                            var path = value.ToString().Replace(",", " ");
+
+                            searchablePath = string.Join(" ", path.Split(',').Select(x => string.Format("{1}{0}{1}", x.Replace(" ", "|").ToLower(), '|')));
+                        }
+                    }
+                }
+
+                var updatedValues = e.ValueSet.Values.ToDictionary(x => x.Key, x => x.Value.ToList());
+
+                updatedValues.Add("ekmSearchPath", new List<object> { searchablePath });
+               
+                e.SetValues(updatedValues.ToDictionary(x => x.Key, x => (IEnumerable<object>)x.Value));
+            }
         }
 
         public void Terminate()
         {
-            //    foreach (var index in _examineManager.Indexes)
-            //    {
-            //        if (!(index is UmbracoExamineIndex umbracoIndex))
-            //        {
-            //            continue;
-            //        }
+            foreach (var index in _examineManager.Indexes)
+            {
+                if (!(index is UmbracoExamineIndex umbracoIndex))
+                {
+                    continue;
+                }
 
-            //        ((BaseIndexProvider)index).TransformingIndexValues -= IndexerComponent_TransformingIndexValues;
+                ((BaseIndexProvider)index).TransformingIndexValues -= IndexerComponent_TransformingIndexValues;
 
-            //    }
+            }
         }
     }
 }

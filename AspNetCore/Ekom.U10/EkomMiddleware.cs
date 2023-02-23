@@ -105,7 +105,7 @@ class EkomMiddleware
     {
         try
         {
-            var user = await memberManager.GetCurrentMemberAsync().ConfigureAwait(false);
+            var user = await memberManager.GetCurrentMemberAsync();
 
             var ekmRequest = appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(_context)) as ContentRequest;
             if (ekmRequest is not null)
