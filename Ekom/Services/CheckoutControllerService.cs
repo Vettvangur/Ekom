@@ -391,9 +391,24 @@ namespace Ekom.Services
             IOrderInfo order,
             string orderTitle)
         {
+            if (order == null)
+            {
+                throw new ArgumentNullException("Order is missing from ProcessPaymentAsync. " + orderTitle);
+            }
+            
+            if (_httpCtx == null)
+            {
+                throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
+            }
+
             var storeAlias = order.StoreInfo.Alias;
 
             var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
+
+            if (ekomPP == null)
+            {
+                throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider);
+            }
 
             var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
@@ -413,29 +428,36 @@ namespace Ekom.Services
                 ekomPP.Name,
                 isOfflinePayment);
 
-            var errorUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
-            ekomPP.GetValue("errorUrl", storeAlias),
-            new Uri(_httpCtx.Request.GetEncodedUrl()));
+            var paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
+            var paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
+            
+            var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
+            
+            var errorUrl = Utilities.UriHelper.EnsureFullUri(
+            paymentErrorUrl,
+            new Uri(GetEncodedUrl));
 
             if (isOfflinePayment)
             {
                 try
                 {
                     var successUrl = Utilities.UriHelper.EnsureFullUri(
-                        ekomPP.GetValue("successUrl", storeAlias),
-                        new Uri(_httpCtx.Request.GetEncodedUrl()))
+                        paymentSuccessUrl,
+                        new Uri(GetEncodedUrl))
                     + "?orderId=" + order.UniqueId;
 
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
-                    
+
+                    var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember()?.Key.ToString() : "" : "";
+ 
                     try
                     {
                         netPaymentService.OnSuccess(
                             ekomPP.Key,
                             ekomPP.Name,
-                            (MemberService.GetCurrentMember()).Key.ToString(),
+                            memberKey,
                             order.UniqueId.ToString());
                     }
                     catch

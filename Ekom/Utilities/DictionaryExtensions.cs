@@ -48,8 +48,8 @@ namespace Ekom.Utilities
                 ? propertyAlias + "_" + alias 
                 : properties.ContainsKey(propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name) 
                     ? propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name
-                    : propertyAlias;  
-
+                    : propertyAlias;
+            
             if (!string.IsNullOrEmpty(propertyAlias))
             {
                 properties.TryGetValue(propertyAlias, out val);
