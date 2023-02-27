@@ -112,10 +112,10 @@ namespace Ekom.Services
 
             var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
                 .ConfigureAwait(false);
-
+            Logger.LogInformation("PayAsync: 1");
             var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
                 .ConfigureAwait(false);
-
+            Logger.LogInformation("PayAsync: 2");
             return responseHandler(result);
         }
 
@@ -459,7 +459,7 @@ namespace Ekom.Services
                         paymentSuccessUrl,
                         new Uri(GetEncodedUrl))
                     + "?orderId=" + order.UniqueId;
-                    Logger.LogInformation("ProcessPaymentAsync: 13");
+                    Logger.LogInformation("ProcessPaymentAsync: 13 {successUrl}", successUrl);
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
@@ -502,7 +502,8 @@ namespace Ekom.Services
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.PaymentFailed,
                         order.UniqueId).ConfigureAwait(false);
-                    Logger.LogInformation("ProcessPaymentAsync: 20");
+                    Logger.LogInformation("ProcessPaymentAsync: 20 " + errorUrl);
+                    
                     return new CheckoutResponse
                     {
                         ResponseBody = errorUrl,
