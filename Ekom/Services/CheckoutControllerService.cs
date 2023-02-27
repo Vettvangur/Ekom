@@ -468,6 +468,7 @@ namespace Ekom.Services
                     Logger.LogInformation("ProcessPaymentAsync: 15");
                     try
                     {
+                        Logger.LogInformation("ProcessPaymentAsync: 16");
                         netPaymentService.OnSuccess(
                             ekomPP.Key,
                             ekomPP.Name,
@@ -480,7 +481,7 @@ namespace Ekom.Services
                         //errorUrl = status.ErrorUrl;
                         throw;
                     }
-                    
+                    Logger.LogInformation("ProcessPaymentAsync: 17");
                     return new CheckoutResponse
                     {
                         ResponseBody = successUrl,
@@ -491,15 +492,17 @@ namespace Ekom.Services
                 catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    await Order.Instance.UpdateStatusAsync(
-                    OrderStatus.PaymentFailed,
-                    order.UniqueId).ConfigureAwait(false);
-                    
+
+                    Logger.LogInformation("ProcessPaymentAsync: 18");
                     Logger.LogError(
                         ex,
                         "Offline Payment Failed. Order: {UniqueId}",
                         order.UniqueId);
-
+                    Logger.LogInformation("ProcessPaymentAsync: 19");
+                    await Order.Instance.UpdateStatusAsync(
+                        OrderStatus.PaymentFailed,
+                        order.UniqueId).ConfigureAwait(false);
+                    Logger.LogInformation("ProcessPaymentAsync: 20");
                     return new CheckoutResponse
                     {
                         ResponseBody = errorUrl,
