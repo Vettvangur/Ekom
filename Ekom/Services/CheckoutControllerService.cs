@@ -391,27 +391,31 @@ namespace Ekom.Services
             IOrderInfo order,
             string orderTitle)
         {
+
+            Logger.LogInformation("ProcessPaymentAsync: 1");
+
             if (order == null)
             {
                 throw new ArgumentNullException("Order is missing from ProcessPaymentAsync. " + orderTitle);
             }
-            
+            Logger.LogInformation("ProcessPaymentAsync: 2");
             if (_httpCtx == null)
             {
                 throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
             }
-
+            Logger.LogInformation("ProcessPaymentAsync: 3");
             var storeAlias = order.StoreInfo.Alias;
-
+            Logger.LogInformation("ProcessPaymentAsync: 4");
             var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
-
+            Logger.LogInformation("ProcessPaymentAsync: 5");
+            
             if (ekomPP == null)
             {
                 throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider);
             }
-
+            Logger.LogInformation("ProcessPaymentAsync: 6");
             var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
-
+            Logger.LogInformation("ProcessPaymentAsync: 7");
             var orderItems = new List<OrderInfo>();
             
             //orderItems.Add(new OrderInfo
@@ -429,29 +433,39 @@ namespace Ekom.Services
                 isOfflinePayment);
 
             var paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
+            
+            Logger.LogInformation("ProcessPaymentAsync: 8");
+
             var paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
-            
+
+            Logger.LogInformation("ProcessPaymentAsync: 9");
+
             var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
-            
+
+            Logger.LogInformation("ProcessPaymentAsync: 10");
+
             var errorUrl = Utilities.UriHelper.EnsureFullUri(
             paymentErrorUrl,
             new Uri(GetEncodedUrl));
+
+            Logger.LogInformation("ProcessPaymentAsync: 11");
 
             if (isOfflinePayment)
             {
                 try
                 {
+                    Logger.LogInformation("ProcessPaymentAsync: 12");
                     var successUrl = Utilities.UriHelper.EnsureFullUri(
                         paymentSuccessUrl,
                         new Uri(GetEncodedUrl))
                     + "?orderId=" + order.UniqueId;
-
+                    Logger.LogInformation("ProcessPaymentAsync: 13");
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
-
+                    Logger.LogInformation("ProcessPaymentAsync: 14");
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember()?.Key.ToString() : "" : "";
- 
+                    Logger.LogInformation("ProcessPaymentAsync: 15");
                     try
                     {
                         netPaymentService.OnSuccess(

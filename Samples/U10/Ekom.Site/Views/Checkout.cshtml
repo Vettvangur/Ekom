@@ -76,7 +76,33 @@
             </tfoot>
         </table>
 
+    </div>
 
+    <div class="payments">
+        @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay, "checkout-footer__payment-form", "payment-form"))
+        {
+            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+            
+            foreach (var shippingProvider in _providers.GetShippingProviders())
+            {
+                <div>
+                    <label for="@shippingProvider.Key">@shippingProvider.Title</label>
+                    <input type="radio" name="ShippingProvider" value="@shippingProvider.Key" id="@shippingProvider.Key" />
+                </div>
+            }
+
+            <hr />
+
+            foreach (var paymentProvider in _providers.GetPaymentProviders())
+            {
+                <div>
+                    <label for="@paymentProvider.Key">@paymentProvider.Title</label>
+                    <input type="radio" name="PaymentProvider" value="@paymentProvider.Key" id="@paymentProvider.Key" />
+                </div>
+            }
+
+            <button type="submit" class="button">Pay</button>
+        }    
     </div>
 
 }
