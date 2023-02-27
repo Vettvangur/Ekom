@@ -1,7 +1,9 @@
 using Ekom.App_Start;
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Umb.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,8 +13,6 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
-using Umbraco.Cms.Infrastructure.Persistence;
-using Umbraco.Cms.Infrastructure.WebAssets;
 using Umbraco.Cms.Web.BackOffice.Trees;
 
 namespace Ekom.Umb;
@@ -21,7 +21,6 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
-        //app.UseMiddleware<ControllerMiddleware>();
         app.UseEkomMiddleware();
         next(app);
     };
@@ -33,6 +32,13 @@ class StartupFilter : IStartupFilter
 // Public allows consumers to target type with ComposeAfter / ComposeBefore
 public class EkomComposer : IComposer
 {
+    readonly IServiceProvider _factory;
+
+    public EkomComposer(IServiceProvider factory)
+    {
+        _factory = factory;
+    }
+    
     /// <summary>
     /// Umbraco lifecycle method
     /// </summary>
@@ -51,9 +57,10 @@ public class EkomComposer : IComposer
             .Append<EkomStartup>()
             ;
 
-
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
+
+        CheckoutEvents.CheckoutSucessEvent += CheckoutSuccess;
 
         var config = new Configuration(builder.Config);
 
@@ -73,6 +80,14 @@ public class EkomComposer : IComposer
         }
 
         builder.Services.AddEkom();
+    }
+
+    private void CheckoutSuccess(object? sender, CheckoutSuccessEventArgs e)
+    {
+        var checkoutSvc = _factory.GetService<CheckoutService>();
+
+        checkoutSvc.CompleteAsync(e.CheckoutStatus.OrderId).Wait();
+        
     }
 }
 //[RuntimeLevelAttribute(MinLevel = RuntimeLevel.Run)]
@@ -106,9 +121,7 @@ class EkomStartup : IComponent
         Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
-        IUmbracoDatabaseFactory databaseFactory,
-        ExamineService es,
-        ServerVariablesParser svp)
+        ExamineService es)
     {
         _config = config;
         _logger = logger;

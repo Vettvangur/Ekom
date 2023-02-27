@@ -8,6 +8,7 @@ using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 
 namespace Ekom.Services
 {
@@ -112,10 +113,8 @@ namespace Ekom.Services
 
             var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
                 .ConfigureAwait(false);
-            Logger.LogInformation("PayAsync: 1");
             var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
                 .ConfigureAwait(false);
-            Logger.LogInformation("PayAsync: 2");
             return responseHandler(result);
         }
 
@@ -455,26 +454,27 @@ namespace Ekom.Services
                     
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember()?.Key.ToString() : "" : "";
 
+                    var checkoutStatus = new CheckoutStatus();
+
+                    checkoutStatus.OrderId = order.UniqueId;
+                    checkoutStatus.SuccessUrl = successUrl;
+                    checkoutStatus.ErrorUrl = errorUrl;
+                    checkoutStatus.PaymentProvider = ekomPP.Name;
+                    checkoutStatus.PaymentProviderKey = ekomPP.Key;
+                    checkoutStatus.MemberKey = (string.IsNullOrEmpty(memberKey) ? "" : memberKey);
+
                     try
                     {
-                        Logger.LogInformation("ProcessPaymentAsync: 16");
-                        Logger.LogInformation("ProcessPaymentAsync: 16 " + ekomPP.Key);
-                        Logger.LogInformation("ProcessPaymentAsync: 16 " + ekomPP.Name);
-                        Logger.LogInformation("ProcessPaymentAsync: 16 " + (string.IsNullOrEmpty(memberKey) ? "" : memberKey));
-                        Logger.LogInformation("ProcessPaymentAsync: 16 " + order.UniqueId.ToString());
-                        
-                        netPaymentService.OnSuccess(
-                            ekomPP.Key,
-                            ekomPP.Name,
-                            (string.IsNullOrEmpty(memberKey) ? "" : memberKey),
-                            order.UniqueId.ToString());
+                        CheckoutEvents.OnCheckoutSuccess(this, new CheckoutSuccessEventArgs() { 
+                             CheckoutStatus = checkoutStatus
+                        });
                     }
                     catch(Exception ex)
                     {
-                        Logger.LogError(ex, "netPaymentService.OnSuccess Failed. Order: {UniqueId}", order.UniqueId);
-                        //TODO: We need to get the error url from the OnSuccess event to override it
-                        //errorUrl = status.ErrorUrl;
-                        //throw;
+                        Logger.LogError(ex, "OnCheckoutSuccess Failed. Order: {UniqueId}", order.UniqueId);
+                        
+                        errorUrl = checkoutStatus.ErrorUrl;
+                        throw;
                     }
                     
                     return new CheckoutResponse
