@@ -31,14 +31,7 @@ class StartupFilter : IStartupFilter
 /// </summary>
 // Public allows consumers to target type with ComposeAfter / ComposeBefore
 public class EkomComposer : IComposer
-{
-    readonly IServiceProvider _factory;
-
-    public EkomComposer(IServiceProvider factory)
-    {
-        _factory = factory;
-    }
-    
+{    
     /// <summary>
     /// Umbraco lifecycle method
     /// </summary>
@@ -60,8 +53,6 @@ public class EkomComposer : IComposer
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
 
-        CheckoutEvents.CheckoutSucessEvent += CheckoutSuccess;
-
         var config = new Configuration(builder.Config);
 
         if (!config.VirtualContent)
@@ -80,14 +71,6 @@ public class EkomComposer : IComposer
         }
 
         builder.Services.AddEkom();
-    }
-
-    private void CheckoutSuccess(object? sender, CheckoutSuccessEventArgs e)
-    {
-        var checkoutSvc = _factory.GetService<CheckoutService>();
-
-        checkoutSvc.CompleteAsync(e.CheckoutStatus.OrderId).Wait();
-        
     }
 }
 //[RuntimeLevelAttribute(MinLevel = RuntimeLevel.Run)]
@@ -156,6 +139,8 @@ class EkomStartup : IComponent
             // The following two caches are not closely related to the ones listed in _config.CacheList
             // They should not be added to the config list since that list is used by f.x. _config.Succeed in many caches
 
+            CheckoutEvents.CheckoutSucessEvent += CheckoutSuccess;
+
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
                 ? _factory.GetService<IPerStoreCache<StockData>>()
@@ -175,6 +160,14 @@ class EkomStartup : IComponent
         }
     }
 
+    private void CheckoutSuccess(object? sender, CheckoutSuccessEventArgs e)
+    {
+        var checkoutSvc = _factory.GetService<CheckoutService>();
+
+        checkoutSvc.CompleteAsync(e.CheckoutStatus.OrderId).Wait();
+
+    }
+    
     public void Terminate()
     {
     }
