@@ -25,7 +25,6 @@ public class ValitorResponseController : ControllerBase
     readonly IOrderService _orderService;
     readonly IDatabaseFactory _dbFac;
     readonly IMailService _mailSvc;
-    readonly HttpRequest _req;
 
     /// <summary>
     /// ctor
@@ -35,15 +34,13 @@ public class ValitorResponseController : ControllerBase
         PaymentsConfiguration settings,
         IOrderService orderService,
         IDatabaseFactory dbFac,
-        IMailService mailSvc,
-        HttpContext httpContext)
+        IMailService mailSvc)
     {
         _logger = logger;
         _settings = settings;
         _orderService = orderService;
         _dbFac = dbFac;
         _mailSvc = mailSvc;
-        _req = httpContext.Request;
     }
 
     /// <summary>
@@ -51,9 +48,9 @@ public class ValitorResponseController : ControllerBase
     /// Changes order status and optionally runs a custom callback provided by the application consuming this library.
     /// </summary>
     /// <param name="valitorResp">Valitor querystring parameters</param>
-    [HttpPost]
+    [HttpGet, HttpPost]
     [Route("")]
-    public async Task<IActionResult> Post([FromQuery]Response valitorResp)
+    public async Task<IActionResult> Post([FromQuery] Response valitorResp)
     {
         _logger.LogInformation("Valitor Payment Response - Start");
 
@@ -79,6 +76,7 @@ public class ValitorResponseController : ControllerBase
 
                     return NotFound();
                 }
+                var paymentSettings = JsonConvert.DeserializeObject<PaymentSettings>(order.EkomPaymentSettingsData);
                 var valitorSettings = JsonConvert.DeserializeObject<ValitorSettings>(order.EkomPaymentProviderData);
 
                 string digitalSignature = CryptoHelpers.GetSHA256HexStringSum(valitorSettings.VerificationCode + valitorResp.ReferenceNumber);
@@ -87,52 +85,64 @@ public class ValitorResponseController : ControllerBase
                 {
                     _logger.LogInformation("Valitor Payment Response - DigitalSignatureResponse Verified");
 
-                    try
+                    if (!order.Paid)
                     {
-                        var paymentData = new PaymentData
+                        try
                         {
-                            Id = order.UniqueId,
-                            Date = DateTime.Now,
-                            CardNumber = valitorResp.CardNumberMasked,
-                            CustomData = JsonConvert.SerializeObject(valitorResp),
-                            Amount = order.Amount.ToString(),
-                        };
+                            var paymentData = new PaymentData
+                            {
+                                Id = order.UniqueId,
+                                Date = DateTime.Now,
+                                CardNumber = valitorResp.CardNumberMasked,
+                                CustomData = JsonConvert.SerializeObject(valitorResp),
+                                Amount = order.Amount.ToString(),
+                            };
 
-                        using var db = _dbFac.GetDatabase();
-                        await db.InsertOrReplaceAsync(paymentData);
+                            using var db = _dbFac.GetDatabase();
+                            await db.InsertOrReplaceAsync(paymentData);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Valitor Payment Response - Error saving payment data");
+                        }
+
+                        order.Paid = true;
+
+                        using (var db = _dbFac.GetDatabase())
+                        {
+                            await db.UpdateAsync(order);
+                        }
+
+                        Events.OnSuccess(this, new SuccessEventArgs
+                        {
+                            OrderStatus = order,
+                        });
+                        _logger.LogInformation($"Valitor Payment Response - SUCCESS - Order ID: {order.UniqueId}");
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogError(ex, "Valitor Payment Response - Error saving payment data");
+                        _logger.LogInformation($"Valitor Payment Response - SUCCESS - Previously validated");
                     }
 
-                    order.Paid = true;
-
-                    using (var db = _dbFac.GetDatabase())
-                    {
-                        await db.UpdateAsync(order);
-                    }
-
-                    Events.OnSuccess(this, new SuccessEventArgs
-                    {
-                        OrderStatus = order,
-                    });
-                    _logger.LogInformation($"Valitor Payment Response - SUCCESS - Order ID: {order.UniqueId}");
-                    return StatusCode((int)HttpStatusCode.OK);
+                    var successUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.SuccessUrl.ToString(), Request);
+                    return Redirect(successUrl.ToString());
                 }
                 else
                 {
                     _logger.LogInformation($"Valitor Payment Response - Verification Error - Order ID: {order.UniqueId}");
                     Events.OnError(this, new ErrorEventArgs
                     {
-                        OrderStatus = order, 
+                        OrderStatus = order,
                     });
+
+                    var cancelUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.CancelUrl.ToString(), Request);
+                    return Redirect(cancelUrl.ToString());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Valitor Payment Response - Failed");
-                Events.OnError(this, new ErrorEventArgs 
+                Events.OnError(this, new ErrorEventArgs
                 {
                     Exception = ex,
                 });
@@ -142,7 +152,7 @@ public class ValitorResponseController : ControllerBase
                     await _mailSvc.SendAsync(new System.Net.Mail.MailMessage
                     {
                         Subject = "Valitor Payment Response - Failed",
-                        Body = $"<p>Valitor Payment Response - Failed<p><br />{_req?.GetDisplayUrl()}<br />" + ex.ToString(),
+                        Body = $"<p>Valitor Payment Response - Failed<p><br />{HttpContext.Request.GetDisplayUrl()}<br />" + ex.ToString(),
                         IsBodyHtml = true,
                     });
                 }
@@ -152,6 +162,6 @@ public class ValitorResponseController : ControllerBase
         }
 
         _logger.LogDebug(JsonConvert.SerializeObject(ModelState));
-        return StatusCode((int)HttpStatusCode.BadRequest);
+        return Redirect("/");
     }
 }

@@ -11,28 +11,23 @@ namespace Ekom.Payments;
 public class OrderStatus
 {
     /// <summary>
-    /// Description of ordered item or items f.x.
+    /// Friendly order name: f.x. IS0001
     /// </summary>
-    public string Name { get; set; }
+    [Column(Length = 50)]
+    public string? OrderName { get; set; }
 
     /// <summary>
     /// Order SQL unique Id
     /// </summary>
-    [NotNull]
+    [Column, NotNull]
     public Guid UniqueId { get; set; }
 
     /// <summary>
     /// Used by borgun gateway for the rrn field.
     /// Is trimmed to 12 characters, this gives us a maximum order count of 10^12
     /// </summary>
-    [Identity, NotNull]
+    [PrimaryKey, Identity, NotNull]
     public long ReferenceId { get; set; }
-
-    /// <summary>
-    /// Friendly order name: f.x. IS0001
-    /// </summary>
-    [Column(Length = 50)]
-    public string OrderName { get; set; }
 
     /// <summary>
     /// Umbraco member id
@@ -62,26 +57,13 @@ public class OrderStatus
     /// Browser User agent
     /// </summary>
     [Column(Length = 4000)]
-    public string UserAgent { get; set; }
+    public string? UserAgent { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
     [Column, NotNull]
     public bool Paid { get; set; }
-
-    /// <summary>
-    /// String name of payment provider <see cref="IPublishedContent"/> node
-    /// </summary>
-    [Column(Length = 50), NotNull]
-    public string PaymentProvider { get; set; }
-
-    /// <summary>
-    /// Guid key of payment provider <see cref="IPublishedContent"/> node
-    /// Helps to resolve overloaded payment providers, f.x. Borgun USD and Borgun ISK
-    /// </summary>
-    [Column, NotNull]
-    public Guid PaymentProviderKey { get; set; }
 
     /// <summary>
     /// For netpayment internal usage
@@ -102,12 +84,26 @@ public class OrderStatus
     }
 
     /// <summary>
-    /// For netpayment internal usage
+    /// For netpayment internal usage <br />
+    /// Contains the payment provider specific settings, f.x. PayPalSettings
     /// </summary>
     [Column]
-    public string EkomPaymentProviderData { get; set; }
+    public string? EkomPaymentProviderData { get; set; }
 
+    /// <summary>
+    /// Contains other custom json data not configured via Settings <br />
+    /// F.x. values received via Api calls to payment providers that are needed later in the payment flow
+    /// </summary>
+    [Column]
+    public string? CustomData { get; set; }
 
     [Column(SkipOnInsert = true, SkipOnUpdate = true)]
     public string PaymentProviderName { get; set; }
+
+    /// <summary>
+    /// Guid key of payment provider <see cref="IPaymentProvider"/> umbraco node
+    /// Helps to resolve overloaded payment providers, f.x. Borgun USD and Borgun ISK
+    /// </summary>
+    [Column(SkipOnInsert = true, SkipOnUpdate = true)]
+    public string PaymentProviderKey { get; set; }
 }

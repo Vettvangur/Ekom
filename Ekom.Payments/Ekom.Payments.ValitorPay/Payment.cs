@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace Ekom.Payments.ValitorPay;
 /// <summary>
 /// Initiate a payment request with ValitorPay
 /// </summary>
-public class Payment : IPaymentProvider
+class Payment : IPaymentProvider
 {
     internal const string _ppNodeName = "valitorPay";
     /// <summary>
@@ -24,23 +25,23 @@ public class Payment : IPaymentProvider
     readonly PaymentsConfiguration _settings;
     readonly IUmbracoService _uService;
     readonly IOrderService _orderService;
-    readonly HttpRequestBase _req;
+    readonly HttpContext _httpCtx;
 
     /// <summary>
     /// ctor for Unit Tests
     /// </summary>
-    internal Payment(
+    public Payment(
         ILogger logger,
         PaymentsConfiguration settings,
         IUmbracoService uService,
         IOrderService orderService,
-        HttpContextBase httpContext)
+        IHttpContextAccessor httpContext)
     {
         _logger = logger;
         _settings = settings;
         _uService = uService;
         _orderService = orderService;
-        _req = httpContext.Request;
+        _httpCtx = httpContext.HttpContext ?? throw new NotSupportedException("Payment requests require an httpcontext");
     }
 
     /// <summary>

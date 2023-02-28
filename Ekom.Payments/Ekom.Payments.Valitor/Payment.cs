@@ -2,6 +2,7 @@ using Ekom.Payments;
 using Ekom.Payments.Helpers;
 using Ekom.Payments.Valitor;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace Ekom.Payments.Valitor;
 /// <summary>
 /// Initiate a payment request with Valitor
 /// </summary>
-public class Payment : IPaymentProvider
+class Payment : IPaymentProvider
 {
     internal const string _ppNodeName = "valitor";
     /// <summary>
@@ -33,7 +34,7 @@ public class Payment : IPaymentProvider
     /// <summary>
     /// ctor for Unit Tests
     /// </summary>
-    internal Payment(
+    public Payment(
         ILogger<Payment> logger,
         PaymentsConfiguration settings,
         IUmbracoService uService,
@@ -94,14 +95,20 @@ public class Payment : IPaymentProvider
             var orderStatus  = await _orderService.InsertAsync(
                 total,
                 paymentSettings,
+                valitorSettings,
                 null,
                 _httpCtx
             ).ConfigureAwait(false);
 
-            var reportUrl = PaymentsUriHelper.EnsureFullUri(reportPath, _httpCtx.Request);
-            
+            paymentSettings.SuccessUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.SuccessUrl, _httpCtx.Request);
+            paymentSettings.SuccessUrl = PaymentsUriHelper.AddQueryString(paymentSettings.SuccessUrl, "?reference=" + orderStatus.UniqueId);
+
+            var cancelUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.CancelUrl, _httpCtx.Request);
+            var reportUrl = PaymentsUriHelper.EnsureFullUri(new Uri(reportPath, UriKind.Relative), _httpCtx.Request);
+            var unusedReportUrl = PaymentsUriHelper.EnsureFullUri(new Uri("/umbraco", UriKind.Relative), _httpCtx.Request);
+
             // Begin populating form values to be submitted
-            var formValues = new Dictionary<string, string>
+            var formValues = new Dictionary<string, string?>
             {
                 { "MerchantID", valitorSettings.MerchantId },
                 { "AuthorizationOnly", "0" },
@@ -109,24 +116,42 @@ public class Payment : IPaymentProvider
                 { "ReferenceNumber", orderStatus.UniqueId.ToString() },
 
                 { "Currency", paymentSettings.Currency },
-                { "Language", paymentSettings.Language.ToUpper() },
+                { "Language", ParseSupportedLanguages(paymentSettings.Language) },
 
-                { "PaymentSuccessfulURL", paymentSettings.SuccessUrl.ToString() },
-                { "PaymentSuccessfulURLText", valitorSettings.PaymentSuccessfulURLText },
-                { "PaymentSuccessfulAutomaticRedirect", valitorSettings.SkipReceipt ? "1" : "0" },
-                { "PaymentCancelledURL", paymentSettings.CancelUrl.ToString() },
-                { "PaymentSuccessfulServerSideURL", reportUrl.ToString() },
+                { "PaymentSuccessfulURL", reportUrl.ToString() },
+                { "PaymentSuccessfulURLText", /*valitorSettings.SkipReceipt*/ true 
+                    ? "-" : 
+                    valitorSettings.PaymentSuccessfulURLText 
+                },
+                { "PaymentSuccessfulAutomaticRedirect", /*valitorSettings.SkipReceipt*/ true 
+                    ? "1" 
+                    : "0" 
+                },
+                { "PaymentCancelledURL", cancelUrl.ToString() },
+
+                // We don't use this during , since the same params are provided in successful url
+                // that way we can control that redirection is only made after processing of our backend server
+                // Instead we direct these reports to /umbraco where they will safely receive a 200 response but
+                // no further processing will be done
+                //
+                // This also means we don't currently support using valitor's receipt page
+                // since when used, the customer will not necessarily use the store receipt page
+                // which would skip the server side processing
+                //
+                // Supporting receiving both would either require db locking 
+                // or accepting that duplicate payment data might be inserted in edge cases
+                { "PaymentSuccessfulServerSideURL", unusedReportUrl.ToString() },
             };
 
-            if (valitorSettings.CheckoutTimeoutMinutes != 0
-            && valitorSettings.TimeoutRedirectURL != null)
+            if (valitorSettings.SessionExpiredTimeoutInSeconds != 0
+            && valitorSettings.SessionExpiredRedirectURL != null)
             {
-                formValues.Add("SessionExpiredTimeoutInSeconds", valitorSettings.CheckoutTimeoutMinutes.ToString());
-                formValues.Add("SessionExpiredRedirectURL", valitorSettings.TimeoutRedirectURL.ToString());
+                formValues.Add("SessionExpiredTimeoutInSeconds", valitorSettings.SessionExpiredTimeoutInSeconds.ToString());
+                formValues.Add("SessionExpiredRedirectURL", valitorSettings.SessionExpiredRedirectURL.ToString());
             }
-            else if (valitorSettings.CheckoutTimeoutMinutes != 0)
+            else if (valitorSettings.SessionExpiredTimeoutInSeconds != 0)
             {
-                _logger.LogError("Requested checkout timeout but could not find redirect url, please configure payment provider with 'timeoutRedirectURL' property");
+                _logger.LogError("Requested session expired timeout but could not find redirect url, please configure payment provider with 'timeoutRedirectURL' property");
             }
 
             for (int x = 0, length = paymentSettings.Orders.Count(); x < length; x++)
@@ -148,8 +173,8 @@ public class Payment : IPaymentProvider
 
             sb.Append(valitorSettings.MerchantId);
             sb.Append(orderStatus.UniqueId.ToString());
-            sb.Append(paymentSettings.SuccessUrl);
             sb.Append(reportUrl);
+            sb.Append(unusedReportUrl);
             sb.Append(paymentSettings.Currency);
 
             if (valitorSettings.LoanType != LoanType.Disabled)
@@ -179,6 +204,24 @@ public class Payment : IPaymentProvider
         {
             _logger.LogError(ex, "Valitor Payment Request - Payment Request Failed");
             throw;
+        }
+    }
+
+    public string ParseSupportedLanguages(string language)
+    {
+        var parsed 
+            = CultureInfo.GetCultureInfo(language).TwoLetterISOLanguageName.ToUpper();
+
+        switch (parsed)
+        {
+            case "IS":
+            case "EN":
+            case "DA":
+            case "DE":
+                return parsed;
+
+            default:
+                return "IS";
         }
     }
 }

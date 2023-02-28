@@ -36,17 +36,10 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     /// Allows to override order name, is otherwise auto-generated from concatenating
     /// OrderItem Names.
     /// </summary>
-    [EkomProperty]
+    [EkomProperty(PropertyEditorType.Language)]
     public string OrderName { get; set; }
-
-    /// <summary>
-    /// Controls payment portal language.
-    /// Default IS
-    /// </summary>
-    [EkomProperty]
-    public string Language { get; set; }
     
-    [EkomProperty]
+    [EkomProperty(PropertyEditorType.Store)]
     public string Currency { get; set; }
 
     /// <summary>
@@ -57,7 +50,21 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     /// </summary>
     [PaymentSettingsIgnore]
     //[EkomProperty]
-    public Dictionary<PropertyEditorType, string> EkomPropertyKey { get; set; }
+    public Dictionary<PropertyEditorType, string> EkomPropertyKeys { get; }
+        = new Dictionary<PropertyEditorType, string>();
+
+    [PaymentSettingsIgnore]
+    public string Store
+    {
+        get => EkomPropertyKeys[PropertyEditorType.Store];
+        set => EkomPropertyKeys[PropertyEditorType.Store] = value;
+    }
+    [PaymentSettingsIgnore]
+    public string Language
+    {
+        get => EkomPropertyKeys[PropertyEditorType.Language];
+        set => EkomPropertyKeys[PropertyEditorType.Language] = value;
+    }
 
     /// <summary>
     /// Optionally store umbraco member id in persisted order
@@ -78,19 +85,19 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     /// Commonly overriden in consumers checkout 
     /// to provide an url that also contains a queryString with the orderId to use on receipt page.
     /// </summary>
-    [EkomProperty]
+    [EkomProperty(PropertyEditorType.Language)]
     public Uri SuccessUrl { get; set; }
 
     /// <summary>
     /// Control cancel url when supported
     /// </summary>
-    [EkomProperty]
+    [EkomProperty(PropertyEditorType.Language)]
     public Uri CancelUrl { get; set; }
 
     /// <summary>
     /// Override umbraco configured error url.
     /// </summary>
-    [EkomProperty]
+    [EkomProperty(PropertyEditorType.Language)]
     public Uri ErrorUrl { get; set; }
 
     ///// <summary>

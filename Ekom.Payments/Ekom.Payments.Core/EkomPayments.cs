@@ -21,7 +21,7 @@ public class EkomPayments
     /// <summary>
     /// 
     /// </summary>
-    internal EkomPayments(
+    public EkomPayments(
         ILogger<EkomPayments> logger,
         PaymentsConfiguration configuration,
         IServiceProvider serviceProvider)
@@ -30,7 +30,7 @@ public class EkomPayments
         _configuration = configuration;
         _serviceProvider = serviceProvider;
     }
-
+    
     /// <summary>
     /// Attempt to retrieve order using reference from http request.
     /// Loops over all registered <see cref="IOrderRetriever"/> to attempt to find the order reference.

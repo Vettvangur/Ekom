@@ -208,10 +208,26 @@ class UmbracoService : IUmbracoService
         object? customProperties,
         IEnumerable<PropertyInfo>? customPropertyList)
     {
-        if (string.IsNullOrEmpty(settings.EkomPropertyKey))
+        if (string.IsNullOrEmpty(settings.Language))
         {
-            var prop = typeof(PaymentSettings).GetProperty(nameof(settings.EkomPropertyKey))!;
+            var prop = typeof(PaymentSettings).GetProperty(nameof(settings.EkomPropertyKeys))!;
             PopulateProperty(ppNode, settings, prop, null!);
+        }
+        if (string.IsNullOrEmpty(settings.Store))
+        {
+            var prop = typeof(PaymentSettings).GetProperty(nameof(settings.EkomPropertyKeys))!;
+            PopulateProperty(ppNode, settings, prop, null!);
+        }
+
+        if (!settings.EkomPropertyKeys.ContainsKey(PropertyEditorType.Language)
+        || string.IsNullOrEmpty(settings.EkomPropertyKeys[PropertyEditorType.Language]))
+        {
+            throw new ArgumentException("String null or empty", nameof(PropertyEditorType.Language));
+        }
+        if (!settings.EkomPropertyKeys.ContainsKey(PropertyEditorType.Store)
+        || string.IsNullOrEmpty(settings.EkomPropertyKeys[PropertyEditorType.Store]))
+        {
+            throw new ArgumentException("String null or empty", nameof(PropertyEditorType.Store));
         }
 
         PopulateProperties(
@@ -219,7 +235,7 @@ class UmbracoService : IUmbracoService
             ppNodeName,
             settings,
             PaymentSettings.Properties,
-            settings.EkomPropertyKey);
+            settings.EkomPropertyKeys);
 
         if (customProperties != null && customPropertyList != null)
         {
@@ -228,7 +244,7 @@ class UmbracoService : IUmbracoService
                 ppNodeName,
                 customProperties,
                 customPropertyList,
-                settings.EkomPropertyKey,
+                settings.EkomPropertyKeys,
                 ppNodeName);
         }
     }
@@ -238,7 +254,7 @@ class UmbracoService : IUmbracoService
         string ppNodeName,
         object o,
         IEnumerable<PropertyInfo> properties,
-        string ekomPropertyKey,
+        Dictionary<PropertyEditorType, string> ekomPropertyKeys,
         string? configSection = null)
     {
         _logger.LogDebug(
@@ -248,7 +264,7 @@ class UmbracoService : IUmbracoService
 
         foreach (PropertyInfo property in properties)
         {
-            PopulateProperty(ppNode, o, property, ekomPropertyKey, configSection);
+            PopulateProperty(ppNode, o, property, ekomPropertyKeys, configSection);
         }
     }
 
@@ -256,23 +272,24 @@ class UmbracoService : IUmbracoService
         object ppNode,
         object o,
         PropertyInfo property,
-        string ekomPropertyKey,
+        Dictionary<PropertyEditorType, string> ekomPropertyKeys,
         string? configSection = null)
     {
         _logger.LogTrace("Populating property {PropertyName} on {SettingsType}", property.Name, o.GetType().Name);
 
-        var val = property.GetValue(o);
-        if (val == default)
+        object val = property.GetValue(o);
+        if (property.PropertyType.IsValueType
+            ? val.Equals(Activator.CreateInstance(property.PropertyType))
+            : val == null)
         {
             var camelCaseName = property.Name.Substring(0, 1).ToLower() + property.Name.Substring(1);
 
             object? umbVal = null;
-            if (property.CustomAttributes.Any(x => x.AttributeType == typeof(EkomPropertyAttribute)))
+            var propAttribute = property.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(EkomPropertyAttribute));
+            if (propAttribute != null)
             {
-                if (string.IsNullOrEmpty(ekomPropertyKey))
-                {
-                    throw new ArgumentException("String null or empty", nameof(ekomPropertyKey));
-                }
+                var language = ekomPropertyKeys[PropertyEditorType.Language];
+                var store = ekomPropertyKeys[PropertyEditorType.Store];
 
                 var genericMethod = publishedContentValueMethod.MakeGenericMethod(typeof(string));
                 var umbJsonVal = genericMethod.Invoke(
@@ -293,6 +310,21 @@ class UmbracoService : IUmbracoService
                 if (!string.IsNullOrEmpty(umbJsonVal))
                 {
                     var propVal = JsonConvert.DeserializeObject<PropertyValue>(umbJsonVal);
+
+                    string ekomPropertyKey = string.Empty; 
+                    var attr = property.GetCustomAttribute<EkomPropertyAttribute>()!;
+                    if (attr.PropertyEditorType == PropertyEditorType.Language)
+                    {
+                        ekomPropertyKey = ekomPropertyKeys[PropertyEditorType.Language];
+                    }
+                    else if (attr.PropertyEditorType == PropertyEditorType.Store)
+                    {
+                        ekomPropertyKey = ekomPropertyKeys[PropertyEditorType.Store];
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("Unsupported ekom property attribute");
+                    }
 
                     if (propVal?.Values?.ContainsKey(ekomPropertyKey) == true)
                     {
@@ -365,7 +397,7 @@ class UmbracoService : IUmbracoService
             {
                 var paymentsSection = _configuration.GetSection("Ekom:Payments");
 
-                if (configSection != null)
+                if (configSection != null && paymentsSection != null)
                 {
                     paymentsSection = paymentsSection.GetSection(configSection);
                 }

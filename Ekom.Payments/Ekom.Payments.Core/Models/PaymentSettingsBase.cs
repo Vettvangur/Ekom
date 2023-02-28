@@ -16,9 +16,8 @@ public class PaymentSettingsBase<T>
     internal static IReadOnlyCollection<PropertyInfo> Properties
         = typeof(T)
                 .GetProperties()
-                .Where(
-                    prop => prop.PropertyType.IsValueType
-                    && prop.CustomAttributes.All(x => x.AttributeType != typeof(PaymentSettingsIgnoreAttribute)))
+                .Where(prop => prop.CustomAttributes
+                    .All(x => x.AttributeType != typeof(PaymentSettingsIgnoreAttribute)))
                 .ToList()
                 .AsReadOnly()
         ;

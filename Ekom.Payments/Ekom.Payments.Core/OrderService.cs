@@ -6,13 +6,18 @@ using Ekom.Payments.Helpers;
 using Microsoft.AspNetCore.Http;
 using Azure.Core;
 using LinqToDB;
+using Newtonsoft.Json;
 
 namespace Ekom.Payments;
 
 public interface IOrderService
 {
     Task<OrderStatus?> GetAsync(Guid id);
-    Task<OrderStatus> InsertAsync(decimal total, PaymentSettings paymentSettings, string netPaymentData, HttpContext httpContext);
+    Task<OrderStatus> InsertAsync(decimal total,
+        PaymentSettings paymentSettings,
+        object paymentProviderSettings,
+        string? netPaymentData,
+        HttpContext httpContext);
     Task UpdateAsync(OrderStatus orderStatus);
 }
 
@@ -57,7 +62,8 @@ class OrderService : IOrderService
     public async Task<OrderStatus> InsertAsync(
         decimal total,
         PaymentSettings paymentSettings,
-        string netPaymentData,
+        object paymentProviderSettings,
+        string? netPaymentData,
         HttpContext httpContext
     )
     {
@@ -65,13 +71,17 @@ class OrderService : IOrderService
 
         var orderStatus = new OrderStatus
         {
+            OrderName = paymentSettings.OrderName,
             UniqueId = orderid,
             Member = paymentSettings.Member,
             Amount = total,
             Date = DateTime.Now,
             IPAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
-            UserAgent = httpContext.Request.Headers["User-Agent"].ToString().Substring(0, 4000),
+            UserAgent = httpContext.Request.Headers["User-Agent"]
+                .ToString().Substring(0, Math.Min(httpContext.Request.Headers["User-Agent"].Count, 4000)),
             EkomPaymentSettings = paymentSettings,
+            EkomPaymentProviderData = JsonConvert.SerializeObject(paymentProviderSettings),
+            CustomData = netPaymentData
         };
 
         using (var db = _dbFac.GetDatabase())

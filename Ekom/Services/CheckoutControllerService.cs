@@ -119,12 +119,12 @@ namespace Ekom.Services
             return responseHandler(result);
         }
 
-        protected virtual Task<CheckoutResponse> PrepareCheckoutAsync(PaymentRequest paymentRequest)
+        protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest)
         {
-            return Task.FromResult<CheckoutResponse>(null);
+            return Task.FromResult<CheckoutResponse?>(null);
         }
 
-        protected virtual async Task<CheckoutResponse> ValidationAndOrderUpdatesAsync(
+        protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
             PaymentRequest paymentRequest,
             IOrderInfo order,
             IFormCollection form)
