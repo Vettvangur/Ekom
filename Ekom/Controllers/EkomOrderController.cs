@@ -272,48 +272,6 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
-        /// Update order, change quantity of line in cart/order
-        /// </summary>
-        /// <param name="lineId">Guid Key of line to update</param>
-        /// <param name="storeAlias"></param>
-        /// <param name="quantity"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("update")]
-        [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
-        public async Task<IOrderInfo> UpdateOrder(Guid lineId, string storeAlias, int quantity)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-            }
-            if (quantity == 0)
-            {
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-            }
-
-            try
-            {
-                var orderInfo = await Order.Instance.AddOrderLineAsync(
-                    lineId,
-                    quantity,
-                    storeAlias);
-
-                return orderInfo;
-            }
-            catch (Exception ex) when (!(ex is HttpResponseException))
-            {
-                var r = ExceptionHandler.Handle<HttpResponseException>(ex);
-                if (r != null)
-                {
-                    throw r;
-                }
-
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Remove product from order/cart
         /// </summary>
         /// <param name="lineId">Guid Key of product/line</param>

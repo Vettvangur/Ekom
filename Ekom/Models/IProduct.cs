@@ -36,7 +36,7 @@ namespace Ekom.Models
         /// Gets the Vat.
         /// </summary>
         /// <value>
-        /// The stock.
+        /// The vat.
         /// </value>
         decimal Vat { get; }
 

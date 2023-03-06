@@ -40,7 +40,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// Product Stock Keeping Unit.
+        /// Product SKU
         /// </summary>
         public string SKU => Properties.GetPropertyValue("sku");
 
