@@ -33,14 +33,14 @@
 
             if (item.values.length > 0) {
               if (currentValue.length > 0) {
-                $scope.values.push(currentValue[0].Values);
+                $scope.values.push(currentValue[0].values);
               } else {
                 $scope.values.push([]);
               }
 
             } else {
               if (currentValue.length > 0) {
-                $scope.values.push(currentValue[0].Values);
+                $scope.values.push(currentValue[0].values);
               } else {
                 $scope.values.push('');
               }
