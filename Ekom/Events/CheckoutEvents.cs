@@ -26,7 +26,6 @@ namespace Ekom.Events
     public class PayEventArgs : EventArgs
     {
         public IOrderInfo OrderInfo { get; set; }
-
     }
 
     public class ProcessingEventArgs : EventArgs
