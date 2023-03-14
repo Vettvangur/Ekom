@@ -46,9 +46,9 @@ namespace Ekom.Umb.Services
 
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language)
             {
-                foreach (var domain in store.Domains.DistinctBy(x => GetDomainPrefix(x.DomainName)).ToList())
+                foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
                 {
-                    var domainPath = GetDomainPrefix(domain.DomainName);
+                    var domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
                     
                     var builder = new StringBuilder(domainPath);
                     
@@ -106,7 +106,7 @@ namespace Ekom.Umb.Services
             {
                 foreach (var domain in store.Domains)
                 {
-                    string domainPath = GetDomainPrefix(domain.DomainName);
+                    string domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
 
                     var builder = new StringBuilder(domainPath);
 
@@ -153,9 +153,9 @@ namespace Ekom.Umb.Services
 
             if (slugValue != null && slugValue.Type == PropertyEditorType.Language)
             {
-                foreach (var domain in store.Domains.DistinctBy(x => GetDomainPrefix(x.DomainName)).ToList())
+                foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
                 {
-                    string domainPath = GetDomainPrefix(domain.DomainName);
+                    string domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
 
                     var categoryUrl = categoryUrls.FirstOrDefault(x => x.InvariantStartsWith(domainPath));
 
@@ -186,27 +186,6 @@ namespace Ekom.Umb.Services
 
             // Categories order by length, otherwise we mess up primary category priority
             return urls /*.OrderBy(x => x.Length) */;
-        }
-
-        public string GetDomainPrefix(string url)
-        {
-            url = url.AddTrailing();
-
-            if (url.Contains(":") && url.IndexOf(":", StringComparison.Ordinal) > 5)
-            {
-                url = url.Substring(url.IndexOf("/", StringComparison.Ordinal));
-
-                return url;
-            }
-
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uriAbsoluteResult))
-            {
-                return uriAbsoluteResult.AbsolutePath.AddTrailing();
-            }
-
-            var firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
-
-            return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
         }
 
         /// <summary>
