@@ -5,11 +5,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Text;
-using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
-using static Umbraco.Cms.Core.Constants.HttpContext;
 
 namespace Ekom.Umb.Services
 {
@@ -44,6 +42,13 @@ namespace Ekom.Umb.Services
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
 
+            _logger.LogDebug("Store " + store.Alias + " " + string.Join(",", categories.Select(x => x.Name)) + " " + categoryProperty.Type.ToString());
+
+            foreach (var d in store.Domains)
+            {
+                _logger.LogDebug("Store Domain " + d.DomainName + " - " + d.LanguageIsoCode + " - " + DomainHelper.GetDomainPrefix(d.DomainName));
+            }
+            
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language)
             {
                 foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
