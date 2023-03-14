@@ -39,7 +39,7 @@ namespace Ekom.Cache
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            _logger.LogInformation($"Starting to fill store domain cache with {{ Count }} domains...", domains.Count);
+            _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
 
             if (domains.Any())
             {

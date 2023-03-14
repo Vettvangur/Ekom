@@ -55,7 +55,16 @@ namespace Ekom.Models
                 return 0;
             }
         }
-        public virtual IEnumerable<UmbracoDomain> Domains { get; } = new List<UmbracoDomain>();
+        public virtual IEnumerable<UmbracoDomain> Domains
+        {
+            get
+            {
+                return storeDomainCache.Cache
+                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
+                    .Select(x => x.Value)
+                    .ToList();
+            }
+        }
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
@@ -149,12 +158,13 @@ namespace Ekom.Models
                 Url = nodeService.GetUrl(storeRootNodeUdi);
             }
 
+
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
             {
-                Domains = storeDomainCache.Cache
-                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
-                    .Select(x => x.Value)
-                    .ToList();
+                //Domains = storeDomainCache.Cache
+                //    .Where(x => x.Value.RootContentId == StoreRootNodeId)
+                //    .Select(x => x.Value)
+                //    .ToList();
             }
             else
             {
