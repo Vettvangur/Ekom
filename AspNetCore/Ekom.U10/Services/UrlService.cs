@@ -41,15 +41,8 @@ namespace Ekom.Umb.Services
             var urls = new HashSet<string>();
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
-
-            _logger.LogDebug("Store " + store.Alias + " " + string.Join(",", categories.Select(x => x.Name)) + " " + categoryProperty.Type.ToString());
-
-            foreach (var d in store.Domains)
-            {
-                _logger.LogDebug("Store Domain " + d.DomainName + " - " + d.LanguageIsoCode + " - " + DomainHelper.GetDomainPrefix(d.DomainName));
-            }
             
-            if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language)
+            if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains != null)
             {
                 foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
                 {
@@ -156,7 +149,7 @@ namespace Ekom.Umb.Services
 
             var categoryUrls = categories.SelectMany(x => x.Urls);
 
-            if (slugValue != null && slugValue.Type == PropertyEditorType.Language)
+            if (slugValue != null && slugValue.Type == PropertyEditorType.Language && store.Domains != null)
             {
                 foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
                 {
