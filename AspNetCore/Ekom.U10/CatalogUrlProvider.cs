@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
@@ -57,6 +58,7 @@ namespace Ekom.Umb
 
         private IEnumerable<UrlInfo> GetUrls(int id, Uri current)
         {
+#pragma warning disable CS8603 // Possible null reference return.
             return _reqCache.GetCacheItem(
                 "EkomUrlProvider-GetOtherUrls-" + id,
                 () =>
@@ -90,14 +92,34 @@ namespace Ekom.Umb
 
                             if (node != null)
                             {
-                                foreach (var url in node.Urls)
+                                var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
+
+                                if (slugValue.Type == Utilities.PropertyEditorType.Language)
                                 {
-                                    list.Add(new UrlInfo(
-                                        url,
-                                        true,
-                                        store.Title)
-                                    );
+                                    foreach (var domain in store.Domains.Select((value, i) => new { i, value }))
+                                    {
+                                       
+                                        var url = node.Urls.ToArray()[domain.i];
+                                        
+                                        list.Add(new UrlInfo(
+                                            url,
+                                            true,
+                                            domain.value.LanguageIsoCode)
+                                        );
+                                    }
+                                } else
+                                {
+                                    foreach (var url in node.Urls)
+                                    {
+                                        list.Add(new UrlInfo(
+                                            url,
+                                            true,
+                                            store.Title)
+                                        );
+                                    }
                                 }
+
+
                             }
                         }
 
@@ -113,6 +135,7 @@ namespace Ekom.Umb
 
                     return null;
                 });
+#pragma warning restore CS8603 // Possible null reference return.
         }
     }
 }
