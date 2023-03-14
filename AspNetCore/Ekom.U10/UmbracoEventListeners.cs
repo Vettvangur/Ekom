@@ -189,13 +189,13 @@ namespace Ekom.App_Start
 
                 var titlePropertyValue = JsonConvert.DeserializeObject<PropertyValue>(content.GetValue<string>("title"));
 
-                if (titlePropertyValue.Type == "Language")
+                if (titlePropertyValue.Type == PropertyEditorType.Language)
                 {
                     var languages = _umbracoService.GetLanguages();
 
                     propertyTypes.AddRange(languages.Select(x => x.IsoCode));
                 }
-                else if (titlePropertyValue.Type == "Store")
+                else if (titlePropertyValue.Type == PropertyEditorType.Store)
                 {
                     propertyType = PropertyEditorType.Store;
                     var stores = API.Store.Instance.GetAllStores().OrderBy(x => x.SortOrder);

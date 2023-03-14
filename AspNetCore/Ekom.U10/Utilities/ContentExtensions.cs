@@ -66,7 +66,7 @@ namespace Ekom.Utilities
                     {
                         DtdGuid = dataType.Key,
                         Values = values,
-                        Type = type.ToString()
+                        Type = type
                     });
 
                     content.SetValue(alias, value);

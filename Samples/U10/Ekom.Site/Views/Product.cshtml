@@ -8,6 +8,18 @@
 
 <p>@product.Price.WithVat.CurrencyString</p>
 
+<p>Size: @product.GetMetaFieldValue("size")</p>
+
+<p>Product Fit: @product.GetMetaFieldValue("productFit")</p>
+
+<p>Urls</p>
+<ul>
+    @foreach (var url in product.Urls)
+    {
+        <li>@url</li>
+    }
+</ul>
+
 @if (product.Stock > 0 || product.Backorder) 
 {
     @using (Html.BeginEkomForm(FormType.AddToOrderProduct, "product__add-form"))

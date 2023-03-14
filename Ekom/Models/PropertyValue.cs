@@ -1,3 +1,4 @@
+using Ekom.Utilities;
 using Newtonsoft.Json;
 
 namespace Ekom.Models
@@ -9,6 +10,6 @@ namespace Ekom.Models
         [JsonProperty("values")]
         public IDictionary<string, object> Values = new Dictionary<string, object>();
         [JsonProperty("type")]
-        public string Type {get; set;}
+        public PropertyEditorType Type {get; set;}
     }
 }

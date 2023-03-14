@@ -11,5 +11,6 @@ namespace Ekom.Services
         IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query);
         JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values);
         List<Dictionary<string, string>> GetMetaFieldValue(string json, string metafieldAlias);
+        string GetMetaFieldValue(IProduct product, string metafieldAlias, string culture = "");
     }
 }

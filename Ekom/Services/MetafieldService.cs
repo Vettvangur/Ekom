@@ -1,6 +1,8 @@
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace EkomCore.Services
 {
@@ -52,9 +54,9 @@ namespace EkomCore.Services
                             {
                                 var valueObject = arrayItem as JObject;
 
-                                if (valueObject != null && valueObject.ContainsKey("Id"))
+                                if (valueObject != null && valueObject.ContainsKey("id"))
                                 {
-                                    var valueId = valueObject["Id"].ToString();
+                                    var valueId = valueObject["id"].ToString();
 
                                     var fieldValues = field.Values.FirstOrDefault(x => x.Id == valueId);
 
@@ -71,9 +73,9 @@ namespace EkomCore.Services
                         {
                             var valueObject = valuesToken as JObject;
 
-                            if (valueObject != null && valueObject.ContainsKey("Id"))
+                            if (valueObject != null && valueObject.ContainsKey("id"))
                             {
-                                var valueId = valueObject["Id"].ToString();
+                                var valueId = valueObject["id"].ToString();
 
                                 var fieldValues = field.Values.FirstOrDefault(x => x.Id == valueId);
 
@@ -179,6 +181,35 @@ namespace EkomCore.Services
             }
 
             return metaField.Values;
+        }
+
+        public string GetMetaFieldValue(IProduct product, string metafieldAlias, string culture = "")
+        {
+            var nodeMetaFields = product.Metafields;
+
+            if (nodeMetaFields == null || !nodeMetaFields.Any())
+            {
+                return string.Empty;
+            }
+
+            var metaField = nodeMetaFields.FirstOrDefault(x => x.Field.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
+
+            if (metaField == null)
+            {
+                return string.Empty;
+            }
+
+            if (metaField.Values.Any(x => x.ContainsKey("")))
+            {
+                return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault();
+            }
+            
+            if (metaField.Values.Any(x => x.ContainsKey(culture)))
+            {
+                return string.Join(",", metaField.Values.Where(x => x.ContainsKey(culture)).Select(d => d.GetValue(culture)));
+            }
+
+            return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault();
         }
 
         public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)

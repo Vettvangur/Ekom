@@ -3,8 +3,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Text;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
@@ -42,19 +42,27 @@ namespace Ekom.Umb.Services
 
             if (store.Domains != null)
             {
-                var domains = store.Domains.Select(domain => GetDomainPrefix(domain.DomainName)).Distinct().ToList();
-
-                foreach (var domainPath in domains)
+                foreach (var domain in store.Domains.DistinctBy(x => GetDomainPrefix(x.DomainName)).ToList())
                 {
+                    var domainPath = GetDomainPrefix(domain.DomainName);
+                    
                     var builder = new StringBuilder(domainPath);
                     
                     foreach (var item in items)
                     {
-                        var itemSlugValue = item.GetValue("slug");
-                        var slugValueByCulture = itemSlugValue.GetEkomPropertyEditorValue("values").GetEkomPropertyEditorValue(store.Culture.ToString());
+                        string slug = "";
+                        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(item.GetValue("slug"));
 
-                        if (!string.IsNullOrWhiteSpace(slugValueByCulture))
-                            builder.Append(slugValueByCulture.ToUrlSegment(_shortStringHelper).AddTrailing());
+                        if (slugValue.Type == PropertyEditorType.Language)
+                        {
+                            slug = item.GetValue("slug", domain.LanguageIsoCode);
+                        } else if (slugValue.Type == PropertyEditorType.Store)
+                        {
+                            slug = item.GetValue("slug", store.Alias);
+                        }
+                        
+                        if (!string.IsNullOrWhiteSpace(slug))
+                            builder.Append(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
                     }
 
                     var url = builder.ToString().AddTrailing().ToLower();
@@ -68,11 +76,11 @@ namespace Ekom.Umb.Services
 
                 foreach (var item in items)
                 {
-                    var categorySlug = item.GetValue("slug");//, store.Alias);
-                    var slugValueByCulture = categorySlug.GetEkomPropertyEditorValue("values").GetEkomPropertyEditorValue(store.Culture.ToString());
-                    if (!string.IsNullOrWhiteSpace(slugValueByCulture))
+                    var categorySlug = item.GetValue("slug", store.Alias);
+
+                    if (!string.IsNullOrWhiteSpace(categorySlug))
                     {
-                        builder.Append(slugValueByCulture.ToUrlSegment(_shortStringHelper).AddTrailing());
+                        builder.Append(categorySlug.ToUrlSegment(_shortStringHelper).AddTrailing());
                     }
                 }
 
@@ -130,24 +138,46 @@ namespace Ekom.Umb.Services
             return urls.OrderBy(x => x.Length);
         }
 
-        public IEnumerable<string> BuildProductUrls(string slug, IEnumerable<ICategory> categories, IStore store, int nodeId)
+        public IEnumerable<string> BuildProductUrls(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
         {
-            var urls = new HashSet<string>();
+            var slug = item.GetValue("slug");
 
             if (string.IsNullOrWhiteSpace(slug))
             {
                 throw new Exception("Slug is missing on product: " + nodeId + " Store: " + store.Alias);
             }
+            
+            var urls = new HashSet<string>();
 
-            //TODO: prettify...
-            var test2 = slug.GetEkomPropertyEditorValue("values").GetEkomPropertyEditorValue(store.Culture.ToString());
-            foreach (var category in categories)
+            var categoryUrls = categories.SelectMany(x => x.Urls);
+
+            if (store.Domains != null)
             {
-                foreach (var categoryUrl in category.Urls)
+                foreach (var domain in store.Domains.DistinctBy(x => GetDomainPrefix(x.DomainName)).ToList())
                 {
-                    var url = categoryUrl + test2.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+                    string domainPath = GetDomainPrefix(domain.DomainName);
 
-                    urls.Add(url);
+                    var categoryUrl = categoryUrls.FirstOrDefault(x => x.InvariantStartsWith(domainPath));
+
+                    if (categoryUrl != null)
+                    {
+                        var productSlug = "";
+
+                        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(slug);
+
+                        if (slugValue.Type == PropertyEditorType.Language)
+                        {
+                            productSlug = item.GetValue("slug", domain.LanguageIsoCode);
+                        }
+                        else if (slugValue.Type == PropertyEditorType.Store)
+                        {
+                            productSlug = item.GetValue("slug", store.Alias);
+                        }
+
+                        var url = categoryUrl + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                        urls.Add(url);
+                    }
                 }
             }
 
