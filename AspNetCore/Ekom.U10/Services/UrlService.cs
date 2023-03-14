@@ -44,7 +44,8 @@ namespace Ekom.Umb.Services
 
             _logger.LogDebug("BuildCategoryUrls");
             _logger.LogDebug(JsonConvert.SerializeObject(store));
-            
+            _logger.LogDebug(JsonConvert.SerializeObject(Ekom.API.Store.Instance.GetDomains()));
+
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
             {
                 foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
