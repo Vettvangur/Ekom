@@ -19,31 +19,11 @@ namespace Ekom.Models
         /// Usually a two letter code, f.x. EU/IS/DK
         /// </summary>
         public virtual string Alias => Properties["nodeName"];
-        private UmbracoContent _storeRootNode;
+        
+
         [JsonIgnore]
         [XmlIgnore]
-        public virtual UmbracoContent StoreRootNode {
-        
-            get
-            {
-                if (_storeRootNode == null)
-                {
-                    if (Properties.HasPropertyValue("storeRootNode"))
-                    {
-                        var storeRootNodeUdi = GetValue("storeRootNode");
-
-                        var storeRootNode = nodeService.NodeById(storeRootNodeUdi);
-
-                        if (storeRootNode != null)
-                        {
-                            _storeRootNode = storeRootNode;
-                        }
-                    }
-                }
-
-                return _storeRootNode;
-            }
-        }
+        public virtual UmbracoContent StoreRootNode { get; set; }
         public virtual int StoreRootNodeId
         {
             get
@@ -55,16 +35,7 @@ namespace Ekom.Models
                 return 0;
             }
         }
-        public virtual IEnumerable<UmbracoDomain> Domains
-        {
-            get
-            {
-                return storeDomainCache.Cache
-                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
-                    .Select(x => x.Value)
-                    .ToList();
-            }
-        }
+        public virtual IEnumerable<UmbracoDomain> Domains { get; } = new List<UmbracoDomain>();
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
@@ -156,15 +127,15 @@ namespace Ekom.Models
                 var storeRootNodeUdi = item.GetValue("storeRootNode");
 
                 Url = nodeService.GetUrl(storeRootNodeUdi);
+                StoreRootNode = nodeService.NodeById(storeRootNodeUdi);
             }
-
 
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
             {
-                //Domains = storeDomainCache.Cache
-                //    .Where(x => x.Value.RootContentId == StoreRootNodeId)
-                //    .Select(x => x.Value)
-                //    .ToList();
+                Domains = storeDomainCache.Cache
+                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
+                    .Select(x => x.Value)
+                    .ToList();
             }
             else
             {

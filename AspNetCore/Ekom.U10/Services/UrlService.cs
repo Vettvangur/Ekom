@@ -42,9 +42,7 @@ namespace Ekom.Umb.Services
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
 
-            _logger.LogDebug("BuildCategoryUrls");
-            _logger.LogDebug(JsonConvert.SerializeObject(store));
-            _logger.LogDebug(JsonConvert.SerializeObject(Ekom.API.Store.Instance.GetDomains()));
+            var domains = Ekom.API.Store.Instance.GetDomains();
 
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
             {
