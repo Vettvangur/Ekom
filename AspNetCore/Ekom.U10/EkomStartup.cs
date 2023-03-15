@@ -148,9 +148,9 @@ class EkomStartup : IComponent
                 as ICache;
 
             stockCache.FillCache();
-
+            
             _factory.GetService<ICouponCache>()
-                .FillCache(); ;
+                .FillCache();
 
             _logger.LogInformation("Ekom Started");
         }

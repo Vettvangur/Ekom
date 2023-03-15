@@ -121,7 +121,6 @@ namespace Ekom.Models
         /// <param name="item"></param>
         internal protected Store(UmbracoContent item) : base(item)
         {
-
             if (item.Properties.HasPropertyValue("storeRootNode"))
             {
                 var storeRootNodeUdi = item.GetValue("storeRootNode");

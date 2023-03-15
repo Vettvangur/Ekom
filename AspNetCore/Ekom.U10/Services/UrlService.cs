@@ -42,8 +42,6 @@ namespace Ekom.Umb.Services
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
 
-            var domains = Ekom.API.Store.Instance.GetDomains();
-
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
             {
                 foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
