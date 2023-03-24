@@ -27,6 +27,7 @@
       <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\package.manifest" />
     </ItemGroup>
     <ItemGroup>
+      <Content Include="App_Plugins\EkomManager\view.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
@@ -45,6 +46,7 @@
       <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen.css" />
     </ItemGroup>
     <ItemGroup>
+      <None Include="App_Plugins\EkomManager\Lang\en-us.xml" />
       <None Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />

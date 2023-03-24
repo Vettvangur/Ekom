@@ -27,7 +27,6 @@ namespace Ekom.Umb.Models
                 x => x.Alias,
                 x => x.GetSourceValue()?.ToString()))
         {
-        
         }
 
         public Umbraco10Content(IContent content)

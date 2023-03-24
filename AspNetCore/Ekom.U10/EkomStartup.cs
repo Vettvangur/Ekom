@@ -4,6 +4,7 @@ using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Umb.Sections;
 using Ekom.Umb.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -49,6 +50,8 @@ public class EkomComposer : IComposer
             .Append<EnsureNodesExist>()
             .Append<EkomStartup>()
             ;
+
+        builder.Sections().Append<ManagerSection>();
 
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
