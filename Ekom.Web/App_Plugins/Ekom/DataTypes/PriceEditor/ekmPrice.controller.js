@@ -9,8 +9,7 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
   //$scope.currencies = [];
   $scope.stores = [];
 
-  $http.get(Umbraco.Sys.ServerVariables.ekom.apiEndpoint + 'Stores').then(function (results) {
-
+  $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'Stores').then(function (results) {
 
     $scope.stores = results.data;
 
@@ -68,10 +67,10 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
     // Reset Prices if currency is not included in the current model
     Object.entries($scope.prices).forEach(([storeAlias, storeArr], priceIndex) => {
-      const store = $scope.stores.find(store => store.Alias === storeAlias)
+      const store = $scope.stores.find(store => store.alias === storeAlias)
       if (store) {
 
-        const validCurr = store.Currencies.map(curr => curr.CurrencyValue);
+        const validCurr = store.currencies.map(curr => curr.currencyValue);
         const storeArrValues = storeArr.map(curr => curr.Currency);
 
         storeArr.forEach((priceCurrency, i) => {
@@ -88,7 +87,7 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
           if (!storeArrValues.includes(curr)) {
 
-            $scope.prices[store.Alias].push({
+            $scope.prices[store.alias].push({
               Currency: curr,
               Price: 0
             });
@@ -122,7 +121,6 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
       }
 
     }
-
   });
 
   $scope.$on("formSubmitting", function () {

@@ -1,4 +1,4 @@
-<div ng-controller="Ekom.Price">
+﻿<div ng-controller="Ekom.Price">
 
   <fieldset ng-repeat="store in stores">
     <legend style="font-size: 18px; font-weight:bold;">{{ store.Alias }}</legend>
@@ -7,9 +7,9 @@
         <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">
           {{ currency.isoCurrencySymbol }}
         </label>
-        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].price" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
+        <input type="number" min="0" step="any" id="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="prices[store.alias][$index].Price" /> <span style="display: inline-block; vertical-align: bottom; margin-bottom:5px;">{{ currency.currencySymbol }}</span>
       </div>
     </div>
-  <fieldset/>
+    <fieldset />
 
 </div>
