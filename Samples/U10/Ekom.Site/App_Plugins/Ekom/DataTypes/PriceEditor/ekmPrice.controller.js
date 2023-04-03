@@ -11,7 +11,6 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
   $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'Stores').then(function (results) {
 
-
     $scope.stores = results.data;
 
     // Set default prices value from existing value
@@ -71,7 +70,7 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
       const store = $scope.stores.find(store => store.alias === storeAlias)
       if (store) {
 
-        const validCurr = store.Currencies.map(curr => curr.CurrencyValue);
+        const validCurr = store.currencies.map(curr => curr.currencyValue);
         const storeArrValues = storeArr.map(curr => curr.Currency);
 
         storeArr.forEach((priceCurrency, i) => {
@@ -122,7 +121,6 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
       }
 
     }
-
   });
 
   $scope.$on("formSubmitting", function () {
