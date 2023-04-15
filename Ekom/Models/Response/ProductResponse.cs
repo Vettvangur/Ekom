@@ -113,6 +113,14 @@ namespace Ekom.Models
             {
                 return products.OrderByDescending(x => x.SortOrder);
             }
+            else if (orderBy == Utilities.OrderBy.SkuAsc)
+            {
+                return products.OrderBy(x => x.SKU);
+            }
+            else if (orderBy == Utilities.OrderBy.SkuDesc)
+            {
+                return products.OrderByDescending(x => x.SKU);
+            }
 
             return products.OrderBy(x => x.SortOrder);
         } 
