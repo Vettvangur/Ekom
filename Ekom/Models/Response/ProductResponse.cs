@@ -33,7 +33,7 @@ namespace Ekom.Models
                 var searchResults = _searhService.Query(new SearchRequest() {
                     SearchQuery = query.SearchQuery,
                     NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
-                    SearchFields = query.SearchFields,
+                    SearchFields = query.SearchFields
                 }, out long total);
                 
                 scope.Dispose();

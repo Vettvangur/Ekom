@@ -69,49 +69,43 @@ namespace Ekom.Cache
         /// </summary>
         public virtual void FillCache()
         {
-            if (!string.IsNullOrEmpty(NodeAlias))
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            _logger.LogDebug("Starting to fill...");
+
+            var count = 0;
+
+            var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished());
+
+            foreach (var r in results)
             {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                _logger.LogDebug("Starting to fill...");
-
-                var count = 0;
-
-                var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished());
-
-                foreach (var r in results)
+                try
                 {
-                    try
-                    {
-                        // Traverse up parent nodes, checking only published status
-                        //if (!r.IsItemUnpublished())
-                        //{
-                        var item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
+                    // Traverse up parent nodes, checking only published status
+                    //if (!r.IsItemUnpublished())
+                    //{
+                    var item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
 
-                        if (item != null)
-                        {
-                            count++;
-
-                            AddOrReplaceFromCache(r.Key, item);
-                        }
-                        //}
-                    }
-                    catch (Exception ex) // Skip on fail
+                    if (item != null)
                     {
-                        _logger.LogWarning(ex, "Failed to map to store. Id: {Id}" + r.Id);
+                        count++;
+
+                        AddOrReplaceFromCache(r.Key, item);
                     }
+                    //}
                 }
+                catch (Exception ex) // Skip on fail
+                {
+                    _logger.LogWarning(ex, "Failed to map to store. Id: {Id}" + r.Id);
+                }
+            }
 
-                stopwatch.Stop();
-                _logger.LogInformation(
-                    "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
-            }
-            else
-            {
-                _logger.LogError(
-                    "No examine search found with the name {ExamineIndex}, Can not fill cache.", _config.ExamineIndex);
-            }
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
+
         }
 
         /// <summary>

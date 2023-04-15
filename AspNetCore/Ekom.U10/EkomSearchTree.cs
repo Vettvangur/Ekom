@@ -23,7 +23,8 @@ namespace Ekom.Tree
             if (!string.IsNullOrEmpty(query) && query.Length > 2)
             {
                 var results = _searchService.Query(new SearchRequest() {
-                    SearchQuery = query
+                    SearchQuery = query,
+                    ExamineIndex = "InternalIndex"
                 }, out _);
 
                 foreach (var result in results)
