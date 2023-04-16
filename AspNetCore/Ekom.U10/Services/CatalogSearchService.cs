@@ -48,17 +48,27 @@ namespace Ekom.Umb.Services
                 new EkomSearchField()
                 {
                     Name = "nodeName",
-                    Booster = "^2.0"
+                    Booster = "^4.0"
                 },
                 new EkomSearchField()
                 {
                     Name = "sku",
-                    Booster = "^5.0",
+                    Booster = "^10.0",
                     SearchType = EkomSearchType.Wildcard
                 },
                 new EkomSearchField()
                 {
                     Name = "title",
+                    Booster = "^4.0"
+                },
+                 new EkomSearchField()
+                {
+                    Name = "description",
+                    Booster = "^2.0"
+                },
+                new EkomSearchField()
+                {
+                    Name = "searchTags",
                     Booster = "^2.0"
                 },
                 new EkomSearchField()

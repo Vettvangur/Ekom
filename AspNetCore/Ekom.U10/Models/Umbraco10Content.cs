@@ -29,7 +29,7 @@ namespace Ekom.Umb.Models
             }, pair => {
                 
                 try {
-                    return pair.PropertyType.VariesByCulture() ? pair.GetSourceValue("is-IS")?.ToString() ?? "" : pair.GetSourceValue()?.ToString() ?? "";
+                    return pair.PropertyType.VariesByCulture() ? pair.GetSourceValue(content.Cultures.FirstOrDefault().Value?.Culture)?.ToString() ?? "" : pair.GetSourceValue()?.ToString() ?? "";
                 } catch {
                     throw new Exception("Failed to GetSourceValue for : " + pair.Alias + " Node: " + content.Id);
                 }

@@ -653,6 +653,10 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Primary Variant Group",
                                         },
+                                        new PropertyType(_shortStringHelper, textstringDt, "searchTags")
+                                        {
+                                            Name = "Search Tags",
+                                        },
                                     }))
                                 {
                                     Alias = "product",
