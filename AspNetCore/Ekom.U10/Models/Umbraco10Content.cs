@@ -25,13 +25,13 @@ namespace Ekom.Umb.Models
             },
             content.Properties.Where(x => !string.IsNullOrEmpty(x.Alias)).ToDictionary(pair =>
             {
-                return pair.Alias;
+                    return pair.Alias;
             }, pair => {
                 
                 try {
-                    return pair.GetSourceValue()?.ToString() ?? "";
+                    return pair.PropertyType.VariesByCulture() ? pair.GetSourceValue("is-IS")?.ToString() ?? "" : pair.GetSourceValue()?.ToString() ?? "";
                 } catch {
-                    throw new Exception("Failed to GetSourceValue for : " + pair.Alias);
+                    throw new Exception("Failed to GetSourceValue for : " + pair.Alias + " Node: " + content.Id);
                 }
             }))
         {

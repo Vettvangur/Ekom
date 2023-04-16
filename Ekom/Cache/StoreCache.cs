@@ -31,8 +31,8 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            try
-            {
+            //try
+            //{
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -43,19 +43,19 @@ namespace Ekom.Cache
 
                 foreach (var r in results)
                 {
-                    try
-                    {
+                    //try
+                    //{
                         var item = _objFac?.Create(r) ?? new Store(r);
 
                         count++;
 
                         AddOrReplaceFromCache(r.Key, item);
 
-                    }
-                    catch (Exception ex) // Skip on fail
-                    {
-                        _logger.LogError(ex, "Failed to map to store. Id: {Id}", r.Id);
-                    }
+                    //}
+                    //catch (Exception ex) // Skip on fail
+                    //{
+                    //    _logger.LogError(ex, "Failed to map to store. Id: {Id}", r.Id);
+                    //}
                 }
 
                 stopwatch.Stop();
@@ -64,11 +64,11 @@ namespace Ekom.Cache
                     count,
                     stopwatch.Elapsed);
 
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to build store Cache");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogError(ex, "Failed to build store Cache");
+            //}
 
         }
 
