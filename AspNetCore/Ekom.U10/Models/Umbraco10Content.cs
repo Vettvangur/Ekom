@@ -23,7 +23,7 @@ namespace Ekom.Umb.Models
                 { "__VariesByCulture", content.Cultures.Count > 1 ? "y" : "n" },
                 { "url", content.Url() }
             },
-            content.Properties.ToDictionary(
+            content.Properties.Where(x => !string.IsNullOrEmpty(x.Alias)).ToDictionary(
                 x => x.Alias,
                 x => x.GetSourceValue()?.ToString()))
         {

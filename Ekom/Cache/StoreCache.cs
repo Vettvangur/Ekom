@@ -54,10 +54,9 @@ namespace Ekom.Cache
                     }
                     catch (Exception ex) // Skip on fail
                     {
-                        _logger.LogWarning(ex, "Failed to map to store. Id: {Id}", r.Id);
+                        _logger.LogError(ex, "Failed to map to store. Id: {Id}", r.Id);
                     }
                 }
-
 
                 stopwatch.Stop();
                 _logger.LogInformation(
