@@ -260,8 +260,14 @@ namespace Ekom.Utilities
 
                 foreach (var value in _values)
                 {
-                    var currencyValue = value["Currency"].Value<string>();
+                    var currencyValue = value["Currency"] != null ? value["Currency"].Value<string>() : value["currency"] != null ? value["currency"].Value<string>() : "";
+
                     var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
+
+                    if (val == 0)
+                    {
+                        val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
+                    }
 
                     values.Add(new CurrencyValue(val, currencyValue));
                 }

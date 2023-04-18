@@ -1,6 +1,4 @@
 using Ekom.Utilities;
-using System;
-using System.Collections.Generic;
 
 namespace Ekom.Models
 {
