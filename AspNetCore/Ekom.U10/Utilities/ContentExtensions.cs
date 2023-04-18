@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Extensions;
 
 namespace Ekom.Utilities
 {
@@ -230,7 +231,14 @@ namespace Ekom.Utilities
             {
                 try
                 {
-                    return JsonConvert.DeserializeObject<PropertyValue>(property.GetValue().ToString());
+                    var propertyValue = property.GetValue().ToString();
+
+                    // Price fix. Values not added on publish. Needs a permament fix
+                    if (!string.IsNullOrEmpty(propertyValue) && !propertyValue.InvariantContains("values")) {
+                        propertyValue = "{\"values\":" + propertyValue + "}";
+                    }
+
+                    return JsonConvert.DeserializeObject<PropertyValue>(propertyValue);
                 } catch(JsonException ex)
                 {
                     return null;
