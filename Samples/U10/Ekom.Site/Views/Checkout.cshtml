@@ -1,12 +1,15 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @using Ekom.Payments
 @using Ekom.Payments.Valitor
+@using Ekom.Payments.ValitorPay
 @inject EkomPayments ekmPayments
 
 @{
     Layout = null;
 
-    var pp = ekmPayments.GetPaymentProvider("valitor");
+    var ppProvider = "valitorPay";
+
+    var pp = ekmPayments.GetPaymentProvider(ppProvider);
 
     var settings = new PaymentSettings
     {
@@ -24,10 +27,31 @@
         Language = "is-IS",
         Member = 1,
     };
-    settings.SetValitorSettings(new ValitorSettings
-    {
 
-    });
+    switch (ppProvider)
+    {
+        case "valitor":
+
+            settings.SetValitorSettings(new ValitorSettings
+            {
+
+            });
+
+            break;
+
+        case "valitorPay":
+
+            settings.SetValitorPaySettings(new ValitorPaySettings
+            {
+                CardNumber = "2223000010246699",
+                ExpirationMonth = 12,
+                ExpirationYear = 2030,
+                CVV = "123",
+            });
+
+            break;
+    }
+
     var form = await pp.RequestAsync(settings);
 
     @Html.Raw(form)

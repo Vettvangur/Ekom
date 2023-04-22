@@ -19,14 +19,16 @@ public class ValitorPaySettings : PaymentSettingsBase<ValitorPaySettings>
     /// <summary>
     /// 16 digit payment card number
     /// </summary>
-    public string sdfagfadsasdfafsd CardNumber { get; set; }
+    public string CardNumber { get; set; }
 
     public int ExpirationMonth { get; set; }
     
     public int ExpirationYear { get; set; }
-
+    
     /// <summary>
     /// Card Verification Value. Triple digit number on the back of the card.
     /// </summary>
     public string CVV { get; set; }
+    
+    public string VirtualCardNumber { get; set; }
 }

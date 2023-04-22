@@ -105,7 +105,6 @@ class Payment : IPaymentProvider
 
             var cancelUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.CancelUrl, _httpCtx.Request);
             var reportUrl = PaymentsUriHelper.EnsureFullUri(new Uri(reportPath, UriKind.Relative), _httpCtx.Request);
-            var unusedReportUrl = PaymentsUriHelper.EnsureFullUri(new Uri("/umbraco", UriKind.Relative), _httpCtx.Request);
 
             // Begin populating form values to be submitted
             var formValues = new Dictionary<string, string?>
@@ -118,7 +117,7 @@ class Payment : IPaymentProvider
                 { "Currency", paymentSettings.Currency },
                 { "Language", ParseSupportedLanguages(paymentSettings.Language) },
 
-                { "PaymentSuccessfulURL", reportUrl.ToString() },
+                { "PaymentSuccessfulURL", paymentSettings.SuccessUrl.ToString() },
                 { "PaymentSuccessfulURLText", /*valitorSettings.SkipReceipt*/ true 
                     ? "-" : 
                     valitorSettings.PaymentSuccessfulURLText 
@@ -129,18 +128,7 @@ class Payment : IPaymentProvider
                 },
                 { "PaymentCancelledURL", cancelUrl.ToString() },
 
-                // We don't use this during , since the same params are provided in successful url
-                // that way we can control that redirection is only made after processing of our backend server
-                // Instead we direct these reports to /umbraco where they will safely receive a 200 response but
-                // no further processing will be done
-                //
-                // This also means we don't currently support using valitor's receipt page
-                // since when used, the customer will not necessarily use the store receipt page
-                // which would skip the server side processing
-                //
-                // Supporting receiving both would either require db locking 
-                // or accepting that duplicate payment data might be inserted in edge cases
-                { "PaymentSuccessfulServerSideURL", unusedReportUrl.ToString() },
+                { "PaymentSuccessfulServerSideURL", reportUrl.ToString() },
             };
 
             if (valitorSettings.SessionExpiredTimeoutInSeconds != 0
@@ -172,9 +160,9 @@ class Payment : IPaymentProvider
             }
 
             sb.Append(valitorSettings.MerchantId);
-            sb.Append(orderStatus.UniqueId.ToString());
+            sb.Append(orderStatus.UniqueId);
+            sb.Append(paymentSettings.SuccessUrl);
             sb.Append(reportUrl);
-            sb.Append(unusedReportUrl);
             sb.Append(paymentSettings.Currency);
 
             if (valitorSettings.LoanType != LoanType.Disabled)

@@ -1,5 +1,3 @@
-using System;
-
 namespace Ekom.Payments.ValitorPay;
 
 /// <summary>
@@ -7,35 +5,35 @@ namespace Ekom.Payments.ValitorPay;
 /// Supplied by library consumer.
 /// Local in this context is in contrast with callbacks to be performed after a remote provider response f.x.
 /// </summary>
-public static class LocalCallback
+public static class Events
 {
     /// <summary>
     /// Raises the success event on successful payment verification
     /// </summary>
     /// <param name="o"></param>
-    internal static void OnSuccess(OrderStatus o)
+    internal static void OnSuccess(object sender, SuccessEventArgs successEventArgs)
     {
-        Success?.Invoke(o);
-        Events.OnSuccess(o);
-
+        Success?.Invoke(sender, successEventArgs);
+        Ekom.Payments.Events.OnSuccess(sender, successEventArgs);
     }
-
+    
     /// <summary>
-    /// Raises the success event on successful payment verification
+    /// Raises the error event on failed payments
     /// </summary>
     /// <param name="o"></param>
     /// <param name="ex"></param>
-    internal static void OnError(OrderStatus o, Exception ex)
+    internal static void OnError(object sender, ErrorEventArgs errorEventArgs)
     {
-        Error?.Invoke(o, ex);
-        Events.OnError(o, ex);
+        Error?.Invoke(sender, errorEventArgs);
+        Ekom.Payments.Events.OnError(sender, errorEventArgs);
     }
+    
     /// <summary>
     /// Event fired on successful payment verification
     /// </summary>
-    public static event Events.SuccessEvent Success;
+    public static event EventHandler<SuccessEventArgs>? Success;
     /// <summary>
     /// Event fired on payment verification error
     /// </summary>
-    public static event Events.ErrorEvent Error;
+    public static event EventHandler<ErrorEventArgs>? Error;
 }

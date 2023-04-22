@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-    <ProjectReference Include="..\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
-  </ItemGroup>
+      <ProjectReference Include="..\..\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
+    </ItemGroup>
 
 </Project>

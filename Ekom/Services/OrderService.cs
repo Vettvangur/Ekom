@@ -212,6 +212,14 @@ namespace Ekom.Services
         ///		What if the user wants to check payment terms for different loan providers, pressing back button after each one
         ///			create new order from old one
         ///
+        /// 2023-04-3 - This doesn't work great with most payment providers
+        /// As they are async, receipt pages often have to show order data from WaitingForPayment orders.
+        /// While the receipt itself can be controlled, oftentimes the header and other portions of page are retrieving order as well.
+        /// This will cause a copy to be made despite the customer just completing payment.
+        /// 
+        /// We probably need some more robust support of cart editing during payment.
+        /// F.x. compare cart when sent to payment provider
+        /// 
         /// </summary>
         /// <param name="orderInfo"></param>
         /// <returns></returns>

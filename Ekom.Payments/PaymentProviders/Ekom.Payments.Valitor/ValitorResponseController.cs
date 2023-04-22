@@ -48,6 +48,7 @@ public class ValitorResponseController : ControllerBase
     /// Changes order status and optionally runs a custom callback provided by the application consuming this library.
     /// </summary>
     /// <param name="valitorResp">Valitor querystring parameters</param>
+    [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet, HttpPost]
     [Route("")]
     public async Task<IActionResult> Post([FromQuery] Response valitorResp)
