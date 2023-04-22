@@ -1,0 +1,3 @@
+[submodule "Ekom.Payments/PaymentProviders/ValitorPay"]
+	path = Ekom.Payments/PaymentProviders/ValitorPay
+	url = https://github.com/Vettvangur/ValitorPay
