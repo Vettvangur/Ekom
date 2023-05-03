@@ -201,7 +201,7 @@ namespace Ekom.Services
         /// 
         /// Orders while waiting for payment
         ///	we must stop modification of orders during and after payment
-        ///		Example: User sent to valitor to pay, completes payment, valitor takes an hour to send callback, meanwhile user fiddles with his cart while twiddling his thumb and everything goes to shit non-maliciously
+        ///		Example: User sent to valitor to pay, completes payment, valitor takes an hour to send callback, meanwhile user fiddles with his cart while twiddling his thumb and everything goes wrong non-maliciously
         ///			this could happen with simple amount validation as well
         ///	simple validation, compare amount paid and stored order payment amount
         ///		not good if user changes cart but keeps amount to some unknown gain
@@ -218,33 +218,33 @@ namespace Ekom.Services
         /// <returns></returns>
         private async Task<OrderInfo> ReturnNonFinalOrderAsync(OrderInfo orderInfo)
         {
-            if (orderInfo?.OrderStatus == OrderStatus.WaitingForPayment)
-            {
-                _logger.LogDebug(
-                    "ReturnNonFinalOrderAsync {UniqueId} - OrderStatus == WaitingForPayment - Cloning old orderdata to new",
-                    orderInfo.UniqueId
-                );
+            //if (orderInfo?.OrderStatus == OrderStatus.WaitingForPayment)
+            //{
+            //    _logger.LogDebug(
+            //        "ReturnNonFinalOrderAsync {UniqueId} - OrderStatus == WaitingForPayment - Cloning old orderdata to new",
+            //        orderInfo.UniqueId
+            //    );
 
-                var newOrder = await CreateEmptyOrderAsync(orderInfo.StoreInfo.Alias)
-                    .ConfigureAwait(false);
+            //    var newOrder = await CreateEmptyOrderAsync(orderInfo.StoreInfo.Alias)
+            //        .ConfigureAwait(false);
 
-                // Prefer this to the other way around since new data added is
-                // less likely to pertain to uniqueness.
-                var oldData = orderInfo.OrderDataClone();
-                oldData.UniqueId = newOrder.UniqueId;
-                oldData.ReferenceId = newOrder.ReferenceId;
-                oldData.OrderStatus = newOrder.OrderStatus;
-                oldData.OrderNumber = newOrder.OrderNumber;
-                oldData.CreateDate = newOrder.CreateDate;
-                oldData.UpdateDate = newOrder.UpdateDate;
+            //    // Prefer this to the other way around since new data added is
+            //    // less likely to pertain to uniqueness.
+            //    var oldData = orderInfo.OrderDataClone();
+            //    oldData.UniqueId = newOrder.UniqueId;
+            //    oldData.ReferenceId = newOrder.ReferenceId;
+            //    oldData.OrderStatus = newOrder.OrderStatus;
+            //    oldData.OrderNumber = newOrder.OrderNumber;
+            //    oldData.CreateDate = newOrder.CreateDate;
+            //    oldData.UpdateDate = newOrder.UpdateDate;
 
-                newOrder = new OrderInfo(oldData);
+            //    newOrder = new OrderInfo(oldData);
 
-                // Fixes the remaining outdated data
-                await UpdateOrderAndOrderInfoAsync(newOrder, false)
-                    .ConfigureAwait(false);
-                return newOrder;
-            }
+            //    // Fixes the remaining outdated data
+            //    await UpdateOrderAndOrderInfoAsync(newOrder, false)
+            //        .ConfigureAwait(false);
+            //    return newOrder;
+            //}
 
             if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
             {

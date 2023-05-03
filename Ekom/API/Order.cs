@@ -500,7 +500,7 @@ namespace Ekom.API
                 || orderStatus.Value == OrderStatus.ReadyForDispatch
                 || orderStatus.Value == OrderStatus.ReadyForDispatchWhenStockArrives
                 || orderStatus.Value == OrderStatus.Dispatched
-                || orderStatus.Value == OrderStatus.WaitingForPayment
+                //|| orderStatus.Value == OrderStatus.WaitingForPayment
                 || orderStatus.Value == OrderStatus.Returned
                 || orderStatus.Value == OrderStatus.Cancelled
                 || orderStatus.Value == OrderStatus.Closed
