@@ -141,13 +141,14 @@ namespace Ekom.Services
 
             var keys = form.Keys;
 
+            var formCollection = keys.ToDictionary(
+                k => k,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
+            );
+            
             if (keys.Contains("ekomUpdateInformation"))
             {
                 var saveCustomerData = false;
-                var formCollection = keys.ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-                    );
                 
                 if (!formCollection.ContainsKey("storeAlias"))
                 {
@@ -188,14 +189,14 @@ namespace Ekom.Services
             {
                 await Order.Instance.UpdatePaymentInformationAsync(
                     paymentRequest.PaymentProvider,
-                    order.StoreInfo.Alias).ConfigureAwait(false);
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
             if (order.ShippingProvider == null || (order.ShippingProvider != null && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 await Order.Instance.UpdateShippingInformationAsync(
                     paymentRequest.ShippingProvider,
-                    order.StoreInfo.Alias).ConfigureAwait(false);
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
             if (Config.StoreCustomerData)

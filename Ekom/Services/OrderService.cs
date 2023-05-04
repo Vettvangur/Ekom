@@ -1200,7 +1200,12 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
                     {
-                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, settings).ConfigureAwait(false);
+                        var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("pashippingproviderymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+
+                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+
                     }
                 }
 
@@ -1208,7 +1213,11 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
                     {
-                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, settings).ConfigureAwait(false);
+                        var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+
+                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
                     }
                 }
 
@@ -1221,7 +1230,6 @@ namespace Ekom.Services
                 foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
                 {
                     var value = form[key];
-
                     orderInfo.CustomerInformation.Shipping.Properties[key] = value;
                 }
 
@@ -1235,6 +1243,7 @@ namespace Ekom.Services
         public async Task<OrderInfo> UpdateShippingInformationAsync(
             Guid shippingProviderId,
             string storeAlias,
+            Dictionary<string,string> customData,
             OrderSettings settings = null)
         {
             _logger.LogDebug("UpdateShippingInformation...");
@@ -1272,8 +1281,7 @@ namespace Ekom.Services
 
                     if (provider != null)
                     {
-
-                        var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo);
+                        var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
 
                         orderInfo.ShippingProvider = orderedShippingProvider;
 
@@ -1296,6 +1304,7 @@ namespace Ekom.Services
         public async Task<OrderInfo> UpdatePaymentInformationAsync(
             Guid paymentProviderId,
             string storeAlias,
+            Dictionary<string,string> customData,
             OrderSettings settings = null)
         {
             _logger.LogDebug("UpdatePaymentInformation...");
@@ -1333,7 +1342,7 @@ namespace Ekom.Services
 
                     if (provider != null)
                     {
-                        var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo);
+                        var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
 
                         orderInfo.PaymentProvider = orderedPaymentProvider;
 

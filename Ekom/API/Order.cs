@@ -330,6 +330,7 @@ namespace Ekom.API
         public async Task<IOrderInfo> UpdateShippingInformationAsync(
             Guid shippingProvider,
             string storeAlias,
+            Dictionary<string,string> customData,
             OrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
@@ -337,7 +338,7 @@ namespace Ekom.API
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, settings)
+            return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, customData, settings)
                 .ConfigureAwait(false);
         }
 
@@ -347,6 +348,7 @@ namespace Ekom.API
         public async Task<IOrderInfo> UpdatePaymentInformationAsync(
             Guid paymentProvider,
             string storeAlias,
+            Dictionary<string,string> customData,
             OrderSettings settings = null)
         {
             if (string.IsNullOrEmpty(storeAlias))
@@ -354,7 +356,7 @@ namespace Ekom.API
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
             }
 
-            return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, settings)
+            return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, customData, settings)
                 .ConfigureAwait(false);
         }
 

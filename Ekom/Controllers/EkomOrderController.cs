@@ -229,7 +229,12 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
+                var form = Request.Form;
+                var keys = form.Keys;
+                
+                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, keys.Where(x => x != "ShippingProvider" && x.StartsWith("shippingprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
                 return orderInfo;
             }
@@ -255,7 +260,12 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
+                var form = Request.Form;
+                var keys = form.Keys;
+                
+                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
                 return orderInfo;
             }

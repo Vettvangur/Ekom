@@ -80,5 +80,11 @@ namespace Ekom.Models
         public int UserId { get; set; }
         public string UserName { get; set; }
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
+        public string Value(string alias)
+        {
+            {
+                return Properties.GetValue(alias);
+            }
+        }
     }
 }
