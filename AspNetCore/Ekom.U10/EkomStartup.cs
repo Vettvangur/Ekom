@@ -166,9 +166,8 @@ class EkomStartup : IComponent
     private void CheckoutSuccess(object? sender, CheckoutSuccessEventArgs e)
     {
         var checkoutSvc = _factory.GetService<CheckoutService>();
-
+        
         checkoutSvc.CompleteAsync(e.CheckoutStatus.OrderId).Wait();
-
     }
     
     public void Terminate()
