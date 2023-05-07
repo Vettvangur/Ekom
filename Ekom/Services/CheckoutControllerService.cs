@@ -556,7 +556,7 @@ namespace Ekom.Services
                     Orders = orderItems,
                     Language = language,
                     Store = storeAlias,
-                    Member = MemberService.GetCurrentMember()?.Id ?? 0,
+                    Member = MemberService.GetCurrentMember()?.Key,
                     PaymentProviderKey = ekomPP.Key,
                 };
                 paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());

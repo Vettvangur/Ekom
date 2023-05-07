@@ -16,7 +16,18 @@ public static class Events
         Success?.Invoke(sender, successEventArgs);
         Ekom.Payments.Events.OnSuccess(sender, successEventArgs);
     }
-    
+
+    /// <summary>
+    /// Raises the success event on successful payment verification
+    /// </summary>
+    /// <param name="o"></param>
+    internal static void OnInitialPaymentSuccess(object sender, SuccessEventArgs successEventArgs)
+    {
+        InitialPaymentSuccess?.Invoke(sender, successEventArgs);
+        Success?.Invoke(sender, successEventArgs);
+        Ekom.Payments.Events.OnSuccess(sender, successEventArgs);
+    }
+
     /// <summary>
     /// Raises the error event on failed payments
     /// </summary>
@@ -32,6 +43,12 @@ public static class Events
     /// Event fired on successful payment verification
     /// </summary>
     public static event EventHandler<SuccessEventArgs>? Success;
+    /// <summary>
+    /// Event fired on successful initial payment verification <br />
+    /// Allows implementers the chance to create a virtual card using the valitor pay api
+    /// </summary>
+    public static event EventHandler<SuccessEventArgs>? InitialPaymentSuccess;
+
     /// <summary>
     /// Event fired on payment verification error
     /// </summary>

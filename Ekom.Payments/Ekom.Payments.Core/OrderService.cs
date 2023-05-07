@@ -78,7 +78,8 @@ class OrderService : IOrderService
             Date = DateTime.Now,
             IPAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "",
             UserAgent = httpContext.Request.Headers["User-Agent"]
-                .ToString().Substring(0, Math.Min(httpContext.Request.Headers["User-Agent"].Count, 4000)),
+                .ToString()
+                .Substring(0, Math.Min(httpContext.Request.Headers["User-Agent"].Count, 4000)),
             EkomPaymentSettings = paymentSettings,
             EkomPaymentProviderData = JsonConvert.SerializeObject(paymentProviderSettings),
             CustomData = netPaymentData

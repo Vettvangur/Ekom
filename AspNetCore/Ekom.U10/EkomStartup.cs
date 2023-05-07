@@ -173,14 +173,7 @@ class EkomStartup : IComponent
         var o = args.OrderStatus;
         var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
-        var customData = JsonConvert.DeserializeObject<Dictionary<string, string>>(o.CustomData!);
-
-        if (customData == null)
-        {
-            throw new EkomException("Unsupported custom data object, ensure to persist data back shaped as Dictionary<string, string>");
-        }
-
-        if (Guid.TryParse(customData["ekomOrderUniqueId"], out var orderId))
+        if (Guid.TryParse(o.EkomPaymentSettings.OrderCustomData["ekomOrderUniqueId"], out var orderId))
         {
             checkoutSvc.CompleteAsync(orderId).Wait();
         }

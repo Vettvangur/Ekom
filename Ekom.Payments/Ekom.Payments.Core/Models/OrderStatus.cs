@@ -32,8 +32,8 @@ public class OrderStatus
     /// <summary>
     /// Umbraco member id
     /// </summary>
-    [Column, NotNull]
-    public int Member { get; set; }
+    [Column]
+    public Guid? Member { get; set; }
 
     /// <summary>
     /// Total amount

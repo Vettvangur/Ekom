@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Localization;
 using Newtonsoft.Json.Serialization;
 using Vettvangur.Shared;
 using Vettvangur.ValitorPay;
+using Ekom.Payments.ValitorPay;
 
 namespace Ekom.Site
 {
@@ -66,11 +67,7 @@ namespace Ekom.Site
                 options.MaxAge = TimeSpan.FromDays(365);
             });
 
-            var apiUrl = new Uri(_config["Ekom:Payments:ValitorPay:ApiUrl"]);
-            var apiKey = _config["Ekom:Payments:ValitorPay:ApiKey"];
-
-            services.AddValitorPay(apiUrl, apiKey);
-
+            services.AddEkomValitorPay(_config);
         }
 
         /// <summary>
@@ -89,6 +86,8 @@ namespace Ekom.Site
                 {
                     // SimpleCorsSetup = true,
                 });
+
+            app.UseEkomValitorPay(_config);
         }
     }
 }

@@ -70,7 +70,7 @@ public class ValitorPayController : ControllerBase
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("completeVirtualCardPayment")]
     [HttpPost]
-    public async Task<IActionResult> CompleteVirtualCardPayment(CardVerificationCallback notificationCallBack)
+    public async Task<IActionResult> CompleteVirtualCardPayment([FromForm] CardVerificationCallback notificationCallBack)
     {
         _logger.LogInformation("CompleteVirtualCardPayment");
 
@@ -141,7 +141,7 @@ public class ValitorPayController : ControllerBase
                     Amount = (long)(order.Amount * 100),
                     VirtualCardPaymentAdditionalData = new AdditionalData
                     {
-                        MerchantReferenceData = order.UniqueId.ToString(),
+                        MerchantReferenceData = order.UniqueId.ToString().Replace("-", ""),
                         //order.UserID,
                         //order.StoreID,
                         //order.WebCoupon,
@@ -311,7 +311,7 @@ public class ValitorPayController : ControllerBase
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("completeFirstPayment")]
     [HttpPost]
-    public async Task<IActionResult> CompleteFirstPayment(CardVerificationCallback notificationCallBack)
+    public async Task<IActionResult> CompleteFirstPayment([FromForm] CardVerificationCallback notificationCallBack)
     {
         _logger.LogInformation("CompleteFirstPayment");
 
@@ -388,7 +388,7 @@ public class ValitorPayController : ControllerBase
                     Amount = (long)(order.Amount * 100),
                     AdditionalData = new CardPaymentAdditionalData
                     {
-                        MerchantReferenceData = order.UniqueId.ToString(),
+                        MerchantReferenceData = order.UniqueId.ToString().Replace("-", ""),
                         //order.UserID,
                         //order.StoreID,
                         //order.WebCoupon,
@@ -437,11 +437,6 @@ public class ValitorPayController : ControllerBase
 
                     order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
                     await _orderService.UpdateAsync(order);
-
-                    Events.OnError(this, new ErrorEventArgs
-                    {
-                        OrderStatus = order,
-                    });
 
                     return content;
                 }
@@ -549,7 +544,7 @@ public class ValitorPayController : ControllerBase
         }
 #pragma warning restore CA1031 // Do not catch general exception types
 
-        Events.OnSuccess(this, new SuccessEventArgs
+        Events.OnInitialPaymentSuccess(this, new SuccessEventArgs
         {
             OrderStatus = order,
         });

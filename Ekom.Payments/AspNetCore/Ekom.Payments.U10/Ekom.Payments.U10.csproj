@@ -44,6 +44,14 @@
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="Models\**" />
+      <Compile Remove="Utilities\**" />
+      <EmbeddedResource Remove="Models\**" />
+      <EmbeddedResource Remove="Utilities\**" />
+      <None Remove="Models\**" />
+      <None Remove="Utilities\**" />
+    </ItemGroup>
 
     <ItemGroup>
         <!-- Package icon -->
@@ -60,10 +68,5 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
       <ProjectReference Include="..\Ekom.Payments.AspNetCore\Ekom.Payments.AspNetCore.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Models\" />
-      <Folder Include="Utilities\" />
     </ItemGroup>
 </Project>

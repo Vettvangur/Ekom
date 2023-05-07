@@ -1,9 +1,14 @@
+using Ekom.API;
+using Ekom.Payments;
+using Ekom.Payments.ValitorPay;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Persistence;
 using Umbraco.Cms.Web.BackOffice.Trees;
+using Vettvangur.ValitorPay;
 
 namespace Ekom.Site
 {

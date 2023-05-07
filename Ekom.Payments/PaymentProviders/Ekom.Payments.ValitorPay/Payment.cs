@@ -33,6 +33,7 @@ class Payment : IPaymentProvider
     readonly IOrderService _orderService;
     readonly HttpContext _httpCtx;
     readonly ValitorPayService _valitorPayService;
+    readonly VirtualCardService _virtualCardService;
 
     /// <summary>
     /// ctor for Unit Tests
@@ -43,7 +44,8 @@ class Payment : IPaymentProvider
         IUmbracoService uService,
         IOrderService orderService,
         IHttpContextAccessor httpContext,
-        ValitorPayService valitorPayService)
+        ValitorPayService valitorPayService,
+        VirtualCardService virtualCardService)
     {
         _logger = logger;
         _settings = settings;
@@ -51,6 +53,7 @@ class Payment : IPaymentProvider
         _orderService = orderService;
         _httpCtx = httpContext.HttpContext ?? throw new NotSupportedException("Payment requests require an httpcontext");
         _valitorPayService = valitorPayService;
+        _virtualCardService = virtualCardService;
     }
 
     /// <summary>
@@ -103,11 +106,18 @@ class Payment : IPaymentProvider
 
             _logger.LogInformation("ValitorPay Payment Request - Amount: " + total + " OrderId: " + orderStatus.UniqueId);
 
+            if (string.IsNullOrEmpty(paymentSettings.VirtualCardNumber) && orderStatus.Member.HasValue)
+            {
+                var vCard = await _virtualCardService.GetMemberDefaultCardAsync(orderStatus.Member.Value);
+
+                paymentSettings.VirtualCardNumber = vCard?.VirtualCardGuid.ToString();
+            }
+
             if (string.IsNullOrEmpty(paymentSettings.VirtualCardNumber))
             {
                 var reportUrl = PaymentsUriHelper.EnsureFullUri(
-                    new Uri(initialPaymentReportPath, UriKind.Relative), 
-                    _httpCtx.Request);
+                new Uri(initialPaymentReportPath, UriKind.Relative),
+                _httpCtx.Request);
 
                 var retVal = await InitialCardUsageAsync(
                     paymentSettings,
@@ -124,7 +134,7 @@ class Payment : IPaymentProvider
             else
             {
                 var reportUrl = PaymentsUriHelper.EnsureFullUri(
-                    new Uri(virtualCardReportPath, UriKind.Relative), 
+                    new Uri(virtualCardReportPath, UriKind.Relative),
                     _httpCtx.Request);
 
                 var retVal = await SubsequentVirtualCardPayments(
@@ -187,7 +197,7 @@ class Payment : IPaymentProvider
             req.TerminalId = valitorPaySettings.TerminalId;
             req.AgreementNumber = valitorPaySettings.AgreementNumber;
         }
-        
+
         req.SetMerchantData(merchantData, secret);
 
         var verificationResp = await _valitorPayService.CardVerificationAsync(req);

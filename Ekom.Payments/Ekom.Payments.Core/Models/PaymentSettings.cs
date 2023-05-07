@@ -70,7 +70,7 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     /// Optionally store umbraco member id in persisted order
     /// </summary>
     [PaymentSettingsIgnore]
-    public int Member { get; set; }
+    public Guid? Member { get; set; }
 
     /// <summary>
     /// This data is serialized into OrderCustomString and persisted through the payment process <br />
@@ -160,7 +160,7 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     public string CardCVV { get; set; }
 
     [PaymentSettingsIgnore]
-    public string VirtualCardNumber { get; set; }
+    public string? VirtualCardNumber { get; set; }
 
     #endregion
 
