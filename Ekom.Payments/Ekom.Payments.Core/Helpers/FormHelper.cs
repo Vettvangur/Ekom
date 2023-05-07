@@ -5,7 +5,7 @@ namespace Ekom.Payments.Helpers;
 
 static class FormHelper
 {
-    public static string CreateRequest(Dictionary<string, string> parameters, string url, string method = "POST")
+    public static string CreateRequest(Dictionary<string, string?> parameters, string url, string method = "POST")
     {
         var html = new StringBuilder($"<form action=\"{url}\" method=\"{method}\" id=\"payform\"> ");
 

@@ -168,7 +168,7 @@ class EkomStartup : IComponent
         }
     }
 
-    public void CompleteCheckout(object sender, SuccessEventArgs args)
+    private void CompleteCheckout(object sender, SuccessEventArgs args)
     {
         var o = args.OrderStatus;
         var checkoutSvc = _factory.GetRequiredService<CheckoutService>();

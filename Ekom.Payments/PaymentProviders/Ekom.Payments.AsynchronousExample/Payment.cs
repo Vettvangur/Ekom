@@ -66,14 +66,14 @@ class Payment : IPaymentProvider
         {
             _logger.LogInformation("AsynchronousExample Payment Request - Start");
 
-            var AsynchronousExampleSettings = paymentSettings.CustomSettings.ContainsKey(typeof(AsynchronousExampleSettings))
-                ? paymentSettings.CustomSettings[typeof(AsynchronousExampleSettings)] as AsynchronousExampleSettings
+            var asynchronousExampleSettings = paymentSettings.CustomSettings.ContainsKey(typeof(AsynchronousExampleSettings))
+                ? (paymentSettings.CustomSettings[typeof(AsynchronousExampleSettings)] as AsynchronousExampleSettings)!
                 : new AsynchronousExampleSettings();
 
             _uService.PopulatePaymentProviderProperties(
                 paymentSettings,
                 _ppNodeName,
-                AsynchronousExampleSettings,
+                asynchronousExampleSettings,
                 AsynchronousExampleSettings.Properties);
             
             var total = paymentSettings.Orders.Sum(x => x.GrandTotal);
@@ -82,13 +82,13 @@ class Payment : IPaymentProvider
             var orderStatus  = await _orderService.InsertAsync(
                 total,
                 paymentSettings,
-                AsynchronousExampleSettings,
+                asynchronousExampleSettings,
                 null,
                 _httpCtx
             ).ConfigureAwait(false);
 
             // This example shows how to construct a success url / receipt page destination
-            // adding the reference querystring allows for easy retrieval of order using the order helper
+            // adding the reference querystring allows for easy retrieval of order using the order helper on the success/receipt page
             paymentSettings.SuccessUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.SuccessUrl, _httpCtx.Request);
             paymentSettings.SuccessUrl = PaymentsUriHelper.AddQueryString(paymentSettings.SuccessUrl, "?reference=" + orderStatus.UniqueId);
 
@@ -96,7 +96,7 @@ class Payment : IPaymentProvider
             var callbackUrl = PaymentsUriHelper.EnsureFullUri(new Uri(reportPath, UriKind.Relative), _httpCtx.Request);
 
 
-            _logger.LogInformation("AsynchronousExample Payment Request - Amount: " + total + " OrderId: " + orderStatus.UniqueId);
+            _logger.LogInformation("AsynchronousExample Payment Request - Amount: {Total} OrderId: {OrderUniqueId}", total, orderStatus.UniqueId);
 
             // If your payment provider expects a client initiated post request to send the user to it's payment portal
             // the following form helper is useful.
@@ -104,7 +104,7 @@ class Payment : IPaymentProvider
             {
 
             };
-            return FormHelper.CreateRequest(formValues, AsynchronousExampleSettings.PaymentPageUrl.ToString());
+            return FormHelper.CreateRequest(formValues, asynchronousExampleSettings.PaymentPageUrl.ToString());
         }
         catch (Exception ex)
         {
