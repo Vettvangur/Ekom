@@ -73,11 +73,21 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     public int Member { get; set; }
 
     /// <summary>
+    /// This data is serialized into OrderCustomString and persisted through the payment process <br />
+    /// Ekom Core f.x. stores it's order unique id in this object
+    /// </summary>
+    [PaymentSettingsIgnore]
+    public Dictionary<string, string> OrderCustomData { get; } = new Dictionary<string, string>();
+
+    /// <summary>
     /// Perfect for storing custom data/json in persisted order to be read on callback after payment.
     /// 255 char max length.
     /// </summary>
     [PaymentSettingsIgnore]
-    public string OrderCustomString { get; set; }
+    public string OrderCustomString 
+    { 
+        get => JsonConvert.SerializeObject(OrderCustomData);
+    }
 
     /// <summary>
     /// Override umbraco configured success url. Used by Ekom Payments to forward user to f.x. receipt page.
@@ -118,12 +128,10 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     ///// </summary>
     //public bool RequireCustomerInformation { get; set; }
 
-    ///// <summary>
-    ///// Provide customer information to payment provider.
-    ///// Supported by: BorgunLoans, Pei
-    ///// Partial support: Netgiro (Phone number)
-    ///// </summary>
-    //public CustomerInfo CustomerInfo { get; set; }
+    /// <summary>
+    /// Provide customer information to payment provider.
+    /// </summary>
+    public CustomerInfo CustomerInfo { get; set; }
 
     ///// <summary>
     ///// BorgunLoans loan type specifier
@@ -131,45 +139,30 @@ public class PaymentSettings : PaymentSettingsBase<PaymentSettings>
     //public int LoanType { get; set; }
 
 
-    //#region Borgun Gateway
+    #region Direct Credit Card Payments
 
-    ///// <summary>
-    ///// 16 digit payment card number
-    ///// Supported by: BorgunGateway
-    ///// </summary>
-    //public string CardNumber { get; set; }
+    /// <summary>
+    /// 16 digit payment card number
+    /// </summary>
+    [PaymentSettingsIgnore]
+    public string CardNumber { get; set; }
 
-    //private string _expiry;
-    ///// <summary>
-    ///// Card expiration date in YYMM format
-    ///// Supported by: BorgunGateway, BorgunRpg
-    ///// </summary>
-    //public string Expiry
-    //{
-    //    get => _expiry;
-    //    set
-    //    {
-    //        var month = int.Parse(value.Substring(2, 2));
-    //        var val = int.Parse(value);
+    [PaymentSettingsIgnore]
+    public int CardExpirationMonth { get; set; }
 
-    //        if (value.Length != 4
-    //        || val < 0
-    //        || month > 12)
-    //        {
-    //            throw new FormatException("Please supply a valid expiry value in the format YYMM");
-    //        }
+    [PaymentSettingsIgnore]
+    public int CardExpirationYear { get; set; }
 
-    //        _expiry = value;
-    //    }
-    //}
+    /// <summary>
+    /// Card Verification Value. Triple digit number on the back of the card.
+    /// </summary>
+    [PaymentSettingsIgnore]
+    public string CardCVV { get; set; }
 
-    ///// <summary>
-    ///// Card Verification Value. Triple digit number on the back of the card.
-    ///// Supported by: BorgunGateway
-    ///// </summary>
-    //public string CVV { get; set; }
+    [PaymentSettingsIgnore]
+    public string VirtualCardNumber { get; set; }
 
-    //#endregion
+    #endregion
 
     [PaymentSettingsIgnore]
     [JsonIgnore]

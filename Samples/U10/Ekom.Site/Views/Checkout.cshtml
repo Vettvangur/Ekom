@@ -7,54 +7,108 @@
 @{
     Layout = null;
 
-    var ppProvider = "valitorPay";
-
-    var pp = ekmPayments.GetPaymentProvider(ppProvider);
-
-    var settings = new PaymentSettings
+    @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay))
     {
-        Orders = new OrderItem[]
-        {
-            new OrderItem
+        <div class="row column">
+
+            @*<h3>Payment Providers</h3>
+            <ul>
+                @foreach (var paymentProvider in Providers.Instance.GetPaymentProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@paymentProvider.Key">
+                            @paymentProvider.Title
+                            <input id="@paymentProvider.Key" type="radio" name="paymentProvider" value="@paymentProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            <h3>Shipping Providers</h3>
+            <ul>
+                @foreach (var shippingProvider in Providers.Instance.GetShippingProviders(
+                    countryCode: country,
+                    orderAmount: order.ChargedAmount.Value
+                ))
+                {
+                    <li>
+                        <label for="@shippingProvider.Key">
+                            @shippingProvider.Title - @shippingProvider.Price.Value
+                            <input id="@shippingProvider.Key" type="radio" name="shippingProvider" value="@shippingProvider.Key" />
+                        </label>
+                    </li>
+                }
+            </ul>
+
+            @foreach (string param in Request.Form)
             {
-                Title = "Item1",
-                Quantity = 1,
-                Price = 100,
-                GrandTotal = 100,
-            },
-        },
-        Store = "Store",
-        Language = "is-IS",
-        Member = 1,
-    };
+                <input name="@param" value="@Request.Form[param]" hidden />
+            }*@
 
-    switch (ppProvider)
-    {
-        case "valitor":
+            <input name="PaymentProvider" value="5f6a006d-d773-48dc-b998-798159ea2461" hidden />
+            <input name="ShippingProvider" value="" hidden />
 
-            settings.SetValitorSettings(new ValitorSettings
-            {
+            <input name="CardNumber" value="2223000010246699" hidden />
+            <input name="Year" value="2030" hidden />
+            <input name="Month" value="12" hidden />
+            <input name="CVV" value="123" hidden />
 
-            });
 
-            break;
-
-        case "valitorPay":
-
-            settings.SetValitorPaySettings(new ValitorPaySettings
-            {
-                CardNumber = "2223000010246699",
-                ExpirationMonth = 12,
-                ExpirationYear = 2030,
-                CVV = "123",
-            });
-
-            break;
+            <button class="button">Klára</button>
+        </div>
     }
 
-    var form = await pp.RequestAsync(settings);
+    //var ppProvider = "valitorPay";
 
-    @Html.Raw(form)
+    //var pp = ekmPayments.GetPaymentProvider(ppProvider);
+
+    //var settings = new PaymentSettings
+    //        {
+    //            Orders = new OrderItem[]
+    //            {
+    //        new OrderItem
+    //        {
+    //            Title = "Item1",
+    //            Quantity = 1,
+    //            Price = 100,
+    //            GrandTotal = 100,
+    //        },
+    //            },
+    //            Store = "Store",
+    //            Language = "is-IS",
+    //            Member = 1,
+    //        };
+
+    //switch (ppProvider)
+    //{
+    //    case "valitor":
+
+    //        settings.SetValitorSettings(new ValitorSettings
+    //        {
+
+    //        });
+
+    //        break;
+
+    //    case "valitorPay":
+
+    //        settings.SetValitorPaySettings(new ValitorPaySettings
+    //                {
+    //                    CardNumber = "2223000010246699",
+    //                    ExpirationMonth = 12,
+    //                    ExpirationYear = 2030,
+    //                    CVV = "123",
+    //                });
+
+    //        break;
+    //}
+
+    //var form = await pp.RequestAsync(settings);
+
+    //@Html.Raw(form)
 
     //var order = Order.Instance.GetOrder();
 
@@ -114,7 +168,7 @@
     //        <tfoot>
     //            <tr>
     //                <td colspan="3">
-                    
+
     //                </td>
     //                <td>
     //                    <strong>

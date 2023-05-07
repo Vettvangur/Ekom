@@ -150,7 +150,7 @@ class UmbracoService : IUmbracoService
     /// <summary>
     /// Populates the payment settings and per payment provider custom settings objects. <br />
     /// The order of precedence is: <br />
-    /// assigned object property, umbraco node property value, appsettings configuration vlaue
+    /// assigned object property, umbraco node property value, appsettings configuration value
     /// </summary>
     /// <param name="settings"></param>
     /// <param name="ppNodeName"></param>

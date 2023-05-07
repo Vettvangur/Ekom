@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<umbPackage>
+  <info>
+    <package>
+      <name>EkomPayments_AsynchronousExample</name>
+    </package>
+  </info>
+  <DocumentTypes>
+    <DocumentType Folders="EkomPayments" FolderKeys="09d11f57-924b-4fd2-9653-48fee335ba8e">
+      <Info>
+        <Name>AsynchronousExample</Name>
+        <Alias>AsynchronousExample</Alias>
+        <Key>7249d75c-2f00-4f9c-90bd-11193b79bb86</Key>
+        <Icon>icon-item-arrangement</Icon>
+        <Thumbnail>folder.png</Thumbnail>
+        <Description />
+        <AllowAtRoot>False</AllowAtRoot>
+        <IsListView>False</IsListView>
+        <IsElement>False</IsElement>
+        <Variations>Nothing</Variations>
+        <Compositions />
+        <AllowedTemplates />
+        <DefaultTemplate></DefaultTemplate>
+      </Info>
+      <Structure />
+      <GenericProperties>
+        <GenericProperty>
+          <Name>Success Url</Name>
+          <Alias>successUrl</Alias>
+          <Key>1c616851-b590-4078-9a1b-8d2261bcf09d</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>f6431a15-4b8a-4527-8c82-8526a65fbfee</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>0</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Cancel Url</Name>
+          <Alias>cancelUrl</Alias>
+          <Key>ba0db8c2-eea6-4adf-b499-95acd59faf07</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>f6431a15-4b8a-4527-8c82-8526a65fbfee</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>1</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Merchant Id</Name>
+          <Alias>merchantId</Alias>
+          <Key>165a44f5-17ee-45ed-9901-317a52ed8c3c</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>2a935aa1-6256-4b5a-a469-fb6a6535221b</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>3</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Verification Code</Name>
+          <Alias>verificationCode</Alias>
+          <Key>5dcca541-f682-4aba-b815-b48695c36342</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>2a935aa1-6256-4b5a-a469-fb6a6535221b</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>4</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Merchant Name</Name>
+          <Alias>merchantName</Alias>
+          <Key>9f1d9fac-592a-473c-9426-cf7c5c76e8cf</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>2a935aa1-6256-4b5a-a469-fb6a6535221b</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>5</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Loan Type</Name>
+          <Alias>loanType</Alias>
+          <Key>b75c3436-f7c2-4bda-ba99-80d684dbdb98</Key>
+          <Type>Umbraco.TextBox</Type>
+          <Definition>0cc0eba1-9960-42c9-bf9b-60e150b429ae</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>6</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Checkout Timeout Minutes</Name>
+          <Alias>checkoutTimeoutMinutes</Alias>
+          <Key>812ba6b1-2515-4442-93d4-ba19e573833d</Key>
+          <Type>Umbraco.Integer</Type>
+          <Definition>2e6d3631-066e-44b8-aec4-96f09099b2b5</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>7</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Skip Receipt</Name>
+          <Alias>skipReceipt</Alias>
+          <Key>81bb7f91-4ca3-4eab-b956-8026a3a058ac</Key>
+          <Type>Umbraco.TrueFalse</Type>
+          <Definition>92897bc6-a5f3-4ffe-ae27-f2e7e33dda49</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>8</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Payment Successful URL Text</Name>
+          <Alias>paymentSuccessfulURLText</Alias>
+          <Key>0968df60-8617-4a56-bb28-02ee79b3911a</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>f6431a15-4b8a-4527-8c82-8526a65fbfee</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>9</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+        <GenericProperty>
+          <Name>Timeout Redirect URL</Name>
+          <Alias>timeoutRedirectURL</Alias>
+          <Key>f1f8184d-7250-4d5f-a0b8-fe34c58ccb5b</Key>
+          <Type>Ekom.Property</Type>
+          <Definition>f6431a15-4b8a-4527-8c82-8526a65fbfee</Definition>
+          <Tab Alias="settings">Settings</Tab>
+          <SortOrder>10</SortOrder>
+          <Mandatory>False</Mandatory>
+          <LabelOnTop>False</LabelOnTop>
+          <Variations>Nothing</Variations>
+        </GenericProperty>
+      </GenericProperties>
+      <Tabs>
+        <Tab>
+          <Id>77</Id>
+          <Key>7900dc67-560e-44a2-b123-781e956da146</Key>
+          <Type>Group</Type>
+          <Caption>Settings</Caption>
+          <Alias>settings</Alias>
+          <SortOrder>0</SortOrder>
+        </Tab>
+      </Tabs>
+      <HistoryCleanupPolicy preventCleanup="false" />
+    </DocumentType>
+  </DocumentTypes>
+  <MediaTypes />
+  <Templates />
+  <Stylesheets />
+  <Scripts />
+  <PartialViews />
+  <Macros />
+  <MacroPartialViews />
+  <DictionaryItems />
+  <Languages />
+  <DataTypes />
+  <MediaItems />
+</umbPackage>

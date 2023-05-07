@@ -42,6 +42,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.U10", "Ekom.Payments\AspNetCore\Ekom.Payments.U10\Ekom.Payments.U10.csproj", "{033E8FC5-24A9-4382-BF21-A0AB43459204}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PaymentProviders", "PaymentProviders", "{470F0A4E-A06C-446B-A72C-2431F74F1778}"
+	ProjectSection(SolutionItems) = preProject
+		Ekom.Payments\PaymentProviders\Directory.Build.props = Ekom.Payments\PaymentProviders\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vettvangur.ValitorPay", "Ekom.Payments\PaymentProviders\ValitorPay\ValitorPay\Vettvangur.ValitorPay.csproj", "{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}"
 EndProject

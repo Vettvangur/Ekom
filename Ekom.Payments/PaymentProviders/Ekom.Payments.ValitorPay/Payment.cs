@@ -24,7 +24,8 @@ class Payment : IPaymentProvider
     /// <summary>
     /// Ekom.Payments ResponseController
     /// </summary>
-    const string reportPath = "/umbraco/NetPayment/valitorpayresponse/post";
+    const string initialPaymentReportPath = "/ekom/payments/valitorPay/completeFirstPayment";
+    const string virtualCardReportPath = "/ekom/payments/valitorPay/completeVirtualCardPayment";
 
     readonly ILogger _logger;
     readonly PaymentsConfiguration _settings;
@@ -93,8 +94,6 @@ class Payment : IPaymentProvider
                 _httpCtx
             ).ConfigureAwait(false);
 
-            var reportUrl = PaymentsUriHelper.EnsureFullUri(new Uri(reportPath, UriKind.Relative), _httpCtx.Request);
-
             paymentSettings.SuccessUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.SuccessUrl, _httpCtx.Request);
             paymentSettings.SuccessUrl = PaymentsUriHelper.AddQueryString(paymentSettings.SuccessUrl, "?reference=" + orderStatus.UniqueId);
             paymentSettings.CancelUrl = PaymentsUriHelper.EnsureFullUri(paymentSettings.CancelUrl, _httpCtx.Request);
@@ -104,8 +103,12 @@ class Payment : IPaymentProvider
 
             _logger.LogInformation("ValitorPay Payment Request - Amount: " + total + " OrderId: " + orderStatus.UniqueId);
 
-            if (string.IsNullOrEmpty(valitorPaySettings.VirtualCardNumber))
+            if (string.IsNullOrEmpty(paymentSettings.VirtualCardNumber))
             {
+                var reportUrl = PaymentsUriHelper.EnsureFullUri(
+                    new Uri(initialPaymentReportPath, UriKind.Relative), 
+                    _httpCtx.Request);
+
                 var retVal = await InitialCardUsageAsync(
                     paymentSettings,
                     valitorPaySettings,
@@ -120,6 +123,10 @@ class Payment : IPaymentProvider
             }
             else
             {
+                var reportUrl = PaymentsUriHelper.EnsureFullUri(
+                    new Uri(virtualCardReportPath, UriKind.Relative), 
+                    _httpCtx.Request);
+
                 var retVal = await SubsequentVirtualCardPayments(
                     paymentSettings,
                     valitorPaySettings,
@@ -153,13 +160,13 @@ class Payment : IPaymentProvider
         {
             OrderId = orderStatus.UniqueId.ToString(),
 
-            CardNumber = valitorPaySettings.CardNumber,
+            CardNumber = paymentSettings.CardNumber,
 
-            ExpirationMonth = valitorPaySettings.ExpirationMonth,
+            ExpirationMonth = paymentSettings.CardExpirationMonth,
 
-            ExpirationYear = valitorPaySettings.ExpirationYear,
+            ExpirationYear = paymentSettings.CardExpirationYear,
 
-            Cvc = valitorPaySettings.CVV,
+            Cvc = paymentSettings.CardCVV,
         };
 
         var secret = valitorPaySettings.ApiKey
@@ -168,9 +175,9 @@ class Payment : IPaymentProvider
 
         var req = new CardVerificationRequest
         {
-            CardNumber = valitorPaySettings.CardNumber,
-            ExpirationMonth = valitorPaySettings.ExpirationMonth,
-            ExpirationYear = valitorPaySettings.ExpirationYear,
+            CardNumber = paymentSettings.CardNumber,
+            ExpirationMonth = paymentSettings.CardExpirationMonth,
+            ExpirationYear = paymentSettings.CardExpirationYear,
             Amount = (long)(grandTotal * 100),
             AuthenticationUrl = reportUrl,
         };
@@ -209,12 +216,12 @@ class Payment : IPaymentProvider
         {
             OrderId = orderStatus.UniqueId.ToString(),
 
-            VirtualCard = valitorPaySettings.VirtualCardNumber,
+            VirtualCard = paymentSettings.VirtualCardNumber,
         };
 
         var req = new CardVerificationRequest
         {
-            VirtualCard = valitorPaySettings.VirtualCardNumber,
+            VirtualCard = paymentSettings.VirtualCardNumber,
             Amount = (long)(grandTotal * 100),
             AuthenticationUrl = reportUrl,
         };

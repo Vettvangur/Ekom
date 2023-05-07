@@ -2,10 +2,12 @@ using Ekom.Payments;
 using Ekom.Payments.Helpers;
 using Ekom.Payments.ValitorPay;
 using LinqToDB;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json;
@@ -36,6 +38,7 @@ public class ValitorPayController : ControllerBase
     readonly IDatabaseFactory _dbFac;
     readonly IMailService _mailSvc;
     readonly ValitorPayService _valitorPayService;
+    readonly IWebHostEnvironment _webHostEnvironment;
 
     /// <summary>
     /// ctor
@@ -47,7 +50,8 @@ public class ValitorPayController : ControllerBase
         IOrderService orderService,
         IDatabaseFactory dbFac,
         IMailService mailSvc,
-        ValitorPayService valitorPayService)
+        ValitorPayService valitorPayService,
+        IWebHostEnvironment webHostEnvironment)
     {
         _logger = logger;
         _config = config;
@@ -56,6 +60,7 @@ public class ValitorPayController : ControllerBase
         _dbFac = dbFac;
         _mailSvc = mailSvc;
         _valitorPayService = valitorPayService;
+        _webHostEnvironment = webHostEnvironment;
     }
 
     /// <summary>
@@ -63,13 +68,24 @@ public class ValitorPayController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("")]
+    [Route("completeVirtualCardPayment")]
     [HttpPost]
     public async Task<IActionResult> CompleteVirtualCardPayment(CardVerificationCallback notificationCallBack)
     {
         _logger.LogInformation("CompleteVirtualCardPayment");
 
-        var response = new HttpResponseMessage { };
+        OrderStatus? order = null;
+
+        if (!MDStatusCodes.CodeMap.ContainsKey(notificationCallBack.MdStatus))
+        {
+            return BadRequest();
+        }
+
+        var valitorPayData = new Dictionary<string, string>
+            {
+                { "dsTransId", notificationCallBack.TDS2.DsTransID },
+                { "updated", DateTime.Now.ToString() }
+            };
 
         try
         {
@@ -79,9 +95,9 @@ public class ValitorPayController : ControllerBase
                 .Last();
             var md = notificationCallBack.GetMerchantData<MerchantDataVirtualCard>(secret);
 
-            _logger.LogInformation("Valitor Payment Response - OrderID: " + md.OrderId);
+            _logger.LogInformation("CompleteVirtualCardPayment - OrderID: " + md.OrderId);
 
-            OrderStatus? order = await _orderService.GetAsync(Guid.Parse(md.OrderId));
+            order = await _orderService.GetAsync(Guid.Parse(md.OrderId));
 
             if (order == null)
             {
@@ -95,19 +111,9 @@ public class ValitorPayController : ControllerBase
                 return Ok();
             }
             
-            _logger.LogInformation("CompleteVirtualCardPayment - order.ID: " + order?.ReferenceId);
-
-            order.DsTransID = notificationCallBack.TDS2.DsTransID;
-            order.Updated = DateTime.Now;
-
             // Remove encrypted card information before logging
             notificationCallBack.MD = null;
             _logger.LogDebug(JsonConvert.SerializeObject(notificationCallBack));
-
-            if (!MDStatusCodes.CodeMap.ContainsKey(notificationCallBack.MdStatus))
-            {
-                throw new NotSupportedException("Unknown MdStatus code");
-            }
 
             var paymentSettings = JsonConvert.DeserializeObject<PaymentSettings>(order.EkomPaymentSettingsData);
             var valitorSettings = JsonConvert.DeserializeObject<ValitorPaySettings>(order.EkomPaymentProviderData);
@@ -148,69 +154,63 @@ public class ValitorPayController : ControllerBase
                     _logger.LogInformation($"CompleteVirtualCardPayment - order.ID: {order.UniqueId} - Payment Success");
 
                     order.Paid = true;
-                    order.StatusCode = resp.ResponseCode;
-                    order.Completed = DateTime.Now;
-                    order.Card = resp.MaskedCardNumber;
+                    valitorPayData.Add("statusCode", resp.ResponseCode);
+                    valitorPayData.Add("completed", DateTime.Now.ToString());
+                    valitorPayData.Add("card", resp.MaskedCardNumber);
 
-                    var sendOrderResponse = await _orderService.Send3dSecureOrderAsync(
-                        store,
-                        order,
-                        order,
-                        _orderService.CreateValitorPayReceipt(order, store, resp));
-
-                    _logger.LogDebug("sendOrderResponse: " + sendOrderResponse.Dump());
-
-                    if (!sendOrderResponse.Success)
-                    {
-                        response.Content = CreateScriptContent(
-                            false,
-                            errorCode: sendOrderResponse.Message ?? Settings.InternalServerErrorCode);
-                        response.StatusCode = HttpStatusCode.InternalServerError;
-                        return ResponseMessage(response);
-                    }
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
                 }
                 else
                 {
-                    HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
+                    ContentResult? content = null;
 
                     if (Vettvangur.ValitorPay.StatusCodes.CodeMap.TryGetValue(resp.ResponseCode, out var statusCode))
                     {
-                        response.Content = CreateScriptContent(
+                        content = CreateScriptContent(
                             false,
-                            errorCode: StatusFormatter(statusCode.Type));
+                            errorCode: statusCode.Type.ToString());
 
                         if (statusCode.Type != CodeType.ServerError)
                         {
-                            httpStatusCode = HttpStatusCode.Unauthorized;
+                            content.StatusCode = (int)HttpStatusCode.Unauthorized;
                         }
                     }
                     else
                     {
-                        response.Content = CreateScriptContent(
+                        content = CreateScriptContent(
                             false,
-                            errorCode: Settings.InternalServerErrorCode);
+                            errorCode: "ServerError");
+                        content.StatusCode = (int)HttpStatusCode.InternalServerError;
                     }
 
-                    response.StatusCode = httpStatusCode;
-                    return ResponseMessage(response);
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
+
+                    Events.OnError(this, new ErrorEventArgs
+                    {
+                        OrderStatus = order,
+                    });
+
+                    return content;
                 }
             }
             else if (MDStatusCodes.CodeMap[notificationCallBack.MdStatus].Retryable
-                && !query.AllKeys.Contains("retry"))
+                && !query.Keys.Contains("retry"))
             {
                 var req = new CardVerificationRequest
                 {
-                    DisplayName = _settings.ValitorPayDisplayName,
+                    DisplayName = valitorSettings.PaymentPortalDisplayName,
 
                     VirtualCard = md.VirtualCard,
-                    Amount = order.Amount * 100,
+                    Amount = (long)(order.Amount * 100),
                     AuthenticationUrl
-                        = new Uri($"{Request.RequestUri.Scheme}://{Request.RequestUri.Authority}"
+                        = new Uri($"{Request.Scheme}://{Request.Host}"
                         + "/api/ValitorPay/completeVirtualCardPayment?retry=1"),
                 };
                 req.SetMerchantData(md, secret);
 
-                if (_settings.Environment == "dev")
+                if (!_webHostEnvironment.IsProduction())
                 {
                     req.ThreeDs20AdditionalParamaters = new ThreeDs20AdditionalParamaters
                     {
@@ -224,69 +224,83 @@ public class ValitorPayController : ControllerBase
                 var resp = await _valitorPayService.CardVerificationAsync(req);
                 if (resp.IsSuccess)
                 {
-                    response.Content = CreateScriptContent(
+                    var content = CreateScriptContent(
                             false,
                             errorCode: null,
                             valitorHtml: resp.CardVerificationRawResponse);
+                    content.StatusCode = 230;
 
-                    response.StatusCode = (HttpStatusCode)230;
-                    return ResponseMessage(response);
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
+
+                    return content;
                 }
             }
             else
             {
-                HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
-                if (MDStatusCodes.CodeMap.TryGetValue(notificationCallBack.MdStatus, out var statusCode))
-                {
-                    response.Content = CreateScriptContent(
-                        false,
-                        errorCode: StatusFormatter(statusCode.Type));
+                var statusCode = MDStatusCodes.CodeMap[notificationCallBack.MdStatus]!;
 
-                    if (statusCode.Type != CodeType.ServerError)
-                    {
-                        httpStatusCode = HttpStatusCode.Unauthorized;
-                    }
-                }
-                else
+                var content = CreateScriptContent(
+                    false,
+                    errorCode: statusCode.Type.ToString());
+
+                if (statusCode.Type != CodeType.ServerError)
                 {
-                    response.Content = CreateScriptContent(
-                        false,
-                        errorCode: Settings.InternalServerErrorCode);
+                    content.StatusCode = (int)HttpStatusCode.Unauthorized;
                 }
 
-                response.StatusCode = httpStatusCode;
-                return ResponseMessage(response);
+                order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                await _orderService.UpdateAsync(order);
+
+                Events.OnError(this, new ErrorEventArgs
+                {
+                    OrderStatus = order,
+                });
+
+                return content;
             }
         }
+#pragma warning disable CA1031 // We log and return 500, so no swallowing
         catch (Exception ex)
         {
             if (order != null)
             {
-                order.Updated = DateTime.Now;
+                valitorPayData["updated"] = DateTime.Now.ToString();
 
                 if (ex is ValitorPayResponseException valitorEx)
                 {
-                    order.StatusCode = valitorEx.ValitorResponse?.ResponseCode;
+                    valitorPayData.Add("statusCode", valitorEx.ValitorResponse?.ResponseCode!);
                 }
 
-                _db.orders.Update(order);
-                _db.Save();
+                order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                await _orderService.UpdateAsync(order);
             }
 
             // We log valitor response when ValitorPayResponseException inside valitorPay library
-            _logger.LogError(ex);
+            _logger.LogError(ex, "CompleteVirtualCardPayment Exception");
 
-            response.Content = CreateScriptContent(
+            var content = CreateScriptContent(
                 false,
-                errorCode: Settings.InternalServerErrorCode);
-            response.StatusCode = HttpStatusCode.InternalServerError;
+                errorCode: notificationCallBack.MdStatus.ToString());
 
-            return ResponseMessage(response);
+            content.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+            Events.OnError(this, new ErrorEventArgs
+            {
+                OrderStatus = order,
+                Exception = ex,
+            });
+
+            return content;
         }
+#pragma warning restore CA1031 // Do not catch general exception types
 
-        response.Content = CreateScriptContent(true);
+        Events.OnSuccess(this, new SuccessEventArgs
+        {
+            OrderStatus = order,
+        });
 
-        return ResponseMessage(response);
+        return CreateScriptContent(true);
     }
 
     /// <summary>
@@ -295,26 +309,37 @@ public class ValitorPayController : ControllerBase
     /// <param name="notificationCallBack"></param>
     /// <returns></returns>
     [ApiExplorerSettings(IgnoreApi = true)]
-    [Route("api/valitorPay/completeFirstPayment")]
+    [Route("completeFirstPayment")]
     [HttpPost]
     public async Task<IActionResult> CompleteFirstPayment(CardVerificationCallback notificationCallBack)
     {
         _logger.LogInformation("CompleteFirstPayment");
 
-        var response = new HttpResponseMessage { };
-        order order = null;
+        OrderStatus? order = null;
+
+        if (!MDStatusCodes.CodeMap.ContainsKey(notificationCallBack.MdStatus))
+        {
+            return BadRequest();
+        }
+
+        var valitorPayData = new Dictionary<string, string>
+            {
+                { "dsTransId", notificationCallBack.TDS2.DsTransID },
+                { "updated", DateTime.Now.ToString() }
+            };
 
         try
         {
-            var secret = _settings.ValitorPayApiKey
+            var apiKey = _config["Ekom:Payments:ValitorPay:ApiKey"];
+            var secret = apiKey
                 .Split('.')
                 .Last();
 
             var md = notificationCallBack.GetMerchantData<MerchantDataCard>(secret);
 
-            order = await _db.orders.FirstOrDefaultAsync(m => m.ID.ToString() == md.OrderId);
+            _logger.LogInformation("CompleteFirstPayment - OrderID: " + md.OrderId);
 
-            _logger.LogInformation("CompleteFirstPayment - order.ID: " + order.ID);
+            order = await _orderService.GetAsync(Guid.Parse(md.OrderId));
 
             if (order == null)
             {
@@ -322,35 +347,27 @@ public class ValitorPayController : ControllerBase
                 return NotFound();
             }
 
-            if (order.IsPayed)
+            if (order.Paid)
             {
                 _logger.LogWarning("Order already paid: " + md.OrderId);
                 return Ok();
             }
 
-            order.DsTransID = notificationCallBack.TDS2.DsTransID;
-            order.Updated = DateTime.Now;
-
-            var order = JsonConvert.DeserializeObject<OrderView>(order.Order);
-            var store = await _db.Stores.FirstOrDefaultAsync(s => s.RefID == order.StoreID);
-
             // Remove encrypted card information before logging
             notificationCallBack.MD = null;
             _logger.LogDebug(JsonConvert.SerializeObject(notificationCallBack));
 
-            if (!MDStatusCodes.CodeMap.ContainsKey(notificationCallBack.MdStatus))
-            {
-                throw new NotSupportedException("Unknown MdStatus code");
-            }
+            var paymentSettings = JsonConvert.DeserializeObject<PaymentSettings>(order.EkomPaymentSettingsData);
+            var valitorSettings = JsonConvert.DeserializeObject<ValitorPaySettings>(order.EkomPaymentProviderData);
 
-            _valitorPayService.ConfigureAgreement(store.AgreementNumber, store.TerminalId);
+            _valitorPayService.ConfigureAgreement(valitorSettings.AgreementNumber, valitorSettings.TerminalId);
 
-            var query = Request.RequestUri.ParseQueryString();
+            var query = Request.Query;
 
             if (MDStatusCodes.CodeMap[notificationCallBack.MdStatus].Type == CodeType.Success
             && VerifySignature(md, notificationCallBack.Signature))
             {
-                _logger.LogInformation($"CompleteFirstPayment - order.ID: {order.ID} - md status success");
+                _logger.LogInformation($"CompleteFirstPayment - order.ID: {order.UniqueId} - MD Status Success");
 
                 var resp = await _valitorPayService.CardPaymentAsync(new CardPaymentRequest
                 {
@@ -368,10 +385,10 @@ public class ValitorPayController : ControllerBase
                         Xid = notificationCallBack.Xid,
                         MdStatus = notificationCallBack.MdStatus,
                     },
-                    Amount = order.Amount * 100,
+                    Amount = (long)(order.Amount * 100),
                     AdditionalData = new CardPaymentAdditionalData
                     {
-                        MerchantReferenceData = order.ID,
+                        MerchantReferenceData = order.UniqueId.ToString(),
                         //order.UserID,
                         //order.StoreID,
                         //order.WebCoupon,
@@ -385,82 +402,68 @@ public class ValitorPayController : ControllerBase
 
                 if (resp.IsSuccess)
                 {
-                    _logger.LogInformation($"CompleteFirstPayment - order.ID: {order.ID} - Payment Success");
+                    _logger.LogInformation($"CompleteFirstPayment - order.ID: {order.UniqueId} - Payment Success");
 
-                    order.IsPayed = true;
-                    order.IsPayed = true;
-                    order.StatusCode = resp.ResponseCode;
-                    order.Completed = DateTime.Now;
-                    order.DsTransID = notificationCallBack.TDS2.DsTransID;
-                    order.Card = resp.MaskedCardNumber;
+                    order.Paid = true;
+                    valitorPayData.Add("statusCode", resp.ResponseCode);
+                    valitorPayData.Add("completed", DateTime.Now.ToString());
+                    valitorPayData.Add("card", resp.MaskedCardNumber);
 
-                    var sendOrderResponse = await _orderService.Send3dSecureOrderAsync(
-                        store,
-                        order,
-                        order,
-                        _orderService.CreateValitorPayReceipt(order, store, resp),
-                        new PaymentMethod
-                        {
-                            CardNumber = md.CardNumber,
-                            Month = md.ExpirationMonth,
-                            Year = md.ExpirationYear,
-                            CVC = md.Cvc,
-                            SaveNewCard = order.PaymentMethod.SaveNewCard,
-                        });
-
-                    _logger.LogDebug("sendOrderResponse: " + sendOrderResponse.Dump());
-
-                    if (!sendOrderResponse.Success)
-                    {
-                        response.Content = CreateScriptContent(
-                            false,
-                            errorCode: sendOrderResponse.Message ?? Settings.InternalServerErrorCode);
-                        response.StatusCode = HttpStatusCode.InternalServerError;
-                        return ResponseMessage(response);
-                    }
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
                 }
                 else
                 {
-                    HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
+                    ContentResult? content = null;
 
                     if (Vettvangur.ValitorPay.StatusCodes.CodeMap.TryGetValue(resp.ResponseCode, out var statusCode))
                     {
-                        response.Content = CreateScriptContent(
+                        content = CreateScriptContent(
                             false,
-                            errorCode: StatusFormatter(statusCode.Type));
+                            errorCode: statusCode.Type.ToString());
 
                         if (statusCode.Type != CodeType.ServerError)
                         {
-                            httpStatusCode = HttpStatusCode.Unauthorized;
+                            content.StatusCode = (int)HttpStatusCode.Unauthorized;
                         }
                     }
                     else
                     {
-                        response.Content = CreateScriptContent(
+                        content = CreateScriptContent(
                             false,
-                            errorCode: Settings.InternalServerErrorCode);
+                            errorCode: "ServerError");
+                        content.StatusCode = (int)HttpStatusCode.InternalServerError;
                     }
 
-                    response.StatusCode = httpStatusCode;
-                    return ResponseMessage(response);
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
+
+                    Events.OnError(this, new ErrorEventArgs
+                    {
+                        OrderStatus = order,
+                    });
+
+                    return content;
                 }
             }
             else if (MDStatusCodes.CodeMap[notificationCallBack.MdStatus].Retryable
-                && !query.AllKeys.Contains("retry"))
+                && !query.Keys.Contains("retry"))
             {
                 var req = new CardVerificationRequest
                 {
+                    DisplayName = valitorSettings.PaymentPortalDisplayName,
+
                     CardNumber = md.CardNumber,
                     ExpirationMonth = md.ExpirationMonth,
                     ExpirationYear = md.ExpirationYear,
-                    Amount = order.Amount * 100,
+                    Amount = (long)(order.Amount * 100),
                     AuthenticationUrl
-                        = new Uri($"{Request.RequestUri.Scheme}://{Request.RequestUri.Authority}"
-                        + "/api/ValitorPay/completeFirstPayment?retry=1"),
+                        = new Uri($"{Request.Scheme}://{Request.Host}"
+                        + "/ekom/payments/ValitorPay/completeFirstPayment?retry=1"),
                 };
                 req.SetMerchantData(md, secret);
 
-                if (_settings.Environment == "dev")
+                if (!_webHostEnvironment.IsProduction())
                 {
                     req.ThreeDs20AdditionalParamaters = new ThreeDs20AdditionalParamaters
                     {
@@ -474,69 +477,84 @@ public class ValitorPayController : ControllerBase
                 var resp = await _valitorPayService.CardVerificationAsync(req);
                 if (resp.IsSuccess)
                 {
-                    response.Content = CreateScriptContent(
+                    var content = CreateScriptContent(
                             false,
                             errorCode: null,
                             valitorHtml: resp.CardVerificationRawResponse);
-                    response.StatusCode = (HttpStatusCode)230;
+                    content.StatusCode = 230;
 
-                    return ResponseMessage(response);
+                    order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                    await _orderService.UpdateAsync(order);
+
+                    return content;
                 }
             }
             else
             {
-                HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
-                if (MDStatusCodes.CodeMap.TryGetValue(notificationCallBack.MdStatus, out var statusCode))
-                {
-                    response.Content = CreateScriptContent(
-                        false,
-                        errorCode: StatusFormatter(statusCode.Type));
+                var statusCode = MDStatusCodes.CodeMap[notificationCallBack.MdStatus]!;
 
-                    if (statusCode.Type != CodeType.ServerError)
-                    {
-                        httpStatusCode = HttpStatusCode.Unauthorized;
-                    }
-                }
-                else
+                var content = CreateScriptContent(
+                    false,
+                    errorCode: statusCode.Type.ToString());
+
+                if (statusCode.Type != CodeType.ServerError)
                 {
-                    response.Content = CreateScriptContent(
-                        false,
-                        errorCode: Settings.InternalServerErrorCode);
+                    content.StatusCode = (int)HttpStatusCode.Unauthorized;
                 }
 
-                response.StatusCode = httpStatusCode;
-                return ResponseMessage(response);
+                order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                await _orderService.UpdateAsync(order);
+
+                Events.OnError(this, new ErrorEventArgs
+                {
+                    OrderStatus = order,
+                });
+
+                return content;
             }
         }
+#pragma warning disable CA1031 // We log and return 500, so no swallowing
         catch (Exception ex)
         {
             if (order != null)
             {
-                order.Updated = DateTime.Now;
+                valitorPayData["updated"] = DateTime.Now.ToString();
 
                 if (ex is ValitorPayResponseException valitorEx)
                 {
-                    order.StatusCode = valitorEx.ValitorResponse?.ResponseCode;
+                    // lies, handles null value just fine
+                    valitorPayData.Add("statusCode", valitorEx.ValitorResponse?.ResponseCode!);
                 }
 
-                _db.orders.Update(order);
-                _db.Save();
+                order!.EkomPaymentProviderData = JsonConvert.SerializeObject(valitorPayData);
+                await _orderService.UpdateAsync(order);
             }
 
             // We log valitor response when ValitorPayResponseException inside valitorPay library
-            _logger.LogError(ex);
+            _logger.LogError(ex, "CompleteFirstPayment Exception");
 
-            response.Content = CreateScriptContent(
+            var content = CreateScriptContent(
                 false,
-                errorCode: Settings.InternalServerErrorCode);
-            response.StatusCode = HttpStatusCode.InternalServerError;
+                errorCode: notificationCallBack.MdStatus.ToString());
 
-            return ResponseMessage(response);
+            content.StatusCode = (int) HttpStatusCode.InternalServerError;
+
+            Events.OnError(this, new ErrorEventArgs
+            {
+                OrderStatus = order,
+                Exception = ex,
+            });
+
+            return content;
         }
+#pragma warning restore CA1031 // Do not catch general exception types
 
-        response.Content = CreateScriptContent(true);
+        Events.OnSuccess(this, new SuccessEventArgs
+        {
+            OrderStatus = order,
+        });
 
-        return ResponseMessage(response);
+        return CreateScriptContent(true);
     }
 
     /// <summary>
@@ -574,29 +592,13 @@ public class ValitorPayController : ControllerBase
         //}
     }
 
-    private string StatusFormatter(CodeType codeType)
-    {
-        switch (codeType)
-        {
-            case CodeType.SecurityEvent:
-            case CodeType.UserError:
-                return "ekki_tokst_ad_rukka_kort"; // kortanumer_ogilt
-
-            case CodeType.InsufficientFunds:
-                return "ekki_heimild";
-
-            case CodeType.ServerError:
-            default:
-                return Settings.InternalServerErrorCode;
-        }
-    }
-
-    private StringContent CreateScriptContent(
+    private ContentResult CreateScriptContent(
         bool success,
-        string errorCode = null,
-        string valitorHtml = null)
+        string? errorCode = null,
+        string? valitorHtml = null)
     {
-        var content = new StringContent(
+        var content = new ContentResult();
+        content.Content = 
             "<script>" +
             //"document.dominosPayment = { " +
             //"success: " + success.ToString().ToLower() + ", " +
@@ -610,9 +612,9 @@ public class ValitorPayController : ControllerBase
             "valitorHtml: '" + (valitorHtml == null
                 ? valitorHtml
                 : Convert.ToBase64String(Encoding.UTF8.GetBytes(valitorHtml))) + "' }, " +
-            "'*'); } catch(err) {}</script>");
+            "'*'); } catch(err) {}</script>";
 
-        content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
+        content.ContentType = "text/html";
 
         return content;
     }

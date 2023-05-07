@@ -103,7 +103,7 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
 
-            return htmlHelper.BeginForm(actionName, "EkomCheckoutApi", null, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
+            return htmlHelper.BeginRouteForm("MvcPay", new { }, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
         }
     }
 }

@@ -31,11 +31,6 @@ public class PaymentsConfiguration
     //public static readonly NumberFormatInfo Nfi = new CultureInfo("is-IS", false).NumberFormat;
 
     /// <summary>
-    /// Ekom:Payments:ConnectionStringName
-    /// </summary>
-    public string ConnectionStringName { get; set; }
-
-    /// <summary>
     /// Ekom:Payments:SendEmailAlerts
     /// This property controls whether we attempt to send emails when exceptions occur in certain places.
     /// Used in response controllers.

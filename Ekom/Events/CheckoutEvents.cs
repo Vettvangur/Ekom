@@ -1,4 +1,5 @@
 using Ekom.Models;
+using Ekom.Payments;
 
 namespace Ekom.Events
 {
@@ -21,7 +22,9 @@ namespace Ekom.Events
     public class PayEventArgs : EventArgs
     {
         public IOrderInfo OrderInfo { get; set; }
+        public PaymentSettings PaymentSettings { get; set; }
 
+        public Dictionary<string, string> CustomData { get; set; }
     }
 
     public class ProcessingEventArgs : EventArgs

@@ -8,6 +8,11 @@ namespace Ekom.Payments.ValitorPay;
 
 public class ValitorPaySettings : PaymentSettingsBase<ValitorPaySettings>
 {
+    /// <summary>
+    /// Displayed to customer on payment portal page during card verification
+    /// </summary>
+    public string PaymentPortalDisplayName { get; set; }
+
     public string ApiUrl { get; set; }
 
     public string ApiKey { get; set; }
@@ -15,20 +20,4 @@ public class ValitorPaySettings : PaymentSettingsBase<ValitorPaySettings>
     public string TerminalId { get; set; }
 
     public string AgreementNumber { get; set; }
-
-    /// <summary>
-    /// 16 digit payment card number
-    /// </summary>
-    public string CardNumber { get; set; }
-
-    public int ExpirationMonth { get; set; }
-    
-    public int ExpirationYear { get; set; }
-    
-    /// <summary>
-    /// Card Verification Value. Triple digit number on the back of the card.
-    /// </summary>
-    public string CVV { get; set; }
-    
-    public string VirtualCardNumber { get; set; }
 }

@@ -3,11 +3,14 @@ using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Payments;
+using Ekom.Payments.Helpers;
 using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
+using OrderStatus = Ekom.Utilities.OrderStatus;
 
 namespace Ekom.Services
 {
@@ -29,6 +32,7 @@ namespace Ekom.Services
         protected readonly ILogger Logger;
         protected readonly Configuration Config;
         protected readonly INetPaymentService netPaymentService;
+        protected readonly EkomPayments ekomPayments;
         readonly HttpContext _httpCtx;
         protected string Culture;
 
@@ -39,7 +43,8 @@ namespace Ekom.Services
             IUmbracoService umbracoService,
             IMemberService memberService,
             IHttpContextAccessor httpContextAccessor,
-            INetPaymentService netPaymentService)
+            INetPaymentService netPaymentService,
+            EkomPayments ekomPayments)
         {
             _httpCtx = httpContextAccessor.HttpContext;
 
@@ -49,6 +54,7 @@ namespace Ekom.Services
             UmbracoService = umbracoService;
             MemberService = memberService;
             this.netPaymentService = netPaymentService;
+            this.ekomPayments = ekomPayments;
             //HttpContext = httpContext;
         }
 
@@ -397,15 +403,16 @@ namespace Ekom.Services
 
             var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
-            var orderItems = new List<OrderInfo>();
-            
-            //orderItems.Add(new OrderInfo
-            //{
-            //    GrandTotal = order.ChargedAmount.Value,
-            //    Price = order.ChargedAmount.Value,
-            //    Title = orderTitle,
-            //    Quantity = 1,
-            //});
+            var orderItems = new List<OrderItem>
+            {
+                new OrderItem
+                {
+                    GrandTotal = order.ChargedAmount.Value,
+                    Price = order.ChargedAmount.Value,
+                    Title = orderTitle,
+                    Quantity = 1,
+                }
+            };
 
             Logger.LogInformation(
                 "Payment Provider: {PaymentProvider}, {Name} offline: {isOfflinePayment}",
@@ -456,7 +463,7 @@ namespace Ekom.Services
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
                     await Order.Instance.UpdateStatusAsync(
-                    OrderStatus.PaymentFailed,
+                    Ekom.Utilities.OrderStatus.PaymentFailed,
                     order.UniqueId).ConfigureAwait(false);
                     
                     Logger.LogError(
@@ -477,62 +484,63 @@ namespace Ekom.Services
                     OrderStatus.WaitingForPayment,
                     order.UniqueId).ConfigureAwait(false);
 
-                //var successUrl = Utilities.UriHelper.EnsureFullUri(
-                //    ekomPP.GetPropertyValue("successUrl", storeAlias),
-                //    HttpContext.Request)
-                //    + "?orderId=" + order.UniqueId;
+                var successUrl = PaymentsUriHelper.EnsureFullUri(
+                    ekomPP.GetValue("successUrl", storeAlias),
+                    _httpCtx.Request);
+                successUrl = PaymentsUriHelper.AddQueryString(
+                    successUrl,
+                    "?orderId=" + order.UniqueId
+                );
 
-                //var pp = NetPayment.Instance.GetPaymentProvider(PublishedPaymentProviderHelper.GetName(UmbracoHelper.Content(ekomPP.Id)));
+                var pp = ekomPayments.GetPaymentProvider(ekomPP.Name);
 
-                //var language = !string.IsNullOrEmpty(ekomPP.GetPropertyValue("language", order.StoreInfo.Alias)) ? ekomPP.GetPropertyValue("language", order.StoreInfo.Alias) : "IS";
+                var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias)) 
+                    ? ekomPP.GetValue("language", order.StoreInfo.Alias) 
+                    : "is-IS";
 
-                //if (!Enum.TryParse(order.StoreInfo.Currency.ISOCurrencySymbol, out Currency currency))
-                //{
-                //    Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
-                //}
-                //int loanTypeValue = 0;
-                //var loanType = ekomPP.GetPropertyValue("loanType");
-                //if (loanType != null)
-                //{
-                //    int.TryParse(loanType, out loanTypeValue);
-                //}
-                //string merchantName = ekomPP.GetPropertyValue("merchantName");
-                //var paymentSettings = new PaymentSettings
-                //{
-                //    CustomerInfo = new CustomerInfo()
-                //    {
-                //        Address = order.CustomerInformation.Customer.Address,
-                //        City = order.CustomerInformation.Customer.City,
-                //        Email = order.CustomerInformation.Customer.Email,
-                //        Name = order.CustomerInformation.Customer.Name,
-                //        NationalRegistryId = order.CustomerInformation.Customer.Properties.GetPropertyValue("customerSsn"),
-                //        PhoneNumber = order.CustomerInformation.Customer.Phone,
-                //        PostalCode = order.CustomerInformation.Customer.ZipCode
-                //    },
-                //    CardNumber = paymentRequest.CardNumber,
-                //    Expiry = paymentRequest.Expiry,
-                //    CVV = paymentRequest.CVV,
-                //    SuccessUrl = successUrl,
-                //    Currency = currency,
-                //    Orders = orderItems,
-                //    SkipReceipt = true,
-                //    VortoLanguage = order.StoreInfo.Alias,
-                //    Language = language,
-                //    Member = MembershipHelper.GetCurrentMemberId(),
-                //    OrderCustomString = order.UniqueId.ToString(),
-                //    LoanType = loanTypeValue,
-                //    MerchantName = merchantName ?? "",
-                //    ReferenceId = order.ReferenceId.ToString()
-                //    //paymentProviderId: paymentRequest.PaymentProvider.ToString()
-                //};
+                if (!Enum.TryParse(order.StoreInfo.Currency.ISOCurrencySymbol, out Currency currency))
+                {
+                    Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
+                }
+                int loanTypeValue = 0;
+                var loanType = ekomPP.GetValue("loanType");
+                if (loanType != null)
+                {
+                    int.TryParse(loanType, out loanTypeValue);
+                }
+                var paymentSettings = new PaymentSettings
+                {
+                    CustomerInfo = new Ekom.Payments.CustomerInfo()
+                    {
+                        Address = order.CustomerInformation.Customer.Address,
+                        City = order.CustomerInformation.Customer.City,
+                        Email = order.CustomerInformation.Customer.Email,
+                        Name = order.CustomerInformation.Customer.Name,
+                        NationalRegistryId = order.CustomerInformation.Customer.Properties.GetValue("customerSsn"),
+                        PhoneNumber = order.CustomerInformation.Customer.Phone,
+                        PostalCode = order.CustomerInformation.Customer.ZipCode
+                    },
+                    CardNumber = paymentRequest.CardNumber,
+                    CardExpirationMonth = paymentRequest.Month,
+                    CardExpirationYear = paymentRequest.Year,
+                    CardCVV = paymentRequest.CVV,
+                    SuccessUrl = successUrl,
+                    Currency = currency.ToString(),
+                    Orders = orderItems,
+                    Language = language,
+                    Member = MemberService.GetCurrentMember().Id,
+                    PaymentProviderKey = ekomPP.Key,
+                };
+                paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());
+                paymentSettings.OrderCustomData.Add("ekomOrderReferenceId", order.ReferenceId.ToString());
 
-                //CheckoutEvents.OnPay(this, new PayEventArgs
-                //{
-                //    OrderInfo = order,
-                //    PaymentSettings = paymentSettings
-                //});
+                CheckoutEvents.OnPay(this, new PayEventArgs
+                {
+                    OrderInfo = order,
+                    PaymentSettings = paymentSettings,
+                });
 
-                //var content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
+                var content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
 
                 return new CheckoutResponse
                 {

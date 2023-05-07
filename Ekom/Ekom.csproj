@@ -130,5 +130,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Ekom.Common\Ekom.Common.csproj" />
+      <ProjectReference Include="..\Ekom.Payments\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
     </ItemGroup>
 </Project>

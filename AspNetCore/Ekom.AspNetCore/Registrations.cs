@@ -6,6 +6,7 @@ using Ekom.Exceptions;
 using Ekom.Factories;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
 using Hangfire;
@@ -43,7 +44,7 @@ static class Registrations
         services.AddSingleton<IPerStoreCache<IProductDiscount>, ProductDiscountCache>();
         services.AddSingleton<IPerStoreCache<IProduct>, ProductCache>();
         services.AddSingleton<IBaseCache<IZone>, ZoneCache>();
-        services.AddSingleton<IPerStoreCache<IPaymentProvider>, PaymentProviderCache>();
+        services.AddSingleton<IPerStoreCache<Models.IPaymentProvider>, PaymentProviderCache>();
         services.AddSingleton<IPerStoreCache<IShippingProvider>, ShippingProviderCache>();
         services.AddSingleton<IBaseCache<StockData>, StockCache>();
         services.AddSingleton<IPerStoreCache<StockData>, StockPerStoreCache>();
@@ -58,7 +59,7 @@ static class Registrations
         services.AddTransient<OrderService>();
 
         services.AddTransient<CheckoutService>();
-        services.AddTransient<IMailService, MailService>();
+        services.AddTransient<Ekom.Services.IMailService, MailService>();
         services.AddTransient<DatabaseService>();
 
         services.AddTransient<CountriesRepository>();
@@ -73,7 +74,7 @@ static class Registrations
         services.AddSingleton<IObjectFactory<IZone>, ZoneFactory>();
         services.AddSingleton<IPerStoreFactory<ICategory>, CategoryFactory>();
         services.AddSingleton<IPerStoreFactory<IDiscount>, DiscountFactory>();
-        services.AddSingleton<IPerStoreFactory<IPaymentProvider>, PaymentProviderFactory>();
+        services.AddSingleton<IPerStoreFactory<Models.IPaymentProvider>, PaymentProviderFactory>();
         services.AddSingleton<IPerStoreFactory<IShippingProvider>, ShippingProviderFactory>();
         services.AddSingleton<IPerStoreFactory<IProduct>, ProductFactory>();
         services.AddSingleton<IPerStoreFactory<IProductDiscount>, ProductDiscountFactory>();
@@ -113,7 +114,8 @@ static class Registrations
                 f.GetService<IUmbracoService>(),
                 f.GetService<IMemberService>(),
                 f.GetService<IHttpContextAccessor>(),
-                f.GetService<INetPaymentService>()
+                f.GetService<INetPaymentService>(),
+                f.GetService<EkomPayments>()
             )
         );
 
@@ -134,7 +136,7 @@ static class Registrations
                     f.GetService<Configuration>(),
                     f.GetService<ILogger<Providers>>(),
                     f.GetService<IPerStoreCache<IShippingProvider>>(),
-                    f.GetService<IPerStoreCache<IPaymentProvider>>(),
+                    f.GetService<IPerStoreCache<Models.IPaymentProvider>>(),
                     f.GetService<IBaseCache<IZone>>(),
                     f.GetService<IStoreService>(),
                     f.GetService<CountriesRepository>()

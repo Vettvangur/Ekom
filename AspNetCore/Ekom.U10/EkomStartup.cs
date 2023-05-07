@@ -1,12 +1,17 @@
 using Ekom.App_Start;
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
+using Ekom.Payments;
+using Ekom.Services;
 using Ekom.Umb.Services;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
@@ -153,12 +158,31 @@ class EkomStartup : IComponent
 
             _factory.GetService<ICouponCache>()
                 .FillCache(); ;
+            Ekom.Payments.Events.Success += CompleteCheckout;
 
             _logger.LogInformation("Ekom Started");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ekom startup failed");
+        }
+    }
+
+    public void CompleteCheckout(object sender, SuccessEventArgs args)
+    {
+        var o = args.OrderStatus;
+        var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+
+        var customData = JsonConvert.DeserializeObject<Dictionary<string, string>>(o.CustomData!);
+
+        if (customData == null)
+        {
+            throw new EkomException("Unsupported custom data object, ensure to persist data back shaped as Dictionary<string, string>");
+        }
+
+        if (Guid.TryParse(customData["ekomOrderUniqueId"], out var orderId))
+        {
+            checkoutSvc.CompleteAsync(orderId).Wait();
         }
     }
 
