@@ -52,6 +52,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.ValitorPay", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.Valitor", "Ekom.Payments\PaymentProviders\Ekom.Payments.Valitor\Ekom.Payments.Valitor.csproj", "{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.AsynchronousExample", "Ekom.Payments\PaymentProviders\Ekom.Payments.AsynchronousExample\Ekom.Payments.AsynchronousExample.csproj", "{A5707C17-3C73-40F5-8E46-40345EED7A32}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -110,6 +112,10 @@ Global
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5707C17-3C73-40F5-8E46-40345EED7A32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5707C17-3C73-40F5-8E46-40345EED7A32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5707C17-3C73-40F5-8E46-40345EED7A32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5707C17-3C73-40F5-8E46-40345EED7A32}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -131,6 +137,7 @@ Global
 		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 		{155D191D-39A7-4E2B-829A-2EE5D859E914} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
+		{A5707C17-3C73-40F5-8E46-40345EED7A32} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}
