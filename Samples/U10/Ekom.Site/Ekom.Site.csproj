@@ -5,28 +5,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PriceEditor\ekmPrice.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\css\ekomProperty.css" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\js\ekmPropertyEditor.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditor.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\PropertyEditor\views\ekmPropertyEditorPicker.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\Extensions\ekmUtility.js" />
-      <Content Remove="C:\Users\gardar\.nuget\packages\ekomcore.web\0.1.25\contentFiles\any\net6.0\App_Plugins\Ekom\package.manifest" />
-    </ItemGroup>
-    <ItemGroup>
+      <Content Include="App_Plugins\EkomManager\view.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
@@ -45,6 +24,7 @@
       <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen.css" />
     </ItemGroup>
     <ItemGroup>
+      <None Include="App_Plugins\EkomManager\Lang\en-us.xml" />
       <None Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.controller.js" />

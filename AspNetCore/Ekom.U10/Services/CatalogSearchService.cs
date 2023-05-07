@@ -48,17 +48,27 @@ namespace Ekom.Umb.Services
                 new EkomSearchField()
                 {
                     Name = "nodeName",
-                    Booster = "^2.0"
+                    Booster = "^4.0"
                 },
                 new EkomSearchField()
                 {
                     Name = "sku",
-                    Booster = "^5.0",
+                    Booster = "^10.0",
                     SearchType = EkomSearchType.Wildcard
                 },
                 new EkomSearchField()
                 {
                     Name = "title",
+                    Booster = "^4.0"
+                },
+                 new EkomSearchField()
+                {
+                    Name = "description",
+                    Booster = "^2.0"
+                },
+                new EkomSearchField()
+                {
+                    Name = "searchTags",
                     Booster = "^2.0"
                 },
                 new EkomSearchField()
@@ -73,13 +83,14 @@ namespace Ekom.Umb.Services
 
             try
             {
-                if (_examineManager.TryGetIndex(_config.ExamineIndex, out var index) || !(index is IUmbracoIndex umbIndex))
+                var examineIndex = !string.IsNullOrEmpty(req.ExamineIndex) ? req.ExamineIndex : _config.ExamineSearchIndex;
+                if (_examineManager.TryGetIndex(examineIndex, out var index) || !(index is IUmbracoIndex umbIndex))
                 {
                     var searcher = index.Searcher;
 
                     if (searcher == null)
                     {
-                        throw new Exception("Searcher not found. " + _config.ExamineIndex);
+                        throw new Exception("Searcher not found. " + examineIndex);
                     }
 
                     var queryWithOutStopWords = req.SearchQuery.RemoveStopWords();
@@ -126,9 +137,9 @@ namespace Ekom.Umb.Services
 
                             luceneQuery.Append(")");
                         }
+                        
                         luceneQuery.Append(")");
                         
-
                         i++;
                     }
 

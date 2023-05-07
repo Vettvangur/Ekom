@@ -59,6 +59,20 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Ekom:ExamineSearchIndex
+        /// Overrides the default of ExternalSearcher
+        /// </summary>
+        public virtual string ExamineSearchIndex
+        {
+            get
+            {
+                var value = _configuration["Ekom:ExamineSearchIndex"];
+
+                return value ?? "ExternalIndex";
+            }
+        }
+
+        /// <summary>
         /// Umbraco:CMS:RequestHandler:CharCollection
         /// Gets the Umbraco CharCollection
         /// </summary>

@@ -1,9 +1,6 @@
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -13,9 +10,8 @@ namespace Ekom.Models
     public class OrderedPaymentProvider
     {
         private readonly IPaymentProvider _provider;
-        private readonly JObject paymentProviderObject;
 
-        public OrderedPaymentProvider(IPaymentProvider provider, StoreInfo storeInfo)
+        public OrderedPaymentProvider(IPaymentProvider provider, StoreInfo storeInfo, Dictionary<string,string> customData)
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
@@ -29,16 +25,21 @@ namespace Ekom.Models
             Key = _provider.Key;
             Title = _provider.Title;
             Prices = _provider.Prices;
+            CustomData = customData;
         }
 
         public OrderedPaymentProvider(JObject paymentProviderObject, StoreInfo storeInfo)
         {
-            this.paymentProviderObject = paymentProviderObject;
-
             if (paymentProviderObject.ContainsKey(nameof(Properties)))
             {
                 Properties = new ReadOnlyDictionary<string, string>(
                 paymentProviderObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+            }
+
+            if (paymentProviderObject.ContainsKey(nameof(CustomData)))
+            {
+                CustomData = new Dictionary<string, string>(
+                paymentProviderObject[nameof(CustomData)].ToObject<Dictionary<string, string>>());
             }
 
             StoreInfo = storeInfo;
@@ -94,5 +95,6 @@ namespace Ekom.Models
             }
         }
         public virtual List<IPrice> Prices { get; set; }
+        public Dictionary<string, string> CustomData = new Dictionary<string, string>();
     }
 }

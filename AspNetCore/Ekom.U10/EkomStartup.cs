@@ -1,10 +1,12 @@
 using Ekom.App_Start;
 using Ekom.Cache;
 using Ekom.Exceptions;
+using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Services;
+using Ekom.Umb.Sections;
 using Ekom.Umb.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Builder;
@@ -16,8 +18,6 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
-using Umbraco.Cms.Infrastructure.Persistence;
-using Umbraco.Cms.Infrastructure.WebAssets;
 using Umbraco.Cms.Web.BackOffice.Trees;
 
 namespace Ekom.Umb;
@@ -26,7 +26,6 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
-        //app.UseMiddleware<ControllerMiddleware>();
         app.UseEkomMiddleware();
         next(app);
     };
@@ -37,7 +36,7 @@ class StartupFilter : IStartupFilter
 /// </summary>
 // Public allows consumers to target type with ComposeAfter / ComposeBefore
 public class EkomComposer : IComposer
-{
+{    
     /// <summary>
     /// Umbraco lifecycle method
     /// </summary>
@@ -56,6 +55,7 @@ public class EkomComposer : IComposer
             .Append<EkomStartup>()
             ;
 
+        builder.Sections().Append<ManagerSection>();
 
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
@@ -111,9 +111,7 @@ class EkomStartup : IComponent
         Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
-        IUmbracoDatabaseFactory databaseFactory,
-        ExamineService es,
-        ServerVariablesParser svp)
+        ExamineService es)
     {
         _config = config;
         _logger = logger;
@@ -148,6 +146,8 @@ class EkomStartup : IComponent
             // The following two caches are not closely related to the ones listed in _config.CacheList
             // They should not be added to the config list since that list is used by f.x. _config.Succeed in many caches
 
+            //CheckoutEvents.CheckoutSucessEvent += CheckoutSuccess;
+
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock
                 ? _factory.GetService<IPerStoreCache<StockData>>()
@@ -155,9 +155,9 @@ class EkomStartup : IComponent
                 as ICache;
 
             stockCache.FillCache();
-
+            
             _factory.GetService<ICouponCache>()
-                .FillCache(); ;
+                .FillCache();
             Ekom.Payments.Events.Success += CompleteCheckout;
 
             _logger.LogInformation("Ekom Started");

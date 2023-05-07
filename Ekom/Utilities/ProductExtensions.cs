@@ -18,7 +18,14 @@ namespace Ekom.Utilities
 
             return ms.FilterProducts(products, query);
         }
+        public static string GetMetaFieldValue(this IProduct product, string alias, string culture = "")
+        {
+            var ms = Configuration.Resolver.GetService<IMetafieldService>();
 
+            culture = string.IsNullOrEmpty(culture) ? System.Globalization.CultureInfo.CurrentCulture.Name : culture;
+
+            return ms.GetMetaFieldValue(product, alias, culture);
+        }
         public static IEnumerable<IProduct> Filter(this ProductResponse response, ProductQuery query)
         {
             var ms = Configuration.Resolver.GetService<IMetafieldService>();

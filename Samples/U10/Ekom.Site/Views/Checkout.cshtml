@@ -1,188 +1,119 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
-@using Ekom.Payments
-@using Ekom.Payments.Valitor
-@using Ekom.Payments.ValitorPay
-@inject EkomPayments ekmPayments
 
 @{
     Layout = null;
 
-    @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay))
+    var order = Order.Instance.GetOrder();
+
+    if (order == null || order.TotalQuantity <= 0)
     {
-        <div class="row column">
-
-            @*<h3>Payment Providers</h3>
-            <ul>
-                @foreach (var paymentProvider in Providers.Instance.GetPaymentProviders(
-                    countryCode: country,
-                    orderAmount: order.ChargedAmount.Value
-                ))
-                {
-                    <li>
-                        <label for="@paymentProvider.Key">
-                            @paymentProvider.Title
-                            <input id="@paymentProvider.Key" type="radio" name="paymentProvider" value="@paymentProvider.Key" />
-                        </label>
-                    </li>
-                }
-            </ul>
-
-            <h3>Shipping Providers</h3>
-            <ul>
-                @foreach (var shippingProvider in Providers.Instance.GetShippingProviders(
-                    countryCode: country,
-                    orderAmount: order.ChargedAmount.Value
-                ))
-                {
-                    <li>
-                        <label for="@shippingProvider.Key">
-                            @shippingProvider.Title - @shippingProvider.Price.Value
-                            <input id="@shippingProvider.Key" type="radio" name="shippingProvider" value="@shippingProvider.Key" />
-                        </label>
-                    </li>
-                }
-            </ul>
-
-            @foreach (string param in Request.Form)
-            {
-                <input name="@param" value="@Request.Form[param]" hidden />
-            }*@
-
-            <input name="PaymentProvider" value="5f6a006d-d773-48dc-b998-798159ea2461" hidden />
-            <input name="ShippingProvider" value="" hidden />
-
-            <input name="CardNumber" value="2223000010246699" hidden />
-            <input name="Year" value="2030" hidden />
-            <input name="Month" value="12" hidden />
-            <input name="CVV" value="123" hidden />
-
-
-            <button class="button">Klára</button>
+        <div>
+            <h1>Cart is empty</h1>
         </div>
+        return;
     }
 
-    //var ppProvider = "valitorPay";
+    <div class="cart">
 
-    //var pp = ekmPayments.GetPaymentProvider(ppProvider);
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var orderline in order.OrderLines)
+                {
+                    <tr class="orderline">
+                        <td>@orderline.Product.Title</td>
+                        <td>@orderline.Product.SKU</td>
+                        <td>@orderline.Product.Price.WithVat.CurrencyString</td>
+                        <td>
+                            @using (Html.BeginEkomForm(FormType.AddToOrderCart, "orderline__update-form"))
+                            {
+                                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                                <input type="number" name="quantity" value="@orderline.Quantity" />
+                                <input type="hidden" name="productId" value="@orderline.ProductKey" />
+                                <input type="hidden" name="action" value="@OrderAction.Set" />
+                                <button type="submit">Update</button>
+                            }
+                        </td>
+                        <td>@orderline.Amount.WithVat.CurrencyString</td>
+                        <td>
+                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, "orderline__remove-form"))
+                            {
+                                <input type="hidden" name="lineId" value="@orderline.Key" />
+                                <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
 
-    //var settings = new PaymentSettings
-    //        {
-    //            Orders = new OrderItem[]
-    //            {
-    //        new OrderItem
-    //        {
-    //            Title = "Item1",
-    //            Quantity = 1,
-    //            Price = 100,
-    //            GrandTotal = 100,
-    //        },
-    //            },
-    //            Store = "Store",
-    //            Language = "is-IS",
-    //            Member = 1,
-    //        };
+                                <button type="submit">
+                                    Remove
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">
+                    
+                    </td>
+                    <td>
+                        <strong>
+                            @order.TotalQuantity
+                        </strong>
+                    </td>
+                    <td>
+                        <strong>@order.ChargedAmount.CurrencyString</strong>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
 
-    //switch (ppProvider)
-    //{
-    //    case "valitor":
+    </div>
 
-    //        settings.SetValitorSettings(new ValitorSettings
-    //        {
+    <div class="payments">
+        @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay, "checkout-footer__payment-form", "payment-form"))
+        {
+            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+            
+            foreach (var shippingProvider in _providers.GetShippingProviders())
+            {
+                <div>
+                    <label for="@shippingProvider.Key">@shippingProvider.Title</label>
+                    <input type="radio" name="ShippingProvider" value="@shippingProvider.Key" id="@shippingProvider.Key" />
+                </div>
+            }
 
-    //        });
+            <hr />
 
-    //        break;
+            foreach (var paymentProvider in _providers.GetPaymentProviders())
+            {
+                <div>
+                    <label for="@paymentProvider.Key">@paymentProvider.Title</label>
+                    <input type="radio" name="PaymentProvider" value="@paymentProvider.Key" id="@paymentProvider.Key" />
+                </div>
+            }
 
-    //    case "valitorPay":
+            <input name="ekomUpdateInformation" hidden />
 
-    //        settings.SetValitorPaySettings(new ValitorPaySettings
-    //                {
-    //                    CardNumber = "2223000010246699",
-    //                    ExpirationMonth = 12,
-    //                    ExpirationYear = 2030,
-    //                    CVV = "123",
-    //                });
+            <input name="customerName" value="ekom test customer" />
+            <input name="customerEmail" value="ekom@vettvangur.is" />
 
-    //        break;
-    //}
+            <input name="CardNumber" value="2223000010246699" hidden />
+            <input name="CVV" value="123" hidden />
+            <input name="Year" value="2030" hidden />
+            <input name="Month" value="12" hidden />
 
-    //var form = await pp.RequestAsync(settings);
-
-    //@Html.Raw(form)
-
-    //var order = Order.Instance.GetOrder();
-
-    //if (order == null || order.TotalQuantity <= 0)
-    //{
-    //    <div>
-    //        <h1>Cart is empty</h1>
-    //    </div>
-    //    return;
-    //}
-
-    //<div class="cart">
-
-    //    <table>
-    //        <thead>
-    //            <tr>
-    //                <th>Product</th>
-    //                <th>SKU</th>
-    //                <th>Unit Price</th>
-    //                <th>Quantity</th>
-    //                <th>Total</th>
-    //                <th></th>
-    //            </tr>
-    //        </thead>
-    //        <tbody>
-    //            @foreach (var orderline in order.OrderLines)
-    //            {
-    //                <tr class="orderline">
-    //                    <td>@orderline.Product.Title</td>
-    //                    <td>@orderline.Product.SKU</td>
-    //                    <td>@orderline.Product.Price.WithVat.CurrencyString</td>
-    //                    <td>
-    //                        @using (Html.BeginEkomForm(FormType.AddToOrderCart, "orderline__update-form"))
-    //                        {
-    //                            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
-    //                            <input type="number" name="quantity" value="@orderline.Quantity" />
-    //                            <input type="hidden" name="productId" value="@orderline.ProductKey" />
-    //                            <input type="hidden" name="action" value="@OrderAction.Set" />
-    //                            <button type="submit">Update</button>
-    //                        }
-    //                    </td>
-    //                    <td>@orderline.Amount.WithVat.CurrencyString</td>
-    //                    <td>
-    //                        @using (Html.BeginEkomForm(FormType.RemoveOrderLine, "orderline__remove-form"))
-    //                        {
-    //                            <input type="hidden" name="lineId" value="@orderline.Key" />
-    //                            <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
-
-    //                            <button type="submit">
-    //                                Remove
-    //                            </button>
-    //                        }
-    //                    </td>
-    //                </tr>
-    //            }
-    //        </tbody>
-    //        <tfoot>
-    //            <tr>
-    //                <td colspan="3">
-
-    //                </td>
-    //                <td>
-    //                    <strong>
-    //                        @order.TotalQuantity
-    //                    </strong>
-    //                </td>
-    //                <td>
-    //                    <strong>@order.ChargedAmount.CurrencyString</strong>
-    //                </td>
-    //                <td></td>
-    //            </tr>
-    //        </tfoot>
-    //    </table>
-
+            <button type="submit" class="button">Pay</button>
+        }    
+    </div>
 
     //</div>
 }

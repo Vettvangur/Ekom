@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
 using System;
@@ -247,14 +248,25 @@ namespace Ekom.Models
         /// </summary>
         public decimal Value { get; }
 
-        public string CurrencyString
+        public virtual string CurrencyString
         {
-
             get
             {
                 var ci = new CultureInfo(_currencyCulture.CurrencyValue);
-                ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
-                return Value.ToString(_currencyCulture.CurrencyFormat, ci);
+                ci = ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS" ? Configuration.IsCultureInfo : ci;
+
+                var value = Value.ToString(_currencyCulture.CurrencyFormat, ci);
+                
+                var model = new CurrencyStringEventArgs()
+                {
+                    CultureInfo = ci,
+                    Value = Value,
+                    ValueString = value
+                };
+
+                CatalogEvents.OnCurrencyString(this, model);
+
+                return model.ValueString;
             }
         }
 

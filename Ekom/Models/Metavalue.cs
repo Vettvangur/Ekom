@@ -4,6 +4,5 @@ namespace Ekom.Models
     {
         public Metafield Field { get; set; }
         public List<Dictionary<string,string>> Values { get; set; } = new List<Dictionary<string, string>>();
-
     }
 }

@@ -65,7 +65,13 @@ namespace Ekom.Models
             }
         }
 
-
         public Dictionary<string, string> Properties = new Dictionary<string, string>();
+
+        public string Value(string alias)
+        {
+            {
+                return Properties.GetValue(alias);
+            }
+        }
     }
 }

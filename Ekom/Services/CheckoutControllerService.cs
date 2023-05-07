@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using OrderStatus = Ekom.Utilities.OrderStatus;
+using System.Reflection;
 
 namespace Ekom.Services
 {
@@ -118,10 +119,8 @@ namespace Ekom.Services
 
             var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
                 .ConfigureAwait(false);
-
             var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
                 .ConfigureAwait(false);
-
             return responseHandler(result);
         }
 
@@ -148,13 +147,14 @@ namespace Ekom.Services
 
             var keys = form.Keys;
 
+            var formCollection = keys.ToDictionary(
+                k => k,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
+            );
+            
             if (keys.Contains("ekomUpdateInformation"))
             {
                 var saveCustomerData = false;
-                var formCollection = keys.ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-                    );
                 
                 if (!formCollection.ContainsKey("storeAlias"))
                 {
@@ -195,14 +195,14 @@ namespace Ekom.Services
             {
                 await Order.Instance.UpdatePaymentInformationAsync(
                     paymentRequest.PaymentProvider,
-                    order.StoreInfo.Alias).ConfigureAwait(false);
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
             if (order.ShippingProvider == null || (order.ShippingProvider != null && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 await Order.Instance.UpdateShippingInformationAsync(
                     paymentRequest.ShippingProvider,
-                    order.StoreInfo.Alias).ConfigureAwait(false);
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
             if (Config.StoreCustomerData)
@@ -397,10 +397,26 @@ namespace Ekom.Services
             IOrderInfo order,
             string orderTitle)
         {
+
+            if (order == null)
+            {
+                throw new ArgumentNullException("Order is missing from ProcessPaymentAsync. " + orderTitle);
+            }
+            
+            if (_httpCtx == null)
+            {
+                throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
+            }
+            
             var storeAlias = order.StoreInfo.Alias;
 
             var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
-
+            
+            if (ekomPP == null)
+            {
+                throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider);
+            }
+            
             var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
             var orderItems = new List<OrderItem>
@@ -420,35 +436,52 @@ namespace Ekom.Services
                 ekomPP.Name,
                 isOfflinePayment);
 
-            var errorUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
-            ekomPP.GetValue("errorUrl", storeAlias),
-            new Uri(_httpCtx.Request.GetEncodedUrl()));
+            var paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
+
+            var paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
+
+            var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
+
+            var errorUrl = Utilities.UriHelper.EnsureFullUri(
+            paymentErrorUrl,
+            new Uri(GetEncodedUrl));
 
             if (isOfflinePayment)
             {
                 try
                 {
+                    
                     var successUrl = Utilities.UriHelper.EnsureFullUri(
-                        ekomPP.GetValue("successUrl", storeAlias),
-                        new Uri(_httpCtx.Request.GetEncodedUrl()))
+                        paymentSuccessUrl,
+                        new Uri(GetEncodedUrl))
                     + "?orderId=" + order.UniqueId;
-
+                    
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
                     
+                    var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember()?.Key.ToString() : "" : "";
+
+                    var checkoutStatus = new CheckoutStatus();
+
+                    checkoutStatus.OrderId = order.UniqueId;
+                    checkoutStatus.SuccessUrl = successUrl;
+                    checkoutStatus.ErrorUrl = errorUrl;
+                    checkoutStatus.PaymentProvider = ekomPP.Name;
+                    checkoutStatus.PaymentProviderKey = ekomPP.Key;
+                    checkoutStatus.MemberKey = (string.IsNullOrEmpty(memberKey) ? "" : memberKey);
+
                     try
                     {
-                        netPaymentService.OnSuccess(
-                            ekomPP.Key,
-                            ekomPP.Name,
-                            (MemberService.GetCurrentMember()).Key.ToString(),
-                            order.UniqueId.ToString());
+                        CheckoutEvents.OnCheckoutSuccess(this, new CheckoutSuccessEventArgs() { 
+                             CheckoutStatus = checkoutStatus
+                        });
                     }
-                    catch
+                    catch(Exception ex)
                     {
-                        //TODO: We need to get the error url from the OnSuccess event to override it
-                        //errorUrl = status.ErrorUrl;
+                        Logger.LogError(ex, "OnCheckoutSuccess Failed. Order: {UniqueId}", order.UniqueId);
+                        
+                        errorUrl = checkoutStatus.ErrorUrl;
                         throw;
                     }
                     
@@ -462,15 +495,15 @@ namespace Ekom.Services
                 catch (Exception ex)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    await Order.Instance.UpdateStatusAsync(
-                    Ekom.Utilities.OrderStatus.PaymentFailed,
-                    order.UniqueId).ConfigureAwait(false);
-                    
                     Logger.LogError(
                         ex,
                         "Offline Payment Failed. Order: {UniqueId}",
                         order.UniqueId);
-
+                    
+                    await Order.Instance.UpdateStatusAsync(
+                        OrderStatus.PaymentFailed,
+                        order.UniqueId).ConfigureAwait(false);
+                    
                     return new CheckoutResponse
                     {
                         ResponseBody = errorUrl,
@@ -492,7 +525,7 @@ namespace Ekom.Services
                     "?orderId=" + order.UniqueId
                 );
 
-                var pp = ekomPayments.GetPaymentProvider(ekomPP.Name);
+                var pp = ekomPayments.GetPaymentProvider(ekomPP.ContentTypeAlias);
 
                 var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias)) 
                     ? ekomPP.GetValue("language", order.StoreInfo.Alias) 
@@ -501,12 +534,6 @@ namespace Ekom.Services
                 if (!Enum.TryParse(order.StoreInfo.Currency.ISOCurrencySymbol, out Currency currency))
                 {
                     Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
-                }
-                int loanTypeValue = 0;
-                var loanType = ekomPP.GetValue("loanType");
-                if (loanType != null)
-                {
-                    int.TryParse(loanType, out loanTypeValue);
                 }
                 var paymentSettings = new PaymentSettings
                 {
@@ -528,7 +555,8 @@ namespace Ekom.Services
                     Currency = currency.ToString(),
                     Orders = orderItems,
                     Language = language,
-                    Member = MemberService.GetCurrentMember().Id,
+                    Store = storeAlias,
+                    Member = MemberService.GetCurrentMember()?.Id ?? 0,
                     PaymentProviderKey = ekomPP.Key,
                 };
                 paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());
@@ -544,7 +572,7 @@ namespace Ekom.Services
 
                 return new CheckoutResponse
                 {
-                    //ResponseBody = content,
+                    ResponseBody = content,
                     HttpStatusCode = 230,
                 };
             }

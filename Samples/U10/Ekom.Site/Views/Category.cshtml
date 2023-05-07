@@ -21,12 +21,20 @@
 
 <h1>@category.Title</h1>
 
+<p>Urls</p>
+<ul>
+    @foreach (var url in category.Urls)
+    {
+        <li>@url</li>
+    }
+</ul>
+
 <h2>Products</h2>
 
 <ul>
     @foreach (var prod in productResponse.Products)
     {
-        <li>@prod.Title</li>
+        <li><a href="@prod.Url">@prod.Title</a></li>
     }
 </ul>
 

@@ -1,10 +1,4 @@
-using Azure.Core;
-#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
-#else
-using System.Web;
-#endif
-using System.Text.RegularExpressions;
 
 namespace Ekom.Models
 {

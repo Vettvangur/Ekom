@@ -147,7 +147,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                return node != null && node.IsPublished() ? node : null;
+                return node;
             }
         }
 
@@ -195,7 +195,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                if (node != null && node.IsPublished())
+                if (node != null)
                 {
                     return new Umbraco10Content(node);
                 }
@@ -217,7 +217,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                if (node != null && node.IsPublished())
+                if (node != null)
                 {
                     return new Umbraco10Content(node);
                 }
@@ -241,7 +241,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                if (node != null && node.IsPublished())
+                if (node != null)
                 {
                     return new Umbraco10Content(node);
                 } 
@@ -310,7 +310,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                if (node != null && node.IsPublished())
+                if (node != null)
                 {
                     return new Umbraco10Content(node);
                 }
@@ -333,7 +333,7 @@ namespace Ekom.Umb.Services
 
                 var node = cache.GetById(false, id);
 
-                if (node != null && node.IsPublished())
+                if (node != null)
                 {
                     return new Umbraco10Content(node);
                 }

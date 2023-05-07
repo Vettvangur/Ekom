@@ -33,7 +33,7 @@ namespace Ekom.Models
                 var searchResults = _searhService.Query(new SearchRequest() {
                     SearchQuery = query.SearchQuery,
                     NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
-                    SearchFields = query.SearchFields,
+                    SearchFields = query.SearchFields
                 }, out long total);
                 
                 scope.Dispose();
@@ -81,8 +81,11 @@ namespace Ekom.Models
         public IEnumerable<MetafieldGrouped> Filters { get; set; }
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
-            
             if (orderBy == Utilities.OrderBy.TitleDesc)
+            {
+                return products.OrderBy(x => x.Title);              
+            }
+            else if (orderBy == Utilities.OrderBy.TitleDesc)
             {
                 return products.OrderByDescending(x => x.Title);
             }
@@ -109,6 +112,14 @@ namespace Ekom.Models
             else if (orderBy == Utilities.OrderBy.UmbracoSortOrderDesc)
             {
                 return products.OrderByDescending(x => x.SortOrder);
+            }
+            else if (orderBy == Utilities.OrderBy.SkuAsc)
+            {
+                return products.OrderBy(x => x.SKU);
+            }
+            else if (orderBy == Utilities.OrderBy.SkuDesc)
+            {
+                return products.OrderByDescending(x => x.SKU);
             }
 
             return products.OrderBy(x => x.SortOrder);

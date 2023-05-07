@@ -653,6 +653,10 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Primary Variant Group",
                                         },
+                                        new PropertyType(_shortStringHelper, textstringDt, "searchTags")
+                                        {
+                                            Name = "Search Tags",
+                                        },
                                     }))
                                 {
                                     Alias = "product",
@@ -1359,10 +1363,10 @@ namespace Ekom.App_Start
 
             var content = _contentService.Create(name, parentId, documentTypeAlias);
 
-            OperationResult res;
+            PublishResult res;
             using (_contextFactory.EnsureUmbracoContext())
             {
-                res = _contentService.Save(content);
+                res = _contentService.SaveAndPublish(content);
             }
 
             if (res.Success)

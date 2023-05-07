@@ -3,10 +3,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Xml.Serialization;
 
 namespace Ekom.Models
@@ -22,31 +19,11 @@ namespace Ekom.Models
         /// Usually a two letter code, f.x. EU/IS/DK
         /// </summary>
         public virtual string Alias => Properties["nodeName"];
-        private UmbracoContent _storeRootNode;
+        
+
         [JsonIgnore]
         [XmlIgnore]
-        public virtual UmbracoContent StoreRootNode {
-        
-            get
-            {
-                if (_storeRootNode == null)
-                {
-                    if (Properties.HasPropertyValue("storeRootNode"))
-                    {
-                        var storeRootNodeUdi = GetValue("storeRootNode");
-
-                        var storeRootNode = nodeService.NodeById(storeRootNodeUdi);
-
-                        if (storeRootNode != null)
-                        {
-                            _storeRootNode = storeRootNode;
-                        }
-                    }
-                }
-
-                return _storeRootNode;
-            }
-        }
+        public virtual UmbracoContent StoreRootNode { get; set; }
         public virtual int StoreRootNodeId
         {
             get
@@ -58,7 +35,7 @@ namespace Ekom.Models
                 return 0;
             }
         }
-        public virtual IEnumerable<UmbracoDomain> Domains { get; }
+        public virtual IEnumerable<UmbracoDomain> Domains { get; } = new List<UmbracoDomain>();
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
@@ -144,12 +121,12 @@ namespace Ekom.Models
         /// <param name="item"></param>
         internal protected Store(UmbracoContent item) : base(item)
         {
-
             if (item.Properties.HasPropertyValue("storeRootNode"))
             {
                 var storeRootNodeUdi = item.GetValue("storeRootNode");
 
                 Url = nodeService.GetUrl(storeRootNodeUdi);
+                StoreRootNode = nodeService.NodeById(storeRootNodeUdi);
             }
 
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))

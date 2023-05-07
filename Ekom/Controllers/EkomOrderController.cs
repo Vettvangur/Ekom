@@ -229,7 +229,12 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias);
+                var form = Request.Form;
+                var keys = form.Keys;
+                
+                var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, keys.Where(x => x != "ShippingProvider" && x.StartsWith("shippingprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
                 return orderInfo;
             }
@@ -255,49 +260,12 @@ namespace Ekom.Controllers
         {
             try
             {
-                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias);
-
-                return orderInfo;
-            }
-            catch (Exception ex) when (!(ex is HttpResponseException))
-            {
-                var r = ExceptionHandler.Handle<HttpResponseException>(ex);
-                if (r != null)
-                {
-                    throw r;
-                }
-
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Update order, change quantity of line in cart/order
-        /// </summary>
-        /// <param name="lineId">Guid Key of line to update</param>
-        /// <param name="storeAlias"></param>
-        /// <param name="quantity"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("update")]
-        [Obsolete("Deprecated, use AddToOrder and specify OrderAction")]
-        public async Task<IOrderInfo> UpdateOrder(Guid lineId, string storeAlias, int quantity)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-            }
-            if (quantity == 0)
-            {
-                throw new HttpResponseException(HttpStatusCode.BadRequest);
-            }
-
-            try
-            {
-                var orderInfo = await Order.Instance.AddOrderLineAsync(
-                    lineId,
-                    quantity,
-                    storeAlias);
+                var form = Request.Form;
+                var keys = form.Keys;
+                
+                var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
                 return orderInfo;
             }

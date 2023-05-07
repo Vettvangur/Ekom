@@ -40,7 +40,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// Product Stock Keeping Unit.
+        /// Product SKU
         /// </summary>
         public string SKU => Properties.GetPropertyValue("sku");
 
@@ -345,7 +345,7 @@ namespace Ekom.Models
             PopulateCategoryAncestors(item);
             PopulateCategories();
 
-            Urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrls(GetValue("slug"), Categories, store, item.Id);
+            Urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrls(item, Categories, store, item.Id);
 
             if (!Urls.Any() || string.IsNullOrEmpty(GetValue("title")))
             {

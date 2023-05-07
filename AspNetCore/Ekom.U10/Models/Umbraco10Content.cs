@@ -23,11 +23,18 @@ namespace Ekom.Umb.Models
                 { "__VariesByCulture", content.Cultures.Count > 1 ? "y" : "n" },
                 { "url", content.Url() }
             },
-            content.Properties.ToDictionary(
-                x => x.Alias,
-                x => x.GetSourceValue()?.ToString()))
+            content.Properties.Where(x => !string.IsNullOrEmpty(x.Alias)).ToDictionary(pair =>
+            {
+                    return pair.Alias;
+            }, pair => {
+                
+                try {
+                    return pair.PropertyType.VariesByCulture() ? pair.GetSourceValue(content.Cultures.FirstOrDefault().Value?.Culture)?.ToString() ?? "" : pair.GetSourceValue()?.ToString() ?? "";
+                } catch {
+                    throw new Exception("Failed to GetSourceValue for : " + pair.Alias + " Node: " + content.Id);
+                }
+            }))
         {
-        
         }
 
         public Umbraco10Content(IContent content)
@@ -50,57 +57,5 @@ namespace Ekom.Umb.Models
                 x => x.Alias,
                 x => content.GetValue<string>(x.Alias)))
         { }
-
-        public Umbraco10Content(PublishedSearchResult content)
-            : base(new Dictionary<string, string>
-            {
-                { "id", content.Content.Id.ToString() },
-                { "parentID", content.Content.Parent?.Id.ToString() ?? "" },
-                { "__Key", content.Content.Key.ToString() },
-                { "nodeName", content.Content.Name ?? "" },
-                { "__NodeTypeAlias", content.Content.ContentType.Alias },
-                { "sortOrder", content.Content.SortOrder.ToString() },
-                { "level", content.Content.Level.ToString() },
-                { "__Path", content.Content.Path },
-                { "createDate", content.Content.CreateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-                { "updateDate", content.Content.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-                { "__VariesByCulture", content.Content.Cultures.Count > 1 ? "y" : "n" },
-                { "url", content.Content.Url() }
-            },
-            content.Content.Properties.ToDictionary(
-                x => x.Alias,
-                x => x.GetSourceValue()?.ToString()))
-        { }
-
-        private static new Dictionary<string, string> GetProperties(IEnumerable<IPublishedProperty> properties, IReadOnlyDictionary<string, PublishedCultureInfo> cultures, IPublishedContent content)
-        {
-            
-            var dict = new Dictionary<string, string>();
-
-            if (properties == null) { return dict; }
-
-            foreach (var prop in properties)
-            {
-
-                //if (prop.PropertyType.VariesByCulture())
-                //{
-                //    foreach (var culture in cultures)
-                //    {
-                //        var value = prop.GetSourceValue(culture.Value.Culture);
-
-                //        dict.Add(prop.Alias, value?.ToString());
-                //    }
-                //} else
-                //{
-
-                //}
-
-                var value = prop.GetSourceValue();
-
-                dict.Add(prop.Alias, value != null ? value.ToString() : "");
-            }
-
-            return dict;
-        }
     }
 }

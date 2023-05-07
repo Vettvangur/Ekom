@@ -25,10 +25,10 @@
 
           $scope.fields = fields;
 
-          $scope.fields.forEach(function (item, index) {
+          $scope.fields.forEach(function (item) {
 
             var currentValue = $scope.model.value.filter(field => {
-              return field.Key === item.Key
+              return field.Key === item.key
             })
 
             if (item.values.length > 0) {
@@ -46,6 +46,8 @@
               }
             }
           });
+
+          console.log($scope.values);
 
           $scope.loading = false;
 

@@ -121,17 +121,23 @@ namespace Ekom.Controllers
                 {
                     if (stockError.OrderLineKey == Guid.Empty)
                     {
-                        return Redirect(Request.GetDisplayUrl() + "?errorStatus=stockError&errorType=" + stockError.Exception.Message);
+                        return Redirect(
+                            Request.GetDisplayUrl() + 
+                            "?errorStatus=stockError&errorType=" + 
+                            stockError.Exception.Message);
                     }
                     else
                     {
                         var type = stockError.IsVariant ? "variant" : "product";
-                        return Redirect(Request.GetDisplayUrl() + $"?errorStatus=stockError&errorType={type}&orderline=" + stockError.OrderLineKey);
+                        return Redirect(
+                            Request.GetDisplayUrl() + 
+                            $"?errorStatus=stockError&errorType={type}&orderline=" + 
+                            stockError.OrderLineKey);
                     }
                 }
                 else if (checkoutResponse.HttpStatusCode == 230)
                 {
-                    return Content(checkoutResponse.ResponseBody as string);
+                    return Content(checkoutResponse.ResponseBody as string, "text/html");
                 }
                 else if (checkoutResponse.HttpStatusCode == 400)
                 {
