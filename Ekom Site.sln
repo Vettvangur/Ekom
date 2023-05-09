@@ -46,10 +46,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PaymentProviders", "Payment
 		Ekom.Payments\PaymentProviders\Directory.Build.props = Ekom.Payments\PaymentProviders\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vettvangur.ValitorPay", "Ekom.Payments\PaymentProviders\ValitorPay\ValitorPay\Vettvangur.ValitorPay.csproj", "{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.ValitorPay", "Ekom.Payments\PaymentProviders\Ekom.Payments.ValitorPay\Ekom.Payments.ValitorPay.csproj", "{155D191D-39A7-4E2B-829A-2EE5D859E914}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.Valitor", "Ekom.Payments\PaymentProviders\Ekom.Payments.Valitor\Ekom.Payments.Valitor.csproj", "{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.AsynchronousExample", "Ekom.Payments\PaymentProviders\Ekom.Payments.AsynchronousExample\Ekom.Payments.AsynchronousExample.csproj", "{A5707C17-3C73-40F5-8E46-40345EED7A32}"
@@ -100,14 +96,6 @@ Global
 		{033E8FC5-24A9-4382-BF21-A0AB43459204}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{033E8FC5-24A9-4382-BF21-A0AB43459204}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{033E8FC5-24A9-4382-BF21-A0AB43459204}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{155D191D-39A7-4E2B-829A-2EE5D859E914}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{155D191D-39A7-4E2B-829A-2EE5D859E914}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{155D191D-39A7-4E2B-829A-2EE5D859E914}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{155D191D-39A7-4E2B-829A-2EE5D859E914}.Release|Any CPU.Build.0 = Release|Any CPU
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -134,8 +122,6 @@ Global
 		{70BAA689-5252-4C4A-82E6-E3F076F948B1} = {FB22825F-8689-4829-AB15-9C60570EBFB3}
 		{033E8FC5-24A9-4382-BF21-A0AB43459204} = {FB22825F-8689-4829-AB15-9C60570EBFB3}
 		{470F0A4E-A06C-446B-A72C-2431F74F1778} = {F654A2D0-D519-4070-AF02-EE0FA671E7E8}
-		{16BC18D2-0EE1-4AEC-9C30-CECF7602B6D2} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
-		{155D191D-39A7-4E2B-829A-2EE5D859E914} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 		{812F6B5A-1E9A-43A2-B92C-2371D1805F3E} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 		{A5707C17-3C73-40F5-8E46-40345EED7A32} = {470F0A4E-A06C-446B-A72C-2431F74F1778}
 	EndGlobalSection
