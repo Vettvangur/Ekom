@@ -1,20 +1,10 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Services;
+using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Serialization;
-using Ekom.Utilities;
-#if NETCOREAPP
-using Microsoft.AspNetCore.Http;
-#else
-using System.Web;
-using System.Web.Script.Serialization;
-using System.Configuration;
-#endif
 
 
 namespace Ekom.Models
@@ -37,14 +27,16 @@ namespace Ekom.Models
         public string SKU => string.IsNullOrEmpty(Properties.GetPropertyValue("sku")) ? Product.SKU : Properties.GetPropertyValue("sku");
 
         /// <summary>
-        /// 
+        /// Get the variant stock
         /// </summary>
-#if NET461
-        [ScriptIgnore]
-#endif
         [JsonIgnore]
         [XmlIgnore]
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
+
+        /// <summary>
+        /// Get the availability of the variant
+        /// </summary>
+        public virtual bool Available => Stock > 0;
 
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
@@ -122,9 +114,6 @@ namespace Ekom.Models
         /// <summary>
         /// Variant group <see cref="IVariant"/> belongs to
         /// </summary>
-#if NET461
-        [ScriptIgnore]
-#endif
         [JsonIgnore]
         [XmlIgnore]
         public IVariantGroup VariantGroup
@@ -148,11 +137,7 @@ namespace Ekom.Models
         /// </summary>
         public IPrice Price
         {
-#if NETCOREAPP
             get => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
-#else
-            get => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
-#endif
         }
 
         public virtual List<IPrice> Prices
@@ -267,7 +252,7 @@ namespace Ekom.Models
         {
             var parentNode = Configuration.Resolver.GetService<INodeService>()
                 .NodeAncestors(item.Id.ToString()).FirstOrDefault();
-            
+
             if (parentNode != null)
             {
                 VariantGroupKey = parentNode.Key;

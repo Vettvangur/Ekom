@@ -65,6 +65,11 @@ namespace Ekom.Models
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
+        /// Get the availability of the product and the variants
+        /// </summary>
+        public virtual bool Available => Stock > 0 || Backorder || AllVariants.Any(x => x.Available);
+
+        /// <summary>
         /// Get the backorder status
         /// </summary>
         public virtual bool Backorder
@@ -103,7 +108,7 @@ namespace Ekom.Models
                         return imageNodes;
                     }
                 }
-                
+
                 var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
 
                 return _images.GetImages();
@@ -237,7 +242,7 @@ namespace Ekom.Models
         public virtual IPrice OriginalPrice
         {
             get
-            {                
+            {
                 var priceJson = GetValue("price", Store.Alias);
 
                 var currencyValues = priceJson.GetCurrencyValues();
@@ -278,7 +283,7 @@ namespace Ekom.Models
                 }
 
                 return new List<Metavalue>();
-            } 
+            }
         }
 
         /// <summary>
@@ -422,7 +427,7 @@ namespace Ekom.Models
                     }
                 }
             }
-            
+
             if (!relatedProducts.Any())
             {
                 var category = Catalog.Instance.GetCategory(ParentId);
