@@ -65,6 +65,11 @@ namespace Ekom.Models
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
         /// <summary>
+        /// Get the availability of the product and the variants
+        /// </summary>
+        public virtual bool Available => Stock > 0 || Backorder || AllVariants.Any(x => x.Available);
+
+        /// <summary>
         /// Get the backorder status
         /// </summary>
         public virtual bool Backorder

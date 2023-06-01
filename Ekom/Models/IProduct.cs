@@ -51,6 +51,14 @@ namespace Ekom.Models
         int Stock { get; }
 
         /// <summary>
+        /// Gets the availability of the product and variants.
+        /// </summary>
+        /// <value>
+        /// The availability.
+        /// </value>
+        bool Available { get; }
+
+        /// <summary>
         /// All categories product belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>

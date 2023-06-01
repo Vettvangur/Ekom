@@ -58,6 +58,15 @@ namespace Ekom.Models
         /// The stock.
         /// </value>
         int Stock { get; }
+
+        /// <summary>
+        /// Gets the availability of the variant.
+        /// </summary>
+        /// <value>
+        /// The availability.
+        /// </value>
+        bool Available { get; }
+
         /// <summary>
         /// Variant group <see cref="IVariant"/> belongs to
         /// </summary>
