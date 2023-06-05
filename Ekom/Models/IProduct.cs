@@ -23,7 +23,7 @@ namespace Ekom.Models
         /// The price.
         /// </value>
         List<IPrice> Prices { get; }
-        
+
         /// <summary>
         /// Gets the orignal price.
         /// </summary>
@@ -49,6 +49,14 @@ namespace Ekom.Models
         /// The stock.
         /// </value>
         int Stock { get; }
+
+        /// <summary>
+        /// Gets the availability of the product and variants.
+        /// </summary>
+        /// <value>
+        /// The availability.
+        /// </value>
+        bool Available { get; }
 
         /// <summary>
         /// All categories product belongs to, includes parent category.
