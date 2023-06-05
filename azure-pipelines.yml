@@ -40,6 +40,7 @@ steps:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+    clean: true
 
 - task: UseDotNet@2
   inputs:
