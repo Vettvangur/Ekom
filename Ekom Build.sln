@@ -41,12 +41,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.U10", "Ekom.P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.Valitor", "Ekom.Payments\PaymentProviders\Ekom.Payments.Valitor\Ekom.Payments.Valitor.csproj", "{91AE01B3-881B-462A-BC91-0CE373318961}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.ValitorPay", "Ekom.Payments\PaymentProviders\Ekom.Payments.ValitorPay\Ekom.Payments.ValitorPay.csproj", "{7D31F8A2-1AEC-4BE2-AC7E-0399E799E8B7}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vettvangur.ValitorPay", "Ekom.Payments\PaymentProviders\ValitorPay\ValitorPay\Vettvangur.ValitorPay.csproj", "{E1DFC7E5-BC81-4CC4-80C8-7F6E4127CDB0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vettvangur.ValitorPay.Tests", "Ekom.Payments\PaymentProviders\ValitorPay\ValitorPay.Tests\Vettvangur.ValitorPay.Tests.csproj", "{AB58F784-1ACF-494A-AB0A-C13F648F47E6}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Payments.AsynchronousExample", "Ekom.Payments\PaymentProviders\Ekom.Payments.AsynchronousExample\Ekom.Payments.AsynchronousExample.csproj", "{049D8B80-7D64-492A-8679-EECBBEA94739}"
 EndProject
 Global
