@@ -16,7 +16,11 @@ namespace Ekom.Models
                 return;
             }
 
-            MetaFilters = MetaFilters == null || !MetaFilters.Any() ? query.Where(x => x.Key.StartsWith("filter_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("filter_", "", StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : MetaFilters;
+            MetaFilters = MetaFilters == null || !MetaFilters.Any() ? 
+                query.Where(x => x.Key.StartsWith("filter_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("filter_", "", StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) 
+                : 
+                MetaFilters;
+            
             PropertyFilters = PropertyFilters == null || !PropertyFilters.Any() ?  query.Where(x => x.Key.StartsWith("property_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("property_", "",  StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : PropertyFilters;
 
             SearchQuery = string.IsNullOrEmpty(SearchQuery) ? query.ContainsKey("q") ? query["q"] : "" : SearchQuery;

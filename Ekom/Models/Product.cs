@@ -434,7 +434,7 @@ namespace Ekom.Models
 
                 if (category != null)
                 {
-                    relatedProducts = category.Products().Products.Where(x => x.Id != Id).Take(count).ToList();
+                    relatedProducts = category.ProductsRecursive().Products.Where(x => x.Id != Id).Take(count).ToList();
                 }
 
             }

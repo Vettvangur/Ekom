@@ -1,6 +1,7 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
@@ -228,16 +229,25 @@ namespace EkomCore.Services
 
             if (query?.MetaFilters?.Any() == true)
             {
+                var filterCriteria = query.MetaFilters;
+
                 products = products
-                    .Where(x =>
-                        x.Metafields.Any(metaField =>
-                            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
-                            .All(filter =>
-                                filter.Key == metaField.Field.Id.ToString() &&
-                                filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
-                            )
-                        )
-                );
+                .Where(product => filterCriteria.All(criteria =>
+                    product.Metafields.Any(metaField =>
+                        metaField.Field.Id.ToString() == criteria.Key && criteria.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
+                    )
+                ));
+                
+                //products = products
+                //    .Where(x =>
+                //        x.Metafields.Any(metaField =>
+                //            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
+                //            .All(filter =>
+                //                filter.Key == metaField.Field.Id.ToString() &&
+                //                filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
+                //            )
+                //        )
+                //);
             }
 
             if (query?.PropertyFilters?.Any() == true)
