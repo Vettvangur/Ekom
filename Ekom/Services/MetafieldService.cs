@@ -113,16 +113,16 @@ namespace EkomCore.Services
             return list;
         }
 
+
         public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
         {
             var metaFields = GetMetafields();
 
-            var valuesArray = new JArray();
             var newArray = new JArray();
 
             if (!string.IsNullOrEmpty(json))
             {
-                valuesArray = JArray.Parse(json);
+                newArray = JArray.Parse(json);
             }
 
             foreach (var value in values)
@@ -141,8 +141,32 @@ namespace EkomCore.Services
                         { "Values", jArrayValue != null ? jArrayValue : new JValue(value.Value.FirstOrDefault()?.Values.FirstOrDefault().Value) }
                     };
 
-                    // Add
-                    newArray.Add(newObject);
+                    if (newArray.Any())
+                    {
+                        foreach (JObject item in newArray)
+                        {
+                            if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
+                            {
+                                // Replace
+                                if (field.Key == _metaFieldKey)
+                                {
+                                    item["Values"] = newObject["Values"];
+                                    continue;
+                                }
+
+                            }
+                            else
+                            {
+                                // Append
+                                newArray.Append(newObject);
+                                continue;
+                            }
+                        }
+                    } else
+                    {
+                        newArray.Add(newObject);
+                    }
+                   
                 }
             }
 
