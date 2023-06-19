@@ -416,11 +416,11 @@ namespace Ekom.Models
                 {
                     var relatedProductIds = UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
 
-                    foreach (var id in guids.Take(count))
+                    foreach (var id in guids.Where(x => x != Key).Take(count))
                     {
                         var product = Catalog.Instance.GetProduct(Store.Alias, id);
 
-                        if (product != null)
+                        if (product != null && product.Key != id)
                         {
                             relatedProducts.Add(product);
                         }
