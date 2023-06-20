@@ -22,7 +22,7 @@
         $scope.languages = languages;
 
         ekmResources.getMetafields().then(function (fields) {
-          
+
           $scope.fields = fields;
 
           $scope.fields.forEach(function (item) {

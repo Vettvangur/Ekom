@@ -1,4 +1,4 @@
-<div ng-controller="Ekom.Metafield">
+﻿<div ng-controller="Ekom.Metafield">
 
   <div ng-if="loading">Loading...</div>
 
@@ -40,6 +40,7 @@
         <input name="metafield_{{$index}}"
                id="metafield_{{$index}}"
                type="text"
+               readonly="{{ field.readOnly }}"
                ng-model="values[$index]" />
       </div>
     </div>
