@@ -1182,7 +1182,8 @@ namespace Ekom.App_Start
                                     },
                                     new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
                                     {
-                                        Name = "Filterable"
+                                        Name = "Filterable",
+                                        Description = "When checked, the metafield will be visible in the filter."
                                     },
                                     new PropertyType(_shortStringHelper, booleanDt, "filterable")
                                     {
@@ -1198,6 +1199,11 @@ namespace Ekom.App_Start
                                     {
                                         Name = "Required"
                                     },
+                                    new PropertyType(_shortStringHelper, booleanDt, "enableMultipleChoice")
+                                    {
+                                        Name = "Read Only",
+                                        Description = "When checked, the field will be read-only. This is good for metafields that data are for example synced to."
+                                    }
                                 })
                             ){
                                 Alias = "metafield",

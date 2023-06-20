@@ -19,7 +19,7 @@ namespace Ekom.Models
             Required = x.GetValue("required").ConvertToBool();
             Filterable = x.GetValue("filterable").ConvertToBool();
             EnableMultipleChoice = x.GetValue("enableMultipleChoice").ConvertToBool();
-
+            ReadOnly = x.GetValue("readOnly").ConvertToBool();
             if (!string.IsNullOrEmpty(values))
             {
                 Values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
@@ -35,6 +35,7 @@ namespace Ekom.Models
         public bool Filterable { get; set; }
         public bool EnableMultipleChoice { get; set; }
         public bool Required { get; set; }
+        public bool ReadOnly { get; set; }
         public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
     }
 

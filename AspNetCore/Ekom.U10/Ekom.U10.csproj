@@ -67,7 +67,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Ekom.Payments\Ekom.Payments.Core\Ekom.Payments.Core.csproj" />
-      <ProjectReference Include="..\..\Ekom\Ekom.csproj" />
       <ProjectReference Include="..\Ekom.AspNetCore\Ekom.AspNetCore.csproj" />
     </ItemGroup>
 </Project>
