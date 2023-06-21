@@ -1,41 +1,29 @@
-#if NETFRAMEWORK
-using System.Web;
-#else
-using Microsoft.AspNetCore.Http;
-#endif
-
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace Ekom.Services
 {
     class StoreService : IStoreService
     {
-        readonly IStoreDomainCache _domainCache;
-        readonly IBaseCache<IStore> _storeCache;
-        readonly HttpContext _httpContext;
+        private readonly IStoreDomainCache _domainCache;
+        private readonly IBaseCache<IStore> _storeCache;
+        private readonly HttpContext _httpContext;
+
+        private readonly string EkmRequestKey = "umbrtmche-ekmRequest";
+        
         /// <summary>
         /// ctor
         /// </summary>
         public StoreService(
             IStoreDomainCache domainCache,
-            IBaseCache<IStore> storeCache
-#if NETCOREAPP
-            ,IHttpContextAccessor httpContextAccessor
-#endif
-        )
+            IBaseCache<IStore> storeCache,
+            IHttpContextAccessor httpContextAccessor)
         {
             _domainCache = domainCache;
             _storeCache = storeCache;
-#if NETFRAMEWORK
-            _httpContext = HttpContext.Current;
-#else
             _httpContext = httpContextAccessor.HttpContext;
-#endif
         }
 
         public IStore GetStoreByDomain(string domain = "", string culture = "")
@@ -61,24 +49,18 @@ namespace Ekom.Services
                 }
             }
 
-            if (store == null)
-            {
-                store = GetAllStores().FirstOrDefault();
-            }
-
-            if (store == null)
-            {
-                throw new Exception("No store found in cache.");
-            }
-
-            return store;
+            // If no store found by domain or domain is empty, return the first store.
+            store ??= GetAllStores().FirstOrDefault();
+            
+            return store ?? throw new Exception("No store found in cache.");
         }
 
         public IStore GetStoreByAlias(string alias)
         {
             var store = _storeCache.Cache
-                             .FirstOrDefault(x => x.Value.Alias.Equals(alias, StringComparison.InvariantCultureIgnoreCase))
+                             .FirstOrDefault(x => string.Equals(alias, x.Value.Alias, StringComparison.InvariantCultureIgnoreCase))
                              .Value;
+
             // If store is not found by alias then return first store
             return store ?? _storeCache.Cache.FirstOrDefault().Value
                 ?? throw new StoreNotFoundException("Unable to find any stores!");
@@ -86,15 +68,15 @@ namespace Ekom.Services
 
         public IStore GetStoreFromCache()
         {
-            ContentRequest contentRequest = null;
-
-            if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
+            if (_httpContext.Items.ContainsKey(EkmRequestKey))
             {
-                var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
-                contentRequest = r.Value as ContentRequest;
+                var r = _httpContext.Items[EkmRequestKey] as Lazy<object>;
+                var contentRequest = r?.Value as ContentRequest;
+
+                return contentRequest?.Store ?? GetAllStores().FirstOrDefault();
             }
 
-            return contentRequest?.Store ?? GetAllStores().FirstOrDefault();
+            return GetAllStores().FirstOrDefault();
         }
 
         public IEnumerable<IStore> GetAllStores()

@@ -5,20 +5,12 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Utilities;
-#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
-#endif
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 
 namespace Ekom.Services
 {
@@ -65,11 +57,7 @@ namespace Ekom.Services
     {
         readonly Configuration _config;
         readonly ILogger<OrderService> _logger;
-#if NETCOREAPP
         readonly HttpContext _httpCtx;
-#else
-        readonly HttpContextBase _httpCtx;
-#endif
         readonly IMemoryCache _memoryCache;
         readonly IMemberService _memberService;
         readonly DiscountCache _discountCache;
@@ -127,19 +115,11 @@ namespace Ekom.Services
             IMemoryCache memoryCache,
             IMemberService memberService,
             DiscountCache discountCache,
-#if NETCOREAPP
             IHttpContextAccessor httpContextAccessor,
-#else
-            HttpContextBase httpCtx,
-#endif
             INodeService nodeService)
             : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache, nodeService)
         {
-#if NETCOREAPP
             _httpCtx = httpContextAccessor.HttpContext;
-#else
-            _httpCtx = httpCtx;
-#endif
             var r = _httpCtx.Items["umbrtmche-ekmRequest"] as Lazy<object>;
             _ekmRequest = r.Value as ContentRequest;
         }
@@ -810,16 +790,21 @@ namespace Ekom.Services
 
         private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
         {
-            var linkedLine = orderInfo.OrderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
-            if (linkedLine != null && linkedLine.Count() > 0)
+            try
             {
-                foreach (var ll in linkedLine)
+                var linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key);
+
+                foreach (var linkedLine in linkedLines)
                 {
-                    orderInfo.orderLines.Remove(ll as OrderLine);
+                    orderInfo.orderLines.Remove(linkedLine);
                 }
+
+                orderInfo.orderLines.Remove(orderLine);
             }
-            
-            orderInfo.orderLines.Remove(orderLine);
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to remove orderLine");
+            }
         }
 
         /// <summary>

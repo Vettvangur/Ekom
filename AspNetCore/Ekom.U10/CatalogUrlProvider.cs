@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
@@ -23,26 +24,18 @@ namespace Ekom.Umb
             _umbracoContextAccessor = umbracoContextAccessor;
         }
 
-        public UrlInfo GetUrl(
-            IPublishedContent content,
-            UrlMode mode,
-            string culture,
-            Uri current)
+        public UrlInfo GetUrl(IPublishedContent content, UrlMode mode, string culture, Uri current)
         {
             try
             {
-                
                 var urls = GetUrls(content.Id, current);
-
                 // In practice this will simply return the first url from the collection
                 // since we're comparing store title to culture.
                 return urls.FirstOrDefault(x => x.Culture == culture) ?? urls.FirstOrDefault();
             }
-#pragma warning disable CA1031 // This must not fail, otherwise Umbraco fails
             catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
             {
-                _logger.LogError(ex.ToString());
+                _logger.LogError(ex, "Failed to get url");
                 return null;
             }
         }
@@ -58,84 +51,87 @@ namespace Ekom.Umb
 
         private IEnumerable<UrlInfo> GetUrls(int id, Uri current)
         {
+            const string cacheKey = "EkomUrlProvider-GetOtherUrls-";
+
 #pragma warning disable CS8603 // Possible null reference return.
             return _reqCache.GetCacheItem(
-                "EkomUrlProvider-GetOtherUrls-" + id,
-                () =>
-                {
-                    try
+                    "EkomUrlProvider-GetOtherUrls-" + id,
+                    () =>
                     {
-                        _umbracoContextAccessor.TryGetUmbracoContext(out IUmbracoContext? context);
-                        var content = context.Content.GetById(id);
+                        if (!_umbracoContextAccessor.TryGetUmbracoContext(out IUmbracoContext? context))
+                        {
+                            return Enumerable.Empty<UrlInfo>();
+                        }
 
+                        var content = context?.Content?.GetById(id);
+                        
                         if (content == null ||
                             (content.ContentType.Alias != "ekmProduct" && content.ContentType.Alias != "ekmCategory"))
+                        {
                             return Enumerable.Empty<UrlInfo>();
-
-                        var list = new List<UrlInfo>();
+                        }
 
                         var stores = API.Store.Instance.GetAllStores().ToList();
+                        
+                        if (!stores.Any())
+                        {
+                            return Enumerable.Empty<UrlInfo>();
+                        }
 
-                        if (!stores.Any()) return list;
-
+                        var urls = new HashSet<UrlInfo>();
                         foreach (var store in stores)
                         {
-                            INodeEntityWithUrl node;
-                            if (content.ContentType.Alias == "ekmProduct")
+                            try
                             {
-                                node = API.Catalog.Instance.GetProduct(store.Alias, id);
-                            }
-                            else
-                            {
-                                node = API.Catalog.Instance.GetCategory(store.Alias, id);
-                            }
+                                INodeEntityWithUrl node = content.ContentType.Alias == "ekmProduct"
+                                    ? API.Catalog.Instance.GetProduct(store.Alias, id)
+                                    : API.Catalog.Instance.GetCategory(store.Alias, id);
 
-                            if (node != null)
-                            {
-                                var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
-
-                                if (slugValue.Type == PropertyEditorType.Language)
+                                if (node != null)
                                 {
-                                    foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).Select((value, i) => new { i, value }))
-                                    {
-                                       
-                                        var url = node.Urls.ToArray()[domain.i];
-                                        
-                                        list.Add(new UrlInfo(
-                                            url,
-                                            true,
-                                            domain.value.LanguageIsoCode)
-                                        );
-                                    }
-                                } else
-                                {
-                                    foreach (var url in node.Urls)
-                                    {
-                                        list.Add(new UrlInfo(
-                                            url,
-                                            true,
-                                            store.Title)
-                                        );
-                                    }
+                                    PopulateUrls(node, store, urls);
                                 }
-
-
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, $"{cacheKey} Failed.");
+                                return Enumerable.Empty<UrlInfo>();
                             }
                         }
 
-                        // UrlInfo implements IEquatable
-                        var distinctUrls = list.Distinct();
-
-                        return distinctUrls;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "EkomUrlProvider-GetOtherUrls Failed.");
-                    }
-
-                    return null;
-                });
+                        return urls;
+                    });
 #pragma warning restore CS8603 // Possible null reference return.
+
+
+        }
+
+        private void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls)
+        {
+            var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
+            
+            if (slugValue?.Type == PropertyEditorType.Language)
+            {
+                var distinctDomains = store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName));
+                
+                foreach (var domain in distinctDomains.Select((value, i) => new { value, i }))
+                {
+
+                    var url = node.Urls.ElementAtOrDefault(domain.i);
+                    if (url != null)
+                    {
+                        urls.Add(new UrlInfo(url, true, domain.value.LanguageIsoCode));
+                    }
+                }
+            }
+            else
+            {
+                foreach (var url in node.Urls)
+                {
+                    urls.Add(new UrlInfo(url, true, store.Title));
+                }
+            }
         }
     }
 }
+
