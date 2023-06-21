@@ -47,7 +47,7 @@ namespace Ekom.Models
                 }
             }
 
-            if (query?.AllFiltersVisible == false)
+            if (query?.AllFiltersVisible ?? false)
             {
                 Filters = products.Filters();
             }
@@ -71,8 +71,8 @@ namespace Ekom.Models
             {
                 Products = products;
             }
-
         }
+        
         public IEnumerable<IProduct> Products { get; set; }
         public int? PageCount { get; set; }
         public int? PageSize { get; set; }

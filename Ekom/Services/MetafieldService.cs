@@ -131,17 +131,17 @@ namespace EkomCore.Services
 
                 if (field != null)
                 {
-                    var multipleValues = field.Values.Any();
-
-                    JArray? jArrayValue = multipleValues ? JArray.FromObject(value) : null;
+                    var firstValue = value.Value.FirstOrDefault();
+                    var firstSubValue = firstValue?.Values.FirstOrDefault();
+                    JArray? jArrayValue = field.Values.Count > 0 ? JArray.FromObject(value) : null;
 
                     var newObject = new JObject
                     {
                         { "Key", new JValue(field.Key.ToString()) },
-                        { "Values", jArrayValue != null ? jArrayValue : new JValue(value.Value.FirstOrDefault()?.Values.FirstOrDefault().Value) }
+                        { "Values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
                     };
 
-                    if (newArray.Any())
+                    if (newArray.Count() > 0)
                     {
                         foreach (JObject item in newArray)
                         {
@@ -151,7 +151,7 @@ namespace EkomCore.Services
                                 if (field.Key == _metaFieldKey)
                                 {
                                     item["Values"] = newObject["Values"];
-                                    continue;
+                                    break;
                                 }
 
                             }
@@ -223,9 +223,6 @@ namespace EkomCore.Services
 
         public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)
         {
-
-            var list = new List<MetafieldGrouped>();
-
             var grouped = products
                 .SelectMany(x => x.Metafields)
                 .Where(x => x.Field.Filterable == filterable)
@@ -233,19 +230,20 @@ namespace EkomCore.Services
 
             foreach (var group in grouped)
             {
-
-                list.Add(new MetafieldGrouped()
+                yield return new MetafieldGrouped()
                 {
                     Field = group.Key,
                     Values = group
-                    .SelectMany(x => x.Values)
-                    .GroupBy(x => x.Values.FirstOrDefault())
-                    .Select(x => x.FirstOrDefault())
-                    .ToList()
-                });
+                        .SelectMany(x => x.Values)
+                        .GroupBy(x => x.Values.FirstOrDefault())
+                        .Select(x =>
+                        {
+                            var firstValue = x.FirstOrDefault();
+                            return firstValue;
+                        })
+                        .ToList()
+                };
             }
-
-            return list;
         }
 
         public IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query)
