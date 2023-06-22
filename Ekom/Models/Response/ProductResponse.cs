@@ -47,7 +47,7 @@ namespace Ekom.Models
                 }
             }
 
-            if (query?.AllFiltersVisible ?? false)
+            if (query?.AllFiltersVisible == false)
             {
                 Filters = products.Filters();
             }
@@ -78,7 +78,7 @@ namespace Ekom.Models
         public int? PageSize { get; set; }
         public int? Page { get; set; }
         public int ProductCount { get; set; }
-        public IEnumerable<MetafieldGrouped> Filters { get; set; }
+        public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
             if (orderBy == Utilities.OrderBy.TitleDesc)
