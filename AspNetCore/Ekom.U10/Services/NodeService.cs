@@ -55,7 +55,7 @@ namespace Ekom.Umb.Services
 
                 if (node == null)
                 {
-                    throw new ArgumentNullException(nameof(node));
+                    return null;
                 }
 
                 var ancestors = node.Ancestors().Select(x => new Umbraco10Content(x)).ToList();

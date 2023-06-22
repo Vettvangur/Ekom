@@ -63,6 +63,11 @@ namespace Ekom.Utilities
             IEnumerable<UmbracoContent> ancestors
             )
         {
+            if (ancestors == null)
+            {
+                return true;
+            }
+
             var selfDisableField = item.GetValue("disable", store.Alias);
 
             if (!string.IsNullOrEmpty(selfDisableField))
