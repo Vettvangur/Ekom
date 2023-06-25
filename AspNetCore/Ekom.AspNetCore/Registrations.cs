@@ -66,6 +66,7 @@ static class Registrations
         services.AddTransient<StockRepository>();
         services.AddTransient<DiscountStockRepository>();
 
+        services.AddTransient<ManagerRepository>();
         services.AddTransient<OrderRepository>();
         services.AddTransient<CouponRepository>();
         services.AddTransient<ActivityLogRepository>();
