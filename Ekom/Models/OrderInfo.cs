@@ -1,5 +1,7 @@
+using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -316,6 +318,23 @@ namespace Ekom.Models
 
             internal set => _hangfireJobs = value.ToList();
         }
+
+        public IEnumerable<IProduct> RelatedProducts(int count = 4)
+        {
+            var relatedProducts = new List<IProduct>();
+            
+            var products = orderLines.Select(x => x.Product);
+
+            foreach (var product in products)
+            {
+                var related = product.RelatedProducts();
+
+                relatedProducts.AddRange(related);
+            }
+
+            return relatedProducts.Take(count);
+        }
+
 
         #region JSON Parsing
         private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)

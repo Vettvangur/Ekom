@@ -1,11 +1,9 @@
+using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 
@@ -138,6 +136,55 @@ namespace Ekom.Models
             var imageNodes = _images.GetImages();
 
             return imageNodes;
+        }
+        public virtual int ParentId
+        {
+            get
+            {
+                if (int.TryParse(Properties.GetPropertyValue("parentID"), out int _parentId))
+                {
+                    return _parentId;
+                }
+
+                return 0;
+            }
+        }
+
+        public IEnumerable<IProduct> RelatedProducts(int count = 4)
+        {
+            var relatedProducts = new List<IProduct>();
+
+            if (Properties.HasPropertyValue("relatedProducts"))
+            {
+                var val = Properties.GetPropertyValue("relatedProducts");
+
+                if (!string.IsNullOrEmpty(val))
+                {
+                    var relatedProductIds = UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
+
+                    foreach (var id in guids.Where(x => x != Key).Take(count))
+                    {
+                        var product = Catalog.Instance.GetProduct(StoreInfo.Alias, id);
+
+                        if (product != null && product.Key != id)
+                        {
+                            relatedProducts.Add(product);
+                        }
+                    }
+                }
+            }
+
+            if (!relatedProducts.Any())
+            {
+                var category = Catalog.Instance.GetCategory(ParentId);
+
+                if (category != null)
+                {
+                    relatedProducts = category.ProductsRecursive().Products.Where(x => x.Id != Id).Take(count).ToList();
+                }
+            }
+
+            return relatedProducts;
         }
 
         /// <summary>

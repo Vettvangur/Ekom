@@ -1,7 +1,4 @@
-using Ekom.Models;
 using Ekom.Utilities;
-using System;
-using System.Collections.Generic;
 
 namespace Ekom.Models
 {
@@ -131,5 +128,10 @@ namespace Ekom.Models
         /// 
         /// </summary>
         DateTime UpdateDate { get; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        IEnumerable<IProduct> RelatedProducts(int count = 4);
     }
 }

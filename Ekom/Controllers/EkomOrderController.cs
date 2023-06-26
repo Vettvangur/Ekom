@@ -123,6 +123,42 @@ namespace Ekom.Controllers
             }
         }
 
+        /// <summary>
+        /// Get order by store
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("relatedproducts/storeAlias/{storeAlias}/{count:Int}")]
+        public async Task<IEnumerable<IProduct>> GetRelatedProducts(string storeAlias, int count = 4)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+            }
+
+            try
+            {
+                var order = await Order.Instance.GetOrderAsync(storeAlias);
+
+                if (order != null)
+                {
+                    return order.RelatedProducts(4);
+                }
+                
+                throw new HttpResponseException(HttpStatusCode.NotFound);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+                if (r != null)
+                {
+                    throw r;
+                }
+
+                throw;
+            }
+        }
+
         ///// <summary>
         ///// Add product with multiple variants to order
         ///// </summary>
