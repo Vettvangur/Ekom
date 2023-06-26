@@ -39,7 +39,7 @@
       <div ng-if="field.values.length <= 0">
         <input name="metafield_{{$index}}"
                id="metafield_{{$index}}"
-               readonly="{{field.readOnly}}"
+               ng-readonly="{{ field.readOnly ? true : false }}"
                type="text"
                ng-model="values[$index]" />
       </div>
