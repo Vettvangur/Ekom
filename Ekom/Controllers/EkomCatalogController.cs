@@ -333,7 +333,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <returns></returns>a
         [HttpPost, HttpGet]
-        [Route("relatedproducts/{sku}/{count:Int}")]
+        [Route("relatedproductsbysku/{sku}/{count:Int}")]
         public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4)
         {
             try
@@ -353,7 +353,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost, HttpGet]
-        [Route("relatedproducts")]
+        [Route("relatedproductsbyskus")]
         public IEnumerable<IProduct> GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4)
         {
             try
