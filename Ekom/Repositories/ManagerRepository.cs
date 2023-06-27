@@ -55,9 +55,12 @@ namespace Ekom.Repositories
             {
                 whereQuery.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
             }
-            if (!string.IsNullOrEmpty(orderStatus))
+            if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
             {
                 whereQuery.Append(" AND OrderStatusCol = @orderStatus");
+            } else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
+            {
+                whereQuery.Append(" AND (OrderStatusCol = 4 OR OrderStatusCol = 6 OR OrderStatusCol = 7 OR OrderStatusCol = 12 OR OrderStatusCol = 8)");
             }
             if (!string.IsNullOrEmpty(store))
             {
