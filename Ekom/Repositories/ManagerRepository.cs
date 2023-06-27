@@ -60,7 +60,7 @@ namespace Ekom.Repositories
                 whereQuery.Append(" AND OrderStatusCol = @orderStatus");
             } else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
             {
-                whereQuery.Append(" AND (OrderStatusCol = 4 OR OrderStatusCol = 6 OR OrderStatusCol = 7 OR OrderStatusCol = 12 OR OrderStatusCol = 8)");
+                whereQuery.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')");
             }
             if (!string.IsNullOrEmpty(store))
             {
