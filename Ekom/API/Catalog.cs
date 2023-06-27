@@ -623,7 +623,22 @@ namespace Ekom.API
             
             return product.RelatedProducts(count);
         }
-        
+
+        /// <summary>
+        /// Get Related Products By Sku
+        /// </summary>
+        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4)
+        {
+            var product = GetProduct(sku);
+
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            return product.RelatedProducts(count);
+        }
+
         /// <summary>
         /// Search Products
         /// </summary>

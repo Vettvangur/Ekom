@@ -329,6 +329,52 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Get Related Products By Sku
+        /// </summary>
+        /// <returns></returns>a
+        [HttpPost, HttpGet]
+        [Route("relatedproducts/{sku:String}/{count:Int}")]
+        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4)
+        {
+            try
+            {
+                var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+
+                return products;
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Related Products By Sku
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost, HttpGet]
+        [Route("relatedproducts")]
+        public IEnumerable<IProduct> GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4)
+        {
+            try
+            {
+                List<IProduct> relatedProducts = new List<IProduct>();
+
+                foreach (var sku in skus)
+                {
+                    var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+                    relatedProducts.AddRange(products);
+                }
+
+                return relatedProducts.Take(count);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
         /// Product Search
         /// </summary>
         /// <returns></returns>
