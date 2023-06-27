@@ -459,6 +459,7 @@ namespace Ekom.App_Start
             { 
                 backofficeApiEndpoint = "/ekom/backoffice/",
                 apiEndpoint = "/ekom/api/",
+                managerEndpoint = "/ekom/manager/",
                 charCollections = _config.CharCollections
             });
         }
