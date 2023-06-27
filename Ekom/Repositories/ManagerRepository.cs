@@ -37,54 +37,91 @@ namespace Ekom.Repositories
                 return data;
             }
         }
-
-        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus)
+        
+        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
-            var whereQuery = new StringBuilder("SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders");
+            var sqlBuilder = new StringBuilder("SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders");
+            var sqlTotalBuilder = new StringBuilder("SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders");
 
             if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
             {
-                whereQuery.Clear();
-                whereQuery.Append(" WHERE PaidDate >= @startDate AND PaidDate <= @endDate");
+                var where = "WHERE PaidDate >= @startDate AND PaidDate <= @endDate";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             } else
             {
-                whereQuery.Append(" WHERE CreateDate >= @startDate AND CreateDate <= @endDate");
+                var where = " WHERE CreateDate >= @startDate AND CreateDate <= @endDate";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             }
 
             if (!string.IsNullOrEmpty(query))
             {
-                whereQuery.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
+                var where = " AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             }
             if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
             {
-                whereQuery.Append(" AND OrderStatusCol = @orderStatus");
+                var where = " AND OrderStatusCol = @orderStatus";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             } else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
             {
-                whereQuery.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')");
+                var where = " AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             }
             if (!string.IsNullOrEmpty(store))
             {
-                whereQuery.Append(" AND StoreAlias = @store");
+                var where = " AND StoreAlias = @store";
+                sqlBuilder.Append(where);
+                sqlTotalBuilder.Append(where);
             }
 
-            whereQuery.Append(" ORDER BY ReferenceId desc");
+            sqlBuilder.Append(" ORDER BY ReferenceId desc");
 
-            var sqlQuery = whereQuery.ToString();
+            int _page;
+            int _pageSize;
+            if (!string.IsNullOrEmpty(page) && int.TryParse(page, out _page) && !string.IsNullOrEmpty(pageSize) && int.TryParse(pageSize, out _pageSize))
+            {
+               
+            }
+            else
+            {
+                _page = 1;
+                _pageSize = 30;
+            }
+
+            sqlBuilder.Append(" OFFSET (" + _page + " - 1) * " + _pageSize + " ROWS\r\nFETCH NEXT " + _pageSize + " ROWS ONLY;");
+
+            var sqlQuery = sqlBuilder.ToString();
+            var sqlTotalQuery = sqlTotalBuilder.ToString();
+
+            var param = new
+            {
+                startDate = start,
+                endDate = end,
+                query = "%" + query + "%",
+                orderStatus,
+                store
+            };
 
             using (var db = _databaseFactory.GetDatabase())
             {
-                var orders = await db.QueryToListAsync<OrderData>(sqlQuery, new
-                {
-                    startDate = start,
-                    endDate = end,
-                    query = "%" + query + "%",
-                    orderStatus,
-                    store
-                });
+                var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
 
-                return new OrderListData(orders);
+                var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
+
+                var orderListData = new OrderListData(orders, totals);
+
+                orderListData.Page = _page;
+                orderListData.PageSize = _pageSize;
+
+                return orderListData;
             }
         }
+
 
     }
 }

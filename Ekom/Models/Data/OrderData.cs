@@ -2,6 +2,7 @@ using Ekom.Utilities;
 using LinqToDB.Mapping;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace Ekom.Models
 {
@@ -52,6 +53,32 @@ namespace Ekom.Models
         {
             get { return (OrderStatus) Enum.Parse(typeof(OrderStatus), OrderStatusCol); }
             set { OrderStatusCol = value.ToString(); }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Column(IsColumn = false)]
+        public string FormattedTotal
+        {
+            get {
+
+                string currencyCode = "ISK";
+
+                CultureInfo cultureInfo = CultureHelper.GetCultureInfoByCurrencyCode(currencyCode);
+
+                if (cultureInfo != null)
+                {
+                    string formattedCurrency = string.Format(cultureInfo, "{0:C}", TotalAmount);
+
+                    return formattedCurrency;
+                }
+                else
+                {
+                    return String.Format("{0:C}", TotalAmount);
+                }
+
+            }
         }
 
         /// <summary>

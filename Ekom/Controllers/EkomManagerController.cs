@@ -38,9 +38,9 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("SearchOrders")]
         [UmbracoUserAuthorize]
-        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus)
+        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
-            return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus);
+            return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,page, pageSize);
         }
 
 
