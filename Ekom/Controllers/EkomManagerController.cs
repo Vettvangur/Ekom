@@ -29,18 +29,42 @@ namespace Ekom.Controllers
         readonly ManagerRepository _repo;
 
         [HttpGet]
-        [Route("Orders")]
+        [Route("AllOrders")]
         [UmbracoUserAuthorize]
         public async Task<IEnumerable<OrderData>> GetOrdersAsync() {
             return await _repo.GetOrdersAsync();
         }
-        
+
+        [HttpGet]
+        [Route("Order/{orderId}")]
+        [UmbracoUserAuthorize]
+        public async Task<OrderData> GetOrderAsync(Guid orderId)
+        {
+            return await _repo.GetOrderAsync(orderId);
+        }
+
+        [HttpGet]
+        [Route("OrderInfo/{orderId}")]
+        [UmbracoUserAuthorize]
+        public IOrderInfo GetOrderInfo(Guid orderId)
+        {
+            return _repo.GetOrderInfo(orderId);
+        }
+
         [HttpGet]
         [Route("SearchOrders")]
         [UmbracoUserAuthorize]
         public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
             return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,page, pageSize);
+        }
+
+        [HttpGet]
+        [Route("StatusList")]
+        [UmbracoUserAuthorize]
+        public object GetStatusList()
+        {
+            return _repo.GetStatusList();
         }
 
 

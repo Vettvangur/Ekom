@@ -1,3 +1,4 @@
+using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Services;
@@ -37,7 +38,30 @@ namespace Ekom.Repositories
                 return data;
             }
         }
-        
+
+        public async Task<OrderData> GetOrderAsync(Guid orderId)
+        {
+            using (var db = _databaseFactory.GetDatabase())
+            {
+                var data = await db.OrderData.FirstAsync(x => x.UniqueId == orderId).ConfigureAwait(false);
+
+                return data;
+            }
+        }
+
+        public IOrderInfo GetOrderInfo(Guid orderId)
+        {
+            try
+            {
+                return API.Order.Instance.GetOrder(orderId);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.Handle<HttpResponseException>(ex);
+                throw;
+            }
+        }
+
         public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
             var sqlBuilder = new StringBuilder("SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders");
@@ -122,6 +146,16 @@ namespace Ekom.Repositories
             }
         }
 
+        public object GetStatusList()
+        {
+            var items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
+
+            return items.Select(x => new
+            {
+                value = x,
+                label = x.ToString()
+            });
+        }
 
     }
 }
