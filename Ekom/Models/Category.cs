@@ -107,7 +107,7 @@ namespace Ekom.Models
                                                 x.Value.Path.Split(',').Contains(Id.ToString()))
                                     .Select(x => x.Value)
                                     .OrderBy(x => x.SortOrder)
-                                    .SelectMany(x => x.Products().Products);
+                                    .SelectMany(x => x.Products().Products).DistinctBy(x => x.Id);
 
             return new ProductResponse(products, query);
         }
