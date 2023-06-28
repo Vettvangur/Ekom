@@ -37,7 +37,7 @@ namespace Ekom.Models
             
             if (shippingProviderObject.ContainsKey(nameof(CustomData)))
             {
-                Properties = new Dictionary<string, string>(
+                CustomData = new Dictionary<string, string>(
                 shippingProviderObject[nameof(CustomData)].ToObject<Dictionary<string, string>>());
             }
 
