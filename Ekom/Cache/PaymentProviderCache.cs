@@ -36,7 +36,7 @@ namespace Ekom.Cache
 
                 try
                 {
-                    var paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
+                    var paymentProviderRoot = nodeService.NodesByTypes("netPaymentProviders").FirstOrDefault();
 
                     if (paymentProviderRoot == null)
                     {

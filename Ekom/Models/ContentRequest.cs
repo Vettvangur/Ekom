@@ -11,7 +11,23 @@ namespace Ekom.Models
         {
             _httpCtx = httpResponse;
         }
-        public string IPAddress => _httpCtx.Request.Host.ToString();
+        public string IPAddress {
+        
+            get
+            {
+                var host = "";
+                
+                try
+                {
+                    host = _httpCtx.Request.Host.ToString();
+                } catch
+                {
+                    // TODO
+                }
+
+                return host;
+            }
+        } 
         public IStore Store
         {
             set
