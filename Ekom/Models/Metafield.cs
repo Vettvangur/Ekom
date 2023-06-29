@@ -1,3 +1,4 @@
+using Ekom.Models.Comparers;
 using Ekom.Utilities;
 using Newtonsoft.Json;
 
@@ -22,8 +23,18 @@ namespace Ekom.Models
             ReadOnly = x.GetValue("readOnly").ConvertToBool();
             if (!string.IsNullOrEmpty(values))
             {
-                Values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
+
+                var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
+
+                var orderedValues = _values
+                    .Where(x => !x.Values.ContainsKey("undefined")).ToList()
+                    .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
+
+                Values = orderedValues;
             }
+
+           
+            
         }
 
         public int Id { get; set; }

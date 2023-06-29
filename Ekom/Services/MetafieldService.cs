@@ -1,9 +1,8 @@
 using Ekom.Models;
+using Ekom.Models.Comparers;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 
 namespace EkomCore.Services
 {
@@ -63,7 +62,7 @@ namespace EkomCore.Services
 
                                     if (fieldValues != null)
                                     {
-                                        valuesList.Add(fieldValues.Values);
+                                        valuesList.Add(fieldValues.Values.Where(x => x.Key != "undefined").ToDictionary(x => x.Key, x => x.Value));
                                     }
                                 }
                             }
@@ -82,7 +81,7 @@ namespace EkomCore.Services
 
                                 if (fieldValues != null)
                                 {
-                                    valuesList.Add(fieldValues.Values);
+                                    valuesList.Add(fieldValues.Values.Where(x => x.Key != "undefined").ToDictionary(x => x.Key, x => x.Value));
                                 }
                             }
 
@@ -228,13 +227,19 @@ namespace EkomCore.Services
                 .Where(x => x.Field.Filterable == filterable)
                 .GroupBy(x => x.Field, new MetafieldComparer());
 
+            var culture = System.Globalization.CultureInfo.CurrentCulture.Name;
+            
             foreach (var group in grouped)
             {
                 yield return new MetafieldGrouped()
                 {
                     Field = group.Key,
                     Values = group
-                        .SelectMany(x => x.Values).DistinctBy(x => x.Values.LastOrDefault()).ToList()
+                        .SelectMany(x => x.Values)
+                        .Where(x => !x.ContainsKey("undefined"))
+                        .OrderBy(x => x.Values.FirstOrDefault(), new SemiNumericComparer())
+                        .DistinctBy(x => x.Values.FirstOrDefault())
+                    .ToList()
                 };
             }
         }

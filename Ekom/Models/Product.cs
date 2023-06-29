@@ -5,11 +5,7 @@ using Newtonsoft.Json;
 using System.Xml.Serialization;
 using Ekom.Utilities;
 using Ekom.API;
-#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
-#else
-using System.Web;
-#endif
 
 namespace Ekom.Models
 {
@@ -195,14 +191,8 @@ namespace Ekom.Models
 
         private IPrice GetPrice()
         {
-
-#if NETCOREAPP
             var httpCtx = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
             var cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias];
-#else
-            var httpCtx = Configuration.Resolver.GetService<HttpContextBase>();
-            var cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias].Value;
-#endif
 
             if (cookie != null && !string.IsNullOrEmpty(cookie))
             {
