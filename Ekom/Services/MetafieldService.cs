@@ -234,14 +234,7 @@ namespace EkomCore.Services
                 {
                     Field = group.Key,
                     Values = group
-                        .SelectMany(x => x.Values)
-                        .GroupBy(x => x.Values.FirstOrDefault())
-                        .Select(x =>
-                        {
-                            var firstValue = x.FirstOrDefault();
-                            return firstValue;
-                        })
-                        .ToList()
+                        .SelectMany(x => x.Values).DistinctBy(x => x.Values.LastOrDefault()).ToList()
                 };
             }
         }
