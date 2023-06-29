@@ -420,7 +420,7 @@ namespace Ekom.Models
                     {
                         var product = Catalog.Instance.GetProduct(Store.Alias, id);
 
-                        if (product != null && product.Key != id)
+                        if (product != null && product.Key != Key)
                         {
                             relatedProducts.Add(product);
                         }
