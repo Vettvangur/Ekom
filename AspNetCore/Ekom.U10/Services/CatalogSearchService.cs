@@ -13,7 +13,7 @@ using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services
 {
-    class CatalogSearchService : ICatalogSearchService
+    public class CatalogSearchService : ICatalogSearchService
     {
         private readonly ILogger _logger;
         private readonly IPublishedContentQuery _query;
@@ -30,6 +30,11 @@ namespace Ekom.Umb.Services
             _query = query;
             _examineManager = examineManager;
             _config = config;
+        }
+
+        public virtual IEnumerable<int> ProductQuery(SearchRequest req, out long total)
+        {
+            return Query(req, out total).Select(x => x.Id);
         }
 
         public IEnumerable<SearchResultEntity> Query(SearchRequest req, out long total)
@@ -189,7 +194,5 @@ namespace Ekom.Umb.Services
 
             return null;
         }
-
-
     }
 }

@@ -657,13 +657,13 @@ namespace Ekom.API
             var scope = Configuration.Resolver.CreateScope();
             var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
 
-            var result = _searhService.Query(req, out long total);
+            var result = _searhService.ProductQuery(req, out long total);
 
             scope.Dispose();
 
             var productQuery = new ProductQuery();
 
-            productQuery.Ids = result.Select(x => x.ParentId);
+            productQuery.Ids = result.Select(x => x);
             productQuery.MetaFilters = req.MetaFilters;
             productQuery.PropertyFilters = req.PropertyFilters;
             productQuery.OrderBy = req.OrderBy;

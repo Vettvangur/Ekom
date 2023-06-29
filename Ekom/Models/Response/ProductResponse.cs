@@ -30,7 +30,7 @@ namespace Ekom.Models
             {
                 var scope = Configuration.Resolver.CreateScope();
                 var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                var searchResults = _searhService.Query(new SearchRequest() {
+                var searchResults = _searhService.ProductQuery(new SearchRequest() {
                     SearchQuery = query.SearchQuery,
                     NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
                     SearchFields = query.SearchFields
@@ -43,7 +43,7 @@ namespace Ekom.Models
                     products = Enumerable.Empty<IProduct>();
                 } else
                 {
-                    products = products.Where(x => searchResults.Any(y => y.Id == x.Id));
+                    products = products.Where(x => searchResults.Any(y => y == x.Id));
                 }
             }
 
