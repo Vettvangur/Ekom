@@ -27,6 +27,6 @@ namespace Ekom.Umb.Sections
 
         public string Alias => "ekommanager";
 
-        public string View => "/app_plugins/ekommanager/view.html";
+        public string View => "/app_plugins/ekommanager/views/ekmManager.html";
     }
 }
