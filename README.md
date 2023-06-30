@@ -12,6 +12,8 @@ Open Source Ecommerce package for Umbraco
 
 Supports Umbraco version 10+
 
+Ekom is a versatile and fully customizable eCommerce solution that is free to use forever. This package has been built with ASP NET Core, focusing on performance and security, and is compatible with Umbraco versions 10 and above.
+
 ## Installation
 Install the appropriate Umbraco versioned package to your solution (f.x. Ekom.U10)
 Install the Ekom.Web package into your sites main project (contains wwwroot)
@@ -28,21 +30,21 @@ Install the Ekom.Web package into your sites main project (contains wwwroot)
 
 `PM> Install-Package Ekom.Web`
 
-## Features
+## Some of the key featured of Ekom includes:
 
-- B2B and B2C support
-- Headless support
-- Multiple currency and language support
-- Powerful order management
-- Multiple payment providers out of the box and pluggable providers
-- Flexible Shipping provider configuration with connection to external services with Íslandspóst, TVG Zimsen or Dropp
-- Flexible discounts
-- Complex variant support
-- Supports integration with external systems like Business Central, Dynamic AX, DK, Salesforce and many more.
-- Powerful inventory management
-- Google Analytics Ecommerce support
+- 100% free and open source forever.
+- Support for both B2B (Business to Business) and B2C (Business to Customer) transactions
+- Headless capabilities, allowing for more flexibility in frontend design and development
+- Multilingual and multicurrency support, making it suitable for international businesses
+- A powerful order management system
+- Out-of-the-box support for multiple payment providers, along with the ability to plug in additional providers as needed
+- Flexible shipping provider configurations, including the ability to connect with external services
+- The capability to set up flexible discounts
+- Support for complex variants, a crucial feature for eCommerce platforms
+- Integration support with external systems like Microsoft Dynamics Business Central, Dynamics AX, DK, Salesforce, and others
+- Advanced inventory management tools
 - Built with ASP NET Core with focus on performance and security
-- Fully extendable
+- The ability to be extended as per your business requirements
 - And much more...
 
 ## Documentation
