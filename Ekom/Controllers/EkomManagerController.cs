@@ -3,6 +3,8 @@ using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using static LinqToDB.Common.Configuration;
 
 namespace Ekom.Controllers
 {
@@ -65,6 +67,56 @@ namespace Ekom.Controllers
         public object GetStatusList()
         {
             return _repo.GetStatusList();
+        }
+
+        [HttpGet]
+        [Route("RevenueChart")]
+        [UmbracoUserAuthorize]
+        public async Task<ChartData> GetRevenueChart(DateTime start, DateTime end, string orderStatus)
+        {
+            var chartData = new ChartData();
+
+            var orders =  await _repo.SearchOrdersAsync(start, end, "", "", orderStatus, "1", "99999");
+
+            var chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
+
+            var groupedchartDataPoints = chartDataPoints
+                    .GroupBy(record =>
+                        DateTime.ParseExact((string)record.x, "yyyy-MM-dd", null).Date)
+                    .Select(group =>
+                        new ChartDataPoint(group))
+                    .ToList();
+
+
+            chartData.Points = groupedchartDataPoints;
+            chartData.Labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
+
+
+            return chartData;
+        }
+
+        public class ChartData
+        {
+            public string[] Labels { get; set; }
+            public IEnumerable<ChartDataPoint> Points { get; set; }
+        }
+
+        public class ChartDataPoint
+        {
+            public ChartDataPoint(OrderData x1)
+            {
+                x = x1.PaidDate.Value.ToString("yyyy-MM-dd");
+                y = x1.TotalAmount;
+            }
+
+            public ChartDataPoint(IGrouping<DateTime, ChartDataPoint> group)
+            {
+                x = group.Key.ToString("yyyy-MM-dd");
+                y = group.Sum(record => record.y);
+            }
+
+            public string x { get; set; }
+            public decimal y { get; set; }
         }
 
 
