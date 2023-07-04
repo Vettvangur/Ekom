@@ -23,18 +23,14 @@ namespace Ekom.Models
             ReadOnly = x.GetValue("readOnly").ConvertToBool();
             if (!string.IsNullOrEmpty(values))
             {
-
                 var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
 
                 var orderedValues = _values
-                    .Where(x => !x.Values.ContainsKey("undefined")).ToList()
+                    //.Where(x => !x.Values.ContainsKey("undefined")).ToList()
                     .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
 
                 Values = orderedValues;
-            }
-
-           
-            
+            }       
         }
 
         public int Id { get; set; }
