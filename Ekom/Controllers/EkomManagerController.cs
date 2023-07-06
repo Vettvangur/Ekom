@@ -84,7 +84,11 @@ namespace Ekom.Controllers
                     .GroupBy(record =>
                         DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
                     .Select(group =>
-                        new ChartDataPoint(group))
+                        new ChartDataPoint()
+                        {
+                            x = group.Key.ToString("yyyy-MM-dd"),
+                            y = Math.Round(group.Sum(x => x.y), 2, MidpointRounding.AwayFromZero)
+                        })
                     .ToList();
 
             var ordersChartDataPoints = chartDataPoints
@@ -98,6 +102,17 @@ namespace Ekom.Controllers
                         })
                     .ToList();
 
+            var avarageChartDataPoints = chartDataPoints
+                    .GroupBy(record =>
+                        DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
+                    .Select(group =>
+                        new ChartDataPoint()
+                        {
+                            x = group.Key.ToString("yyyy-MM-dd"),
+                            y = Math.Round(group.Average(x => x.y), 2, MidpointRounding.AwayFromZero) 
+                        })
+                    .ToList();
+
             var labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
 
             chartData.RevenueChart.Points = revenueChartDataPoints;
@@ -106,6 +121,9 @@ namespace Ekom.Controllers
             chartData.OrdersChart.Points = ordersChartDataPoints;
             chartData.OrdersChart.Labels = labels;
 
+            chartData.AvarageChart.Points = avarageChartDataPoints;
+            chartData.AvarageChart.Labels = labels;
+
             return chartData;
         }
 
@@ -113,6 +131,7 @@ namespace Ekom.Controllers
         {
             public ChartGroupData RevenueChart { get; set; } = new ChartGroupData();
             public ChartGroupData OrdersChart { get; set; } = new ChartGroupData();
+            public ChartGroupData AvarageChart { get; set; } = new ChartGroupData();
         }
 
         public class ChartGroupData
@@ -133,11 +152,6 @@ namespace Ekom.Controllers
                 y = x1.TotalAmount;
             }
 
-            public ChartDataPoint(IGrouping<DateTime, ChartDataPoint> group)
-            {
-                x = group.Key.ToString("yyyy-MM-dd");
-                y = group.Sum(record => record.y);
-            }
 
             public string x { get; set; }
             public decimal y { get; set; }

@@ -1192,7 +1192,7 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
                     {
-                        var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("pashippingproviderymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
@@ -1205,7 +1205,7 @@ namespace Ekom.Services
                 {
                     if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
                     {
-                        var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+                        var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
