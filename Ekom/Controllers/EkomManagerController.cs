@@ -70,9 +70,9 @@ namespace Ekom.Controllers
         }
 
         [HttpGet]
-        [Route("RevenueChart")]
+        [Route("charts")]
         [UmbracoUserAuthorize]
-        public async Task<ChartData> GetRevenueChart(DateTime start, DateTime end, string orderStatus)
+        public async Task<ChartData> GetChartsData(DateTime start, DateTime end, string orderStatus)
         {
             var chartData = new ChartData();
 
@@ -80,22 +80,42 @@ namespace Ekom.Controllers
 
             var chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
 
-            var groupedchartDataPoints = chartDataPoints
+            var revenueChartDataPoints = chartDataPoints
                     .GroupBy(record =>
-                        DateTime.ParseExact((string)record.x, "yyyy-MM-dd", null).Date)
+                        DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
                     .Select(group =>
                         new ChartDataPoint(group))
                     .ToList();
 
+            var ordersChartDataPoints = chartDataPoints
+                    .GroupBy(record =>
+                        DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
+                    .Select(group =>
+                        new ChartDataPoint()
+                        {
+                            x = group.Key.ToString("yyyy-MM-dd"),
+                            y = group.Count()
+                        })
+                    .ToList();
 
-            chartData.Points = groupedchartDataPoints;
-            chartData.Labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
+            var labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
 
+            chartData.RevenueChart.Points = revenueChartDataPoints;
+            chartData.RevenueChart.Labels = labels;
+            
+            chartData.OrdersChart.Points = ordersChartDataPoints;
+            chartData.OrdersChart.Labels = labels;
 
             return chartData;
         }
 
         public class ChartData
+        {
+            public ChartGroupData RevenueChart { get; set; } = new ChartGroupData();
+            public ChartGroupData OrdersChart { get; set; } = new ChartGroupData();
+        }
+
+        public class ChartGroupData
         {
             public string[] Labels { get; set; }
             public IEnumerable<ChartDataPoint> Points { get; set; }
@@ -103,6 +123,10 @@ namespace Ekom.Controllers
 
         public class ChartDataPoint
         {
+            public ChartDataPoint()
+            {
+                
+            }
             public ChartDataPoint(OrderData x1)
             {
                 x = x1.PaidDate.Value.ToString("yyyy-MM-dd");

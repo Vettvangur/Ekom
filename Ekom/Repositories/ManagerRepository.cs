@@ -69,7 +69,7 @@ namespace Ekom.Repositories
 
             if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
             {
-                var where = "WHERE PaidDate >= @startDate AND PaidDate <= @endDate";
+                var where = " WHERE PaidDate >= @startDate AND PaidDate <= @endDate";
                 sqlBuilder.Append(where);
                 sqlTotalBuilder.Append(where);
             } else
@@ -121,6 +121,8 @@ namespace Ekom.Repositories
 
             var sqlQuery = sqlBuilder.ToString();
             var sqlTotalQuery = sqlTotalBuilder.ToString();
+
+            _logger.LogInformation(sqlQuery);
 
             var param = new
             {

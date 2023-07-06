@@ -238,6 +238,28 @@ namespace Ekom.Models
             }
         }
 
+        public ICalculatedPrice GrandTotalWithOutVat
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line =>
+                {
+                    if (line.Discount == null)
+                    {
+                        var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+
+                        return lineWithOrderDiscount.WithoutVat.Value;
+                    }
+
+                    return line.Amount.WithoutVat.Value;
+                });
+
+                amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
+
+                return new CalculatedPrice(amount, StoreInfo.Currency);
+            }
+        }
+
         /// <inheritdoc />
         public ICalculatedPrice DiscountAmount
             => new CalculatedPrice(
