@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Dashboards;
 
@@ -27,6 +22,6 @@ namespace Ekom.Umb.Sections
 
         public string Alias => "ekommanager";
 
-        public string View => "/app_plugins/ekommanager/views/ekmManager.html";
+        public string View => "/app_plugins/ekom/manager/views/ekmManager.html";
     }
 }

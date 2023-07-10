@@ -1,0 +1,97 @@
+.ekmManager .cards {
+  grid-gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+  margin-bottom: 20px;
+}
+
+.ekmManager .card {
+  background-color: #fff;
+  border-radius: 3px;
+  border-bottom: 1px solid 
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  max-width: 100%;
+  padding: 15px;
+  position: relative;
+  text-align: center;
+}
+
+  .ekmManager .card strong {
+    display: block;
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+.ekmManager .umb-table-cell {
+  color: #111;
+}
+
+.ekmManager .umb-table-head .umb-table-cell {
+  color: #1b264f;
+}
+
+.ekmManager .umb-table-body {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+.ekmManager .umb-overlay {
+  max-width: 1000px;
+  width: 100% !important;
+}
+
+.ekmManager .umb-overlay umb-button[alias=overlaySubmit] {
+  display: none;
+}
+
+.ekmManager .ekmManager__logo {
+  height: 28px;
+  margin-right: 20px;
+}
+
+.ekmManager .ekmManager__filters {
+  float: left;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.ekmManager .ekmManager__filter {
+  margin-right: 15px;
+}
+
+.ekmManager .ekmManager__search {
+  margin-left:auto;
+}
+
+.ekmManager .ekmManager__filter input {
+  margin-bottom: 0;
+}
+
+.ekmGrid {
+  display: grid;
+  grid-template-columns: 2fr 2fr;
+  grid-gap: 40px;
+  margin-bottom: 40px;
+}
+
+@media only screen and (max-width: 800px) {
+  .ekmGrid {
+    grid-template-columns: 1fr;
+  }
+  .ekmManager .ekmManager__filters {
+    flex-direction: column;
+  }
+  .ekmManager .ekmManager__filter {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+
+  .ekmManager .ekmManager__search {
+    margin-left: initial;
+  }
+}

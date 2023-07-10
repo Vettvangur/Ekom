@@ -1,0 +1,145 @@
+﻿<div>
+
+  <h2>Order number: {{ model.editModel.order.referenceId}}</h2>
+
+  <p>Created date: {{ model.editModel.order.createDate | date:'dd. MMMM yyyy HH:mm'}}</p>
+  <p>Paid date: {{ model.editModel.order.paidDate | date:'dd. MMMM yyyy HH:mm'}}</p>
+  <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
+  <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
+
+  <hr />
+
+  <h4>Billing</h4>
+
+  <p>Name: {{ model.editModel.order.customerInformation.customer.name}}</p>
+  <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
+  <p>Address: {{ model.editModel.order.customerInformation.customer.address}} {{ model.editModel.order.customerInformation.customer.apartment}}</p>
+  <p>City: {{ model.editModel.order.customerInformation.customer.city}}</p>
+  <p>Country: {{ model.editModel.order.customerInformation.customer.country}}</p>
+  <p>Zipcode: {{ model.editModel.order.customerInformation.customer.zipCode}}</p>
+  <p>Phone: {{ model.editModel.order.customerInformation.customer.phone}}</p>
+
+  <h5>Extra properties</h5>
+  <ul>
+    <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.customer.properties">
+      {{key}} : {{value}}
+    </li>
+  </ul>
+
+  <hr />
+
+  <h4>Shipping</h4>
+
+  <p>Name: {{ model.editModel.order.customerInformation.shipping.name}}</p>
+  <p>Email: {{ model.editModel.order.customerInformation.shipping.email}}</p>
+  <p>Address: {{ model.editModel.order.customerInformation.shipping.address}} {{ model.editModel.order.customerInformation.shipping.apartment}}</p>
+  <p>City: {{ model.editModel.order.customerInformation.shipping.city}}</p>
+  <p>Country: {{ model.editModel.order.customerInformation.shipping.country}}</p>
+  <p>Zipcode: {{ model.editModel.order.customerInformation.shipping.zipCode}}</p>
+  <p>Phone: {{ model.editModel.order.customerInformation.shipping.phone}}</p>
+
+  <h5>Extra properties</h5>
+  <ul>
+    <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.shipping.properties">
+      {{key}}: {{value}}
+    </li>
+  </ul>
+
+  <div ng-if="model.editModel.order.paymentProvider != null">
+
+    <hr />
+
+    <h4>Payment Method</h4>
+
+    <p><strong>{{ model.editModel.order.paymentProvider.title }}</strong></p>
+    <p>Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}</p>
+
+    <h5>Custom data</h5>
+    <ul>
+      <li ng-repeat="(key, value)  in model.editModel.order.paymentProvider.customData">
+        {{key}}: {{value}}
+      </li>
+    </ul>
+
+  </div>
+
+  <div ng-if="model.editModel.order.shippingProvider != null">
+
+    <hr />
+
+    <h4>Shipping Method</h4>
+
+    <p><strong>{{ model.editModel.order.shippingProvider.title }}</strong></p>
+    <p>Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</p>
+
+    <h5>Custom data</h5>
+    <ul>
+      <li ng-repeat="(key, value)  in model.editModel.order.shippingProvider.customData">
+        {{key}}: {{value}}
+      </li>
+    </ul>
+
+  </div>
+
+  <hr />
+
+  <h4>Order Details</h4>
+
+  <div class="umb-table" style="width:100%;">
+    <div class="umb-table-head">
+      <div class="umb-table-row">
+        <div class="umb-table-cell not-fixed">Product</div>
+        <div class="umb-table-cell">Quantity</div>
+        <div class="umb-table-cell">Price</div>
+        <div class="umb-table-cell">Vat</div>
+        <div class="umb-table-cell">Total</div>
+      </div>
+    </div>
+    <div class="umb-table-body">
+      <div ng-repeat="orderLine in model.editModel.order.orderLines" class="umb-table-row">
+        <div class="umb-table-cell not-fixed">{{ orderLine.product.title }} ({{ orderLine.product.sku }})</div>
+        <div class="umb-table-cell">{{ orderLine.quantity }}</div>
+        <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
+        <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.vat.currencyString}}</div>
+        <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.withVat.currencyString}}</div>
+      </div>
+    </div>
+    <div class="umb-table-footer">
+      <div class="umb-table-row">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Grand Total</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.grandTotalWithOutVat.currencyString }}</div>
+      </div>
+      <div class="umb-table-row" ng-if="model.editModel.order.shippingProvider != null">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Shipping Total</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</div>
+      </div>
+      <div class="umb-table-row">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Discount</div>
+        <div class="umb-table-cell" style="text-align: right;">-{{ model.editModel.order.discountAmount.currencyString }}</div>
+      </div>
+      <div class="umb-table-row">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Vat</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.chargedVat.currencyString }}</div>
+      </div>
+      <div class="umb-table-row">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Total</div>
+        <div class="umb-table-cell" style="text-align: right;"><strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></div>
+      </div>
+    </div>
+  </div>
+</div>

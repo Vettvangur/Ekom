@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
 using Ekom.API;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Utilities;
-using System.Net;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Ekom.Controllers
 {
