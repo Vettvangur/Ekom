@@ -58,8 +58,7 @@ namespace Ekom.Models
             get
             {
                 return _categoryCache.Cache[Store.Alias]
-                    .Where(x => x.Value.Level > Level && 
-                        x.Value.Path.Split(',').Contains(Id.ToString()))
+                    .Where(x => x.Value.ParentId == Id)
                     .Select(x => x.Value)
                     .OrderBy(x => x.SortOrder);
             }
