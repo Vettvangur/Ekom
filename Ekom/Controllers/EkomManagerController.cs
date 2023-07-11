@@ -3,8 +3,6 @@ using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using static LinqToDB.Common.Configuration;
 
 namespace Ekom.Controllers
 {
@@ -68,6 +66,15 @@ namespace Ekom.Controllers
         {
             return _repo.GetStatusList();
         }
+
+        [HttpGet]
+        [Route("stores")]
+        [UmbracoUserAuthorize]
+        public IEnumerable<IStore> GetStores()
+        {
+            return API.Store.Instance.GetAllStores();
+        }
+
 
         [HttpGet]
         [Route("charts")]

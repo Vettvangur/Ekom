@@ -19,7 +19,13 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
           url: url
         });
       },
-
+      Stores: function () {
+        var url = this.baseUrl + 'Stores';
+        return $http({
+          method: 'GET',
+          url: url
+        });
+      },
       OrderInfo: function (orderId) {
         var url = this.baseUrl + 'OrderInfo/' + orderId;
         return $http({

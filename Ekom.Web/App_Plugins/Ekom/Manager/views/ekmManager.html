@@ -66,6 +66,21 @@
                 <uui-input type="date" id="dateTo" value="{{ dateTo }}" label="Date To" name="dateTo" class="ekmManager__datepicker"></uui-input>
               </div>
 
+              <div class="ekmManager__filter">
+                <label>Store:</label>
+                <div class="btn-group dropdown-toggle">
+                  <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStores')">
+                    {{labelDropdown('dropdownStores','')}}
+                    <span class="caret" aria-hidden="true"></span>
+                  </div>
+                  <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStores')">
+                    <li ng-repeat="store in stores">
+                      <button type="button" ng-click="selectDropdown('dropdownStores',store.alias)">{{ store.title }}</button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
               <div class="ekmManager__search">
                 <div class="form-search">
                   <div class="inner-addon left-addon">

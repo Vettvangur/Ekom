@@ -23,6 +23,8 @@
     $scope.orderStatus = 'CompletedOrders';
     $scope.dateFrom = dateFrom;
     $scope.dateTo = dateTo;
+    $scope.selectedStore = {};
+    $scope.stores = [];
     
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
@@ -71,7 +73,7 @@
 
     $scope.GetData = function () {
 
-      resources.SearchOrders('?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus +'&page=' + $scope.page + '&pagesize=20&query=' + $scope.query)
+      resources.SearchOrders('?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&page=' + $scope.page + '&pagesize=20&query=' + $scope.query + '&store=' + $scope.store.alias)
         .then(function (result) {
 
           $scope.loading = false;
@@ -105,6 +107,24 @@
         })
     };
 
+    $scope.GetStores = function () {
+
+      resources.Stores()
+        .then(function (result) {
+          
+          $scope.stores = result.data;
+
+          $scope.store = $scope.stores[0];
+          $scope.labelDropdowns['dropdownStores'] = $scope.store.alias;
+
+          $scope.GetData();
+
+        }, function errorCallback(data) {
+
+          notificationsService.error("Error", "Error on getting stores.");
+        })
+    };
+
     tabsElement.addEventListener('click', function (e) {
       var target = e.target;
 
@@ -119,15 +139,28 @@
       resources.OrderInfo(order.uniqueId)
         .then(function (result) {
 
+          var orderInfo = result.data;
+          
+          var shippingAddress = {};
+          var sameAsShipping = orderInfo.customerInformation.shipping;
+          if (
+            orderInfo.customerInformation.shipping.name === '' &&
+            orderInfo.customerInformation.shipping.address === '') {
+            shippingAddress = orderInfo.customerInformation.customer;
+            sameAsShipping = true;
+          }
+
           var model = {
-            'order': result.data
+            order: orderInfo,
+            shippingAddress,
+            sameAsShipping
           };
 
           console.log(model);
 
           $scope.overlay = {
             title: "View Order",
-            view: "/App_Plugins/EkomManager/views/overlays/ekmOrder.html",
+            view: "/App_Plugins/Ekom/Manager/views/overlays/ekmOrder.html",
             editModel: model,
             show: true,
             submit: function (submitModel) {
@@ -322,11 +355,12 @@
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
 
       $scope.labelDropdowns[dropdownId] = status;
-      $scope.orderStatus = status;
 
       if (dropdownId === 'dropdownStatusList') {
-        $scope.GetData();
+        $scope.orderStatus = status;
       }
+      
+      $scope.GetData();
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -365,7 +399,7 @@
     angular.element(document).ready(function () {
       // Init Orders
       if ($scope.location === 'orders') {
-        $scope.GetData();
+        $scope.GetStores();
         $scope.GetStatusList();
       }
 

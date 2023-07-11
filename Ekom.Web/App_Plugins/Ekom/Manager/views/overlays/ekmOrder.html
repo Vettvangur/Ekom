@@ -1,87 +1,119 @@
-﻿<div>
+<article class="ekmOrder">
 
-  <h2>Order number: {{ model.editModel.order.referenceId}}</h2>
+  <div class="ekmOrder__header">
 
-  <p>Created date: {{ model.editModel.order.createDate | date:'dd. MMMM yyyy HH:mm'}}</p>
-  <p>Paid date: {{ model.editModel.order.paidDate | date:'dd. MMMM yyyy HH:mm'}}</p>
-  <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
-  <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
+    <h1 class="ekmOrder__ordernumber">Order number: {{ model.editModel.order.referenceId}}</h1>
 
-  <hr />
-
-  <h4>Billing</h4>
-
-  <p>Name: {{ model.editModel.order.customerInformation.customer.name}}</p>
-  <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
-  <p>Address: {{ model.editModel.order.customerInformation.customer.address}} {{ model.editModel.order.customerInformation.customer.apartment}}</p>
-  <p>City: {{ model.editModel.order.customerInformation.customer.city}}</p>
-  <p>Country: {{ model.editModel.order.customerInformation.customer.country}}</p>
-  <p>Zipcode: {{ model.editModel.order.customerInformation.customer.zipCode}}</p>
-  <p>Phone: {{ model.editModel.order.customerInformation.customer.phone}}</p>
-
-  <h5>Extra properties</h5>
-  <ul>
-    <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.customer.properties">
-      {{key}} : {{value}}
-    </li>
-  </ul>
-
-  <hr />
-
-  <h4>Shipping</h4>
-
-  <p>Name: {{ model.editModel.order.customerInformation.shipping.name}}</p>
-  <p>Email: {{ model.editModel.order.customerInformation.shipping.email}}</p>
-  <p>Address: {{ model.editModel.order.customerInformation.shipping.address}} {{ model.editModel.order.customerInformation.shipping.apartment}}</p>
-  <p>City: {{ model.editModel.order.customerInformation.shipping.city}}</p>
-  <p>Country: {{ model.editModel.order.customerInformation.shipping.country}}</p>
-  <p>Zipcode: {{ model.editModel.order.customerInformation.shipping.zipCode}}</p>
-  <p>Phone: {{ model.editModel.order.customerInformation.shipping.phone}}</p>
-
-  <h5>Extra properties</h5>
-  <ul>
-    <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.shipping.properties">
-      {{key}}: {{value}}
-    </li>
-  </ul>
-
-  <div ng-if="model.editModel.order.paymentProvider != null">
-
-    <hr />
-
-    <h4>Payment Method</h4>
-
-    <p><strong>{{ model.editModel.order.paymentProvider.title }}</strong></p>
-    <p>Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}</p>
-
-    <h5>Custom data</h5>
-    <ul>
-      <li ng-repeat="(key, value)  in model.editModel.order.paymentProvider.customData">
-        {{key}}: {{value}}
-      </li>
-    </ul>
-
+    <p>Created date: {{ model.editModel.order.createDate | date:'dd. MMMM yyyy HH:mm'}}</p>
+    <p>Paid date: {{ model.editModel.order.paidDate | date:'dd. MMMM yyyy HH:mm'}}</p>
+    <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
+    <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
+    
   </div>
 
-  <div ng-if="model.editModel.order.shippingProvider != null">
+  <div class="ekmSplit">
 
-    <hr />
+    <div class="ekmOrder__shipping ekmSplit__column">
+      <h4>Shipping Address</h4>
 
-    <h4>Shipping Method</h4>
+      <p>Name: {{ model.editModel.shippingAddress.name}}</p>
+      <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
+      <p>Address: {{ model.editModel.shippingAddress.address}} {{ model.editModel.shippingAddress.apartment}}</p>
+      <p>City: {{ model.editModel.shippingAddress.city}}</p>
+      <p>Country: {{ model.editModel.shippingAddress.country}}</p>
+      <p>Zipcode: {{ model.editModel.shippingAddress.zipCode}}</p>
+      <p>Phone: {{ model.editModel.shippingAddress.phone}}</p>
 
-    <p><strong>{{ model.editModel.order.shippingProvider.title }}</strong></p>
-    <p>Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</p>
+      <div ng-if="model.editModel.shippingAddress.properties.length > 0">
+        <h5>Extra Data</h5>
+        <ul>
+          <li ng-repeat="(key, value)  in model.editModel.shippingAddress.properties">
+            {{key}}: {{value}}
+          </li>
+        </ul>
+      </div>
 
-    <h5>Custom data</h5>
-    <ul>
-      <li ng-repeat="(key, value)  in model.editModel.order.shippingProvider.customData">
-        {{key}}: {{value}}
-      </li>
-    </ul>
+    </div>
+    
+    <div class="ekmOrder__billing ekmSplit__column">
 
+      <h4>Billing Address</h4>
+
+      <div ng-if="model.editModel.sameAsShipping">
+        Same as shipping address
+      </div>
+
+      <div ng-if="!model.editModel.sameAsShipping">
+        <p>Name: {{ model.editModel.order.customerInformation.customer.name}}</p>
+        <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
+        <p>Address: {{ model.editModel.order.customerInformation.customer.address}} {{ model.editModel.order.customerInformation.customer.apartment}}</p>
+        <p>City: {{ model.editModel.order.customerInformation.customer.city}}</p>
+        <p>Country: {{ model.editModel.order.customerInformation.customer.country}}</p>
+        <p>Zipcode: {{ model.editModel.order.customerInformation.customer.zipCode}}</p>
+        <p>Phone: {{ model.editModel.order.customerInformation.customer.phone}}</p>
+
+        <div ng-if="model.editModel.order.customerInformation.customer.properties.length > 0">
+          <h5>Extra Data</h5>
+          <ul>
+            <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.customer.properties">
+              {{key}} : {{value}}
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      </div>
+
+    </div>
+  
+
+  <div class="ekmSplit">
+
+    <div class="ekmSplit__column">
+      <div ng-if="model.editModel.order.paymentProvider != null">
+
+        <div class="ekmOrder__paymentMethod ekmSplit__column">
+          <h4>Payment Method</h4>
+
+          <h4>{{ model.editModel.order.paymentProvider.title }}</h4>
+          <p>Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}</p>
+
+          <div ng-if="model.editModel.order.paymentProvider.customData.length > 0">
+            <h5>Extra data</h5>
+            <ul>
+              <li ng-repeat="(key, value)  in model.editModel.order.paymentProvider.customData">
+                {{key}}: {{value}}
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="ekmSplit__column">
+
+      <div ng-if="model.editModel.order.shippingProvider != null">
+
+        <div class="ekmOrder__shippingMethod ekmSplit__column">
+          <h4>Shipping Method</h4>
+
+          <h4>{{ model.editModel.order.shippingProvider.title }}</h4>
+          <p>Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</p>
+
+          <div ng-if="model.editModel.order.shippingProvider.customData.length > 0">
+            <h5>Extra data</h5>
+            <ul>
+              <li ng-repeat="(key, value)  in model.editModel.order.shippingProvider.customData">
+                {{key}}: {{value}}
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
-
-  <hr />
 
   <h4>Order Details</h4>
 
@@ -142,4 +174,4 @@
       </div>
     </div>
   </div>
-</div>
+</article>
