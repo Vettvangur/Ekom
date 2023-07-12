@@ -102,6 +102,16 @@
                             </li>
                         }
                     </ul>
+
+                    <h4>Categories Ancestors</h4>
+                    <ul>
+                        @foreach (var category in product.CategoryAncestors)
+                        {
+                            <li>
+                                @category.Title
+                            </li>
+                        }
+                    </ul>
                 </li>
             }
         </ul>

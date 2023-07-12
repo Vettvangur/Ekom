@@ -142,8 +142,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// All categories this <see cref="Product"/> belongs to.
-        /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
+        /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
         /// </summary>
         /// <returns></returns>
         [JsonIgnore]
@@ -152,8 +151,7 @@ namespace Ekom.Models
         internal List<ICategory> categoryAncestors = new List<ICategory>();
 
         /// <summary>
-        /// All categories product belongs to, includes parent category.
-        /// Does not include categories product is an indirect child of.
+        /// All categories product belongs to, includes parent category and related categories.
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
@@ -161,8 +159,7 @@ namespace Ekom.Models
         internal List<ICategory> categories = new List<ICategory>();
 
         /// <summary>
-        /// All ID's of categories product belongs to, includes parent category.
-        /// Does not include categories product is an indirect child of.
+        /// All ID's of categories product belongs to, includes parent category and related categories.
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
@@ -337,7 +334,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         internal protected Product(UmbracoContent item, IStore store) : base(item, store)
         {
-            PopulateCategoryAncestors(item);
+            PopulateCategoryAncestors();
             PopulateCategories();
 
             Urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrls(item, Categories, store, item.Id);
@@ -369,8 +366,8 @@ namespace Ekom.Models
                 foreach (var catId in categoryIds)
                 {
                     var categoryItem
-                        = API.Catalog.Instance.GetCategory(Store.Alias, catId);
-
+                        = Catalog.Instance.GetCategory(Store.Alias, catId);
+                    
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
                         categories.Add(categoryItem);
@@ -379,19 +376,23 @@ namespace Ekom.Models
             }
         }
 
-        private void PopulateCategoryAncestors(UmbracoContent node)
+        private void PopulateCategoryAncestors()
         {
-            var ancestors = Configuration.Resolver.GetService<INodeService>().NodeCatalogAncestors(node.Id.ToString());
 
-            foreach (var item in ancestors.Where(x => x.IsDocumentType("ekmCategory")))
+            foreach (var p in Path.Split(','))
             {
-                var c = API.Catalog.Instance.GetCategory(Store.Alias, item.Id);
-
-                if (c != null)
+                if (int.TryParse(p, out int id))
                 {
-                    categoryAncestors.Add(c);
+                    var c = API.Catalog.Instance.GetCategory(Store.Alias, id);
+
+                    if (c != null)
+                    {
+                        categoryAncestors.Add(c);
+                    }
                 }
             }
+
+            categoryAncestors.Reverse();
         }
 
         public IEnumerable<IProduct> RelatedProducts(int count = 4)
