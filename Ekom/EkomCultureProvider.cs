@@ -28,17 +28,24 @@ namespace Ekom
 
         public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
         {
-            var cultureName = context.Request.Headers["Culture"].FirstOrDefault() ?? context.Request.Query["Culture"].FirstOrDefault();
-            
+            var cultureName = context.Request.Headers["Accept-Language"].FirstOrDefault()
+                            ?? context.Request.Headers["Culture"].FirstOrDefault()
+                            ?? context.Request.Query["Accept-Language"].FirstOrDefault()
+                            ?? context.Request.Query["Culture"].FirstOrDefault();
+
             if (string.IsNullOrEmpty(cultureName))
             {
                 return NullProviderCultureResult;
             }
 
-            var culture = new CultureInfo(cultureName);
-
-            if (culture is null)
+            CultureInfo culture;
+            try
             {
+                culture = new CultureInfo(cultureName);
+            }
+            catch (CultureNotFoundException)
+            {
+                // Culture is not recognized, return null result
                 return NullProviderCultureResult;
             }
 
@@ -57,5 +64,6 @@ namespace Ekom
 
             return Task.FromResult(new ProviderCultureResult(culture.Name));
         }
+
     }
 }
