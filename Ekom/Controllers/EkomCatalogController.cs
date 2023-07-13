@@ -31,7 +31,7 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Guid Key of product</param>
         /// <returns></returns>
-        [HttpPost, HttpGet]
+        [HttpGet]
         [Route("product/{id:Guid}")]
         public IProduct GetProduct(Guid Id)
         {
@@ -50,13 +50,32 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="Id">Int Id of product</param>
         /// <returns></returns>
-        [HttpPost, HttpGet]
+        [HttpGet]
         [Route("product/{id:Int}")]
         public IProduct GetProduct(int Id)
         {
             try
             {
                 return API.Catalog.Instance.GetProduct(Id);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Product By Sku
+        /// </summary>
+        /// <param name="sku">Sku of product</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("product/{sku}")]
+        public IProduct GetProduct(string sku)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetProduct(sku);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
