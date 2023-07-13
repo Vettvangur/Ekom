@@ -70,7 +70,7 @@ namespace Ekom.Controllers
         /// <param name="sku">Sku of product</param>
         /// <returns></returns>
         [HttpGet]
-        [Route("product/{sku}")]
+        [Route("product/sku/{sku}")]
         public IProduct GetProduct(string sku)
         {
             try
