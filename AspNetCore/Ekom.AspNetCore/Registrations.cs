@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Vettvangur.Core;
 using Vettvangur.OrganisationManagement.AspNetCore;
 
 namespace Ekom.AspNetCore;
@@ -171,7 +172,7 @@ static class Registrations
             )
             );
 
-            services.ConfigureOptions<EkomRequestLocalizationOptions>();
+            services.ConfigureOptions<EkomCultureRequestLocalizationOptions>();
 
             services.AddSingleton<DatabaseFactory>();
 

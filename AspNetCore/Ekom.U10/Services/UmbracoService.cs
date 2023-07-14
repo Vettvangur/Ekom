@@ -133,6 +133,13 @@ class UmbracoService : IUmbracoService
         }, TimeSpan.FromMinutes(60));
     }
 
+    public string DefaultLanguage()
+    {
+        return _runtimeCache.GetCacheItem("ekmDefaultLanguage", () => {
+            return _localizationService.GetDefaultLanguageIsoCode();
+        }, TimeSpan.FromMinutes(30));
+    }
+
     private object FormatDataType(IDataType dtd)
     {
         if (dtd == null)
