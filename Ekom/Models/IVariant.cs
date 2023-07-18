@@ -50,7 +50,17 @@ namespace Ekom.Models
         /// Product Stock Keeping Unit.
         /// </summary>
         IProductDiscount ProductDiscount(string price);
+        
+        /// <summary>
+        /// Get SKU
+        /// </summary>
         string SKU { get; }
+
+        /// <summary>
+        /// Get Backorder status
+        /// </summary>
+        bool Backorder { get; }
+
         /// <summary>
         /// Gets the stock.
         /// </summary>
