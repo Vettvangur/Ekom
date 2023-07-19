@@ -127,7 +127,7 @@ class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
 
-            if (_config.DisableCacheStartup)
+            if (!_config.DisableCacheStartup)
             {
                 _logger.LogWarning("Ekom cache is disabled, change the settings in appsettings to fix.");
                 // Fill Caches
