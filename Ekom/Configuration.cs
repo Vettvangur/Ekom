@@ -174,6 +174,28 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Ekom:DisableCacheStartup
+        /// Disable cache build up on startup
+        /// Use case: If cache is extremly slow on startup and you want to get into the application faster.
+        /// </summary>
+        public virtual bool DisableCacheStartup
+        {
+            get
+            {
+                var value = _configuration["Ekom:DisableCacheStartup"];
+
+                if (string.IsNullOrEmpty(value))
+                {
+                    return false;
+                }
+
+                return value.ConvertToBool();
+            }
+        }
+        
+
+
+        /// <summary>
         /// Ekom:CategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>

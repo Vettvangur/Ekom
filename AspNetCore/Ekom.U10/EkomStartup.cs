@@ -102,7 +102,6 @@ class EkomStartup : IComponent
     readonly Configuration _config;
     readonly ILogger _logger;
     readonly IServiceProvider _factory;
-    readonly ExamineService _es;
 
     /// <summary>
     /// 
@@ -110,13 +109,11 @@ class EkomStartup : IComponent
     public EkomStartup(
         Configuration config,
         ILogger<EkomStartup> logger,
-        IServiceProvider factory,
-        ExamineService es)
+        IServiceProvider factory)
     {
         _config = config;
         _logger = logger;
         _factory = factory;
-        _es = es;
     }
 
     /// <summary>
@@ -130,16 +127,16 @@ class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
 
-            if (_config.ExamineRebuild)
+            if (_config.DisableCacheStartup)
             {
-                _es.Rebuild();
+
+                // Fill Caches
+                foreach (var cacheEntry in _config.CacheList.Value)
+                {
+                    cacheEntry.FillCache();
+                }
             }
 
-            // Fill Caches
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
 
             // FIX: To override the default stock cache register before EkomStartup
 
