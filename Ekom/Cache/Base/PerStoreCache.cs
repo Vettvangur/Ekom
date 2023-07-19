@@ -90,7 +90,11 @@ namespace Ekom.Cache
                     if (_config.LimitProductCacheItems > 0 && (NodeAlias == "ekmProduct" || NodeAlias == "ekmProductVariant"))
                     {
                         results = results.Take(_config.LimitProductCacheItems).ToList();
+
+                        _logger.LogWarning("LimitProductCacheItems ({LimitProductCacheItems}) is in use for {NodeAlias}... You can remove the config in appsettings", NodeAlias, _config.LimitProductCacheItems);
                     }
+
+                    _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
                     if (storeParam == null) // Startup initialization
                     {
@@ -165,7 +169,7 @@ namespace Ekom.Cache
                 {
                     _logger.LogWarning(
                         ex,
-                        "Error on adding item with id: " + r.Id + " from Examine in Store: " + store.Alias
+                        "Error on adding item with id: " + r.Id + " in Store: " + store.Alias + " to cache."
                     );
                 }
             }
