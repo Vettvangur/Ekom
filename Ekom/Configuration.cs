@@ -188,12 +188,25 @@ namespace Ekom
                 {
                     return false;
                 }
-
+                
                 return value.ConvertToBool();
             }
         }
-        
 
+        /// <summary>
+        /// Ekom:LimitProductCacheItems
+        /// Limit the amount of items to add to product and variant cache on startup
+        /// Use case: If you want to debug performance on x amount of items in startup.
+        /// </summary>
+        public virtual int LimitProductCacheItems
+        {
+            get
+            {
+                var value = _configuration["Ekom:LimitProductCacheItems"];
+
+                return int.Parse(_configuration["Ekom:LimitProductCacheItems"] ?? "0");
+            }
+        }
 
         /// <summary>
         /// Ekom:CategoryRootLevel

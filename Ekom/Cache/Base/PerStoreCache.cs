@@ -87,6 +87,11 @@ namespace Ekom.Cache
                 {
                     var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished()).ToList();
 
+                    if (_config.LimitProductCacheItems > 0 && (NodeAlias == "ekmProduct" || NodeAlias == "ekmProductVariant"))
+                    {
+                        results = results.Take(_config.LimitProductCacheItems).ToList();
+                    }
+
                     if (storeParam == null) // Startup initialization
                     {
                         foreach (var store in _storeCache.Cache.Select(x => x.Value))
