@@ -2,12 +2,6 @@
   "version": 1,
   "dependencies": {
     "net6.0": {
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Direct",
-        "requested": "[6.0.0, )",
-        "resolved": "6.0.0",
-        "contentHash": "cjG06LMeOADNUeCUaklOfVgrnVkLy80H5PVll4QHDUXv+C+6G9rHczrNdWjfb3xKv3Ts9s4UsP6J2ZWe52Gz4Q=="
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[1.0.0, )",
@@ -17,12 +11,6 @@
           "Microsoft.Build.Tasks.Git": "1.0.0",
           "Microsoft.SourceLink.Common": "1.0.0"
         }
-      },
-      "Microsoft.VisualStudio.Threading.Analyzers": {
-        "type": "Direct",
-        "requested": "[16.10.56, )",
-        "resolved": "16.10.56",
-        "contentHash": "uTvu9fbmHTtRFY5xUgG45waU+ARad0JxyG/2btOC9Su6RTo3PrGVXKU2vHDtVELqlJsnKImhMaPH3YR0XCVwDg=="
       },
       "Umbraco.Cms.Core": {
         "type": "Direct",
@@ -126,6 +114,16 @@
         "type": "Transitive",
         "resolved": "3.1.0",
         "contentHash": "i6x0hDsFWg6Ke2isaNAcHQ9ChxBvTJu2cSmBY+Jtjiv2W4q6y9QlA3JKYuZqJ573TAZmpAn65Qf3sRpjvZ1gmw=="
+      },
+      "Ekom.Payments.Core": {
+        "type": "Transitive",
+        "resolved": "0.1.279",
+        "contentHash": "vh8wf1v/nSgrGJbq3aa1RBPmo0FndtF2MO4XY5gyf5zr+jzXlgobcIoEfp5Ikh3SVhziJzuk2S2ryyPjGzcbsw==",
+        "dependencies": {
+          "Ekom.Common": "0.1.279",
+          "Microsoft.Data.SqlClient": "4.1.0",
+          "linq2db": "4.3.0"
+        }
       },
       "Examine": {
         "type": "Transitive",
@@ -2413,8 +2411,8 @@
         "type": "Project",
         "dependencies": {
           "CommonServiceLocator": "[2.0.6, )",
-          "Ekom.Common": "[1.0.0, )",
-          "Ekom.Payments.Core": "[0.0.1, )",
+          "Ekom.Common": "[0.0.1, )",
+          "Ekom.Payments.Core": "[0.1.279, )",
           "Hangfire": "[1.7.32, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.2.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",
@@ -2424,14 +2422,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
           "Newtonsoft.Json": "[12.0.3, )",
-          "linq2db": "[4.3.0, )"
-        }
-      },
-      "ekom.payments.core": {
-        "type": "Project",
-        "dependencies": {
-          "Ekom.Common": "[1.0.0, )",
-          "Microsoft.Data.SqlClient": "[4.1.0, )",
           "linq2db": "[4.3.0, )"
         }
       }

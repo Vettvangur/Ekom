@@ -35,6 +35,16 @@
         "resolved": "2.0.6",
         "contentHash": "cIVBcA+z8B9oyM67/6mVsJ9PIswFXqREz6nHdngaA7M56su0kOlqlfDHrhYOBB/vAZU466WOWTJCzrVEWrYUvQ=="
       },
+      "Ekom.Payments.Core": {
+        "type": "Transitive",
+        "resolved": "0.1.279",
+        "contentHash": "vh8wf1v/nSgrGJbq3aa1RBPmo0FndtF2MO4XY5gyf5zr+jzXlgobcIoEfp5Ikh3SVhziJzuk2S2ryyPjGzcbsw==",
+        "dependencies": {
+          "Ekom.Common": "0.1.279",
+          "Microsoft.Data.SqlClient": "4.1.0",
+          "linq2db": "4.3.0"
+        }
+      },
       "Hangfire": {
         "type": "Transitive",
         "resolved": "1.7.32",
@@ -567,8 +577,8 @@
         "type": "Project",
         "dependencies": {
           "CommonServiceLocator": "[2.0.6, )",
-          "Ekom.Common": "[1.0.0, )",
-          "Ekom.Payments.Core": "[0.0.1, )",
+          "Ekom.Common": "[0.0.1, )",
+          "Ekom.Payments.Core": "[0.1.279, )",
           "Hangfire": "[1.7.32, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.2.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",
@@ -578,14 +588,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
           "Newtonsoft.Json": "[12.0.3, )",
-          "linq2db": "[4.3.0, )"
-        }
-      },
-      "ekom.payments.core": {
-        "type": "Project",
-        "dependencies": {
-          "Ekom.Common": "[1.0.0, )",
-          "Microsoft.Data.SqlClient": "[4.1.0, )",
           "linq2db": "[4.3.0, )"
         }
       }

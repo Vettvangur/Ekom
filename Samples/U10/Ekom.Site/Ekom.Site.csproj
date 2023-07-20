@@ -60,8 +60,6 @@
         <PackageReference Include="Microsoft.Identity.Web" Version="1.15.2" />
         <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
         <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
-        <ProjectReference Include="..\..\..\Ekom.Payments\AspNetCore\Ekom.Payments.U10\Ekom.Payments.U10.csproj" />
-        <ProjectReference Include="..\..\..\Ekom.Payments\PaymentProviders\Ekom.Payments.Valitor\Ekom.Payments.Valitor.csproj" />
         <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
     </ItemGroup>
 
