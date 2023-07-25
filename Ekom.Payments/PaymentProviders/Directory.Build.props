@@ -1,5 +1,0 @@
-<Project>
-    <PropertyGroup>
-        <ExcludeNetFx>true</ExcludeNetFx>
-    </PropertyGroup>
-</Project>
