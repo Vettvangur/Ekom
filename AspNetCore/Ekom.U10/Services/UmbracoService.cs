@@ -9,7 +9,6 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
-using Umbraco.Cms.Web.Common;
 using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services;
@@ -18,7 +17,7 @@ class UmbracoService : IUmbracoService
 {
     private readonly IDataTypeService _dataTypeService;
     private readonly IDomainService _domainService;
-    private readonly UmbracoHelper _umbracoHelper;
+    private readonly INodeService _nodeService;
     private readonly ILocalizationService _localizationService;
     private readonly PropertyEditorCollection _propertyEditorCollection;
     private readonly IContentTypeService _contentTypeService;
@@ -27,21 +26,21 @@ class UmbracoService : IUmbracoService
     public UmbracoService(
         IDomainService domainService,
         IDataTypeService dataTypeService,
-        IUmbracoHelperAccessor umbracoHelperAccessor,
         ILocalizationService localizationService,
         PropertyEditorCollection propertyEditorCollection,
         IContentTypeService contentTypeService,
         AppCaches appCaches,
-        IShortStringHelper shortStringHelper)
+        IShortStringHelper shortStringHelper,
+        INodeService nodeService)
     {
         _domainService = domainService;
         _dataTypeService = dataTypeService;
-        umbracoHelperAccessor.TryGetUmbracoHelper(out var _umbracoHelper);
         _localizationService = localizationService;
         _propertyEditorCollection = propertyEditorCollection;
         _contentTypeService = contentTypeService;
         _runtimeCache = appCaches.RuntimeCache;
         _shortStringHelper = shortStringHelper;
+        _nodeService = nodeService;
     }
 
     public string GetDictionaryValue(string key)
@@ -71,7 +70,7 @@ class UmbracoService : IUmbracoService
         var nodes = guid
                 ?.Split(',')
                 .Where(x => !string.IsNullOrEmpty(x))
-                .Select(x => _umbracoHelper.Content(GuidUdiHelper.GetGuid(x)))
+                .Select(x => _nodeService.NodeById(GuidUdiHelper.GetGuid(x)))
                 .Where(x => x != null)
                 .ToList();
         return nodes.Select(x => x.Id.ToString());

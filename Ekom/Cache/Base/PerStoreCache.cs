@@ -205,7 +205,6 @@ namespace Ekom.Cache
                         Cache[store.Value.Alias].TryRemove(node.Key, out _);
                         continue;
                     }
-
            
                     var item = _objFac?.Create(node, store.Value)
                         ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);

@@ -1,13 +1,8 @@
 using Ekom.API;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Serialization;
 using Ekom.Utilities;
-#if NET461
-using System.Web.Script.Serialization;
-#endif
+using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -78,9 +73,6 @@ namespace Ekom.Models
         /// <summary>
         /// Get all variants in this group
         /// </summary>
-#if NET461
-        [ScriptIgnore]
-#endif
         [JsonIgnore]
         [XmlIgnore]
         public IEnumerable<IVariant> Variants

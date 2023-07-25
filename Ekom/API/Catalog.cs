@@ -586,7 +586,8 @@ namespace Ekom.API
 
             return _variantCache.Cache[storeAlias]
                                    .Where(x => x.Value.VariantGroup != null && x.Value.VariantGroup.Id == Id)
-                                   .Select(x => x.Value).OrderBy(x => x.SortOrder);
+                                   .OrderBy(x => x.Value.SortOrder)
+                                   .Select(x => x.Value);
         }
 
         public IVariantGroup GetVariantGroup(string storeAlias, Guid key)
