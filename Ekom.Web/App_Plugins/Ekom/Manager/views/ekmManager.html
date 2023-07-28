@@ -25,7 +25,7 @@
 
             <div class="card">
               <strong>{{ grandTotal }}</strong>
-              Grand total
+              Payments total
             </div>
 
             <div class="card">
@@ -171,6 +171,34 @@
 
           <div class="ekmGrid__column">
 
+            <div class="card">
+              <h3>Most Sold Products</h3>
+
+              <div ng-if="loadingMostSoldProducts">
+                Retrieving top-sellers from our collection... Your patience is appreciated, this could take some time.
+              </div>
+              <div ng-if="!loadingMostSoldProducts">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>SKU</th>
+                      <th>Product</th>
+                      <th>Sold Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="product in mostsoldproducts | limitTo:20">
+                      <td>{{product.id}}</td>
+                      <td>{{product.sku}}</td>
+                      <td>{{product.title}}</td>
+                      <td>{{product.productCount}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
 
           </div>
 

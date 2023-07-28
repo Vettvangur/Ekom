@@ -3,12 +3,13 @@
 
   function controller($scope, $routeParams, notificationsService, resources, $location, $document, $filter) {
     $scope.loading = true;
+    $scope.loadingMostSoldProducts = true;
     $scope.result = {};
 
 
     var currentDate = new Date(); // get the current date
     var januaryFirstCurrentYear = new Date(currentDate.getFullYear(), 0, 1); // get January 1st of the current year
-    
+
     var dateFrom = januaryFirstCurrentYear.toISOString().substring(0, 10);
     var dateTo = currentDate.toISOString().substring(0, 10);
 
@@ -25,7 +26,8 @@
     $scope.dateTo = dateTo;
     $scope.selectedStore = {};
     $scope.stores = [];
-    
+    $scope.mostsoldproducts = [];
+
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
     var lastPathComponent = pathComponents[pathComponents.length - 1]; // get the last component
@@ -35,7 +37,7 @@
     $scope.location = lastPathComponent;
 
     var tabsElement = document.getElementById('ekmNavigationTabs')
-     
+
     if (lastPathComponent === 'orders' || lastPathComponent === 'analytics') {
 
       var allTabs = tabsElement.querySelectorAll('uui-tab')
@@ -86,7 +88,7 @@
 
           setTimeout(function () {
             $scope.DatePickers();
-          }, 50); 
+          }, 50);
 
         }, function errorCallback(data) {
           $scope.loading = false;
@@ -111,7 +113,7 @@
 
       resources.Stores()
         .then(function (result) {
-          
+
           $scope.stores = result.data;
 
           $scope.store = $scope.stores[0];
@@ -140,7 +142,7 @@
         .then(function (result) {
 
           var orderInfo = result.data;
-          
+
           var shippingAddress = {};
           var sameAsShipping = orderInfo.customerInformation.shipping;
           if (
@@ -164,7 +166,7 @@
             editModel: model,
             show: true,
             submit: function (submitModel) {
-  
+
             },
             close: function (oldModel) {
               $scope.CloseModal();
@@ -250,16 +252,18 @@
           notificationsService.error("Error", "Error on chart data.");
         });
 
-      resources.MostPopularProducts()
+      resources.MostSoldProducts()
         .then(function (result) {
 
-          console.log(result.data);
+          $scope.loadingMostSoldProducts = false;
+
+          $scope.mostsoldproducts = result.data;
 
         }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on most popular products data.");
+          $scope.loadingMostSoldProducts = false;
+          notificationsService.error("Error", "Error on most sold products data.");
         });
-      
+
     };
 
     $scope.renderChart = function (chartId, labels, dataset1, dataset2) {
@@ -370,7 +374,7 @@
       if (dropdownId === 'dropdownStatusList') {
         $scope.orderStatus = status;
       }
-      
+
       $scope.GetData();
     };
 
@@ -430,7 +434,7 @@
     "notificationsService",
     "Ekom.Manager.Resources",
     "$location",
-    "$document", 
+    "$document",
     "$filter",
     controller
   ]);

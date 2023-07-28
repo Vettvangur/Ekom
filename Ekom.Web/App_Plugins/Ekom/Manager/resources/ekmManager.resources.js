@@ -39,12 +39,12 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
           url: url
         });
       },
-      MostPopularProducts: function () {
-        var url = this.baseUrl + 'MostPopularProducts' + querystring;
+      MostSoldProducts: function () {
+        var url = this.baseUrl + 'MostSoldProducts';
         return $http({
           method: 'GET',
           url: url
         });
-      } 
+      }
     };
   });
