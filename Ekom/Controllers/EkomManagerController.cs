@@ -6,22 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Controllers
 {
-
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Reliability",
-        "CA2007:Consider calling ConfigureAwait on the awaited task",
-        Justification = "Async controller actions don't need ConfigureAwait")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Style",
-        "VSTHRD200:Use \"Async\" suffix for async methods",
-        Justification = "Async controller action")]
-
     [Route("ekom/manager")]
     public class EkomManagerController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
         public EkomManagerController(ManagerRepository repo)
         {
             _repo = repo;
@@ -57,6 +44,15 @@ namespace Ekom.Controllers
         public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
             return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,page, pageSize);
+        }
+
+        [HttpGet]
+        [Route("MostSoldProducts")]
+        [UmbracoUserAuthorize]
+        [ResponseCache(Duration = 60 * 60 * 24)]
+        public async Task<List<MostSoldProduct>> GetMostSoldProducts()
+        {
+            return await _repo.MostSoldProducts();
         }
 
         [HttpGet]

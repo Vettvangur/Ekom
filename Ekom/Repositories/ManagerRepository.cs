@@ -64,58 +64,15 @@ namespace Ekom.Repositories
 
         public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
         {
-            var sqlBuilder = new StringBuilder("SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders");
-            var sqlTotalBuilder = new StringBuilder("SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders");
-
-            if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
-            {
-                var where = " WHERE PaidDate >= @startDate AND PaidDate <= @endDate";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            } else
-            {
-                var where = " WHERE CreateDate >= @startDate AND CreateDate <= @endDate";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            }
-
-            if (!string.IsNullOrEmpty(query))
-            {
-                var where = " AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            }
-            if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
-            {
-                var where = " AND OrderStatusCol = @orderStatus";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            } else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
-            {
-                var where = " AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            }
-            if (!string.IsNullOrEmpty(store))
-            {
-                var where = " AND StoreAlias = @store";
-                sqlBuilder.Append(where);
-                sqlTotalBuilder.Append(where);
-            }
-
+            string whereClause = GenerateWhereClause(orderStatus, query, store);
+            
+            var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+            var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
+            
             sqlBuilder.Append(" ORDER BY ReferenceId desc");
 
-            int _page;
-            int _pageSize;
-            if (!string.IsNullOrEmpty(page) && int.TryParse(page, out _page) && !string.IsNullOrEmpty(pageSize) && int.TryParse(pageSize, out _pageSize))
-            {
-               
-            }
-            else
-            {
-                _page = 1;
-                _pageSize = 30;
-            }
+            int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
+            int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
 
             sqlBuilder.Append(" OFFSET (" + _page + " - 1) * " + _pageSize + " ROWS\r\nFETCH NEXT " + _pageSize + " ROWS ONLY;");
 
@@ -148,6 +105,74 @@ namespace Ekom.Repositories
             }
         }
 
+        private string GenerateWhereClause(string orderStatus, string query, string store)
+        {
+            StringBuilder whereClause = new StringBuilder();
+
+            if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
+            {
+                whereClause.Append(" WHERE PaidDate >= @startDate AND PaidDate <= @endDate");
+            }
+            else
+            {
+                whereClause.Append(" WHERE CreateDate >= @startDate AND CreateDate <= @endDate");
+            }
+
+            if (!string.IsNullOrEmpty(query))
+            {
+                whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
+            }
+
+            if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
+            {
+                whereClause.Append(" AND OrderStatusCol = @orderStatus");
+            }
+            else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
+            {
+                whereClause.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')");
+            }
+
+            if (!string.IsNullOrEmpty(store))
+            {
+                whereClause.Append(" AND StoreAlias = @store");
+            }
+
+            return whereClause.ToString();
+        }
+
+        public async Task<List<MostSoldProduct>> MostSoldProducts()
+        {
+            var sqlBuilder = new StringBuilder(@"SELECT 
+	            MAX(OL.SKU) as SKU,
+                MAX(OL.Title) as Title,
+	            OL.Id,
+	            COUNT(*) AS ProductCount
+            FROM 
+                EkomOrders O
+            CROSS APPLY 
+                OPENJSON (O.OrderInfo, '$.OrderLines')
+                WITH (
+                    SKU nvarchar(200) '$.Product.SKU',
+                    Title nvarchar(200) '$.Product.Title',
+		            Id int '$.Product.Id'
+                ) AS OL
+            WHERE 
+                (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed') AND
+                O.OrderInfo IS NOT NULL
+                AND LTRIM(RTRIM(O.OrderInfo)) <> ''
+            GROUP BY
+	            OL.Id
+            ORDER BY 
+                ProductCount DESC");
+
+            using (var db = _databaseFactory.GetDatabase())
+            {
+                var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString());
+
+                return products;
+            }
+        }
+
         public object GetStatusList()
         {
             var items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
@@ -158,6 +183,5 @@ namespace Ekom.Repositories
                 label = string.Concat(x.ToString().Select(x => Char.IsUpper(x) ? " " + x : x.ToString()))
             });
         }
-
     }
 }
