@@ -68,8 +68,6 @@ namespace Ekom.Repositories
             
             var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
             var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
-            
-            sqlBuilder.Append(" ORDER BY ReferenceId desc");
 
             int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
             int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;

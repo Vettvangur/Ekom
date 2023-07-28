@@ -247,8 +247,19 @@
 
         }, function errorCallback(data) {
           $scope.loading = false;
-          notificationsService.error("Error", "Error on RevenuChart data.");
+          notificationsService.error("Error", "Error on chart data.");
         });
+
+      resources.MostPopularProducts()
+        .then(function (result) {
+
+          console.log(result.data);
+
+        }, function errorCallback(data) {
+
+          notificationsService.error("Error", "Error on most popular products data.");
+        });
+      
     };
 
     $scope.renderChart = function (chartId, labels, dataset1, dataset2) {
