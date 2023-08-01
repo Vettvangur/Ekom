@@ -6,6 +6,7 @@ using Ekom.Utilities;
 using LinqToDB;
 using LinqToDB.Data;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Text;
 
 namespace Ekom.Repositories
@@ -138,13 +139,38 @@ namespace Ekom.Repositories
             return whereClause.ToString();
         }
 
-        public async Task<List<MostSoldProduct>> MostSoldProducts()
+        public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
         {
+            var whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''";
+
+            if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
+            {
+                whereClause += " AND PaidDate >= @startDate AND PaidDate <= @endDate";
+            }
+            else
+            {
+                whereClause +=" AND CreateDate >= @startDate AND CreateDate <= @endDate";
+            }
+
+            if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
+            {
+                whereClause += " AND OrderStatusCol = @orderStatus";
+            }
+            else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
+            {
+                whereClause += " AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')";
+            }
+
+            if (!string.IsNullOrEmpty(store))
+            {
+                whereClause += " AND StoreAlias = @store";
+            }
+
             var sqlBuilder = new StringBuilder(@"SELECT 
-	            MAX(OL.SKU) as SKU,
+                MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
-	            OL.Id,
-	            COUNT(*) AS ProductCount
+                OL.Id,
+                COUNT(*) AS ProductCount
             FROM 
                 EkomOrders O
             CROSS APPLY 
@@ -152,16 +178,18 @@ namespace Ekom.Repositories
                 WITH (
                     SKU nvarchar(200) '$.Product.SKU',
                     Title nvarchar(200) '$.Product.Title',
-		            Id int '$.Product.Id'
+                    Id int '$.Product.Id'
                 ) AS OL
-            WHERE 
-                (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed') AND
-                O.OrderInfo IS NOT NULL
-                AND LTRIM(RTRIM(O.OrderInfo)) <> ''
-            GROUP BY
-	            OL.Id
-            ORDER BY 
-                ProductCount DESC");
+            WHERE ");
+
+            // Add the where clause
+            sqlBuilder.Append(whereClause);
+
+            sqlBuilder.Append(@" 
+                GROUP BY
+                    OL.Id
+                ORDER BY 
+                    ProductCount DESC");
 
             using (var db = _databaseFactory.GetDatabase())
             {

@@ -52,11 +52,9 @@
 }
 
 .ekmManager .ekmManager__filters {
-    float: left;
     display: flex;
     align-items: center;
     width: 100%;
-    margin-bottom: 15px;
 }
 
 .ekmManager .ekmManager__filter {

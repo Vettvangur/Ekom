@@ -50,9 +50,9 @@ namespace Ekom.Controllers
         [Route("MostSoldProducts")]
         [UmbracoUserAuthorize]
         [ResponseCache(Duration = 60 * 60 * 24)]
-        public async Task<List<MostSoldProduct>> GetMostSoldProducts()
+        public async Task<List<MostSoldProduct>> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
         {
-            return await _repo.MostSoldProducts();
+            return await _repo.MostSoldProducts(start, end, store, orderStatus);
         }
 
         [HttpGet]
@@ -75,11 +75,11 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("charts")]
         [UmbracoUserAuthorize]
-        public async Task<ChartData> GetChartsData(DateTime start, DateTime end, string orderStatus)
+        public async Task<ChartData> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
         {
             var chartData = new ChartData();
 
-            var orders =  await _repo.SearchOrdersAsync(start, end, "", "", orderStatus, "1", "99999");
+            var orders =  await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999");
 
             var chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
 

@@ -1,4 +1,4 @@
-<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
+﻿<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
   <div class="umb-editor-header">
     <div class="flex items-center" style="height:100%;">
       <img src="/App_Plugins/Ekom/Manager/assets/ekomLogo.png" class="ekmManager__logo" alt="Ekom Ecommerce" />
@@ -91,43 +91,45 @@
               </div>
 
             </div>
-            <div class="umb-table" style="width:100%;">
-              <div class="umb-table-head">
-                <div class="umb-table-row">
-                  <div class="umb-table-cell not-fixed"></div>
-                  <div class="umb-table-cell">Order Number</div>
-                  <div class="umb-table-cell">Status</div>
-                  <div class="umb-table-cell">Name</div>
-                  <div class="umb-table-cell">Store</div>
-                  <div class="umb-table-cell">Created</div>
-                  <div class="umb-table-cell">Payment</div>
-                </div>
-              </div>
-              <div class="umb-table-body">
-                <div ng-repeat="order in result.orders" class="umb-table-row">
-                  <div class="umb-table-cell not-fixed">
-                    <button class="btn umb-button__button btn-success" ng-click="ViewOrder(order)">View</button>
-                  </div>
-                  <div class="umb-table-cell">{{order.referenceId}}</div>
-                  <div class="umb-table-cell"><uui-tag color="default">{{order.orderStatus}}</uui-tag></div>
-                  <div class="umb-table-cell">{{order.customerName}}</div>
-                  <div class="umb-table-cell">{{order.storeAlias}}</div>
-                  <div class="umb-table-cell">{{order.createDate | date : "dd.MM.y HH:mm" }}</div>
-                  <div class="umb-table-cell">{{order.formattedTotal }}</div>
-                </div>
-                <div ng-if="result.orders.length <= 0">
-                  <div class="umb-table-cell">No orders found</div>
-                </div>
+          </div>
+
+          <div class="umb-table" style="width:100%;">
+            <div class="umb-table-head">
+              <div class="umb-table-row">
+                <div class="umb-table-cell not-fixed"></div>
+                <div class="umb-table-cell">Order Number</div>
+                <div class="umb-table-cell">Status</div>
+                <div class="umb-table-cell">Name</div>
+                <div class="umb-table-cell">Store</div>
+                <div class="umb-table-cell">Created</div>
+                <div class="umb-table-cell">Payment</div>
               </div>
             </div>
-            <div class="flex justify-center">
-              <div class="umb-pagination pagination">
-                <ul>
-                  <li ng-repeat="n in pageRange()" ng-class="{active: n == page}">
-                    <button class="btn-reset" ng-disabled="n == page" ng-click="setPage(n)">{{n}}</button>
-                  </li>
-                </ul>
+            <div class="umb-table-body">
+              <div ng-repeat="order in result.orders" class="umb-table-row">
+                <div class="umb-table-cell not-fixed">
+                  <button class="btn umb-button__button btn-success" ng-click="ViewOrder(order)">View</button>
+                </div>
+                <div class="umb-table-cell">{{order.referenceId}}</div>
+                <div class="umb-table-cell"><uui-tag color="default">{{order.orderStatus}}</uui-tag></div>
+                <div class="umb-table-cell">{{order.customerName}}</div>
+                <div class="umb-table-cell">{{order.storeAlias}}</div>
+                <div class="umb-table-cell">{{order.createDate | date : "dd.MM.y HH:mm" }}</div>
+                <div class="umb-table-cell">{{order.formattedTotal }}</div>
               </div>
+              <div ng-if="result.orders.length <= 0">
+                <div class="umb-table-cell">No orders found</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-center">
+            <div class="umb-pagination pagination">
+              <ul>
+                <li ng-repeat="n in pageRange()" ng-class="{active: n == page}">
+                  <button class="btn-reset" ng-disabled="n == page" ng-click="setPage(n)">{{n}}</button>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -136,72 +138,123 @@
 
       <div ng-if="location == 'analytics'">
 
-        <div class="ekmGrid">
+        <div class="umb-sub-header">
+          <div class="ekmManager__filters">
 
-          <div class="ekmGrid__column">
+            <div class="ekmManager__filter">
+              <label>Order Status:</label>
+              <div class="btn-group dropdown-toggle">
+                <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStatusList')">
+                  {{labelDropdown('dropdownStatusList','Completed Orders')}}
+                  <span class="caret" aria-hidden="true"></span>
+                </div>
+                <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStatusList')">
+                  <li>
+                    <button type="button" ng-click="selectDropdown('dropdownStatusList', 'CompletedOrders')">Completed Orders</button>
+                  </li>
+                  <li ng-repeat="status in statusList">
+                    <button type="button" ng-click="selectDropdown('dropdownStatusList',status.value)">{{ status.label }}</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
-            <div class="card">
-              <h3>Sales Revenue</h3>
-              <canvas id="chartRevenue"></canvas>
+            <div class="ekmManager__filter">
+              <label for="dateFrom">Date From:</label>
+              <uui-input type="date" id="dateFrom" value="{{ dateFrom }}" label="Date From" name="dateFrom" class="ekmManager__datepicker"></uui-input>
+            </div>
+
+            <div class="ekmManager__filter">
+              <label for="dateTo">Date To:</label>
+              <uui-input type="date" id="dateTo" value="{{ dateTo }}" label="Date To" name="dateTo" class="ekmManager__datepicker"></uui-input>
+            </div>
+
+            <div class="ekmManager__filter">
+              <label>Store:</label>
+              <div class="btn-group dropdown-toggle">
+                <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStores')">
+                  {{labelDropdown('dropdownStores','')}}
+                  <span class="caret" aria-hidden="true"></span>
+                </div>
+                <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStores')">
+                  <li ng-repeat="store in stores">
+                    <button type="button" ng-click="selectDropdown('dropdownStores',store.alias)">{{ store.title }}</button>
+                  </li>
+                </ul>
+              </div>
             </div>
 
           </div>
-
-          <div class="ekmGrid__column">
-
-            <div class="card">
-              <h3>Total Orders</h3>
-              <canvas id="chartOrders"></canvas>
-            </div>
-
-          </div>
-
         </div>
 
-        <div class="ekmGrid">
+        <div>
+          <div class="ekmGrid">
 
-          <div class="ekmGrid__column">
+            <div class="ekmGrid__column">
 
-            <div class="card">
-              <h3>Average Order Value (AOV)</h3>
-              <canvas id="chartAvarage"></canvas>
+              <div class="card">
+                <h3>Sales Revenue</h3>
+                <canvas id="chartRevenue"></canvas>
+              </div>
+
             </div>
 
-          </div>
+            <div class="ekmGrid__column">
 
-          <div class="ekmGrid__column">
-
-            <div class="card">
-              <h3>Most Sold Products</h3>
-
-              <div ng-if="loadingMostSoldProducts">
-                Retrieving top-sellers from our collection... Your patience is appreciated, this could take some time.
-              </div>
-              <div ng-if="!loadingMostSoldProducts">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>SKU</th>
-                      <th>Product</th>
-                      <th>Sold Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr ng-repeat="product in mostsoldproducts | limitTo:20">
-                      <td>{{product.id}}</td>
-                      <td>{{product.sku}}</td>
-                      <td>{{product.title}}</td>
-                      <td>{{product.productCount}}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="card">
+                <h3>Total Orders</h3>
+                <canvas id="chartOrders"></canvas>
               </div>
 
             </div>
 
           </div>
 
+          <div class="ekmGrid">
+
+            <div class="ekmGrid__column">
+
+              <div class="card">
+                <h3>Average Order Value (AOV)</h3>
+                <canvas id="chartAvarage"></canvas>
+              </div>
+
+            </div>
+
+            <div class="ekmGrid__column">
+
+              <div class="card">
+                <h3>Most Sold Products</h3>
+
+                <div ng-if="loadingMostSoldProducts">
+                  Retrieving top-sellers from our collection... Your patience is appreciated, this could take some time.
+                </div>
+                <div ng-if="!loadingMostSoldProducts">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Sold Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr ng-repeat="product in mostsoldproducts | limitTo:20">
+                        <td>{{product.id}}</td>
+                        <td>{{product.sku}}</td>
+                        <td>{{product.title}}</td>
+                        <td>{{product.productCount}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
         </div>
 
       </div>

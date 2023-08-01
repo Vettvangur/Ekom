@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  function controller($scope, $routeParams, notificationsService, resources, $location, $document, $filter) {
+  function controller($scope, notificationsService, resources, $location, $document) {
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
     $scope.result = {};
@@ -231,7 +231,9 @@
 
     $scope.analytics = function () {
 
-      resources.Charts('?start=2000-01-01&end=2030-01-01&orderStatus=CompletedOrders')
+      var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store.alias;
+
+      resources.Charts(query)
         .then(function (result) {
 
 
@@ -252,7 +254,7 @@
           notificationsService.error("Error", "Error on chart data.");
         });
 
-      resources.MostSoldProducts()
+      resources.MostSoldProducts(query)
         .then(function (result) {
 
           $scope.loadingMostSoldProducts = false;
@@ -375,7 +377,12 @@
         $scope.orderStatus = status;
       }
 
-      $scope.GetData();
+      if ($scope.location === 'analytics') {
+        $scope.analytics();
+      } else {
+        $scope.GetData();
+      }
+      
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -410,7 +417,6 @@
       }
     });
 
-
     angular.element(document).ready(function () {
       // Init Orders
       if ($scope.location === 'orders') {
@@ -422,6 +428,8 @@
       if ($scope.location === 'analytics') {
         setTimeout(function () {
           $scope.analytics();
+          $scope.GetStores();
+          $scope.GetStatusList();
         }, 250);
       }
     });
@@ -430,12 +438,10 @@
 
   angular.module("umbraco").controller("Ekom.Manager.Dashboard", [
     "$scope",
-    "$routeParams",
     "notificationsService",
     "Ekom.Manager.Resources",
     "$location",
     "$document",
-    "$filter",
     controller
   ]);
 })();

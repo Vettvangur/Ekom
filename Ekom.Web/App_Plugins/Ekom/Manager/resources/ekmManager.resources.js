@@ -39,8 +39,8 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
           url: url
         });
       },
-      MostSoldProducts: function () {
-        var url = this.baseUrl + 'MostSoldProducts';
+      MostSoldProducts: function (querystring) {
+        var url = this.baseUrl + 'MostSoldProducts' + querystring;
         return $http({
           method: 'GET',
           url: url
