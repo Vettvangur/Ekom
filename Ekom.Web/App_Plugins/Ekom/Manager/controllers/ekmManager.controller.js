@@ -67,7 +67,11 @@
             $scope.dateTo = e.target.value;
           }
 
-          $scope.GetData();
+          if ($scope.location === 'analytics') {
+            $scope.analytics();
+          } else {
+            $scope.GetData();
+          }
 
         });
       }
@@ -386,7 +390,7 @@
       } else {
         $scope.GetData();
       }
-      
+
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -426,6 +430,7 @@
       if ($scope.location === 'orders') {
         $scope.GetStores();
         $scope.GetStatusList();
+
       }
 
       // Init Analytics
@@ -433,6 +438,7 @@
         setTimeout(function () {
           $scope.GetStores();
           $scope.GetStatusList();
+          $scope.DatePickers();
         }, 250);
       }
     });
