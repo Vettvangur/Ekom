@@ -17,6 +17,7 @@
     $scope.grandTotal = 0;
     $scope.averageAmount = 0;
     $scope.page = 1;
+    $scope.pageMostSoldProducts = 1;
     $scope.query = "";
     $scope.statusList = [];
     $scope.visibleDropdowns = {};
@@ -199,16 +200,25 @@
       $scope.GetData();
     };
 
+    $scope.setPageMostSoldProducts = function (page) {
+      $scope.pageMostSoldProducts = page.toString().replace('...', '');
+    };
+
     $scope.search = function (query) {
       $scope.query = query;
       $scope.GetData();
+    };
+
+    $scope.mostSoldProductsPaged = function () {
+      var start = $scope.pageMostSoldProducts * 20,
+        end = start + 20;
+      return $scope.mostsoldproducts.slice(start, end);
     };
 
     $scope.pageRange = function () {
       var rangeSize = 5;
       var ret = [];
       var start;
-
       if ($scope.page <= Math.floor(rangeSize / 2)) {
         start = 1;
       } else if (parseInt($scope.page) + Math.floor(rangeSize / 2) >= $scope.result.totalPages) {
@@ -227,6 +237,41 @@
       // If last page is not already in the list, add it.
       if (ret[ret.length - 1] < $scope.result.totalPages) {
         ret.push('...' + $scope.result.totalPages);
+      }
+
+      // If first page is not already in the list, add it at the beginning.
+      if (ret[0] > 1) {
+        ret.unshift('...' + 1);
+      }
+
+      return ret;
+    };
+
+    $scope.pageRangeMostSoldProducts = function () {
+      var rangeSize = 5;
+      var ret = [];
+      var start;
+      var totalPages = Math.floor($scope.mostsoldproducts.length / 20);
+      var page = $scope.pageMostSoldProducts;
+
+      if (page <= Math.floor(rangeSize / 2)) {
+        start = 1;
+      } else if (parseInt(page) + Math.floor(rangeSize / 2) >= totalPages) {
+        start = Math.max(totalPages - rangeSize + 1, 1);
+      } else {
+        start = page - Math.floor(rangeSize / 2);
+      }
+
+      for (var i = 0; i < rangeSize; i++) {
+        var pageNumber = start + i;
+        if (pageNumber <= totalPages) {
+          ret.push(pageNumber);
+        }
+      }
+
+      // If last page is not already in the list, add it.
+      if (ret[ret.length - 1] < totalPages) {
+        ret.push('...' + totalPages);
       }
 
       // If first page is not already in the list, add it at the beginning.
@@ -384,13 +429,13 @@
       if (dropdownId === 'dropdownStatusList') {
         $scope.orderStatus = status;
       }
-
+      
       if ($scope.location === 'analytics') {
         $scope.analytics();
       } else {
         $scope.GetData();
       }
-
+      
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -430,7 +475,7 @@
       if ($scope.location === 'orders') {
         $scope.GetStores();
         $scope.GetStatusList();
-
+        
       }
 
       // Init Analytics
