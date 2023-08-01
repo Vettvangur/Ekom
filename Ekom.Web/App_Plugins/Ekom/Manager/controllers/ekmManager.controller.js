@@ -119,7 +119,11 @@
           $scope.store = $scope.stores[0];
           $scope.labelDropdowns['dropdownStores'] = $scope.store.alias;
 
-          $scope.GetData();
+          if ($scope.location === 'analytics') {
+            $scope.analytics();
+          } else {
+            $scope.GetData();
+          }
 
         }, function errorCallback(data) {
 
@@ -427,7 +431,6 @@
       // Init Analytics
       if ($scope.location === 'analytics') {
         setTimeout(function () {
-          $scope.analytics();
           $scope.GetStores();
           $scope.GetStatusList();
         }, 250);

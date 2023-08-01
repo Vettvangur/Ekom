@@ -166,6 +166,14 @@ namespace Ekom.Repositories
                 whereClause += " AND StoreAlias = @store";
             }
 
+            var param = new
+            {
+                startDate = start,
+                endDate = end,
+                orderStatus,
+                store
+            };
+
             var sqlBuilder = new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
@@ -193,7 +201,7 @@ namespace Ekom.Repositories
 
             using (var db = _databaseFactory.GetDatabase())
             {
-                var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString());
+                var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
 
                 return products;
             }
