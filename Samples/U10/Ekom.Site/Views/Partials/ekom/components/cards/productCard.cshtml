@@ -1,0 +1,44 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    var product = (IProduct)ViewData["product"];
+
+    if (product == null) { return; }
+
+    var images = product.Images;
+
+}
+
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div class="aspect-h-4 aspect-w-3 bg-gray-200 sm:aspect-none group-hover:opacity-75 sm:h-96">
+        @if (images.Any())
+        {
+            <picture class="h-full w-full object-cover object-center sm:h-full sm:w-full">
+                <source media="(max-width: 576px)" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2">
+                <img alt="@product.Title" loading="lazy" src="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7" srcset="@(images.First().Url)?width=278&height=384&rmode=BoxPad&bgcolor=f7f7f7 x1, @(images.First().Url)?width=556&height=768&rmode=BoxPad&bgcolor=f7f7f7 x2" style="">
+            </picture>
+        }
+    </div>
+    <div class="flex flex-1 flex-col space-y-2 p-4">
+        <h3 class="text-sm font-medium text-gray-900">
+            <a href="@product.Url">
+                <span aria-hidden="true" class="absolute inset-0"></span>
+                @product.Title
+            </a>
+        </h3>
+        <p class="text-sm text-gray-500">@product.Summary</p>
+        <h4 class="sr-only">Available colors</h4>
+        <ul role="list" class="mt-auto flex space-x-3 pt-4 pb-4">
+            <li class="h-4 w-4 rounded-full border border-black border-opacity-10" style="background-color:#4B5563">
+                <span class="sr-only">Matte Black</span>
+            </li>
+            <li class="h-4 w-4 rounded-full border border-black border-opacity-10" style="background-color:#FEF3C7">
+                <span class="sr-only">Natural</span>
+            </li>
+
+        </ul>
+        <div class="flex flex-1 flex-col justify-end">
+            <p class="text-base font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+        </div>
+    </div>
+</div>

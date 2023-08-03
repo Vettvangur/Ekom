@@ -6,57 +6,71 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
   $scope.fieldAlias = $scope.model.alias;
 
-  //$scope.currencies = [];
+  let currentPrices = angular.copy($scope.model.value);
+
+  // Backward Compatability
+  for (let key in currentPrices) {
+    if (key === 'undefined') {
+      delete currentPrices[key];
+    }
+  }
+
   $scope.stores = [];
+  $scope.prices = {};
+
+  var priceStructure = {};
 
   $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'Stores').then(function (results) {
 
     $scope.stores = results.data;
+    
+    // Backward Compatability
+    // {"Store":{"0":{"Price":32}}}
+    // {"values":{"IS":"1355"},"dtdGuid":"26cc6028-5c7f-49ca-bd3c-145709efd777"}
+    if (currentPrices !== null || currentPrices !== undefined || currentPrices !== '') {
 
-    // Set default prices value from existing value
-    if (typeof $scope.model.value === 'object' && $scope.model.value !== null && $scope.model.value !== '') {
-      // If model value is json then return
+      var formatValid = checkFormat(currentPrices);
 
-      if ($scope.model.value.hasOwnProperty('values')) {
+      if (!formatValid) {
+        console.log('Not valid format on price object');
 
-        var temp1 = $scope.model.value.values;
+        var transformedObject = transformObject(currentPrices, $scope.stores);
 
-        // Not sure that this applies to current implementation of SetPriceStoreValue
-        // Wrapping in try-catch
-        try {
-          Object.keys(temp1).forEach(key => temp1[key] = JSON.parse(temp1[key]));
-        }
-        catch { }
-
-        $scope.prices = temp1;
-
-      } else {
-        $scope.prices = $scope.model.value;
-      }
-
-    } else {
-      // If model value is not json then return as decimal
-      if ($scope.model.value !== undefined) {
-        $scope.prices = $scope.model.value.replace(/,/g, '.');
+        currentPrices = transformedObject;
       }
     }
 
-    // Backward Compatability if value is decimal and not json
-    if (isFinite($scope.prices)) {
+    $scope.stores.forEach((store, storeIndex) => {
 
-      $scope.prices = {};
+      priceStructure[store.alias] = [];
+      
+      store.currencies.forEach((currency, currencyIndex) => {
 
-      for (s = 0; $scope.stores.length > s; s += 1) {
+        priceStructure[store.alias].push({
+          Currency: currency.currencyValue,
+          Price: 0
+        });
 
-        let store = $scope.stores[s];
+      });
 
-        $scope.prices[store.alias] = [];
+    });
 
-        for (c = 0; store.currencies.length > c; c += 1) {
+    //$scope.prices = priceStructure;
+    
+    if (currentPrices !== null || currentPrices !== undefined || currentPrices !== '') {
 
-          $scope.prices[store.alias].push({
-            currency: store.currencies[c].currencyValue,
-            price: parseFloat($scope.model.value.replace(/,/g, '.'))
+      for (let storeAlias in currentPrices) {
+
+        const store = $scope.stores.find(store => store.alias === storeAlias)
+
+        if (store) {
+          
+          var priceObjs = currentPrices[storeAlias];
+
+          priceObjs.forEach((obj) => {
+
+           updatePrice(priceStructure, storeAlias, obj.Currency, obj.Price);
+
           });
 
         }
@@ -65,66 +79,69 @@ angular.module("umbraco").controller("Ekom.Price", function ($scope, $http, $rou
 
     }
 
-    // Reset Prices if currency is not included in the current model
-    Object.entries($scope.prices).forEach(([storeAlias, storeArr], priceIndex) => {
-      const store = $scope.stores.find(store => store.alias === storeAlias)
-      if (store) {
-
-        const validCurr = store.currencies.map(curr => curr.currencyValue);
-        const storeArrValues = storeArr.map(curr => curr.Currency);
-
-        storeArr.forEach((priceCurrency, i) => {
-
-          if (!validCurr.includes(priceCurrency.Currency)) {
-
-            $scope.prices[storeAlias].splice($scope.prices[storeAlias].indexOf($scope.prices[storeAlias][i]), 1);
-
-          }
-
-        })
-
-        validCurr.forEach((curr, i) => {
-
-          if (!storeArrValues.includes(curr)) {
-
-            $scope.prices[store.alias].push({
-              Currency: curr,
-              Price: 0
-            });
-
-          }
-
-        })
-
-      }
-    })
-
-    if ($scope.prices === 'null' || $scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
-
-      $scope.prices = {};
-
-      for (s = 0; $scope.stores.length > s; s += 1) {
-
-        let store = $scope.stores[s];
-
-        $scope.prices[store.Alias] = [];
-
-        for (c = 0; store.Currencies.length > c; c += 1) {
-
-          $scope.prices[store.Alias].push({
-            Currency: store.Currencies[c].CurrencyValue,
-            Price: 0
-          });
-
-        }
-
-      }
-
-    }
+    $scope.prices = priceStructure;
   });
 
-  $scope.$on("formSubmitting", function () {
+  function checkFormat(obj) {
+    const keys = Object.keys(obj);
+    for (let key of keys) {
+      if (obj[key] && typeof obj[key] === 'object') {
+        for (let i = 0; i < obj[key].length; i++) {
+          let subObj = obj[key][i];
+          if (!subObj.hasOwnProperty('Price') || !subObj.hasOwnProperty('Currency')) {
+            return false;
+          }
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
 
+  function transformObject(obj, stores) {
+    if (checkFormat(obj) === false) {
+      const keys = Object.keys(obj);
+      for (let key of keys) {
+        if (obj[key] && typeof obj[key] === 'object') {
+          const subKeys = Object.keys(obj[key]);
+          const prices = subKeys.map((subKey) => {
+            let currency = stores[0].currencies[0].currencyValue; // assuming "en-US" as the default currency
+            if (obj[key][subKey].Price !== undefined) { // handle the case when Price is nested
+              return {
+                "Currency": currency,
+                "Price": obj[key][subKey].Price
+              };
+            } else { // handle the case when Price is direct value
+              return {
+                "Currency": currency,
+                "Price": obj[key][subKey]
+              };
+            }
+          });
+          let result = {};
+          result[key] = prices;
+          return result;
+        }
+      }
+    }
+    return obj;
+  }
+  
+  function updatePrice(obj, storeName, currency, newPrice) {
+    // Check if the storeName exists in the object
+    if (obj[storeName]) {
+      // Loop through the array for the matching store
+      for (let i = 0; i < obj[storeName].length; i++) {
+        // If the currency matches, update the price
+        if (obj[storeName][i].Currency === currency) {
+          obj[storeName][i].Price = newPrice;
+        }
+      }
+    }
+    return obj;
+  }
+  $scope.$on("formSubmitting", function () {
     $scope.model.value = $scope.prices;
   });
 

@@ -252,11 +252,9 @@ namespace Ekom.Models
         {
             get
             {
-                var ci = new CultureInfo(_currencyCulture.CurrencyValue);
-                ci = ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS" ? Configuration.IsCultureInfo : ci;
+                var ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
+                var value = FormatCurrencyValue(ci);
 
-                var value = Value.ToString(_currencyCulture.CurrencyFormat, ci);
-                
                 var model = new CurrencyStringEventArgs()
                 {
                     CultureInfo = ci,
@@ -270,6 +268,18 @@ namespace Ekom.Models
             }
         }
 
-    }
+        private CultureInfo CreateCultureInfo(string cultureValue)
+        {
+            var ci = new CultureInfo(cultureValue);
+            return ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
+                ? Configuration.IsCultureInfo
+                : ci;
+        }
 
+        private string FormatCurrencyValue(CultureInfo cultureInfo)
+        {
+            return Value.ToString(_currencyCulture.CurrencyFormat, cultureInfo);
+        }
+
+    }
 }

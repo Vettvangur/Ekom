@@ -1,0 +1,130 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    var root = Model.GetRootNode();
+
+    string companyName = root.Value<string>("companyName");
+    string companyTagline = root.Value<string>("companyTagline");
+    string pageTitle = Model.GetTitle();
+    string websiteTitle = $"{pageTitle}{(!string.IsNullOrEmpty(companyName) ? $" - {companyName}" : "")}{(!string.IsNullOrEmpty(companyTagline) ? $" - {companyTagline}" : "")}";
+
+    string socialImage = "/build/assets/default-fbshare.jpg";
+    string fbSize = "?width=1200&height=630&mode=crop";
+    string twSize = "?width=1200&height=675&mode=crop";
+
+    if (Model.HasProperty("image") && Model.HasValue("image"))
+    {
+        var media = Model.Value<IPublishedContent>("image");
+
+        if (media != null)
+        {
+            socialImage = media.Url();
+        }
+    }
+    else 
+    {
+        if (Model.HasValue("socialImage"))
+        {
+            var media = Model.Value<IPublishedContent>("socialImage");
+    
+            if (media != null)
+            {
+                socialImage = media.Url();
+            }
+        }
+        else if (!Model.HasValue("socialImage") && root.HasValue("socialImage"))
+        {
+            var media = root.Value<IPublishedContent>("socialImage");
+    
+            if (media != null)
+            {
+                socialImage = media.Url();
+            }
+        }
+    }
+
+    string description = Model.HasValue("metaDescription") ? Model.Value<string>("metaDescription") : "";
+    string socialDescription = Model.HasValue("socialDescription") ? Model.Value<string>("socialDescription") : description;
+    string url = Model.Url(mode: UrlMode.Absolute);
+    string host = $"{HttpContextAccessor.HttpContext.Request.Scheme}://{HttpContextAccessor.HttpContext.Request.Host}";
+
+    string socialTitle = Model.HasValue("socialTitle") ? $"{Model.Value("socialTitle")} - {companyName}" : $"{pageTitle} - {companyName}";
+
+    if (Model.Level == 1)
+    {
+        websiteTitle = $"{companyName}{(!string.IsNullOrEmpty(companyTagline) ? $" - {companyTagline}" : "")}";
+        socialTitle = !Model.HasValue("socialTitle") ? $"{companyName} {(!string.IsNullOrEmpty(companyTagline) ? $" - {companyTagline}" : "")}" : $"{Model.Value("socialTitle")} - {companyName}";
+    }
+    
+    if (Model.IsDocumentType("ekmProduct"))
+    {
+        var product = _catalog.GetProduct();
+
+        pageTitle = product.Title;
+
+        if (product != null)
+        {
+            websiteTitle = $"{pageTitle} - {companyName}{(!string.IsNullOrEmpty(companyTagline) ? $" - {companyTagline}" : "")}";
+            socialTitle = $"{pageTitle} - {companyName}";
+
+            var images = product.Images;
+            if (images.Any())
+            {
+                socialImage = images.FirstOrDefault().Url;
+            }
+        }
+    }
+
+    if (Model.IsDocumentType("ekmCategory"))
+    {
+        var category = _catalog.GetCategory();
+
+        if (category != null)
+        {
+            pageTitle = category.Title;
+            
+            websiteTitle = $"{pageTitle} - {companyName}{(!string.IsNullOrEmpty(companyTagline) ? $" - {companyTagline}" : "")}";
+            socialTitle = $"{pageTitle} - {companyName}";
+        }
+    }
+}
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>@websiteTitle</title>
+<meta name="description" content="@description">
+<meta name="author" content="@companyName">
+
+<meta property="og:title" content="@socialTitle">
+<meta property="og:type" content="website">
+<meta property="og:url" content="@url">
+@if (!string.IsNullOrEmpty(socialImage))
+{
+    <meta property="og:image" content="@host@socialImage@fbSize">
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+}
+<meta property="og:site_name" content="@companyName">
+<meta property="og:description" content="@socialDescription">
+
+<meta name="twitter:title" content="@socialTitle">
+<meta name="twitter:description" content="@socialDescription">
+
+@if (!string.IsNullOrEmpty(socialImage)) 
+{   
+    <meta name="twitter:image" content="@host@socialImage@twSize">
+    @*The card type, which will be one of “summary”, “summary_large_image”, “app”, or “player”.*@
+    <meta name="twitter:card" content="summary_large_image">
+}
+
+@if (
+   Model.Value<bool>("disableCrawling") ||
+   env.EnvironmentName != "Production"
+)
+{
+    <meta name="robots" content="noindex, nofollow">
+}
+
+<partial name="ekom/utility/fav" />

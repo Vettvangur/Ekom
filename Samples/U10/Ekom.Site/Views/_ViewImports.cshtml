@@ -8,9 +8,16 @@
 @using Ekom.API
 @using Ekom
 @using Ekom.Models;
+@using Ekom.Site;
 
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @addTagHelper *, Smidge
+
+
+@inject Umbraco.Cms.Core.Strings.IShortStringHelper ShortStringHelper
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment env
+
 @inject Smidge.SmidgeHelper SmidgeHelper
 @inject Order _order;
 @inject Catalog _catalog;

@@ -285,6 +285,7 @@ namespace Ekom.Models
                 // Use ID Instead of Key, Key is much slower.
                 return _variantGroupCache.Cache[Store.Alias]
                                         .Where(x => x.Value.ProductId == Id)
+                                        .OrderBy(x => x.Value.SortOrder)
                                         .Select(x => x.Value);
             }
         }

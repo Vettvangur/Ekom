@@ -1,7 +1,60 @@
 @using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
 @{
-	Layout = null;
+    Layout = null;
 }
 
-@RenderBody()
+<!doctype html>
+<html>
+<head>
+    <partial name="ekom/utility/meta" />
+
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        transparent: 'transparent',
+                        current: 'currentColor',
+                        indigo: {
+                            '100': '#ed0f0f',
+                            '200': '#ed0f0f',
+                            '300': '#ed0f0f',
+                            '400': '#ed0f0f',
+                            '500': '#ed0f0f',
+                            '600': '#ed0f0f',
+                            '700': '#ed0f0f',
+                            '800': '#ed0f0f',
+                            '900': '#ed0f0f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="bg-white">
+        <partial name="ekom/components/mobileMenu" />
+        
+        <header class="relative overflow-hidden">
+
+            <partial name="ekom/components/topNavigation" />
+
+            @RenderSection("Header", false)
+        </header>
+
+        @RenderSection("Main", true)
+
+        <partial name="ekom/sections/footer" />
+    </div>
+
+</body>
+</html>
+
+

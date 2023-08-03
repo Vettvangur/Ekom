@@ -60,6 +60,8 @@ namespace Ekom.Site
 #pragma warning restore IDE0022 // Use expression body for methods
 
             //services.AddApplicationInsightsTelemetry(_config["ApplicationInsights:ConnectionString"]);
+            
+            services.AddScoped<UmbracoService>();
 
             //services.AddTransient<Service>();
             services.AddHsts(options =>
@@ -75,8 +77,10 @@ namespace Ekom.Site
         /// </summary>
         /// <param name="app">The application builder.</param>
         /// <param name="env">The web hosting environment.</param>
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
         {
+            GlobalSettings.HttpContextAccessor = httpContextAccessor;
+
             app.UseRequestLocalization();
             
             app.UseVettvangurDefaults(
