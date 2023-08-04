@@ -27,7 +27,12 @@ namespace Ekom.Models
         {
             get
             {
-                return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
+                if (Properties.ContainsKey("__NodeId"))
+                {
+                    return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
+                }
+                
+                return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
         [JsonIgnore]
