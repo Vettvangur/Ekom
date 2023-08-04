@@ -1,7 +1,6 @@
 using Ekom.API;
 using Ekom.Utilities;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Xml.Serialization;
 
 namespace Ekom.Models
@@ -34,16 +33,14 @@ namespace Ekom.Models
         {
             get
             {
-                var variants = Variants;
-
-                if (variants.Any())
-                {
-                    return variants.FirstOrDefault().Price;
-                }
-
-                return Product.Price;
+               return PrimaryVariant != null ? PrimaryVariant.Price : Product.Price;
             }
         }
+
+        /// <summary>
+        /// Get the availability of the variant group
+        /// </summary>
+        public virtual bool Available => Variants.Any(x => x.Available);
 
         // Waiting for variants to be composed with their parent product
         ///// <summary>
@@ -80,6 +77,25 @@ namespace Ekom.Models
             get
             {
                 return Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
+            }
+        }
+
+        /// <summary>
+        /// Select the Primary variant.
+        /// First Variant in the group that is available, if none are available, return the first variant.
+        /// </summary>
+        public virtual IVariant PrimaryVariant
+        {
+            get
+            {
+                var primaryVariant = Variants.FirstOrDefault(x => x.Available);
+
+                if (primaryVariant == null)
+                {
+                    primaryVariant = Variants.FirstOrDefault();
+                }
+
+                return primaryVariant;
             }
         }
 

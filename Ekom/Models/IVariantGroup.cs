@@ -24,6 +24,15 @@ namespace Ekom.Models
         /// <summary>
         /// Id of Parent <see cref="IProduct"/> of Variant
         /// </summary>
+
+        /// <summary>
+        /// Gets the availability of the variant group.
+        /// </summary>
+        /// <value>
+        /// The availability.
+        /// </value>
+        bool Available { get; }
+
         int ProductId { get; }
         /// <summary>
         /// Key of Parent <see cref="IProduct"/> of Variant
@@ -33,5 +42,11 @@ namespace Ekom.Models
         /// Get all variants in this group
         /// </summary>
         IEnumerable<IVariant> Variants { get; }
+
+        /// <summary>
+        /// Select the Primary variant.
+        /// First Variant in the group that is available, if none are available, return the first variant.
+        /// </summary>
+        IVariant PrimaryVariant { get; }
     }
 }

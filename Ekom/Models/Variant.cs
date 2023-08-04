@@ -1,5 +1,4 @@
 using Ekom.API;
-using Ekom.Cache;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,11 +15,6 @@ namespace Ekom.Models
     /// </summary>
     public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
-        private IPerStoreCache<IVariantGroup> __variantGroupCache;
-
-        //private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-        //    __variantGroupCache ?? (__variantGroupCache = Current.Factory.GetInstance<IPerStoreCache<IVariantGroup>>());
-
         /// <summary>
         /// Stock Keeping Unit, identifier
         /// </summary>
@@ -49,9 +43,14 @@ namespace Ekom.Models
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
+
+        /// <summary>
         /// Get the availability of the variant
         /// </summary>
-        public virtual bool Available => Stock > 0;
+        public virtual bool Available => Stock > 0 || Backorder;
 
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
@@ -80,9 +79,17 @@ namespace Ekom.Models
             {
                 var paths = Path.Split(',');
 
-                int productId = Convert.ToInt32(paths[paths.Length - 3]);
+                int id = Convert.ToInt32(paths[paths.Length - 3]);
 
-                return productId;
+                return id;
+            }
+        }
+
+        public int VariantGroupId
+        {
+            get
+            {
+                return ParentId;
             }
         }
 
@@ -111,21 +118,6 @@ namespace Ekom.Models
                 );
         }
 
-        // Waiting for variants to be composed with their parent product
-        ///// <summary>
-        ///// Get the Product Key
-        ///// </summary>
-        //public Guid ProductKey => Product.Key;
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public int ProductId => Product.Id;
-
-        /// <summary>
-        /// <see cref="IVariantGroup"/> Key
-        /// </summary>
-        public Guid VariantGroupKey { get; set; }
-
         /// <summary>
         /// Variant group <see cref="IVariant"/> belongs to
         /// </summary>
@@ -135,15 +127,7 @@ namespace Ekom.Models
         {
             get
             {
-                var parentId = Properties.GetPropertyValue("parentID");
-
-                if (int.TryParse(parentId, out int _parentId))
-                {
-
-                    return Catalog.Instance.GetVariantGroup(Store.Alias, VariantGroupKey);
-                }
-
-                return null;
+                return Catalog.Instance.GetVariantGroup(Store.Alias, VariantGroupId);
             }
         }
 
@@ -265,13 +249,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(UmbracoContent item, IStore store) : base(item, store)
         {
-            var parentNode = Configuration.Resolver.GetService<INodeService>()
-                .NodeAncestors(item.Id.ToString()).FirstOrDefault();
 
-            if (parentNode != null)
-            {
-                VariantGroupKey = parentNode.Key;
-            }
         }
     }
 }

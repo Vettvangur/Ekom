@@ -1,13 +1,10 @@
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
-using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Data;
-using System.Globalization;
 
 namespace Ekom.API
 {
@@ -602,6 +599,20 @@ namespace Ekom.API
                 return val;
             }
 
+            return null;
+        }
+        public IVariantGroup GetVariantGroup(string storeAlias, int id)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                throw new ArgumentException(nameof(storeAlias));
+            }
+
+            if (_variantGroupCache.Cache[storeAlias].Any(x => x.Value.Id == id))
+            {
+                return _variantGroupCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == id).Value;
+            }
+           
             return null;
         }
 

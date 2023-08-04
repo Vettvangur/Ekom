@@ -507,27 +507,32 @@ namespace Ekom.App_Start
                                             Name = "Images",
                                             SortOrder = 2
                                         },
+                                        new PropertyType(_shortStringHelper, propertyTextareaDt, "description")
+                                        {
+                                            Name = "Description",
+                                            SortOrder = 3
+                                        },
                                         new PropertyType(_shortStringHelper, priceDt, "price")
                                         {
                                             Name = "Price",
-                                            SortOrder = 3
+                                            SortOrder = 4
                                         },
                                         new PropertyType(_shortStringHelper, stockDt, "stock")
                                         {
                                             Name = "Stock",
-                                            SortOrder = 4
+                                            SortOrder = 5
                                         },
                                         new PropertyType(_shortStringHelper, booleanDt, "enableBackorder")
                                         {
                                             Name = "Enable Backorder",
                                             Description = "If set then the variant can be sold indefinitely",
-                                            SortOrder = 5
+                                            SortOrder = 6
                                         },
                                         new PropertyType(_shortStringHelper, numericDt, "vat")
                                         {
                                             Name = "VAT",
                                             Description = "%, override store VAT.",
-                                            SortOrder = 6
+                                            SortOrder = 7
                                         },
                                     }))
                                 {
@@ -586,8 +591,7 @@ namespace Ekom.App_Start
                             AllowedTemplates = productTemplates,
                             AllowedContentTypes = new List<ContentTypeSort>
                             {
-                                new ContentTypeSort(productVariantCt.Id, 1),
-                                new ContentTypeSort(productVariantGroupCt.Id, 2),
+                                new ContentTypeSort(productVariantGroupCt.Id, 1),
                             },
                             PropertyGroups = new PropertyGroupCollection(
                                 new List<PropertyGroup>

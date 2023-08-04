@@ -69,6 +69,7 @@ namespace Ekom.Models
         /// Does not include categories product is an indirect child of.
         /// </summary>
         IEnumerable<Guid> CategoriesIds { get; }
+        
         /// <summary>
         /// 
         /// </summary>
@@ -90,6 +91,13 @@ namespace Ekom.Models
         /// If none is configured, we return the first possible item.
         /// </summary>
         IVariantGroup PrimaryVariantGroup { get; }
+
+        /// <summary>
+        /// Select the Primary variant.
+        /// First Variant in the primary variant group that is available, if none are available, return the first variant.
+        /// </summary>
+        IVariant PrimaryVariant { get; }
+
         /// <summary>
         /// Product Stock Keeping Unit.
         /// </summary>

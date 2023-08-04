@@ -120,6 +120,11 @@ namespace Ekom.Models
         {
             get
             {
+                if (!VariantGroups.Any())
+                {
+                    return null;
+                }
+
                 if (Properties.ContainsKey("primaryVariantGroup"))
                 {
                     var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
@@ -137,7 +142,41 @@ namespace Ekom.Models
                     }
                 }
 
-                return VariantGroups.FirstOrDefault();
+
+                var primaryGroup = VariantGroups.FirstOrDefault(x => x.Available);
+
+                if (primaryGroup == null)
+                {
+                    primaryGroup = VariantGroups.FirstOrDefault();
+                }
+
+                return primaryGroup;
+            }
+        }
+
+        /// <summary>
+        /// Select the Primary variant.
+        /// First Variant in the primary variant group that is available, if none are available, return the first variant.
+        /// </summary>
+        public virtual IVariant PrimaryVariant
+        {
+            get
+            {
+                var primaryVariantGroup = PrimaryVariantGroup;
+
+                if (primaryVariantGroup == null)
+                {
+                    return null;
+                }
+
+                var primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(x => x.Available);
+
+                if (primaryVariant == null)
+                {
+                    primaryVariant = primaryVariantGroup.Variants.FirstOrDefault();
+                }
+
+                return primaryVariant;
             }
         }
 

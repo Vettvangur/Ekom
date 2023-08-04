@@ -2,10 +2,12 @@
 @{
     Layout = "Master.cshtml";
 
-
     var product = _catalog.GetProduct();
 
     var primaryVariantGroup = product.PrimaryVariantGroup;
+    var primaryVariant = product.PrimaryVariant;
+
+    var images = product.Images;
 }
 
 @section Main {
@@ -18,80 +20,135 @@
                 </div>
             </div>
 
-            <!-- Image gallery -->
-            <div class="mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0">
-                <h2 class="sr-only">Images</h2>
+            @if (images.Any())
+            {
+                <!-- Image gallery -->
+                <div class="mt-8 lg:col-span-7 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:mt-0">
+                    <h2 class="sr-only">Images</h2>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8">
-                    <img src="https://tailwindui.com/img/ecommerce-images/product-page-01-featured-product-shot.jpg" alt="Back of women's Basic Tee in black." class="lg:col-span-2 lg:row-span-2 rounded-lg">
-                    <img src="https://tailwindui.com/img/ecommerce-images/product-page-01-product-shot-01.jpg" alt="Side profile of women's Basic Tee in black." class="hidden lg:block rounded-lg">
-                    <img src="https://tailwindui.com/img/ecommerce-images/product-page-01-product-shot-02.jpg" alt="Front of women's Basic Tee in black." class="hidden lg:block rounded-lg">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-3 lg:gap-8">
+                        @foreach (var image in images)
+                        {
+                            <img src="@image.Url" alt="@image.Description" class="lg:col-span-2 lg:row-span-2 rounded-lg">
+                        }
+                    </div>
                 </div>
-            </div>
+            }
 
             <div class="mt-8 lg:col-span-5">
-
                 @if (product.Available)
                 {
                     @using (Html.BeginEkomForm(FormType.AddToOrderProduct, "product__add-form"))
                     {
                         <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
                         <input type="hidden" name="productId" value="@product.Key" />
-                        <input type="hidden" name="quantity" value="1" />
-                        <input type="hidden" name="action" value="AddOrUpdate" />
-
-                        @if (product.VariantGroups.Any()) {
-                            <!-- Color picker -->
-                            <div>
-                                <h2 class="text-sm font-medium text-gray-900">Color</h2>
-
-                                <fieldset x-data="window.Components.radioGroup({ initialCheckedIndex: 0 })" x-init="init()" class="mt-2">
-                                    <legend class="sr-only">Choose a color</legend>
-                                    <div class="flex items-center space-x-3">
-
-                                        @foreach (var variantGroup in product.VariantGroups)
-                                        {
-                                            var selected = variantGroup == primaryVariantGroup;
-
-                                            var colorHex = variantGroup.GetValue("color");
-
-                                            <label class="relative -m-0.5 flex cursor-pointer items-center justify-center rounded-full p-0.5 focus:outline-none ring-gray-900 @(selected ? "ring-2" : "")" >
-                                                <input type="radio" x-model="value" name="color-choice" value="Black" class="sr-only" aria-labelledby="color-choice-0-label">
-                                                <span id="color-choice-0-label" class="sr-only">@variantGroup.Title</span>
-                                                <span aria-hidden="true" class="h-8 w-8 rounded-full border border-opacity-10" style="background-color: @colorHex; border-color: @colorHex;"></span>
-                                            </label>
-                                        }
-
-                                    </div>
-                                </fieldset>
-                            </div>
-                        }
-
-                        @if (primaryVariantGroup != null && primaryVariantGroup.Variants.Any())
+                        <input type="hidden" name="action" value="@OrderAction.AddOrUpdate" />
+                        
+                        if (primaryVariantGroup != null)
                         {
-                            <!-- Size picker -->
-                            <div class="mt-8">
-                                <div class="flex items-center justify-between">
-                                    <h2 class="text-sm font-medium text-gray-900">Size</h2>
-                                    <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">See sizing chart</a>
-                                </div>
+                            var isColor = !string.IsNullOrEmpty(primaryVariantGroup.GetValue("color"));
 
-                                <fieldset class="mt-2">
-                                    <legend class="sr-only">Choose a size</legend>
-                                    <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                                        @foreach (var variant in primaryVariantGroup.Variants)
+                            if (isColor)
+                            {
+                                <div x-data="{
+                                    selectedColor: @(primaryVariantGroup != null ? primaryVariantGroup.Id : 0),
+                                    selectedSize: '@(primaryVariant != null ? primaryVariant.Key : "")'}">
+                                   
+                                    <input type="hidden" name="variantId" x-model="selectedSize" />
+
+                                    @if (product.VariantGroups.Any())
+                                    {
+                                        <!-- Color picker -->
+                                        <div>
+                                            <h2 class="text-sm font-medium text-gray-900">Color</h2>
+
+                                            <fieldset class="mt-2">
+                                                <legend class="sr-only">Choose a color</legend>
+                                                <div class="flex items-center space-x-3">
+
+                                                    @foreach (var variantGroup in product.VariantGroups)
+                                                    {
+                                                        var selected = variantGroup == primaryVariantGroup;
+
+                                                        var colorHex = variantGroup.GetValue("color");
+
+                                                        var available = variantGroup.Available;
+
+                                                        var primaryVariant = variantGroup.PrimaryVariant;
+
+                                                        <label :class="selectedColor == @variantGroup.Id ? 'ring-2' : ''" class="relative -m-0.5 flex items-center justify-center rounded-full p-0.5 focus:outline-none ring-gray-900 @(available ? "cursor-pointer" :"cursor-not-allowed")">
+                                                            <input type="radio" name="ekmVariantGroup" value="@variantGroup.Id" class="sr-only" aria-labelledby="color-choice-@variantGroup.Id-label" @@change="selectedColor = $event.target.value; selectedSize = '@(primaryVariant != null ? variantGroup.PrimaryVariant.Key : "")'" @(!available ? "x-ignore disabled" :"")>
+                                                            <span id="color-choice-@variantGroup.Id-label" class="sr-only">@variantGroup.Title</span>
+                                                            <span aria-hidden="true" class="h-8 w-8 rounded-full border border-opacity-10" style="background-color: @colorHex; border-color: @colorHex;"></span>
+                                                        </label>
+                                                    }
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    }
+
+                                    @if (product.VariantGroups.Any())
+                                    {
+
+                                        foreach (var variantGroup in product.VariantGroups)
                                         {
+                                            <!-- Size picker -->
+                                            <div class="mt-8" x-show="selectedColor == @variantGroup.Id">
+                                                <div class="flex items-center justify-between">
+                                                    <h2 class="text-sm font-medium text-gray-900">Size</h2>
+                                                </div>
 
-                                            <label class="flex items-center justify-center rounded-md border py-3 px-3 text-sm font-medium uppercase sm:flex-1 focus:outline-none undefined border-gray-200 bg-white text-gray-900 hover:bg-gray-50 @(variant.Available ? "cursor-pointer" :"cursor-not-allowed opacity-25")">
-                                                <input type="radio" x-model="value" name="size-choice" value="@variant.Title" class="sr-only" aria-labelledby="size-choice-0-label">
-                                                <span id="size-choice-0-label">@variant.Title</span>
-                                            </label>
+                                                <fieldset class="mt-2">
+                                                    <legend class="sr-only">Choose a size</legend>
+                                                    <div class="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                                                        @foreach (var variant in variantGroup.Variants)
+                                                        {
+                                                            var available = variant.Available;
+
+                                                            <label :class="selectedSize == '@variant.Key' ? 'ring-2 ring-indigo-500 ring-offset-2 border-transparent bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-white'" class="flex items-center justify-center rounded-md border py-3 px-3 text-sm font-medium uppercase sm:flex-1 focus:outline-none undefined border-gray-200 text-gray-900 hover:bg-gray-50 @(available ? "cursor-pointer" :"cursor-not-allowed opacity-25")">
+                                                                <input type="radio" name="ekmProductVariant" value="@variant.Key" class="sr-only" aria-labelledby="size-choice-@variant.Id-label" @(!available ? "x-ignore disabled" :"") @@change="selectedSize = $event.target.value">
+                                                                <span id="size-choice-@variant.Id-label">@variant.Title</span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                </fieldset>
+                                            </div>
                                         }
-                                    </div>
-                                </fieldset>
-                            </div>
+                                    }
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div x-data="{selectedVariant: '@(primaryVariant != null ? primaryVariant.Key.ToString() : "")'}">
+                                    <input type="hidden" name="variantId" x-model="selectedVariant" />
+                                    <fieldset>
+                                        <legend class="block text-sm font-medium text-gray-700">@primaryVariantGroup.Title</legend>
+                                        <div class="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            @foreach (var variant in primaryVariantGroup.Variants)
+                                            {
+                                                var available = variant.Available;
+
+                                                <label for="size-choice-@variant.Id" :class="selectedVariant == '@variant.Key.ToString()' ? 'ring-2 ring-indigo-500' : ''" class="relative block rounded-lg border border-gray-300 p-4 focus:outline-none undefined @(available ? "cursor-pointer" : "cursor-not-allowed opacity-25")">
+                                                    <input id="size-choice-@variant.Id" type="radio" name="ekmProductVariant" value="@variant.Key" class="sr-only" aria-labelledby="size-choice-@variant.Id-label" aria-describedby="size-choice-@variant.Id-description" @(!available ? "x-ignore disabled" :"") @@change="selectedVariant = $event.target.value">
+                                                    <p id="size-choice-@variant.Id-label" class="text-base font-medium text-gray-900">@variant.Title</p>
+                                                    <p id="size-choice-@variant.Id-description" class="mt-1 text-sm text-gray-500">@variant.Description</p>
+                                                    <div :class="selectedVariant == '@variant.Key.ToString()' ? 'border-2 border-indigo-500' : ''" class="pointer-events-none absolute -inset-px rounded-lg" aria-hidden="true"></div>
+                                                </label>
+                                            }
+                                        </div>
+                                    </fieldset>
+                                </div> 
+                            }
                         }
 
+                        <div class="mt-8">
+                            <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Quantity</label>
+                            <div class="mt-2">
+                                <input type="number" name="quantity" id="quantity" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value="1" min="1">
+                            </div>
+                        </div>
+                        
                         <button type="submit" class="mt-8 flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Add to cart</button>
                     }
                 }
@@ -150,131 +207,6 @@
                 </section>
             </div>
         </div>
-
-        <!-- Reviews -->
-        <section aria-labelledby="reviews-heading" class="mt-16 sm:mt-24">
-            <h2 id="reviews-heading" class="text-lg font-medium text-gray-900">Recent reviews</h2>
-
-            <div class="mt-6 space-y-10 divide-y divide-gray-200 border-b border-t border-gray-200 pb-10">
-                <div class="pt-10 lg:grid lg:grid-cols-12 lg:gap-x-8">
-                    <div class="lg:col-span-8 lg:col-start-5 xl:col-span-9 xl:col-start-4 xl:grid xl:grid-cols-3 xl:items-start xl:gap-x-8">
-                        <div class="flex items-center xl:col-span-1">
-                            <div class="flex items-center">
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state:on="Active" x-state:off="Inactive" x-state-description="Active: &quot;text-yellow-400&quot;, Inactive: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-
-                            </div>
-                            <p class="ml-3 text-sm text-gray-700">5<span class="sr-only"> out of 5 stars</span></p>
-                        </div>
-
-                        <div class="mt-4 lg:mt-6 xl:col-span-2 xl:mt-0">
-                            <h3 class="text-sm font-medium text-gray-900">Can't say enough good things</h3>
-
-                            <div class="mt-3 space-y-6 text-sm text-gray-500">
-                                <p>I was really pleased with the overall shopping experience. My order even included a little personal, handwritten note, which delighted me!</p>
-                                <p>The product quality is amazing, it looks and feel even better than I had anticipated. Brilliant stuff! I would gladly recommend this store to my friends. And, now that I think of it... I actually have, many times!</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3">
-                        <p class="font-medium text-gray-900">Risako M</p>
-                        <time datetime="2021-01-06" class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0">May 16, 2021</time>
-                    </div>
-                </div>
-                <div class="pt-10 lg:grid lg:grid-cols-12 lg:gap-x-8">
-                    <div class="lg:col-span-8 lg:col-start-5 xl:col-span-9 xl:col-start-4 xl:grid xl:grid-cols-3 xl:items-start xl:gap-x-8">
-                        <div class="flex items-center xl:col-span-1">
-                            <div class="flex items-center">
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state:on="Active" x-state:off="Inactive" x-state-description="Active: &quot;text-yellow-400&quot;, Inactive: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-
-                            </div>
-                            <p class="ml-3 text-sm text-gray-700">5<span class="sr-only"> out of 5 stars</span></p>
-                        </div>
-
-                        <div class="mt-4 lg:mt-6 xl:col-span-2 xl:mt-0">
-                            <h3 class="text-sm font-medium text-gray-900">Very comfy and looks the part</h3>
-
-                            <div class="mt-3 space-y-6 text-sm text-gray-500">
-                                <p>After a quick chat with customer support, I had a good feeling about this shirt and ordered three of them.</p>
-                                <p>Less than 48 hours later, my delivery arrived. I haven't worn anything else since that day! These shirts are so comfortable, yet look classy enough that I can wear them at work or even some formal events. Winning!</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3">
-                        <p class="font-medium text-gray-900">Jackie H</p>
-                        <time datetime="2021-01-06" class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0">April 6, 2021</time>
-                    </div>
-                </div>
-                <div class="pt-10 lg:grid lg:grid-cols-12 lg:gap-x-8">
-                    <div class="lg:col-span-8 lg:col-start-5 xl:col-span-9 xl:col-start-4 xl:grid xl:grid-cols-3 xl:items-start xl:gap-x-8">
-                        <div class="flex items-center xl:col-span-1">
-                            <div class="flex items-center">
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state:on="Active" x-state:off="Inactive" x-state-description="Active: &quot;text-yellow-400&quot;, Inactive: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-yellow-400 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-                                <svg class="text-gray-200 h-5 w-5 flex-shrink-0" x-state-description="undefined: &quot;text-yellow-400&quot;, undefined: &quot;text-gray-200&quot;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd"></path>
-                                </svg>
-
-                            </div>
-                            <p class="ml-3 text-sm text-gray-700">4<span class="sr-only"> out of 5 stars</span></p>
-                        </div>
-
-                        <div class="mt-4 lg:mt-6 xl:col-span-2 xl:mt-0">
-                            <h3 class="text-sm font-medium text-gray-900">The last shirts I may ever need</h3>
-
-                            <div class="mt-3 space-y-6 text-sm text-gray-500">
-                                <p>I bought two of those comfy cotton shirts, and let me tell you: they're amazing! I have been wearing them almost every day. Even after a dozen of washes, that still looks and feel good as new. Will definitely order a few more... If I ever need to!</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3">
-                        <p class="font-medium text-gray-900">Laura G</p>
-                        <time datetime="2021-01-06" class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0">February 24, 2021</time>
-                    </div>
-                </div>
-
-            </div>
-        </section>
 
         <!-- Related products -->
         <section aria-labelledby="related-heading" class="mt-16 sm:mt-24">
@@ -354,41 +286,3 @@
         </section>
     </main>
 }
-
-
-@*<h1>@product.Title</h1>
-
-<p>@product.Price.WithVat.CurrencyString</p>
-
-<p>Size: @product.GetMetaFieldValue("size")</p>
-
-<p>Product Fit: @product.GetMetaFieldValue("productFit")</p>
-
-<p>Urls</p>
-<ul>
-    @foreach (var url in product.Urls)
-    {
-        <li>@url</li>
-    }
-</ul>
-
-@if (product.Stock > 0 || product.Backorder)
-{
-    @using (Html.BeginEkomForm(FormType.AddToOrderProduct, "product__add-form"))
-    {
-        <input type="hidden" name="storeAlias" value="@product.Store.Alias" />
-        <input type="hidden" name="productId" value="@product.Key" />
-        <input type="hidden" name="quantity" value="1" />
-        <input type="hidden" name="action" value="AddOrUpdate" />
-
-        <button type="submit">
-            <span class="button__text">Bæta við körfu</span>
-        </button>
-    }
-} else
-{
-    <div>
-        Product out of stock
-    </div>
-}
-*@

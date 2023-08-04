@@ -43,6 +43,11 @@ namespace Ekom.Models
         /// </summary>
         int ProductId { get; }
         /// <summary>
+        /// Parent variantGroup Id
+        /// </summary>
+        int VariantGroupId { get; }
+
+        /// <summary>
         /// Parent product Key
         /// </summary>
         Guid ProductKey { get; }
@@ -70,6 +75,11 @@ namespace Ekom.Models
         int Stock { get; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        string Description { get; }
+
+        /// <summary>
         /// Gets the availability of the variant.
         /// </summary>
         /// <value>
@@ -81,10 +91,6 @@ namespace Ekom.Models
         /// Variant group <see cref="IVariant"/> belongs to
         /// </summary>
         IVariantGroup VariantGroup { get; }
-        /// <summary>
-        /// <see cref="IVariantGroup"/> Key
-        /// </summary>
-        Guid VariantGroupKey { get; }
 
         /// <summary>
         /// All categories product belongs to, includes parent category.
