@@ -11,11 +11,9 @@ namespace Ekom.Models
 {
     public class OrderedProduct
     {
-        private readonly IConfiguration config;
 
-        public OrderedProduct(IConfiguration config)
+        public OrderedProduct()
         {
-            this.config = config;
         }
 
         public int Id

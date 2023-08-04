@@ -1,0 +1,208 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    Layout = "Master.cshtml";
+    var order = _order.GetOrder();
+
+    var siblings = Model.Siblings().Where(x => x.IsDocumentType("checkout"));
+
+    var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder).Url();
+}
+
+@section Main {
+    <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+        <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Shopping Cart</h1>
+
+        <div class="mt-12 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16">
+            <section aria-labelledby="cart-heading" class="lg:col-span-7">
+                <h2 id="cart-heading" class="sr-only">Items in your shopping cart</h2>
+
+                <ul role="list" class="divide-y divide-gray-200 border-b border-t border-gray-200">
+                    @foreach (var orderline in order.OrderLines)
+                    {
+                        var images = orderline.Product.Images();
+                        
+                        var ekmProduct = _catalog.GetProduct(orderline.ProductKey);
+
+                        <li class="flex py-6 sm:py-10">
+                            <div class="flex-shrink-0">
+                                @if (images != null && images.Any())
+                                {
+                                    <img src="@images.FirstOrDefault()?.Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
+                                }
+                                
+                            </div>
+
+                            <div class="ml-4 flex flex-1 flex-col justify-between sm:ml-6">
+                                <div class="relative pr-9 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:pr-0">
+                                    <div>
+                                        <div class="flex justify-between">
+                                            <h3 class="text-sm">
+                                                @if(ekmProduct != null)
+                                                {
+                                                    <a href="@ekmProduct.Url" class="font-medium text-gray-700 hover:text-gray-800">@orderline.Product.Title</a>
+                                                } else
+                                                {
+                                                    <span class="font-medium text-gray-700 hover:text-gray-800">@orderline.Product.Title</span>
+                                                }
+
+                                            </h3>
+                                        </div>
+                                        @foreach (var variant in orderline.Product?.VariantGroups?.SelectMany(x => x.Variants))
+                                        {
+                                        <div class="mt-1 flex text-sm">
+                                            <p class="text-gray-500">@orderline.Product?.VariantGroups?.FirstOrDefault().Title</p>
+                                            <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
+                                        </div>
+                                        }
+
+                                        <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
+                                    </div>
+
+                                    
+                                    <div class="mt-4 sm:mt-0 sm:pr-9">
+                                        @using (Html.BeginEkomForm(FormType.AddToOrderCart, "orderline__update-form"))
+                                        {
+                                            <input type="hidden" name="action" value="@OrderAction.Set" />
+                                            <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
+                                            <input type="hidden" name="productId" value="@orderline.ProductKey" />
+
+                                            @if (orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault() != null)
+                                            {
+                                                <input type="hidden" name="variantId" value="@orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault()?.Key" />
+                                            }
+                                            
+                                            <label for="quantity" class="block text-sm font-medium leading-6 text-gray-900">Quantity</label>
+                                            <div class="mt-2">
+                                                <input type="number" name="quantity" id="quantity" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" value="@orderline.Quantity" min="1">
+                                            </div>
+                                        }
+
+                                        <div class="absolute right-0 top-0">
+                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine))
+                                            {
+                                                <input type="hidden" name="lineId" value="@orderline.Key" />
+                                                <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
+                                                <button type="submit" class="-m-2 inline-flex p-2 text-gray-400 hover:text-gray-500">
+                                                    <span class="sr-only">Remove</span>
+                                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"></path>
+                                                    </svg>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+            <!-- Order summary -->
+            <section aria-labelledby="summary-heading" class="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8">
+                
+                <form class="mb-6">
+                    <label for="discount-code" class="block text-sm font-medium text-gray-700">Discount code</label>
+                    <div class="mt-1 flex space-x-4">
+                        <input type="text" id="discount-code" name="discount-code" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <button type="submit" class="rounded-md bg-gray-200 px-4 text-sm font-medium text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">Apply</button>
+                    </div>
+                </form>
+                
+                <h2 id="summary-heading" class="text-lg font-medium text-gray-900">Order summary</h2>
+
+                <dl class="mt-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <dt class="text-sm text-gray-600">Subtotal</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.CurrencyString</dd>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-200 pt-4">
+                        <dt class="text-base font-medium text-gray-900">Order total</dt>
+                        <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
+                    </div>
+                </dl>
+
+                <div class="mt-6">
+                    <a href="@nextUrl" class="w-full block text-center rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">Checkout</a>
+                </div>
+            </section>
+        </div>
+
+        <!-- Related products -->
+        <section aria-labelledby="related-heading" class="mt-24">
+            <h2 id="related-heading" class="text-lg font-medium text-gray-900">You may also like…</h2>
+
+            <div class="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+                <div class="group relative">
+                    <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-80">
+                        <img src="https://tailwindui.com/img/ecommerce-images/shopping-cart-page-01-related-product-01.jpg" alt="Front of Billfold Wallet in natural leather." class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Billfold Wallet
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Natural</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$118</p>
+                    </div>
+                </div>
+                <div class="group relative">
+                    <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-80">
+                        <img src="https://tailwindui.com/img/ecommerce-images/shopping-cart-page-01-related-product-02.jpg" alt="Black machined pen and pencil with hexagonal shaft and small white logo." class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Machined Pen and Pencil Set
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Black</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$70</p>
+                    </div>
+                </div>
+                <div class="group relative">
+                    <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-80">
+                        <img src="https://tailwindui.com/img/ecommerce-images/shopping-cart-page-01-related-product-03.jpg" alt="Three mini sketchbooks with tan and charcoal typography poster covers." class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Mini Sketchbook Set
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Tan and Charcoal</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$28</p>
+                    </div>
+                </div>
+                <div class="group relative">
+                    <div class="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md lg:aspect-none group-hover:opacity-75 lg:h-80">
+                        <img src="https://tailwindui.com/img/ecommerce-images/shopping-cart-page-01-related-product-04.jpg" alt="Grooved walnut desk organizer base with five modular white plastic organizer trays." class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                    </div>
+                    <div class="mt-4 flex justify-between">
+                        <div>
+                            <h3 class="text-sm text-gray-700">
+                                <a href="#">
+                                    <span aria-hidden="true" class="absolute inset-0"></span>
+                                    Organize Set
+                                </a>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">Walnut</p>
+                        </div>
+                        <p class="text-sm font-medium text-gray-900">$149</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+}

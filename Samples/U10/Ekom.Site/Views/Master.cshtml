@@ -1,4 +1,4 @@
-@using Umbraco.Cms.Web.Common.PublishedModels;
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
@@ -45,7 +45,7 @@
 
         <header class="relative overflow-hidden">
 
-            <partial name="ekom/components/topNavigation" />
+            <partial name="ekom/components/header" />
 
             @RenderSection("Header", false)
         </header>
@@ -57,5 +57,3 @@
 
 </body>
 </html>
-
-
