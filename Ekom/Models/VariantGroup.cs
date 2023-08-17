@@ -11,10 +11,18 @@ namespace Ekom.Models
     /// </summary>
     public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
+        private readonly string storeAlias;
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        public IProduct Product { get; internal set; }
+        public IProduct Product { 
+            get
+            {
+                var pathArray = Path.Split(',');
+                var productId = pathArray[pathArray.Count() - 2];
+                return Catalog.Instance.GetProduct(storeAlias, Convert.ToInt32(productId));
+            }
+        }
 
         /// <summary>
         /// 
@@ -41,16 +49,6 @@ namespace Ekom.Models
         /// Get the availability of the variant group
         /// </summary>
         public virtual bool Available => Variants.Any(x => x.Available);
-
-        // Waiting for variants to be composed with their parent product
-        ///// <summary>
-        ///// Get the Product Key
-        ///// </summary>
-        //public Guid ProductKey => Product.Key;
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public int ProductId => Product.Id;
 
         // <summary>
         // Variant Group images
@@ -112,10 +110,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public VariantGroup(UmbracoContent node, IStore store) : base(node, store)
         {
-            var pathArray = Path.Split(',');
-            var productId = pathArray[pathArray.Count() - 2];
-            var parentProduct = Catalog.Instance.GetProduct(store.Alias, Convert.ToInt32(productId));
-            Product = parentProduct;
+            storeAlias = store.Alias;
         }
     }
 }

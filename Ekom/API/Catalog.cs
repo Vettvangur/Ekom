@@ -581,10 +581,14 @@ namespace Ekom.API
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            return _variantCache.Cache[storeAlias]
-                                   .Where(x => x.Value.VariantGroup != null && x.Value.VariantGroup.Id == Id)
-                                   .OrderBy(x => x.Value.SortOrder)
-                                   .Select(x => x.Value);
+            if (_variantCache == null || !_variantCache.Cache.TryGetValue(storeAlias, out var variants))
+            {
+                return Enumerable.Empty<IVariant>();
+            }
+
+            return variants.Values
+                           .Where(v => v.VariantGroup?.Id == Id)
+                           .OrderBy(v => v.SortOrder);
         }
 
         public IVariantGroup GetVariantGroup(string storeAlias, Guid key)
@@ -608,11 +612,11 @@ namespace Ekom.API
                 throw new ArgumentException(nameof(storeAlias));
             }
 
-            if (_variantGroupCache.Cache[storeAlias].Any(x => x.Value.Id == id))
+            if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var variantGroups))
             {
-                return _variantGroupCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == id).Value;
+                return variantGroups.Values.FirstOrDefault(v => v.Id == id);
             }
-           
+
             return null;
         }
 

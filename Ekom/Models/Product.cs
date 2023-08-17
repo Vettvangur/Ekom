@@ -321,11 +321,11 @@ namespace Ekom.Models
         {
             get
             {
-                // Use ID Instead of Key, Key is much slower.
-                return _variantGroupCache.Cache[Store.Alias]
-                                        .Where(x => x.Value.ProductId == Id)
-                                        .OrderBy(x => x.Value.SortOrder)
-                                        .Select(x => x.Value);
+                return from pair in _variantGroupCache.Cache[Store.Alias]
+                       let variantGroup = pair.Value
+                       where variantGroup.ProductId == Id
+                       orderby variantGroup.SortOrder
+                       select variantGroup;
             }
         }
 
@@ -339,9 +339,10 @@ namespace Ekom.Models
             get
             {
                 // Use ID Instead of Key, Key is much slower.
-                return _variantCache.Cache[Store.Alias]
-                    .Where(x => x.Value.ProductId == Id)
-                    .Select(x => x.Value);
+                return from pair in _variantCache.Cache[Store.Alias]
+                       let variant = pair.Value
+                       where variant.ProductId == Id
+                       select variant;
             }
         }
 
@@ -407,7 +408,7 @@ namespace Ekom.Models
                 {
                     var categoryItem
                         = Catalog.Instance.GetCategory(Store.Alias, catId);
-                    
+
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
                         categories.Add(categoryItem);
@@ -416,14 +417,15 @@ namespace Ekom.Models
             }
         }
 
+
         private void PopulateCategoryAncestors()
         {
 
-            foreach (var p in Path.Split(','))
+            foreach (var p in Path.Split(',').Skip(2))
             {
                 if (int.TryParse(p, out int id))
                 {
-                    var c = API.Catalog.Instance.GetCategory(Store.Alias, id);
+                    var c = Catalog.Instance.GetCategory(Store.Alias, id);
 
                     if (c != null)
                     {

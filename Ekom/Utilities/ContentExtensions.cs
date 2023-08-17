@@ -99,6 +99,80 @@ namespace Ekom.Utilities
                     return true;
                 }
             }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Determine if a content item is disabled<para />
+        /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores code
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="store">Used to look for umbraco properties matching stores code </param>
+        /// <returns>True if disabled</returns>
+        public static bool IsItemDisabled(
+            this UmbracoContent item,
+            IStore store
+            )
+        {
+            var selfDisableField = item.GetValue("disable", store.Alias);
+
+            if (!string.IsNullOrEmpty(selfDisableField))
+            {
+                if (selfDisableField.ConvertToBool())
+                {
+                    return true;
+                }
+            }
+            
+            if (item.Level > 3)
+            {
+                if (item.ContentTypeAlias == "ekmProduct" || item.ContentTypeAlias == "ekmCategory")
+                {
+                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 1);
+
+                    foreach (var pathId in paths)
+                    {
+                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+
+                        if (category == null)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                if (item.ContentTypeAlias == "ekmProductVariantGroup")
+                {
+                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 2);
+
+                    foreach (var pathId in paths)
+                    {
+                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+
+                        if (category == null)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                if (item.ContentTypeAlias == "ekmProductVariant")
+                {
+                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 3);
+
+                    foreach (var pathId in paths)
+                    {
+                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+
+                        if (category == null)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+            }
 
             return false;
         }

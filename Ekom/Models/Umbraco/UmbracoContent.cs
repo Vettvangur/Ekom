@@ -24,7 +24,8 @@ namespace Ekom.Models
             // Add culture parameter to get the correct nodename based on language ?
             Name = Properties.GetPropertyValue("nodeName");
             Path = Properties.GetPropertyValue("__Path");
-            ContentTypeAlias = Properties.GetPropertyValue("ContentTypeAlias");
+            Level = Convert.ToInt32(Properties.GetPropertyValue("level"));
+            ContentTypeAlias = Properties.GetPropertyValue("__NodeTypeAlias");
             Url = Properties.GetPropertyValue("url");
         }
 
@@ -40,6 +41,7 @@ namespace Ekom.Models
         public string Url { get; set; }
         public string Name { get; set; }
         public string Path { get; set; }
+        public int Level { get; set; }
         public string ContentTypeAlias { get; set; }
         public bool IsDocumentType(string alias)
         {
@@ -48,7 +50,6 @@ namespace Ekom.Models
 
         public bool IsPublished()
         {        
-            // TODO
             return true;
         }
 

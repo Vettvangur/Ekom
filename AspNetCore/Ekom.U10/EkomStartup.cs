@@ -129,14 +129,15 @@ class EkomStartup : IComponent
 
             if (!_config.DisableCacheStartup)
             {
-                _logger.LogWarning("Ekom cache is disabled, change the settings in appsettings to fix.");
                 // Fill Caches
                 foreach (var cacheEntry in _config.CacheList.Value)
                 {
                     cacheEntry.FillCache();
                 }
+            } else
+            {
+                _logger.LogWarning("Ekom cache is disabled, change the settings in appsettings to fix.");
             }
-
 
             // FIX: To override the default stock cache register before EkomStartup
 

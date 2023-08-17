@@ -1,14 +1,11 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Utilities;
 using Ekom.Services;
+using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ekom.Cache
 {
@@ -82,10 +79,10 @@ namespace Ekom.Cache
                 _logger.LogDebug("Starting to fill per store cache for {NodeAlias}...", NodeAlias);
 
                 int count = 0;
-
+                
                 try
                 {
-                    var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished()).ToList();
+                    var results = nodeService.NodesByTypes(NodeAlias).ToList();
 
                     if (_config.LimitProductCacheItems > 0 && (NodeAlias == "ekmProduct" || NodeAlias == "ekmProductVariant"))
                     {
@@ -145,9 +142,7 @@ namespace Ekom.Cache
             {
                 try
                 {
-                    var ancestors = nodeService.NodeAncestors(r.Id.ToString());
-
-                    var isDisabled = r.IsItemDisabled(store, ancestors);
+                    var isDisabled = r.IsItemDisabled(store);
 
                     if (isDisabled)
                     {
