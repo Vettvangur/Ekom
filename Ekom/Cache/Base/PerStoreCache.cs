@@ -84,13 +84,6 @@ namespace Ekom.Cache
                 {
                     var results = nodeService.NodesByTypes(NodeAlias).ToList();
 
-                    if (_config.LimitProductCacheItems > 0 && (NodeAlias == "ekmProduct" || NodeAlias == "ekmProductVariant"))
-                    {
-                        results = results.Take(_config.LimitProductCacheItems).ToList();
-
-                        _logger.LogWarning("LimitProductCacheItems ({LimitProductCacheItems}) is in use for {NodeAlias}... You can remove the config in appsettings", NodeAlias, _config.LimitProductCacheItems);
-                    }
-
                     _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
                     if (storeParam == null) // Startup initialization

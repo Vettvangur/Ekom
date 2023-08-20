@@ -127,9 +127,11 @@ namespace Ekom.Utilities
             
             if (item.Level > 3)
             {
+                var pathArray = item.Path.Split(',');
+                
                 if (item.ContentTypeAlias == "ekmProduct" || item.ContentTypeAlias == "ekmCategory")
                 {
-                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 1);
+                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 4);
 
                     foreach (var pathId in paths)
                     {
@@ -144,7 +146,7 @@ namespace Ekom.Utilities
 
                 if (item.ContentTypeAlias == "ekmProductVariantGroup")
                 {
-                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 2);
+                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 5);
 
                     foreach (var pathId in paths)
                     {
@@ -159,7 +161,7 @@ namespace Ekom.Utilities
 
                 if (item.ContentTypeAlias == "ekmProductVariant")
                 {
-                    var paths = item.Path.Split(',').Skip(3).Take(item.Path.Split(',').Length - 3);
+                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 6);
 
                     foreach (var pathId in paths)
                     {

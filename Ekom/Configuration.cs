@@ -174,41 +174,6 @@ namespace Ekom
         }
 
         /// <summary>
-        /// Ekom:DisableCacheStartup
-        /// Disable cache build up on startup
-        /// Use case: If cache is extremly slow on startup and you want to get into the application faster.
-        /// </summary>
-        public virtual bool DisableCacheStartup
-        {
-            get
-            {
-                var value = _configuration["Ekom:DisableCacheStartup"];
-
-                if (string.IsNullOrEmpty(value))
-                {
-                    return false;
-                }
-                
-                return value.ConvertToBool();
-            }
-        }
-
-        /// <summary>
-        /// Ekom:LimitProductCacheItems
-        /// Limit the amount of items to add to product and variant cache on startup
-        /// Use case: If you want to debug performance on x amount of items in startup.
-        /// </summary>
-        public virtual int LimitProductCacheItems
-        {
-            get
-            {
-                var value = _configuration["Ekom:LimitProductCacheItems"];
-
-                return int.Parse(_configuration["Ekom:LimitProductCacheItems"] ?? "0");
-            }
-        }
-
-        /// <summary>
         /// Ekom:CategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>
