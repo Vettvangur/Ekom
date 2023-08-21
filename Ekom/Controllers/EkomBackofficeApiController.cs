@@ -60,8 +60,8 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Metafields")]
         [UmbracoUserAuthorize]
-        public IEnumerable<Metafield> GetMetafields()
-    => _metafieldService.GetMetafields();
+        public IEnumerable<MetafieldInternal> GetMetafields()
+    => _metafieldService.GetMetafieldsInternal();
 
         [HttpGet]
         [Route("Languages")]

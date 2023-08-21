@@ -35,6 +35,15 @@ namespace EkomCore.Services
             return result;
         }
 
+        public IEnumerable<MetafieldInternal> GetMetafieldsInternal()
+        {
+            var metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
+
+            var result = metafieldNodes.Select(x => new MetafieldInternal(x));
+
+            return result;
+        }
+
         public List<Metavalue> SerializeMetafields(string jsonValue, int nodeId)
         {
             if (string.IsNullOrEmpty(jsonValue))
