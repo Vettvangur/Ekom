@@ -1,6 +1,7 @@
 using Ekom.Models.Comparers;
 using Ekom.Utilities;
 using Newtonsoft.Json;
+using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -43,6 +44,8 @@ namespace Ekom.Models
         public bool EnableMultipleChoice { get; set; }
         public bool Required { get; set; }
         public bool ReadOnly { get; set; }
+        [JsonIgnore]
+        [XmlIgnore]
         public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
     }
 

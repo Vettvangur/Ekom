@@ -16,61 +16,63 @@ namespace Ekom.Models
         public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
         {
 
-            if (query?.AllFiltersVisible == true)
-            {
-                Filters = products.Filters();
-            }
+            Products = products;
 
-            if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
-            {
-                products = products.Filter(query);
-            }
+            //if (query?.AllFiltersVisible == true)
+            //{
+            //    Filters = products.Filters();
+            //}
 
-            if (!string.IsNullOrEmpty(query?.SearchQuery))
-            {
-                var scope = Configuration.Resolver.CreateScope();
-                var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                var searchResults = _searhService.ProductQuery(new SearchRequest() {
-                    SearchQuery = query.SearchQuery,
-                    NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
-                    SearchFields = query.SearchFields
-                }, out long total);
+            //if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
+            //{
+            //    products = products.Filter(query);
+            //}
+
+            //if (!string.IsNullOrEmpty(query?.SearchQuery))
+            //{
+            //    var scope = Configuration.Resolver.CreateScope();
+            //    var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+            //    var searchResults = _searhService.ProductQuery(new SearchRequest() {
+            //        SearchQuery = query.SearchQuery,
+            //        NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+            //        SearchFields = query.SearchFields
+            //    }, out long total);
                 
-                scope.Dispose();
+            //    scope.Dispose();
 
-                if (searchResults == null || total <= 0)
-                {
-                    products = Enumerable.Empty<IProduct>();
-                } else
-                {
-                    products = products.Where(x => searchResults.Any(y => y == x.Id));
-                }
-            }
+            //    if (searchResults == null || total <= 0)
+            //    {
+            //        products = Enumerable.Empty<IProduct>();
+            //    } else
+            //    {
+            //        products = products.Where(x => searchResults.Any(y => y == x.Id));
+            //    }
+            //}
 
-            if (query?.AllFiltersVisible == false)
-            {
-                Filters = products.Filters();
-            }
+            //if (query?.AllFiltersVisible == false)
+            //{
+            //    Filters = products.Filters();
+            //}
 
-            ProductCount = products.Count();
+            //ProductCount = products.Count();
 
-            if (query?.OrderBy != Utilities.OrderBy.NoOrder)
-            {
-                products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
-            }
+            //if (query?.OrderBy != Utilities.OrderBy.NoOrder)
+            //{
+            //    products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            //}
 
-            if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
-            {
-                Page = query.Page;
-                PageSize = query.PageSize;
-                PageCount = (ProductCount + PageSize - 1) / PageSize;
+            //if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
+            //{
+            //    Page = query.Page;
+            //    PageSize = query.PageSize;
+            //    PageCount = (ProductCount + PageSize - 1) / PageSize;
 
-                Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
+            //    Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
 
-            } else
-            {
-                Products = products;
-            }
+            //} else
+            //{
+            //    Products = products;
+            //}
         }
         
         public IEnumerable<IProduct> Products { get; set; }

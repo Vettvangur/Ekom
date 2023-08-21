@@ -154,7 +154,7 @@ namespace Ekom.Utilities
 
             var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
-            return _metaService.GetMetaFieldValue(content.GetValue<string>("metaFields"), metafieldAlias);
+            return _metaService.GetMetaFieldValue(content.GetValue<string>("metaFields"), content.Id, metafieldAlias);
         }
 
         internal static void SetProperty(this IContent content, string alias, string key, object value)

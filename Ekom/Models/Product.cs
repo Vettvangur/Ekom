@@ -1,11 +1,11 @@
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Services;
+using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
-using Ekom.Utilities;
-using Ekom.API;
-using Microsoft.AspNetCore.Http;
 
 namespace Ekom.Models
 {
@@ -21,6 +21,9 @@ namespace Ekom.Models
         private IPerStoreCache<IVariantGroup> __variantGroupCache;
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
+
+        private Lazy<IEnumerable<IVariant>> _allVariantsLazy;
+        private Lazy<IEnumerable<IVariantGroup>> _allVariantGroupsLazy;
 
         public virtual IDiscount ProductDiscount(string price = null)
         {
@@ -116,6 +119,8 @@ namespace Ekom.Models
         /// therefore we allow to configure a default/primary variant group.
         /// If none is configured, we return the first possible item.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IVariantGroup PrimaryVariantGroup
         {
             get
@@ -129,7 +134,7 @@ namespace Ekom.Models
                 {
                     var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
 
-                    if (!string.IsNullOrEmpty(primaryGroupValue) && VariantGroups.Any())
+                    if (!string.IsNullOrEmpty(primaryGroupValue))
                     {
                         var node = Configuration.Resolver.GetService<INodeService>().NodeById(primaryGroupValue);
 
@@ -141,7 +146,6 @@ namespace Ekom.Models
                         }
                     }
                 }
-
 
                 var primaryGroup = VariantGroups.FirstOrDefault(x => x.Available);
 
@@ -158,6 +162,8 @@ namespace Ekom.Models
         /// Select the Primary variant.
         /// First Variant in the primary variant group that is available, if none are available, return the first variant.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IVariant PrimaryVariant
         {
             get
@@ -246,6 +252,8 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual List<IPrice> Prices
         {
             get
@@ -264,7 +272,8 @@ namespace Ekom.Models
                 return prices;
             }
         }
-
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IPrice OriginalPrice
         {
             get
@@ -305,7 +314,7 @@ namespace Ekom.Models
                 {
                     var value = GetValue("metafields");
 
-                    return Configuration.Resolver.GetService<IMetafieldService>().SerializeMetafields(value);
+                    return Configuration.Resolver.GetService<IMetafieldService>().SerializeMetafields(value, Id);
                 }
 
                 return new List<Metavalue>();
@@ -315,34 +324,22 @@ namespace Ekom.Models
         /// <summary>
         /// All child variant groups of this product
         /// </summary>
-        [JsonIgnore]
-        [XmlIgnore]
-        public virtual IEnumerable<IVariantGroup> VariantGroups
+        public virtual List<IVariantGroup> VariantGroups
         {
             get
             {
-                return from pair in _variantGroupCache.Cache[Store.Alias]
-                       let variantGroup = pair.Value
-                       where variantGroup.ProductId == Id
-                       orderby variantGroup.SortOrder
-                       select variantGroup;
+                return _allVariantGroupsLazy.Value.ToList();
             }
         }
 
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        [JsonIgnore]
-        [XmlIgnore]
-        public virtual IEnumerable<IVariant> AllVariants
+        public virtual List<IVariant> AllVariants
         {
             get
             {
-                // Use ID Instead of Key, Key is much slower.
-                return from pair in _variantCache.Cache[Store.Alias]
-                       let variant = pair.Value
-                       where variant.ProductId == Id
-                       select variant;
+                return _allVariantsLazy.Value.ToList();
             }
         }
 
@@ -356,8 +353,7 @@ namespace Ekom.Models
             get
             {
                 // AllVariants is slower with Select, this is done for performance
-                return _variantCache.Cache[Store.Alias]
-                    .Count(x => x.Value.ProductId == Id);
+                return AllVariants.Count();
             }
 
         }
@@ -377,6 +373,9 @@ namespace Ekom.Models
         {
             PopulateCategoryAncestors();
             PopulateCategories();
+
+            _allVariantsLazy = new Lazy<IEnumerable<IVariant>>(() => ComputeAllVariants());
+            _allVariantGroupsLazy = new Lazy<IEnumerable<IVariantGroup>>(() => ComputeAllVariantGroups());
 
             Urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrls(item, Categories, store, item.Id);
 
@@ -417,7 +416,6 @@ namespace Ekom.Models
             }
         }
 
-
         private void PopulateCategoryAncestors()
         {
 
@@ -437,6 +435,22 @@ namespace Ekom.Models
             categoryAncestors.Reverse();
         }
 
+        private IEnumerable<IVariant> ComputeAllVariants()
+        {
+            return from pair in _variantCache.Cache[Store.Alias]
+                   let variant = pair.Value
+                   where variant.ProductId == Id
+                   select variant;
+        }
+
+        private IEnumerable<IVariantGroup> ComputeAllVariantGroups()
+        {
+            return from pair in _variantGroupCache.Cache[Store.Alias]
+                   let variantGroup = pair.Value
+                   where variantGroup.ProductId == Id
+                   orderby variantGroup.SortOrder
+                   select variantGroup;
+        }
         public IEnumerable<IProduct> RelatedProducts(int count = 4)
         {
             var relatedProducts = new List<IProduct>();

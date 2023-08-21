@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Models.Comparers;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
 
 namespace EkomCore.Services
@@ -9,25 +10,45 @@ namespace EkomCore.Services
     class MetafieldService : IMetafieldService
     {
         private readonly INodeService _nodeService;
-        public MetafieldService(INodeService nodeService)
+        private IMemoryCache _cache;
+        public MetafieldService(INodeService nodeService, IMemoryCache cache)
         {
             _nodeService = nodeService;
+            _cache = cache;
         }
 
         public IEnumerable<Metafield> GetMetafields()
         {
-            var metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
+            var cacheKey = $"GetMetafields";
 
-            return metafieldNodes.Select(x => new Metafield(x));
+            if (_cache.TryGetValue(cacheKey, out IEnumerable<Metafield> cachedResponse))
+            {
+                return cachedResponse;
+            }
+            
+            var metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
+            
+            var result = metafieldNodes.Select(x => new Metafield(x));
+
+            _cache.Set(cacheKey, result, TimeSpan.FromMinutes(360));
+
+            return result;
         }
 
-        public List<Metavalue> SerializeMetafields(string jsonValue)
+        public List<Metavalue> SerializeMetafields(string jsonValue, int nodeId)
         {
             if (string.IsNullOrEmpty(jsonValue))
             {
                 return null;
             }
+            
+            var cacheKey = $"{nodeId}_SerializeMetafields";
 
+            if (_cache.TryGetValue(cacheKey, out List<Metavalue> cachedResponse))
+            {
+                return cachedResponse;
+            }
+            
             var list = new List<Metavalue>();
 
             var fields = GetMetafields();
@@ -109,9 +130,10 @@ namespace EkomCore.Services
                 }
             }
 
+            _cache.Set(cacheKey, list, TimeSpan.FromMinutes(360));
+
             return list;
         }
-
 
         public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
         {
@@ -172,9 +194,9 @@ namespace EkomCore.Services
             return newArray;
         }
 
-        public List<Dictionary<string, string>> GetMetaFieldValue(string json, string metafieldAlias)
+        public List<Dictionary<string, string>> GetMetaFieldValue(string json, int nodeId, string metafieldAlias)
         {
-            var nodeMetaFields = SerializeMetafields(json);
+            var nodeMetaFields = SerializeMetafields(json, nodeId);
 
             if (nodeMetaFields == null || !nodeMetaFields.Any())
             {
@@ -222,24 +244,26 @@ namespace EkomCore.Services
 
         public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)
         {
-            var grouped = products
-                .SelectMany(x => x.Metafields)
-                .Where(x => x.Field.Filterable == filterable)
-                .GroupBy(x => x.Field, new MetafieldComparer());
+            var metafields = products
+             .SelectMany(x => x.Metafields)
+             .Where(x => x.Field.Filterable == filterable)
+             .ToList();
 
-            var culture = System.Globalization.CultureInfo.CurrentCulture.Name;
-            
+            var grouped = metafields.GroupBy(x => x.Field, new MetafieldComparer());
+
             foreach (var group in grouped)
             {
+                var distinctValues = group
+                    .SelectMany(x => x.Values)
+                    .Where(x => !x.ContainsKey("undefined"))
+                    .DistinctBy(x => x.Values.FirstOrDefault()) // Assuming DistinctBy is efficient
+                    .OrderBy(x => x.Values.FirstOrDefault(), new SemiNumericComparer())
+                    .ToList();
+
                 yield return new MetafieldGrouped()
                 {
                     Field = group.Key,
-                    Values = group
-                        .SelectMany(x => x.Values)
-                        .Where(x => !x.ContainsKey("undefined"))
-                        .OrderBy(x => x.Values.FirstOrDefault(), new SemiNumericComparer())
-                        .DistinctBy(x => x.Values.FirstOrDefault())
-                    .ToList()
+                    Values = distinctValues
                 };
             }
         }

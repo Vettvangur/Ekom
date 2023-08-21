@@ -109,11 +109,11 @@ namespace Ekom.Models
         /// <summary>
         /// All child variant groups of this product
         /// </summary>
-        IEnumerable<IVariantGroup> VariantGroups { get; }
+        List<IVariantGroup> VariantGroups { get; }
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        IEnumerable<IVariant> AllVariants { get; }
+        List<IVariant> AllVariants { get; }
 
         /// <summary>
         /// All categories this <see cref="Product"/> belongs to.

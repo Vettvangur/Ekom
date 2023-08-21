@@ -1,5 +1,5 @@
 using Ekom.Utilities;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using System.Xml.Serialization;
 
 namespace Ekom.Models

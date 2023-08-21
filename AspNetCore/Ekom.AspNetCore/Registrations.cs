@@ -173,11 +173,11 @@ static class Registrations
             );
 
             services.ConfigureOptions<EkomCultureRequestLocalizationOptions>();
-
+        
             services.AddSingleton<DatabaseFactory>();
 
         services.AddHttpContextAccessor();
-        //services.AddMemoryCache();
+        services.AddMemoryCache();
 
         services.Configure<MvcOptions>(mvcOptions =>
         {

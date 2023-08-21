@@ -3,6 +3,7 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.Models;
 using Ekom.Utilities;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Cache;
@@ -39,6 +40,7 @@ namespace Ekom.App_Start
         readonly IUmbracoContextFactory _context;
         readonly IUmbracoService _umbracoService;
         readonly IAppPolicyCache _runtimeCache;
+        private IMemoryCache _cache;
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
@@ -51,6 +53,7 @@ namespace Ekom.App_Start
             IUmbracoContextFactory context,
             IShortStringHelper shortStringHelper,
             IUmbracoService umbracoService,
+            IMemoryCache cache,
             AppCaches appCaches)
         {
             _logger = logger;
@@ -62,6 +65,7 @@ namespace Ekom.App_Start
             _shortStringHelper = shortStringHelper;
             _umbracoService = umbracoService;
             _runtimeCache = appCaches.RuntimeCache;
+            _cache = cache;
         }
 
         public void Handle(ContentSavingNotification e)
@@ -69,6 +73,8 @@ namespace Ekom.App_Start
             foreach (var content in e.SavedEntities)
             {
                 var alias = content.ContentType.Alias;
+
+                ClearMemoryCache(content);
 
                 try
                 {
@@ -127,6 +133,9 @@ namespace Ekom.App_Start
         {
             foreach (var node in args.UnpublishedEntities)
             {
+
+                ClearMemoryCache(node);
+                
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 cacheEntry?.Remove(node.Key);
@@ -139,6 +148,8 @@ namespace Ekom.App_Start
         {
             foreach (var node in args.DeletedEntities)
             {
+                ClearMemoryCache(node);
+                
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 cacheEntry?.Remove(node.Key);
@@ -498,6 +509,20 @@ namespace Ekom.App_Start
 
 
             }
+        }
+        
+        private void ClearMemoryCache(IContent content)
+        {
+
+            if (content.ContentType.Alias == "ekmProduct")
+            {
+                _cache.Remove($"{content.Id}_SerializeMetafields");
+            }
+            if (content.ContentType.Alias == "ekmMetaField")
+            {
+                _cache.Remove($"GetMetafields");
+            }
+           
         }
     }
 }
