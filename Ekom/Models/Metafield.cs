@@ -5,35 +5,12 @@ using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
-    public class Metafield : MetafieldBase
+    public class Metafield
     {
-        public Metafield(UmbracoContent x) : base(x)
-        {
-            string values = x.GetValue("values");
-            Values = OrderedValues(values);
-        }
-        [JsonIgnore]
-        [XmlIgnore]
-        public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
-    }
-
-    public class MetafieldInternal : MetafieldBase
-    {
-        public MetafieldInternal(UmbracoContent x) : base(x)
-        {
-            var values = x.GetValue("values");
-            Values = OrderedValues(values);
-        }
-        
-        public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
-    }
-
-    public class MetafieldBase
-    {
-        public MetafieldBase(UmbracoContent x)
+        public Metafield(UmbracoContent x)
         {
             var titleValues = JsonConvert.DeserializeObject<PropertyValue>(x.GetValue("title"));
-            
+            var values = x.GetValue("values");
 
             Id = x.Id;
             Key = x.Key;
@@ -45,10 +22,16 @@ namespace Ekom.Models
             Filterable = x.GetValue("filterable").ConvertToBool();
             EnableMultipleChoice = x.GetValue("enableMultipleChoice").ConvertToBool();
             ReadOnly = x.GetValue("readOnly").ConvertToBool();
+            if (!string.IsNullOrEmpty(values))
+            {
+                var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
 
-        
-            
+                var orderedValues = _values
+                    //.Where(x => !x.Values.ContainsKey("undefined")).ToList()
+                    .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
 
+                Values = orderedValues;
+            }
         }
 
         public int Id { get; set; }
@@ -61,23 +44,9 @@ namespace Ekom.Models
         public bool EnableMultipleChoice { get; set; }
         public bool Required { get; set; }
         public bool ReadOnly { get; set; }
-
-        public List<MetafieldValues> OrderedValues(string values)
-        {
-            if (!string.IsNullOrEmpty(values))
-            {
-                var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
-
-                var orderedValues = _values
-                    //.Where(x => !x.Values.ContainsKey("undefined")).ToList()
-                    .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
-
-                return orderedValues;
-            }
-
-            return new List<MetafieldValues>();
-        }
-
+        [JsonIgnore]
+        [XmlIgnore]
+        public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
     }
 
     public class MetafieldValues
@@ -90,6 +59,6 @@ namespace Ekom.Models
     public class MetafieldGrouped
     {
         public Metafield Field { get; set; }
-        public List<Dictionary<string,string>> Values { get; set; } = new List<Dictionary<string, string>>();
+        public List<Dictionary<string, string>> Values { get; set; } = new List<Dictionary<string, string>>();
     }
 }

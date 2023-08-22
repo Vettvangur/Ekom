@@ -25,21 +25,12 @@ namespace EkomCore.Services
             {
                 return cachedResponse;
             }
-            
+
             var metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
-            
+
             var result = metafieldNodes.Select(x => new Metafield(x));
 
             _cache.Set(cacheKey, result, TimeSpan.FromMinutes(360));
-
-            return result;
-        }
-
-        public IEnumerable<MetafieldInternal> GetMetafieldsInternal()
-        {
-            var metafieldNodes = _nodeService.NodesByTypes("ekmMetaField");
-
-            var result = metafieldNodes.Select(x => new MetafieldInternal(x));
 
             return result;
         }
@@ -50,14 +41,14 @@ namespace EkomCore.Services
             {
                 return null;
             }
-            
+
             var cacheKey = $"{nodeId}_SerializeMetafields";
 
             if (_cache.TryGetValue(cacheKey, out List<Metavalue> cachedResponse))
             {
                 return cachedResponse;
             }
-            
+
             var list = new List<Metavalue>();
 
             var fields = GetMetafields();
@@ -146,7 +137,7 @@ namespace EkomCore.Services
 
         public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
         {
-            var metaFields = GetMetafieldsInternal();
+            var metaFields = GetMetafields();
 
             var newArray = new JArray();
 
@@ -192,11 +183,12 @@ namespace EkomCore.Services
                                 continue;
                             }
                         }
-                    } else
+                    }
+                    else
                     {
                         newArray.Add(newObject);
                     }
-                   
+
                 }
             }
 
@@ -242,7 +234,7 @@ namespace EkomCore.Services
             {
                 return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault();
             }
-            
+
             if (metaField.Values.Any(x => x.ContainsKey(culture)))
             {
                 return string.Join(",", metaField.Values.Where(x => x.ContainsKey(culture)).Select(d => d.GetValue(culture)));
@@ -290,16 +282,26 @@ namespace EkomCore.Services
                         metaField.Field.Id.ToString() == criteria.Key && criteria.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
                     )
                 ));
-               
+
+                //products = products
+                //    .Where(x =>
+                //        x.Metafields.Any(metaField =>
+                //            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
+                //            .All(filter =>
+                //                filter.Key == metaField.Field.Id.ToString() &&
+                //                filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
+                //            )
+                //        )
+                //);
             }
 
             if (query?.PropertyFilters?.Any() == true)
             {
 
-                products = products.Where(product => 
+                products = products.Where(product =>
                     query.PropertyFilters
                     .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
-                    .All(f =>product.Properties.Any(p => p.Key == f.Key && 
+                    .All(f => product.Properties.Any(p => p.Key == f.Key &&
                         f.Value.Any(d => p.Value != null && p.Value.Contains(d, StringComparison.InvariantCultureIgnoreCase)))));
             }
 

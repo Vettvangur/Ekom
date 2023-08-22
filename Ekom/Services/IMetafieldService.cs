@@ -6,7 +6,6 @@ namespace Ekom.Services
     public interface IMetafieldService
     {
         IEnumerable<Metafield> GetMetafields();
-        IEnumerable<MetafieldInternal> GetMetafieldsInternal();
         List<Metavalue> SerializeMetafields(string jsonValue, int nodeId);
         IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true);
         IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query);
