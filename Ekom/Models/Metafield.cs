@@ -75,7 +75,7 @@ namespace Ekom.Models
                 return orderedValues;
             }
 
-            return null;
+            return new List<MetafieldValues>();
         }
 
     }
