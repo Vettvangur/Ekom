@@ -44,8 +44,6 @@ namespace Ekom.Models
         public bool EnableMultipleChoice { get; set; }
         public bool Required { get; set; }
         public bool ReadOnly { get; set; }
-        [JsonIgnore]
-        [XmlIgnore]
         public List<MetafieldValues> Values { get; set; } = new List<MetafieldValues>();
     }
 
