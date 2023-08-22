@@ -60,7 +60,7 @@ namespace EkomCore.Services
             
             var list = new List<Metavalue>();
 
-            var fields = GetMetafieldsInternal();
+            var fields = GetMetafields();
 
             var jArray = JArray.Parse(jsonValue);
 
@@ -290,17 +290,7 @@ namespace EkomCore.Services
                         metaField.Field.Id.ToString() == criteria.Key && criteria.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
                     )
                 ));
-                
-                //products = products
-                //    .Where(x =>
-                //        x.Metafields.Any(metaField =>
-                //            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
-                //            .All(filter =>
-                //                filter.Key == metaField.Field.Id.ToString() &&
-                //                filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
-                //            )
-                //        )
-                //);
+               
             }
 
             if (query?.PropertyFilters?.Any() == true)
