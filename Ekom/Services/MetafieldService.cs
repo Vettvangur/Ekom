@@ -60,7 +60,7 @@ namespace EkomCore.Services
             
             var list = new List<Metavalue>();
 
-            var fields = GetMetafields();
+            var fields = GetMetafieldsInternal();
 
             var jArray = JArray.Parse(jsonValue);
 
@@ -146,7 +146,7 @@ namespace EkomCore.Services
 
         public JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values)
         {
-            var metaFields = GetMetafields();
+            var metaFields = GetMetafieldsInternal();
 
             var newArray = new JArray();
 
