@@ -4,6 +4,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace EkomCore.Services
 {
@@ -144,9 +145,17 @@ namespace EkomCore.Services
             if (!string.IsNullOrEmpty(json))
             {
                 existingArray = JArray.Parse(json);
+
+                // Remove duplicates
+                var distinctItems = existingArray
+                    .GroupBy(item => item["Key"]?.ToString())
+                    .Select(group => group.First())
+                    .ToList();
+
+                existingArray = new JArray(distinctItems);
             }
 
-            newArray.Concat(existingArray);
+            newArray.Merge(existingArray);
 
             foreach (var value in values)
             {
@@ -164,26 +173,31 @@ namespace EkomCore.Services
                         { "Values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
                     };
 
+                    // If any value exist in the array
                     if (existingArray.Count() > 0)
                     {
-                        foreach (JObject item in existingArray)
-                        {
-                            if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
-                            {
-                                // Replace
-                                if (field.Key == _metaFieldKey)
-                                {
-                                    item["Values"] = newObject["Values"];
-                                    break;
-                                }
+                        bool containsKey = existingArray.Any(item => item["Key"]?.ToString() == field.Key.ToString());
 
-                            }
-
-                            // Append
+                        if (!containsKey)
+                        {    
+                            // Append Object if the key is not in the existing list
                             newArray.Add(newObject);
-                            continue;
-                            
+                        } else
+                        {
+                            // Iterate over current values and replace values if the same key is found
+                            foreach (JObject item in existingArray)
+                            {
+                                if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
+                                {
+                                    // Replace
+                                    if (field.Key == _metaFieldKey)
+                                    {
+                                        item["Values"] = newObject["Values"];
+                                    }
+                                }
+                            }
                         }
+
                     }
                     else
                     {
