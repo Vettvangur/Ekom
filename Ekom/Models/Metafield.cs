@@ -1,7 +1,6 @@
 using Ekom.Models.Comparers;
 using Ekom.Utilities;
 using Newtonsoft.Json;
-using System.Xml.Serialization;
 
 namespace Ekom.Models
 {
@@ -27,7 +26,6 @@ namespace Ekom.Models
                 var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
 
                 var orderedValues = _values
-                    //.Where(x => !x.Values.ContainsKey("undefined")).ToList()
                     .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
 
                 Values = orderedValues;
