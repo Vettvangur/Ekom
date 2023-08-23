@@ -128,11 +128,15 @@ namespace Ekom.Utilities
                 throw new ArgumentNullException("Metafield can only be set on ekom product");
             }
 
+            var valuesJson = JsonConvert.SerializeObject(values);
+
             var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
             var metaValue = _metaService.SetMetafield(content.GetValue<string>("metafields"), values);
 
-            SetProperty(content, "metafields", JsonConvert.SerializeObject(metaValue));
+            var metaValueJson = JsonConvert.SerializeObject(metaValue);
+
+            SetProperty(content, "metafields", metaValueJson);
         }
 
         public static List<Dictionary<string,string>> GetMetafieldValue(this IContent content, string metafieldAlias)

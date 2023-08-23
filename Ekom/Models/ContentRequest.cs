@@ -32,9 +32,10 @@ namespace Ekom.Models
         {
             set
             {
-                if (_httpCtx != null)
+                var cookies = _httpCtx?.Response?.Cookies;
+                if (cookies != null)
                 {
-                    _httpCtx.Response.Cookies.Append("StoreInfo", "StoreAlias=" + value.Alias);
+                    cookies.Append("StoreInfo", "StoreAlias=" + value.Alias);
                 }
 
                 //// Make sure to update users cookies on store change

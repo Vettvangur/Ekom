@@ -140,11 +140,13 @@ namespace EkomCore.Services
             var metaFields = GetMetafields();
 
             var newArray = new JArray();
-
+            var existingArray = new JArray();
             if (!string.IsNullOrEmpty(json))
             {
-                newArray = JArray.Parse(json);
+                existingArray = JArray.Parse(json);
             }
+
+            newArray.Concat(existingArray);
 
             foreach (var value in values)
             {
@@ -162,9 +164,9 @@ namespace EkomCore.Services
                         { "Values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
                     };
 
-                    if (newArray.Count() > 0)
+                    if (existingArray.Count() > 0)
                     {
-                        foreach (JObject item in newArray)
+                        foreach (JObject item in existingArray)
                         {
                             if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
                             {
@@ -176,12 +178,11 @@ namespace EkomCore.Services
                                 }
 
                             }
-                            else
-                            {
-                                // Append
-                                newArray.Append(newObject);
-                                continue;
-                            }
+
+                            // Append
+                            newArray.Add(newObject);
+                            continue;
+                            
                         }
                     }
                     else
