@@ -140,22 +140,20 @@ namespace EkomCore.Services
         {
             var metaFields = GetMetafields();
 
-            var newArray = new JArray();
-            var existingArray = new JArray();
+            var valueJsonArray = new JArray();
+
             if (!string.IsNullOrEmpty(json))
             {
-                existingArray = JArray.Parse(json);
+                valueJsonArray = JArray.Parse(json);
 
                 // Remove duplicates
-                var distinctItems = existingArray
+                var distinctItems = valueJsonArray
                     .GroupBy(item => item["Key"]?.ToString())
                     .Select(group => group.First())
                     .ToList();
 
-                existingArray = new JArray(distinctItems);
+                valueJsonArray = new JArray(distinctItems);
             }
-
-            newArray.Merge(existingArray);
 
             foreach (var value in values)
             {
@@ -174,40 +172,35 @@ namespace EkomCore.Services
                     };
 
                     // If any value exist in the array
-                    if (existingArray.Count() > 0)
+                    if (valueJsonArray.Count() > 0)
                     {
-                        bool containsKey = existingArray.Any(item => item["Key"]?.ToString() == field.Key.ToString());
+                        bool containsKey = valueJsonArray.Any(item => item["Key"]?.ToString() == field.Key.ToString());
 
                         if (!containsKey)
-                        {    
+                        {
                             // Append Object if the key is not in the existing list
-                            newArray.Add(newObject);
+                            valueJsonArray.Add(newObject);
                         } else
                         {
-                            // Iterate over current values and replace values if the same key is found
-                            foreach (JObject item in existingArray)
+                            var targetObject = valueJsonArray.FirstOrDefault(item => item["Key"]?.ToString() == field.Key.ToString()) as JObject;
+
+                            // If found, update its value
+                            if (targetObject != null)
                             {
-                                if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
-                                {
-                                    // Replace
-                                    if (field.Key == _metaFieldKey)
-                                    {
-                                        item["Values"] = newObject["Values"];
-                                    }
-                                }
+                                targetObject["Values"] = newObject["Values"];
                             }
                         }
 
                     }
                     else
                     {
-                        newArray.Add(newObject);
+                        valueJsonArray.Add(newObject);
                     }
 
                 }
             }
 
-            return newArray;
+            return valueJsonArray;
         }
 
         public List<Dictionary<string, string>> GetMetaFieldValue(string json, int nodeId, string metafieldAlias)
