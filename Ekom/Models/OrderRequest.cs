@@ -1,6 +1,4 @@
 using Ekom.Utilities;
-using System;
-using System.Collections.Generic;
 
 namespace Ekom.Models
 {
@@ -11,6 +9,13 @@ namespace Ekom.Models
         public string storeAlias { get; set; }
         public int quantity { get; set; }
         public OrderAction? action { get; set; }
+    }
+
+    public class OrderlineRequest
+    {
+        public Guid lineId { get; set; }
+        public string storeAlias { get; set; }
+        public int quantity { get; set; }
     }
 
     public class OrderMultipleRequest

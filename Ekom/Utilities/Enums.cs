@@ -150,7 +150,11 @@ public enum FormType
     /// <summary>
     /// 
     /// </summary>
-    ChangeCurrency
+    ChangeCurrency,
+    /// <summary>
+    /// 
+    /// </summary>
+    UpdateOrderLineQuantity
 }
 
 /// <summary>

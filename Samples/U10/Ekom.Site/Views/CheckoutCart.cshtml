@@ -1,12 +1,12 @@
-﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
     var order = _order.GetOrder();
 
-    var siblings = Model.Siblings().Where(x => x.IsDocumentType("checkout"));
+    var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
 
-    var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder).Url();
+    var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url();
 }
 
 @section Main {
@@ -50,10 +50,10 @@
                                         </div>
                                         @foreach (var variant in orderline.Product?.VariantGroups?.SelectMany(x => x.Variants))
                                         {
-                                        <div class="mt-1 flex text-sm">
-                                            <p class="text-gray-500">@orderline.Product?.VariantGroups?.FirstOrDefault().Title</p>
-                                            <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
-                                        </div>
+                                            <div class="mt-1 flex text-sm">
+                                                <p class="text-gray-500">@orderline.Product?.VariantGroups?.FirstOrDefault().Title</p>
+                                                <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
+                                            </div>
                                         }
 
                                         <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
@@ -61,11 +61,14 @@
 
                                     
                                     <div class="mt-4 sm:mt-0 sm:pr-9">
-                                        @using (Html.BeginEkomForm(FormType.AddToOrderCart, "orderline__update-form"))
+                                        @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity, htmlAttributes: new Dictionary<string, object> {
+                                        { "class", "cart__update-orderline" },
+                                        { "x-data", "updateOrderline($formData)" },
+                                        { "x-on:submit.prevent", "post"}
+                                        }))
                                         {
-                                            <input type="hidden" name="action" value="@OrderAction.Set" />
+                                            <input type="hidden" name="lineId" value="@orderline.Key" />
                                             <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
-                                            <input type="hidden" name="productId" value="@orderline.ProductKey" />
 
                                             @if (orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault() != null)
                                             {
@@ -79,10 +82,15 @@
                                         }
 
                                         <div class="absolute right-0 top-0">
-                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine))
+                                            @using (Html.BeginEkomForm(FormType.RemoveOrderLine, htmlAttributes: new Dictionary<string, object> {
+                                            { "class", "cart__remove-orderline" },
+                                            { "x-data", "removeOrderline" },
+                                            { "x-on:submit.prevent", "post"}
+                                            }))
                                             {
                                                 <input type="hidden" name="lineId" value="@orderline.Key" />
                                                 <input type="hidden" name="storeAlias" value="@orderline.OrderInfo.StoreInfo.Alias" />
+                                                
                                                 <button type="submit" class="-m-2 inline-flex p-2 text-gray-400 hover:text-gray-500">
                                                     <span class="sr-only">Remove</span>
                                                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -205,4 +213,76 @@
             </div>
         </section>
     </main>
+
+
+    <script>
+
+        document.addEventListener("alpine:init", () => {
+
+            Alpine.data("updateOrderline", () => ({
+                data() {
+                    var formData = new FormData(this.$el);
+                    var jsonObject = {};
+                    formData.forEach((value, key) => jsonObject[key] = value);
+                    return JSON.stringify(jsonObject);
+                },
+                async post() {
+
+                    return await (
+                        await fetch(this.$el.getAttribute('action'), {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: this.data(),
+                        }).then((response) => {
+
+                            if (response.ok) {
+                                window.location.reload();
+                            } else if (response.status === 409) {
+                                alert('stock error');
+                            } else {
+                                throw new Error('Something went wrong.');
+                            }
+
+                        }).catch((ex) => {
+                            alert('error');
+                        })
+                    )
+                },
+            }));
+
+            Alpine.data("removeOrderline", () => ({
+                data() {
+                    var formData = new FormData(this.$el);
+                    var jsonObject = {};
+                    formData.forEach((value, key) => jsonObject[key] = value);
+                    return JSON.stringify(jsonObject);
+                },
+                async post() {
+
+                    return await (
+                        await fetch(this.$el.getAttribute('action'), {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: this.data(),
+                        }).then((response) => {
+
+                            if (response.ok) {
+                                window.location.reload();
+                            } else {
+                                throw new Error('Something went wrong.');
+                            }
+                            
+                        }).catch((ex) => { 
+                            alert('error');
+                        })
+                    )
+                },
+            }));
+            
+        });
+    </script>
 }

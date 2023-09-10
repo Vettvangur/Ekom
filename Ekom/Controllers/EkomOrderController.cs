@@ -5,6 +5,7 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Reflection;
 
 namespace Ekom.Controllers
 {
@@ -41,7 +42,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("add")]
-        public async Task<IOrderInfo> AddToOrder(OrderRequest request)
+        public async Task<IOrderInfo> AddToOrder([FromBody] OrderRequest request)
         {
             if (request == null)
             {
@@ -144,7 +145,7 @@ namespace Ekom.Controllers
                 {
                     return order.RelatedProducts(4);
                 }
-                
+
                 throw new HttpResponseException(HttpStatusCode.NotFound);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
@@ -267,7 +268,7 @@ namespace Ekom.Controllers
             {
                 var form = Request.Form;
                 var keys = form.Keys;
-                
+
                 var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, keys.Where(x => x != "ShippingProvider" && x.StartsWith("shippingprovider", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
@@ -298,7 +299,7 @@ namespace Ekom.Controllers
             {
                 var form = Request.Form;
                 var keys = form.Keys;
-                
+
                 var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
@@ -325,16 +326,61 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("removeorderline")]
-        public async Task<IOrderInfo> RemoveOrderLine(Guid lineId, string storeAlias)
+        public async Task<IOrderInfo> RemoveOrderLine([FromBody] OrderlineRequest model)
         {
-            if (string.IsNullOrEmpty(storeAlias))
+            if (model == null)
+            {
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+            }
+            
+            if (string.IsNullOrEmpty(model.storeAlias))
             {
                 throw new HttpResponseException(HttpStatusCode.BadRequest);
             }
 
             try
             {
-                var orderInfo = await Order.Instance.RemoveOrderLineAsync(lineId, storeAlias);
+                var orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias);
+
+                return orderInfo;
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+                if (r != null)
+                {
+                    throw r;
+                }
+
+                throw;
+            }
+        }
+
+
+        /// <summary>
+        /// Update quantity in orderline
+        /// </summary>
+        /// <param name="lineId">Guid Key of line</param>
+        /// <param name="quantity">Quantity</param>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("Updateorderlinequantity")]
+        public async Task<IOrderInfo> UpdateOrderLineQuantity([FromBody] OrderlineRequest model)
+        {
+            if (model == null)
+            {
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+            }
+
+            if (string.IsNullOrEmpty(model.storeAlias))
+            {
+                throw new HttpResponseException(HttpStatusCode.BadRequest);
+            }
+
+            try
+            {
+                var orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias);
 
                 return orderInfo;
             }

@@ -11,6 +11,8 @@ namespace Ekom.Utilities
         /// <param name="htmlHelper"></param>
         /// <param name="formType"></param>
         /// <param name="className">Override the default Ekom classnames</param>
+        /// <param name="Id"></param>
+        /// <param name="htmlAttributes"></param>
         /// <returns></returns>
         /// <example>
         /// using (Html.BeginEkomForm(FormType.UpdatePaymentProvider)) 
@@ -19,7 +21,7 @@ namespace Ekom.Utilities
         ///     <button type = "submit" class="button">Submit</button>            
         /// }
         /// </example>
-        public static MvcForm BeginEkomForm(this IHtmlHelper htmlHelper, FormType formType, string className = null, string Id = null)
+        public static MvcForm BeginEkomForm(this IHtmlHelper htmlHelper, FormType formType, string className = null, string Id = null, Dictionary<string,object> htmlAttributes = null)
         {
             var actionName = formType.ToString();
             var defaultClassName = "";
@@ -41,7 +43,10 @@ namespace Ekom.Utilities
 
                     defaultClassName = "cart__remove-form";
                     break;
+                case FormType.UpdateOrderLineQuantity:
 
+                    defaultClassName = "cart__update-quantity-form";
+                    break;
                 case FormType.UpdatePaymentProvider:
 
                     defaultClassName = "cart__payment-form";
@@ -68,7 +73,7 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
             
-            return htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
+            return htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, false, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
         }
 
         /// <summary>
