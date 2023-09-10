@@ -18,6 +18,12 @@ namespace Ekom.Models
         public int quantity { get; set; }
     }
 
+    public class CouponRequest
+    {
+        public string coupon { get; set; }
+        public string storeAlias { get; set; }
+    }
+
     public class OrderMultipleRequest
     {
         public Guid productId { get; set; }

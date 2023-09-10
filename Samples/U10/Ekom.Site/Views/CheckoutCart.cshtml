@@ -10,6 +10,18 @@
 }
 
 @section Main {
+
+    @{
+        if (order == null || order.TotalQuantity <= 0)
+        {
+    <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+                    <partial name="ekom/components/noCartResult" />
+    </main>
+           
+            return;
+        }
+    }
+
     <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Shopping Cart</h1>
 
@@ -108,14 +120,20 @@
             </section>
             <!-- Order summary -->
             <section aria-labelledby="summary-heading" class="mt-16 rounded-lg bg-gray-50 px-4 py-6 sm:p-6 lg:col-span-5 lg:mt-0 lg:p-8">
-                
-                <form class="mb-6">
+
+                @using (Html.BeginEkomForm(FormType.ApplyCouponToOrder, htmlAttributes: new Dictionary<string, object> {
+                { "class", "cart__add-coupon mb-6" },
+                { "x-data", "addCoupon" },
+                { "x-on:submit.prevent", "post"}
+                }))
+                {
+                    <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                     <label for="discount-code" class="block text-sm font-medium text-gray-700">Discount code</label>
                     <div class="mt-1 flex space-x-4">
-                        <input type="text" id="discount-code" name="discount-code" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <input type="text" id="discount-code" name="coupon" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                         <button type="submit" class="rounded-md bg-gray-200 px-4 text-sm font-medium text-gray-600 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">Apply</button>
                     </div>
-                </form>
+                }
                 
                 <h2 id="summary-heading" class="text-lg font-medium text-gray-900">Order summary</h2>
 
@@ -282,7 +300,64 @@
                     )
                 },
             }));
-            
+
+            Alpine.data("addCoupon", () => ({
+                data() {
+                    var formData = new FormData(this.$el);
+                    var jsonObject = {};
+                    formData.forEach((value, key) => jsonObject[key] = value);
+                    return JSON.stringify(jsonObject);
+                },
+                async post() {
+
+                    let message = '';
+                    
+                    return await (
+                        await fetch(this.$el.getAttribute('action'), {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: this.data(),
+                        }).then((response) => {
+
+                            if (response.ok) {
+                                window.location.reload();
+                            } else {
+                                throw new Error();
+                            }
+
+                        }).catch((ex) => {
+                            message = `<div class="rounded-md mt-5 bg-red-50 p-4 message">
+                                            <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-red-800">Invalid discount code</h3>
+                                                <div class="mt-2 text-sm text-red-700">
+                                                    <p>We're sorry, but the discount code you entered doesn't seem to exist or may have expired. Please double-check the code and try again. If you don't have a code, don't worry; we often offer great deals and discounts that you can take advantage of while shopping with us.</p>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        </div>`;
+                        }).finally(() => {
+
+                            var successHtmlElement = this.$el.querySelector('.message');
+
+                            if (successHtmlElement) {
+                                successHtmlElement.outerHTML = message;
+                            } else {
+                                this.$el.insertAdjacentHTML('beforeend', message);
+                            }
+                            
+                        })
+                    )
+                },
+            }));
+
         });
     </script>
 }

@@ -1,17 +1,19 @@
-﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
     Layout = "Master.cshtml";
 
     var order = Order.Instance.GetOrder();
-
+    
     if (order == null || order.TotalQuantity <= 0)
     {
-        <div>
-            <h1>Cart is empty</h1>
-        </div>
+        <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+            <partial name="ekom/components/noCartResult" />
+        </main>
+           
         return;
     }
+    
 
     <div class="cart">
 

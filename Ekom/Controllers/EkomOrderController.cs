@@ -435,11 +435,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("coupon/apply")]
-        public async Task ApplyCouponToOrder(string coupon, string storeAlias)
+        public async Task ApplyCouponToOrder([FromBody] CouponRequest model)
         {
             try
             {
-                if (string.IsNullOrEmpty(coupon))
+                if (string.IsNullOrEmpty(model.coupon))
                 {
                     var resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
                     {
@@ -448,7 +448,7 @@ namespace Ekom.Controllers
                     throw new HttpResponseException(resp);
                 }
 
-                if (await Order.Instance.ApplyCouponToOrderAsync(coupon, storeAlias))
+                if (await Order.Instance.ApplyCouponToOrderAsync(model.coupon, model.storeAlias))
                 {
                     throw new HttpResponseException(HttpStatusCode.OK);
                 }
