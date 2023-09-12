@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace Ekom.Models
 {
     /// <summary>
@@ -113,6 +115,11 @@ namespace Ekom.Models
         /// All entity urls, computed from stores and possibly categories.
         /// </summary>
         IEnumerable<string> Urls { get; }
+
+        /// <summary>
+        /// All entity urls, computed from stores and possibly categories.
+        /// </summary>
+        Dictionary<string,string> UrlsWithContext { get; }
 
         /// <summary>
         /// Product url in relation to current request.

@@ -27,6 +27,12 @@ namespace Ekom.Models
         /// All category Urls, computed from stores
         /// </summary>
         public IEnumerable<string> Urls { get; set; }
+
+        /// <summary>
+        /// All category Urls with context, computed from stores
+        /// </summary>
+        public Dictionary<string,string> UrlsWithContext { get; set; }
+
         /// <summary>
         /// Our eldest ancestor category
         /// </summary>
@@ -158,7 +164,11 @@ namespace Ekom.Models
         {
             var urlSvc = Configuration.Resolver.GetService<IUrlService>();
             var nodeSvc = Configuration.Resolver.GetService<INodeService>();
-            Urls = urlSvc.BuildCategoryUrls(nodeSvc.GetAllCatalogAncestors(item), store);
+
+            var urls = urlSvc.BuildCategoryUrls(nodeSvc.GetAllCatalogAncestors(item), store); ;
+
+            UrlsWithContext = urls;
+            Urls = urls.Select(x => x.Value);
         }
     }
 }

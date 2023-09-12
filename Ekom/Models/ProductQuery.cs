@@ -28,6 +28,14 @@ namespace Ekom.Models
             int page = int.TryParse(query["page"], out page) ? page : 1;
 
             Page = Page.HasValue ? Page : page;
+
+            if (query.ContainsKey("orderby"))
+            {
+                if (Enum.TryParse(typeof(OrderBy), query.FirstOrDefault(x => x.Key == "orderby").Value, true, out var result))
+                {
+                    OrderBy = (OrderBy)result;
+                }
+            }
         }
         
         public Dictionary<string, List<string>> MetaFilters { get; set; }

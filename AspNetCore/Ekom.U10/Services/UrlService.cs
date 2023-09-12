@@ -36,9 +36,9 @@ namespace Ekom.Umb.Services
         /// <param name="items">All categories in hierarchy inclusive</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
-        public IEnumerable<string> BuildCategoryUrls(IEnumerable<UmbracoContent> categories, IStore store)
+        public Dictionary<string,string> BuildCategoryUrls(IEnumerable<UmbracoContent> categories, IStore store)
         {
-            var urls = new HashSet<string>();
+            var urls = new Dictionary<string, string>();
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
 
@@ -63,7 +63,7 @@ namespace Ekom.Umb.Services
 
                     var url = builder.ToString().AddTrailing().ToLower();
 
-                    urls.Add(url);
+                    urls.Add(domain.LanguageIsoCode, url);
                 }
             }
             else
@@ -82,10 +82,10 @@ namespace Ekom.Umb.Services
 
                 var url = builder.ToString().AddTrailing().ToLower();
 
-                urls.Add(url);
+                urls.Add(store.Alias, url);
             }
 
-            return urls.Distinct().OrderBy(x => x.Length);
+            return urls;
         }
 
         /// <summary>
@@ -134,6 +134,7 @@ namespace Ekom.Umb.Services
             return urls.OrderBy(x => x.Length);
         }
 
+        [Obsolete]
         public IEnumerable<string> BuildProductUrls(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
         {
             var slug = item.GetValue("slug");
@@ -186,6 +187,58 @@ namespace Ekom.Umb.Services
             return urls /*.OrderBy(x => x.Length) */;
         }
 
+        public Dictionary<string,string> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
+        {
+            var slug = item.GetValue("slug");
+
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                throw new Exception("Slug is missing on product: " + nodeId + " Store: " + store.Alias);
+            }
+
+            var slugValue = JsonConvert.DeserializeObject<PropertyValue>(slug);
+
+            var urls = new Dictionary<string, string>();
+
+            var categoryUrls = categories.SelectMany(x => x.UrlsWithContext);
+
+            if (slugValue != null && slugValue.Type == PropertyEditorType.Language && store.Domains.Any())
+            {
+                foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
+                {
+                    string domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
+
+                    var categoryUrl = categoryUrls.FirstOrDefault(x => x.Key == domain.LanguageIsoCode).Value;
+
+                    if (categoryUrl != null)
+                    {
+                        var productSlug = "";
+
+                        productSlug = item.GetValue("slug", domain.LanguageIsoCode);
+
+                        var url = categoryUrl + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                        urls.Add(domain.LanguageIsoCode, url);
+                    }
+                }
+            }
+            else
+            {
+
+                foreach (var category in categories)
+                {
+                    foreach (var categoryUrl in category.Urls)
+                    {
+                        var url = categoryUrl + item.GetValue("slug", store.Alias).ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                        urls.Add(store.Alias, url);
+                    }
+                }
+            }
+
+            return urls;
+        }
+
         /// <summary>
         /// If we need to refactor this further see
         /// Umbraco.Web.Routing.DomainUtilities.GetCultureFromDomains
@@ -201,7 +254,7 @@ namespace Ekom.Umb.Services
             using (var cref = _context.EnsureUmbracoContext())
             {
                 var pubReq = cref.UmbracoContext.PublishedRequest;
-
+                var culture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
                 var debugLogging = false;
                 Uri uri = null;
                 if (pubReq == null)
@@ -225,6 +278,7 @@ namespace Ekom.Umb.Services
                 else
                 {
                     uri = pubReq.Domain?.Uri;
+                    culture = pubReq.Culture;
                 }
 
                 if (uri == null)
@@ -256,6 +310,14 @@ namespace Ekom.Umb.Services
                     .AbsolutePath
                     .ToLower()
                     .AddTrailing();
+
+
+                var findUrlByDomainOrStore = node.UrlsWithContext.FirstOrDefault(x => x.Key == culture);
+
+                if (node.UrlsWithContext.ContainsKey(culture))
+                {
+                    return node.UrlsWithContext.FirstOrDefault(x => x.Key == culture).Value;
+                }
 
                 var findUrlByPrefix = node.Urls
                     .FirstOrDefault(x => x.StartsWith(path));

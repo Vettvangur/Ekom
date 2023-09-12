@@ -225,6 +225,13 @@ namespace Ekom.Models
         [JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<string> Urls { get; internal set; }
+        
+        /// <summary>
+        /// All product urls with context, computed from stores and categories.
+        /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
+        public virtual Dictionary<string,string> UrlsWithContext { get; internal set; }
 
         /// <summary>
         /// Get Price by current store currency
@@ -377,7 +384,10 @@ namespace Ekom.Models
             _allVariantsLazy = new Lazy<IEnumerable<IVariant>>(() => ComputeAllVariants());
             _allVariantGroupsLazy = new Lazy<IEnumerable<IVariantGroup>>(() => ComputeAllVariantGroups());
 
-            Urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrls(item, Categories, store, item.Id);
+            var urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
+
+            UrlsWithContext = urls;
+            Urls = urls.Select(x => x.Value);
 
             if (!Urls.Any() || string.IsNullOrEmpty(GetValue("title")))
             {
