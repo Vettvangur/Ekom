@@ -5,7 +5,9 @@ using Examine;
 using Examine.Lucene.Search;
 using Examine.Search;
 using Lucene.Net.QueryParsers.Classic;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.Extensions.Logging;
+using System.Drawing;
 using System.Text;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Infrastructure.Examine;
@@ -32,12 +34,13 @@ namespace Ekom.Umb.Services
             _config = config;
         }
 
+        // This function is used for public search engines.
         public virtual IEnumerable<int> ProductQuery(SearchRequest req, out long total)
         {
-            return Query(req, out total).Select(x => x.Id);
+            return PublicQuery(req, out total).Select(x => x.Id);
         }
-
-        public IEnumerable<SearchResultEntity> Query(SearchRequest req, out long total)
+        // This function is used for the the public search engin if its not overriden
+        public virtual IEnumerable<SearchResultEntity> PublicQuery(SearchRequest req, out long total)
         {
             total = 0;
 
@@ -53,7 +56,7 @@ namespace Ekom.Umb.Services
                 new EkomSearchField()
                 {
                     Name = "nodeName",
-                    Booster = "^4.0"
+                    Booster = "^4.0",
                 },
                 new EkomSearchField()
                 {
@@ -64,17 +67,19 @@ namespace Ekom.Umb.Services
                 new EkomSearchField()
                 {
                     Name = "title",
-                    Booster = "^4.0"
+                    Booster = "^4.0",
                 },
                  new EkomSearchField()
                 {
                     Name = "description",
-                    Booster = "^2.0"
+                    Booster = "^2.0",
+                    SearchType = EkomSearchType.Wildcard
                 },
                 new EkomSearchField()
                 {
                     Name = "searchTags",
-                    Booster = "^2.0"
+                    Booster = "^2.0",
+                    SearchType = EkomSearchType.Wildcard
                 },
                 new EkomSearchField()
                 {
@@ -97,7 +102,7 @@ namespace Ekom.Umb.Services
                     {
                         throw new Exception("Searcher not found. " + examineIndex);
                     }
-
+                    
                     var queryWithOutStopWords = req.SearchQuery.RemoveStopWords();
 
                     var cleanQuery = SearchHelper.RemoveDiacritics(string.IsNullOrEmpty(queryWithOutStopWords) ? req.SearchQuery : queryWithOutStopWords);
@@ -150,6 +155,7 @@ namespace Ekom.Umb.Services
 
                     IQuery searchQuery = searcher.CreateQuery("content");
 
+
                     ((LuceneSearchQueryBase)searchQuery).QueryParser.AllowLeadingWildcard = true;
 
                     var booleanOperation = searchQuery.NativeQuery(luceneQuery.ToString());
@@ -180,6 +186,155 @@ namespace Ekom.Umb.Services
                         ParentId = x.Content.IsDocumentType("ekmProduct") ? x.Content.Id : x.Content.IsDocumentType("ekmVariant") ? x.Content.Parent.Parent.Id : x.Content.Id,
                         SKU = x.Content.HasProperty("sku") ? x.Content.Value<string>("sku") : "",
                         Url = x.Content.Url()
+                    });
+
+                    return searchResultEntities;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to query search service. Query: " + req.SearchQuery + " Message: " + ex.Message);
+                _logger.LogInformation(luceneQuery.ToString());
+            }
+
+            return null;
+        }
+        
+        // This function is used for the the internal search engin if its not overriden
+        public virtual IEnumerable<SearchResultEntity> InternalQuery(SearchRequest req, out long total)
+        {
+            total = 0;
+
+            if (req == null || string.IsNullOrEmpty(req.SearchQuery))
+            {
+                return null;
+            }
+
+            var luceneQuery = new StringBuilder();
+
+            var defaultFields = new List<EkomSearchField>()
+            {
+                new EkomSearchField()
+                {
+                    Name = "nodeName",
+                    Booster = "^4.0",
+                    FuzzyConfiguration = "0.7"
+                },
+                new EkomSearchField()
+                {
+                    Name = "sku",
+                    Booster = "^10.0",
+                    SearchType = EkomSearchType.Wildcard
+                },
+                new EkomSearchField()
+                {
+                    Name = "title",
+                    Booster = "^4.0",
+                    FuzzyConfiguration = "0.7"
+                },
+                 new EkomSearchField()
+                {
+                    Name = "description",
+                    Booster = "^2.0",
+                    SearchType = EkomSearchType.Wildcard
+                },
+                new EkomSearchField()
+                {
+                    Name = "searchTags",
+                    Booster = "^2.0",
+                    SearchType = EkomSearchType.Wildcard
+                },
+                new EkomSearchField()
+                {
+                    Name = "id",
+                    Booster = "^10.0",
+                    SearchType = EkomSearchType.Exact
+                }
+            };
+
+            req.SearchFields = req.SearchFields == null ? defaultFields : req.SearchFields;
+
+            try
+            {
+                var examineIndex = !string.IsNullOrEmpty(req.ExamineIndex) ? req.ExamineIndex : _config.ExamineSearchIndex;
+                if (_examineManager.TryGetIndex(examineIndex, out var index) || !(index is IUmbracoIndex umbIndex))
+                {
+                    var searcher = index.Searcher;
+
+                    if (searcher == null)
+                    {
+                        throw new Exception("Searcher not found. " + examineIndex);
+                    }
+
+                    var queryWithOutStopWords = req.SearchQuery.RemoveStopWords();
+
+                    var cleanQuery = SearchHelper.RemoveDiacritics(string.IsNullOrEmpty(queryWithOutStopWords) ? req.SearchQuery : queryWithOutStopWords);
+
+                    var searchTerms = cleanQuery
+                        .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(QueryParser.Escape);
+
+                    int i = 0;
+                    foreach (var term in searchTerms)
+                    {
+                        if (i != 0)
+                        {
+                            luceneQuery.Append(" AND ");
+                        }
+
+                        if (i == 0)
+                        {
+                            luceneQuery.Append("+");
+                        }
+
+
+                        luceneQuery.Append(" (");
+                        foreach (var field in req.SearchFields)
+                        {
+                            luceneQuery.Append(" (");
+
+                            if (field.SearchType == EkomSearchType.Wildcard || field.SearchType == EkomSearchType.FuzzyAndWilcard)
+                            {
+                                luceneQuery.Append("(" + field.Name + ": " + "*" + term + "*" + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                            }
+
+                            if (field.SearchType == EkomSearchType.Fuzzy || field.SearchType == EkomSearchType.FuzzyAndWilcard)
+                            {
+                                luceneQuery.Append(" (" + field.Name + ": " + term + "~" + field.FuzzyConfiguration + ")" + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                            }
+
+                            if (field.SearchType == EkomSearchType.Exact)
+                            {
+                                luceneQuery.Append(" (" + field.Name + ": " + term + ") " + (!string.IsNullOrEmpty(field.Booster) ? field.Booster : ""));
+                            }
+
+                            luceneQuery.Append(")");
+                        }
+
+                        luceneQuery.Append(")");
+
+                        i++;
+                    }
+
+                    IQuery searchQuery = searcher.CreateQuery("content");
+
+                    ((LuceneSearchQueryBase)searchQuery).QueryParser.AllowLeadingWildcard = true;
+                    
+                    var booleanOperation = searchQuery.NativeQuery(luceneQuery.ToString());
+
+                    var results = booleanOperation.Execute();
+
+                    var searchResultEntities = results.Select(x => new SearchResultEntity()
+                    {
+                        DocType = x.Values.ContainsKey("__NodeTypeAlias") ? x.Values["__NodeTypeAlias"] : "",
+                        Name = x.Values.ContainsKey("nodeName") ? x.Values["nodeName"] : "",
+                        Id = Convert.ToInt32(x.Id),
+                        Key = x.Values.ContainsKey("__Key") ? new Guid(x.Values["__Key"]) : Guid.Empty,
+                        Score = x.Score,
+                        Path = x.Values.ContainsKey("__Path") ? x.Values["p__Pathath"] : "",
+                        SKU = x.Values.ContainsKey("sku") ? x.Values["sku"] : "",
+                        ParentId = x.Values.ContainsKey("parentID") ? Convert.ToInt32(x.Values["parentID"]) : -1
                     });
 
                     return searchResultEntities;
