@@ -334,10 +334,10 @@ namespace Ekom.Umb.Services
                         Score = x.Score,
                         Path = x.Values.ContainsKey("__Path") ? x.Values["p__Pathath"] : "",
                         SKU = x.Values.ContainsKey("sku") ? x.Values["sku"] : "",
-                        ParentId = x.Values.ContainsKey("parentID") ? Convert.ToInt32(x.Values["parentID"]) : -1
+                        ParentId = x.Values.ContainsKey("parentID") ? Convert.ToInt32(x.Values["parentID"]) : 0
                     });
 
-                    return searchResultEntities;
+                    return searchResultEntities.Where(x => x.ParentId != -1);
                 }
 
             }
