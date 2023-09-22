@@ -22,6 +22,10 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsServi
 
   $scope.GetStock = function (storeAlias) {
 
+    if ($scope.content.contentTypeAlias !== 'ekmProduct' && $scope.content.contentTypeAlias !== 'ekmProductVariant') {
+      return;
+    }
+
     if (storeAlias !== '') {
       $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'GetStockByStore?id=' + $scope.content.key + "&storeAlias=" + storeAlias)
         .then(function (result) {
@@ -42,7 +46,7 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsServi
 
   $scope.UpdateStock = function () {
 
-    $http.patch(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'stock/' + $scope.content.key + ($scope.storeSelected !== '' ? "/StoreAlias/" + $scope.storeSelected : '') + "/value/" + $scope.stockValue  )
+    $http.patch(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'stock/' + $scope.content.key + ($scope.storeSelected !== '' ? "/StoreAlias/" + $scope.storeSelected : '') + "/value/" + $scope.stockValue)
       .then(
         function () {
           notificationsService.success("Success", "Stock has been updated");

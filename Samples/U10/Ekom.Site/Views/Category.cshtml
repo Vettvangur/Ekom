@@ -9,11 +9,11 @@
     int currentPage = PaginationHelper.GetCurrentPage(Context);
         
     var productResponse = category.ProductsRecursive(new ProductQuery(Context.Request.Query)
-            {
-                Page = currentPage,
-                PageSize = 12,
-                AllFiltersVisible = true
-            });
+    {
+        Page = currentPage,
+        PageSize = 12,
+        AllFiltersVisible = true
+    });
 
     var culture = Model.GetCultureFromDomains();
 }
