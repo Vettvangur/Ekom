@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using OrderStatus = Ekom.Utilities.OrderStatus;
-using System.Reflection;
 
 namespace Ekom.Services
 {

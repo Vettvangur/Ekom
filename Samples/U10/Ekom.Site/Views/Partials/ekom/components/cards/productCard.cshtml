@@ -27,16 +27,19 @@
             </a>
         </h3>
         <p class="text-sm text-gray-500">@product.Summary</p>
-        <h4 class="sr-only">Available colors</h4>
-        <ul role="list" class="mt-auto flex space-x-3 pt-4 pb-4">
-            <li class="h-4 w-4 rounded-full border border-black border-opacity-10" style="background-color:#4B5563">
-                <span class="sr-only">Matte Black</span>
-            </li>
-            <li class="h-4 w-4 rounded-full border border-black border-opacity-10" style="background-color:#FEF3C7">
-                <span class="sr-only">Natural</span>
-            </li>
-
-        </ul>
+        @if (product.VariantGroups.Any(x => !string.IsNullOrEmpty(x.GetValue<string>("color"))))
+        {
+            <h4 class="sr-only">Available colors</h4>
+            <ul role="list" class="mt-auto flex space-x-3 pt-4 pb-4">
+                @foreach (var variantGroup in product.VariantGroups.Where(x => !string.IsNullOrEmpty(x.GetValue<string>("color"))))
+                {
+                    var color = variantGroup.GetValue<string>("color");
+                    <li class="h-4 w-4 rounded-full border border-black border-opacity-10" style="background-color:@color">
+                        <span class="sr-only">@variantGroup.Title</span>
+                    </li>
+                }
+            </ul>
+        }
         <div class="flex flex-1 flex-col justify-end">
             <p class="text-base font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
         </div>

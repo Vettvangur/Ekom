@@ -6,16 +6,17 @@
     var category = _catalog.GetCategory();
     var orderBy = Context.Request.Query["orderby"];
 
+    int currentPage = PaginationHelper.GetCurrentPage(Context);
+        
     var productResponse = category.ProductsRecursive(new ProductQuery(Context.Request.Query)
-    {
-        Page = 1,
-        PageSize = 10,
-        AllFiltersVisible = true
-    });
+            {
+                Page = currentPage,
+                PageSize = 1,
+                AllFiltersVisible = true
+            });
 
     var culture = Model.GetCultureFromDomains();
 }
-
 
 @section Main {
 
@@ -27,7 +28,7 @@
                 @if (productResponse.ProductCount > 0)
                 {
                     <div class="flex items-center">
-                        <div class="relative inline-block text-left" x-data="{ 
+                        <div class="relative inline-block text-left" x-data="{
                             showSort: false
                         }">
                             <div>
@@ -59,9 +60,10 @@
             </div>
 
             <div class="pb-24 pt-12 lg:grid lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
+                
                 <partial name="ekom/components/categoryFilters" view-data="@(new ViewDataDictionary(ViewData) {
-                { "productResponse", productResponse }
-            })" />
+                    { "productResponse", productResponse }
+                })" />
 
                 <section aria-labelledby="product-heading" class="mt-6 lg:col-span-2 lg:mt-0 xl:col-span-3">
                     <h2 id="product-heading" class="sr-only">Products</h2>
@@ -80,7 +82,10 @@
                             })" />
                             }
                         </div>
-                        <partial name="ekom/components/pagination" />
+
+                        <partial name="ekom/components/pagination" view-data="@(new ViewDataDictionary(ViewData) {
+                            { "productResponse", productResponse }
+                        })" />
                     }
                 </section>
             </div>
