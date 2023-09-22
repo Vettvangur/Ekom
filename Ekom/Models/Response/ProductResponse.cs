@@ -67,6 +67,12 @@ namespace Ekom.Models
                 PageSize = query.PageSize;
                 PageCount = (ProductCount + PageSize - 1) / PageSize;
 
+                if (Page > PageCount)
+                    Page = PageCount;
+
+                if (Page < 1)
+                    Page = 1;
+
                 Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
 
             } else
