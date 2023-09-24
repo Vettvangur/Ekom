@@ -34,7 +34,6 @@ static class ApplicationBuilderExtensions
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();
         services.AddTransient<IUrlService, UrlService>();
-        services.AddTransient<ExamineService>();
         services.AddScoped<BackofficeUserAccessor>();
         services.AddScoped<ISecurityService, SecurityService>();
         services.AddScoped<ICatalogSearchService, CatalogSearchService>();

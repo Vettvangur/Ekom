@@ -58,20 +58,19 @@ public class EkomComposer : IComposer
 
         var config = new Configuration(builder.Config);
 
-        if (!config.VirtualContent)
-        {
-            builder
-                .AddNotificationHandler<ContentPublishedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ContentUnpublishedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ContentSavingNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ContentDeletedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ContentMovedToRecycleBinNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ContentMovedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<DomainSavedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<ServerVariablesParsingNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<DomainDeletedNotification, UmbracoEventListeners>()
-                .AddNotificationHandler<LanguageCacheRefresherNotification, UmbracoEventListeners>();
-        }
+
+        builder
+            .AddNotificationHandler<ContentPublishedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ContentUnpublishedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ContentSavingNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ContentDeletedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ContentMovedToRecycleBinNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ContentMovedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<DomainSavedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<ServerVariablesParsingNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<DomainDeletedNotification, UmbracoEventListeners>()
+            .AddNotificationHandler<LanguageCacheRefresherNotification, UmbracoEventListeners>();
+        
 
         builder.Services.AddEkom();
     }

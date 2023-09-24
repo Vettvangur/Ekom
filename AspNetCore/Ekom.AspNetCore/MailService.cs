@@ -1,12 +1,7 @@
 using Ekom.Services;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Configuration;
 using System.Net;
 using System.Net.Mail;
-using System.Threading.Tasks;
-using System.Configuration;
-using LinqToDB.Common;
 
 namespace Ekom.AspNetCore.Services
 {

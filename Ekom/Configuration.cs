@@ -43,21 +43,7 @@ namespace Ekom
                 return value.ConvertToBool();
             }
         }
-
-        /// <summary>
-        /// Ekom:ExamineIndex
-        /// Overrides the default of ExternalSearcher
-        /// </summary>
-        public virtual string ExamineIndex
-        {
-            get
-            {
-                var value = _configuration["Ekom:ExamineIndex"];
-
-                return value ?? "ExternalIndex";
-            }
-        }
-
+        
         /// <summary>
         /// Ekom:ExamineSearchIndex
         /// Overrides the default of ExternalSearcher
@@ -80,11 +66,8 @@ namespace Ekom
         {
             get
             {
-#if NETCOREAPP
                 var value = _configuration.GetSection("Umbraco:CMS:RequestHandler:CharCollection").Get<List<CharCollection>>();
-#else
-                var value =  new List<CharCollection>();
-#endif
+
                 return value;
             }
         }
@@ -141,35 +124,6 @@ namespace Ekom
                 var value = _configuration["Ekom:CustomImage"];
 
                 return value ?? "images";
-            }
-        }
-
-        /// <summary>
-        /// Ekom:ExamineRebuild
-        /// Default is false, if true on startup we will check if examine is empty and rebuild if so.
-        /// </summary>
-        public virtual bool ExamineRebuild
-        {
-            get
-            {
-                var value = _configuration["Ekom:ExamineRebuild"];
-
-                return value.ConvertToBool();
-            }
-        }
-
-        /// <summary>
-        /// Ekom:VirtualContent
-        /// Allows for configuration of content nodes to use for matching all requests
-        /// Use case: Data populated from Navision, Ekom used as in memory cache with no backing umbraco nodes.
-        /// </summary>
-        public virtual bool VirtualContent
-        {
-            get
-            {
-                var value = _configuration["Ekom:VirtualContent"];
-
-                return value.ConvertToBool();
             }
         }
 
@@ -312,7 +266,5 @@ namespace Ekom
                 return ci;
             }
         }
-
-        public static object UmbracoCurrent { get; private set; }
     }
 }

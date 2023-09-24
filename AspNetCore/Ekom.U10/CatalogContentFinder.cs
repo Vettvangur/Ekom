@@ -65,8 +65,6 @@ namespace Ekom.Umb
 
                 var store = _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name, contentRequest.Culture);
 
-                var virtualContent = _config.VirtualContent;
-
                 #region Product and/or Category
 
                 // Requesting Product?
@@ -79,7 +77,6 @@ namespace Ekom.Umb
 
                 if (product != null && !string.IsNullOrEmpty(product.GetValue("slug")))
                 {
-                    //contentId = virtualContent ? int.Parse(umbHelper.GetDictionaryValue("virtualProductNode")) : product.Id;
                     contentId = product.Id;
 
                     var urlArray = path.Split('/');
@@ -99,9 +96,6 @@ namespace Ekom.Umb
 
                     if (category != null && !string.IsNullOrEmpty(category.GetValue("slug")))
                     {
-                        //contentId = virtualContent.InvariantEquals("true")
-                        //    ? int.Parse(umbHelper.GetDictionaryValue("virtualCategoryNode"))
-                        //    : category.Id;
 
                         contentId = category.Id;
                     }
