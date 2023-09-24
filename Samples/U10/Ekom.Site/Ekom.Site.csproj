@@ -62,6 +62,9 @@
         <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
         <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Controllers\" />
+    </ItemGroup>
 
     <PropertyGroup>
         <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>

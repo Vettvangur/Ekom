@@ -89,7 +89,7 @@ namespace Ekom.Models
         public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
-            if (orderBy == Utilities.OrderBy.TitleDesc)
+            if (orderBy == Utilities.OrderBy.TitleAsc)
             {
                 return products.OrderBy(x => x.Title);              
             }

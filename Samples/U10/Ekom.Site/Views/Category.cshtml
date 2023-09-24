@@ -21,7 +21,7 @@
 @section Main {
 
     <main class="mx-auto max-w-2xl px-4 lg:max-w-7xl lg:px-8" x-data>
-        <form method="get" action="@Model.Url()">
+        <form method="get" action="@category.Url">
             <div class="flex items-baseline justify-between border-b border-gray-200 pb-6 pt-24">
                 <h1 class="text-4xl font-bold tracking-tight text-gray-900">@category.Title</h1>
 
@@ -43,7 +43,7 @@
                             <div class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1" x-show="showSort">
                                 <div class="py-1" role="none">
                                     <input type="hidden" name="orderby" value="@(orderBy.Count > 0 ? orderBy : "TitleAsc")" />
-                                    <a href="#" x-on:click.prevent="document.querySelector('input[name=orderby]').value = 'TitleAsc'; $event.target.closest('form').submit();" class="@(orderBy == "TitleAsc" ? "font-medium text-gray-900" : "text-gray-500") block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Title: Low to High</a>
+                                    <a href="#" x-on:click.prevent="document.querySelector('input[name=orderby]').value = 'TitleAsc'; $event.target.closest('form').submit();" class="@(orderBy == "TitleAsc" || string.IsNullOrEmpty(orderBy) ? "font-medium text-gray-900" : "text-gray-500") block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Title: Low to High</a>
                                     <a href="#" x-on:click.prevent="document.querySelector('input[name=orderby]').value = 'TitleDesc'; $event.target.closest('form').submit();" class="@(orderBy == "TitleDesc" ? "font-medium text-gray-900" : "text-gray-500") block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-2">Title: High to Low</a>
                                     <a href="#" x-on:click.prevent="document.querySelector('input[name=orderby]').value = 'PriceAsc'; $event.target.closest('form').submit();" class="@(orderBy == "PriceAsc" ? "font-medium text-gray-900" : "text-gray-500") block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-3">Price: Low to High</a>
                                     <a href="#" x-on:click.prevent="document.querySelector('input[name=orderby]').value = 'PriceDesc'; $event.target.closest('form').submit();" class="@(orderBy == "PriceDesc" ? "font-medium text-gray-900" : "text-gray-500") block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-4">Price: High to Low</a>
@@ -61,7 +61,7 @@
 
             <div class="pb-24 pt-12 lg:grid lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
                 
-                <partial name="ekom/components/categoryFilters" view-data="@(new ViewDataDictionary(ViewData) {
+                <partial name="ekom/components/categoryNavigation" view-data="@(new ViewDataDictionary(ViewData) {
                     { "productResponse", productResponse }
                 })" />
 

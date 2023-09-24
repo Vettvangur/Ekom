@@ -98,8 +98,7 @@ namespace Ekom.Models
 
             var products = _productCache.Cache[Store.Alias]
                                 .Where(x => x.Value.Categories.Any(z => z.Id == Id))
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder).AsEnumerable();
+                                .Select(x => x.Value).AsEnumerable();
 
             return new ProductResponse(products, query);
         }
@@ -114,7 +113,6 @@ namespace Ekom.Models
                                     .Where(x => x.Value.Level >= Level &&
                                                 x.Value.Path.Split(',').Contains(Id.ToString()))
                                     .Select(x => x.Value)
-                                    .OrderBy(x => x.SortOrder)
                                     .SelectMany(x => x.Products().Products).DistinctBy(x => x.Id);
 
             return new ProductResponse(products, query);

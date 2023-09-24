@@ -1,4 +1,6 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives;
 
 @{
     var productResponse = (ProductResponse?)ViewData["productResponse"];
@@ -10,13 +12,15 @@
     var helper = new PaginationHelper(currentPage, productResponse.PageCount.Value);
 
     var pageRange = helper.PageRange();
+
+    var currentQueryString = Context.Request.QueryString.Value;
 }
     
 <!-- Pagination -->
 <nav aria-label="Pagination" class="mx-auto mt-6 flex max-w-7xl justify-between text-sm font-medium text-gray-700">
     
     <div class="min-w-0 flex-1">
-        <a href="?p=@(currentPage - 1)" class="@(currentPage == 1 ? "pointer-events-none opacity-50" : "") inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">Previous</a>
+        <a href="@GetQueryValue((currentPage - 1).ToString())" class="@(currentPage == 1 ? "pointer-events-none opacity-50" : "") inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">Previous</a>
     </div>
     <div class="hidden space-x-2 sm:flex">
         @foreach (var item in pageRange)
@@ -27,12 +31,34 @@
             }
             else
             {
-                <a href="?p=@item" class="inline-flex h-10 items-center rounded-md border @(item == currentPage.ToString() ? "border-indigo-600 ring-1 ring-indigo-600" : "border-gray-300")  bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">@item</a>
+                <a href="@GetQueryValue(item)" class="inline-flex h-10 items-center rounded-md border @(item == currentPage.ToString() ? "border-indigo-600 ring-1 ring-indigo-600" : "border-gray-300")  bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">@item</a>
             }
         }
-       
     </div>
     <div class="flex min-w-0 flex-1 justify-end">
-        <a href="?p=@(currentPage + 1)" class="@(pageRange.Last() == currentPage.ToString() ? "pointer-events-none opacity-50" : "") inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">Next</a>
+        <a href="@GetQueryValue((currentPage + 1).ToString())" class="@(pageRange.Last() == currentPage.ToString() ? "pointer-events-none opacity-50" : "") inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 hover:bg-gray-100 focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-25 focus:ring-offset-1 focus:ring-offset-indigo-600">Next</a>
     </div>
 </nav>
+
+@{
+    string GetQueryValue(string page)
+    {
+        var queryCollection = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(Context.Request.QueryString.Value);
+
+        var modifiedQuery = queryCollection.ToDictionary(
+            p => p.Key,
+            p => p.Key == "p" ? new StringValues(page) : p.Value
+        );
+
+        // Add "p" key if it doesn't exist
+        if (!modifiedQuery.ContainsKey("p"))
+        {
+            modifiedQuery.Add("p", page);
+        }
+
+        var newQueryString = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("", modifiedQuery);
+
+        return newQueryString;
+
+    }
+}

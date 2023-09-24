@@ -40,6 +40,6 @@ namespace Ekom.Models
         
         public Dictionary<string, List<string>> MetaFilters { get; set; }
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
-        public OrderBy OrderBy { get; set; }
+        public OrderBy OrderBy { get; set; } = OrderBy.TitleAsc;
     }
 }
