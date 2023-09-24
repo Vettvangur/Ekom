@@ -5,23 +5,23 @@ namespace Ekom.Events
 {
     public static class CheckoutEvents
     {
-        public static event EventHandler<PayEventArgs> PayEvent;
+        public static event EventHandler<PayEventArgs> Pay;
         internal static void OnPay(object sender, PayEventArgs args)
-            => PayEvent?.Invoke(sender, args);
+            => Pay?.Invoke(sender, args);
 
-        public static event EventHandler<ProcessingEventArgs> ProcessingEvent;
+        public static event EventHandler<ProcessingEventArgs> Processing;
         internal static void OnProcessing(object sender, ProcessingEventArgs args)
-            => ProcessingEvent?.Invoke(sender, args);
+            => Processing?.Invoke(sender, args);
 
-        public static event EventHandler<CompleteCheckoutEventArgs> CompleteCheckoutEvent;
+        public static event EventHandler<CompleteCheckoutEventArgs> CompleteCheckout;
 
         internal static void OnCompleteCheckout(object sender, CompleteCheckoutEventArgs args)
-            => CompleteCheckoutEvent?.Invoke(sender, args);
+            => CompleteCheckout?.Invoke(sender, args);
 
-        public static event EventHandler<CheckoutSuccessEventArgs> CheckoutSucessEvent;
+        public static event EventHandler<CheckoutSuccessEventArgs> CheckoutSucess;
 
         internal static void OnCheckoutSuccess(object sender, CheckoutSuccessEventArgs args)
-            => CheckoutSucessEvent?.Invoke(sender, args);
+            => CheckoutSucess?.Invoke(sender, args);
     }
 
     public class PayEventArgs : EventArgs

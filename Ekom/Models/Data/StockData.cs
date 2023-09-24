@@ -1,6 +1,4 @@
 using LinqToDB.Mapping;
-using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace Ekom.Models
 {
@@ -12,12 +10,12 @@ namespace Ekom.Models
     {
         /// <summary>
         /// With per store stock this id has the following format
-        /// {Two letter country code}_{Guid} or:
-        /// IS_d6da9d30-9246-4856-b66b-5411086b84d9
+        /// {StoreAlias}_{Guid} or:{Guid}
+        /// 
         /// In other cases this is simply a Guid
         /// </summary>
         [PrimaryKey, NotNull]
-        [Column(Length = 39)]
+        [Column(Length = 255)]
         public string UniqueId { get; internal set; }
 
         /// <summary>

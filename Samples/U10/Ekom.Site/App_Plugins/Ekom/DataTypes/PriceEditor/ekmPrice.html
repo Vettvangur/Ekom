@@ -1,7 +1,7 @@
 <div ng-controller="Ekom.Price">
 
   <fieldset ng-repeat="store in stores">
-    <legend style="font-size: 18px; font-weight:bold;">{{ store.Alias }}</legend>
+    <legend style="font-size: 18px; font-weight:bold;">{{ store.alias }}</legend>
     <div ng-repeat="currency in store.currencies">
       <div style="margin-bottom:10px;">
         <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="price_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">

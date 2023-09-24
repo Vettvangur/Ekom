@@ -1,13 +1,9 @@
 using Ekom.Exceptions;
-using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Repositories;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ekom.Cache
 {
@@ -52,7 +48,7 @@ namespace Ekom.Cache
             int count = 0;
 
             var allStock = _stockRepo.GetAllStockAsync().Result;
-            var filteredStock = allStock.Where(stock => stock.UniqueId.Length == 39);
+            var filteredStock = allStock.Where(stock => stock.UniqueId.Contains("_", StringComparison.InvariantCulture));
 
             foreach (var store in _storeCache.Cache.Select(x => x.Value))
             {
@@ -75,7 +71,7 @@ namespace Ekom.Cache
 
             var curStoreCache = Cache[store.Alias];
 
-            foreach (var stock in stockData.Where(x => x.UniqueId.StartsWith(store.Alias)))
+            foreach (var stock in stockData.Where(x => x.UniqueId.Split('_')[0].Equals(store.Alias, StringComparison.InvariantCulture)))
             {
                 var stockIdSplit = stock.UniqueId.Split('_');
 

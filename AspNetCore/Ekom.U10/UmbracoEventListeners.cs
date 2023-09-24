@@ -1,3 +1,4 @@
+using Ekom.API;
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
@@ -82,10 +83,38 @@ namespace Ekom.App_Start
                     {
                         UpdatePropertiesDefaultValues(content, alias, e);
                     }
+
+                    if (alias == "ekmProduct" || alias == "ekmProductVariant")
+                    {
+                        var stockValue = content.GetValue<string>("stock");
+
+                        if (!string.IsNullOrEmpty(stockValue))
+                        {
+                          
+                            var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
+
+                            if (stockArray != null)
+                            {
+                                foreach (var stockItem in stockArray)
+                                {
+                                    if (!string.IsNullOrEmpty(stockItem.StoreAlias))
+                                    {
+                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
+                                    }
+                                    else
+                                    {
+                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
+                                    }
+                                }
+                            }
+                            
+                        }
+
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "ContentService_Saving Failed");
+                    _logger.LogError(ex, $"ContentService_Saving Failed for {content.Id}");
                     throw;
                 }
             }

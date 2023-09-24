@@ -262,7 +262,7 @@ namespace Ekom.Models
                     ValueString = value
                 };
 
-                CatalogEvents.OnCurrencyString(this, model);
+                CatalogEvents.OnCurrencyStringFormat(this, model);
 
                 return model.ValueString;
             }

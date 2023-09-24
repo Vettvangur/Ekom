@@ -4,9 +4,9 @@ namespace Ekom.Events
 {
     public static class CatalogEvents
     {
-        public static event EventHandler<CurrencyStringEventArgs> CurrencyStringEvent;
-        internal static void OnCurrencyString(object sender, CurrencyStringEventArgs args)
-            => CurrencyStringEvent?.Invoke(sender, args);
+        public static event EventHandler<CurrencyStringEventArgs> CurrencyStringFormat;
+        internal static void OnCurrencyStringFormat(object sender, CurrencyStringEventArgs args)
+            => CurrencyStringFormat?.Invoke(sender, args);
         
     }
     public class CurrencyStringEventArgs : EventArgs

@@ -1,19 +1,15 @@
 using Ekom.App_Start;
 using Ekom.Cache;
-using Ekom.Exceptions;
-using Ekom.Events;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Payments;
+using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Umb.Sections;
-using Ekom.Umb.Services;
-using Ekom.Utilities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
@@ -147,11 +143,16 @@ class EkomStartup : IComponent
                 : _factory.GetService<IBaseCache<StockData>>()
                 as ICache;
 
-            stockCache.FillCache();
+            stockCache?.FillCache();
             
-            _factory.GetService<ICouponCache>()
+            _factory.GetService<ICouponCache>()?
                 .FillCache();
-            Ekom.Payments.Events.Success += CompleteCheckout;
+
+            Payments.Events.Success += CompleteCheckout;
+
+            var orderServce = _factory.GetService<OrderRepository>();
+
+            orderServce?.MigrateOrderTableToEkom10();
 
             _logger.LogInformation("Ekom Started");
         }
