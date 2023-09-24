@@ -14,9 +14,9 @@
     @{
         if (order == null || order.TotalQuantity <= 0)
         {
-    <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
-                    <partial name="ekom/components/noCartResult" />
-    </main>
+            <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
+                            <partial name="ekom/components/noCartResult" />
+            </main>
            
             return;
         }
@@ -75,7 +75,7 @@
                                     <div class="mt-4 sm:mt-0 sm:pr-9">
                                         @using (Html.BeginEkomForm(FormType.UpdateOrderLineQuantity, htmlAttributes: new Dictionary<string, object> {
                                         { "class", "cart__update-orderline" },
-                                        { "x-data", "updateOrderline($formData)" },
+                                        { "x-data", "updateOrderline" },
                                         { "x-on:submit.prevent", "post"}
                                         }))
                                         {

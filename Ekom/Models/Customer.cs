@@ -63,6 +63,20 @@ namespace Ekom.Models
                 return Properties.GetValue("customerCountry");
             }
         }
+        public string Region
+        {
+            get
+            {
+                return Properties.GetValue("customerRegion");
+            }
+        }
+        public string Company
+        {
+            get
+            {
+                return Properties.GetValue("customerCompany");
+            }
+        }
         public string ZipCode
         {
             get

@@ -2,8 +2,20 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
+    var currentMember = await _memberManager.GetCurrentMemberAsync();
+    var memberAsContent = currentMember != null ? _memberManager.AsPublishedMember(currentMember) : null;
 
     var order = _order.GetOrder();
+
+    var customerName = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) ? order.CustomerInformation.Customer.Name : memberAsContent != null ? memberAsContent.Name : "";
+    var customerEmail = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email) ? order.CustomerInformation.Customer.Email : currentMember != null ? currentMember.Email : "";
+    var customerAddress = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Address) ? order.CustomerInformation.Customer.Address : memberAsContent != null ? memberAsContent.Value<string>("address") : "";
+    var customerApartment = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Apartment) ? order.CustomerInformation.Customer.Apartment : memberAsContent != null ? memberAsContent.Value<string>("apartment") : "";
+    var customerCity = !string.IsNullOrEmpty(order.CustomerInformation.Customer.City) ? order.CustomerInformation.Customer.City : memberAsContent != null ? memberAsContent.Value<string>("city") : "";
+    var customerCountry = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Country) ? order.CustomerInformation.Customer.Country : memberAsContent != null ? memberAsContent.Value<string>("country") : "";
+    var customerRegion = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Region) ? order.CustomerInformation.Customer.Region : memberAsContent != null ? memberAsContent.Value<string>("region") : "";
+    var customerZipCode = !string.IsNullOrEmpty(order.CustomerInformation.Customer.ZipCode) ? order.CustomerInformation.Customer.ZipCode : memberAsContent != null ? memberAsContent.Value<string>("zipCode") : "";
+    var customerPhone = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Phone) ? order.CustomerInformation.Customer.Phone : memberAsContent != null ? memberAsContent.Value<string>("phone") : "";
 }
 
 @section Main {
@@ -23,18 +35,24 @@
         <div class="mx-auto max-w-2xl lg:max-w-none">
             <h1 class="sr-only">Checkout</h1>
 
-            <form class="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
+            @using (Html.BeginEkomForm(FormType.UpdateCustomerInformation, htmlAttributes: new Dictionary<string, object> {
+                { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" },
+                { "x-data", "updateCustomerInformation" },
+                { "x-on:submit.prevent", "post"}
+            }))
+            {
+                <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                 <div>
                     <div>
                         <h2 class="text-lg font-medium text-gray-900 flex items-center justify-between">
                             <span>Contact information</span>
-                                <a href="#" class="text-sm font-semibold leading-6 text-indigo-400">Already have an account? Login</a>
-                            </h2>
+                            <a href="#" class="text-sm font-semibold leading-6 text-indigo-400">Already have an account? Login</a>
+                        </h2>
 
                         <div class="mt-4">
-                            <label for="email-address" class="block text-sm font-medium text-gray-700">Email address</label>
+                            <label for="email-address" class="block text-sm font-medium text-gray-700">Email address *</label>
                             <div class="mt-1">
-                                <input type="email" id="email-address" name="email-address" autocomplete="email" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <input type="email" id="email-address" name="customerEmail" autocomplete="email" value="@customerEmail" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             </div>
                         </div>
                     </div>
@@ -43,77 +61,66 @@
                         <h2 class="text-lg font-medium text-gray-900">Shipping information</h2>
 
                         <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                            <div>
-                                <label for="first-name" class="block text-sm font-medium text-gray-700">First name</label>
+                            <div class="sm:col-span-2">
+                                <label for="full-name" class="block text-sm font-medium text-gray-700">Full name *</label>
                                 <div class="mt-1">
-                                    <input type="text" id="first-name" name="first-name" autocomplete="given-name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="last-name" class="block text-sm font-medium text-gray-700">Last name</label>
-                                <div class="mt-1">
-                                    <input type="text" id="last-name" name="last-name" autocomplete="family-name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" id="full-name" name="customerName" autocomplete="given-name" value="@customerName" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
 
                             <div class="sm:col-span-2">
-                                <label for="company" class="block text-sm font-medium text-gray-700">Company</label>
+                                <label for="address" class="block text-sm font-medium text-gray-700">Address *</label>
                                 <div class="mt-1">
-                                    <input type="text" name="company" id="company" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                </div>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
-                                <div class="mt-1">
-                                    <input type="text" name="address" id="address" autocomplete="street-address" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerAddress" id="address" autocomplete="street-address" value="@customerAddress" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
 
                             <div class="sm:col-span-2">
                                 <label for="apartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
                                 <div class="mt-1">
-                                    <input type="text" name="apartment" id="apartment" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerApartment" id="apartment" value="@customerApartment" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 </div>
                             </div>
 
                             <div>
-                                <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                                <label for="city" class="block text-sm font-medium text-gray-700">City *</label>
                                 <div class="mt-1">
-                                    <input type="text" name="city" id="city" autocomplete="address-level2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerCity" id="city" autocomplete="address-level2" value="@customerCity" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
 
                             <div>
-                                <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
+                                <label for="country" class="block text-sm font-medium text-gray-700">Country *</label>
                                 <div class="mt-1">
-                                    <select id="country" name="country" autocomplete="country-name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        <option>United States</option>
-                                        <option>Canada</option>
-                                        <option>Mexico</option>
+ 
+
+                                    <select id="country" data-val="@customerCountry" name="customerCountry" autocomplete="country-name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                        <!option value="US" @(customerCountry == "US" ? "selected='selected'" : "")>United States</!option>
+                                        <!option value="CA" @(customerCountry == "CA" ? "selected='selected'" : "")>Canada</!option>
+                                        <!option value="IS" @(customerCountry == "IS" ? "selected='selected'" : "")>Iceland</!option>
+                                        <!option value="MX" @(customerCountry == "MX" ? "selected='selected'" : "")>Mexico</!option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label for="region" class="block text-sm font-medium text-gray-700">State / Province</label>
+                                <label for="region" class="block text-sm font-medium text-gray-700">State / Province *</label>
                                 <div class="mt-1">
-                                    <input type="text" name="region" id="region" autocomplete="address-level1" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerRegion" id="region" autocomplete="address-level1" value="@customerRegion" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
 
                             <div>
-                                <label for="postal-code" class="block text-sm font-medium text-gray-700">Postal code</label>
+                                <label for="zip-code" class="block text-sm font-medium text-gray-700">Postal code *</label>
                                 <div class="mt-1">
-                                    <input type="text" name="postal-code" id="postal-code" autocomplete="postal-code" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerZipCode" id="zip-code" autocomplete="postal-code" value="@customerZipCode" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
 
                             <div class="sm:col-span-2">
-                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone *</label>
                                 <div class="mt-1">
-                                    <input type="text" name="phone" id="phone" autocomplete="tel" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    <input type="text" name="customerPhone" id="phone" autocomplete="tel" value="@customerPhone" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
                                 </div>
                             </div>
                         </div>
@@ -123,7 +130,7 @@
                         <h2 id="billing-heading" class="text-lg font-medium text-gray-900">Billing information</h2>
 
                         <div class="mt-6 flex items-center">
-                            <input id="same-as-shipping" name="same-as-shipping" type="checkbox" checked="" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <input id="same-as-shipping" name="same-as-shipping" type="checkbox" @(order.CustomerInformation.IsBillingSameAsShipping ? "checked" : "") class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             <div class="ml-2">
                                 <label for="same-as-shipping" class="text-sm font-medium text-gray-900">Same as shipping information</label>
                             </div>
@@ -185,7 +192,70 @@
                         </div>
                     </div>
                 </div>
-            </form>
+            }
         </div>
     </main>
+
+    <script>
+        document.addEventListener("alpine:init", () => {
+            Alpine.data("updateCustomerInformation", () => ({
+                data() {
+                    var formData = new FormData(this.$el);
+                    const params = new URLSearchParams();
+                    formData.forEach((value, key) => {
+                        params.append(key, value);
+                    });
+                    return params.toString();
+                },
+                async post() {
+
+                    let message = '';
+
+                    return await (
+                        await fetch(this.$el.getAttribute('action'), {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                            },
+                            body: this.data(),
+                        }).then((response) => {
+
+                            if (response.ok) {
+                              // Redirect to shipping node
+                            } else {
+                                throw new Error();
+                            }
+
+                        }).catch((ex) => {
+                            message = `<div class="rounded-md mt-5 bg-red-50 p-4 message">
+                                                            <div class="flex">
+                                                            <div class="flex-shrink-0">
+                                                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                            <h3 class="text-sm font-medium text-red-800">Invalid discount code</h3>
+                                                                <div class="mt-2 text-sm text-red-700">
+                                                                    <p>We're sorry, but the discount code you entered doesn't seem to exist or may have expired. Please double-check the code and try again. If you don't have a code, don't worry; we often offer great deals and discounts that you can take advantage of while shopping with us.</p>
+                                                                </div>
+                                                            </div>
+                                                            </div>
+                                                        </div>`;
+                        }).finally(() => {
+
+                            var successHtmlElement = this.$el.querySelector('.message');
+
+                            if (successHtmlElement) {
+                                successHtmlElement.outerHTML = message;
+                            } else {
+                                this.$el.insertAdjacentHTML('beforeend', message);
+                            }
+
+                        })
+                    )
+                },
+            }));
+        });
+    </script>
 }
