@@ -1,4 +1,4 @@
-angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
+angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParams, $http, contentResource, $q) {
   $scope.stocks = [];
   $scope.content = null;
   $scope.config = null;
@@ -37,7 +37,7 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsServi
       getStockValue('').then(function (stockValue) {
         $scope.stocks.push({
           storeAlias: '',
-          value: stostockValueck
+          value: stockValue
         });
       })
     }
@@ -45,6 +45,7 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, assetsServi
   };
 
   var getStockValue = function (storeAlias) {
+    
     if ($scope.content.contentTypeAlias !== 'ekmProduct' && $scope.content.contentTypeAlias !== 'ekmProductVariant') {
       return $q.when(0);
     }
