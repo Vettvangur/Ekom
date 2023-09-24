@@ -3,14 +3,9 @@ using Ekom.Services;
 using Ekom.Utilities;
 using LinqToDB;
 using LinqToDB.Data;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace Ekom.Repositories
 {

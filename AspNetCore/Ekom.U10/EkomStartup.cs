@@ -123,6 +123,9 @@ class EkomStartup : IComponent
 
             Configuration.Resolver = _factory;
 
+            var orderServce = _factory.GetService<OrderRepository>();
+
+            orderServce?.MigrateOrderTableToEkom10();
 
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
@@ -149,10 +152,6 @@ class EkomStartup : IComponent
                 .FillCache();
 
             Payments.Events.Success += CompleteCheckout;
-
-            var orderServce = _factory.GetService<OrderRepository>();
-
-            orderServce?.MigrateOrderTableToEkom10();
 
             _logger.LogInformation("Ekom Started");
         }
