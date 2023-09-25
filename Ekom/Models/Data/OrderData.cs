@@ -90,8 +90,6 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        /// </summary>
-        /// </summary>
         [Column(Length = 200)]
         public string CustomerName { get; set; }
 
@@ -104,13 +102,11 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        /// </summary>
         [Column(Length = 200)]
         public string CustomerUsername { get; set; }
 
         /// <summary>
         /// 
-        /// </summary>
         /// </summary>
         [Column(Length = 50)]
         public string ShippingCountry { get; set; }
@@ -125,13 +121,11 @@ namespace Ekom.Models
         /// <summary>
         /// Contains the culture (e: "is-IS" or "is")
         /// </summary>
-        /// </summary>
         [Column(Length = 5)]
         public string Currency { get; set; }
 
         /// <summary>
         /// 
-        /// </summary>
         /// </summary>
         [Column(Length = 50)]
         public string StoreAlias { get; set; }
