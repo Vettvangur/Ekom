@@ -20,8 +20,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AspNetCore", "AspNetCore", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.AspNetCore", "AspNetCore\Ekom.AspNetCore\Ekom.AspNetCore.csproj", "{14B44BFE-58B1-4653-B4FC-2C99B64A9336}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.U9", "AspNetCore\Ekom.U9\Ekom.U9.csproj", "{805379DC-7D41-4E5E-846E-454BCF632B28}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.U10", "AspNetCore\Ekom.U10\Ekom.U10.csproj", "{8C89F85B-D4D6-4FAF-AA00-2AA3F2F669B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ekom.Web", "Ekom.Web\Ekom.Web.csproj", "{F9B82FAF-F5C3-4E97-80E4-4785F8CE930F}"
