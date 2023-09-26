@@ -78,8 +78,8 @@
                             @foreach (var product in productResponse.Products)
                             {
                                 <partial name="ekom/components/cards/productCard" view-data="@(new ViewDataDictionary(ViewData) {
-                                { "product", product }
-                            })" />
+                                    { "product", product }
+                                })" />
                             }
                         </div>
 

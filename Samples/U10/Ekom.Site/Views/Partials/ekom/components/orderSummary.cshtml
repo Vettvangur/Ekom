@@ -1,0 +1,43 @@
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@{
+    var order = (IOrderInfo)ViewData["order"];
+
+    if (order == null)
+    {
+        return;
+    }
+
+    var buttonText = (string)ViewData["buttonText"];
+}
+
+<div class="mt-10 lg:mt-0">
+    <h2 class="text-lg font-medium text-gray-900">Order summary</h2>
+
+    <div class="mt-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+        <dl class="space-y-6 px-4 py-6 sm:px-6">
+            <div class="flex items-center justify-between">
+                <dt class="text-sm">Subtotal</dt>
+                <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithoutVat.CurrencyString</dd>
+            </div>
+            @if (order.ShippingProvider != null)
+            {
+                <div class="flex items-center justify-between">
+                    <dt class="text-sm">Shipping (@order.ShippingProvider.Title)</dt>
+                    <dd class="text-sm font-medium text-gray-900">@order.ShippingProvider.Price.WithVat.CurrencyString</dd>
+                </div>
+            }
+            <div class="flex items-center justify-between">
+                <dt class="text-sm">Taxes</dt>
+                <dd class="text-sm font-medium text-gray-900">@order.ChargedVat.CurrencyString</dd>
+            </div>
+            <div class="flex items-center justify-between border-t border-gray-200 pt-6">
+                <dt class="text-base font-medium">Total</dt>
+                <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
+            </div>
+        </dl>
+
+        <div class="border-t border-gray-200 px-4 py-6 sm:px-6">
+            <button type="submit" :disabled="isLoading" class="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50">@buttonText</button>
+        </div>
+    </div>
+</div>

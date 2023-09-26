@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Ekom.Utilities
 {
     public static class DictionaryExtensions
@@ -26,7 +22,7 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetValue(this Dictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            return GetBasePropertyValue(properties, propertyAlias, alias);
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties, propertyAlias, alias));
         }
 
         /// <summary>
@@ -37,7 +33,7 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            return GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias);
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias));
         }
 
         private static string GetBasePropertyValue(Dictionary<string, string> properties, string propertyAlias, string alias = null)

@@ -1,12 +1,7 @@
-using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -158,7 +153,7 @@ namespace Ekom.Models
         }
 
         /// <inheritdoc />
-        public ICalculatedPrice SubTotal
+        public IPrice SubTotal
         {
             get
             {
@@ -175,8 +170,8 @@ namespace Ekom.Models
                 });
 
                 amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
-
-                return new CalculatedPrice(amount, StoreInfo.Currency);
+                
+                return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
             }
         }
 

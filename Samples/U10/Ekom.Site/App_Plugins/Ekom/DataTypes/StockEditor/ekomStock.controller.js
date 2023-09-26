@@ -11,7 +11,7 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParam
 
 
       $http.get(Umbraco.Sys.ServerVariables.ekom.apiEndpoint + 'Stores').then(function (results) {
-        
+
         if (results.data.length > 1) {
           results.data.forEach(function (store) {
 
@@ -45,7 +45,7 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParam
   };
 
   var getStockValue = function (storeAlias) {
-    
+
     if ($scope.content.contentTypeAlias !== 'ekmProduct' && $scope.content.contentTypeAlias !== 'ekmProductVariant') {
       return $q.when(0);
     }
