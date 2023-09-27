@@ -7,7 +7,7 @@
         <label style="display:inline-block; vertical-align:bottom; min-width:45px;" for="range_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}">
           {{ currency.isoCurrencySymbol }}
         </label>
-        <input type="number" min="0" step="any" id="range_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="ranges[store.alias][$index].Value" />
+        <input type="number" min="0" step="any" id="range_{{ currency.isoCurrencySymbol }}_{{ fieldAlias }}_{{ store.alias }}" ng-model="ranges[store.alias][$index].value" />
       </div>
     </div>
     </fieldset>

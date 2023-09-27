@@ -1,12 +1,9 @@
 using Ekom.Cache;
+using Ekom.Domain.Repositories;
 using Ekom.Models;
 using Ekom.Services;
-using Ekom.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.API
 {
@@ -141,6 +138,13 @@ namespace Ekom.API
 
             if (orderAmount > 0)
             {
+
+                foreach (var p in providers)
+                {
+                    var start = p.Constraints.StartRange;
+                    var end = p.Constraints.EndRange;
+                }
+
                 providers = providers
                     .Where(x =>
                         x.Constraints.StartRange <= orderAmount &&

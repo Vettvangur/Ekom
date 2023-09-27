@@ -1,4 +1,4 @@
-﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
@@ -20,6 +20,8 @@
     var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
 
     var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url();
+
+    var providers = _providers.GetPaymentProviders();
 }
 
 @section Main {
@@ -39,78 +41,41 @@
         <div class="mx-auto max-w-2xl lg:max-w-none">
             <h1 class="sr-only">Checkout</h1>
 
-            @using (Html.BeginEkomForm(FormType.UpdateCustomerInformation, htmlAttributes: new Dictionary<string, object> {
-        { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" },
-        { "x-data", "updateCustomerInformation" },
-        { "x-on:submit.prevent", "post"}
-        }))
+            @using (Html.BeginEkomForm(FormType.UpdateShippingProvider, htmlAttributes: new Dictionary<string, object> {
+            { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" },
+            { "x-data", "UpdatePaymentProvider" },
+            { "x-on:submit.prevent", "post"}
+            }))
             {
                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                 <div>
                     <div>
                         <h1 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-5">Payment options</h1>
 
-                        <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                            <div class="sm:col-span-2">
-                                <label for="full-name" class="block text-sm font-medium text-gray-700">Full name *</label>
-                                <div class="mt-1">
-                                    <input type="text" id="full-name" name="customerName" autocomplete="given-name" value="@customerName" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                </div>
-                            </div>
+                        <div>
+                            <fieldset x-data="{
+                                    selectedProvider: '@(order.ShippingProvider != null ? order.ShippingProvider.Key : Guid.Empty)'}">
+                                <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                                    @foreach (var provider in providers)
+                                    {
+                                        var selectedProvider = order.ShippingProvider != null && order.PaymentProvider.Id == provider.Id;
 
-                            <div class="sm:col-span-2">
-                                <label for="address" class="block text-sm font-medium text-gray-700">Address *</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerAddress" id="address" autocomplete="street-address" value="@customerAddress" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                                        <label :class="selectedProvider == '@provider.Key' ? 'border-transparent ring-2 ring-indigo-500' : 'border-gray-300'" class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none">
+                                            <input type="radio" name="ShippingProvider" value="@provider.Key" class="sr-only" aria-labelledby="delivery-method-@provider.Id-label" aria-describedby="delivery-method-0-description-@provider.Id delivery-method-@provider.Id-description-1" required @(selectedProvider ? "checked" : "") @@change="selectedProvider = $event.target.value;">
+                                            <span class="flex flex-1">
+                                                <span class="flex flex-col">
+                                                    <span id="delivery-method-@provider.Id-label" class="block text-sm font-medium text-gray-900">@provider.Title</span>
+                                                    <span id="delivery-method-@provider.Id-description-0" class="mt-1 flex items-center text-sm text-gray-500">@provider.GetValue("description", order.Culture)</span>
+                                                    <span id="delivery-method-@provider.Id-description-1" class="mt-6 text-sm font-medium text-gray-900">@provider.Price.WithVat.CurrencyString</span>
+                                                </span>
+                                            </span>
+                                            <svg :class="selectedProvider == '@provider.Key' ? '' : 'hidden'" class="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </label>
+                                    }
                                 </div>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <label for="apartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerApartment" id="apartment" value="@customerApartment" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="city" class="block text-sm font-medium text-gray-700">City *</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerCity" id="city" autocomplete="address-level2" value="@customerCity" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="country" class="block text-sm font-medium text-gray-700">Country *</label>
-                                <div class="mt-1">
-                                    <select id="country" data-val="@customerCountry" name="customerCountry" autocomplete="country-name" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                        <!option value="US" @(customerCountry == "US" ? "selected='selected'" : "")>United States</!option>
-                                        <!option value="CA" @(customerCountry == "CA" ? "selected='selected'" : "")>Canada</!option>
-                                        <!option value="IS" @(customerCountry == "IS" ? "selected='selected'" : "")>Iceland</!option>
-                                        <!option value="MX" @(customerCountry == "MX" ? "selected='selected'" : "")>Mexico</!option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="region" class="block text-sm font-medium text-gray-700">State / Province *</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerRegion" id="region" autocomplete="address-level1" value="@customerRegion" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="zip-code" class="block text-sm font-medium text-gray-700">Postal code *</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerZipCode" id="zip-code" autocomplete="postal-code" value="@customerZipCode" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                </div>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone *</label>
-                                <div class="mt-1">
-                                    <input type="text" name="customerPhone" id="phone" autocomplete="tel" value="@customerPhone" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
-                                </div>
-                            </div>
+                            </fieldset>
                         </div>
                     </div>
                 </div>
@@ -118,7 +83,7 @@
                 <!-- Order summary -->
                 <partial name="ekom/components/orderSummary" view-data="@(new ViewDataDictionary(ViewData) {
                     { "order", order },
-                    { "buttonText" ,"Continue to review order"}
+                    { "buttonText" ,"Continue to payment options"}
                 })" />
             }
         </div>
@@ -126,8 +91,7 @@
 
     <script>
         document.addEventListener("alpine:init", () => {
-            Alpine.data("updateCustomerInformation", () => ({
-                isLoading: false,
+            Alpine.data("UpdatePaymentProvider", () => ({
                 data() {
                     var formData = new FormData(this.$el);
                     const params = new URLSearchParams();
@@ -138,7 +102,10 @@
                 },
                 async post() {
 
-                    isLoading = true;
+                    var button = this.$el.querySelector('button[type=submit]');
+
+                    button.disabled = true;
+
                     let message = '';
 
                     return await (
@@ -158,22 +125,22 @@
 
                         }).catch((ex) => {
                             message = `<div class="rounded-md mt-5 bg-red-50 p-4 message">
-                                                                    <div class="flex">
-                                                                    <div class="flex-shrink-0">
-                                                                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
-                                                                        </svg>
-                                                                    </div>
-                                                                    <div class="ml-3">
-                                                                    <h3 class="text-sm font-medium text-red-800">Invalid data</h3>
-                                                                        <div class="mt-2 text-sm text-red-700">
-                                                                            <p>Oops! Something went wrong. Please ensure all fields are filled out correctly.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    </div>
-                                                                </div>`;
+                                                    <div class="flex">
+                                                    <div class="flex-shrink-0">
+                                                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </div>
+                                                    <div class="ml-3">
+                                                    <h3 class="text-sm font-medium text-red-800">Invalid data</h3>
+                                                        <div class="mt-2 text-sm text-red-700">
+                                                            <p>Oops! Something went wrong. Please ensure all fields are filled out correctly.</p>
+                                                        </div>
+                                                    </div>
+                                                    </div>
+                                                </div>`;
                         }).finally(() => {
-                            isLoading = false;
+                            button.disabled = false;
                             var successHtmlElement = this.$el.querySelector('.message');
 
                             if (successHtmlElement) {

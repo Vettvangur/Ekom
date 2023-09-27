@@ -3,9 +3,6 @@ using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -149,7 +146,7 @@ namespace Ekom.Utilities
 
                 foreach (var price in _prices)
                 {
-                    var currency = price["Currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
+                    var currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
 
                     prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
                 }
@@ -191,7 +188,7 @@ namespace Ekom.Utilities
 
                 foreach (var price in _prices)
                 {
-                    var currencyValue = price["Currency"].Value<string>();
+                    var currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
                     var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
                     IDiscount productDiscount = !string.IsNullOrEmpty(path)
@@ -199,13 +196,13 @@ namespace Ekom.Utilities
                             .GetProductDiscount(
                                 path,
                                 storeAlias,
-                                price["Price"].Value<string>(),
+                                price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
                                 categories
                             )
                         : null;
 
                     prices.Add(new Price(
-                        price["Price"].Value<string>(),
+                        price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
                         currency,
                         vat,
                         vatIncludedInPrice,
@@ -259,10 +256,19 @@ namespace Ekom.Utilities
 
                 foreach (var value in _values)
                 {
-                    var currencyValue = value["Currency"].Value<string>();
-                    var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
+                    if (KeyExists(value, "Currency"))
+                    {
+                        var currencyValue = value["Currency"].Value<string>();
+                        var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
 
-                    values.Add(new CurrencyValue(val, currencyValue));
+                        values.Add(new CurrencyValue(val, currencyValue));
+                    } else
+                    {
+                        var currencyValue = value["currency"].Value<string>();
+                        var val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
+
+                        values.Add(new CurrencyValue(val, currencyValue));
+                    }
                 }
             }
             catch
@@ -280,6 +286,13 @@ namespace Ekom.Utilities
 
             return values;
         }
+        
+        internal static bool KeyExists(JToken token, string key)
+        {
+            JObject obj = token as JObject;
+            return obj?.ContainsKey(key) ?? false;
+        }
+
         internal static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
         {
             var values = new List<CurrencyPrice>();

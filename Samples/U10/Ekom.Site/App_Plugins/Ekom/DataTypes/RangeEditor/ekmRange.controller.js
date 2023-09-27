@@ -32,30 +32,6 @@ angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
       }
     }
 
-    // Backward Compatability if value is decimal and not json
-    if (isFinite($scope.ranges)) {
-
-      $scope.ranges = {};
-
-      for (s = 0; $scope.stores.length > s; s += 1) {
-
-        let store = $scope.stores[s];
-
-        $scope.ranges[store.alias] = [];
-
-        for (c = 0; store.currencies.length > c; c += 1) {
-
-          $scope.ranges[store.alias].push({
-            currency: store.currencies[c].currencyValue,
-            value: parseFloat($scope.model.value.replace(/,/g, '.'))
-          });
-
-        }
-
-      }
-
-    }
-
     if ($scope.model.value === null || $scope.model.value === '' || $scope.model.value === undefined) {
 
       $scope.ranges = {};
@@ -78,7 +54,6 @@ angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
       }
 
     }
-
   });
 
   $scope.$on("formSubmitting", function () {
