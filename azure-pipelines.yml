@@ -61,10 +61,6 @@ steps:
 #     nuGetFeedType: 'external'
 #     publishFeedCredentials: 'VV Public NuGet'
 
-- task: QodanaScan@2023
-  env:
-    QODANA_TOKEN: $(QODANA_TOKEN)
-    
 - task: NuGetCommand@2
   inputs:
     command: 'push'
