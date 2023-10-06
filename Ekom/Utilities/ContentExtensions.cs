@@ -78,6 +78,9 @@ namespace Ekom.Utilities
                 }
             }
 
+            if (item.ContentTypeAlias is not ("ekmProduct" or "ekmCategory" or "ekmProductVariantGroup"
+                or "ekmProductVariant")) return false;
+            
             var catalogAncestors = ancestors.Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).ToList();
 
             foreach (var ancestor in catalogAncestors)
@@ -86,12 +89,11 @@ namespace Ekom.Utilities
                 {
                     var disableField = ancestor.GetValue("disable", store.Alias);
 
-                    if (!string.IsNullOrEmpty(disableField))
+                    if (string.IsNullOrEmpty(disableField)) continue;
+                    
+                    if (disableField.ConvertToBool())
                     {
-                        if (disableField.ConvertToBool())
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
                 else
@@ -99,7 +101,7 @@ namespace Ekom.Utilities
                     return true;
                 }
             }
-            
+
             return false;
         }
 

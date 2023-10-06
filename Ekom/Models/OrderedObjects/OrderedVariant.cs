@@ -1,6 +1,6 @@
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
@@ -10,14 +10,6 @@ namespace Ekom.Models
 {
     public class OrderedVariant
     {
-        private readonly JToken variantObject;
-        private readonly IConfiguration config;
-
-        public OrderedVariant(IConfiguration config)
-        {
-            this.config = config;
-        }
-
         [JsonIgnore]
         [XmlIgnore]
         public int Id
@@ -139,13 +131,20 @@ namespace Ekom.Models
         // </summary>
         public virtual IEnumerable<Image> Images()
         {
-            var value = config["ekmCustomImage"];
+            var config = Configuration.Resolver.GetService<Configuration>();
+            
+            var _images = Properties.GetPropertyValue(config != null ? config.CustomImage : "images", StoreInfo.Alias);
 
-            var _images = Properties.GetPropertyValue(value ?? "images", StoreInfo.Alias);
+            if (!string.IsNullOrEmpty(_images))
+            {
+                var imageNodes = _images.GetImages();
 
-            var imageNodes = _images.GetImages();
+                return imageNodes;
+            }
 
-            return imageNodes;
+            return Enumerable.Empty<Image>();
+
+
         }
 
         /// <summary>
@@ -168,7 +167,6 @@ namespace Ekom.Models
         /// </summary>
         public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
         {
-            this.variantObject = variantObject;
             StoreInfo = storeInfo;
 
             ProductVat = (decimal)(variantObject["ProductVat"] ?? 0);

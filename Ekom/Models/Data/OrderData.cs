@@ -91,7 +91,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         [Column(Length = 200)]
-        public string CustomerName { get; set; }
+        public string? CustomerName { get; set; }
 
         /// <summary>
         /// 

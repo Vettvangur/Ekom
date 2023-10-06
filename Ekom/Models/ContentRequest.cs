@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Ekom.Models
 {
-    class ContentRequest
+    public class ContentRequest
     {
 
         private IStore _store;

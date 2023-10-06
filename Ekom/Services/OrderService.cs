@@ -5,6 +5,7 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Utilities;
+using Hangfire.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -686,7 +687,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            OrderLine existingOrderLine = null;
+            OrderLine? existingOrderLine = null;
 
             var semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
@@ -1106,14 +1107,14 @@ namespace Ekom.Services
             _logger.LogDebug("CreateEmptyOrderAsync..");
 
             Guid orderUniqueId;
+            
             if (_config.UserBasket)
             {
                 orderUniqueId = Guid.NewGuid();
 
                 _memberService.Save(new Dictionary<string, object>() {
-                        { "orderId", "" }
-                    }, orderUniqueId.ToString());
-
+                        { "orderId", orderUniqueId.ToString() }
+                }, _httpCtx.User.Identity.Name);
             }
             else
             {
@@ -1174,10 +1175,8 @@ namespace Ekom.Services
             }
 
 
-            if (form.ContainsKey("storeAlias"))
+            if (form.TryGetValue("storeAlias", out var storeAlias))
             {
-                var storeAlias = form["storeAlias"];
-
                 OrderInfo orderInfo;
                 if (settings.OrderInfo == null)
                 {
@@ -1201,9 +1200,9 @@ namespace Ekom.Services
                     }
                 }
 
-                if (form.ContainsKey("PaymentProvider"))
+                if (form.TryGetValue("PaymentProvider", out var paymentProvider))
                 {
-                    if (Guid.TryParse(form["PaymentProvider"], out Guid _providerKey))
+                    if (Guid.TryParse(paymentProvider, out Guid _providerKey))
                     {
                         var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
@@ -1267,22 +1266,19 @@ namespace Ekom.Services
             }
             try
             {
-                if (shippingProviderId != Guid.Empty)
-                {
-                    var provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
+                if (shippingProviderId == Guid.Empty) return orderInfo
+                    ;
+                var provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
 
-                    if (provider != null)
-                    {
-                        var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
+                if (provider == null) return orderInfo;
+                
+                var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
 
-                        orderInfo.ShippingProvider = orderedShippingProvider;
+                orderInfo.ShippingProvider = orderedShippingProvider;
 
-                        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                            .ConfigureAwait(false);
-                    }
-                }
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                    .ConfigureAwait(false);
 
-                return orderInfo;
             }
             finally
             {
@@ -1328,22 +1324,19 @@ namespace Ekom.Services
             }
             try
             {
-                if (paymentProviderId != Guid.Empty)
-                {
-                    var provider = Providers.Instance.GetPaymentProvider(paymentProviderId, store);
+                if (paymentProviderId == Guid.Empty) return orderInfo;
+                
+                var provider = Providers.Instance.GetPaymentProvider(paymentProviderId, store);
 
-                    if (provider != null)
-                    {
-                        var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
+                if (provider == null) return orderInfo;
 
-                        orderInfo.PaymentProvider = orderedPaymentProvider;
+                var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
 
-                        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                            .ConfigureAwait(false);
-                    }
-                }
+                orderInfo.PaymentProvider = orderedPaymentProvider;
 
-                return orderInfo;
+                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                    .ConfigureAwait(false);
+
             }
             finally
             {
@@ -1457,94 +1450,74 @@ namespace Ekom.Services
         /// </summary>
         private void VerifyProviders(OrderInfo orderInfo)
         {
-            if (orderInfo.PaymentProvider != null || orderInfo.ShippingProvider != null)
+            if (orderInfo.PaymentProvider == null && orderInfo.ShippingProvider == null) return;
+            
+            var total = orderInfo.GrandTotal.Value;
+            var countryCode = orderInfo.CustomerInformation.Customer.Country;
+            var shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
+
+            var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
+
+            // Verify paymentProvider constraints
+            if (orderInfo.PaymentProvider != null)
             {
-                var total = orderInfo.GrandTotal.Value;
-                var countryCode = orderInfo.CustomerInformation.Customer.Country;
-                var shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
+                var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key, store);
 
-                var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
-
-                // Verify paymentProvider constraints
-                if (orderInfo.PaymentProvider != null)
+                if (paymentProvider == null)
                 {
-                    var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key, store);
-
-                    if (paymentProvider == null)
-                    {
-                        _logger.LogError(
-                            "Unable to find matching shipping provider {PaymentProviderKey} for Order {UniqueId} ",
-                            orderInfo.PaymentProvider.Key,
-                            orderInfo.UniqueId);
-                    }
-
-                    // In case of deletion
-                    if (paymentProvider == null
-                    || !paymentProvider.Constraints.IsValid(countryCode, total))
-                    {
-                        _logger.LogDebug(
-                            "Removing invalid payment provider {PaymentProviderKey} from Order {UniqueId}",
-                            orderInfo.PaymentProvider.Key,
-                            orderInfo.UniqueId);
-
-                        orderInfo.PaymentProvider = null;
-                    }
+                    _logger.LogError(
+                        "Unable to find matching shipping provider {PaymentProviderKey} for Order {UniqueId} ",
+                        orderInfo.PaymentProvider.Key,
+                        orderInfo.UniqueId);
                 }
 
-                // Verify shipping provider constraints
-                if (orderInfo.ShippingProvider != null)
+                // In case of deletion
+                if (paymentProvider == null
+                    || !paymentProvider.Constraints.IsValid(countryCode, total))
                 {
-                    var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key, store);
+                    _logger.LogDebug(
+                        "Removing invalid payment provider {PaymentProviderKey} from Order {UniqueId}",
+                        orderInfo.PaymentProvider.Key,
+                        orderInfo.UniqueId);
 
-                    if (shippingProvider == null)
-                    {
-                        _logger.LogError(
-                            "Unable to find matching shipping provider {ShippingProviderKey} for Order {UniqueId} ",
-                            orderInfo.ShippingProvider.Key,
-                            orderInfo.UniqueId);
-                    }
-                    if (shippingProvider == null
-                    || !shippingProvider.Constraints.IsValid(shippingCountry, total))
-                    {
-                        _logger.LogDebug(
-                            "Removing invalid shipping provider {ShippingProviderKey} from Order {UniqueId}",
-                            orderInfo.ShippingProvider.Key,
-                            orderInfo.UniqueId);
-                        orderInfo.ShippingProvider = null;
-                    }
+                    orderInfo.PaymentProvider = null;
                 }
             }
+
+            // Verify shipping provider constraints
+            if (orderInfo.ShippingProvider == null) return;
+                
+            var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key, store);
+
+            if (shippingProvider == null)
+            {
+                _logger.LogError(
+                    "Unable to find matching shipping provider {ShippingProviderKey} for Order {UniqueId} ",
+                    orderInfo.ShippingProvider.Key,
+                    orderInfo.UniqueId);
+            }
+
+            if (shippingProvider != null
+                && shippingProvider.Constraints.IsValid(shippingCountry, total)) return;
+                    
+            _logger.LogDebug(
+                "Removing invalid shipping provider {ShippingProviderKey} from Order {UniqueId}",
+                orderInfo.ShippingProvider.Key,
+                orderInfo.UniqueId);
+            orderInfo.ShippingProvider = null;
         }
 
         private Guid GetOrderIdFromCookie(string key)
         {
-            string cookie = null;
+            string? cookie = null;
 
-#if NETCOREAPP
             cookie = _httpCtx.Response
                 .GetTypedHeaders()
                 .SetCookie.FirstOrDefault(x => x.Name == key)?.Value.ToString();
-#else
-            // Applicable when the order was created in this request
-            // This enables support for event handlers accessing the api and modifying order info
-            // during the request that created the OrderInfo
-            if (_httpCtx.Response.Cookies.AllKeys.Contains(key))
-            // The response cookie collection has extremely specific behavior
-            // Any key accessed will by default create and return a fresh cookie, 
-            // regardless of it existing or not beforehand. (previous cookies are overwritten this way)
-            // Therefore we check AllKeys before accessing the collection directly
-            {
-                cookie = _httpCtx.Response.Cookies[key]?.Value;
-            }
-#endif
 
             if (string.IsNullOrEmpty(cookie))
             {
-#if NETCOREAPP
                 cookie = _httpCtx.Request.Cookies[key];
-#else
-                cookie = _httpCtx.Request.Cookies[key]?.Value;
-#endif
             }
 
             if (!string.IsNullOrEmpty(cookie))
@@ -1559,43 +1532,17 @@ namespace Ekom.Services
         {
             var guid = Guid.NewGuid();
 
-#if NETFRAMEWORK
-            var guidCookie = new HttpCookie(key)
-            {
-                Value = guid.ToString(),
-                Expires = DateTime.UtcNow.AddDays(_config.BasketCookieLifetime)
-            };
-
-            _httpCtx.Response.Cookies.Add(guidCookie);
-#else
             _httpCtx.Response.Cookies.Append(key, guid.ToString(), new CookieOptions
             {
                 Expires = DateTime.UtcNow.AddDays(_config.BasketCookieLifetime)
             });
-#endif
 
             return guid;
         }
 
         private void DeleteOrderCookie(string key)
         {
-#if NETCOREAPP
             _httpCtx.Response.Cookies.Delete(key);
-#else
-            var cookie = _httpCtx.Request.Cookies[key];
-
-            if (cookie != null)
-            {
-                cookie.Expires = DateTime.Now.AddDays(-1);
-                cookie.Value = null;
-
-                _httpCtx.Response.SetCookie(cookie);
-            }
-            else
-            {
-                _logger.LogWarning("Could not delete order cookie. Cookie not found. Key: {Key}", key);
-            }
-#endif
         }
 
         private string GenerateOrderNumberTemplate(int referenceId, IStore store)
@@ -1604,7 +1551,7 @@ namespace Ekom.Services
 
             if (string.IsNullOrEmpty(store.OrderNumberTemplate))
             {
-                return string.Format("{0}{1}", store.OrderNumberPrefix, referenceId.ToString("0000"));
+                return $"{store.OrderNumberPrefix}{referenceId:0000}";
             }
 
             var template = store.OrderNumberTemplate;
@@ -1636,6 +1583,6 @@ namespace Ekom.Services
 
         /// See comments for service and under <see cref="OrderSettings"/>
         private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _orderLocks
-            = new ConcurrentDictionary<Guid, SemaphoreSlim>();
+            = new();
     }
 }

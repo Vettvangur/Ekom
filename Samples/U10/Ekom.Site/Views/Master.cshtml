@@ -45,12 +45,12 @@
 
         <header class="relative overflow-hidden">
 
-            <partial name="ekom/components/header" />
+            <partial name="ekom/sections/header" />
 
-            @RenderSection("Header", false)
+            @await RenderSectionAsync("Header", false)
         </header>
 
-        @RenderSection("Main", true)
+        @await RenderSectionAsync("Main", true)
 
         <partial name="ekom/sections/footer" />
     </div>

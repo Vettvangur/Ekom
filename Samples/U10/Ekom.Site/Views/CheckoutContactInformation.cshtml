@@ -2,10 +2,11 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
+    
     var currentMember = await _memberManager.GetCurrentMemberAsync();
     var memberAsContent = currentMember != null ? _memberManager.AsPublishedMember(currentMember) : null;
 
-    var order = _order.GetOrder();
+    var order = await _order.GetOrderAsync();
 
     var customerName = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) ? order.CustomerInformation.Customer.Name : memberAsContent != null ? memberAsContent.Name : "";
     var customerEmail = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email) ? order.CustomerInformation.Customer.Email : currentMember != null ? currentMember.Email : "";

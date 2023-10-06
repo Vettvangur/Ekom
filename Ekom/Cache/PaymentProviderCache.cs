@@ -49,12 +49,12 @@ namespace Ekom.Cache
                     {
                         foreach (var store in _storeCache.Cache.Select(x => x.Value))
                         {
-                            count += FillStoreCache(store, results);
+                            count += FillStoreCache(store, results, NodeAlias);
                         }
                     }
                     else // Triggered with dynamic addition/removal of store
                     {
-                        count += FillStoreCache(storeParam, results);
+                        count += FillStoreCache(storeParam, results, NodeAlias);
                     }
                 }
                 catch (Exception ex)

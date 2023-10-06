@@ -1,6 +1,4 @@
 using Ekom.Utilities;
-using System;
-using System.Collections.Generic;
 
 namespace Ekom.Models
 {
@@ -24,6 +22,7 @@ namespace Ekom.Models
             Name = Properties.GetPropertyValue("nodeName");
             UserName = Properties.GetPropertyValue("loginName");
             Email = Properties.GetPropertyValue("email");
+            OrderId = Properties.GetPropertyValue("orderId");
         }
 
         readonly Dictionary<string, string> _properties;
@@ -37,5 +36,6 @@ namespace Ekom.Models
         public string Name { get; set; }
         public string UserName { get; set; }
         public string Email { get; set; }
+        public string OrderId { get; set; }
     }
 }

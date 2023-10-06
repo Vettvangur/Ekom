@@ -22,6 +22,7 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
+        app.UseAuthentication();
         app.UseEkomMiddleware();
         next(app);
     };
@@ -31,6 +32,7 @@ class StartupFilter : IStartupFilter
 /// Hooks into the umbraco application startup lifecycle 
 /// </summary>
 // Public allows consumers to target type with ComposeAfter / ComposeBefore
+
 public class EkomComposer : IComposer
 {    
     /// <summary>
@@ -56,7 +58,7 @@ public class EkomComposer : IComposer
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
 
-        var config = new Configuration(builder.Config);
+        _ = new Configuration(builder.Config);
 
 
         builder

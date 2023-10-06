@@ -1,10 +1,9 @@
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
-using Umbraco.Cms.Core.Security;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 
 namespace Ekom.Umb;
@@ -32,20 +31,19 @@ class EkomMiddleware
         HttpContext context,
         ILogger<EkomMiddleware> logger,
         IUmbracoContextFactory umbracoContextFac,
-        IMemberService memberService,
         AppCaches appCaches,
-        IMemberManager memberManager
+        IMemberService memberService
     )
     {
         _logger = logger;
         _context = context;
 
-        Application_BeginRequest(umbracoContextFac, appCaches);
-        await Application_AuthenticateRequestAsync(appCaches, memberService, memberManager).ConfigureAwait(false);
-
-        Context_PostRequestHandlerExecute(umbracoContextFac);
+        OnBeginRequest(umbracoContextFac, appCaches);
+        await OnAuthenticateRequest(appCaches, memberService);
 
         await _next.Invoke(context);
+        
+        OnPostRequestHandlerExecute(umbracoContextFac);
     }
 
     /// <summary>
@@ -57,7 +55,7 @@ class EkomMiddleware
     /// Another option would have been to always return the list of urls for a product/category,
     /// leaving it to the frontend to match, sub-par solution but simpler?
     /// </summary>
-    private void Context_PostRequestHandlerExecute(IUmbracoContextFactory umbracoContextFac)
+    private void OnPostRequestHandlerExecute(IUmbracoContextFactory umbracoContextFac)
     {
         try
         {
@@ -75,7 +73,7 @@ class EkomMiddleware
         }
     }
 
-    private void Application_BeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
+    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
     {
         try
         {
@@ -98,37 +96,37 @@ class EkomMiddleware
         }
     }
 
-    private async Task Application_AuthenticateRequestAsync(
+    private async Task OnAuthenticateRequest(
         AppCaches appCaches,
-        IMemberService memberService,
-        IMemberManager memberManager)
+        IMemberService memberService)
     {
+        
+        if (_context?.User?.Identity?.IsAuthenticated is false)
+        {
+            return;
+        }
+        
         try
         {
-            var user = await memberManager.GetCurrentMemberAsync();
+            var username = _context.User.Identity.Name;
 
-            var ekmRequest = appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(_context)) as ContentRequest;
-            if (ekmRequest is not null)
+            if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(_context)) is ContentRequest ekmRequest)
             {
-                // This is always firing!, ekmRequest.User.Username is always empty
-                // ..makes sense, new request with new cache each time this is run
-                if (user != null && ekmRequest.User.Username != user.Name)
+                var memberContent = memberService.GetByUsername(username);
+
+                if (memberContent != null)
                 {
-                    var member = memberService.GetByUsername(user.Name);
-                    if (member != null)
+                    ekmRequest.User = new User
                     {
-                        ekmRequest.User = new User
-                        {
-                            Email = member.Email,
-                            Username = member.Username,
-                            UserId = member.Id,
-                            Name = member.Name,
-                        };
-                        var orderid = member.GetValue<string>("orderId");
-                        if (!string.IsNullOrEmpty(orderid))
-                        {
-                            ekmRequest.User.OrderId = Guid.Parse(orderid);
-                        }
+                        Email = memberContent.Email,
+                        Username = memberContent.UserName,
+                        UserId = memberContent.Id,
+                        Name = memberContent.Name,
+                    };
+                    var orderid = memberContent.OrderId;
+                    if (!string.IsNullOrEmpty(orderid) && Guid.TryParse(orderid, out var guid))
+                    {
+                        ekmRequest.User.OrderId = guid;
                     }
                 }
             }

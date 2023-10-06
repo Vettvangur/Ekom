@@ -2,14 +2,8 @@ using Ekom.Models;
 using Ekom.Umb.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Models;
-using Umbraco.Cms.Core.Models.Membership;
-using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Security;
-using Umbraco.Cms.Infrastructure.Scoping;
 
 namespace Ekom.Umb.Services
 {
@@ -54,6 +48,11 @@ namespace Ekom.Umb.Services
 
         public void Save(Dictionary<string, object> data, string userName)
         {
+            if (string.IsNullOrEmpty(userName))
+            {
+                return;
+            }
+
             var serviceContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
             var m = serviceContext?.GetByUsername(userName);
 

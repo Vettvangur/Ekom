@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Localization;
 using Newtonsoft.Json.Serialization;
 using Vettvangur.Shared;
 //using Vettvangur.ValitorPay;

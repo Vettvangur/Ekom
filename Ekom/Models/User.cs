@@ -1,5 +1,3 @@
-using System;
-
 namespace Ekom.Models
 {
     public class User

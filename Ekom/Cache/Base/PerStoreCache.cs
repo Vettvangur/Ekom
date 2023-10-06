@@ -73,7 +73,7 @@ namespace Ekom.Cache
 
             if (!string.IsNullOrEmpty(NodeAlias))
             {
-                Stopwatch stopwatch = new Stopwatch();
+                var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 _logger.LogDebug("Starting to fill per store cache for {NodeAlias}...", NodeAlias);
@@ -90,12 +90,12 @@ namespace Ekom.Cache
                     {
                         foreach (var store in _storeCache.Cache.Select(x => x.Value))
                         {
-                            count += FillStoreCache(store, results);
+                            count += FillStoreCache(store, results, NodeAlias);
                         }
                     }
                     else // Triggered with dynamic addition/removal of store
                     {
-                        count += FillStoreCache(storeParam, results);
+                        count += FillStoreCache(storeParam, results, NodeAlias);
                     }
                 }
                 catch (Exception ex)
@@ -125,14 +125,18 @@ namespace Ekom.Cache
         /// <param name="store">The current store being filled of TItem</param>
         /// <param name="results">UmbracoContent results</param>
         /// <returns>Count of items added</returns>
-        protected virtual int FillStoreCache(IStore store, List<UmbracoContent> results)
+        protected virtual int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
         {
             int count = 0;
 
             var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
 
+            var timer = new LoopTimer(results.Count, _logger, nodeAlias);
+
             foreach (var r in results)
             {
+                timer.StartIteration();
+
                 try
                 {
                     var isDisabled = r.IsItemDisabled(store);
@@ -143,7 +147,7 @@ namespace Ekom.Cache
                     }
 
                     var item = _objFac?.Create(r, store)
-                        ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
+                               ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
 
                     if (item != null)
                     {
@@ -151,16 +155,19 @@ namespace Ekom.Cache
 
                         curStoreCache[r.Key] = item;
                     }
-                    
+
                 }
-                catch (Exception ex) // Skip on fail
+                catch (Exception ex)
                 {
                     _logger.LogWarning(
                         ex,
                         "Error on adding item with id: " + r.Id + " in Store: " + store.Alias + " to cache."
                     );
                 }
+
+                timer.EndIteration();
             }
+            
 
             return count;
         }
@@ -205,7 +212,7 @@ namespace Ekom.Cache
                 {
                     _logger.LogWarning(
                         ex,
-                        "Error on adding item with id: " + node.Id + " from Examine in Store: " + store.Value.Alias
+                        "Error on adding item with id: " + node.Id + " in Store: " + store.Value.Alias
                     );
                 }
             }

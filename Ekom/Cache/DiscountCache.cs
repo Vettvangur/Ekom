@@ -33,7 +33,7 @@ namespace Ekom.Cache
         /// <param name="store">The current store being filled of TItem</param>
         /// <param name="results">Examine search results</param>
         /// <returns>Count of items added</returns>
-        protected override int FillStoreCache(IStore store, List<UmbracoContent> results)
+        protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
         {
             int count = 0;
 
@@ -45,15 +45,15 @@ namespace Ekom.Cache
                 try
                 {
                     var ancestors = nodeService.NodeAncestors(r.Id.ToString());
+                    
                     // Traverse up parent nodes, checking disabled status and published status
-                    if (!r.IsItemDisabled(store, ancestors))
-                    {
-                        var item = _objFac?.Create(r, store) ?? new Discount(r, store);
+                    if (r.IsItemDisabled(store, ancestors)) continue;
 
-                        count++;
+                    var item = _objFac?.Create(r, store) ?? new Discount(r, store);
 
-                        curStoreCache[r.Key] = item;
-                    }
+                    count++;
+
+                    curStoreCache[r.Key] = item;
                 }
                 catch (Exception ex)
                 {
