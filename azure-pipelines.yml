@@ -53,7 +53,7 @@ steps:
     packagesToPack: '**/Ekom.csproj;**/Ekom.Common.csproj;**/Ekom.Payments.Core.csproj;**/Ekom.AspNetCore.csproj;**/Ekom.U10.csproj;**/Ekom.Web.csproj'
     includesymbols: true
     versioningScheme: 'byBuildNumber'
-
+    
 # - task: DotNetCoreCLI@2
 #   inputs:
 #     command: 'push'
