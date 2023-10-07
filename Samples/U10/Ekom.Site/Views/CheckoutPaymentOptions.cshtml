@@ -1,25 +1,8 @@
-@using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
-    var currentMember = await _memberManager.GetCurrentMemberAsync();
-    var memberAsContent = currentMember != null ? _memberManager.AsPublishedMember(currentMember) : null;
 
-    var order = _order.GetOrder();
-
-    var customerName = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) ? order.CustomerInformation.Customer.Name : memberAsContent != null ? memberAsContent.Name : "";
-    var customerEmail = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email) ? order.CustomerInformation.Customer.Email : currentMember != null ? currentMember.Email : "";
-    var customerAddress = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Address) ? order.CustomerInformation.Customer.Address : memberAsContent != null ? memberAsContent.Value<string>("address") : "";
-    var customerApartment = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Apartment) ? order.CustomerInformation.Customer.Apartment : memberAsContent != null ? memberAsContent.Value<string>("apartment") : "";
-    var customerCity = !string.IsNullOrEmpty(order.CustomerInformation.Customer.City) ? order.CustomerInformation.Customer.City : memberAsContent != null ? memberAsContent.Value<string>("city") : "";
-    var customerCountry = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Country) ? order.CustomerInformation.Customer.Country : memberAsContent != null ? memberAsContent.Value<string>("country") : "";
-    var customerRegion = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Region) ? order.CustomerInformation.Customer.Region : memberAsContent != null ? memberAsContent.Value<string>("region") : "";
-    var customerZipCode = !string.IsNullOrEmpty(order.CustomerInformation.Customer.ZipCode) ? order.CustomerInformation.Customer.ZipCode : memberAsContent != null ? memberAsContent.Value<string>("zipCode") : "";
-    var customerPhone = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Phone) ? order.CustomerInformation.Customer.Phone : memberAsContent != null ? memberAsContent.Value<string>("phone") : "";
-
-    var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
-
-    var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url();
+    var order = await _order.GetOrderAsync();
 
     var providers = _providers.GetPaymentProviders();
 }
@@ -41,10 +24,8 @@
         <div class="mx-auto max-w-2xl lg:max-w-none">
             <h1 class="sr-only">Checkout</h1>
 
-            @using (Html.BeginEkomForm(FormType.UpdateShippingProvider, htmlAttributes: new Dictionary<string, object> {
-            { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" },
-            { "x-data", "UpdatePaymentProvider" },
-            { "x-on:submit.prevent", "post"}
+            @using (Html.BeginEkomCheckoutForm(CheckoutFormType.Pay, htmlAttributes: new Dictionary<string, object> {
+            { "class", "lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16" }
             }))
             {
                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
@@ -54,19 +35,18 @@
 
                         <div>
                             <fieldset x-data="{
-                                    selectedProvider: '@(order.ShippingProvider != null ? order.ShippingProvider.Key : Guid.Empty)'}">
+                                    selectedProvider: '@(order.PaymentProvider != null ? order.PaymentProvider.Key : Guid.Empty)'}">
                                 <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                                     @foreach (var provider in providers)
                                     {
-                                        var selectedProvider = order.ShippingProvider != null && order.PaymentProvider.Id == provider.Id;
+                                        var selectedProvider = order.PaymentProvider != null && order.PaymentProvider.Id == provider.Id;
 
                                         <label :class="selectedProvider == '@provider.Key' ? 'border-transparent ring-2 ring-indigo-500' : 'border-gray-300'" class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none">
-                                            <input type="radio" name="ShippingProvider" value="@provider.Key" class="sr-only" aria-labelledby="delivery-method-@provider.Id-label" aria-describedby="delivery-method-0-description-@provider.Id delivery-method-@provider.Id-description-1" required @(selectedProvider ? "checked" : "") @@change="selectedProvider = $event.target.value;">
+                                            <input type="radio" name="PaymentProvider" value="@provider.Key" class="sr-only" aria-labelledby="delivery-method-@provider.Id-label" aria-describedby="delivery-method-0-description-@provider.Id delivery-method-@provider.Id-description-1" required @(selectedProvider ? "checked" : "") @@change="selectedProvider = $event.target.value;">
                                             <span class="flex flex-1">
                                                 <span class="flex flex-col">
                                                     <span id="delivery-method-@provider.Id-label" class="block text-sm font-medium text-gray-900">@provider.Title</span>
                                                     <span id="delivery-method-@provider.Id-description-0" class="mt-1 flex items-center text-sm text-gray-500">@provider.GetValue("description", order.Culture)</span>
-                                                    <span id="delivery-method-@provider.Id-description-1" class="mt-6 text-sm font-medium text-gray-900">@provider.Price.WithVat.CurrencyString</span>
                                                 </span>
                                             </span>
                                             <svg :class="selectedProvider == '@provider.Key' ? '' : 'hidden'" class="h-5 w-5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -83,15 +63,16 @@
                 <!-- Order summary -->
                 <partial name="ekom/components/orderSummary" view-data="@(new ViewDataDictionary(ViewData) {
                     { "order", order },
-                    { "buttonText" ,"Continue to payment options"}
+                    { "buttonText" ,"Pay"},
+                    { "buttonDisabled", order.PaymentProvider == null}
                 })" />
             }
         </div>
     </main>
 
-    <script>
+@*     <script>
         document.addEventListener("alpine:init", () => {
-            Alpine.data("UpdatePaymentProvider", () => ({
+            Alpine.data("Pay", () => ({
                 data() {
                     var formData = new FormData(this.$el);
                     const params = new URLSearchParams();
@@ -154,5 +135,5 @@
                 },
             }));
         });
-    </script>
+    </script> *@
 }

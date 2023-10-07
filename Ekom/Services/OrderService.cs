@@ -67,7 +67,6 @@ namespace Ekom.Services
         readonly CouponRepository _couponRepository;
         readonly IStoreService _storeSvc;
         readonly ContentRequest _ekmRequest;
-        readonly INodeService _nodeService;
         /// <summary>
         /// Ensure all future usages of date for this request point to the same time
         /// </summary>
@@ -85,8 +84,7 @@ namespace Ekom.Services
             IStoreService storeService,
             IMemoryCache memoryCache,
             IMemberService memberService,
-            DiscountCache discountCache,
-            INodeService nodeService)
+            DiscountCache discountCache)
         {
             _logger = logger;
 
@@ -98,7 +96,6 @@ namespace Ekom.Services
             _discountCache = discountCache;
             _memoryCache = memoryCache;
             _memberService = memberService;
-            _nodeService = nodeService;
 
             _date = DateTime.Now;
         }
@@ -118,7 +115,7 @@ namespace Ekom.Services
             DiscountCache discountCache,
             IHttpContextAccessor httpContextAccessor,
             INodeService nodeService)
-            : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache, nodeService)
+            : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache)
         {
             _httpCtx = httpContextAccessor.HttpContext;
             var r = _httpCtx.Items["umbrtmche-ekmRequest"] as Lazy<object>;
@@ -134,14 +131,11 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
-            if (_config.UserBasket)
+            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
-                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
-                {
-                    var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+                var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
-                    return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
-                }
+                return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
             }
             else
             {
@@ -250,16 +244,13 @@ namespace Ekom.Services
         {
             // Add timelimit to get the order ? Maybe 1-2 hours ?
 
-            if (_config.UserBasket)
+            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
-                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
-                {
-                    var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+                var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
-                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
-                    {
-                        return orderInfo;
-                    }
+                if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+                {
+                    return orderInfo;
                 }
             }
             else
@@ -269,14 +260,13 @@ namespace Ekom.Services
                 var orderUniqueId = GetOrderIdFromCookie(key);
 
                 // If Cookie Exist then return Cart
-                if (orderUniqueId != Guid.Empty)
-                {
-                    var orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
+                if (orderUniqueId == Guid.Empty) return null;
+                
+                var orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
 
-                    if (Order.IsOrderFinal(orderInfo?.OrderStatus))
-                    {
-                        return orderInfo;
-                    }
+                if (Order.IsOrderFinal(orderInfo?.OrderStatus))
+                {
+                    return orderInfo;
                 }
             }
 
@@ -386,23 +376,26 @@ namespace Ekom.Services
 
         public void ClearCustomerOrderReference(OrderData order)
         {
-            if (Order.IsOrderFinal(order.OrderStatus))
-            {
-                if (order.OrderStatus == OrderStatus.ReadyForDispatch && !order.PaidDate.HasValue)
-                {
-                    order.PaidDate = DateTime.Now;
-                }
+            if (!Order.IsOrderFinal(order.OrderStatus)) return;
 
-                if (_config.UserBasket)
-                {
-                    _memberService.Save(new Dictionary<string, object>() {
-                        { "orderId", "" }
-                    }, !string.IsNullOrEmpty(order.CustomerUsername) ? order?.CustomerUsername  : _httpCtx.User.Identity.Name);
-                }
-                else
-                {
-                    _memoryCache.Remove(order.UniqueId.ToString());
-                }
+            if (order is { OrderStatus: OrderStatus.ReadyForDispatch, PaidDate: null })
+            {
+                order.PaidDate = DateTime.Now;
+            }
+
+            var userName = !string.IsNullOrEmpty(order.CustomerUsername)
+                ? order?.CustomerUsername
+                : _httpCtx.User.Identity?.Name;
+
+            if (_config.UserBasket && !string.IsNullOrEmpty((userName)))
+            {
+                _memberService.Save(new Dictionary<string, object>() {
+                    { "orderId", "" }
+                }, userName);
+            }
+            else
+            {
+                _memoryCache.Remove(order?.UniqueId.ToString());
             }
         }
 
@@ -1107,8 +1100,8 @@ namespace Ekom.Services
             _logger.LogDebug("CreateEmptyOrderAsync..");
 
             Guid orderUniqueId;
-            
-            if (_config.UserBasket)
+
+            if (_config.UserBasket && _httpCtx.User.Identity.IsAuthenticated)
             {
                 orderUniqueId = Guid.NewGuid();
 

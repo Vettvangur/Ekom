@@ -1,17 +1,13 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ekom.Cache
 {
     class PaymentProviderCache : PerStoreCache<IPaymentProvider>
     {
-        public override string NodeAlias { get; } = "netPaymentProvider";
+        public override string NodeAlias { get; } = "ekmPaymentProvider";
 
         public PaymentProviderCache(
             Configuration config,
@@ -27,7 +23,7 @@ namespace Ekom.Cache
         {
             if (!string.IsNullOrEmpty(NodeAlias))
             {
-                Stopwatch stopwatch = new Stopwatch();
+                var stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 _logger.LogDebug("Starting to fill...");
@@ -36,7 +32,7 @@ namespace Ekom.Cache
 
                 try
                 {
-                    var paymentProviderRoot = nodeService.NodesByTypes("netPaymentProviders").FirstOrDefault();
+                    var paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
 
                     if (paymentProviderRoot == null)
                     {

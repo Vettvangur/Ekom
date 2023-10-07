@@ -8,6 +8,10 @@
 
     var order = await _order.GetOrderAsync();
 
+    var rootNode = Model.GetRootNode();
+
+    var signInNode = rootNode.FirstChildOfType("signIn");
+
     var customerName = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Name) ? order.CustomerInformation.Customer.Name : memberAsContent != null ? memberAsContent.Name : "";
     var customerEmail = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email) ? order.CustomerInformation.Customer.Email : currentMember != null ? currentMember.Email : "";
     var customerAddress = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Address) ? order.CustomerInformation.Customer.Address : memberAsContent != null ? memberAsContent.Value<string>("address") : "";
@@ -48,9 +52,25 @@
             {
                 <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
                 <div>
-                    <div>
-                        <h1 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-5">Shipping information</h1>
 
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900 flex items-center justify-between">
+                            <span>Shipping information</span>
+                            @if (signInNode != null)
+                            {
+                                <a href="@signInNode.Url()" class="text-sm font-semibold leading-6 text-indigo-400">Already have an account? Login</a>
+                            }
+                        </h2>
+
+                        <div class="mt-4">
+                            <label for="email-address" class="block text-sm font-medium text-gray-700">Email address *</label>
+                            <div class="mt-1">
+                                <input type="email" id="email-address" name="customerEmail" autocomplete="email" value="@customerEmail" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
                         <div class="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                             <div class="sm:col-span-2">
                                 <label for="full-name" class="block text-sm font-medium text-gray-700">Full name *</label>

@@ -1,10 +1,8 @@
 using Ekom.Models;
-using Ekom.Payments;
 using Ekom.Services;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Ekom.Controllers
@@ -13,10 +11,6 @@ namespace Ekom.Controllers
     /// <summary>
     /// Handles order/cart creation, updates and removals
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Style",
-        "VSTHRD200:Use \"Async\" suffix for async methods",
-        Justification = "Async controller action")]
     [Route("ekom/checkout")]
     public class EkomCheckoutApiController : ControllerBase
     {
@@ -49,15 +43,14 @@ namespace Ekom.Controllers
                 {
                     return BadRequest();
                 }
-                else if (checkoutResponse.HttpStatusCode == 300)
+
+                if (checkoutResponse.HttpStatusCode == 300)
                 {
                     return Redirect(checkoutResponse.ResponseBody as string);
                 }
-                else
-                {
-                    Response.StatusCode = checkoutResponse.HttpStatusCode;
-                    return Content(checkoutResponse.ResponseBody as string);
-                }
+
+                Response.StatusCode = checkoutResponse.HttpStatusCode;
+                return Content(checkoutResponse.ResponseBody as string);
             }
             else
             {
@@ -70,10 +63,6 @@ namespace Ekom.Controllers
     /// Offers a default way to complete checkout using Ekom
     /// </summary>
     [Route("ekom/mvcCheckout")]
-    [SuppressMessage(
-        "Style",
-        "VSTHRD200:Use \"Async\" suffix for async methods",
-        Justification = "Async controller action")]
     public class CheckoutController : ControllerBase
     {
         /// <summary>
@@ -92,12 +81,18 @@ namespace Ekom.Controllers
         /// </summary>
         /// <param name="paymentRequest"></param>
         /// <returns></returns>
-        [Route("pay", Name = "MvcPay")]
+        [Route("pay")]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<ActionResult> Pay(PaymentRequest paymentRequest)
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(paymentRequest.ReturnUrl) && Url.IsLocalUrl(paymentRequest.ReturnUrl))
+                {
+                    return Redirect(paymentRequest.ReturnUrl + "?errorStatus=badReturnUrl");
+                }
+                
                 var culture = Thread.CurrentThread.CurrentCulture.Name;
                 return await _checkoutControllerService.PayAsync(
                     ResponseHandler, 
@@ -109,7 +104,7 @@ namespace Ekom.Controllers
 #pragma warning restore CA1031 // Do not catch general exception types
             {
                 _logger.LogError(ex, "Checkout payment failed!");
-                return Redirect(Request.GetDisplayUrl() + "?errorStatus=serverError");
+                return Redirect(paymentRequest.ReturnUrl + "?errorStatus=serverError");
             }
         }
 
@@ -117,44 +112,46 @@ namespace Ekom.Controllers
         {
             if (checkoutResponse != null)
             {
-                if (checkoutResponse.HttpStatusCode == 530 && checkoutResponse.ResponseBody is StockError stockError)
+                if (checkoutResponse.HttpStatusCode != 530 ||
+                    checkoutResponse.ResponseBody is not StockError stockError)
                 {
-                    if (stockError.OrderLineKey == Guid.Empty)
+                    if (checkoutResponse.HttpStatusCode == 230)
                     {
-                        return Redirect(
-                            Request.GetDisplayUrl() + 
-                            "?errorStatus=stockError&errorType=" + 
-                            stockError.Exception.Message);
+                        return Content(checkoutResponse.ResponseBody as string, "text/html");
                     }
-                    else
+
+                    if (checkoutResponse.HttpStatusCode == 400)
                     {
-                        var type = stockError.IsVariant ? "variant" : "product";
-                        return Redirect(
-                            Request.GetDisplayUrl() + 
-                            $"?errorStatus=stockError&errorType={type}&orderline=" + 
-                            stockError.OrderLineKey);
+                        return Redirect(checkoutResponse.ReturnUrl + "?errorStatus=invalidData");
                     }
+
+                    if (checkoutResponse.HttpStatusCode == 300)
+                    {
+                        return Redirect(checkoutResponse.ResponseBody as string);
+                    }
+
+                    return Redirect(
+                        checkoutResponse.ReturnUrl + "?errorStatus=" + checkoutResponse.ResponseBody as string);
                 }
-                else if (checkoutResponse.HttpStatusCode == 230)
+
+                if (stockError.OrderLineKey == Guid.Empty)
                 {
-                    return Content(checkoutResponse.ResponseBody as string, "text/html");
-                }
-                else if (checkoutResponse.HttpStatusCode == 400)
-                {
-                    return Redirect(Request.GetDisplayUrl() + "?errorStatus=invalidData");
-                }
-                else if (checkoutResponse.HttpStatusCode == 300)
-                {
-                    return Redirect(checkoutResponse.ResponseBody as string);
+                    return Redirect(
+                        checkoutResponse.ReturnUrl +
+                        "?errorStatus=stockError&errorType=" +
+                        stockError.Exception.Message);
                 }
                 else
                 {
-                    return Redirect(Request.GetDisplayUrl() + "?errorStatus=" + checkoutResponse.ResponseBody as string);
+                    var type = stockError.IsVariant ? "variant" : "product";
+                    return Redirect(checkoutResponse.ReturnUrl +
+                                    $"?errorStatus=stockError&errorType={type}&orderline=" +
+                                    stockError.OrderLineKey);
                 }
             }
             else
             {
-                return Redirect(Request.GetDisplayUrl() + "?success=true");
+                return Redirect(checkoutResponse.ReturnUrl + "?success=true");
             }
         }
     }

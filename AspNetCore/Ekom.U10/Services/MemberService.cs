@@ -2,7 +2,6 @@ using Ekom.Models;
 using Ekom.Umb.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Security;
 
 namespace Ekom.Umb.Services
@@ -20,25 +19,22 @@ namespace Ekom.Umb.Services
             var serviceContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
             var m = serviceContext?.GetByUsername(userName);
 
-            if (m == null)
-            {
-                return null;
-            }
-
-            return new Umbraco10Member(m);
+            return m == null ? null : new Umbraco10Member(m);
         }
 
-        public UmbracoMember GetCurrentMember()
+        public async Task<UmbracoMember> GetCurrentMember()
         {
-            var serviceContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
             var managerContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<IMemberManager>();
-            var m = managerContext?.GetCurrentMemberAsync();
-            IMember? member = serviceContext?.GetById(Convert.ToInt32(m?.Id));
-            if (member == null)
+
+            if (managerContext == null)
             {
                 return null;
             }
-            return new Umbraco10Member(member);
+
+            var m = await managerContext.GetCurrentMemberAsync();
+            var publishedMember = managerContext.AsPublishedMember(m);
+            
+            return publishedMember == null ? null : new Umbraco10Member(publishedMember, m.UserName);
         }
 
         public void Save(Dictionary<string, object> data, UmbracoMember member)

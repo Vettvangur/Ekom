@@ -129,16 +129,15 @@ namespace Ekom.App_Start
                 cacheEntry?.AddReplace(new Umbraco10Content(node));
 
                 // If slug changes on category then we need to update the cache for all descending products.
-                if (node.ContentType.Alias == "ekmCategory")
-                {
-                    var dirty = (IRememberBeingDirty)node;
-                    var slugHasChanged = dirty.WasPropertyDirty("slug");
-                    var disabledChanged = dirty.WasPropertyDirty("disable");
+                if (node.ContentType.Alias != "ekmCategory") continue;
+                
+                var dirty = (IRememberBeingDirty)node;
+                var slugHasChanged = dirty.WasPropertyDirty("slug");
+                var disabledChanged = dirty.WasPropertyDirty("disable");
 
-                    if (slugHasChanged || disabledChanged)
-                    {
-                        RefreshCacheForDescendants(node.Id);
-                    }
+                if (slugHasChanged || disabledChanged)
+                {
+                    RefreshCacheForDescendants(node.Id);
                 }
 
             }
@@ -197,20 +196,18 @@ namespace Ekom.App_Start
 
         private ICache? FindMatchingCache(string contentTypeAlias)
         {
-            if (contentTypeAlias.Contains("netPaymentProvider"))
+            if (contentTypeAlias.Contains("ekmpaymentprovider", StringComparison.InvariantCulture))
             {
                 return _config.CacheList.Value.FirstOrDefault(x
                     => !string.IsNullOrEmpty(x.NodeAlias)
                     && contentTypeAlias.StartsWith(x.NodeAlias, StringComparison.InvariantCulture)
                 );
             }
-            else
-            {
-                return _config.CacheList.Value.FirstOrDefault(x
-                    => !string.IsNullOrEmpty(x.NodeAlias)
-                    && contentTypeAlias.Equals(x.NodeAlias, StringComparison.InvariantCulture)
-                );
-            }
+
+            return _config.CacheList.Value.FirstOrDefault(x
+                => !string.IsNullOrEmpty(x.NodeAlias)
+                   && contentTypeAlias.Equals(x.NodeAlias, StringComparison.InvariantCulture)
+            );
         }
 
         private void UpdatePropertiesDefaultValues(
@@ -247,22 +244,20 @@ namespace Ekom.App_Start
 
                 foreach (var type in propertyTypes)
                 {
-                    if (alias == "ekmProduct" || alias == "ekmCategory")
+                    if (alias != "ekmProduct" && alias != "ekmCategory") continue;
+                    
+                    var title = content.GetProperty("title", type);
+
+                    var slug = string.Empty; // NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+
+                    if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                     {
-                        var title = content.GetProperty("title", type);
-
-                        var slug = string.Empty; // NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
-
-                        if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
-                        {
-                            slug = title;
-                        }
-
-                        slug = slug.ToLowerInvariant();
-
-                        slugItems.Add(type, slug.ToUrlSegment(_shortStringHelper));
-
+                        slug = title;
                     }
+
+                    slug = slug.ToLowerInvariant();
+
+                    slugItems.Add(type, slug.ToUrlSegment(_shortStringHelper));
 
 
                 }
@@ -426,28 +421,22 @@ namespace Ekom.App_Start
 
             var domain = saveEventArgs.SavedEntities.FirstOrDefault();
 
-            if (domain != null)
+            if (domain?.RootContentId == null) return;
+            
+            var rootContent = _cs.GetById(domain.RootContentId.Value);
+
+            if (rootContent == null) return;
+
+            var store = _storeCache.Cache.Values.FirstOrDefault(x => x.StoreRootNodeId == rootContent.Id);
+
+            if (store == null) return;
+            
+            var ekmStoreContent = _cs.GetById(store.Id);
+
+            if (ekmStoreContent != null)
             {
-                if (domain.RootContentId != null)
-                {
-                    var rootContent = _cs.GetById(domain.RootContentId.Value);
-
-                    var store = _storeCache.Cache.Values.FirstOrDefault(x => x.StoreRootNodeId == rootContent.Id);
-
-                    if (store != null)
-                    {
-                        IContent ekmStoreContent = _cs.GetById(store.Id);
-
-                        if (ekmStoreContent != null)
-                        {
-                            // Update cached IStore
-                            _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent));
-                        }
-
-                    }
-
-
-                }
+                // Update cached IStore
+                _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent));
             }
         }
 
@@ -510,32 +499,28 @@ namespace Ekom.App_Start
 
         private void RefreshCacheForDescendants(int Id, bool remove = false)
         {
-            using (var cref = _context.EnsureUmbracoContext())
+            using var cref = _context.EnsureUmbracoContext();
+            
+            var cache = cref.UmbracoContext.Content;
+
+            var currentNode = cache.GetById(Id);
+
+            if (currentNode == null) return;
+            
+            var descendants = currentNode.Descendants();
+
+            foreach (var descendant in descendants)
             {
-                var cache = cref.UmbracoContext.Content;
+                var cacheEntryForDesc = FindMatchingCache(descendant.ContentType.Alias);
 
-                var currentNode = cache.GetById(Id);
-
-                if (currentNode != null)
+                if (remove)
                 {
-                    var descendants = currentNode.Descendants();
-
-                    foreach (var descendant in descendants)
-                    {
-                        var cacheEntryForDesc = FindMatchingCache(descendant.ContentType.Alias);
-
-                        if (remove)
-                        {
-                            cacheEntryForDesc?.Remove(descendant.Key);
-                        }
-                        else
-                        {
-                            cacheEntryForDesc?.AddReplace(new Umbraco10Content(descendant));
-                        }
-
-                    }
+                    cacheEntryForDesc?.Remove(descendant.Key);
                 }
-
+                else
+                {
+                    cacheEntryForDesc?.AddReplace(new Umbraco10Content(descendant));
+                }
 
             }
         }

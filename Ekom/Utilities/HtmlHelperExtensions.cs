@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Ekom.Utilities
@@ -73,11 +74,13 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
             
-            return htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, false, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+            var form = htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+            
+            return form;
         }
 
         /// <summary>
-        /// Render an Ekom checkout form that submits to the <see cref="CheckoutApiController"/>
+        /// Render an Ekom checkout form that submits to the <see cref="EkomCheckoutController"/>
         /// Placing html inside using construct.
         /// </summary>
         /// <param name="htmlHelper"></param>
@@ -91,7 +94,7 @@ namespace Ekom.Utilities
         ///     <button type = "submit" class="button">Submit</button>            
         /// }
         /// </example>
-        public static MvcForm BeginEkomCheckoutForm(this IHtmlHelper htmlHelper, CheckoutFormType formType, string className = null, string Id = null)
+        public static MvcForm BeginEkomCheckoutForm(this IHtmlHelper htmlHelper, CheckoutFormType formType, string className = null, string Id = null, Dictionary<string, object> htmlAttributes = null)
 
         {
             var actionName = formType.ToString();
@@ -108,7 +111,11 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
 
-            return htmlHelper.BeginRouteForm("MvcPay", new { }, FormMethod.Post, false, htmlAttributes: new { @class = className, @id = Id });
+            var form = htmlHelper.BeginForm(actionName, "Checkout", new { }, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+
+            htmlHelper.ViewContext.Writer.WriteLine($"<input type='hidden' name='returnUrl' value='{htmlHelper.ViewContext.HttpContext.Request.GetDisplayUrl()}' />");
+            
+            return form;
         }
     }
 }

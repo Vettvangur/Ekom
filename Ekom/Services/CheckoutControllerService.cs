@@ -58,7 +58,7 @@ namespace Ekom.Services
             //HttpContext = httpContext;
         }
 
-        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
+        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, string returnUrl = "")
         {
             Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -84,6 +84,7 @@ namespace Ekom.Services
                 order,
                 _httpCtx.Request.Form)
                 .ConfigureAwait(false);
+            
             if (res != null)
             {
                 return responseHandler(res);
@@ -102,6 +103,7 @@ namespace Ekom.Services
 
             var hangfireJobs = new List<string>();
             res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+            
             if (res != null)
             {
                 return responseHandler(res);
@@ -140,6 +142,7 @@ namespace Ekom.Services
 
                 return new CheckoutResponse
                 {
+                    ReturnUrl = paymentRequest.ReturnUrl,
                     HttpStatusCode = 400,
                 };
             }
@@ -197,7 +200,7 @@ namespace Ekom.Services
                     order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
-            if (order.ShippingProvider == null || (order.ShippingProvider != null && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
+            if (order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 await Order.Instance.UpdateShippingInformationAsync(
                     paymentRequest.ShippingProvider,
@@ -206,27 +209,25 @@ namespace Ekom.Services
 
             if (Config.StoreCustomerData)
             {
-                using (var db = DatabaseFactory.GetDatabase())
+                await using var db = DatabaseFactory.GetDatabase();
+                
+                await db.InsertAsync(new CustomerData
                 {
-                    await db.InsertAsync(new CustomerData
-                    {
-                        // Unfinished
-                    }).ConfigureAwait(false);
-                }
+                    // Unfinished
+                }).ConfigureAwait(false);
             }
 
-            if (string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
-            || string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+            if (!string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
+                && !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email)) return null;
+            
+            Logger.LogWarning("ValidationAndOrderUpdatesAsync Failed. Name or Email is empty. " + (order != null ? order.UniqueId.ToString() : ""));
+
+            return new CheckoutResponse
             {
-                Logger.LogWarning("ValidationAndOrderUpdatesAsync Failed. Name or Email is empty. " + (order != null ? order.UniqueId.ToString() : ""));
+                ReturnUrl = paymentRequest.ReturnUrl,
+                HttpStatusCode = 400,
+            };
 
-                return new CheckoutResponse
-                {
-                    HttpStatusCode = 400,
-                };
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -361,27 +362,26 @@ namespace Ekom.Services
         {
             string orderTitle = "Pöntun";
 
-            if (store != null)
+            if (store == null) return Task.FromResult(orderTitle += " - " + order.OrderNumber);
+            
+            var paymentOrderTitle = store.GetValue("paymentOrderTitle");
+
+            if (string.IsNullOrEmpty(paymentOrderTitle))
+                return Task.FromResult(orderTitle += " - " + order.OrderNumber);
+            
+            if (paymentOrderTitle.Substring(0, 1) == "#")
             {
-                var paymentOrderTitle = store.GetValue("paymentOrderTitle");
+                var dictionaryValue
+                    = UmbracoService.GetDictionaryValue(paymentOrderTitle.Substring(1));
 
-                if (!string.IsNullOrEmpty(paymentOrderTitle))
+                if (!string.IsNullOrEmpty(dictionaryValue))
                 {
-                    if (paymentOrderTitle.Substring(0, 1) == "#")
-                    {
-                        var dictionaryValue
-                            = UmbracoService.GetDictionaryValue(paymentOrderTitle.Substring(1));
-
-                        if (!string.IsNullOrEmpty(dictionaryValue))
-                        {
-                            orderTitle = dictionaryValue;
-                        }
-                    }
-                    else
-                    {
-                        orderTitle = paymentOrderTitle;
-                    }
+                    orderTitle = dictionaryValue;
                 }
+            }
+            else
+            {
+                orderTitle = paymentOrderTitle;
             }
 
             return Task.FromResult(orderTitle += " - " + order.OrderNumber);
@@ -459,16 +459,17 @@ namespace Ekom.Services
                         OrderStatus.OfflinePayment,
                         order.UniqueId).ConfigureAwait(false);
                     
-                    var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember()?.Key.ToString() : "" : "";
+                    var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-                    var checkoutStatus = new CheckoutStatus();
-
-                    checkoutStatus.OrderId = order.UniqueId;
-                    checkoutStatus.SuccessUrl = successUrl;
-                    checkoutStatus.ErrorUrl = errorUrl;
-                    checkoutStatus.PaymentProvider = ekomPP.Name;
-                    checkoutStatus.PaymentProviderKey = ekomPP.Key;
-                    checkoutStatus.MemberKey = (string.IsNullOrEmpty(memberKey) ? "" : memberKey);
+                    var checkoutStatus = new CheckoutStatus
+                    {
+                        OrderId = order.UniqueId,
+                        SuccessUrl = successUrl,
+                        ErrorUrl = errorUrl,
+                        PaymentProvider = ekomPP.Name,
+                        PaymentProviderKey = ekomPP.Key,
+                        MemberKey = (string.IsNullOrEmpty(memberKey) ? "" : memberKey)
+                    };
 
                     try
                     {
@@ -534,6 +535,9 @@ namespace Ekom.Services
                 {
                     Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
                 }
+
+                var currentMember = await MemberService.GetCurrentMember();
+
                 var paymentSettings = new PaymentSettings
                 {
                     CustomerInfo = new Ekom.Payments.CustomerInfo()
@@ -555,7 +559,7 @@ namespace Ekom.Services
                     Orders = orderItems,
                     Language = language,
                     Store = storeAlias,
-                    Member = MemberService.GetCurrentMember()?.Key,
+                    Member = currentMember?.Key,
                     PaymentProviderKey = ekomPP.Key,
                 };
                 paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());

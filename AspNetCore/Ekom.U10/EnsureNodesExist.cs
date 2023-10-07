@@ -942,10 +942,10 @@ namespace Ekom.App_Start
 
                     #region Payment Providers
 
-                    var netPaymentProviderCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, ppContainer.Id)
+                    var paymentProviderCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, ppContainer.Id)
                     {
-                        Name = "NetPayment Provider",
-                        Alias = "netPaymentProvider",
+                        Name = "Payment Provider",
+                        Alias = "ekmPaymentProvider",
                         Icon = "icon-bill",
                         ContentTypeComposition = new List<IContentTypeComposition>
                     {
@@ -1003,14 +1003,14 @@ namespace Ekom.App_Start
                         ),
                     });
 
-                    var netPaymentProvidersCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, ppContainer.Id)
+                    var paymentProvidersCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, ppContainer.Id)
                     {
-                        Name = "NetPayment Providers",
-                        Alias = "netPaymentProviders",
+                        Name = "Payment Providers",
+                        Alias = "ekmPaymentProviders",
                         Icon = "icon-bills",
                         AllowedContentTypes = new List<ContentTypeSort>
                     {
-                        new ContentTypeSort(netPaymentProviderCt.Id, 1),
+                        new ContentTypeSort(paymentProviderCt.Id, 1),
                     },
                     });
 
@@ -1259,7 +1259,7 @@ namespace Ekom.App_Start
                         new ContentTypeSort(storesCt.Id, 1),
                         new ContentTypeSort(catalogCt.Id, 2),
                         new ContentTypeSort(shippingProvidersCt.Id, 3),
-                        new ContentTypeSort(netPaymentProvidersCt.Id, 4),
+                        new ContentTypeSort(paymentProvidersCt.Id, 4),
                         new ContentTypeSort(zonesCt.Id, 5),
                         new ContentTypeSort(discountsCt.Id, 6),
                     },

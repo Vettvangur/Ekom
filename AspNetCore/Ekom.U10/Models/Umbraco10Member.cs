@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Ekom.Umb.Models
 {
@@ -16,6 +15,19 @@ namespace Ekom.Umb.Models
             },
             member.Properties.ToDictionary(
                 x => x.Alias, 
+                x => x.GetValue()?.ToString()))
+        { }
+
+        public Umbraco10Member(IPublishedContent member, string userName) 
+            : base(new Dictionary<string, string>
+        {
+            { "id", member.Id.ToString() },
+            { "__Key", member.Key.ToString() },
+            { "nodeName", member.Name },
+            { "loginName", userName }
+        },
+            member.Properties.ToDictionary(
+                x => x.Alias,
                 x => x.GetValue()?.ToString()))
         { }
     }

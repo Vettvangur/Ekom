@@ -77,17 +77,15 @@ class EkomMiddleware
     {
         try
         {
-            using (var umbCtx = umbracoContextFac.EnsureUmbracoContext())
+            using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
+            // No umbraco context exists for static file requests
+            if (umbCtx?.UmbracoContext != null)
             {
-                // No umbraco context exists for static file requests
-                if (umbCtx?.UmbracoContext != null)
-                {
-                    appCaches.RequestCache.Get("ekmRequest", () =>
-                        new ContentRequest(_context)
-                        {
-                            User = new User(),
-                        });
-                }
+                appCaches.RequestCache.Get("ekmRequest", () =>
+                    new ContentRequest(_context)
+                    {
+                        User = new User(),
+                    });
             }
         }
         catch (Exception ex)

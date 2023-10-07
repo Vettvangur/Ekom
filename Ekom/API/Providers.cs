@@ -104,7 +104,7 @@ namespace Ekom.API
                 store,
                 countryCode,
                 orderAmount
-            ).Cast<IPaymentProvider>();
+            ).Cast<IPaymentProvider>().OrderBy(x => x.SortOrder);
         }
 
         /// <summary>

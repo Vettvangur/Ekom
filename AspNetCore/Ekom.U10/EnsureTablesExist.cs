@@ -70,9 +70,16 @@ namespace Ekom.App_Start
         {
             logger.LogDebug("Ensuring Ekom db tables exist");
 
-            // perform any upgrades (as needed)
-            var upgrader = new Upgrader(new EkomMigrationPlan());
-            upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
+            try
+            {
+                // perform any upgrades (as needed)
+                var upgrader = new Upgrader(new EkomMigrationPlan());
+                upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to run ekom Upgrader");
+            }
 
             logger.LogDebug("Done");
         }

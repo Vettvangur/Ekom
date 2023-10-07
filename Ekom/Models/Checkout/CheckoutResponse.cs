@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Ekom.Models
 {
     /// <summary>
@@ -16,5 +9,6 @@ namespace Ekom.Models
         public object ResponseBody { get; set; }
 
         public int HttpStatusCode { get; set; }
+        public string ReturnUrl { get; set; } = "";
     }
 }
