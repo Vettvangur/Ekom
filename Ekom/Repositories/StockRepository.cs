@@ -4,10 +4,6 @@ using Ekom.Services;
 using LinqToDB;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Ekom.Repositories
 {
@@ -38,15 +34,14 @@ namespace Ekom.Repositories
         /// <returns></returns>
         public async Task<StockData> GetStockByUniqueIdAsync(string uniqueId)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var stockData = await db.StockData
-                    .Where(x => x.UniqueId == uniqueId)
-                    .FirstOrDefaultAsync()
-                    .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
 
-                return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
-            }
+            var stockData = await db.StockData
+                .Where(x => x.UniqueId == uniqueId)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
+
+            return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
         }
 
         public async Task<StockData> CreateNewStockRecordAsync(string uniqueId)
@@ -60,10 +55,9 @@ namespace Ekom.Repositories
             };
 
             // Run synchronously to ensure that callers can expect a db record present after method runs
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                await db.InsertAsync(stockData).ConfigureAwait(false);
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            
+            await db.InsertAsync(stockData).ConfigureAwait(false);
 
             return stockData;
         }
@@ -74,10 +68,9 @@ namespace Ekom.Repositories
         /// <returns></returns>
         public async Task<List<StockData>> GetAllStockAsync()
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                return await db.StockData.ToListAsync().ConfigureAwait(false);
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            
+            return await db.StockData.ToListAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -107,11 +100,9 @@ namespace Ekom.Repositories
             stockDataFromRepo.UpdateDate = DateTime.Now;
 
             // Called synchronously and hopefully contained by a locking construct
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
-                return stockDataFromRepo.Stock;
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
+            return stockDataFromRepo.Stock;
         }
 
         /// <summary>
@@ -121,25 +112,24 @@ namespace Ekom.Repositories
         /// <exception cref="StockException"></exception>
         public async Task RollBackJob(string jobId)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                string hangfireArgument = await db.FromSql<string>(
+            await using var db = _databaseFactory.GetDatabase();
+            
+            string hangfireArgument = await db.FromSql<string>(
                     "SELECT Arguments FROM [HangFire].[Job] WHERE Id = @0 AND StateName = @1",
                     jobId,
                     "Scheduled"
-                    )
-                    .FirstOrDefaultAsync()
-                    .ConfigureAwait(false);
+                )
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
 
-                if (!string.IsNullOrEmpty(hangfireArgument))
-                {
-                    var arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
+            if (!string.IsNullOrEmpty(hangfireArgument))
+            {
+                var arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
 
-                    var key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
-                    var stock = Convert.ToInt32(arguments.LastOrDefault());
+                var key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
+                var stock = Convert.ToInt32(arguments.LastOrDefault());
 
-                    await Ekom.API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
-                }
+                await API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
             }
         }
     }

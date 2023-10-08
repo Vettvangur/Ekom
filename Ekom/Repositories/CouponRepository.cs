@@ -1,14 +1,8 @@
-using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using LinqToDB;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Ekom.Repositories
 {
@@ -41,13 +35,12 @@ namespace Ekom.Repositories
             if (!await CouponCodeExistAsync(couponData.CouponCode)
                 .ConfigureAwait(false))
             {
-                using (var db = _databaseFactory.GetDatabase())
-                {
-                    await db.InsertAsync(couponData)
-                        .ConfigureAwait(false);
+                await using var db = _databaseFactory.GetDatabase();
+                
+                await db.InsertAsync(couponData)
+                    .ConfigureAwait(false);
 
-                    RefreshCache(couponData);
-                }
+                RefreshCache(couponData);
             }
             else
             {
@@ -57,13 +50,12 @@ namespace Ekom.Repositories
 
         public async Task UpdateCouponAsync(CouponData couponData)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                await db.UpdateAsync(couponData)
-                        .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
+            
+            await db.UpdateAsync(couponData)
+                .ConfigureAwait(false);
 
-                RefreshCache(couponData);
-            }
+            RefreshCache(couponData);
         }
 
         public async Task RemoveCouponAsync(Guid discountId, string couponCode)
@@ -73,13 +65,12 @@ namespace Ekom.Repositories
 
             if (coupon != null)
             {
-                using (var db = _databaseFactory.GetDatabase())
-                {
-                    await db.DeleteAsync(coupon)
-                        .ConfigureAwait(false);
+                await using var db = _databaseFactory.GetDatabase();
+                
+                await db.DeleteAsync(coupon)
+                    .ConfigureAwait(false);
 
-                    RemoveCache(coupon);
-                }
+                RemoveCache(coupon);
             }
             else
             {
@@ -90,110 +81,95 @@ namespace Ekom.Repositories
 
         public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var data = await db.CouponData
-                    .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
-                    .FirstOrDefaultAsync()
-                    .ConfigureAwait(false);
-                return data;
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            
+            var data = await db.CouponData
+                .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
+            return data;
         }
 
         public async Task<CouponData> GetCouponByKeyAsync(Guid key)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var data = await db.CouponData
-                    .Where(x => x.CouponKey == key)
-                    .FirstOrDefaultAsync()
-                    .ConfigureAwait(false);
-                return data;
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            var data = await db.CouponData
+                .Where(x => x.CouponKey == key)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
+            return data;
         }
 
         public async Task<CouponData> GetCouponByCodeAsync(string couponCode)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var data = await db.CouponData
-                    .Where(x => x.CouponCode == couponCode)
-                    .FirstOrDefaultAsync()
-                        .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
+            var data = await db.CouponData
+                .Where(x => x.CouponCode == couponCode)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
 
-                return data;
-            }
+            return data;
         }
 
         public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var data = await db.CouponData
-                    .Where(x => x.DiscountId == discountId)
-                    .ToListAsync()
-                    .ConfigureAwait(false);
-                return data;
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            var data = await db.CouponData
+                .Where(x => x.DiscountId == discountId)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            return data;
         }
 
         public async Task DeleteCouponsByDiscountAsync(Guid discountId)
         {
-            using (var db = _databaseFactory.GetDatabase())
+            await using var db = _databaseFactory.GetDatabase();
+            var coupons = await GetCouponsForDiscountAsync(discountId).ConfigureAwait(false);
+
+            foreach (var coupon in coupons)
             {
-                var coupons = await GetCouponsForDiscountAsync(discountId).ConfigureAwait(false);
+                await db.DeleteAsync(coupon).ConfigureAwait(false);
 
-                foreach (var coupon in coupons)
-                {
-                    await db.DeleteAsync(coupon).ConfigureAwait(false);
-
-                    RemoveCache(coupon);
-                }
+                RemoveCache(coupon);
             }
         }
         public async Task<bool> DiscountHasCouponAsync(Guid discountId, string couponCode)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var query = await db.CouponData
-                    .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
-                    .ToListAsync()
-                    .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
+            var query = await db.CouponData
+                .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
-                return query.Any();
-            }
+            return query.Any();
         }
 
         public async Task<bool> CouponCodeExistAsync(string couponCode)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var query = await db.CouponData
-                    .Where(x => x.CouponCode == couponCode)
-                    .ToListAsync()
-                    .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
+            var query = await db.CouponData
+                .Where(x => x.CouponCode == couponCode)
+                .ToListAsync()
+                .ConfigureAwait(false);
 
-                return query.Any();
-            }
+            return query.Any();
         }
 
         public async Task MarkUsedAsync(string couponCode)
         {
-            using (var db = _databaseFactory.GetDatabase())
+            await using var db = _databaseFactory.GetDatabase();
+            var coupon = await GetCouponByCodeAsync(couponCode)
+                .ConfigureAwait(false);
+
+            if (coupon != null)
             {
-                var coupon = await GetCouponByCodeAsync(couponCode)
-                    .ConfigureAwait(false);
-
-                if (coupon != null)
-                {
-                    coupon.NumberAvailable--;
-                }
-
-                await db.UpdateAsync(coupon)
-                    .ConfigureAwait(false);
-
-                RefreshCache(coupon);
+                coupon.NumberAvailable--;
             }
+
+            await db.UpdateAsync(coupon)
+                .ConfigureAwait(false);
+
+            RefreshCache(coupon);
         }
 
         public void RefreshCache(CouponData coupon)
@@ -214,15 +190,13 @@ namespace Ekom.Repositories
         {
             var orderDiscountCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmOrderDiscount");
 
-            if (orderDiscountCache != null)
-            {
-                // Content service is always null. need to FIX
-                var discountNode = _nodeService.NodeById(coupon.DiscountId);
+            if (orderDiscountCache == null) return;
+            // Content service is always null. need to FIX
+            var discountNode = _nodeService.NodeById(coupon.DiscountId);
 
-                if (discountNode != null)
-                {
-                    orderDiscountCache.AddReplace(discountNode);
-                }
+            if (discountNode != null)
+            {
+                orderDiscountCache.AddReplace(discountNode);
             }
         }
     }

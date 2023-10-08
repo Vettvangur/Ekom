@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Ekom.Domain.Repositories;
+using Ekom.Repositories;
 using Ekom.Models;
 
 namespace Ekom.Controllers

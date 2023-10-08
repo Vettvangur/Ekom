@@ -1,7 +1,6 @@
 using Ekom.API;
 using Ekom.AspNetCore.Services;
 using Ekom.Cache;
-using Ekom.Domain.Repositories;
 using Ekom.Exceptions;
 using Ekom.Factories;
 using Ekom.Interfaces;

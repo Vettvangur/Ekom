@@ -1,5 +1,5 @@
 using Ekom.Cache;
-using Ekom.Domain.Repositories;
+using Ekom.Repositories;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;

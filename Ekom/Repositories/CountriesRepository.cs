@@ -1,24 +1,17 @@
-using Ekom;
 using Ekom.Models;
-#if NETCOREAPP
 using Microsoft.AspNetCore.Hosting;
-#endif
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text;
-using System.Web;
 using System.Xml.Linq;
 
-namespace Ekom.Domain.Repositories
+namespace Ekom.Repositories
 {
     public class CountriesRepository
     {
-        private static readonly ConcurrentDictionary<string, List<Country>> _cache = new ConcurrentDictionary<string, List<Country>>();
+        private static readonly ConcurrentDictionary<string, List<Country>> _cache = new();
 
         private readonly ILogger _logger;
 
@@ -46,16 +39,11 @@ namespace Ekom.Domain.Repositories
             return _cache.GetOrAdd(BaseXMLFileName, s =>
             {
                 // future todo: make file location configurable (web.config or through code)
-#if NETCOREAPP
                 var env = Configuration.Resolver.GetService<IWebHostEnvironment>();
                 //string webRootPath = env.WebRootPath;
                 string contentRootPath = env.ContentRootPath;
 
                 var path = Path.Combine(contentRootPath, $"scripts/Ekom/{BaseXMLFileName}.xml");
-#else
-                var serverUtility = Configuration.Resolver.GetService<HttpContextBase>()?.Server;
-                var path = serverUtility.MapPath($"/scripts/Ekom/{BaseXMLFileName}.xml");
-#endif
 
                 if (!File.Exists(path))
                 {
@@ -86,10 +74,7 @@ namespace Ekom.Domain.Repositories
                 {
                     var region = new RegionInfo(culture.LCID);
 
-                    if (!(cultureList.ContainsKey(region.TwoLetterISORegionName)))
-                    {
-                        cultureList.Add(region.TwoLetterISORegionName, region.DisplayName);
-                    }
+                    cultureList.TryAdd(region.TwoLetterISORegionName, region.DisplayName);
                 }
                 catch
                 {

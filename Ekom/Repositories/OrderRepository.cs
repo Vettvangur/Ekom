@@ -67,8 +67,10 @@ namespace Ekom.Repositories
             try
             {
                 await using var db = _databaseFactory.GetDatabase();
-                
-                const string sql = @"
+
+                const string insertTempColumnSql = @"
+                    DECLARE @result INT = 0; -- default to 0 (false)
+
                     BEGIN TRANSACTION;
 
                     IF EXISTS (
@@ -79,20 +81,45 @@ namespace Ekom.Repositories
                         AND DATA_TYPE = 'int'
                     )
                     BEGIN
-	                    IF NOT EXISTS (
-		                    SELECT 1
-		                    FROM INFORMATION_SCHEMA.COLUMNS
-		                    WHERE TABLE_NAME = 'EkomOrders'
-		                    AND COLUMN_NAME = 'OrderStatusColTemp'
-	                    )
-	                    BEGIN
-		                    ALTER TABLE [dbo].[EkomOrders] ADD [OrderStatusColTemp] [nvarchar](4000) NULL;
-	                    END
+                        IF NOT EXISTS (
+                            SELECT 1
+                            FROM INFORMATION_SCHEMA.COLUMNS
+                            WHERE TABLE_NAME = 'EkomOrders'
+                            AND COLUMN_NAME = 'OrderStatusColTemp'
+                        )
+                        BEGIN
+                            ALTER TABLE [dbo].[EkomOrders] ADD [OrderStatusColTemp] [nvarchar](4000) NULL;
+                            SET @result = 1; -- set to 1 (true) if the column was created
+                        END
+                    END
+
+                    COMMIT TRANSACTION;
+
+                    -- Return the result
+                    SELECT @result AS Result;";
+
+                var insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
+
+                int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0;
+
+                if (insertTempColumn == 1)
+                {
+                    const string renameAndChangeToNvarcharSql = @"
+                        BEGIN TRANSACTION;
+
                         UPDATE [dbo].[EkomOrders] SET [OrderStatusColTemp] = CAST([OrderStatusCol] AS nvarchar(4000));
+
+                        COMMIT TRANSACTION;";
+
+                    affected1 = await db.ExecuteAsync<int>(renameAndChangeToNvarcharSql);
+
+                    const string changeDataStructureSql = @"
+                        BEGIN TRANSACTION;
+
                         ALTER TABLE [dbo].[EkomOrders] DROP COLUMN [OrderStatusCol];
                         EXEC sp_rename 'dbo.EkomOrders.OrderStatusColTemp', 'OrderStatusCol', 'COLUMN';
 
-                        UPDATE [dbo].[EkomOrders] SET [CustomerId] = 0 WHERE [CustomerId] IS NULL; -- Setting 0 as default, modify as needed
+                        UPDATE [dbo].[EkomOrders] SET [CustomerId] = 0 WHERE [CustomerId] IS NULL;
                         ALTER TABLE [dbo].[EkomOrders] ALTER COLUMN [CustomerId] [int] NOT NULL;
 
                         ALTER TABLE [dbo].[EkomOrders] ALTER COLUMN [TotalAmount] [decimal](18, 0) NOT NULL;
@@ -101,11 +128,12 @@ namespace Ekom.Repositories
                         ALTER TABLE [dbo].[EkomOrders] ALTER COLUMN [UpdateDate] [datetime2](7) NOT NULL;
                         ALTER TABLE [dbo].[EkomOrders] ALTER COLUMN [PaidDate] [datetime2](7) NULL;
 
-                    END
+                        COMMIT TRANSACTION;
+                        ";
 
-                    COMMIT TRANSACTION;";
+                    affected2 = await db.ExecuteAsync<int>(changeDataStructureSql);
 
-                const string sql2 = @"BEGIN TRANSACTION;
+                    const string updateOrderStatusColDataSql = @"BEGIN TRANSACTION;
                     IF EXISTS (
                         SELECT TOP 1 1
                         FROM [dbo].[EkomOrders]
@@ -135,7 +163,10 @@ namespace Ekom.Repositories
 
                     COMMIT TRANSACTION;";
 
-                const string sql3 = @"BEGIN TRANSACTION;
+                    affected3 = await db.ExecuteAsync<int>(updateOrderStatusColDataSql);
+                }
+
+                const string stockUniqueIdMoreLengthSql = @"BEGIN TRANSACTION;
                         IF EXISTS (
 	                        SELECT 1
 	                        FROM INFORMATION_SCHEMA.COLUMNS
@@ -149,14 +180,14 @@ namespace Ekom.Repositories
                         End
                         COMMIT TRANSACTION;";
 
-                var affected1 = await db.ExecuteAsync<int>(sql);
-                var affected2 = await db.ExecuteAsync<int>(sql2);
-                var affected3 = await db.ExecuteAsync<int>(sql3);
 
-                if ((affected1 + affected2 + affected3) > 0)
+                affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
+
+                if ((affected2 + affected3 + affected4) > 0)
                 {
                     _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3));
                 }
+
             } catch(Exception ex)
             {
                 _logger.LogError(ex, "Failed to run migration script for Order table");
