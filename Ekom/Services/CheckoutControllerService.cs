@@ -31,7 +31,6 @@ namespace Ekom.Services
         protected readonly IMemberService MemberService;
         protected readonly ILogger Logger;
         protected readonly Configuration Config;
-        protected readonly INetPaymentService netPaymentService;
         protected readonly EkomPayments ekomPayments;
         readonly HttpContext _httpCtx;
         protected string Culture;
@@ -43,7 +42,6 @@ namespace Ekom.Services
             IUmbracoService umbracoService,
             IMemberService memberService,
             IHttpContextAccessor httpContextAccessor,
-            INetPaymentService netPaymentService,
             EkomPayments ekomPayments)
         {
             _httpCtx = httpContextAccessor.HttpContext;
@@ -53,7 +51,6 @@ namespace Ekom.Services
             DatabaseFactory = databaseFactory;
             UmbracoService = umbracoService;
             MemberService = memberService;
-            this.netPaymentService = netPaymentService;
             this.ekomPayments = ekomPayments;
             //HttpContext = httpContext;
         }

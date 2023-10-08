@@ -56,6 +56,7 @@ static class Registrations
 
 
         services.AddTransient<IStoreService, StoreService>();
+
         services.AddTransient<OrderService>();
 
         services.AddTransient<CheckoutService>();
@@ -115,7 +116,6 @@ static class Registrations
                 f.GetService<IUmbracoService>(),
                 f.GetService<IMemberService>(),
                 f.GetService<IHttpContextAccessor>(),
-                f.GetService<INetPaymentService>(),
                 f.GetService<EkomPayments>()
             )
         );

@@ -1,9 +1,7 @@
 using Ekom.Models;
 using Ekom.Services;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Ekom.Controllers
 {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
@@ -51,6 +51,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Ekom.Payments.U10" Version="0.1.7" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Umbraco.Cms.Core" Version="10.3.2" />
         <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.3.2" />
