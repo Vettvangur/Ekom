@@ -1134,22 +1134,20 @@ namespace Ekom.Services
                 Currency = store.Currency.ISOCurrencySymbol,
                 UpdateDate = DateTime.Now
             };
-            
-            if (_ekmRequest != null)
-            {
-                if(_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
-                {
-                    orderData.CustomerEmail = _ekmRequest.User.Email;
-                    orderData.CustomerUsername = _ekmRequest.User.Username;
-                    orderData.CustomerId = _ekmRequest.User.UserId;
-                    orderData.CustomerName = _ekmRequest.User.Name?.Trim();
-                }
-            }
 
+            if(_ekmRequest?.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+            {
+                orderData.CustomerEmail = _ekmRequest.User.Email;
+                orderData.CustomerUsername = _ekmRequest.User.Username;
+                orderData.CustomerId = _ekmRequest.User.UserId;
+                orderData.CustomerName = _ekmRequest.User.Name?.Trim();
+            }
+            
             await _orderRepository.InsertOrderAsync(orderData)
                 .ConfigureAwait(false);
 
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId, store);
+            
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
 
@@ -1168,60 +1166,60 @@ namespace Ekom.Services
             }
 
 
-            if (form.TryGetValue("storeAlias", out var storeAlias))
+            if (!form.TryGetValue("storeAlias", out var storeAlias))
+                throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
+            
+            OrderInfo orderInfo;
+            
+            if (settings.OrderInfo == null)
             {
-                OrderInfo orderInfo;
-                if (settings.OrderInfo == null)
-                {
-                    orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
-                }
-                else
-                {
-                    orderInfo = settings.OrderInfo as OrderInfo;
-                }
-
-                if (form.ContainsKey("ShippingProvider"))
-                {
-                    if (Guid.TryParse(form["ShippingProvider"], out Guid _providerKey))
-                    {
-                        var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
-
-                        orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
-
-                    }
-                }
-
-                if (form.TryGetValue("PaymentProvider", out var paymentProvider))
-                {
-                    if (Guid.TryParse(paymentProvider, out Guid _providerKey))
-                    {
-                        var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
-
-                        orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
-                    }
-                }
-
-                foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
-                {
-                    var value = form[key];
-                    orderInfo.CustomerInformation.Customer.Properties[key] = value;
-                }
-
-                foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
-                {
-                    var value = form[key];
-                    orderInfo.CustomerInformation.Shipping.Properties[key] = value;
-                }
-
-                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                    .ConfigureAwait(false);
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
             }
 
-            throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
+            if (form.TryGetValue("ShippingProvider", out var shippingProvider))
+            {
+                if (Guid.TryParse(shippingProvider, out Guid _providerKey))
+                {
+                    var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+
+                    orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+
+                }
+            }
+
+            if (form.TryGetValue("PaymentProvider", out var paymentProvider))
+            {
+                if (Guid.TryParse(paymentProvider, out Guid _providerKey))
+                {
+                    var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+
+                    orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+                }
+            }
+
+            foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
+            {
+                var value = form[key];
+                orderInfo.CustomerInformation.Customer.Properties[key] = value;
+            }
+
+            foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
+            {
+                var value = form[key];
+                orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+            }
+
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                .ConfigureAwait(false);
+
         }
 
         public async Task<OrderInfo> UpdateShippingInformationAsync(

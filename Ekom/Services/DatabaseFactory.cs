@@ -10,10 +10,10 @@ public class DatabaseFactory
 
     public DatabaseFactory(IConfiguration configuration)
     {
-        var connectionStringName = "umbracoDbDSN";
+        const string connectionStringName = "umbracoDbDSN";
         _connectionString = configuration.GetConnectionString(connectionStringName);
     }
 
-    public DbContext GetDatabase() => new DbContext(_connectionString);
-    public SqlConnection GetSqlConnection() => new SqlConnection(_connectionString);
+    public DbContext GetDatabase() => new(_connectionString);
+    public SqlConnection GetSqlConnection() => new(_connectionString);
 }

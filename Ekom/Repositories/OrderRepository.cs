@@ -32,33 +32,33 @@ namespace Ekom.Repositories
 
         public async Task<OrderData> GetOrderAsync(Guid uniqueId)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                var data = await db.OrderData
-                    .Where(x => x.UniqueId == uniqueId)
-                    .SingleOrDefaultAsync()
-                    .ConfigureAwait(false);
+            await using var db = _databaseFactory.GetDatabase();
+            
+            var data = await db.OrderData
+                .Where(x => x.UniqueId == uniqueId)
+                .SingleOrDefaultAsync()
+                .ConfigureAwait(false);
 
-                return data;
-            }
+            return data;
+            
         }
 
         public async Task InsertOrderAsync(OrderData orderData)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                await db.InsertAsync(orderData).ConfigureAwait(false);
-            }
+            await using var db = _databaseFactory.GetDatabase();
+
+            var referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
+
+            orderData.ReferenceId = (int)referenceId;
         }
 
         public async Task UpdateOrderAsync(OrderData orderData)
         {
-            using (var db = _databaseFactory.GetDatabase())
-            {
-                await db.UpdateAsync(orderData).ConfigureAwait(false);
-                //Clear cache after update.
-                _memoryCache.Remove(orderData.UniqueId);
-            }
+            await using var db = _databaseFactory.GetDatabase();
+            
+            await db.UpdateAsync(orderData).ConfigureAwait(false);
+            //Clear cache after update.
+            _memoryCache.Remove(orderData.UniqueId);
         }
 
 
@@ -66,9 +66,9 @@ namespace Ekom.Repositories
         {
             try
             {
-                using (var db = _databaseFactory.GetDatabase())
-                {
-                    var sql = @"
+                await using var db = _databaseFactory.GetDatabase();
+                
+                const string sql = @"
                     BEGIN TRANSACTION;
 
                     IF EXISTS (
@@ -105,7 +105,7 @@ namespace Ekom.Repositories
 
                     COMMIT TRANSACTION;";
 
-                    var sql2 = @"BEGIN TRANSACTION;
+                const string sql2 = @"BEGIN TRANSACTION;
                     IF EXISTS (
                         SELECT TOP 1 1
                         FROM [dbo].[EkomOrders]
@@ -135,7 +135,7 @@ namespace Ekom.Repositories
 
                     COMMIT TRANSACTION;";
 
-                    var sql3 = @"BEGIN TRANSACTION;
+                const string sql3 = @"BEGIN TRANSACTION;
                         IF EXISTS (
 	                        SELECT 1
 	                        FROM INFORMATION_SCHEMA.COLUMNS
@@ -149,15 +149,13 @@ namespace Ekom.Repositories
                         End
                         COMMIT TRANSACTION;";
 
-                    var affected1 = await db.ExecuteAsync<int>(sql);
-                    var affected2 = await db.ExecuteAsync<int>(sql2);
-                    var affected3 = await db.ExecuteAsync<int>(sql3);
+                var affected1 = await db.ExecuteAsync<int>(sql);
+                var affected2 = await db.ExecuteAsync<int>(sql2);
+                var affected3 = await db.ExecuteAsync<int>(sql3);
 
-                    if ((affected1 + affected2 + affected3) > 0)
-                    {
-                        _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3));
-                    }
-
+                if ((affected1 + affected2 + affected3) > 0)
+                {
+                    _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3));
                 }
             } catch(Exception ex)
             {
@@ -175,20 +173,19 @@ namespace Ekom.Repositories
             params OrderStatus[] orderStatuses
         )
         {
-            using (var db = _databaseFactory.GetDatabase())
+            await using var db = _databaseFactory.GetDatabase();
+
+            var query = db.OrderData
+                .Where(x => orderStatuses.Select(y => y.ToString()).Contains(x.OrderStatusCol));
+
+            if (filter != null)
             {
-                var query = db.OrderData
-                    .Where(x => orderStatuses.Select(y => y.ToString()).Contains(x.OrderStatusCol));
-
-                if (filter != null)
-                {
-                    query = query.Where(filter);
-                }
-
-                return await query
-                    .ToListAsync()
-                    .ConfigureAwait(false);
+                query = query.Where(filter);
             }
+
+            return await query
+                .ToListAsync()
+                .ConfigureAwait(false);
         }
     }
 }
