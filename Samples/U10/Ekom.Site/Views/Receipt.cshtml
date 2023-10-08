@@ -105,7 +105,7 @@
                                 <dt class="font-medium text-gray-900">Shipping method</dt>
                                 <dd class="mt-2 text-gray-700">
                                     <p>@order.ShippingProvider.Title</p>
-                                    <p>Takes up to 3 working days</p>
+                                    <p>@order.ShippingProvider.Properties.GetValue("description", order.StoreInfo.Alias)</p>
                                 </dd>
                             </div>
                         }

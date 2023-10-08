@@ -31,15 +31,19 @@
                 <ul role="list" class="divide-y divide-gray-200 border-b border-t border-gray-200">
                     @foreach (var orderline in order.OrderLines)
                     {
-                        var images = orderline.Product.Images();
+                        var images = orderline.Product.Images().ToList();
                         
                         var ekmProduct = _catalog.GetProduct(orderline.ProductKey);
 
                         <li class="flex py-6 sm:py-10">
                             <div class="flex-shrink-0">
-                                @if (images != null && images.Any())
+
+                                @{
+                                    var enumerable = images.ToList();
+                                }
+                                @if (images != null && enumerable.Any())
                                 {
-                                    <img src="@images.FirstOrDefault()?.Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
+                                    <img src="@enumerable.FirstOrDefault()?.Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
                                 }
                                 
                             </div>
@@ -62,7 +66,7 @@
                                         @foreach (var variant in orderline.Product?.VariantGroups?.SelectMany(x => x.Variants))
                                         {
                                             <div class="mt-1 flex text-sm">
-                                                <p class="text-gray-500">@orderline.Product?.VariantGroups?.FirstOrDefault().Title</p>
+                                                <p class="text-gray-500">@orderline.Product?.VariantGroups?.FirstOrDefault()?.Title</p>
                                                 <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
                                             </div>
                                         }
@@ -81,7 +85,7 @@
                                             <input type="hidden" name="lineId" value="@orderline.Key" />
                                             <input type="hidden" name="storeAlias" value="@order.StoreInfo.Alias" />
 
-                                            @if (orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault() != null)
+                                            @if (orderline.Product?.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault() != null)
                                             {
                                                 <input type="hidden" name="variantId" value="@orderline.Product.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault()?.Key" />
                                             }

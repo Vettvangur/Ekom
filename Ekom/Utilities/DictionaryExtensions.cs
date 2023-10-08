@@ -31,6 +31,18 @@ namespace Ekom.Utilities
         /// alias name = field + "_" + storeAlias <para/>
         /// f.x. disabled_IS
         /// </summary>
+        public static string GetValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
+        {
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias));
+        }
+
+
+        /// <summary>
+        /// Get value from umbraco properties by store
+        /// Retrieves a store specific property <para/>
+        /// alias name = field + "_" + storeAlias <para/>
+        /// f.x. disabled_IS
+        /// </summary>
         public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
             return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias));
