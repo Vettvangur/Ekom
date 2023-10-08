@@ -3,7 +3,7 @@
 @{
     Layout = "Master.cshtml";
 
-    var order = Order.Instance.GetOrder();
+    var order = await _order.GetOrderAsync();
     
     if (order == null || order.TotalQuantity <= 0)
     {
@@ -116,6 +116,4 @@
             <button type="submit" class="button">Pay</button>
         }    
     </div>
-
-    //</div>
 }

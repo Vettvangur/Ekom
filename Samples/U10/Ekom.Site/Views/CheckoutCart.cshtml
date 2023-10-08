@@ -2,7 +2,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
-    var order = _order.GetOrder();
+    var order = await _order.GetOrderAsync();
 
     var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
 

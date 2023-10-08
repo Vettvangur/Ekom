@@ -97,6 +97,14 @@ namespace Ekom.API
         public IOrderInfo GetOrder(Guid uniqueId) => _orderService.GetOrderAsync(uniqueId).Result;
 
         /// <summary>
+        /// Get order regardless of status using <see cref="Guid"/>.
+        /// This may return complete / final orders. <br />
+        /// Do not use for cart or checkout display.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IOrderInfo> GetOrderAsync(Guid uniqueId) => await _orderService.GetOrderAsync(uniqueId);
+
+        /// <summary>
         /// Get completed order using cookie data and provided store.
         /// Retrieves from session if possible, otherwise from SQL.
         /// </summary>
