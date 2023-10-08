@@ -193,7 +193,7 @@ namespace Ekom.Services
                 }
             }
 
-            if (order.PaymentProvider == null || (order.PaymentProvider != null && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
+            if (order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
                 await Order.Instance.UpdatePaymentInformationAsync(
                     paymentRequest.PaymentProvider,
