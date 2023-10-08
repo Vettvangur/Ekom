@@ -1,7 +1,6 @@
 using Ekom.API;
 using Ekom.Events;
 using Ekom.Exceptions;
-using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Payments.Helpers;
@@ -167,11 +166,11 @@ namespace Ekom.Services
 
                     if (member != null)
                     {
-                        if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name))
+                        if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
                         {
                             formCollection.Add("customerName", member.Name);
                         }
-                        if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email))
+                        if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
                         {
                             formCollection.Add("customerEmail", member.Email);
                         }
@@ -190,14 +189,14 @@ namespace Ekom.Services
                 }
             }
 
-            if (order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
+            if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
                 await Order.Instance.UpdatePaymentInformationAsync(
                     paymentRequest.PaymentProvider,
                     order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
-            if (order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
+            if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 await Order.Instance.UpdateShippingInformationAsync(
                     paymentRequest.ShippingProvider,

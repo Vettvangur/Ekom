@@ -18,10 +18,10 @@ namespace Ekom.Events
         internal static void OnCompleteCheckout(object sender, CompleteCheckoutEventArgs args)
             => CompleteCheckout?.Invoke(sender, args);
 
-        public static event EventHandler<CheckoutSuccessEventArgs> CheckoutSucess;
+        public static event EventHandler<CheckoutSuccessEventArgs> CheckoutSuccess;
 
         internal static void OnCheckoutSuccess(object sender, CheckoutSuccessEventArgs args)
-            => CheckoutSucess?.Invoke(sender, args);
+            => CheckoutSuccess?.Invoke(sender, args);
     }
 
     public class PayEventArgs : EventArgs

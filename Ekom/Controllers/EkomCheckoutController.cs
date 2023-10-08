@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Ekom.Controllers
 {
@@ -35,6 +36,8 @@ namespace Ekom.Controllers
 
         private IActionResult ResponseHandler(CheckoutResponse checkoutResponse)
         {
+            _logger.LogInformation("ResponseHandler: " +  JsonConvert.SerializeObject(checkoutResponse));
+            
             if (checkoutResponse != null)
             {
                 if (checkoutResponse.HttpStatusCode == 400)
@@ -48,12 +51,10 @@ namespace Ekom.Controllers
                 }
 
                 Response.StatusCode = checkoutResponse.HttpStatusCode;
-                return Content(checkoutResponse.ResponseBody as string);
+                return Content(JsonConvert.SerializeObject(checkoutResponse.ResponseBody), "application/json");
             }
-            else
-            {
-                return Ok();
-            }
+
+            return Ok();
         }    
     }
 
