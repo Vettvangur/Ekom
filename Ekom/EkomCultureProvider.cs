@@ -18,23 +18,27 @@ namespace Vettvangur.Core
 
         public void Configure(RequestLocalizationOptions options)
         {
-            var supportedCultures = new List<CultureInfo>();
-
-            var cultures = _umbracoService.GetLanguages();
-            var defaultCulture = _umbracoService.DefaultLanguage();
-
-            foreach (var culture in cultures)
+            try
             {
-                supportedCultures.Add(new CultureInfo(culture.IsoCode));
+                var cultures = _umbracoService.GetLanguages();
+                var defaultCulture = _umbracoService.DefaultLanguage();
+
+                var supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
+
+                options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+
+                // Add the custom provider,
+                // in many cases you'll want this to execute before the defaults
+                options.RequestCultureProviders.Insert(0, new CultureProvider(options));
+            }
+            catch
+            {
+
             }
 
-            options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
-            options.SupportedCultures = supportedCultures;
-            options.SupportedUICultures = supportedCultures;
 
-            // Add the custom provider,
-            // in many cases you'll want this to execute before the defaults
-            options.RequestCultureProviders.Insert(0, new CultureProvider(options));
         }
     }
 
