@@ -77,12 +77,14 @@ namespace Ekom.Models
                     else
                     {
                         var c = Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? Properties["currency"] : Culture.ToString();
-                        var l = new List<CurrencyModel>();
-                        l.Add(new CurrencyModel
+                        var l = new List<CurrencyModel>
                         {
-                            CurrencyValue = c,
-                            CurrencyFormat = "C"
-                        });
+                            new()
+                            {
+                                CurrencyValue = c,
+                                CurrencyFormat = "C"
+                            }
+                        };
                         return l;
                     }
                 }
