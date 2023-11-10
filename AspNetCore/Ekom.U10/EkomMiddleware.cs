@@ -99,14 +99,19 @@ class EkomMiddleware
         IMemberService memberService)
     {
         
-        if (_context?.User?.Identity?.IsAuthenticated is false)
-        {
-            return;
-        }
-        
         try
         {
-            var username = _context.User.Identity.Name;
+            if (_context?.User?.Identity?.IsAuthenticated is false)
+            {
+                return;
+            }
+
+            var username = _context?.User?.Identity?.Name;
+
+            if (string.IsNullOrEmpty(username))
+            {
+                return;
+            }
 
             if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(_context)) is ContentRequest ekmRequest)
             {
@@ -121,7 +126,9 @@ class EkomMiddleware
                         UserId = memberContent.Id,
                         Name = memberContent.Name,
                     };
+                    
                     var orderid = memberContent.OrderId;
+
                     if (!string.IsNullOrEmpty(orderid) && Guid.TryParse(orderid, out var guid))
                     {
                         ekmRequest.User.OrderId = guid;

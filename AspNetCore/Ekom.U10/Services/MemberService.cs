@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Umb.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Security;
 
 namespace Ekom.Umb.Services
@@ -9,17 +10,28 @@ namespace Ekom.Umb.Services
     class MemberService : Ekom.Services.IMemberService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public MemberService(IHttpContextAccessor httpContextAccessor)
+        private readonly ILogger<MemberService> _logger;
+        public MemberService(IHttpContextAccessor httpContextAccessor, ILogger<MemberService> logger)
         {
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public UmbracoMember GetByUsername(string userName)
         {
-            var serviceContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
-            var m = serviceContext?.GetByUsername(userName);
+            try
+            {
+                var serviceContext = _httpContextAccessor.HttpContext?.RequestServices.GetService<Umbraco.Cms.Core.Services.IMemberService>();
+                var m = serviceContext?.GetByUsername(userName);
 
-            return m == null ? null : new Umbraco10Member(m);
+                return m == null ? null : new Umbraco10Member(m);
+            } catch(Exception ex)
+            {
+                _logger.LogError(ex, "Failed to Get user by username: " + userName);
+
+                return null;
+            }
+
         }
 
         public async Task<UmbracoMember> GetCurrentMember()
