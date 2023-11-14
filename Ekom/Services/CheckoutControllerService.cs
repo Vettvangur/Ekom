@@ -516,12 +516,17 @@ namespace Ekom.Services
                 var successUrl = PaymentsUriHelper.EnsureFullUri(
                     ekomPP.GetValue("successUrl", storeAlias),
                     _httpCtx.Request);
+                var cancelUrl = PaymentsUriHelper.EnsureFullUri(
+                    ekomPP.GetValue("cancelUrl", storeAlias),
+                    _httpCtx.Request);
                 successUrl = PaymentsUriHelper.AddQueryString(
                     successUrl,
                     "?orderId=" + order.UniqueId
                 );
 
-                var pp = ekomPayments.GetPaymentProvider(ekomPP.ContentTypeAlias);
+                var basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
+
+                var pp = ekomPayments.GetPaymentProvider(basePaymentProvider);
 
                 var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias)) 
                     ? ekomPP.GetValue("language", order.StoreInfo.Alias) 
@@ -551,6 +556,8 @@ namespace Ekom.Services
                     CardExpirationYear = paymentRequest.Year,
                     CardCVV = paymentRequest.CVV,
                     SuccessUrl = successUrl,
+                    ErrorUrl = PaymentsUriHelper.EnsureFullUri(errorUrl, _httpCtx.Request),
+                    CancelUrl = cancelUrl,
                     Currency = currency.ToString(),
                     Orders = orderItems,
                     Language = language,
