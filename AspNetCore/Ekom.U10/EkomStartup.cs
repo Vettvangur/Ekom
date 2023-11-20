@@ -165,11 +165,15 @@ class EkomStartup : IComponent
     private void CompleteCheckout(object sender, SuccessEventArgs args)
     {
         var o = args.OrderStatus;
-        var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
-        if (Guid.TryParse(o.EkomPaymentSettings.OrderCustomData["ekomOrderUniqueId"], out var orderId))
+        if (o.EkomPaymentSettings.OrderCustomData.TryGetValue("ekomOrderUniqueId", out var value))
         {
-            checkoutSvc.CompleteAsync(orderId).Wait();
+            var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+
+            if (Guid.TryParse(value, out var orderId))
+            {
+                checkoutSvc.CompleteAsync(orderId).Wait();
+            }
         }
     }
 
