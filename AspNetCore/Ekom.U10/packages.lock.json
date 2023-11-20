@@ -2390,7 +2390,10 @@
         }
       },
       "ekom.aspnetcore": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Ekom.Core": "[0.0.1, )"
+        }
       },
       "ekom.common": {
         "type": "Project",

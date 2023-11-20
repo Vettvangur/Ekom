@@ -75,8 +75,6 @@ namespace Ekom.Repositories
             var sqlQuery = sqlBuilder.ToString();
             var sqlTotalQuery = sqlTotalBuilder.ToString();
 
-            _logger.LogInformation(sqlQuery);
-
             var param = new
             {
                 startDate = start,
