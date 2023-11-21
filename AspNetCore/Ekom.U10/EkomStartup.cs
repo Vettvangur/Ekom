@@ -44,7 +44,7 @@ public class EkomComposer : IComposer
         builder.ContentFinders()
             .InsertBefore<ContentFinderByPageIdQuery, CatalogContentFinder>();
         builder.UrlProviders()
-            .InsertBefore<DefaultUrlProvider, CatalogUrlProvider>();
+            .Insert<CatalogUrlProvider>();
 
         builder.Components()
             // Can't use umbraco npoco for this since we use linq2db in core
