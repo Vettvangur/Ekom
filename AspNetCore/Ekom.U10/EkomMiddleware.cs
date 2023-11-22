@@ -82,7 +82,7 @@ class EkomMiddleware
             if (umbCtx?.UmbracoContext != null)
             {
                 appCaches.RequestCache.Get("ekmRequest", () =>
-                    new ContentRequest(_context)
+                    new ContentRequest()
                     {
                         User = new User(),
                     });
@@ -113,7 +113,7 @@ class EkomMiddleware
                 return;
             }
 
-            if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(_context)) is ContentRequest ekmRequest)
+            if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest()) is ContentRequest ekmRequest)
             {
                 var memberContent = memberService.GetByUsername(username);
 

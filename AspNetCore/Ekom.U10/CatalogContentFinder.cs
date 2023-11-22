@@ -104,12 +104,14 @@ namespace Ekom.Umb
                 #endregion
 
                 var httpCtx = _httpContextAccessor.HttpContext;
-                var requestCache = _appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest(httpCtx));
+                var requestCache = _appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest());
                 if (requestCache != null && requestCache is ContentRequest ekmRequest)
                 {
                     ekmRequest.Store = store;
                     ekmRequest.Product = product;
                     ekmRequest.Category = category;
+
+                    ekmRequest.SetStoreCookie(store.Alias, httpCtx);
                 }
 
                 // Request for Product or Category

@@ -4,54 +4,24 @@ namespace Ekom.Models
 {
     public class ContentRequest
     {
-
-        private IStore _store;
-        private readonly HttpContext _httpCtx;
-        public ContentRequest(HttpContext httpResponse)
-        {
-            _httpCtx = httpResponse;
-        }
-        public string IPAddress {
-        
-            get
-            {
-                var host = "";
-                
-                try
-                {
-                    host = _httpCtx.Request.Host.ToString();
-                } catch
-                {
-                    // TODO
-                }
-
-                return host;
-            }
-        } 
-        public IStore Store
-        {
-            set
-            {
-                var cookies = _httpCtx?.Response?.Cookies;
-                if (cookies != null)
-                {
-                    cookies.Append("StoreInfo", "StoreAlias=" + value.Alias);
-                }
-
-                //// Make sure to update users cookies on store change
-                //var legacyCookie = _httpCtx.Request.Cookies["StoreInfo"];
-                //legacyCookie = Regex.Replace(legacyCookie, "(StoreAlias =)[^&]", value.Alias);
-                //_httpCtx.Response.Cookies.Append("StoreInfo", legacyCookie);
-
-                _store = value;
-            }
-
-            get { return _store; }
-        }
-
+        public string IPAddress { get; set; }
+        public IStore Store { get; set; }
         public object Currency { get; set; }
         public IProduct Product { get; set; }
         public ICategory Category { get; set; }
         public User User { get; set; }
+
+        public void SetStoreCookie(string storeAlias, HttpContext? httpContext)
+        {
+            if (httpContext != null)
+            {
+                var cookies = httpContext.Response.Cookies;
+                cookies?.Append("StoreInfo", "StoreAlias=" + storeAlias);
+
+                IPAddress = httpContext.Request.Host.ToString();
+            }
+
+        }
+
     }
 }
