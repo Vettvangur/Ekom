@@ -1,6 +1,7 @@
 using Ekom.Models;
 using Ekom.Umb.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
 
@@ -92,6 +93,28 @@ namespace Ekom.Utilities
                 }
             }
 
+            try
+            {
+                var medias = JsonConvert.DeserializeObject<List<MediaItem>>(value);
+
+                if (medias != null && medias.Any())
+                {
+                    var r = Configuration.Resolver.GetService<NodeService>();
+
+                    var media = r.GetMediaById(medias.FirstOrDefault().MediaKey.ToString());
+
+                    if (media != null)
+                    {
+                        return media;
+                    }
+                }
+
+            }
+            catch
+            {
+
+            }
+
             return null;
 
         }
@@ -129,8 +152,29 @@ namespace Ekom.Utilities
                 return result;
             }
 
+            try
+            {
+                var medias = JsonConvert.DeserializeObject<List<MediaItem>>(value);
+
+                if (medias != null && medias.Any())
+                {
+                    return medias.Select(x => x.MediaKey).Select(x => Configuration.Resolver.GetService<NodeService>()?.GetMediaById(x.ToString()));
+                }
+
+            }
+            catch
+            {
+
+            }
+
             return Enumerable.Empty<IPublishedContent>();
 
+        }
+
+        internal class MediaItem
+        {
+            public Guid Key { get; set; }
+            public Guid MediaKey { get; set; }
         }
     }
 }
