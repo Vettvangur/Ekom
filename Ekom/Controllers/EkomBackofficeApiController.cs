@@ -39,12 +39,14 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("GetNonEkomDataTypes")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public IEnumerable<object> GetNonEkomDataTypes()
             => _umbracoService.GetNonEkomDataTypes();
 
         [HttpGet]
         [Route("DataType/{id:guid}")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public object GetDataTypeById(Guid id)
             => _umbracoService.GetDataTypeById(id);
 
@@ -52,6 +54,7 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("DataType/{contentTypeAlias}/propertyAlias/{propertyAlias}")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public object GetDataTypeByAlias(
             string contentTypeAlias,
             string propertyAlias)
@@ -60,18 +63,21 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Metafields")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public IEnumerable<Metafield> GetMetafields()
             => _metafieldService.GetMetafields();
 
         [HttpGet]
         [Route("Languages")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public IEnumerable<object> GetLanguages()
             => _umbracoService.GetLanguages();
 
         [HttpGet]
         [Route("Stores")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public IEnumerable<object> GetStores()
         {
             var stores = API.Store.Instance.GetAllStores();
@@ -114,6 +120,7 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Stock/{id:Guid}/StoreAlias/{storeAlias}")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public int GetStockByStore(Guid id, string storeAlias)
         {
             return API.Stock.Instance.GetStock(id, storeAlias);
@@ -126,6 +133,7 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Stock/{id:Guid}")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public int GetStock(Guid id)
         {
             return API.Stock.Instance.GetStock(id);
@@ -272,6 +280,7 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("coupon/discountId/{id:Guid}")]
         [UmbracoUserAuthorize]
+        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
         public async Task<object> GetCouponsForDiscount(Guid discountId)
         {
             try
