@@ -77,8 +77,8 @@ namespace Ekom.Repositories
 
             var param = new
             {
-                startDate = start,
-                endDate = end,
+                startDate = start.Date,
+                endDate = end.Date.AddDays(1).AddTicks(-1),
                 query = "%" + query + "%",
                 orderStatus,
                 store

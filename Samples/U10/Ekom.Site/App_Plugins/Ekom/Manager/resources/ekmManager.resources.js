@@ -11,7 +11,6 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
           url: url
         });
       },
-
       StatusList: function () {
         var url = this.baseUrl + 'StatusList';
         return $http({
@@ -33,13 +32,19 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
           url: url
         });
       },
-
       Charts: function (querystring) {
         var url = this.baseUrl + 'Charts' + querystring;
         return $http({
           method: 'GET',
           url: url
         });
-      }  
+      },
+      MostSoldProducts: function (querystring) {
+        var url = this.baseUrl + 'MostSoldProducts' + querystring;
+        return $http({
+          method: 'GET',
+          url: url
+        });
+      }
     };
   });

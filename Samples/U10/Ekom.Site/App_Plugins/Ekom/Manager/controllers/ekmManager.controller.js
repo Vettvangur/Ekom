@@ -1,14 +1,15 @@
 (function () {
   "use strict";
 
-  function controller($scope, $routeParams, notificationsService, resources, $location, $document, $filter) {
+  function controller($scope, notificationsService, resources, $location, $document) {
     $scope.loading = true;
+    $scope.loadingMostSoldProducts = true;
     $scope.result = {};
 
 
     var currentDate = new Date(); // get the current date
     var januaryFirstCurrentYear = new Date(currentDate.getFullYear(), 0, 1); // get January 1st of the current year
-    
+
     var dateFrom = januaryFirstCurrentYear.toISOString().substring(0, 10);
     var dateTo = currentDate.toISOString().substring(0, 10);
 
@@ -16,6 +17,7 @@
     $scope.grandTotal = 0;
     $scope.averageAmount = 0;
     $scope.page = 1;
+    $scope.pageMostSoldProducts = 1;
     $scope.query = "";
     $scope.statusList = [];
     $scope.visibleDropdowns = {};
@@ -25,7 +27,8 @@
     $scope.dateTo = dateTo;
     $scope.selectedStore = {};
     $scope.stores = [];
-    
+    $scope.mostsoldproducts = [];
+
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
     var lastPathComponent = pathComponents[pathComponents.length - 1]; // get the last component
@@ -35,7 +38,7 @@
     $scope.location = lastPathComponent;
 
     var tabsElement = document.getElementById('ekmNavigationTabs')
-     
+
     if (lastPathComponent === 'orders' || lastPathComponent === 'analytics') {
 
       var allTabs = tabsElement.querySelectorAll('uui-tab')
@@ -65,7 +68,11 @@
             $scope.dateTo = e.target.value;
           }
 
-          $scope.GetData();
+          if ($scope.location === 'analytics') {
+            $scope.analytics();
+          } else {
+            $scope.GetData();
+          }
 
         });
       }
@@ -86,7 +93,7 @@
 
           setTimeout(function () {
             $scope.DatePickers();
-          }, 50); 
+          }, 50);
 
         }, function errorCallback(data) {
           $scope.loading = false;
@@ -111,13 +118,17 @@
 
       resources.Stores()
         .then(function (result) {
-          
+
           $scope.stores = result.data;
 
           $scope.store = $scope.stores[0];
           $scope.labelDropdowns['dropdownStores'] = $scope.store.alias;
 
-          $scope.GetData();
+          if ($scope.location === 'analytics') {
+            $scope.analytics();
+          } else {
+            $scope.GetData();
+          }
 
         }, function errorCallback(data) {
 
@@ -140,7 +151,7 @@
         .then(function (result) {
 
           var orderInfo = result.data;
-          
+
           var shippingAddress = {};
           var sameAsShipping = orderInfo.customerInformation.shipping;
           if (
@@ -164,7 +175,7 @@
             editModel: model,
             show: true,
             submit: function (submitModel) {
-  
+
             },
             close: function (oldModel) {
               $scope.CloseModal();
@@ -189,16 +200,25 @@
       $scope.GetData();
     };
 
+    $scope.setPageMostSoldProducts = function (page) {
+      $scope.pageMostSoldProducts = page.toString().replace('...', '');
+    };
+
     $scope.search = function (query) {
       $scope.query = query;
       $scope.GetData();
+    };
+
+    $scope.mostSoldProductsPaged = function () {
+      var start = $scope.pageMostSoldProducts * 20,
+        end = start + 20;
+      return $scope.mostsoldproducts.slice(start, end);
     };
 
     $scope.pageRange = function () {
       var rangeSize = 5;
       var ret = [];
       var start;
-
       if ($scope.page <= Math.floor(rangeSize / 2)) {
         start = 1;
       } else if (parseInt($scope.page) + Math.floor(rangeSize / 2) >= $scope.result.totalPages) {
@@ -227,9 +247,46 @@
       return ret;
     };
 
+    $scope.pageRangeMostSoldProducts = function () {
+      var rangeSize = 5;
+      var ret = [];
+      var start;
+      var totalPages = Math.floor($scope.mostsoldproducts.length / 20);
+      var page = $scope.pageMostSoldProducts;
+
+      if (page <= Math.floor(rangeSize / 2)) {
+        start = 1;
+      } else if (parseInt(page) + Math.floor(rangeSize / 2) >= totalPages) {
+        start = Math.max(totalPages - rangeSize + 1, 1);
+      } else {
+        start = page - Math.floor(rangeSize / 2);
+      }
+
+      for (var i = 0; i < rangeSize; i++) {
+        var pageNumber = start + i;
+        if (pageNumber <= totalPages) {
+          ret.push(pageNumber);
+        }
+      }
+
+      // If last page is not already in the list, add it.
+      if (ret[ret.length - 1] < totalPages) {
+        ret.push('...' + totalPages);
+      }
+
+      // If first page is not already in the list, add it at the beginning.
+      if (ret[0] > 1) {
+        ret.unshift('...' + 1);
+      }
+
+      return ret;
+    };
+
     $scope.analytics = function () {
 
-      resources.Charts('?start=2000-01-01&end=2030-01-01&orderStatus=CompletedOrders')
+      var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store.alias;
+
+      resources.Charts(query)
         .then(function (result) {
 
 
@@ -247,8 +304,21 @@
 
         }, function errorCallback(data) {
           $scope.loading = false;
-          notificationsService.error("Error", "Error on RevenuChart data.");
+          notificationsService.error("Error", "Error on chart data.");
         });
+
+      resources.MostSoldProducts(query)
+        .then(function (result) {
+
+          $scope.loadingMostSoldProducts = false;
+
+          $scope.mostsoldproducts = result.data;
+
+        }, function errorCallback(data) {
+          $scope.loadingMostSoldProducts = false;
+          notificationsService.error("Error", "Error on most sold products data.");
+        });
+
     };
 
     $scope.renderChart = function (chartId, labels, dataset1, dataset2) {
@@ -360,7 +430,12 @@
         $scope.orderStatus = status;
       }
       
-      $scope.GetData();
+      if ($scope.location === 'analytics') {
+        $scope.analytics();
+      } else {
+        $scope.GetData();
+      }
+      
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -395,18 +470,20 @@
       }
     });
 
-
     angular.element(document).ready(function () {
       // Init Orders
       if ($scope.location === 'orders') {
         $scope.GetStores();
         $scope.GetStatusList();
+        
       }
 
       // Init Analytics
       if ($scope.location === 'analytics') {
         setTimeout(function () {
-          $scope.analytics();
+          $scope.GetStores();
+          $scope.GetStatusList();
+          $scope.DatePickers();
         }, 250);
       }
     });
@@ -415,12 +492,10 @@
 
   angular.module("umbraco").controller("Ekom.Manager.Dashboard", [
     "$scope",
-    "$routeParams",
     "notificationsService",
     "Ekom.Manager.Resources",
     "$location",
-    "$document", 
-    "$filter",
+    "$document",
     controller
   ]);
 })();
