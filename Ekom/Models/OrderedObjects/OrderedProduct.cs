@@ -1,7 +1,6 @@
 using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
@@ -28,14 +27,21 @@ namespace Ekom.Models
         {
             get
             {
-                var key = Properties.GetPropertyValue("__Key");
-
-                if (!Guid.TryParse(key, out Guid _key))
+                if (Properties.ContainsKey("__Key"))
                 {
-                    throw new Exception("No key present for product.");
+                    var key = Properties.GetPropertyValue("__Key");
+
+                    if (!Guid.TryParse(key, out Guid _key))
+                    {
+                        throw new Exception("No key present for product.");
+                    }
+
+                    return _key;
                 }
 
-                return _key;
+                // Backword Compatability
+                return Guid.Empty;
+
             }
         }
 

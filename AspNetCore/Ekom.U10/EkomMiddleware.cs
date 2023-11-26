@@ -77,20 +77,24 @@ class EkomMiddleware
     {
         try
         {
-            using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
-            // No umbraco context exists for static file requests
-            if (umbCtx?.UmbracoContext != null)
+            if (_context != null && _context.Request.Path.StartsWithSegments("/umbraco") is false)
             {
-                appCaches.RequestCache.Get("ekmRequest", () =>
-                    new ContentRequest()
-                    {
-                        User = new User(),
-                    });
+                using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
+                // No umbraco context exists for static file requests
+                if (umbCtx?.UmbracoContext != null)
+                {
+                    appCaches.RequestCache.Get("ekmRequest", () =>
+                        new ContentRequest()
+                        {
+                            User = new User(),
+                        });
+                }
             }
+
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Http module Begin Request failed");
+            _logger.LogWarning(ex, "Http module Begin Request failed");
         }
     }
 

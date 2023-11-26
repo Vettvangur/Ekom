@@ -28,7 +28,8 @@
     $scope.selectedStore = {};
     $scope.stores = [];
     $scope.mostsoldproducts = [];
-
+    $scope.orderChangeStatus = '';
+    
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
     var lastPathComponent = pathComponents[pathComponents.length - 1]; // get the last component
@@ -164,7 +165,8 @@
           var model = {
             order: orderInfo,
             shippingAddress,
-            sameAsShipping
+            sameAsShipping,
+            statusList: $scope.statusList
           };
 
           console.log(model);
@@ -210,8 +212,9 @@
     };
 
     $scope.mostSoldProductsPaged = function () {
-      var start = $scope.pageMostSoldProducts * 20,
-        end = start + 20;
+      var start = ($scope.pageMostSoldProducts - 1) * 20;
+      var end = start + 20;
+
       return $scope.mostsoldproducts.slice(start, end);
     };
 
@@ -288,7 +291,7 @@
 
       resources.Charts(query)
         .then(function (result) {
-
+          
 
           $scope.revenueChart = result.data.revenueChart;
 
@@ -408,8 +411,8 @@
       };
 
       var ctx = document.getElementById(chartId).getContext('2d');
-
-      var myChart = new Chart(ctx, chartConfig);
+      
+      var chart = new Chart(ctx, chartConfig);
     };
 
     $scope.toggleDropdown = function (dropdownId) {
@@ -429,9 +432,15 @@
       if (dropdownId === 'dropdownStatusList') {
         $scope.orderStatus = status;
       }
-      
+
+      if (dropdownId === 'dropdownOrderStatusList') {
+        $scope.orderChangeStatus = status;
+      }
+
       if ($scope.location === 'analytics') {
         $scope.analytics();
+      } else if (dropdownId === 'dropdownOrderStatusList') {
+       
       } else {
         $scope.GetData();
       }
@@ -443,6 +452,10 @@
       var label = $scope.labelDropdowns[dropdownId];
 
       label = label || defaultText;
+
+      if (dropdownId === 'dropdownOrderStatusList') {
+        $scope.orderChangeStatus = label;
+      }
 
       return label;
 
@@ -469,6 +482,30 @@
         });
       }
     });
+
+    var changeOrderStatusButton = document.getElementById('changeOrderStatusButton');
+
+    if (changeOrderStatusButton) {
+      changeOrderStatusButton.addEventListener('click', function () {
+
+        var notify = document.getElementById('notifyOrderStatus');
+
+        resources.ChangeOrderStatus('?orderId=' + changeOrderStatusButton.getAttribute('data-orderId') + '&orderStatus=' + $scope.orderChangeStatus + '&notify=' + notify.checked)
+          .then(function (result) {
+
+            notificationsService.success("Success", "Order status updated.");
+            $scope.GetData();
+
+          }, function errorCallback(data) {
+            notificationsService.error("Error", "Error updating order status.");
+          })
+        
+      });
+    }
+
+    $scope.ChangeOrderStatus = function () {
+      console.log('test');
+    };
 
     angular.element(document).ready(function () {
       // Init Orders

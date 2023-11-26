@@ -1,7 +1,9 @@
+using Ekom.API;
 using Ekom.Authorization;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Repositories;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Controllers
@@ -71,6 +73,26 @@ namespace Ekom.Controllers
             return API.Store.Instance.GetAllStores();
         }
 
+        [HttpPost]
+        [Route("changeOrderStatus")]
+        [UmbracoUserAuthorize]
+        public async Task<IActionResult> ChangeOrderStatusAsync(Guid orderId, string orderStatus, bool notify)
+        {
+            if (Enum.TryParse(orderStatus, out OrderStatus status))
+            {
+                await Order.Instance.UpdateStatusAsync(status, orderId, null, new ChangeOrderSettings
+                {
+                    FireEvents = notify
+
+                });
+
+                return Ok(true);
+            }
+            else
+            {
+                return BadRequest("Invalid order status.");
+            }
+        }
 
         [HttpGet]
         [Route("charts")]

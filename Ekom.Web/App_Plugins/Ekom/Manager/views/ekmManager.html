@@ -1,4 +1,4 @@
-﻿<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
+<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
   <div class="umb-editor-header">
     <div class="flex items-center" style="height:100%;">
       <img src="/App_Plugins/Ekom/Manager/assets/ekomLogo.png" class="ekmManager__logo" alt="Ekom Ecommerce" />
@@ -110,7 +110,7 @@
                 <div class="umb-table-cell not-fixed">
                   <button class="btn umb-button__button btn-success" ng-click="ViewOrder(order)">View</button>
                 </div>
-                <div class="umb-table-cell">{{order.referenceId}}</div>
+                <div class="umb-table-cell" title="{{order.uniqueId}}">{{order.referenceId}}</div>
                 <div class="umb-table-cell"><uui-tag color="default">{{order.orderStatus}}</uui-tag></div>
                 <div class="umb-table-cell">{{order.customerName}}</div>
                 <div class="umb-table-cell">{{order.storeAlias}}</div>
@@ -240,7 +240,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr ng-repeat="product in mostSoldProductsPaged() | limitTo:20">
+                      <tr ng-repeat="product in mostSoldProductsPaged()">
                         <td>{{product.id}}</td>
                         <td>{{product.sku}}</td>
                         <td>{{product.title}}</td>

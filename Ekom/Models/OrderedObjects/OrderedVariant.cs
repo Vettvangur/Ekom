@@ -30,16 +30,21 @@ namespace Ekom.Models
         {
             get
             {
-                var key = Properties.GetPropertyValue("__Key");
-
-                var _key = new Guid();
-
-                if (!Guid.TryParse(key, out _key))
+                if (Properties.ContainsKey("__Key"))
                 {
-                    throw new Exception("No key present for product.");
+                    var key = Properties.GetPropertyValue("__Key");
+
+                    if (!Guid.TryParse(key, out Guid _key))
+                    {
+                        throw new Exception("No key present for product.");
+                    }
+
+                    return _key;
                 }
 
-                return _key;
+                // Backword Compatability
+                return Guid.Empty;
+
             }
         }
         [JsonIgnore]

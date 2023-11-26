@@ -1,5 +1,5 @@
 angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
-  function ($q, $http, umbRequestHelper) {
+  function ($q, $http) {
     return {
 
       baseUrl: Umbraco.Sys.ServerVariables.ekom.managerEndpoint,
@@ -43,6 +43,13 @@ angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
         var url = this.baseUrl + 'MostSoldProducts' + querystring;
         return $http({
           method: 'GET',
+          url: url
+        });
+      },
+      ChangeOrderStatus: function (querystring) {
+        var url = this.baseUrl + 'ChangeOrderStatus' + querystring;
+        return $http({
+          method: 'POST',
           url: url
         });
       }

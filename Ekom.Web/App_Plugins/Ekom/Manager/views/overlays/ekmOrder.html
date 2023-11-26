@@ -1,14 +1,31 @@
-<article class="ekmOrder">
+<article class="ekmOrder" ng-controller="Ekom.Manager.Dashboard">
 
   <div class="ekmOrder__header">
 
     <h1 class="ekmOrder__ordernumber">Order number: {{ model.editModel.order.referenceId}}</h1>
-
+    
+    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom:1px solid #d8d7d9;">
+      <label>Order Status:</label>
+      <div class="btn-group dropdown-toggle">
+        <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownOrderStatusList')">
+          {{labelDropdown('dropdownOrderStatusList', model.editModel.order.orderStatus)}}
+          <span class="caret" aria-hidden="true"></span>
+        </div>
+        <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownOrderStatusList')">
+          <li ng-repeat="status in model.editModel.statusList">
+            <button type="button" ng-click="selectDropdown('dropdownOrderStatusList',status.value)">{{ status.label }}</button>
+          </li>
+        </ul>
+      </div>
+      <uui-checkbox label="Fire events?" style="vertical-align: middle; margin-left:15px;" id="notifyOrderStatus"></uui-checkbox>
+      <uui-button look="primary" data-orderId="{{model.editModel.order.uniqueId}}" style="margin-left: 15px;" id="changeOrderStatusButton">Save</uui-button>
+    </div>
+    <p>UniqueId: {{ model.editModel.order.uniqueId }}</p>
     <p>Created date: {{ model.editModel.order.createDate | date:'dd. MMMM yyyy HH:mm'}}</p>
     <p>Paid date: {{ model.editModel.order.paidDate | date:'dd. MMMM yyyy HH:mm'}}</p>
     <p>Store: {{ model.editModel.order.storeInfo.alias }}</p>
     <p>Payment: <strong>{{ model.editModel.order.chargedAmount.currencyString }}</strong></p>
-    
+
   </div>
 
   <div class="ekmSplit">
