@@ -47,11 +47,11 @@ namespace Ekom.Repositories
             return data;
         }
 
-        public IOrderInfo GetOrderInfo(Guid orderId)
+        public async Task<IOrderInfo> GetOrderInfoAsync(Guid orderId)
         {
             try
             {
-                return API.Order.Instance.GetOrder(orderId);
+                return await API.Order.Instance.GetOrderAsync(orderId);
             }
             catch (Exception ex)
             {

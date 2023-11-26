@@ -33,9 +33,9 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("OrderInfo/{orderId}")]
         [UmbracoUserAuthorize]
-        public IOrderInfo GetOrderInfo(Guid orderId)
+        public async Task<IOrderInfo> GetOrderInfoAsync(Guid orderId)
         {
-            return _repo.GetOrderInfo(orderId);
+            return await _repo.GetOrderInfoAsync(orderId);
         }
 
         [HttpGet]
