@@ -452,13 +452,11 @@ namespace Ekom.Controllers
                 {
                     throw new HttpResponseException(HttpStatusCode.OK);
                 }
-                else
+
+                throw new HttpResponseException(new HttpResponseMessage((HttpStatusCode)NoChangeResponse)
                 {
-                    throw new HttpResponseException(new HttpResponseMessage((HttpStatusCode)NoChangeResponse)
-                    {
-                        Content = new StringContent("Discount not modified, better discount found"),
-                    });
-                }
+                    Content = new StringContent("Discount not modified, better discount found"),
+                });
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
