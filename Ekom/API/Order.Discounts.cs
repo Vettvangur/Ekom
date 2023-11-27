@@ -41,37 +41,25 @@ namespace Ekom.API
 
             coupon = coupon.ToLowerInvariant();
 
-            if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
-            {
-                if (couponData.NumberAvailable > 0)
-                {
-                    if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
-                    {
-                        return await _orderService.ApplyDiscountToOrderAsync(
-                            discount, 
-                            storeAlias, 
-                            new DiscountOrderSettings
-                            {
-                                Coupon = coupon,
-                            })
-                            .ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
-                    }
-                }
-                else
-                {
-                    throw new DiscountNotFoundException($"Coupon has no usage.");
-                }
-
-            }
-
-            else
-            {
+            if (!_couponCache.Cache.TryGetValue(coupon, out var couponData))
                 throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
+            
+            if (couponData.NumberAvailable <= 0) throw new DiscountNotFoundException($"Coupon has no usage.");
+
+            if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+            {
+                return await _orderService.ApplyDiscountToOrderAsync(
+                        discount, 
+                        storeAlias, 
+                        new DiscountOrderSettings
+                        {
+                            Coupon = coupon,
+                        })
+                    .ConfigureAwait(false);
             }
+
+            throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+
         }
 
         /// <summary>
