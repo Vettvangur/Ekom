@@ -18,10 +18,9 @@
       <td>
         <label class="text-right" for="txtRanges">Current Coupons:</label><br />
         <select size="10" name="txtCoupons" ng-model="Selected">
-          <option ng-repeat="coupon in coupons | orderBy:'couponCode'" value="{{coupon.couponCode}}">{{coupon.couponCode }} ({{coupon.numberAvailable}})</option>
+          <option ng-repeat="coupon in coupons" value="{{coupon.couponCode}}">{{coupon.couponCode }} ({{coupon.numberAvailable}})</option>
         </select>
       </td>
     </tr>
-
   </table>
 </div>

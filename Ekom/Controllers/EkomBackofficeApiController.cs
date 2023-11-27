@@ -240,11 +240,11 @@ namespace Ekom.Controllers
         [HttpPost]
         [Route("coupon/{couponCode}/NumberAvailable/{numberAvailable}/discountId/{id:Guid}")]
         [UmbracoUserAuthorize]
-        public async Task InsertCoupon(string couponCode, int numberAvailable, Guid discountId)
+        public async Task InsertCoupon(string couponCode, int numberAvailable, Guid id)
         {
             try
             {
-                await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, discountId);
+                await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, id);
 
                 throw new HttpResponseException(HttpStatusCode.OK);
             }
@@ -260,11 +260,11 @@ namespace Ekom.Controllers
         [HttpDelete]
         [Route("coupon/{couponCode}/discountId/{id:Guid}")]
         [UmbracoUserAuthorize]
-        public async Task RemoveCoupon(string couponCode, Guid discountId)
+        public async Task RemoveCoupon(string couponCode, Guid id)
         {
             try
             {
-                await API.Order.Instance.RemoveCouponCodeAsync(couponCode, discountId);
+                await API.Order.Instance.RemoveCouponCodeAsync(couponCode, id);
 
                 throw new HttpResponseException(HttpStatusCode.OK);
             }
@@ -281,11 +281,11 @@ namespace Ekom.Controllers
         [Route("coupon/discountId/{id:Guid}")]
         [UmbracoUserAuthorize]
         [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-        public async Task<object> GetCouponsForDiscount(Guid discountId)
+        public async Task<object> GetCouponsForDiscount(Guid id)
         {
             try
             {
-                var items = await API.Order.Instance.GetCouponsForDiscountAsync(discountId);
+                var items = await API.Order.Instance.GetCouponsForDiscountAsync(id);
 
                 return items;
             }

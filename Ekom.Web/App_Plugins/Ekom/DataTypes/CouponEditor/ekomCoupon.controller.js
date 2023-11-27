@@ -8,10 +8,10 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Init = function () {
 
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'GetCouponsForDiscount?discountId=' + key)
+    $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/discountId/' + key)
       .then(function (result) {
 
-        $scope.coupons = result;
+        $scope.coupons = result.data;
 
         if ($scope.coupons.length > 0) {
           $scope.Selected = $scope.coupons[0].couponCode;
@@ -23,7 +23,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Insert = function () {
 
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'InsertCoupon?discountId=' + key + '&couponCode=' + $scope.couponCode + '&numberAvailable=' + $scope.numberAvailable)
+    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + $scope.couponCode + '/NumberAvailable/' + $scope.numberAvailable + '/discountId/' + key)
       .then(function () {
 
         $scope.Init();
@@ -34,7 +34,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   $scope.Remove = function (couponCode) {
 
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'RemoveCoupon?discountId=' + key + '&couponCode=' + couponCode)
+    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + couponCode + '/discountId/' + key)
       .then(function () {
 
         $scope.Init();
