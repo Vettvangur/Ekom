@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Models;
+using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Umb.Models;
 using Ekom.Utilities;
@@ -42,6 +43,7 @@ namespace Ekom.App_Start
         readonly IUmbracoService _umbracoService;
         readonly IAppPolicyCache _runtimeCache;
         private IMemoryCache _cache;
+        private CouponRepository _couponRepository;
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
@@ -55,7 +57,8 @@ namespace Ekom.App_Start
             IShortStringHelper shortStringHelper,
             IUmbracoService umbracoService,
             IMemoryCache cache,
-            AppCaches appCaches)
+            AppCaches appCaches, 
+            CouponRepository couponRepository)
         {
             _logger = logger;
             _config = config;
@@ -67,6 +70,7 @@ namespace Ekom.App_Start
             _umbracoService = umbracoService;
             _runtimeCache = appCaches.RuntimeCache;
             _cache = cache;
+            _couponRepository = couponRepository;
         }
 
         public void Handle(ContentSavingNotification e)
@@ -181,6 +185,11 @@ namespace Ekom.App_Start
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 cacheEntry?.Remove(node.Key);
+
+                if (node.ContentType.Alias == "ekmOrderDiscount")
+                {
+                    _couponRepository.DeleteCouponsByDiscountAsync(node.Key).Wait();
+                }
             }
         }
 

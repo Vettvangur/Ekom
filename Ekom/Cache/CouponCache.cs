@@ -1,11 +1,9 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using GlobalCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Models.CouponData>;
 
@@ -16,16 +14,18 @@ namespace Ekom.Cache
     {
         readonly ILogger _logger;
         readonly DatabaseFactory _databaseFactory;
+        protected IServiceProvider _serviceProvider;
 
+        protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
         public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
 
         public CouponCache(
             ILogger<CouponCache> logger,
-            DatabaseFactory databaseFactory
-        )
+            DatabaseFactory databaseFactory, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _databaseFactory = databaseFactory;
+            _serviceProvider = serviceProvider;
         }
 
         /// <inheritdoc />
@@ -36,17 +36,20 @@ namespace Ekom.Cache
 
             _logger.LogInformation("Starting to fill coupon cache...");
 
+            var orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
+
             List<CouponData> allCoupons;
             using (var db = _databaseFactory.GetDatabase())
             {
-                //var db = scope.Database;
                 allCoupons = db.CouponData.ToList();
-                //scope.Complete();
             }
 
             foreach (var coupon in allCoupons)
             {
-                Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
+                if (orderDiscountNodes.Any(x => x.Key == coupon.DiscountId))
+                {
+                    Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
+                }
             }
 
             stopwatch.Stop();
