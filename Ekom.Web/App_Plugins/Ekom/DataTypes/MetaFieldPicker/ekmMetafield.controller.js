@@ -47,7 +47,6 @@
             }
           });
 
-          console.log($scope.values);
 
           $scope.loading = false;
 

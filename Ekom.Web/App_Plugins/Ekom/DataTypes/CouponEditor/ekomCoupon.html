@@ -1,26 +1,63 @@
 <div ng-controller="Ekom.Coupon">
-  <table>
-    <tr>
-      <td valign="top">
-        <label for="CouponCode">Coupon code:</label><br />
-        <input type="text" name="CouponCode" ng-model="couponCode" />
-        <br />
-        <label for="NumberAvailable">Number available:</label><br />
-        <input type="number" name="NumberAvailable" ng-model="numberAvailable" />
-      </td>
-      <td class="text-center" valign="top">
-        <label class="text-center">Options</label><br />
-        <div class="btn-group">
-          <button class="btn btn-success" type="button" ng-click="Insert()">Add</button>
-          <button class="btn btn-default" type="button" ng-click="Remove(Selected)">Remove</button>
-        </div>
-      </td>
-      <td>
-        <label class="text-right" for="txtRanges">Current Coupons:</label><br />
-        <select size="10" name="txtCoupons" ng-model="Selected">
-          <option ng-repeat="coupon in coupons" value="{{coupon.couponCode}}">{{coupon.couponCode }} ({{coupon.numberAvailable}})</option>
-        </select>
-      </td>
-    </tr>
-  </table>
+
+  <div ng-if="create">
+    You need to save the order discount before you can add coupon codes. You will need to refresh the page after saving the order discount.
+  </div>
+
+  <div ng-if="!create">
+    <uui-button look="primary" ng-click="openOverlay()">Add Code</uui-button>
+
+    <hr />
+
+    <div class="form-search">
+      <div class="inner-addon left-addon">
+        <i class="icon icon-search"></i>
+        <input type="text" class="form-control" ng-model="query" placeholder="Type to search..." ng-change="search(query)">
+      </div>
+    </div>
+
+    <uui-table>
+      <uui-table-head>
+        <uui-table-head-cell>Coupon Code</uui-table-head-cell>
+        <uui-table-head-cell>Usage limits</uui-table-head-cell>
+        <uui-table-head-cell>Created</uui-table-head-cell>
+        <uui-table-head-cell></uui-table-head-cell>
+      </uui-table-head>
+
+      <uui-table-row ng-repeat="coupon in coupons">
+        <uui-table-cell>{{coupon.couponCode }}</uui-table-cell>
+        <uui-table-cell>{{coupon.numberAvailable}}</uui-table-cell>
+        <uui-table-cell>{{coupon.date | date : "dd.MM.y HH:mm"}}</uui-table-cell>
+        <uui-table-cell>
+          <uui-icon-registry-essential>
+            <uui-action-bar style="justify-self: left;">
+              <uui-button label="Delete" ng-click="delete(coupon.couponCode)">
+                <uui-icon name="delete"></uui-icon>
+              </uui-button>
+            </uui-action-bar>
+          </uui-icon-registry-essential>
+        </uui-table-cell>
+      </uui-table-row>
+
+      <uui-table-row ng-if="coupons.length <= 0">
+        <uui-table-cell>No coupon codes found</uui-table-cell>
+        <uui-table-cell></uui-table-cell>
+        <uui-table-cell></uui-table-cell>
+      </uui-table-row>
+
+    </uui-table>
+
+    <div style="max-width:600px; margin-top: 40px;">
+      <uui-pagination id="ekmCouponPagination" total="{{ totalPages }}"></uui-pagination>
+    </div>
+
+    <umb-overlay ng-if="overlay.show"
+                 model="overlay"
+                 view="overlay.view"
+                 position="right">
+    </umb-overlay>
+  </div>
+
+
+
 </div>
