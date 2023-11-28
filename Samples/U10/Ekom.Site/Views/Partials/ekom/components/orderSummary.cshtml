@@ -17,20 +17,34 @@
     <div class="mt-4 rounded-lg border border-gray-200 bg-white shadow-sm">
         <dl class="space-y-6 px-4 py-6 sm:px-6">
             <div class="flex items-center justify-between">
-                <dt class="text-sm">Subtotal</dt>
-                <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithoutVat.CurrencyString</dd>
+                <dt class="text-sm">Total product cost (Including tax)</dt>
+                <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotal.CurrencyString</dd>
+            </div>
+            @if (order.Discount != null)
+            {
+                <div class="flex items-center justify-between">
+                    <dt class="text-sm">Discount
+                        @if (!string.IsNullOrEmpty(order.Coupon))
+                        {
+                            <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.Coupon</span>
+                        }
+                    </dt>
+                    <dd class="text-sm font-medium text-gray-900">-@order.DiscountAmount.CurrencyString</dd>
+                </div>
+            }
+            <div class="flex items-center justify-between">
+                <dt class="text-sm">Subtotal (Including tax)</dt>
+                <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithVat.CurrencyString</dd>
             </div>
             @if (order.ShippingProvider != null)
             {
                 <div class="flex items-center justify-between">
-                    <dt class="text-sm">Shipping (@order.ShippingProvider.Title)</dt>
+                    <dt class="text-sm">Shipping
+                        <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.ShippingProvider.Title</span>
+                    </dt>
                     <dd class="text-sm font-medium text-gray-900">@order.ShippingProvider.Price.WithVat.CurrencyString</dd>
                 </div>
             }
-            <div class="flex items-center justify-between">
-                <dt class="text-sm">Taxes</dt>
-                <dd class="text-sm font-medium text-gray-900">@order.ChargedVat.CurrencyString</dd>
-            </div>
             <div class="flex items-center justify-between border-t border-gray-200 pt-6">
                 <dt class="text-base font-medium">Total</dt>
                 <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>

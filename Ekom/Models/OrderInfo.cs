@@ -122,13 +122,26 @@ namespace Ekom.Models
         {
             get
             {
-                var amount = OrderLines.Sum(line => line.Amount.Value);
+                var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
 
                 amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
 
                 return new CalculatedPrice(amount, StoreInfo.Currency);
             }
         }
+
+        public ICalculatedPrice OrderLineTotalWithOutVat
+        {
+            get
+            {
+                var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
+
+                amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
+
+                return new CalculatedPrice(amount - ChargedVat.Value, StoreInfo.Currency);
+            }
+        }
+
 
         private Price LinePriceWithOrderDiscount(IOrderLine line)
         {

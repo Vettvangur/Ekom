@@ -1,7 +1,6 @@
 angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
   $scope.model.hideLabel = true;
 
-
   if ($routeParams.section !== 'content') { return; }
 
   var key = editorState.current.key;
@@ -63,7 +62,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
     document.body.classList.remove('tabbing-active');
   };
 
-  $scope.getCoupons = function () {
+  $scope.getCoupons = function (enablePagination) {
 
     $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/discountId/' + key + '?query=' + $scope.query + '&page=' + $scope.page + '&pageSize=' + $scope.pageSize)
       .then(function (result) {
@@ -73,22 +72,22 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
         var pagination = document.getElementById('ekmCouponPagination');
 
-        if (pagination) {
+        if (pagination && enablePagination) {
           pagination.addEventListener('change', function (a, b) {
 
             $scope.page = a.target.current;
-
-            $scope.getCoupons();
+            
+            $scope.getCoupons(false);
           });
         }
 
       });
-
+      
   };
 
   $scope.search = function (query) {
     $scope.query = query;
-    $scope.getCoupons();
+    $scope.getCoupons(false);
   };
 
   $scope.delete = function (couponCode) {
@@ -96,7 +95,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
     $http.delete(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + couponCode + '/discountId/' + key)
       .then(function () {
 
-        $scope.getCoupons();
+        $scope.getCoupons(false);
 
         notificationsService.success("Success", "Coupon Code removed");
 
@@ -104,7 +103,7 @@ angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsServ
 
   };
 
-  $scope.getCoupons();
+  $scope.getCoupons(true);
 
 
 });

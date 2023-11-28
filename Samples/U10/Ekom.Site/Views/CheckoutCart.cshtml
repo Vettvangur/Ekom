@@ -142,13 +142,34 @@
 
                 <dl class="mt-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Subtotal</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithoutVat.CurrencyString</dd>
+                        <dt class="text-sm text-gray-600">Total product cost (Including tax)</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotal.CurrencyString</dd>
                     </div>
+                    @if (order.Discount != null)
+                    {
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">Discount
+                                @if (!string.IsNullOrEmpty(order.Coupon))
+                                {
+                                    <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.Coupon</span>
+                                }
+                            </dt>
+                            <dd class="text-sm font-medium text-gray-900">-@order.DiscountAmount.CurrencyString</dd>
+                        </div>
+                    }
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Taxes</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.ChargedVat.CurrencyString</dd>
+                        <dt class="text-sm text-gray-600">Subtotal (Including tax)</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithVat.CurrencyString</dd>
                     </div>
+                    @if (order.ShippingProvider != null)
+                    {
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">Shipping cost
+                                <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.ShippingProvider.Title</span>
+                            </dt>
+                            <dd class="text-sm font-medium text-gray-900">@order.ShippingProvider.Price.WithVat.CurrencyString</dd>
+                        </div>
+                    }
                     <div class="flex items-center justify-between border-t border-gray-200 pt-4">
                         <dt class="text-base font-medium text-gray-900">Order total</dt>
                         <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
@@ -330,6 +351,8 @@
 
                             if (response.ok) {
                                 window.location.reload();
+                            } else if (response.status === 450) {
+                                throw new Error("Coupon not added, better discount found on order.");
                             } else {
                                 throw new Error();
                             }

@@ -73,6 +73,10 @@ namespace Ekom.Models
         /// </summary>
         ICalculatedPrice OrderLineTotal { get; }
         /// <summary>
+        /// OrderLines with OrderDiscount excluded and exludes vat
+        /// </summary>
+        ICalculatedPrice OrderLineTotalWithOutVat { get; }
+        /// <summary>
         /// Total amount of value added tax in order lines.
         /// This counts up all vat whether it's included in item prices or not.
         /// </summary>
