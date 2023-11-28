@@ -668,7 +668,8 @@ namespace Ekom.Services
                 CouponCode = couponCode.ToLowerInvariant(),
                 CouponKey = Guid.NewGuid(),
                 DiscountId = discountId,
-                NumberAvailable = numberAvailable
+                NumberAvailable = numberAvailable,
+                Date = DateTime.Now
             }).ConfigureAwait(false);
         }
 
@@ -688,14 +689,14 @@ namespace Ekom.Services
                 .ConfigureAwait(false);
         }
 
-        public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
+        public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
         {
             if (discountId == Guid.Empty)
             {
                 throw new ArgumentException("== Guid.Empty", nameof(discountId));
             }
 
-            return await _couponRepository.GetCouponsForDiscountAsync(discountId)
+            return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
                 .ConfigureAwait(false);
         }
     }

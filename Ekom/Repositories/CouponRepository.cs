@@ -111,6 +111,34 @@ namespace Ekom.Repositories
             return data;
         }
 
+        public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+        {
+            await using var db = _databaseFactory.GetDatabase();
+
+            var totalCount = await db.CouponData
+                .Where(x => x.DiscountId == discountId)
+                .Where(x => string.IsNullOrEmpty(query) || x.CouponCode.Contains(query, StringComparison.InvariantCultureIgnoreCase))
+                .CountAsync()
+                .ConfigureAwait(false);
+
+            // Calculate total pages
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            // Calculate the number of records to skip
+            int skip = (page - 1) * pageSize;
+
+            var data = await db.CouponData
+                .Where(x => x.DiscountId == discountId)
+                .Where(x => string.IsNullOrEmpty(query) || x.CouponCode.Contains(query, StringComparison.InvariantCultureIgnoreCase))
+                .OrderByDescending(x => x.Date) // Ensure to order the data before applying Skip and Take
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            
+            return (data, totalPages);
+        }
+
         public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
         {
             await using var db = _databaseFactory.GetDatabase();

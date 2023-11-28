@@ -1,0 +1,29 @@
+<div>
+
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="couponCode">
+        Coupon Code
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="text" ng-model="model.editModel.couponCode" id="couponCode" class="umb-textstring textstring" required=""/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br/>
+  <div class="control-group umb-control-group">
+    <div class="umb-el-wrap">
+      <label class="control-label" for="available">
+        Usage limits
+      </label>
+      <div class="controls">
+        <div class="umb-property-editor">
+          <input type="number" ng-model="model.editModel.numberAvailable" id="available" class="umb-textstring textstring" min="0" required=""/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -201,9 +201,9 @@ namespace Ekom.API
                 .ConfigureAwait(false);
         }
 
-        public async Task<IEnumerable<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
+        public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
         {
-            return await _orderService.GetCouponsForDiscountAsync(discountId)
+            return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
                 .ConfigureAwait(false);
         }
     }

@@ -100,7 +100,7 @@ namespace Ekom.Repositories
 
                 var insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
 
-                int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0;
+                int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0;
 
                 if (insertTempColumn == 1)
                 {
@@ -183,9 +183,23 @@ namespace Ekom.Repositories
 
                 affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
 
-                if ((affected2 + affected3 + affected4) > 0)
+                const string CouponDateSql = @"BEGIN TRANSACTION;
+                        IF NOT EXISTS(
+                            SELECT *
+                            FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME = 'EkomCoupon' AND COLUMN_NAME = 'Date'
+                            )
+                        BEGIN
+                            ALTER TABLE EkomCoupon
+                        ADD[Date] DATETIME NOT NULL DEFAULT GETDATE()
+                        END
+                        COMMIT TRANSACTION;";
+
+                affected5 = await db.ExecuteAsync<int>(CouponDateSql);
+
+                if ((affected2 + affected3 + affected4 + affected5) > 0)
                 {
-                    _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3));
+                    _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
                 }
 
             } catch(Exception ex)

@@ -7,6 +7,7 @@
     <ItemGroup>
       <Content Include="App_Plugins\Ekom\DataTypes\CacheEditor\ekmCache.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CountryPicker\ekmCountry.html" />
+      <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekmCouponAddOverlay.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CouponEditor\ekomCoupon.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\CurrencyPicker\ekmCurrency.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\MetaValueEditor\ekmMetavalue.html" />

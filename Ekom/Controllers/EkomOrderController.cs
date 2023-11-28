@@ -5,7 +5,6 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Net;
-using System.Reflection;
 
 namespace Ekom.Controllers
 {

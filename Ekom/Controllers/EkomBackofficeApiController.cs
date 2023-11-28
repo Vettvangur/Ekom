@@ -250,6 +250,11 @@ namespace Ekom.Controllers
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
+                if (ex.Message == "Duplicate coupon")
+                {
+                    throw new HttpResponseException(HttpStatusCode.Conflict);
+                }
+
                 throw ExceptionHandler.Handle<HttpResponseException>(ex);
             }
         }
@@ -281,11 +286,11 @@ namespace Ekom.Controllers
         [Route("coupon/discountId/{id:Guid}")]
         [UmbracoUserAuthorize]
         [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-        public async Task<object> GetCouponsForDiscount(Guid id)
+        public async Task<object> GetCouponsForDiscount(Guid id, string query = "", int page = 1, int pageSize = 20)
         {
             try
             {
-                var items = await API.Order.Instance.GetCouponsForDiscountAsync(id);
+                var items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize);
 
                 return items;
             }

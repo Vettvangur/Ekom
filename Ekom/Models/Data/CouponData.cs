@@ -1,5 +1,4 @@
 using LinqToDB.Mapping;
-using System;
 
 namespace Ekom.Models
 {
@@ -34,5 +33,11 @@ namespace Ekom.Models
         /// </summary>
         [Column, NotNull]
         public Guid DiscountId { get; set; }
+
+        /// <summary>
+        /// Created Date
+        /// </summary>
+        [Column, Nullable]
+        public DateTime Date { get; set; }
     }
 }

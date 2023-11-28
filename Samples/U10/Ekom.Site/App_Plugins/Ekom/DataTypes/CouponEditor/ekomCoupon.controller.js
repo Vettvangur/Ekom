@@ -1,53 +1,110 @@
 angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
-  $scope.model.hideLabel = false;
-  var key = editorState.current.key;
+  $scope.model.hideLabel = true;
 
+
+  if ($routeParams.section !== 'content') { return; }
+
+  var key = editorState.current.key;
+  $scope.create = editorState.current.id === 0;
   $scope.coupons = [];
   $scope.couponCode = '';
-  $scope.numberAvailable = 1;
+  $scope.query = '';
+  $scope.page = 1;
+  $scope.pageSize = 10;
+  $scope.totalPages = 0;
+  $scope.openOverlay = function () {
 
-  $scope.Init = function () {
+    var model = {
+      couponCode: '',
+      numberAvailable: 1
+    };
 
-    $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/discountId/' + key)
+    $scope.overlay = {
+      title: "Add Coupon Code",
+      view: "/App_Plugins/Ekom/DataTypes/CouponEditor/ekmCouponAddOverlay.html",
+      editModel: model,
+      show: true,
+      submit: function (submitModel) {
+
+        if (submitModel.editModel.couponCode === '' || submitModel.editModel.numberAvailable === '') {
+          notificationsService.error("Error", "Coupon Code and Usage Limit are required fields");
+        }
+
+        $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + submitModel.editModel.couponCode + '/NumberAvailable/' + submitModel.editModel.numberAvailable + '/discountId/' + key)
+          .then(function () {
+            
+            $scope.getCoupons();
+
+            $scope.closeOverlay();
+
+            notificationsService.success("Success", "Coupon Code added successfully");
+
+          }, function errorCallback(data) {
+
+            if (data.status === 409) {
+              notificationsService.error("Error", "Coupon Code already exists on this or another discount.");
+            } else {
+              notificationsService.error("Error", "Error on creating coupon.");
+            }
+            
+          });
+
+      },
+      close: function (oldModel) {
+        $scope.closeOverlay();
+      }
+    };
+    
+  };
+
+  $scope.closeOverlay = function () {
+    $scope.overlay.show = false;
+    $scope.overlay = null;
+    document.body.classList.remove('tabbing-active');
+  };
+
+  $scope.getCoupons = function () {
+
+    $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/discountId/' + key + '?query=' + $scope.query + '&page=' + $scope.page + '&pageSize=' + $scope.pageSize)
       .then(function (result) {
 
-        $scope.coupons = result.data;
+        $scope.coupons = result.data.item1;
+        $scope.totalPages = result.data.item2;
 
-        if ($scope.coupons.length > 0) {
-          $scope.Selected = $scope.coupons[0].couponCode;
+        var pagination = document.getElementById('ekmCouponPagination');
+
+        if (pagination) {
+          pagination.addEventListener('change', function (a, b) {
+
+            $scope.page = a.target.current;
+
+            $scope.getCoupons();
+          });
         }
 
       });
 
   };
 
-  $scope.Insert = function () {
+  $scope.search = function (query) {
+    $scope.query = query;
+    $scope.getCoupons();
+  };
 
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + $scope.couponCode + '/NumberAvailable/' + $scope.numberAvailable + '/discountId/' + key)
+  $scope.delete = function (couponCode) {
+
+    $http.delete(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + couponCode + '/discountId/' + key)
       .then(function () {
 
-        $scope.Init();
+        $scope.getCoupons();
+
+        notificationsService.success("Success", "Coupon Code removed");
 
       });
 
   };
 
-  $scope.Remove = function (couponCode) {
-
-    $http.post(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'coupon/' + couponCode + '/discountId/' + key)
-      .then(function () {
-
-        $scope.Init();
-
-      });
-
-  };
-
-  if ($routeParams.section !== 'settings') {
-
-    $scope.Init();
-
-  }
+  $scope.getCoupons();
 
 
 });
