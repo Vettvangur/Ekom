@@ -5,7 +5,6 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Utilities;
-using Hangfire.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -118,7 +117,7 @@ namespace Ekom.Services
             : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache)
         {
             _httpCtx = httpContextAccessor.HttpContext;
-            var r = _httpCtx.Items["umbrtmche-ekmRequest"] as Lazy<object>;
+            var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
             _ekmRequest = r.Value as ContentRequest;
         }
 
