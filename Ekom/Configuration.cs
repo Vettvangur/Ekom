@@ -12,7 +12,7 @@ namespace Ekom
     public class Configuration
     {
         readonly IConfiguration _configuration;
-
+        private List<CharCollection> _charCollectionsCache;
         public Configuration(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -66,9 +66,14 @@ namespace Ekom
         {
             get
             {
-                var value = _configuration.GetSection("Umbraco:CMS:RequestHandler:CharCollection").Get<List<CharCollection>>();
+                if (_charCollectionsCache != null)
+                {
+                    return _charCollectionsCache;
+                }
 
-                return value;
+                _charCollectionsCache = _configuration.GetSection("Umbraco:CMS:RequestHandler:UserDefinedCharCollection").Get<List<CharCollection>>() ?? new List<CharCollection>();
+
+                return _charCollectionsCache;
             }
         }
 
