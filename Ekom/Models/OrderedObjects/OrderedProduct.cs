@@ -19,7 +19,12 @@ namespace Ekom.Models
         {
             get
             {
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
+                if (Properties.ContainsKey("id"))
+                {
+                    return Convert.ToInt32(Properties.GetPropertyValue("id"));
+                }
+
+                return 0;
             }
         }
 
@@ -63,13 +68,8 @@ namespace Ekom.Models
         }
         [JsonIgnore]
         [XmlIgnore]
-        public string Path
-        {
-            get
-            {
-                return Properties.GetPropertyValue("__Path");
-            }
-        }
+        public string Path => Properties.GetPropertyValue("__Path");
+
         [JsonIgnore]
         [XmlIgnore]
         //TODO Store default setup!
