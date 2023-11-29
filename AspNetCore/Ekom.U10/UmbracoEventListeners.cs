@@ -44,6 +44,7 @@ namespace Ekom.App_Start
         readonly IAppPolicyCache _runtimeCache;
         private IMemoryCache _cache;
         private CouponRepository _couponRepository;
+        private INodeService _nodeService;
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
@@ -58,7 +59,8 @@ namespace Ekom.App_Start
             IUmbracoService umbracoService,
             IMemoryCache cache,
             AppCaches appCaches, 
-            CouponRepository couponRepository)
+            CouponRepository couponRepository, 
+            INodeService nodeService)
         {
             _logger = logger;
             _config = config;
@@ -71,6 +73,7 @@ namespace Ekom.App_Start
             _runtimeCache = appCaches.RuntimeCache;
             _cache = cache;
             _couponRepository = couponRepository;
+            _nodeService = nodeService;
         }
 
         public void Handle(ContentSavingNotification e)
@@ -130,7 +133,9 @@ namespace Ekom.App_Start
             {
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
-                cacheEntry?.AddReplace(new Umbraco10Content(node));
+                var parentNode = _nodeService.NodeById(node.Id);
+
+                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
 
                 // If slug changes on category then we need to update the cache for all descending products.
                 if (node.ContentType.Alias != "ekmCategory") continue;
@@ -157,7 +162,10 @@ namespace Ekom.App_Start
                 var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
                 cacheEntry?.Remove(node.Key);
-                cacheEntry?.AddReplace(new Umbraco10Content(node));
+
+                var parentNode = _nodeService.NodeById(node.Id);
+
+                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
             }
         }
 
@@ -445,7 +453,7 @@ namespace Ekom.App_Start
             if (ekmStoreContent != null)
             {
                 // Update cached IStore
-                _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent));
+                _storeCache.AddReplace(new Umbraco10Content(ekmStoreContent, Guid.Empty));
             }
         }
 

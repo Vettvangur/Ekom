@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Ekom.Models
 {
     /// <summary>
@@ -59,14 +56,18 @@ namespace Ekom.Models
         bool Available { get; }
 
         /// <summary>
-        /// All categories product belongs to, includes parent category.
-        /// Does not include categories product is an indirect child of.
+        /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<ICategory> CategoryAncestors { get; }
+
+        /// <summary>
+        /// All categories product belongs to, includes parent category and related categories.
         /// </summary>
         IEnumerable<ICategory> Categories { get; }
 
         /// <summary>
-        /// All ID's of categories product belongs to, includes parent category.
-        /// Does not include categories product is an indirect child of.
+        /// All ID's of categories product belongs to, includes parent category and related categories.
         /// </summary>
         IEnumerable<Guid> CategoriesIds { get; }
         
@@ -109,18 +110,12 @@ namespace Ekom.Models
         /// <summary>
         /// All child variant groups of this product
         /// </summary>
-        List<IVariantGroup> VariantGroups { get; }
+        IEnumerable<IVariantGroup> VariantGroups { get; }
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        List<IVariant> AllVariants { get; }
+        IEnumerable<IVariant> AllVariants { get; }
 
-        /// <summary>
-        /// All categories this <see cref="Product"/> belongs to.
-        /// Found by traversing up the examine tree and then matching examine items to cached <see cref="ICategory"/>'s
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<ICategory> CategoryAncestors { get; }
         /// <summary>
         /// A discount specific to this product populated after product discount cache is filled.
         /// </summary>

@@ -1,9 +1,6 @@
-using Ekom;
-using Ekom.Cache;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace Ekom.Cache
 {

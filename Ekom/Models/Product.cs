@@ -22,41 +22,38 @@ namespace Ekom.Models
         private IPerStoreCache<IVariantGroup> _variantGroupCache =>
             __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
 
-        private Lazy<IEnumerable<IVariant>> _allVariantsLazy;
-        private Lazy<IEnumerable<IVariantGroup>> _allVariantGroupsLazy;
-
         public virtual IDiscount ProductDiscount(string price = null)
         {
             price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
 
-            return Configuration.Resolver.GetService<ProductDiscountService>()
+            return Configuration.Resolver.GetService<ProductDiscountService>()?
                     .GetProductDiscount(
                         Path,
                         Store.Alias,
                         price,
-                        categories.Select(x => x.Id.ToString()).ToArray()
+                        categories.Select(x => x.Id.ToString())?.ToArray()
                     );
         }
 
         /// <summary>
         /// Product SKU
         /// </summary>
-        public string SKU => Properties.GetPropertyValue("sku");
+        public string SKU => GetValue("sku");
 
         /// <summary>
         /// 
         /// </summary>
-        public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
+        public virtual string Description => GetValue("description", Store.Alias);
 
         /// <summary>
         /// 
         /// </summary>
-        public virtual string Summary => Properties.GetPropertyValue("summary", Store.Alias);
+        public virtual string Summary => GetValue("summary", Store.Alias);
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
         /// </summary>
-        public string Slug => Properties.GetPropertyValue("slug", Store.Alias);
+        public string Slug => GetValue("slug", Store.Alias);
 
         /// <summary>
         /// Get the current product Stock
@@ -77,7 +74,7 @@ namespace Ekom.Models
             {
                 //TODO Store default setup!
 
-                var backOrderValue = Properties.GetPropertyValue("enableBackorder", Store.Alias);
+                var backOrderValue = GetValue("enableBackorder", Store.Alias);
 
                 return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
             }
@@ -88,18 +85,17 @@ namespace Ekom.Models
         // </summary>
         public virtual IEnumerable<Image> Images
         {
-
             get
             {
                 var primaryVariantGroup = PrimaryVariantGroup;
 
                 if (primaryVariantGroup != null)
                 {
-                    var imageNodes = primaryVariantGroup.Images;
+                    var imageNodes = primaryVariantGroup.Images.ToList();
 
                     if (!imageNodes.Any() && primaryVariantGroup.Variants.Any())
                     {
-                        imageNodes = primaryVariantGroup.Variants.FirstOrDefault()?.Images;
+                        imageNodes = primaryVariantGroup.Variants.FirstOrDefault()?.Images.ToList();
                     }
 
                     if (imageNodes.Any())
@@ -108,7 +104,7 @@ namespace Ekom.Models
                     }
                 }
 
-                var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
+                var _images = GetValue(Configuration.Instance.CustomImage);
 
                 return _images.GetImages();
             }
@@ -125,18 +121,20 @@ namespace Ekom.Models
         {
             get
             {
-                if (!VariantGroups.Any())
+                var variantGroups = VariantGroups.ToList();
+
+                if (!variantGroups.Any())
                 {
                     return null;
                 }
 
                 if (Properties.ContainsKey("primaryVariantGroup"))
                 {
-                    var primaryGroupValue = Properties.GetPropertyValue("primaryVariantGroup", Store.Alias);
+                    var primaryGroupValue = GetValue("primaryVariantGroup");
 
                     if (!string.IsNullOrEmpty(primaryGroupValue))
                     {
-                        var node = Configuration.Resolver.GetService<INodeService>().NodeById(primaryGroupValue);
+                        var node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
 
                         if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
                         {
@@ -147,12 +145,7 @@ namespace Ekom.Models
                     }
                 }
 
-                var primaryGroup = VariantGroups.FirstOrDefault(x => x.Available);
-
-                if (primaryGroup == null)
-                {
-                    primaryGroup = VariantGroups.FirstOrDefault();
-                }
+                var primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
 
                 return primaryGroup;
             }
@@ -193,7 +186,7 @@ namespace Ekom.Models
         [JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<ICategory> CategoryAncestors => categoryAncestors.AsReadOnly();
-        internal List<ICategory> categoryAncestors = new List<ICategory>();
+        internal List<ICategory> categoryAncestors = new();
 
         /// <summary>
         /// All categories product belongs to, includes parent category and related categories.
@@ -201,7 +194,7 @@ namespace Ekom.Models
         [JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<ICategory> Categories => categories.AsReadOnly();
-        internal List<ICategory> categories = new List<ICategory>();
+        internal List<ICategory> categories = new();
 
         /// <summary>
         /// All ID's of categories product belongs to, includes parent category and related categories.
@@ -265,7 +258,7 @@ namespace Ekom.Models
         {
             get
             {
-                var prices = Properties.GetPropertyValue("price", Store.Alias)
+                var prices = GetValue("price", Store.Alias)
                     .GetPriceValues(
                         Store.Currencies,
                         Vat,
@@ -289,7 +282,7 @@ namespace Ekom.Models
 
                 var currencyValues = priceJson.GetCurrencyValues();
 
-                var value = currencyValues.Any() ? currencyValues.FirstOrDefault().Value : 0;
+                var value = currencyValues.Any() ? currencyValues.FirstOrDefault()?.Value : 0;
 
                 return new Price(value, Store.Currency, Store.Vat, true);
             }
@@ -301,7 +294,7 @@ namespace Ekom.Models
             {
                 if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    var value = Properties.GetPropertyValue("vat", Store.Alias);
+                    var value = GetValue("vat", Store.Alias);
 
                     if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
                     {
@@ -331,22 +324,33 @@ namespace Ekom.Models
         /// <summary>
         /// All child variant groups of this product
         /// </summary>
-        public virtual List<IVariantGroup> VariantGroups
+        public virtual IEnumerable<IVariantGroup> VariantGroups
         {
             get
             {
-                return _allVariantGroupsLazy.Value.ToList();
+                var variantGroups = from pair in _variantGroupCache.Cache[Store.Alias]
+                    let variantGroup = pair.Value
+                    where variantGroup.ProductId == Id
+                    orderby variantGroup.SortOrder
+                    select variantGroup;
+
+                return variantGroups;
             }
         }
 
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        public virtual List<IVariant> AllVariants
+        public virtual IEnumerable<IVariant> AllVariants
         {
             get
             {
-                return _allVariantsLazy.Value.ToList();
+                var variants = from pair in _variantCache.Cache[Store.Alias]
+                    let variant = pair.Value
+                    where variant.ProductId == Id
+                    select variant;
+
+                return variants;
             }
         }
 
@@ -381,9 +385,6 @@ namespace Ekom.Models
             PopulateCategoryAncestors();
             PopulateCategories();
 
-            _allVariantsLazy = new Lazy<IEnumerable<IVariant>>(() => ComputeAllVariants());
-            _allVariantGroupsLazy = new Lazy<IEnumerable<IVariantGroup>>(() => ComputeAllVariantGroups());
-
             var urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
 
             UrlsWithContext = urls;
@@ -400,9 +401,9 @@ namespace Ekom.Models
             int categoryId = ParentId;
 
             var categoryField = Properties.ContainsKey("categories") ?
-                                Properties.GetPropertyValue("categories") : "";
+                                GetValue("categories") : "";
 
-            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
+            var primaryCategory = Catalog.Instance.GetCategory(Store.Alias, categoryId);
 
             if (primaryCategory != null)
             {
@@ -445,22 +446,6 @@ namespace Ekom.Models
             categoryAncestors.Reverse();
         }
 
-        private IEnumerable<IVariant> ComputeAllVariants()
-        {
-            return from pair in _variantCache.Cache[Store.Alias]
-                   let variant = pair.Value
-                   where variant.ProductId == Id
-                   select variant;
-        }
-
-        private IEnumerable<IVariantGroup> ComputeAllVariantGroups()
-        {
-            return from pair in _variantGroupCache.Cache[Store.Alias]
-                   let variantGroup = pair.Value
-                   where variantGroup.ProductId == Id
-                   orderby variantGroup.SortOrder
-                   select variantGroup;
-        }
         public IEnumerable<IProduct> RelatedProducts(int count = 4)
         {
             var relatedProducts = new List<IProduct>();
@@ -471,7 +456,7 @@ namespace Ekom.Models
 
                 if (!string.IsNullOrEmpty(val))
                 {
-                    var relatedProductIds = UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
+                    UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
 
                     foreach (var id in guids.Where(x => x != Key).Take(count))
                     {

@@ -12,40 +12,13 @@ namespace Ekom.Models
             this.storeAlias = storeAlias;
         }
 
-        public int Id
-        {
-            get
-            {
-                return node.Id;
-            }
-        }
-        public Guid Key
-        {
-            get
-            {
-                return node.Key;
-            }
-        }
-        public string Url
-        {
-            get
-            {
-                return node.Url;
-            }
-        }
-        public string Name
-        {
-            get
-            {
-                return node.Name;
-            }
-        }
-        public string Description
-        {
-            get
-            {
-                return node.Properties.HasPropertyValue("description", storeAlias) ? node.Properties.GetPropertyValue("description", storeAlias) : "";
-            }
-        }
+        public int Id => node.Id;
+        public Guid Key => node.Key;
+
+        public string Url => node.Url;
+
+        public string Name => node.Name;
+
+        public string Description => node.Properties.HasPropertyValue("description", storeAlias) ? node.GetValue("description", storeAlias) : "";
     }
 }

@@ -24,7 +24,7 @@ namespace Ekom.Models
         {
             get
             {
-                if (int.TryParse(Properties.GetPropertyValue("id"), out int _value))
+                if (int.TryParse(GetValue("id"), out int _value))
                 {
                     return _value;
                 }
@@ -41,12 +41,25 @@ namespace Ekom.Models
         {
             get
             {
-                if (int.TryParse(Properties.GetPropertyValue("parentID"), out int _parentId))
+                if (int.TryParse(GetValue("parentID"), out int _parentId))
                 {
                     return _parentId;
                 }
 
                 return 0;
+            }
+        }
+
+        public virtual Guid ParentKey
+        {
+            get
+            {
+                if (Guid.TryParse(GetValue("parentKey"), out Guid _parentKey))
+                {
+                    return _parentKey;
+                }
+
+                return Guid.Empty;
             }
         }
 

@@ -12,6 +12,7 @@ namespace Ekom.Umb.Models
             {
                 { "id", content.Id.ToString() },
                 { "parentID", content.Parent?.Id.ToString() ?? "" },
+                { "parentKey", (content.Parent != null ? content.Parent.Key.ToString() : Guid.Empty.ToString()) },
                 { "__Key", content.Key.ToString() },
                 { "nodeName", content.Name ?? "" },
                 { "__NodeTypeAlias", content.ContentType.Alias },
@@ -37,11 +38,12 @@ namespace Ekom.Umb.Models
         {
         }
 
-        public Umbraco10Content(IContent content)
+        public Umbraco10Content(IContent content, Guid ParentKey)
             : base(new Dictionary<string, string>
             {
                 { "id", content.Id.ToString() },
                 { "parentID", content.ParentId.ToString() },
+                { "parentKey",ParentKey.ToString() },
                 { "__Key", content.Key.ToString() },
                 { "nodeName", content.Name ?? ""},
                 { "__NodeTypeAlias", content.ContentType.Alias },

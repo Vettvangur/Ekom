@@ -1,5 +1,7 @@
 using Ekom.API;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
 
@@ -15,14 +17,7 @@ namespace Ekom.Models
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        public IProduct Product { 
-            get
-            {
-                var pathArray = Path.Split(',');
-                var productId = pathArray[pathArray.Count() - 2];
-                return Catalog.Instance.GetProduct(storeAlias, Convert.ToInt32(productId));
-            }
-        }
+        public IProduct Product => Catalog.Instance.GetProduct(storeAlias, ParentKey);
 
         /// <summary>
         /// 
@@ -57,7 +52,7 @@ namespace Ekom.Models
         {
             get
             {
-                var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
+                var _images = GetValue(Configuration.Instance.CustomImage);
 
                 var imageNodes = _images.GetImages();
 
@@ -74,6 +69,27 @@ namespace Ekom.Models
         {
             get
             {
+                var cacheKey = $"Variants_{Store.Alias}_{Id}";
+
+                var httpContextAccessor = Configuration.Resolver.GetService<IHttpContextAccessor>();
+
+                if (httpContextAccessor != null)
+                {
+                    var httpContext = httpContextAccessor.HttpContext;
+
+                    if (httpContext != null)
+                    {
+                        if (httpContext.Items.ContainsKey(cacheKey))
+                        {
+                            return (IEnumerable<IVariant>)httpContext.Items[cacheKey];
+                        }
+
+                        var variants = Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
+                        httpContext.Items[cacheKey] = variants;
+                        return variants;
+                    }
+                }
+
                 return Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
             }
         }

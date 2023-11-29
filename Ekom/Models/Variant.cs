@@ -18,7 +18,7 @@ namespace Ekom.Models
         /// <summary>
         /// Stock Keeping Unit, identifier
         /// </summary>
-        public string SKU => string.IsNullOrEmpty(Properties.GetPropertyValue("sku")) ? Product.SKU : Properties.GetPropertyValue("sku");
+        public string SKU => string.IsNullOrEmpty(GetValue("sku")) ? Product.SKU : GetValue("sku");
 
         /// <summary>
         /// Get the variant stock
@@ -36,7 +36,7 @@ namespace Ekom.Models
             {
                 //TODO Store default setup!
 
-                var backOrderValue = Properties.GetPropertyValue("enableBackorder", Store.Alias);
+                var backOrderValue = GetValue("enableBackorder", Store.Alias);
 
                 return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
             }
@@ -45,7 +45,7 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
+        public virtual string Description => GetValue("description", Store.Alias);
 
         /// <summary>
         /// Get the availability of the variant
@@ -127,7 +127,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Catalog.Instance.GetVariantGroup(Store.Alias, VariantGroupId);
+                return Catalog.Instance.GetVariantGroup(Store.Alias, ParentKey);
             }
         }
 
@@ -171,7 +171,7 @@ namespace Ekom.Models
             {
                 if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    return Convert.ToDecimal(Properties.GetPropertyValue("vat", Store.Alias)) / 100;
+                    return Convert.ToDecimal(GetValue("vat", Store.Alias)) / 100;
                 }
 
                 return Product.Vat;
@@ -185,7 +185,7 @@ namespace Ekom.Models
         {
             get
             {
-                var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
+                var _images = GetValue(Configuration.Instance.CustomImage);
 
                 var imageNodes = _images.GetImages();
 
@@ -204,7 +204,7 @@ namespace Ekom.Models
             int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
 
             var categoryField = Properties.Any(x => x.Key == "categories") ?
-                                Properties.GetPropertyValue("categories") : "";
+                                GetValue("categories") : "";
 
             var categories = new List<ICategory>();
 

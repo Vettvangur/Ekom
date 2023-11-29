@@ -329,7 +329,7 @@ namespace Ekom.Utilities
 
                     foreach (var image in imageList)
                     {
-                        var node = Configuration.Resolver.GetService<INodeService>().MediaById(image.MediaKey);
+                        var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
 
                         if (node != null)
                         {
@@ -344,7 +344,7 @@ namespace Ekom.Utilities
                     foreach (var imgId in imageIds)
                     {
 
-                        var node = Configuration.Resolver.GetService<INodeService>().MediaById(imgId);
+                        var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
 
                         if (node != null)
                         {
