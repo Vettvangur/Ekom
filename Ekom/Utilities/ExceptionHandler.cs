@@ -1,5 +1,4 @@
 using Ekom.Exceptions;
-using System;
 using System.Net;
 
 namespace Ekom.Utilities
@@ -60,7 +59,18 @@ namespace Ekom.Utilities
             {
                 return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.Conflict);
             }
-
+            else if (exception is DiscountNotFoundException)
+            {
+                return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
+            }
+            else if (exception is DiscountHasNoUsageException)
+            {
+                return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotAcceptable);
+            }
+            else if (exception is DiscountUnableToFindCouponException)
+            {
+                return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
+            }
             if (defaultHandler != null)
             {
                 var actionResult = defaultHandler();

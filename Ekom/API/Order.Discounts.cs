@@ -44,7 +44,7 @@ namespace Ekom.API
             if (!_couponCache.Cache.TryGetValue(coupon, out var couponData))
                 throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
             
-            if (couponData.NumberAvailable <= 0) throw new DiscountNotFoundException($"Coupon has no usage.");
+            if (couponData.NumberAvailable <= 0) throw new DiscountHasNoUsageException($"Coupon has no usage.");
 
             if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
             {
@@ -58,7 +58,7 @@ namespace Ekom.API
                     .ConfigureAwait(false);
             }
 
-            throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
+            throw new DiscountUnableToFindCouponException($"Unable to find discount with coupon {coupon}");
 
         }
 

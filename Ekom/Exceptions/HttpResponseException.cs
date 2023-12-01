@@ -1,4 +1,4 @@
-#if NETCOREAPP
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Net;
@@ -40,4 +40,3 @@ namespace Ekom.Exceptions
         }
     }
 }
-#endif

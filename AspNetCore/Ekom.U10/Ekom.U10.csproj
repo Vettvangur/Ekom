@@ -59,7 +59,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Ekom\Ekom.csproj" />
       <ProjectReference Include="..\Ekom.AspNetCore\Ekom.AspNetCore.csproj" />
     </ItemGroup>
 </Project>
