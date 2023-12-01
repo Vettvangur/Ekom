@@ -1,3 +1,0 @@
-[submodule "Umbraco.StorageProviders"]
-	path = Umbraco.StorageProviders
-	url = https://github.com/umbraco/Umbraco.StorageProviders

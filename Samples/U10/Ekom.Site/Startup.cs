@@ -1,7 +1,4 @@
 using Newtonsoft.Json.Serialization;
-using Vettvangur.Shared;
-//using Vettvangur.ValitorPay;
-//using Ekom.Payments.ValitorPay;
 
 namespace Ekom.Site
 {
@@ -49,7 +46,6 @@ namespace Ekom.Site
 #pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
-                .AddBackofficeAzureAd()
                 .AddWebsite()
                 .AddComposers()
                 //.AddAzureBlobMediaFileSystem()
@@ -76,21 +72,55 @@ namespace Ekom.Site
         /// </summary>
         /// <param name="app">The application builder.</param>
         /// <param name="env">The web hosting environment.</param>
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, IConfiguration config)
         {
             GlobalSettings.HttpContextAccessor = httpContextAccessor;
 
             app.UseRequestLocalization();
-            
-            app.UseVettvangurDefaults(
-                env,
-                _config,
-                new VettvangurBuilderConfig
-                {
-                    // SimpleCorsSetup = true,
-                });
 
-            //app.UseEkomValitorPay(_config);
+            if (env.IsProduction())
+            {
+                app.UseResponseCompression();
+            }
+
+            if (!env.IsProduction())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Error");
+                app.UseHsts();
+            }
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                context.Response.Headers.Add("X-Frame-Options", "sameorigin");
+                context.Response.Headers.Add("Referrer-Policy", "origin-when-cross-origin, strict-origin-when-cross-origin");
+                await next.Invoke();
+            });
+
+            app.UseUmbraco()
+                .WithMiddleware(u =>
+                {
+                    u.UseBackOffice();
+                    u.UseWebsite();
+
+                    app.UseCors(builder => builder
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+                    
+
+                })
+                .WithEndpoints(u =>
+                {
+                    u.UseInstallerEndpoints();
+                    u.UseBackOfficeEndpoints();
+                    u.UseWebsiteEndpoints();
+                });
         }
     }
 }
