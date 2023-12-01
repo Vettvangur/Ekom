@@ -5,6 +5,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using Ekom.Cache;
+using Ekom.Interfaces;
 
 namespace Ekom.Controllers
 {
@@ -94,10 +96,7 @@ namespace Ekom.Controllers
         [UmbracoUserAuthorize]
         public bool PopulateCache()
         {
-            foreach (var cacheEntry in _config.CacheList.Value)
-            {
-                cacheEntry.FillCache();
-            }
+            API.Store.Instance.RefreshCache();
 
             return true;
         }

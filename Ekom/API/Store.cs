@@ -1,8 +1,8 @@
+using Ekom.Cache;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
 
 namespace Ekom.API
@@ -17,24 +17,17 @@ namespace Ekom.API
         /// </summary>
         public static Store Instance => Configuration.Resolver.GetService<Store>();
 
-        readonly ILogger<Store> _logger;
         readonly IStoreService _storeSvc;
         readonly Configuration _config;
-        readonly INodeService _nodeService;
         /// <summary>
         /// ctor
         /// </summary>
         internal Store(
-            ILogger<Store> logger,
             IStoreService storeService,
-            Configuration config,
-            INodeService nodeService
-        )
+            Configuration config)
         {
             _storeSvc = storeService;
-            _logger = logger;
             _config = config;
-            _nodeService = nodeService;
         }
 
         /// <summary>
@@ -90,6 +83,16 @@ namespace Ekom.API
             {
                 cacheEntry.FillCache();
             }
+
+            var stockCache = _config.PerStoreStock
+                ? Configuration.Resolver.GetService<IPerStoreCache<StockData>>()
+                : Configuration.Resolver.GetService<IBaseCache<StockData>>()
+                    as ICache;
+
+            stockCache?.FillCache();
+
+            Configuration.Resolver.GetService<ICouponCache>()?
+                .FillCache();
         }
 
     }
