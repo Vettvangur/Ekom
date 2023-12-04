@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 
@@ -116,9 +117,18 @@ namespace Ekom.Services
             INodeService nodeService)
             : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache)
         {
-            _httpCtx = httpContextAccessor.HttpContext;
-            var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
-            _ekmRequest = r.Value as ContentRequest;
+
+            try
+            {
+                _httpCtx = httpContextAccessor.HttpContext;
+                var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
+                _ekmRequest = r.Value as ContentRequest;
+            }
+            catch
+            {
+                _logger.LogWarning("HttpContext is null trying to fetch umbrtmche-ekmRequest, likely running in Hangfire or similar.");
+            }
+
         }
 
         public Task<OrderInfo> GetOrderAsync(string storeAlias)
