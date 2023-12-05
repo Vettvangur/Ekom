@@ -80,74 +80,82 @@ namespace Ekom.App_Start
         {
             foreach (var content in e.SavedEntities)
             {
-                var alias = content.ContentType.Alias;
-
-                ClearMemoryCache(content);
-
-                try
+                if (content.ContentType.Alias.StartsWith("ekm"))
                 {
-                    if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant" || alias == "ekmProductDiscount" || alias == "ekmOrderDiscount")
-                    {
-                        UpdatePropertiesDefaultValues(content, alias, e);
-                    }
+                    var alias = content.ContentType.Alias;
 
-                    if (alias == "ekmProduct" || alias == "ekmProductVariant")
-                    {
-                        var stockValue = content.GetValue<string>("stock");
+                    ClearMemoryCache(content);
 
-                        if (!string.IsNullOrEmpty(stockValue))
+                    try
+                    {
+                        if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant" || alias == "ekmProductDiscount" || alias == "ekmOrderDiscount")
                         {
-                          
-                            var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
-
-                            if (stockArray != null)
-                            {
-                                foreach (var stockItem in stockArray)
-                                {
-                                    if (!string.IsNullOrEmpty(stockItem.StoreAlias))
-                                    {
-                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
-                                    }
-                                    else
-                                    {
-                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
-                                    }
-                                }
-                            }
-                            
+                            UpdatePropertiesDefaultValues(content, alias, e);
                         }
 
+                        if (alias == "ekmProduct" || alias == "ekmProductVariant")
+                        {
+                            var stockValue = content.GetValue<string>("stock");
+
+                            if (!string.IsNullOrEmpty(stockValue))
+                            {
+
+                                var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
+
+                                if (stockArray != null)
+                                {
+                                    foreach (var stockItem in stockArray)
+                                    {
+                                        if (!string.IsNullOrEmpty(stockItem.StoreAlias))
+                                        {
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
+                                        }
+                                        else
+                                        {
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
+                                        }
+                                    }
+                                }
+
+                            }
+
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"ContentService_Saving Failed for {content.Id}");
-                    throw;
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"ContentService_Saving Failed for {content.Id}");
+                        throw;
+                    }
                 }
             }
         }
 
         public void Handle(ContentPublishedNotification args)
         {
+
             foreach (var node in args.PublishedEntities)
             {
-                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
-
-                var parentNode = _nodeService.NodeById(node.Id);
-
-                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
-
-                // If slug changes on category then we need to update the cache for all descending products.
-                if (node.ContentType.Alias != "ekmCategory") continue;
-                
-                var dirty = (IRememberBeingDirty)node;
-                var slugHasChanged = dirty.WasPropertyDirty("slug");
-                var disabledChanged = dirty.WasPropertyDirty("disable");
-
-                if (slugHasChanged || disabledChanged)
+                if (node.ContentType.Alias.StartsWith("ekm"))
                 {
-                    RefreshCacheForDescendants(node.Id);
+                    var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+
+                    var parentNode = _nodeService.NodeById(node.ParentId);
+
+                    cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
+
+                    // If slug changes on category then we need to update the cache for all descending products.
+                    if (node.ContentType.Alias != "ekmCategory") continue;
+
+                    var dirty = (IRememberBeingDirty)node;
+                    var slugHasChanged = dirty.WasPropertyDirty("slug");
+                    var disabledChanged = dirty.WasPropertyDirty("disable");
+
+                    if (slugHasChanged || disabledChanged)
+                    {
+                        RefreshCacheForRelatedNodes(node.Id);
+                    }
                 }
+
 
             }
         }
@@ -159,13 +167,18 @@ namespace Ekom.App_Start
             {
                 var node = info.Entity;
 
-                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+                if (node.ContentType.Alias.StartsWith("ekm"))
+                {
+                    var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
-                cacheEntry?.Remove(node.Key);
+                    cacheEntry?.Remove(node.Key);
 
-                var parentNode = _nodeService.NodeById(node.Id);
+                    var parentNode = _nodeService.NodeById(node.Id);
 
-                cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
+                    cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
+                }
+
+
             }
         }
 
@@ -173,14 +186,16 @@ namespace Ekom.App_Start
         {
             foreach (var node in args.UnpublishedEntities)
             {
+                if (node.ContentType.Alias.StartsWith("ekm"))
+                {
+                    ClearMemoryCache(node);
 
-                ClearMemoryCache(node);
-                
-                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+                    var cacheEntry = FindMatchingCache(node.ContentType.Alias);
 
-                cacheEntry?.Remove(node.Key);
+                    cacheEntry?.Remove(node.Key);
 
-                RefreshCacheForDescendants(node.Id, true);
+                    RefreshCacheForRelatedNodes(node.Id, true);
+                }
             }
         }
 
@@ -188,15 +203,18 @@ namespace Ekom.App_Start
         {
             foreach (var node in args.DeletedEntities)
             {
-                ClearMemoryCache(node);
-                
-                var cacheEntry = FindMatchingCache(node.ContentType.Alias);
-
-                cacheEntry?.Remove(node.Key);
-
-                if (node.ContentType.Alias == "ekmOrderDiscount")
+                if (node.ContentType.Alias.StartsWith("ekm"))
                 {
-                    _couponRepository.DeleteCouponsByDiscountAsync(node.Key).Wait();
+                    ClearMemoryCache(node);
+
+                    var cacheEntry = FindMatchingCache(node.ContentType.Alias);
+
+                    cacheEntry?.Remove(node.Key);
+
+                    if (node.ContentType.Alias == "ekmOrderDiscount")
+                    {
+                        _couponRepository.DeleteCouponsByDiscountAsync(node.Key).Wait();
+                    }
                 }
             }
         }
@@ -205,9 +223,14 @@ namespace Ekom.App_Start
         {
             foreach (var node in args.MoveInfoCollection)
             {
-                var cacheEntry = FindMatchingCache(node.Entity.ContentType.Alias);
+                if (node.Entity.ContentType.Alias.StartsWith("ekm"))
+                {
+                    var cacheEntry = FindMatchingCache(node.Entity.ContentType.Alias);
 
-                cacheEntry?.Remove(node.Entity.Key);
+                    cacheEntry?.Remove(node.Entity.Key);
+                }
+
+
             }
         }
 
@@ -514,7 +537,7 @@ namespace Ekom.App_Start
             _runtimeCache.Clear("ekmLanguages");
         }
 
-        private void RefreshCacheForDescendants(int Id, bool remove = false)
+        private void RefreshCacheForRelatedNodes(int Id, bool remove = false)
         {
             using var cref = _context.EnsureUmbracoContext();
             
@@ -525,6 +548,7 @@ namespace Ekom.App_Start
             if (currentNode == null) return;
             
             var descendants = currentNode.Descendants();
+            var ancestors = currentNode.Ancestors().Where(x => x.ContentType.Alias.StartsWith("ekm"));
 
             foreach (var descendant in descendants)
             {
@@ -537,6 +561,21 @@ namespace Ekom.App_Start
                 else
                 {
                     cacheEntryForDesc?.AddReplace(new Umbraco10Content(descendant));
+                }
+
+            }
+
+            foreach (var ancestor in ancestors)
+            {
+                var cacheEntryForDesc = FindMatchingCache(ancestor.ContentType.Alias);
+
+                if (remove)
+                {
+                    cacheEntryForDesc?.Remove(ancestor.Key);
+                }
+                else
+                {
+                    cacheEntryForDesc?.AddReplace(new Umbraco10Content(ancestor));
                 }
 
             }
