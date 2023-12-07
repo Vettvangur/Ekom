@@ -12,19 +12,15 @@ namespace Ekom.Umb.Sections
             get
             {
                 var accessRulesAliases = Configuration.Instance.SectionAccessRules;
-
-
-                var rules = new IAccessRule[]
+                var rules = new[]
                 {
                     new AccessRule {Type = AccessRuleType.Grant, Value = Constants.Security.AdminGroupAlias}
                 };
 
                 foreach (var accessRule in accessRulesAliases)
                 {
-                    rules.Append(new AccessRule
-                        { Type = AccessRuleType.Grant, Value = accessRule });
+                    rules = rules.Concat(new[] { new AccessRule { Type = AccessRuleType.Grant, Value = accessRule } }).ToArray();
                 }
-
 
                 return rules;
             }
