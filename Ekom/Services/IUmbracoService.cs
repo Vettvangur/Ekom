@@ -1,7 +1,5 @@
 using Ekom.Models;
 using Ekom.Models.Umbraco;
-using System;
-using System.Collections.Generic;
 
 namespace Ekom.Services
 {

@@ -1,11 +1,8 @@
-using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Diagnostics;
-using System.Linq;
 
 
 namespace Ekom.Cache
@@ -34,26 +31,34 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            var domains = umbracoService.GetDomains().ToList();
-
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
-
-            if (domains.Any())
+            try
             {
-                foreach (var d in domains)
+                var domains = umbracoService.GetDomains().ToList();
+
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
+
+                if (domains.Any())
                 {
-                    AddOrReplaceFromCache(d.Key, d);
+                    foreach (var d in domains)
+                    {
+                        AddOrReplaceFromCache(d.Key, d);
+                    }
                 }
+
+                _logger.LogInformation(
+                    "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
+                    domains.Count,
+                    stopwatch.Elapsed
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "StoreDomainCache: Error filling cache");
             }
 
-            _logger.LogInformation(
-                "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
-                domains.Count,
-                stopwatch.Elapsed
-            );
         }
 
         /// <inheritdoc />

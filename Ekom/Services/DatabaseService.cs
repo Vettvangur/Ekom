@@ -1,25 +1,26 @@
 using Ekom.Models;
 using LinqToDB;
 using LinqToDB.Data;
-using LinqToDB.SchemaProvider;
-using System.CodeDom.Compiler;
-using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Ekom.Services
 {
     internal class DatabaseService
     {
         readonly DatabaseFactory _databaseFactory;
-        public DatabaseService(DatabaseFactory databaseFactory)
+        readonly ILogger<DatabaseService> _logger;
+        public DatabaseService(DatabaseFactory databaseFactory, ILogger<DatabaseService> logger)
         {
             _databaseFactory = databaseFactory;
+            _logger = logger;
         }
 
         internal virtual void CreateTables()
         {
-
-            using (var db = _databaseFactory.GetDatabase())
+            try
             {
+                using var db = _databaseFactory.GetDatabase();
+
                 var sp = db.DataProvider.GetSchemaProvider();
 
                 var dbSchema = sp.GetSchema(db);
@@ -47,12 +48,17 @@ namespace Ekom.Services
                 {
                     db.CreateTable<CouponData>();
                 }
-               
+
                 if (!dbSchema.Tables.Any(x => x.TableName == Configuration.DiscountStockTableName))
                 {
                     db.CreateTable<DiscountStockData>();
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create tables");
+            }
+
         }
     }
 }

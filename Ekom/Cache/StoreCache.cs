@@ -1,12 +1,7 @@
 using Ekom.Interfaces;
 using Ekom.Models;
-using Ekom.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ekom.Cache
 {
@@ -31,8 +26,8 @@ namespace Ekom.Cache
         /// </summary>
         public override void FillCache()
         {
-            //try
-            //{
+            try
+            {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -64,11 +59,11 @@ namespace Ekom.Cache
                     count,
                     stopwatch.Elapsed);
 
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "Failed to build store Cache");
-            //}
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to build store Cache");
+            }
 
         }
 
