@@ -133,6 +133,25 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Ekom:SectionAccessRules Access Rules
+        /// Section Group alias acess rules, comma sepereated
+        /// </summary>
+        public virtual string[] SectionAccessRules
+        {
+            get
+            {
+                var value = _configuration["Ekom:SectionAccessRules"];
+
+                if (!string.IsNullOrEmpty(value))
+                {
+                    return value.Split(',');
+                }
+
+                return new string[] { };
+            }
+        }
+
+        /// <summary>
         /// Ekom:CategoryRootLevel
         /// Umbraco level value. Minimum level value for categories in umbraco hierarchy.
         /// </summary>

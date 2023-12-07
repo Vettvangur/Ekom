@@ -11,11 +11,21 @@ namespace Ekom.Umb.Sections
         {
             get
             {
+                var accessRulesAliases = Configuration.Instance.SectionAccessRules;
+
+
                 var rules = new IAccessRule[]
                 {
-                    new AccessRule {Type = AccessRuleType.Grant, Value = Constants.Security.EditorGroupAlias},
                     new AccessRule {Type = AccessRuleType.Grant, Value = Constants.Security.AdminGroupAlias}
                 };
+
+                foreach (var accessRule in accessRulesAliases)
+                {
+                    rules.Append(new AccessRule
+                        { Type = AccessRuleType.Grant, Value = accessRule });
+                }
+
+
                 return rules;
             }
         }
