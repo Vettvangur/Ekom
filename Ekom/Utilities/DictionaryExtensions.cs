@@ -11,7 +11,7 @@ namespace Ekom.Utilities
         [Obsolete("Use GetValue instead")]
         public static string GetPropertyValue(this Dictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            return GetBasePropertyValue(properties, propertyAlias, alias);
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties, propertyAlias, alias));
         }
 
         /// <summary>
