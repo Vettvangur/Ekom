@@ -368,15 +368,19 @@ namespace Ekom.Utilities
                         }
                     }
 
-                    if (currencyPrices.Any(x => x.Currency == currency))
+                    if (storeAlias == store.Alias)
                     {
-                        currencyPrices.FirstOrDefault(x => x.Currency == currency).Price = price;
+                        if (currencyPrices.Any(x => x.Currency == currency))
+                        {
+                            currencyPrices.FirstOrDefault(x => x.Currency == currency).Price = price;
 
+                        }
+                        else
+                        {
+                            currencyPrices.Add(new CurrencyPrice(price, currency));
+                        }
                     }
-                    else
-                    {
-                        currencyPrices.Add(new CurrencyPrice(price, currency));
-                    }
+
 
                     currencyPriceRoot.Add(store.Alias, currencyPrices);
                 }
