@@ -285,7 +285,7 @@ namespace Ekom.Utilities
         /// <param name="storeAlias">Store alias</param>
         /// <param name="currency">Currency (is-IS, en-US)</param>
         /// <param name="price">Price as decimal</param>
-        public static void SetPrice2(this IContent content, string storeAlias, string currency, decimal price)
+        public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
         {
             if (content == null)
             {
@@ -386,58 +386,6 @@ namespace Ekom.Utilities
                 }
 
                 content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
-            }
-
-        }
-
-        /// <summary>
-        /// Set price on ekom product or variant
-        /// </summary>
-        /// <param name="content">IContent</param>
-        /// <param name="storeAlias">Store alias</param>
-        /// <param name="currency">Currency (is-IS, en-US)</param>
-        /// <param name="price">Price as decimal</param>
-        public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
-        {
-            if (content == null)
-            {
-                throw new ArgumentNullException(nameof(content));
-            }
-
-            if (content.HasProperty("price"))
-            {
-
-                var fieldValue = content.GetValue<string>("price");
-
-                var currencyPrices = new List<CurrencyPrice>();
-
-                if (!string.IsNullOrEmpty(fieldValue))
-                {
-                    try
-                    {
-                        var jsonCurrencyValue = fieldValue.GetEkomPropertyEditorValue(storeAlias);
-
-                        currencyPrices = jsonCurrencyValue.GetCurrencyPrices();
-
-                    }
-                    catch
-                    {
-
-                    }
-                }
-
-                if (currencyPrices.Any(x => x.Currency == currency))
-                {
-                    currencyPrices.FirstOrDefault(x => x.Currency == currency).Price = price;
-
-                }
-                else
-                {
-                    currencyPrices.Add(new CurrencyPrice(price, currency));
-                }
-
-
-                content.SetProperty("price", storeAlias, currencyPrices);
             }
 
         }

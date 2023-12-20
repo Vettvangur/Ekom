@@ -71,20 +71,6 @@ namespace Ekom.Site.Controllers
 
         [HttpGet]
         [IgnoreAntiforgeryToken]
-        public async Task<string> UpdatePrice()
-        {
-
-            var content = Services.ContentService.GetById(1167);
-
-            content.SetPrice2("Store", "en-US", 585);
-
-            Services.ContentService.SaveAndPublish(content);
-            return "Success";
-
-        }
-
-        [HttpGet]
-        [IgnoreAntiforgeryToken]
         public async Task<ActionResult> Logout()
         {
             try
