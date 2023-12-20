@@ -282,7 +282,7 @@ namespace Ekom.Models
 
                 var currencyValues = priceJson.GetCurrencyValues();
 
-                var value = currencyValues.Any() ? currencyValues.FirstOrDefault()?.Value : 0;
+                var value = currencyValues.Any() ? currencyValues.FirstOrDefault().Value : 0;
 
                 return new Price(value, Store.Currency, Store.Vat, true);
             }
