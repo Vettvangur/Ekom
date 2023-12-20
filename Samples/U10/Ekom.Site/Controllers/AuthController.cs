@@ -1,4 +1,5 @@
 using Ekom.Site.Models;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Win32;
@@ -67,7 +68,21 @@ namespace Ekom.Site.Controllers
                 return RedirectToCurrentUmbracoPage(QueryString.Create("error", "servererror"));
             }
         }
-        
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<string> UpdatePrice()
+        {
+
+            var content = Services.ContentService.GetById(1167);
+
+            content.SetPrice2("Store", "en-US", 585);
+
+            Services.ContentService.SaveAndPublish(content);
+            return "Success";
+
+        }
+
         [HttpGet]
         [IgnoreAntiforgeryToken]
         public async Task<ActionResult> Logout()

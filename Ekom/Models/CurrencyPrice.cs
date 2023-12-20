@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Ekom.Models
 {
     public class CurrencyPrice
@@ -16,5 +10,9 @@ namespace Ekom.Models
 
         public string Currency { get; set; }
         public decimal Price { get; set; }
+    }
+
+    public class CurrencyPriceRoot : Dictionary<string, List<CurrencyPrice>>
+    {
     }
 }

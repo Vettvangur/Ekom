@@ -285,8 +285,121 @@ namespace Ekom.Utilities
         /// <param name="storeAlias">Store alias</param>
         /// <param name="currency">Currency (is-IS, en-US)</param>
         /// <param name="price">Price as decimal</param>
+        public static void SetPrice2(this IContent content, string storeAlias, string currency, decimal price)
+        {
+            if (content == null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
+            if (content.HasProperty("price"))
+            {
+
+                var fieldValue = content.GetValue<string>("price");
+
+                CurrencyPrice priceObject = null;
+                CurrencyPriceRoot currencyPriceRoot = new CurrencyPriceRoot();
+
+                try
+                {
+                    currencyPriceRoot = string.IsNullOrEmpty(fieldValue) ? currencyPriceRoot : JsonConvert.DeserializeObject<CurrencyPriceRoot>(fieldValue);
+                    if (currencyPriceRoot.ContainsKey(storeAlias))
+                    {
+                        var storeItems = currencyPriceRoot[storeAlias];
+
+                        // Ensure the storeItems list is not null and has elements
+                        if (storeItems.Any())
+                        {
+                            // Find the first item with the specified currency
+                            priceObject = storeItems.FirstOrDefault(z => z.Currency == currency);
+
+                            if (priceObject != null)
+                            {
+                                priceObject.Price = price;
+                            }
+                            else
+                            {
+                                storeItems.Add(new CurrencyPrice(price, currency));
+                            }
+                        }
+                        else
+                        {
+                            storeItems.Add(new CurrencyPrice(price, currency));
+                        }
+                    }
+                    else
+                    {
+                        currencyPriceRoot.Add(storeAlias,
+                            new List<CurrencyPrice>()
+                            {
+                                new(price, currency)
+                            });
+                    }
+
+                    content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+
+                    return;
+
+                }
+                catch
+                {
+
+                }
+
+                // Fallback
+                var stores = API.Store.Instance.GetAllStores();
+
+                foreach (var store in stores)
+                {
+                    var currencyPrices = new List<CurrencyPrice>();
+
+                    if (!string.IsNullOrEmpty(fieldValue))
+                    {
+                        try
+                        {
+                            var jsonCurrencyValue = fieldValue.GetEkomPropertyEditorValue(storeAlias);
+
+                            currencyPrices = jsonCurrencyValue.GetCurrencyPrices();
+
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+
+                    if (currencyPrices.Any(x => x.Currency == currency))
+                    {
+                        currencyPrices.FirstOrDefault(x => x.Currency == currency).Price = price;
+
+                    }
+                    else
+                    {
+                        currencyPrices.Add(new CurrencyPrice(price, currency));
+                    }
+
+                    currencyPriceRoot.Add(store.Alias, currencyPrices);
+                }
+
+                content.SetValue("price", JsonConvert.SerializeObject(currencyPriceRoot));
+            }
+
+        }
+
+        /// <summary>
+        /// Set price on ekom product or variant
+        /// </summary>
+        /// <param name="content">IContent</param>
+        /// <param name="storeAlias">Store alias</param>
+        /// <param name="currency">Currency (is-IS, en-US)</param>
+        /// <param name="price">Price as decimal</param>
         public static void SetPrice(this IContent content, string storeAlias, string currency, decimal price)
         {
+            if (content == null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
             if (content.HasProperty("price"))
             {
 
@@ -318,6 +431,7 @@ namespace Ekom.Utilities
                 {
                     currencyPrices.Add(new CurrencyPrice(price, currency));
                 }
+
 
                 content.SetProperty("price", storeAlias, currencyPrices);
             }
