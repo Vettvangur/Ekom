@@ -77,9 +77,7 @@ namespace Ekom.Models
         {
             get
             {
-                var paths = Path.Split(',');
-
-                int id = Convert.ToInt32(paths[paths.Length - 3]);
+                int id = Convert.ToInt32(PathArray[PathArray.Length - 3]);
 
                 return id;
             }
@@ -199,9 +197,7 @@ namespace Ekom.Models
         /// </summary>
         public List<ICategory> Categories()
         {
-            var paths = Path.Split(',');
-
-            int categoryId = Convert.ToInt32(paths[paths.Length - 4]);
+            int categoryId = Convert.ToInt32(PathArray[PathArray.Length - 4]);
 
             var categoryField = Properties.Any(x => x.Key == "categories") ?
                                 GetValue("categories") : "";

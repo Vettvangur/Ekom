@@ -13,29 +13,18 @@ namespace Ekom.Models
     public abstract class NodeEntity : INodeEntity
     {
         /// <summary>
-        /// 
+        /// Node Title
         /// </summary>
         public virtual string Title => Properties["nodeName"];
 
         /// <summary>
-        /// 
+        /// Node Id
         /// </summary>
-        public virtual int Id
-        {
-            get
-            {
-                if (int.TryParse(GetValue("id"), out int _value))
-                {
-                    return _value;
-                }
-
-                return 0;
-            }
-        }
+        public int Id { get; set; }
 
 
         /// <summary>
-        /// 
+        /// Node Parent Id
         /// </summary>
         public virtual int ParentId
         {
@@ -49,7 +38,10 @@ namespace Ekom.Models
                 return 0;
             }
         }
-
+        
+        /// <summary>
+        /// Node Parent Guid Key
+        /// </summary>
         public virtual Guid ParentKey
         {
             get
@@ -64,7 +56,7 @@ namespace Ekom.Models
         }
 
         /// <summary>
-        /// 
+        /// Node Guid Key
         /// </summary>
         public virtual Guid Key
         {
@@ -137,7 +129,13 @@ namespace Ekom.Models
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
-        public virtual string Path => Properties.GetPropertyValue("__Path");
+        public string Path { get; set;  }
+        
+        /// <summary>
+        /// Array of node id's describing hierarchy from left to right leading up to node.
+        /// </summary>
+        public string[] PathArray { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -179,12 +177,16 @@ namespace Ekom.Models
         protected NodeEntity() { }
 
         /// <summary>
-        /// Construct Node from Examine item
+        /// Construct Node
         /// </summary>
         /// <param name="item"></param>
         protected NodeEntity(UmbracoContent content)
         {
             _properties = content.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            Id = (int.TryParse(GetValue("id"), out int _value)) ? _value : 0;
+            Path = content.Path;
+            PathArray = !string.IsNullOrEmpty(content.Path) ? content.Path.Split(',') : new string[] { };
         }
 
         /// <summary>

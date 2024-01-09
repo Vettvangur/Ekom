@@ -16,7 +16,6 @@ namespace Ekom.Models
     {
         private IPerStoreCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreCache<ICategory>>();
         private IPerStoreCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreCache<IProduct>>();
-        private IMetafieldService _metafieldService => Configuration.Resolver.GetService<IMetafieldService>();
 
         /// <summary>
         /// Short spaceless descriptive title used to create URLs
@@ -84,7 +83,7 @@ namespace Ekom.Models
             {
                 return _categoryCache.Cache[Store.Alias]
                                     .Where(x => x.Value.Level > Level &&
-                                                x.Value.Path.Split(',').Contains(Id.ToString()))
+                                                x.Value.PathArray.Contains(Id.ToString()))
                                     .Select(x => x.Value)
                                     .OrderBy(x => x.SortOrder);
             }
@@ -103,17 +102,24 @@ namespace Ekom.Models
             return new ProductResponse(products, query);
         }
 
+
         /// <summary>
         /// All descendant products of category, this includes child products of sub-categories
         /// </summary>
         public ProductResponse ProductsRecursive(ProductQuery query = null)
         {
+            var categories = _categoryCache.Cache[Store.Alias]
+                .Where(x => x.Value.Level >= Level &&
+                            x.Value.PathArray.Contains(Id.ToString()))
+                .Select(x => x.Value)
+                .ToList(); // ToList for better performance in the next query
 
-            var products = _categoryCache.Cache[Store.Alias]
-                                    .Where(x => x.Value.Level >= Level &&
-                                                x.Value.Path.Split(',').Contains(Id.ToString()))
-                                    .Select(x => x.Value)
-                                    .SelectMany(x => x.Products().Products).DistinctBy(x => x.Id);
+            var categoryIds = new HashSet<int>(categories.Select(c => c.Id));
+
+            var products = _productCache.Cache[Store.Alias]
+                .Where(x => x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
+                .Select(x => x.Value)
+                .AsEnumerable();
 
             return new ProductResponse(products, query);
         }
@@ -126,7 +132,7 @@ namespace Ekom.Models
         {
             var list = new List<ICategory>();
 
-            foreach (var id in Path.Split(','))
+            foreach (var id in PathArray)
             {
                 if (int.TryParse(id, out int categoryId))
                 {

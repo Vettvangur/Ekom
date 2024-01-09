@@ -430,7 +430,7 @@ namespace Ekom.Models
         private void PopulateCategoryAncestors()
         {
 
-            foreach (var p in Path.Split(',').Skip(2))
+            foreach (var p in PathArray.Skip(2))
             {
                 if (int.TryParse(p, out int id))
                 {

@@ -19,7 +19,7 @@ namespace Ekom.Models
         /// <value>
         /// The unique identifier.
         /// </value>
-        int Id { get; }
+        int Id { get; set; }
 
         /// <summary>
         /// Gets the unique key identifier.
@@ -91,7 +91,15 @@ namespace Ekom.Models
         /// <value>
         /// The path.
         /// </value>
-        string Path { get; }
+        string Path { get; set; }
+
+        /// <summary>
+        /// Path for the node as array
+        /// </summary>
+        /// <value>
+        /// The path.
+        /// </value>
+        string[] PathArray { get; set; }
 
         /// <summary>
         /// Get value in properties by store or languge
