@@ -55,7 +55,9 @@ namespace Ekom.Models
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        public IProduct Product
+        [JsonIgnore]
+        [XmlIgnore]
+        public virtual IProduct Product
         {
             get
             {
@@ -195,7 +197,7 @@ namespace Ekom.Models
         /// All categories variant belongs to, includes parent category.
         /// Does not include categories product is an indirect child of.
         /// </summary>
-        public List<ICategory> Categories()
+        public virtual List<ICategory> Categories()
         {
             int categoryId = Convert.ToInt32(PathArray[PathArray.Length - 4]);
 
