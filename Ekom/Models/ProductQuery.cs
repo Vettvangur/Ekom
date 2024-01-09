@@ -5,10 +5,13 @@ namespace Ekom.Models
 {
     public class ProductQuery : ProductQueryBase
     {
+        private const string FilterPrefix = "filter_";
+        private const string PropertyPrefix = "property_";
+
         public ProductQuery()
         {
-            
         }
+
         public ProductQuery(IQueryCollection query)
         {
             if (query == null)
@@ -16,28 +19,33 @@ namespace Ekom.Models
                 return;
             }
 
-            MetaFilters = MetaFilters == null || !MetaFilters.Any() ? 
-                query.Where(x => x.Key.StartsWith("filter_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("filter_", "", StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) 
-                : 
-                MetaFilters;
-            
-            PropertyFilters = PropertyFilters == null || !PropertyFilters.Any() ?  query.Where(x => x.Key.StartsWith("property_", StringComparison.InvariantCultureIgnoreCase) && x.Value.All(v => !string.IsNullOrEmpty(v))).ToDictionary(x => x.Key.Replace("property_", "",  StringComparison.InvariantCultureIgnoreCase), x => x.Value.ToList()) : PropertyFilters;
+            MetaFilters = MetaFilters ?? ExtractFilters(query, FilterPrefix);
+            PropertyFilters = PropertyFilters ?? ExtractFilters(query, PropertyPrefix);
 
-            SearchQuery = string.IsNullOrEmpty(SearchQuery) ? query.ContainsKey("q") ? query["q"] : "" : SearchQuery;
+            SearchQuery = !string.IsNullOrEmpty(SearchQuery) ?
+                SearchQuery :
+                (query.TryGetValue("q", out var sq) ? sq.FirstOrDefault() : string.Empty);
 
-            int page = int.TryParse(query["page"], out page) ? page : 1;
 
-            Page = Page.HasValue ? Page : page;
+            Page = Page ?? (int.TryParse(query["page"], out int page) ? page : 1);
 
-            if (query.ContainsKey("orderby"))
+            if (query.TryGetValue("orderby", out var orderByValue) &&
+                Enum.TryParse(orderByValue, true, out OrderBy orderBy))
             {
-                if (Enum.TryParse(typeof(OrderBy), query.FirstOrDefault(x => x.Key == "orderby").Value, true, out var result))
-                {
-                    OrderBy = (OrderBy)result;
-                }
+                OrderBy = orderBy;
             }
         }
-        
+
+        private static Dictionary<string, List<string>> ExtractFilters(IQueryCollection query, string prefix)
+        {
+            return query
+                .Where(x => x.Key.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase) &&
+                            x.Value.All(v => !string.IsNullOrEmpty(v)))
+                .ToDictionary(
+                    x => x.Key.Replace(prefix, "", StringComparison.InvariantCultureIgnoreCase),
+                    x => x.Value.ToList());
+        }
+
         public Dictionary<string, List<string>> MetaFilters { get; set; }
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
         public OrderBy OrderBy { get; set; } = OrderBy.TitleAsc;
