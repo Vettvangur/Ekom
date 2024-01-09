@@ -14,9 +14,12 @@ namespace Ekom.Models
     public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         private readonly string storeAlias;
+
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public IProduct Product => Catalog.Instance.GetProduct(storeAlias, ParentKey);
 
         /// <summary>
