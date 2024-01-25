@@ -111,7 +111,7 @@
 
             $scope.model.value.type = "Store";
 
-            ekmResources.getStores().then(function (stores) {
+            ekmResources.getStoresByNode($rootScope.$id).then(function (stores) {
 
               $scope.loading = false;
 

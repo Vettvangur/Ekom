@@ -26,6 +26,12 @@ angular.module('umbraco.resources').factory('Ekom.Resources',
           'Failed to retrieve languages'
         );
       },
+      getStoresByNode: function (id) {
+        return umbRequestHelper.resourcePromise(
+          $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Stores/" + id),
+          'Failed to retrieve stores'
+        );
+      },
       getStores: function () {
         return umbRequestHelper.resourcePromise(
           $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + "Stores"),

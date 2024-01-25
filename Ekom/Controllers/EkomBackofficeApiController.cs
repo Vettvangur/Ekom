@@ -4,9 +4,8 @@ using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using System.Net;
-using Ekom.Cache;
-using Ekom.Interfaces;
 
 namespace Ekom.Controllers
 {
@@ -25,18 +24,21 @@ namespace Ekom.Controllers
     [Route("ekom/backoffice")]
     public class EkomBackofficeApiController : ControllerBase
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService)
+        private readonly Configuration _config;
+        private readonly IUmbracoService _umbracoService;
+        private readonly IMetafieldService _metafieldService;
+        private readonly INodeService _nodeService;
+        private readonly IMemoryCache _memoryCache;
+
+        public EkomBackofficeApiController(Configuration config, IUmbracoService umbracoService, IMetafieldService metafieldService, INodeService nodeService, IMemoryCache memoryCache)
         {
             _config = config;
             _umbracoService = umbracoService;
             _metafieldService = metafieldService;
+            _nodeService = nodeService;
+            _memoryCache = memoryCache;
         }
-        readonly Configuration _config;
-        readonly IUmbracoService _umbracoService;
-        readonly IMetafieldService _metafieldService;
+
 
         [HttpGet]
         [Route("GetNonEkomDataTypes")]
@@ -79,12 +81,35 @@ namespace Ekom.Controllers
         [HttpGet]
         [Route("Stores")]
         [UmbracoUserAuthorize]
-        [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-        public IEnumerable<object> GetStores()
+        public async Task<IEnumerable<IStore>> GetAllStores()
         {
-            var stores = API.Store.Instance.GetAllStores();
+            return await _memoryCache.GetOrCreateAsync("AllStores", async cacheEntry =>
+            {
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
+                return API.Store.Instance.GetAllStores().ToList();
+            });
+        }
 
-            return stores;
+
+        [HttpGet]
+        [Route("Stores/{id}")]
+        [UmbracoUserAuthorize]
+        public async Task<IEnumerable<IStore>> GetStores([FromRoute] int id)
+        {
+            return await _memoryCache.GetOrCreateAsync($"Stores_{id}", async cacheEntry =>
+            {
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
+
+                var stores = API.Store.Instance.GetAllStores().ToList();
+                var node = _nodeService.NodeById(id);
+
+                if (node != null)
+                {
+                    stores = stores.Where(store => !node.IsItemDisabled(store)).ToList();
+                }
+
+                return stores;
+            });
         }
 
         /// <summary>

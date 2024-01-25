@@ -49,7 +49,7 @@ namespace Ekom.Utilities
         }
 
         /// <summary>
-        /// Determine if an examine item is disabled/unpublished <para />
+        /// Determine if an node is disabled/unpublished <para />
         /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
         /// </summary>
         /// <param name="searchResult"></param>
