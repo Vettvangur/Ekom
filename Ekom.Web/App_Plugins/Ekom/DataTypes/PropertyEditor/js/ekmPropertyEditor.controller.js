@@ -111,7 +111,7 @@
 
             $scope.model.value.type = "Store";
 
-            ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
+            ekmResources.getStoresByNode($scope.model.alias === 'disable' ? '1' : $routeParams.id).then(function (stores) {
 
               $scope.loading = false;
 
@@ -151,7 +151,7 @@
           localStorageService.set('ekomCurrentTab', tab.value);
           $rootScope.$broadcast("ekomSync");
         }
-        
+
       }
 
       $scope.$on("formSubmitting", function (ev, args) {
@@ -339,7 +339,7 @@ angular.module("umbraco.directives").directive('ekomProperty',
                 var model = {
                   title: titleInput.value,
                   slug: "",
-                  alias: scope.model.alias.replace('title','slug')
+                  alias: scope.model.alias.replace('title', 'slug')
                 };
 
                 let inputValue = titleInput.value;
@@ -368,7 +368,7 @@ angular.module("umbraco.directives").directive('ekomProperty',
 
         }
 
-      },500);
+      }, 500);
 
       scope.$on('$destroy', function () {
         unsubscribe();

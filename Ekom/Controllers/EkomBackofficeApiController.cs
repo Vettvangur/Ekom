@@ -85,8 +85,8 @@ namespace Ekom.Controllers
         {
             return await _memoryCache.GetOrCreateAsync("AllStores", async cacheEntry =>
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
-                return API.Store.Instance.GetAllStores().ToList();
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                return API.Store.Instance.GetAllStores();
             });
         }
 
@@ -98,14 +98,14 @@ namespace Ekom.Controllers
         {
             return await _memoryCache.GetOrCreateAsync($"Stores_{id}", async cacheEntry =>
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
 
-                var stores = API.Store.Instance.GetAllStores().ToList();
+                var stores = API.Store.Instance.GetAllStores();
                 var node = _nodeService.NodeById(id);
 
                 if (node != null)
                 {
-                    stores = stores.Where(store => !node.IsItemDisabled(store)).ToList();
+                    stores = stores.Where(store => !node.IsItemDisabled(store));
                 }
 
                 return stores;

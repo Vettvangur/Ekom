@@ -111,7 +111,7 @@
 
             $scope.model.value.type = "Store";
 
-            ekmResources.getStoresByNode($routeParams.id).then(function (stores) {
+            ekmResources.getStoresByNode($scope.model.alias === 'disable' ? '1' : $routeParams.id).then(function (stores) {
 
               $scope.loading = false;
 
