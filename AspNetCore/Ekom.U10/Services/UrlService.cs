@@ -90,6 +90,18 @@ namespace Ekom.Umb.Services
 
                     foreach (var category in categories)
                     {
+                        var virtualUrl = false;
+
+                        if (category.Properties.TryGetValue("ekmVirtualUrl", out string _virtualUrl))
+                        {
+                            virtualUrl = _virtualUrl.IsBoolean();
+                        }
+
+                        if (virtualUrl)
+                        {
+                            continue;
+                        }
+                        
                         var categorySlug = category.GetValue("slug", store.Alias);
 
                         if (!string.IsNullOrWhiteSpace(categorySlug))
