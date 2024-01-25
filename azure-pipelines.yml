@@ -26,6 +26,12 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+- task: UseDotNet@2
+  displayName: Use DotNet $(dotNetVersion)
+  inputs:
+    packageType: 'sdk'
+    version: '$(dotNetVersion)'
+    performMultiLevelLookup: true
 - task: NuGetToolInstaller@1
   inputs:
     versionSpec: '6.x'
@@ -41,13 +47,6 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     clean: true
-
-- task: UseDotNet@2
-  displayName: Use DotNet $(dotNetVersion)
-  inputs:
-    packageType: 'sdk'
-    version: '$(dotNetVersion)'
-    performMultiLevelLookup: true
 
 - task: DotNetCoreCLI@2
   inputs:
