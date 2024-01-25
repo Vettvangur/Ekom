@@ -26,26 +26,20 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- task: NuGetToolInstaller@1
-  inputs:
-    versionSpec: '6.x'
-
-- task: NuGetCommand@2
-  inputs:
-    command: 'restore'
-    restoreSolution: '$(solution)'
-
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-    clean: true
-
 - task: UseDotNet@2
+  displayName: Use DotNet $(dotNetVersion)
   inputs:
     packageType: 'sdk'
-    version: '6.0.x'
+    version: '$(dotNetVersion)'
+    performMultiLevelLookup: true
+
+- task: DotNetCoreCLI@2
+  displayName: dotnet restore
+  inputs:
+    command: 'restore'
+    projects: '*.sln'
+    feedsToUse: 'select'
+    vstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
 
 - task: DotNetCoreCLI@2
   inputs:
