@@ -43,9 +43,11 @@ steps:
     clean: true
 
 - task: UseDotNet@2
+  displayName: Use DotNet $(dotNetVersion)
   inputs:
     packageType: 'sdk'
-    version: '7.0.x'
+    version: '$(dotNetVersion)'
+    performMultiLevelLookup: true
 
 - task: DotNetCoreCLI@2
   inputs:
