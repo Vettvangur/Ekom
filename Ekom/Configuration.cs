@@ -98,6 +98,20 @@ namespace Ekom
         }
 
         /// <summary>
+        /// Ekom:AbsoluteUrls
+        /// This will set all backoffice urls to absolute to work better with multi site setup
+        /// </summary>
+        public virtual bool AbsoluteUrls
+        {
+            get
+            {
+                var value = _configuration["Ekom:AbsoluteUrls"];
+
+                return value.ConvertToBool();
+            }
+        }
+
+        /// <summary>
         /// Ekom:BasketCookieLifetime
         /// Set how many days the order cookie should live, Default 1 day
         /// </summary>

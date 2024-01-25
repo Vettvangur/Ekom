@@ -1,8 +1,8 @@
 using Ekom.Models;
 using Ekom.Utilities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Linq;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
@@ -15,13 +15,15 @@ namespace Ekom.Umb
     {
         readonly ILogger<CatalogUrlProvider> _logger;
         readonly IAppCache _reqCache;
-        readonly IUmbracoContextAccessor _umbracoContextAccessor;
+        readonly IUmbracoContextAccessor _umbracoContextAccessor; 
+        readonly IConfiguration _configuration;
 
-        public CatalogUrlProvider(ILogger<CatalogUrlProvider> logger, AppCaches appCaches, IUmbracoContextAccessor umbracoContextAccessor)
+        public CatalogUrlProvider(ILogger<CatalogUrlProvider> logger, AppCaches appCaches, IUmbracoContextAccessor umbracoContextAccessor, IConfiguration configuration)
         {
             _logger = logger;
             _reqCache = appCaches.RequestCache;
             _umbracoContextAccessor = umbracoContextAccessor;
+            _configuration = configuration;
         }
 
         public UrlInfo GetUrl(IPublishedContent content, UrlMode mode, string culture, Uri current)
@@ -78,6 +80,8 @@ namespace Ekom.Umb
                             return Enumerable.Empty<UrlInfo>();
                         }
 
+                        var absoluteUrls = _configuration["Ekom:AbsoluteUrls"].IsBoolean();
+                            
                         var urls = new HashSet<UrlInfo>();
                         foreach (var store in stores)
                         {
@@ -89,7 +93,7 @@ namespace Ekom.Umb
 
                                 if (node != null)
                                 {
-                                    PopulateUrls(node, store, urls);
+                                    PopulateUrls(node, store, urls, current, absoluteUrls);
                                 }
                             }
                             catch (Exception ex)
@@ -106,20 +110,25 @@ namespace Ekom.Umb
 
         }
 
-        private void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls)
+        private void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls, Uri current, bool absoluteUrls)
         {
             var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
+
+            var distinctDomains = absoluteUrls ? store.Domains : store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName));
             
             if (slugValue?.Type == PropertyEditorType.Language)
             {
-                var distinctDomains = store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName));
-                
+
                 foreach (var domain in distinctDomains.Select((value, i) => new { value, i }))
                 {
 
-                    var url = node.Urls.ElementAtOrDefault(domain.i);
-                    if (url != null)
+                    var url = node.UrlsWithContext.FirstOrDefault(x =>
+                        x.Culture == domain.value.LanguageIsoCode && x.Domain == domain.value.DomainName)?.Url;
+                    
+                    if (!string.IsNullOrEmpty(url))
                     {
+                        url = UrlModifier(url, absoluteUrls, current, domain.value);
+                        
                         urls.Add(new UrlInfo(url, true, domain.value.LanguageIsoCode));
                     }
                 }
@@ -128,9 +137,31 @@ namespace Ekom.Umb
             {
                 foreach (var url in node.Urls)
                 {
-                    urls.Add(new UrlInfo(url, true, store.Title));
+                    foreach (var domain in store.Domains)
+                    {
+                        urls.Add(new UrlInfo(UrlModifier(url, absoluteUrls, current, domain), true, store.Title));
+                    }
+
                 }
             }
+        }
+
+        private string UrlModifier(string url, bool absoluteUrls, Uri current, UmbracoDomain domain)
+        {
+            if (absoluteUrls && !domain.DomainName.StartsWith("/"))
+            {
+                var domainName = domain.DomainName;
+
+                int slashIndex = domainName.IndexOf('/');
+                if (slashIndex != -1)
+                {
+                    domainName = domainName.Substring(0, slashIndex);
+                }
+
+                return current.Scheme + "://" + domainName + url;
+            }
+
+            return !url.StartsWith("/") ? "/" + url : url;
         }
     }
 }

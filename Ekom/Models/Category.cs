@@ -4,6 +4,7 @@ using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
+using Ekom.Models.Umbraco;
 
 
 namespace Ekom.Models
@@ -12,7 +13,7 @@ namespace Ekom.Models
     /// Categories are groupings of products, categories can also be nested, f.x.
     /// Women->Winter->Shirts
     /// </summary>
-    public class Category : PerStoreNodeEntity, IPerStoreNodeEntity, ICategory
+    public class Category : PerStoreNodeEntity, ICategory
     {
         private IPerStoreCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreCache<ICategory>>();
         private IPerStoreCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreCache<IProduct>>();
@@ -30,7 +31,7 @@ namespace Ekom.Models
         /// <summary>
         /// All category Urls with context, computed from stores
         /// </summary>
-        public Dictionary<string,string> UrlsWithContext { get; set; }
+        public List<UmbracoUrl> UrlsWithContext { get; set; }
 
         /// <summary>
         /// Our eldest ancestor category
@@ -169,10 +170,10 @@ namespace Ekom.Models
             var urlSvc = Configuration.Resolver.GetService<IUrlService>();
             var nodeSvc = Configuration.Resolver.GetService<INodeService>();
 
-            var urls = urlSvc.BuildCategoryUrls(nodeSvc.GetAllCatalogAncestors(item), store); ;
+            var urls = urlSvc.BuildCategoryUrls(nodeSvc.GetAllCatalogAncestors(item), store);
 
             UrlsWithContext = urls;
-            Urls = urls.Select(x => x.Value);
+            Urls = urls.Select(x => x.Url);
         }
     }
 }

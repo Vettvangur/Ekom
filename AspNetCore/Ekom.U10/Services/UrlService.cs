@@ -1,4 +1,5 @@
 using Ekom.Models;
+using Ekom.Models.Umbraco;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
@@ -36,15 +37,15 @@ namespace Ekom.Umb.Services
         /// <param name="items">All categories in hierarchy inclusive</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
-        public Dictionary<string,string> BuildCategoryUrls(IEnumerable<UmbracoContent> categories, IStore store)
+        public List<UmbracoUrl> BuildCategoryUrls(IEnumerable<UmbracoContent> categories, IStore store)
         {
-            var urls = new Dictionary<string, string>();
+            var urls = new List<UmbracoUrl>();
 
             var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
 
             if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
             {
-                foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
+                foreach (var domain in store.Domains)
                 {
                     var domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
                     
@@ -52,10 +53,19 @@ namespace Ekom.Umb.Services
                     
                     foreach (var category in categories)
                     {
-                        string slug = "";
-                        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(category.GetValue("slug"));
+                        var virtualUrl = false;
 
-                        slug = category.GetValue("slug", domain.LanguageIsoCode);
+                        if (category.Properties.TryGetValue("ekmVirtualUrl", out string _virtualUrl))
+                        {
+                            virtualUrl = _virtualUrl.IsBoolean();
+                        }
+
+                        if (virtualUrl)
+                        {
+                            continue;
+                        }
+
+                        var slug = category.GetValue("slug", domain.LanguageIsoCode);
 
                         if (!string.IsNullOrWhiteSpace(slug))
                             builder.Append(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
@@ -63,26 +73,43 @@ namespace Ekom.Umb.Services
 
                     var url = builder.ToString().AddTrailing().ToLower();
 
-                    urls.Add(domain.LanguageIsoCode, url);
+                    urls.Add(new UmbracoUrl()
+                    {
+                        Culture = domain.LanguageIsoCode,
+                        Store = store.Alias,
+                        Url = url,
+                        Domain = domain.DomainName
+                    });
                 }
             }
             else
             {
-                var builder = new StringBuilder("/");
-
-                foreach (var category in categories)
+                foreach (var domain in store.Domains)
                 {
-                    var categorySlug = category.GetValue("slug", store.Alias);
+                    var builder = new StringBuilder("/");
 
-                    if (!string.IsNullOrWhiteSpace(categorySlug))
+                    foreach (var category in categories)
                     {
-                        builder.Append(categorySlug.ToUrlSegment(_shortStringHelper).AddTrailing());
+                        var categorySlug = category.GetValue("slug", store.Alias);
+
+                        if (!string.IsNullOrWhiteSpace(categorySlug))
+                        {
+                            builder.Append(categorySlug.ToUrlSegment(_shortStringHelper).AddTrailing());
+                        }
                     }
+
+                    var url = builder.ToString().AddTrailing().ToLower();
+
+                    urls.Add(new UmbracoUrl()
+                    {
+                        Culture = domain.LanguageIsoCode,
+                        Store = store.Alias,
+                        Url = url,
+                        Domain = domain.DomainName
+                    });
                 }
 
-                var url = builder.ToString().AddTrailing().ToLower();
 
-                urls.Add(store.Alias, url);
             }
 
             return urls;
@@ -187,7 +214,7 @@ namespace Ekom.Umb.Services
             return urls /*.OrderBy(x => x.Length) */;
         }
 
-        public Dictionary<string,string> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
+        public List<UmbracoUrl> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
         {
             var slug = item.GetValue("slug");
 
@@ -198,17 +225,15 @@ namespace Ekom.Umb.Services
 
             var slugValue = JsonConvert.DeserializeObject<PropertyValue>(slug);
 
-            var urls = new Dictionary<string, string>();
+            var urls = new List<UmbracoUrl>();
 
             var categoryUrls = categories.SelectMany(x => x.UrlsWithContext);
 
             if (slugValue != null && slugValue.Type == PropertyEditorType.Language && store.Domains.Any())
             {
-                foreach (var domain in store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName)).ToList())
+                foreach (var domain in store.Domains.ToList())
                 {
-                    string domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
-
-                    var categoryUrl = categoryUrls.FirstOrDefault(x => x.Key == domain.LanguageIsoCode).Value;
+                    var categoryUrl = categoryUrls.FirstOrDefault(x => x.Culture == domain.LanguageIsoCode)?.Url;
 
                     if (categoryUrl != null)
                     {
@@ -218,7 +243,13 @@ namespace Ekom.Umb.Services
 
                         var url = categoryUrl + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
 
-                        urls.Add(domain.LanguageIsoCode, url);
+                        urls.Add(new UmbracoUrl()
+                        {
+                            Culture =domain.LanguageIsoCode,
+                            Store = store.Alias,
+                            Url = url,
+                            Domain = domain.DomainName
+                        });
                     }
                 }
             }
@@ -229,9 +260,19 @@ namespace Ekom.Umb.Services
                 {
                     foreach (var categoryUrl in category.Urls)
                     {
-                        var url = categoryUrl + item.GetValue("slug", store.Alias).ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+                        foreach (var domain in store.Domains)
+                        {
+                            var url = categoryUrl + item.GetValue("slug", store.Alias).ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
 
-                        urls.Add(store.Alias, url);
+                            urls.Add(new UmbracoUrl()
+                            {
+                                Culture = domain.LanguageIsoCode,
+                                Store = store.Alias,
+                                Url = url,
+                                Domain = domain.DomainName
+                            });
+                        }
+
                     }
                 }
             }
@@ -311,12 +352,9 @@ namespace Ekom.Umb.Services
                     .ToLower()
                     .AddTrailing();
 
-
-                var findUrlByDomainOrStore = node.UrlsWithContext.FirstOrDefault(x => x.Key == culture);
-
-                if (node.UrlsWithContext.ContainsKey(culture))
+                if (node.UrlsWithContext.Any(x => x.Culture == culture))
                 {
-                    return node.UrlsWithContext.FirstOrDefault(x => x.Key == culture).Value;
+                    return node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
                 }
 
                 var findUrlByPrefix = node.Urls

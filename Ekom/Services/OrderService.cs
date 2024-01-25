@@ -113,8 +113,7 @@ namespace Ekom.Services
             IMemoryCache memoryCache,
             IMemberService memberService,
             DiscountCache discountCache,
-            IHttpContextAccessor httpContextAccessor,
-            INodeService nodeService)
+            IHttpContextAccessor httpContextAccessor)
             : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache)
         {
 
@@ -122,7 +121,11 @@ namespace Ekom.Services
             {
                 _httpCtx = httpContextAccessor.HttpContext;
                 var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
-                _ekmRequest = r.Value as ContentRequest;
+
+                if (r != null && r.Value != null)
+                {
+                    _ekmRequest = r.Value as ContentRequest;
+                }
             }
             catch
             {

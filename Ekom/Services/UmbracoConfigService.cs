@@ -42,7 +42,8 @@ namespace Ekom.Services
 
     //            if (settingsFile.Root != null)
     //            {
-    //                var webRouting = settingsFile.Root.DescendantsAndSelf("web.routing").Single();
+    //                var
+    // = settingsFile.Root.DescendantsAndSelf("web.routing").Single();
 
     //                if (webRouting != null)
     //                {

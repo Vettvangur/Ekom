@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
+using Ekom.Models.Umbraco;
 
 namespace Ekom.Models
 {
@@ -224,7 +225,7 @@ namespace Ekom.Models
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
-        public virtual Dictionary<string,string> UrlsWithContext { get; internal set; }
+        public virtual List<UmbracoUrl> UrlsWithContext { get; internal set; }
 
         /// <summary>
         /// Get Price by current store currency
@@ -388,7 +389,7 @@ namespace Ekom.Models
             var urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
 
             UrlsWithContext = urls;
-            Urls = urls.Select(x => x.Value);
+            Urls = urls.Select(x => x.Url).ToList();
 
             if (!Urls.Any() || string.IsNullOrEmpty(GetValue("title")))
             {

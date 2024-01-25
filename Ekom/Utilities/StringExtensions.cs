@@ -64,16 +64,15 @@ namespace Ekom.Utilities
                    || input.StartsWith("[") && input.EndsWith("]");
         }
 
-        internal static bool IsBoolean(this string value)
+        internal static bool IsBoolean(this string? value)
         {
-            if (value == "1" || value == "y" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(value) && (value == "1" || value == "y" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase)))
             {
                 return true;
             }
-            else
-            {
-                return false;
-            }
+   
+            return false;
+            
         }
         // Maybe this should return T and not force String
         internal static string GetEkomPropertyEditorValue(this string value, string alias)

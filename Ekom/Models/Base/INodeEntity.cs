@@ -1,3 +1,4 @@
+using Ekom.Models.Umbraco;
 using Newtonsoft.Json;
 
 namespace Ekom.Models
@@ -127,7 +128,7 @@ namespace Ekom.Models
         /// <summary>
         /// All entity urls, computed from stores and possibly categories.
         /// </summary>
-        Dictionary<string,string> UrlsWithContext { get; }
+        List<UmbracoUrl> UrlsWithContext { get; }
 
         /// <summary>
         /// Product url in relation to current request.

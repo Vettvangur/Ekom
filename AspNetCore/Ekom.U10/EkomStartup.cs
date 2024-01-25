@@ -15,6 +15,7 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Web.BackOffice.Trees;
+using Umbraco.Extensions;
 
 namespace Ekom.Umb;
 
