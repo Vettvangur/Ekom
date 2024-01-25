@@ -32,14 +32,14 @@ steps:
     packageType: 'sdk'
     version: '$(dotNetVersion)'
     performMultiLevelLookup: true
-- task: NuGetToolInstaller@1
-  inputs:
-    versionSpec: '6.x'
 
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
+  displayName: dotnet restore
   inputs:
     command: 'restore'
-    restoreSolution: '$(solution)'
+    projects: '*.sln'
+    feedsToUse: 'select'
+    vstsFeed: '2ec80bf7-377e-42e0-9fcd-fe6b6fd9660f'
 
 - task: VSBuild@1
   inputs:
