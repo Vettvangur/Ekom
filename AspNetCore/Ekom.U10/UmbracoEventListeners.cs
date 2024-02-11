@@ -565,19 +565,11 @@ namespace Ekom.App_Start
 
             }
 
-            foreach (var ancestor in ancestors)
+            foreach (var ancestor in ancestors.Where(x => x.ContentType.Alias is "ekmCategory" or "ekmProduct"))
             {
                 var cacheEntryForDesc = FindMatchingCache(ancestor.ContentType.Alias);
 
-                if (remove)
-                {
-                    cacheEntryForDesc?.Remove(ancestor.Key);
-                }
-                else
-                {
-                    cacheEntryForDesc?.AddReplace(new Umbraco10Content(ancestor));
-                }
-
+                cacheEntryForDesc?.AddReplace(new Umbraco10Content(ancestor));
             }
         }
         
