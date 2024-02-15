@@ -77,9 +77,9 @@ namespace Ekom.API
         /// Get product by SKU using store from ekmRequest
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProduct(string sku)
+        public IProduct GetProduct(string sku, string storeAlias = null)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -95,9 +95,10 @@ namespace Ekom.API
         /// Get product by Guid using store from ekmRequest
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProduct(Guid Key)
+        public IProduct GetProduct(Guid Key, string storeAlias = null)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
 
             if (store != null)
             {
@@ -124,39 +125,11 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get product by SKU from specific store
-        /// </summary>
-        public IProduct GetProduct(string storeAlias, string sku)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-
-            if (string.IsNullOrEmpty(sku))
-            {
-                throw new ArgumentException(nameof(sku));
-            }
-
-            if (!_productCache.Cache.ContainsKey(storeAlias))
-            {
-                return null;
-            }
-
-            if (_productCache.Cache[storeAlias].Any(x => x.Value.SKU == sku))
-            {
-                return _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.SKU == sku).Value;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Get product by id using store from ekmRequest
         /// </summary>
-        public IProduct GetProduct(int Id)
+        public IProduct GetProduct(int Id, string storeAlias = null)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -191,7 +164,7 @@ namespace Ekom.API
         /// </summary>
         public ProductResponse GetAllProducts(ProductQuery query = null)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -233,12 +206,7 @@ namespace Ekom.API
                 throw new ArgumentNullException(nameof(query));
             }
 
-            var store = _storeSvc.GetStoreFromCache();
-
-            if (store == null && !string.IsNullOrEmpty(query.StoreAlias))
-            {
-                store = _storeSvc.GetStoreByAlias(query.StoreAlias);
-            }
+            var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -289,7 +257,7 @@ namespace Ekom.API
                 throw new ArgumentNullException(nameof(query));
             }
 
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
             
             if (store != null)
             {
@@ -360,20 +328,44 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get category by string id using store from ekmRequest
+        /// Get category by string id 
         /// </summary>
-        public ICategory GetCategory(string Id)
+        public ICategory GetCategory(string Id, string storeAlias = null)
         {
             if (Id == null)
             {
                 throw new ArgumentNullException(nameof(Id));
             }
 
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                return GetCategory(store.Alias, Id);
+
+                if (string.IsNullOrEmpty(storeAlias))
+                {
+                    throw new ArgumentException(nameof(storeAlias));
+                }
+
+                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                {
+                    return null;
+                }
+
+                if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
+                {
+                    return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == guid).Value;
+                }
+
+                if (Guid.TryParse(Id, out Guid _guid))
+                {
+                    return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == _guid).Value;
+                }
+
+                if (int.TryParse(Id, out int id))
+                {
+                    return GetCategory(storeAlias, id);
+                }
 
             }
 
@@ -381,7 +373,7 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Gets the category by id.
+        /// Gets the category by int id.
         /// </summary>
         /// <param name="storeAlias">The store alias.</param>
         /// <param name="Id">The identifier.</param>
@@ -400,113 +392,49 @@ namespace Ekom.API
             return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
-        /// <summary>
-        /// Gets the category by key or id.
-        /// </summary>
-        /// <param name="storeAlias">The store alias.</param>
-        /// <param name="Id">The identifier.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException">Id</exception>
-        /// <exception cref="ArgumentException">storeAlias</exception>
-        public ICategory GetCategory(string storeAlias, string Id)
+        public IEnumerable<ICategory> GetRootCategories(string storeAlias = null)
         {
-            if (Id == null)
-            {
-                throw new ArgumentNullException(nameof(Id));
-            }
-
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-            
-            if (!_categoryCache.Cache.ContainsKey(storeAlias))
-            {
-                return null;
-            }
-
-            if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
-            {
-                return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == guid).Value;
-            }
-
-            if (Guid.TryParse(Id, out Guid _guid))
-            {
-                return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == _guid).Value;
-            }
-
-            if (int.TryParse(Id, out int id))
-            {
-                return GetCategory(storeAlias, id);
-            }
-
-            return null;
-        }
-
-        public IEnumerable<ICategory> GetRootCategories()
-        {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                var categories = GetRootCategories(store.Alias);
 
-                return categories;
+                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                {
+                    return null;
+                }
+
+                return _categoryCache.Cache[storeAlias]
+                    .Where(x => x.Value.Level == _config.CategoryRootLevel)
+                    .Select(x => x.Value)
+                    .OrderBy(x => x.SortOrder);
             }
 
             return Enumerable.Empty<ICategory>();
         }
 
-        public IEnumerable<ICategory> GetRootCategories(string storeAlias)
+        public IEnumerable<ICategory> GetAllCategories(string storeAlias = null)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-            if (!_categoryCache.Cache.ContainsKey(storeAlias))
-            {
-                return null;
-            }
-            return _categoryCache.Cache[storeAlias]
-                .Where(x => x.Value.Level == _config.CategoryRootLevel)
-                .Select(x => x.Value)
-                .OrderBy(x => x.SortOrder);
-        }
-
-        public IEnumerable<ICategory> GetAllCategories()
-        {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                var categories = GetAllCategories(store.Alias);
+                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                {
+                    return null;
+                }
 
-                return categories;
+                return _categoryCache.Cache[storeAlias]
+                                    .Select(x => x.Value)
+                                    .OrderBy(x => x.SortOrder);
             }
 
             return Enumerable.Empty<ICategory>();
         }
 
-        public IEnumerable<ICategory> GetAllCategories(string storeAlias)
+        public IVariant GetVariant(Guid Id, string storeAlias = null)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-            
-            if (!_categoryCache.Cache.ContainsKey(storeAlias))
-            {
-                return null;
-            }
-
-            return _categoryCache.Cache[storeAlias]
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder);
-        }
-
-        public IVariant GetVariant(Guid Id)
-        {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -519,41 +447,29 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get variant by SKU using store from ekmRequest
+        /// Get variant by SKU
         /// </summary>
         /// <returns></returns>
-        public IVariant GetVariant(string sku)
+        public IVariant GetVariant(string sku, string storeAlias = null)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                var variant = GetVariant(store.Alias, sku);
+                if (string.IsNullOrEmpty(storeAlias))
+                {
+                    throw new ArgumentException(nameof(storeAlias));
+                }
 
-                return variant;
-            }
+                if (string.IsNullOrEmpty(sku))
+                {
+                    throw new ArgumentException(nameof(sku));
+                }
 
-            return null;
-        }
-
-        /// <summary>
-        /// Get variant by SKU from specific store
-        /// </summary>
-        public IVariant GetVariant(string storeAlias, string sku)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-
-            if (string.IsNullOrEmpty(sku))
-            {
-                throw new ArgumentException(nameof(sku));
-            }
-
-            if (_variantCache.Cache[storeAlias].Any(x => x.Value.SKU == sku))
-            {
-                return _variantCache.Cache[storeAlias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+                if (_variantCache.Cache[storeAlias].Any(x => x.Value.SKU == sku))
+                {
+                    return _variantCache.Cache[storeAlias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+                }
             }
 
             return null;
@@ -628,9 +544,9 @@ namespace Ekom.API
         /// <summary>
         /// Get Related Products
         /// </summary>
-        public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4, string storeAlias = null)
         {            
-            var product = GetProduct(productId);
+            var product = GetProduct(productId, storeAlias);
 
             if (product == null)
             {
@@ -643,9 +559,9 @@ namespace Ekom.API
         /// <summary>
         /// Get Related Products By Sku
         /// </summary>
-        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4, string storeAlias = null)
         {
-            var product = GetProduct(sku);
+            var product = GetProduct(sku, storeAlias);
 
             if (product == null)
             {
@@ -683,6 +599,7 @@ namespace Ekom.API
             productQuery.MetaFilters = req.MetaFilters;
             productQuery.PropertyFilters = req.PropertyFilters;
             productQuery.OrderBy = req.OrderBy;
+            productQuery.StoreAlias = req.StoreAlias;
             
             var products = GetProductsByIds(productQuery);
 

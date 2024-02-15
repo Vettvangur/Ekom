@@ -33,11 +33,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("product/{id:Guid}")]
-        public IProduct GetProduct(Guid Id)
+        public IProduct GetProduct(Guid Id, string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetProduct(Id);
+                return API.Catalog.Instance.GetProduct(Id, storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -52,11 +52,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("product/{id:Int}")]
-        public IProduct GetProduct(int Id)
+        public IProduct GetProduct(int Id, string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetProduct(Id);
+                return API.Catalog.Instance.GetProduct(Id, storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -71,11 +71,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("product/sku/{sku}")]
-        public IProduct GetProduct(string sku)
+        public IProduct GetProduct(string sku, string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetProduct(sku);
+                return API.Catalog.Instance.GetProduct(sku, storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -94,7 +94,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(categoryId);
+                var category = API.Catalog.Instance.GetCategory(query?.StoreAlias, categoryId);
 
                 return category.Products(query);
             }
@@ -153,7 +153,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(categoryId);
+                var category = API.Catalog.Instance.GetCategory(query?.StoreAlias, categoryId);
 
                 if (category == null)
                 {
@@ -175,11 +175,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("category/{id:Int}")]
-        public ICategory GetCategory(int Id)
+        public ICategory GetCategory(int Id, string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetCategory(Id);
+                return API.Catalog.Instance.GetCategory(storeAlias, Id);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -191,14 +191,15 @@ namespace Ekom.Controllers
         /// Get Category By Id
         /// </summary>
         /// <param name="Id">Int Id of category</param>
+        /// <param name="storeAlias">Store Alias</param>
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("category/{id:Guid}")]
-        public ICategory GetCategory(Guid Id)
+        public ICategory GetCategory(Guid Id, string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetCategory(Id.ToString());
+                return API.Catalog.Instance.GetCategory(Id.ToString(), storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -212,11 +213,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("rootcategories")]
-        public IEnumerable<ICategory> GetRootCategories()
+        public IEnumerable<ICategory> GetRootCategories(string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetRootCategories();
+                return API.Catalog.Instance.GetRootCategories(storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -230,11 +231,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("allcategories")]
-        public IEnumerable<ICategory> GetAllCategories()
+        public IEnumerable<ICategory> GetAllCategories(string? storeAlias = null)
         {
             try
             {
-                return API.Catalog.Instance.GetAllCategories();
+                return API.Catalog.Instance.GetAllCategories(storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -248,11 +249,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("subcategories/{id:Int}")]
-        public IEnumerable<ICategory> GetSubCategories(int id)
+        public IEnumerable<ICategory> GetSubCategories(int id, string? storeAlias = null)
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(id);
+                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
 
                 return category.SubCategories;
             }
@@ -269,12 +270,12 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("subcategoriesrecursive/{id:Int}")]
-        public IEnumerable<ICategory> GetSubCategoriesRecurisve(int id)
+        public IEnumerable<ICategory> GetSubCategoriesRecurisve(int id, string? storeAlias = null)
         {
             try
             {
 
-                var category = API.Catalog.Instance.GetCategory(id);
+                var category = API.Catalog.Instance.GetCategory(storeAlias,id);
 
                 return category.SubCategoriesRecursive;
             }
@@ -291,11 +292,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("categoryfilters/{id:Int}")]
-        public IEnumerable<MetafieldGrouped> GetCategoryFilters(int id)
+        public IEnumerable<MetafieldGrouped> GetCategoryFilters(int id, string? storeAlias = null)
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(id);
+                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
 
                 return category.Filters();
             }
@@ -312,11 +313,11 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("relatedproducts/{id:Guid}/{count:Int}")]
-        public IEnumerable<IProduct> GetRelatedProducts(Guid id, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProducts(Guid id, int count = 4, string? storeAlias = null)
         {
             try
             {
-                var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+                var products = API.Catalog.Instance.GetRelatedProducts(id, count, storeAlias);
 
                 return products;
             }
@@ -332,7 +333,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("relatedproducts")]
-        public IEnumerable<IProduct> GetRelatedProducts(IEnumerable<Guid> ids, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProducts(IEnumerable<Guid> ids, int count = 4, string? storeAlias = null)
         {
             try
             {
@@ -340,7 +341,7 @@ namespace Ekom.Controllers
 
                 foreach (Guid id in ids)
                 {
-                    var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+                    var products = API.Catalog.Instance.GetRelatedProducts(id, count, storeAlias);
                     relatedProducts.AddRange(products);
                 }
 
@@ -358,11 +359,11 @@ namespace Ekom.Controllers
         /// <returns></returns>a
         [HttpPost, HttpGet]
         [Route("relatedproductsbysku/{sku}/{count:Int}")]
-        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4, string? storeAlias = null)
         {
             try
             {
-                var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+                var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count, storeAlias);
 
                 return products;
             }
@@ -378,7 +379,7 @@ namespace Ekom.Controllers
         /// <returns></returns>
         [HttpPost, HttpGet]
         [Route("relatedproductsbyskus")]
-        public IEnumerable<IProduct> GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4)
+        public IEnumerable<IProduct> GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4, string? storeAlias = null)
         {
             try
             {
@@ -386,7 +387,7 @@ namespace Ekom.Controllers
 
                 foreach (var sku in skus)
                 {
-                    var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+                    var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count, storeAlias);
                     relatedProducts.AddRange(products);
                 }
 

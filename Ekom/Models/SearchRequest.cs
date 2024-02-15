@@ -10,6 +10,7 @@ namespace Ekom.Models
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
         public OrderBy OrderBy { get; set; } = OrderBy.NoOrder;
         public string ExamineIndex { get; set; }
+        public string StoreAlias { get; set; }
     }
 
     public class EkomSearchField
