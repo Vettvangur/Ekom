@@ -155,6 +155,11 @@ namespace Ekom.Controllers
             {
                 var category = API.Catalog.Instance.GetCategory(categoryId);
 
+                if (category == null)
+                {
+                    throw new ArgumentNullException(nameof(category));
+                }
+
                 return category.ProductsRecursive(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))

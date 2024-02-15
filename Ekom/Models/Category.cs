@@ -118,7 +118,7 @@ namespace Ekom.Models
             var categoryIds = new HashSet<int>(categories.Select(c => c.Id));
 
             var products = _productCache.Cache[Store.Alias]
-                .Where(x => x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
+                .Where(x => x.Value.Categories != null && x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
                 .Select(x => x.Value)
                 .AsEnumerable();
 
