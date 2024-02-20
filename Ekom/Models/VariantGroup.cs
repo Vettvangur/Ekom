@@ -20,7 +20,7 @@ namespace Ekom.Models
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
-        public IProduct Product => Catalog.Instance.GetProduct(storeAlias, ParentKey);
+        public IProduct Product => Catalog.Instance.GetProduct(ParentKey, storeAlias);
 
         /// <summary>
         /// 

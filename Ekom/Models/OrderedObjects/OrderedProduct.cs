@@ -168,7 +168,7 @@ namespace Ekom.Models
 
                     foreach (var id in guids.Where(x => x != Key).Take(count))
                     {
-                        var product = Catalog.Instance.GetProduct(StoreInfo.Alias, id);
+                        var product = Catalog.Instance.GetProduct(id, StoreInfo.Alias);
 
                         if (product != null && product.Key != id)
                         {

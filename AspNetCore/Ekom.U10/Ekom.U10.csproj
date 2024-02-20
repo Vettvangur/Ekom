@@ -53,6 +53,7 @@
     <ItemGroup>
         <PackageReference Include="Ekom.Payments.U10" Version="0.1.7" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Umbraco.Cms.Api.Common" Version="12.3.6" />
         <PackageReference Include="Umbraco.Cms.Core" Version="12.3.6" />
         <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="12.3.6" />
         <PackageReference Include="Umbraco.Cms.Web.Website" Version="12.3.6" />

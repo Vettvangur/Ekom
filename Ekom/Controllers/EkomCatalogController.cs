@@ -84,6 +84,26 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Get Product By Route
+        /// </summary>
+        /// <param name="route">Route</param>
+        /// <param name="storeAlias">Store Alias</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("product/route")]
+        public IProduct GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetProductByRoute(route, storeAlias);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
         /// Get Child Products Of A Category
         /// </summary>
         /// <param name="categoryId">Id of category</param>
@@ -200,6 +220,26 @@ namespace Ekom.Controllers
             try
             {
                 return API.Catalog.Instance.GetCategory(Id.ToString(), storeAlias);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Category By Route
+        /// </summary>
+        /// <param name="route">Route</param>
+        /// <param name="storeAlias">Store Alias</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("category/route")]
+        public ICategory GetCategoryByRoute([FromQuery] string route, [FromQuery] string? storeAlias = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetCategoryByRoute(route, storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {

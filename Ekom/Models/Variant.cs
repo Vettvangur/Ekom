@@ -61,7 +61,7 @@ namespace Ekom.Models
         {
             get
             {
-                var product = Catalog.Instance.GetProduct(Store.Alias, ProductId);
+                var product = Catalog.Instance.GetProduct(ProductId, Store.Alias);
 
                 if (product == null)
                 {

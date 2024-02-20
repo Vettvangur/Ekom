@@ -1,6 +1,7 @@
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,16 +75,25 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get product by SKU using store from ekmRequest
+        /// Get product by Route
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProduct(string sku, string storeAlias = null)
+        public IProduct GetProductByRoute(string route, string storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                var product = GetProduct(store.Alias, sku);
+                if (string.IsNullOrEmpty(route))
+                {
+                    throw new ArgumentException(nameof(route));
+                }
+
+                if (!_productCache.Cache.ContainsKey(store.Alias))
+                {
+                    return null;
+                }
+                var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Urls.Contains(route)).Value;
 
                 return product;
             }
@@ -92,7 +102,36 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get product by Guid using store from ekmRequest
+        /// Get product by SKU
+        /// </summary>
+        /// <returns></returns>
+        public IProduct GetProduct(string sku, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                if (string.IsNullOrEmpty(sku))
+                {
+                    throw new ArgumentException(nameof(sku));
+                }
+
+                if (!_productCache.Cache.ContainsKey(store.Alias))
+                {
+                    return null;
+                }
+
+                if (_productCache.Cache[store.Alias].Any(x => x.Value.SKU == sku))
+                {
+                    return _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get product by Guid
         /// </summary>
         /// <returns></returns>
         public IProduct GetProduct(Guid Key, string storeAlias = null)
@@ -102,26 +141,22 @@ namespace Ekom.API
 
             if (store != null)
             {
-                var product = GetProduct(store.Alias, Key);
-
-                return product;
+                return _productCache.Cache[store.Alias].TryGetValue(Key, out var prod) ? prod : null;
             }
 
             return null;
         }
 
-        /// <summary>
-        /// Get product by Guid from specific store
-        /// </summary>
-        public IProduct GetProduct(string storeAlias, Guid Id)
+        [Obsolete]
+        public IProduct GetProduct(string storeAlias, Guid Key)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
+            return GetProduct(Key, storeAlias);
+        }
 
-            _productCache.Cache[storeAlias].TryGetValue(Id, out var prod);
-            return prod;
+        [Obsolete]
+        public IProduct GetProduct(string storeAlias, int id)
+        {
+            return GetProduct(id, storeAlias);
         }
 
         /// <summary>
@@ -133,30 +168,17 @@ namespace Ekom.API
 
             if (store != null)
             {
-                var product = GetProduct(store.Alias, Id);
+                if (!_productCache.Cache.ContainsKey(store.Alias))
+                {
+                    return null;
+                }
+
+                var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
 
                 return product;
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Get product by id from specific store
-        /// </summary>
-        public IProduct GetProduct(string storeAlias, int Id)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-
-            if (!_productCache.Cache.ContainsKey(storeAlias))
-            {
-                return null;
-            }
-
-            return _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
         }
 
         /// <summary>
@@ -311,24 +333,7 @@ namespace Ekom.API
         }
 
         /// <summary>
-        /// Get category by id using store from ekmRequest
-        /// </summary>
-        public ICategory GetCategory(int Id)
-        {
-            var store = _storeSvc.GetStoreFromCache();
-
-            if (store != null)
-            {
-                var category = GetCategory(store.Alias, Id);
-
-                return category;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Get category by string id 
+        /// Get category by string id, supports udi, guid and int 
         /// </summary>
         public ICategory GetCategory(string Id, string storeAlias = null)
         {
@@ -342,31 +347,25 @@ namespace Ekom.API
             if (store != null)
             {
 
-                if (string.IsNullOrEmpty(storeAlias))
-                {
-                    throw new ArgumentException(nameof(storeAlias));
-                }
-
-                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                if (!_categoryCache.Cache.ContainsKey(store.Alias))
                 {
                     return null;
                 }
 
                 if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
                 {
-                    return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == guid).Value;
+                    return GetCategory(guid, store.Alias);
                 }
 
                 if (Guid.TryParse(Id, out Guid _guid))
                 {
-                    return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Key == _guid).Value;
+                    return GetCategory(_guid, store.Alias);
                 }
 
                 if (int.TryParse(Id, out int id))
                 {
-                    return GetCategory(storeAlias, id);
+                    return GetCategory(id, store.Alias);
                 }
-
             }
 
             return null;
@@ -375,21 +374,45 @@ namespace Ekom.API
         /// <summary>
         /// Gets the category by int id.
         /// </summary>
-        /// <param name="storeAlias">The store alias.</param>
         /// <param name="Id">The identifier.</param>
+        /// <param name="storeAlias">The store alias.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
-        public ICategory GetCategory(string storeAlias, int Id)
+        public ICategory GetCategory(int Id, string storeAlias = null)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-            if (!_categoryCache.Cache.ContainsKey(storeAlias))
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (!_categoryCache.Cache.ContainsKey(store.Alias))
             {
                 return null;
             }
-            return _categoryCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == Id).Value;
+
+            return _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+        }
+
+        /// <summary>
+        /// Gets the category by guid id.
+        /// </summary>
+        /// <param name="Id">The identifier.</param>
+        /// <param name="storeAlias">The store alias.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">storeAlias</exception>
+        public ICategory GetCategory(Guid Id, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (!_categoryCache.Cache.ContainsKey(store.Alias))
+            {
+                return null;
+            }
+
+            return _categoryCache.Cache[store.Alias].TryGetValue(Id, out var cat) ? cat : null;
+        }
+
+        [Obsolete]
+        public ICategory GetCategory(string storeAlias, int id)
+        {
+            return GetCategory(id, storeAlias);
         }
 
         public IEnumerable<ICategory> GetRootCategories(string storeAlias = null)
@@ -399,12 +422,12 @@ namespace Ekom.API
             if (store != null)
             {
 
-                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                if (!_categoryCache.Cache.ContainsKey(store.Alias))
                 {
                     return null;
                 }
 
-                return _categoryCache.Cache[storeAlias]
+                return _categoryCache.Cache[store.Alias]
                     .Where(x => x.Value.Level == _config.CategoryRootLevel)
                     .Select(x => x.Value)
                     .OrderBy(x => x.SortOrder);
@@ -413,18 +436,46 @@ namespace Ekom.API
             return Enumerable.Empty<ICategory>();
         }
 
+        /// <summary>
+        /// Get category by Route
+        /// </summary>
+        /// <returns></returns>
+        public ICategory GetCategoryByRoute(string route, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                if (string.IsNullOrEmpty(route))
+                {
+                    throw new ArgumentException(nameof(route));
+                }
+
+                if (!_categoryCache.Cache.ContainsKey(store.Alias))
+                {
+                    return null;
+                }
+
+                var category = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Urls.Contains(route)).Value;
+
+                return category;
+            }
+
+            return null;
+        }
+
         public IEnumerable<ICategory> GetAllCategories(string storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                if (!_categoryCache.Cache.ContainsKey(storeAlias))
+                if (!_categoryCache.Cache.ContainsKey(store.Alias))
                 {
                     return null;
                 }
 
-                return _categoryCache.Cache[storeAlias]
+                return _categoryCache.Cache[store.Alias]
                                     .Select(x => x.Value)
                                     .OrderBy(x => x.SortOrder);
             }
@@ -438,9 +489,10 @@ namespace Ekom.API
 
             if (store != null)
             {
-                var variant = GetVariant(store.Alias, Id);
-
-                return variant;
+                if (_variantCache.Cache[storeAlias].TryGetValue(Id, out var val))
+                {
+                    return val;
+                }
             }
 
             return null;
@@ -456,9 +508,9 @@ namespace Ekom.API
 
             if (store != null)
             {
-                if (string.IsNullOrEmpty(storeAlias))
+                if (string.IsNullOrEmpty(store.Alias))
                 {
-                    throw new ArgumentException(nameof(storeAlias));
+                    throw new ArgumentException(nameof(store.Alias));
                 }
 
                 if (string.IsNullOrEmpty(sku))
@@ -466,75 +518,88 @@ namespace Ekom.API
                     throw new ArgumentException(nameof(sku));
                 }
 
-                if (_variantCache.Cache[storeAlias].Any(x => x.Value.SKU == sku))
+                if (_variantCache.Cache[store.Alias].Any(x => x.Value.SKU == sku))
                 {
-                    return _variantCache.Cache[storeAlias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+                    return _variantCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
                 }
             }
 
             return null;
         }
 
+        [Obsolete]
         public IVariant GetVariant(string storeAlias, Guid key)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
+            return GetVariant(key, storeAlias);
+        }
 
-            if (_variantCache.Cache[storeAlias].TryGetValue(key, out var val))
+        public IEnumerable<IVariant> GetVariantsByGroup(int Id, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store != null)
             {
-                return val;
+                if (_variantCache == null || !_variantCache.Cache.TryGetValue(store.Alias, out var variants))
+                {
+                    return Enumerable.Empty<IVariant>();
+                }
+
+                return variants.Values
+                               .Where(v => v.VariantGroup?.Id == Id)
+                               .OrderBy(v => v.SortOrder);
             }
 
             return null;
         }
 
+        [Obsolete]
         public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, int Id)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-
-            if (_variantCache == null || !_variantCache.Cache.TryGetValue(storeAlias, out var variants))
-            {
-                return Enumerable.Empty<IVariant>();
-            }
-
-            return variants.Values
-                           .Where(v => v.VariantGroup?.Id == Id)
-                           .OrderBy(v => v.SortOrder);
+            return GetVariantsByGroup(Id, storeAlias);
         }
 
+        public IVariantGroup GetVariantGroup(Guid key, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store != null)
+            {
+                if (_variantGroupCache.Cache[store.Alias].TryGetValue(key, out var val))
+                {
+                    return val;
+                }
+            }
+
+            return null;
+        }
+
+        [Obsolete]
         public IVariantGroup GetVariantGroup(string storeAlias, Guid key)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
+            return GetVariantGroup(key, storeAlias);
+        }
 
-            if (_variantGroupCache.Cache[storeAlias].TryGetValue(key, out var val))
+        public IVariantGroup GetVariantGroup(int id, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store != null)
             {
-                return val;
+                if (_variantGroupCache.Cache.TryGetValue(store.Alias, out var variantGroups))
+                {
+                    return variantGroups.Values.FirstOrDefault(v => v.Id == id);
+                }
             }
 
             return null;
         }
+
+        [Obsolete]
         public IVariantGroup GetVariantGroup(string storeAlias, int id)
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException(nameof(storeAlias));
-            }
-
-            if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var variantGroups))
-            {
-                return variantGroups.Values.FirstOrDefault(v => v.Id == id);
-            }
-
-            return null;
+            return GetVariantGroup(id, storeAlias);
         }
+
 
         public IEnumerable<Metafield> GetMetafields()
         {

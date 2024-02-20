@@ -17,7 +17,7 @@ namespace Ekom.Utilities
                 {
                     foreach (var guid in guids)
                     {
-                        var product = Catalog.Instance.GetProduct(storeAlias, guid);
+                        var product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                         if (product != null)
                         {
@@ -38,7 +38,7 @@ namespace Ekom.Utilities
             {
                 if (UtilityService.ConvertUdiToGuid(udi, out Guid guid))
                 {
-                    var product = Catalog.Instance.GetProduct(storeAlias, guid);
+                    var product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                     if (product != null)
                     {
