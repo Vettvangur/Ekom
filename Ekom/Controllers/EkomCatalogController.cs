@@ -114,7 +114,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(query?.StoreAlias, categoryId);
+                var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
 
                 return category.Products(query);
             }
@@ -173,7 +173,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(query?.StoreAlias, categoryId);
+                var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
 
                 if (category == null)
                 {
@@ -199,7 +199,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                return API.Catalog.Instance.GetCategory(storeAlias, Id);
+                return API.Catalog.Instance.GetCategory(Id, storeAlias);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
             {
@@ -293,7 +293,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
+                var category = API.Catalog.Instance.GetCategory(id, storeAlias);
 
                 return category.SubCategories;
             }
@@ -315,7 +315,7 @@ namespace Ekom.Controllers
             try
             {
 
-                var category = API.Catalog.Instance.GetCategory(storeAlias,id);
+                var category = API.Catalog.Instance.GetCategory(id, storeAlias);
 
                 return category.SubCategoriesRecursive;
             }
@@ -336,7 +336,7 @@ namespace Ekom.Controllers
         {
             try
             {
-                var category = API.Catalog.Instance.GetCategory(storeAlias, id);
+                var category = API.Catalog.Instance.GetCategory(id, storeAlias);
 
                 return category.Filters();
             }

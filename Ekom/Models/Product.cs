@@ -404,7 +404,7 @@ namespace Ekom.Models
             var categoryField = Properties.ContainsKey("categories") ?
                                 GetValue("categories") : "";
 
-            var primaryCategory = Catalog.Instance.GetCategory(Store.Alias, categoryId);
+            var primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias);
 
             if (primaryCategory != null)
             {
@@ -418,7 +418,7 @@ namespace Ekom.Models
                 foreach (var catId in categoryIds)
                 {
                     var categoryItem
-                        = Catalog.Instance.GetCategory(Store.Alias, catId);
+                        = Catalog.Instance.GetCategory(catId, Store.Alias);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {
@@ -435,7 +435,7 @@ namespace Ekom.Models
             {
                 if (int.TryParse(p, out int id))
                 {
-                    var c = Catalog.Instance.GetCategory(Store.Alias, id);
+                    var c = Catalog.Instance.GetCategory(id, Store.Alias);
 
                     if (c != null)
                     {

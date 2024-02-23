@@ -9,6 +9,7 @@ using System.Text;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
+using static Umbraco.Cms.Core.Constants.HttpContext;
 
 namespace Ekom.Umb.Services
 {
@@ -243,26 +244,19 @@ namespace Ekom.Umb.Services
 
             if (slugValue != null && slugValue.Type == PropertyEditorType.Language && store.Domains.Any())
             {
-                foreach (var domain in store.Domains.ToList())
+                foreach (var categoryUrl in categoryUrls)
                 {
-                    var categoryUrl = categoryUrls.FirstOrDefault(x => x.Culture == domain.LanguageIsoCode)?.Url;
+                    var productSlug = item.GetValue("slug", categoryUrl.Culture);
 
-                    if (categoryUrl != null)
+                    var url = categoryUrl.Url + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                    urls.Add(new UmbracoUrl()
                     {
-                        var productSlug = "";
-
-                        productSlug = item.GetValue("slug", domain.LanguageIsoCode);
-
-                        var url = categoryUrl + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
-
-                        urls.Add(new UmbracoUrl()
-                        {
-                            Culture =domain.LanguageIsoCode,
-                            Store = store.Alias,
-                            Url = url,
-                            Domain = domain.DomainName
-                        });
-                    }
+                        Culture = categoryUrl.Culture,
+                        Store = store.Alias,
+                        Url = url,
+                        Domain = categoryUrl.Domain
+                    });
                 }
             }
             else
@@ -364,6 +358,16 @@ namespace Ekom.Umb.Services
                     .ToLower()
                     .AddTrailing();
 
+                if (pubReq != null)
+                {
+                    var nodeUrl = node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture && x.Url.InvariantContains(pubReq.AbsolutePathDecoded));
+
+                    if (nodeUrl != null)
+                    {
+                        return nodeUrl.Url;
+                    }
+                }
+ 
                 if (node.UrlsWithContext.Any(x => x.Culture == culture))
                 {
                     return node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;

@@ -206,7 +206,7 @@ namespace Ekom.Models
 
             var categories = new List<ICategory>();
 
-            var primaryCategory = API.Catalog.Instance.GetCategory(Store.Alias, categoryId);
+            var primaryCategory = API.Catalog.Instance.GetCategory(categoryId, Store.Alias);
 
             if (primaryCategory != null)
             {
@@ -222,7 +222,7 @@ namespace Ekom.Models
                     var intCatId = Convert.ToInt32(catId);
 
                     var categoryItem
-                        = Catalog.Instance.GetCategory(Store.Alias, intCatId);
+                        = Catalog.Instance.GetCategory(intCatId, Store.Alias);
 
                     if (categoryItem != null && !categories.Contains(categoryItem))
                     {

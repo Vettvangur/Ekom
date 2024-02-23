@@ -137,7 +137,7 @@ namespace Ekom.Utilities
 
                     foreach (var pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {
@@ -152,7 +152,7 @@ namespace Ekom.Utilities
 
                     foreach (var pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {
@@ -167,7 +167,7 @@ namespace Ekom.Utilities
 
                     foreach (var pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(store.Alias, Convert.ToInt32(pathId));
+                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {
