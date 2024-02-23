@@ -2,6 +2,7 @@ using Ekom.Models;
 using Ekom.Umb.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
 
@@ -47,6 +48,10 @@ namespace Ekom.Utilities
             if (typeof(T) == typeof(bool))
             {
                 return (T)(object)val.IsBoolean();
+            }
+            if (typeof(T) == typeof(MediaWithCrops))
+            {
+                return (T)(object)GetContent(val);
             }
             if (typeof(T) == typeof(IPublishedContent))
             {
