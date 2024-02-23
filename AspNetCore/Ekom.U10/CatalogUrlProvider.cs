@@ -88,8 +88,8 @@ namespace Ekom.Umb
                             try
                             {
                                 INodeEntityWithUrl node = content.ContentType.Alias == "ekmProduct"
-                                    ? API.Catalog.Instance.GetProduct(store.Alias, id)
-                                    : API.Catalog.Instance.GetCategory(store.Alias, id);
+                                    ? API.Catalog.Instance.GetProduct(id, store.Alias)
+                                    : API.Catalog.Instance.GetCategory(id, store.Alias);
 
                                 if (node != null)
                                 {
