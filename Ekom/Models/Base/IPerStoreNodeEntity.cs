@@ -9,7 +9,5 @@ namespace Ekom.Models
         /// Ekom Store
         /// </summary>
         IStore Store { get; }
-
-
     }
 }

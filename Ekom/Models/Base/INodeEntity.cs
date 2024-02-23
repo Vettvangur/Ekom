@@ -112,6 +112,7 @@ namespace Ekom.Models
         /// <summary>
         /// Umbraco node properties
         /// </summary>
+        [JsonIgnore]
         IReadOnlyDictionary<string, string> Properties { get; }
     }
 
