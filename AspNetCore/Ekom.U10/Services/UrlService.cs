@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Text;
+using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
-using static Umbraco.Cms.Core.Constants.HttpContext;
 
 namespace Ekom.Umb.Services
 {
@@ -19,17 +19,20 @@ namespace Ekom.Umb.Services
         readonly IUmbracoContextFactory _context;
         readonly IHttpContextAccessor _httpContextAccessor;
         readonly IShortStringHelper _shortStringHelper;
+        readonly AppCaches _appCaches;
 
         public UrlService(
             ILogger<UrlService> logger,
             IUmbracoContextFactory context,
             IHttpContextAccessor httpContextAccessor,
-            IShortStringHelper shortStringHelper)
+            IShortStringHelper shortStringHelper,
+            AppCaches appCaches)
         {
             _logger = logger;
             _context = context;
             _httpContextAccessor = httpContextAccessor;
             _shortStringHelper = shortStringHelper;
+            _appCaches = appCaches;
         }
 
         /// <summary>
@@ -298,13 +301,24 @@ namespace Ekom.Umb.Services
             // This code matches to find correct prefix,
             // aside from that, relative urls should be similar between domains
 
+            string contextCategoryUrl = string.Empty;
+
+            var requestCacheFromHttpContext = _httpContextAccessor.HttpContext?.Items["ekmRequest"] as Lazy<ContentRequest>;
+            if (requestCacheFromHttpContext != null)
+            {
+                if (requestCacheFromHttpContext.Value.Url != null)
+                {
+                    contextCategoryUrl = requestCacheFromHttpContext.Value.Url;
+                }
+            }
+
             using (var cref = _context.EnsureUmbracoContext())
             {
                 var pubReq = cref.UmbracoContext.PublishedRequest;
                 var culture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
                 var debugLogging = false;
                 Uri uri = null;
-                if (pubReq == null)
+                if (pubReq == null || pubReq?.PublishedContent == null)
                 {
 
                     var httpCtx = _httpContextAccessor.HttpContext;
@@ -317,7 +331,7 @@ namespace Ekom.Umb.Services
 
                         if (uri == null)
                         {
-                            debugLogging = true;
+                            uri = pubReq?.Domain?.Uri;
                         }
 
                     }
@@ -330,26 +344,6 @@ namespace Ekom.Umb.Services
 
                 if (uri == null)
                 {
-                    var message = "Unable to determine umbraco domain." + (cref.UmbracoContext == null ? "Umbraco Context is null, the Url getter is not supported in background services." : "") + (pubReq != null && pubReq.Domain == null ? "Domain is not found in context. Check if domain is set in culture and hostnames under the store root node" : "") + (pubReq == null ? "Publish request is null. Fallbacking to cookie did not work." : "") + " - " + new System.Diagnostics.StackTrace();
-
-                    // Handle when umbraco couldn't find matching domain for request
-                    // This can be due to the following error message, or some failure with the cookie solution
-                    // Historically this would happen when ajaxing to surface controllers without including the ufprt ctx
-                    // today the cookie solution should cover that as well
-
-                    if (debugLogging)
-                    {
-                        _logger.LogDebug(message);
-                    }
-                    else
-                    {               
-                        // This was error, but on swapping in some projects the log got filled with it.
-                        // We dont know at the moment why the context is not available but it does not seem to affect the site.
-
-                        _logger.LogDebug(
-                            message);
-                    }
-
                     return node.Urls.FirstOrDefault();
                 }
 
@@ -357,6 +351,16 @@ namespace Ekom.Umb.Services
                     .AbsolutePath
                     .ToLower()
                     .AddTrailing();
+
+                if (!string.IsNullOrEmpty(contextCategoryUrl))
+                {
+                    var nodeUrl = node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture && x.Url.InvariantContains(contextCategoryUrl));
+
+                    if (nodeUrl != null)
+                    {
+                        return nodeUrl.Url;
+                    }
+                }
 
                 if (pubReq != null)
                 {

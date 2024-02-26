@@ -17,13 +17,16 @@ namespace Ekom.Controllers
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
     [Route("ekom/catalog")]
-    public class EkomCatalogController : ControllerBase
+    internal class EkomCatalogController : ControllerBase
     {
+        private readonly ControllerRequestHelper _reqHelper;
+
         /// <summary>
         /// ctor
         /// </summary>
-        public EkomCatalogController()
+        public EkomCatalogController(ControllerRequestHelper reqHelper)
         {
+            _reqHelper = reqHelper;
         }
 
         /// <summary>
@@ -116,6 +119,13 @@ namespace Ekom.Controllers
             {
                 var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
 
+                if (category == null)
+                {
+                    throw new ArgumentNullException(nameof(category));
+                }
+
+                _reqHelper.SetEkmRequest(category);
+
                 return category.Products(query);
             }
             catch (Exception ex) when (!(ex is HttpResponseException))
@@ -179,6 +189,8 @@ namespace Ekom.Controllers
                 {
                     throw new ArgumentNullException(nameof(category));
                 }
+
+                _reqHelper.SetEkmRequest(category);
 
                 return category.ProductsRecursive(query);
             }
@@ -314,8 +326,13 @@ namespace Ekom.Controllers
         {
             try
             {
-
                 var category = API.Catalog.Instance.GetCategory(id, storeAlias);
+
+                if (category == null)
+                {
+                    throw new ArgumentNullException(nameof(category));
+                }
+
 
                 return category.SubCategoriesRecursive;
             }

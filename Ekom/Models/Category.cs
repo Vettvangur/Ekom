@@ -26,11 +26,15 @@ namespace Ekom.Models
         /// <summary>
         /// All category Urls, computed from stores
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public IEnumerable<string> Urls { get; set; }
 
         /// <summary>
         /// All category Urls with context, computed from stores
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public List<UmbracoUrl> UrlsWithContext { get; set; }
 
         /// <summary>

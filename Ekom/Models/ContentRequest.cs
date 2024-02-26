@@ -9,6 +9,7 @@ namespace Ekom.Models
         public object Currency { get; set; }
         public IProduct Product { get; set; }
         public ICategory Category { get; set; }
+        public string Url { get; set; }
         public User User { get; set; }
 
         public void SetStoreCookie(string storeAlias, HttpContext? httpContext)

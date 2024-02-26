@@ -8,6 +8,7 @@ using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
+using Ekom.Utilities;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -58,7 +59,7 @@ static class Registrations
         services.AddTransient<IStoreService, StoreService>();
 
         services.AddTransient<OrderService>();
-
+        services.AddScoped<ControllerRequestHelper>();
         services.AddTransient<CheckoutService>();
         services.AddTransient<Ekom.Services.IMailService, MailService>();
         services.AddTransient<DatabaseService>();
