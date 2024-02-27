@@ -489,7 +489,7 @@ namespace Ekom.API
 
             if (store != null)
             {
-                if (_variantCache.Cache[storeAlias].TryGetValue(Id, out var val))
+                if (_variantCache.Cache[store.Alias].TryGetValue(Id, out var val))
                 {
                     return val;
                 }
