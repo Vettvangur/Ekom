@@ -17,7 +17,7 @@ namespace Ekom.Controllers
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Async controller action")]
     [Route("ekom/catalog")]
-    internal class EkomCatalogController : ControllerBase
+    public class EkomCatalogController : ControllerBase
     {
         private readonly ControllerRequestHelper _reqHelper;
 

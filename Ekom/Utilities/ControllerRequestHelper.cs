@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Ekom.Utilities
 {
-    internal class ControllerRequestHelper
+    public class ControllerRequestHelper
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
