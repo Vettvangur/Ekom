@@ -644,10 +644,16 @@ namespace Ekom.Services
         /// <returns></returns>
         public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
         {
+            if ((!discount.Stackable ? orderLine.Product.ProductDiscount == null : true) == false)
+            {
+                return false;
+            }
+
             return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
                 && (discount.DiscountItems.Count == 0
                 || (orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems).Any())
                 || (orderLine.Product.Properties.GetPropertyValue("categories").Split(',').Select(x => Configuration.Resolver.GetService<INodeService>().NodeById(x)?.Id.ToString()).Intersect(discount.DiscountItems).Any())
+                || (!discount.Stackable ? orderLine.Product.ProductDiscount == null : true)
                 );
         }
 

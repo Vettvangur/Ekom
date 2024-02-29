@@ -333,8 +333,8 @@
       },
       "Newtonsoft.Json": {
         "type": "Transitive",
-        "resolved": "12.0.3",
-        "contentHash": "6mgjfnRB4jKMlzHSl+VD+oUc1IebOZabkbyWj2RiTgWwYPPuaK1H97G1sHqGwPlS5npiF5Q0OrxN1wni2n5QWg=="
+        "resolved": "13.0.3",
+        "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
       },
       "System.Buffers": {
         "type": "Transitive",
@@ -555,7 +555,7 @@
       "ekom.common": {
         "type": "Project",
         "dependencies": {
-          "Newtonsoft.Json": "[12.0.3, )"
+          "Newtonsoft.Json": "[13.0.3, )"
         }
       },
       "Ekom.Core": {
@@ -572,7 +572,7 @@
           "Microsoft.Extensions.Configuration": "[6.0.1, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[3.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
-          "Newtonsoft.Json": "[12.0.3, )",
+          "Newtonsoft.Json": "[13.0.3, )",
           "linq2db": "[4.3.0, )"
         }
       }

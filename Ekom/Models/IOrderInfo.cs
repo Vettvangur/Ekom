@@ -65,7 +65,7 @@ namespace Ekom.Models
         /// </summary>
         ICalculatedPrice ChargedAmount { get; }
         /// <summary>
-        /// OrderLines with OrderDiscount included
+        /// Subtotal
         /// </summary>
         IPrice SubTotal { get; }
         /// <summary>
