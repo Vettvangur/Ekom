@@ -1,12 +1,15 @@
 using Ekom.Models;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
+
 #else
 using System.Web;
 #endif
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ekom.Utilities
@@ -82,6 +85,18 @@ namespace Ekom.Utilities
             {
                 return prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie)
                     ?? prices.FirstOrDefault();
+            }
+
+            var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+
+            if (culture != null)
+            {
+                var price = prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
+
+                if (price != null)
+                {
+                    return price;
+                }
             }
 
             return prices.FirstOrDefault();

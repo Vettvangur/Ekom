@@ -15,13 +15,21 @@
 }
 
 @section Main {
-
+    @product.Price.Value
     <main class="mx-auto mt-8 max-w-2xl px-4 pb-16 sm:px-6 sm:pb-24 lg:max-w-7xl lg:px-8">
         <div class="lg:grid lg:auto-rows-min lg:grid-cols-12 lg:gap-x-8">
             <div class="lg:col-span-5 lg:col-start-8">
                 <div class="flex justify-between">
                     <h1 class="text-xl font-medium text-gray-900">@product.Title</h1>
-                    <p class="text-xl font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+                    @if (product.ProductDiscount != null)
+                    {
+                        <p class="text-xl font-medium text-gray-900"><span class="line-through">@product.Price.BeforeDiscount.CurrencyString</span> @product.Price.WithVat.CurrencyString</p>
+                    }
+                    else
+                    {
+                        <p class="text-xl font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+                    }
+                   
                 </div>
             </div>
 

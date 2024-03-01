@@ -653,7 +653,6 @@ namespace Ekom.Services
                 && (discount.DiscountItems.Count == 0
                 || (orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems).Any())
                 || (orderLine.Product.Properties.GetPropertyValue("categories").Split(',').Select(x => Configuration.Resolver.GetService<INodeService>().NodeById(x)?.Id.ToString()).Intersect(discount.DiscountItems).Any())
-                || (!discount.Stackable ? orderLine.Product.ProductDiscount == null : true)
                 );
         }
 

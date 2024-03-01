@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Xml.Serialization;
 using Ekom.Models.Umbraco;
+using Microsoft.AspNetCore.Localization;
 
 namespace Ekom.Models
 {
@@ -240,6 +241,18 @@ namespace Ekom.Models
             if (cookie != null && !string.IsNullOrEmpty(cookie))
             {
                 var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
+
+                if (price != null)
+                {
+                    return price;
+                }
+            }
+
+            var culture = httpCtx?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+            
+            if (culture != null)
+            {
+                var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
 
                 if (price != null)
                 {

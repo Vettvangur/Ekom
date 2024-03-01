@@ -41,7 +41,13 @@
             </ul>
         }
         <div class="flex flex-1 flex-col justify-end">
-            <p class="text-base font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+            @if (product.ProductDiscount != null)
+            {
+                <p class="text-base font-medium text-gray-900"><span class="line-through">@product.Price.BeforeDiscount.CurrencyString</span> @product.Price.WithVat.CurrencyString</p>
+            } else
+            {
+                <p class="text-base font-medium text-gray-900">@product.Price.WithVat.CurrencyString</p>
+            }
         </div>
     </div>
 </div>

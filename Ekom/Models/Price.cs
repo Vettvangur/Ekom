@@ -211,6 +211,18 @@ namespace Ekom.Models
                     }
                 }
 
+                // Check if the OriginalValue has decimals
+                bool originalHasDecimals = OriginalValue != Math.Floor(OriginalValue);
+
+                // Check if the DiscountedValue should have decimals based on the OriginalValue
+                bool shouldHaveDecimals = originalHasDecimals;
+
+                // If the DiscountedValue should not have decimals, round it to the nearest integer
+                if (!shouldHaveDecimals)
+                {
+                    price = Math.Round(price);
+                }
+
                 return price;
             }
         }

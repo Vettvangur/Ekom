@@ -58,6 +58,7 @@ namespace Ekom.Models
                     {
                         _price += v.Price.Discount != null ? (v.Price.Value - _price) : (v.Price.OriginalValue - _price);
                     }
+
                 }
 
                 OrderedDiscount discount = null;
