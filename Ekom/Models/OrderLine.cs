@@ -1,7 +1,6 @@
+using Ekom.Services;
 using Ekom.Utilities;
 using Newtonsoft.Json;
-using System;
-using System.Linq;
 using System.Xml.Serialization;
 
 namespace Ekom.Models
@@ -51,31 +50,47 @@ namespace Ekom.Models
         {
             get
             {
-                decimal _price = Product.Price.Discount != null ? Product.Price.Value : Product.Price.OriginalValue;
+                decimal _price = Product.Price.OriginalValue;
                 if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
                 {
                     foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        _price += v.Price.Discount != null ? (v.Price.Value - _price) : (v.Price.OriginalValue - _price);
+                        _price += (v.Price.OriginalValue - _price);
                     }
-
                 }
 
-                OrderedDiscount discount = null;
-                // This allows us to display discounted prices of orderlines
-                // when the order has a global discount applying only to specific DiscountItems
-                if ((OrderInfo.Discount != null && OrderInfo.Discount.Stackable && Product.Price.Discount == null) && OrderInfo.Discount?.DiscountItems.Any() == true)
-                {
-                    discount = OrderInfo.Discount;
-                }
+                OrderedDiscount discount = Product.ProductDiscount != null ? Product.ProductDiscount as OrderedDiscount : null;
 
-                return new Price(
+                var priceWithProductDiscount = new Price(
                     _price,
                     OrderInfo.StoreInfo.Currency,
                     Vat,
                     OrderInfo.StoreInfo.VatIncludedInPrice,
                     discount,
                     Quantity);
+
+                // This allows us to display discounted prices of orderlines
+                // when the order has a global discount applying only to specific DiscountItems
+                if (OrderInfo.Discount != null && OrderInfo.Discount?.DiscountItems.Any() == true)
+                {
+                    discount = OrderInfo.Discount;
+
+                    var priceWithOrderedDiscount = new Price(
+                        _price,
+                        OrderInfo.StoreInfo.Currency,
+                        Vat,
+                        OrderInfo.StoreInfo.VatIncludedInPrice,
+                        discount,
+                        Quantity);
+
+                    if (priceWithOrderedDiscount.Value < priceWithProductDiscount.Value)
+                    {
+                        return priceWithOrderedDiscount;
+                    }
+
+                }
+
+                return priceWithProductDiscount;
             }
         }
 

@@ -4,10 +4,6 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
@@ -642,14 +638,16 @@ namespace Ekom.Services
         /// <param name="orderLine"></param>
         /// <param name="discount"></param>
         /// <returns></returns>
-        public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
+        public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount, decimal? orderLineTotal = null)
         {
-            if ((!discount.Stackable ? orderLine.Product.ProductDiscount == null : true) == false)
-            {
-                return false;
-            }
+            //if ((!discount.Stackable ? orderLine.Product.ProductDiscount == null : true) == false)
+            //{
+            //    return false;
+            //}
 
-            return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
+            orderLineTotal = orderLineTotal ?? orderInfo.OrderLineTotal.Value;
+
+            return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderLineTotal.Value)
                 && (discount.DiscountItems.Count == 0
                 || (orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems).Any())
                 || (orderLine.Product.Properties.GetPropertyValue("categories").Split(',').Select(x => Configuration.Resolver.GetService<INodeService>().NodeById(x)?.Id.ToString()).Intersect(discount.DiscountItems).Any())

@@ -70,8 +70,14 @@
                                                 <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
                                             </div>
                                         }
+                                        @if (orderline.Amount.Discount != null)
+                                        {
+                                            <p class="mt-1 text-sm font-medium text-gray-900"><span class="line-through" title="@orderline.Amount.Discount.Key">@orderline.Amount.BeforeDiscount.CurrencyString</span> @orderline.Amount.WithVat.CurrencyString</p>
+                                        } else
+                                        {
+                                            <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
+                                        }
 
-                                        <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
                                     </div>
 
                                     
