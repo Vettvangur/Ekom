@@ -63,7 +63,9 @@ namespace Ekom.Utilities
         {
             var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
             var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
-            
+
+            var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+
             if (!string.IsNullOrEmpty(cookie))
             {
                 var c = currencies.FirstOrDefault(x => x.CurrencyValue == cookie);
@@ -73,6 +75,16 @@ namespace Ekom.Utilities
                     return c;
                 }
             }
+
+            //if (culture != null)
+            //{
+            //    var price = currencies.FirstOrDefault(x => x.CurrencyValue == culture.Name);
+
+            //    if (price != null)
+            //    {
+            //        return price;
+            //    }
+            //}
 
             return currencies.FirstOrDefault();
         }

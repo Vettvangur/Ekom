@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Localization
 @using Umbraco.Cms.Web.Common.PublishedModels;
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
@@ -7,11 +8,18 @@
     var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
 
     var nextUrl = siblings.FirstOrDefault(x => x.SortOrder > Model.SortOrder)?.Url();
+
+    var store = Ekom.API.Store.Instance.GetStore();
+
+    var culture = Context.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+
 }
 
 @section Main {
-
-
+    @culture
+    @order.StoreInfo.Culture **
+    @store.Currency.CurrencyValue
+    @order.StoreInfo.Currency.CurrencyValue
     @if (order == null || order.TotalQuantity <= 0)
     {
         <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">

@@ -1,6 +1,8 @@
 using Ekom.Cache;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Globalization;
@@ -44,6 +46,15 @@ namespace Ekom.Models
         {
             get
             {
+                //var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+
+                //var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+
+                //if (culture != null)
+                //{
+                //    return culture;
+                //}
+
                 var ci = new CultureInfo(Properties["culture"]);
 
                 return ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
