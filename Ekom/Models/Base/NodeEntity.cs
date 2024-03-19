@@ -164,7 +164,6 @@ namespace Ekom.Models
         /// <summary>
         /// Read only dictionary of all umbraco base and custom properties for this item
         /// </summary>
-        //[JsonIgnore] backward compatability
         public IReadOnlyDictionary<string, string> Properties => new ReadOnlyDictionary<string, string>(_properties);
 
         /// <summary>
