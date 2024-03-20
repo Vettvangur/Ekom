@@ -1376,7 +1376,7 @@ namespace Ekom.App_Start
             PublishResult res;
             using (_contextFactory.EnsureUmbracoContext())
             {
-                res = _contentService.SaveAndPublish(content);
+                res = _contentService.Save(content);
             }
 
             if (res.Success)
