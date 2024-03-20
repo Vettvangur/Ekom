@@ -1373,7 +1373,7 @@ namespace Ekom.App_Start
 
             var content = _contentService.Create(name, parentId, documentTypeAlias);
 
-            PublishResult res;
+            OperationResult res;
             using (_contextFactory.EnsureUmbracoContext())
             {
                 res = _contentService.Save(content);
