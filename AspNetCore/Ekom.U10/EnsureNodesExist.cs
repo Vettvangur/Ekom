@@ -1271,7 +1271,7 @@ namespace Ekom.App_Start
                     var ekom = EnsureContentExists("Ekom", "ekom");
                     var catalog = EnsureContentExists("Catalog", "ekmCatalog", ekom.Id);
                     EnsureContentExists("Shipping Providers", "ekmShippingProviders", ekom.Id);
-                    EnsureContentExists("Payment Providers", "netPaymentProviders", ekom.Id);
+                    EnsureContentExists("Payment Providers", "ekmPaymentProviders", ekom.Id);
                     var discounts = EnsureContentExists("Discounts", "ekmDiscounts", ekom.Id);
                     EnsureContentExists("Product Discounts", "ekmProductDiscounts", discounts.Id);
                     EnsureContentExists("Order Discounts", "ekmOrderDiscounts", discounts.Id);
