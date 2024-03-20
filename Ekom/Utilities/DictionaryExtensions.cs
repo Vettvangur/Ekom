@@ -33,7 +33,7 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias));
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties, propertyAlias, alias));
         }
 
 
@@ -45,24 +45,34 @@ namespace Ekom.Utilities
         /// </summary>
         public static string GetPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), propertyAlias, alias));
+            return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties, propertyAlias, alias));
         }
 
-        private static string GetBasePropertyValue(Dictionary<string, string> properties, string propertyAlias, string alias = null)
+        private static string GetBasePropertyValue(IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
             string val = string.Empty;
+            string modifiedPropertyAlias = propertyAlias;
 
-            propertyAlias = properties.ContainsKey(propertyAlias + "_" + alias) 
-                ? propertyAlias + "_" + alias 
-                : properties.ContainsKey(propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name) 
-                    ? propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name
-                    : propertyAlias;
-            
-            if (!string.IsNullOrEmpty(propertyAlias))
+            // Build the modified property alias based on the available keys
+            if (!string.IsNullOrEmpty(alias))
             {
-                properties.TryGetValue(propertyAlias, out val);
+                var tempAlias = propertyAlias + "_" + alias;
+                if (properties.ContainsKey(tempAlias))
+                {
+                    modifiedPropertyAlias = tempAlias;
+                }
             }
 
+            var tempCultureAlias = propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name;
+            if (properties.ContainsKey(tempCultureAlias))
+            {
+                modifiedPropertyAlias = tempCultureAlias;
+            }
+
+            // Attempt to retrieve the value for the final property alias
+            properties.TryGetValue(modifiedPropertyAlias, out val);
+
+            // Special processing based on alias
             if (!string.IsNullOrEmpty(alias))
             {
                 return val.GetEkomPropertyEditorValue(alias) ?? string.Empty;
