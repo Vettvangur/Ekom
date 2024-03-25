@@ -3,6 +3,7 @@ using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -77,60 +78,48 @@ namespace Ekom.Utilities
         // Maybe this should return T and not force String
         internal static string GetEkomPropertyEditorValue(this string value, string alias)
         {
-
-            if (!string.IsNullOrEmpty(value))
+            if (string.IsNullOrEmpty(value))
             {
+                return string.Empty;
+            }
 
-                if (value.IsJson())
+            if (!value.IsJson())
+            {
+                return value;
+            }
+
+            try
+            {
+                var obj = JObject.Parse(value);
+
+                // Try getting the value directly by alias.
+                if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out JToken directValue) && directValue != null)
                 {
-                    PropertyValue o = null;
+                    return directValue.ToString();
+                }
 
-                    try
+                // Attempt to deserialize to PropertyValue and extract based on culture or alias.
+                var propertyValue = obj.ToObject<PropertyValue>();
+                if (propertyValue != null)
+                {
+                    // Prioritize direct alias match in PropertyValue.Values.
+                    if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
                     {
-                        o = JsonConvert.DeserializeObject<PropertyValue>(value);
+                        return valAlias.ToString();
                     }
-                    catch { }
 
-                    if (o != null)
+                    // Fallback to current culture match in PropertyValue.Values.
+                    var currentCultureName = CultureInfo.CurrentCulture.Name;
+                    if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
                     {
-
-                        if (o.Values?.TryGetValue(alias, out object valAlias) == true)
-                        {
-                            if (valAlias != null)
-                            {
-                                return valAlias.ToString();
-                            }
-                        }
-
-                        if (o.Values?.TryGetValue(System.Globalization.CultureInfo.CurrentCulture.Name, out object valCulture) == true)
-                        {
-                            if (valCulture != null)
-                            {
-                                return valCulture.ToString();
-                            }
-                        }
-
-
-
+                        return valCulture.ToString();
                     }
                 }
-                else
-                {
-                    return value;
-                }
-
-                JObject parsed = null;
-                try
-                {
-                    parsed = JObject.Parse(value);
-                }
-                catch { }
-
-                JToken itemVal = null;
-                if (parsed?.TryGetValue(alias, out itemVal) == true)
-                {
-                    return itemVal.ToString();
-                }
+            }
+            catch (JsonException ex)
+            {
+                // Consider logging the exception or handling it as needed.
+                // Log.Error(ex, "Failed to parse JSON in GetEkomPropertyEditorValue.");
             }
 
             return string.Empty;
