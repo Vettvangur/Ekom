@@ -118,19 +118,19 @@ namespace Ekom.Utilities
                 {
                     return value;
                 }
-            }
 
-            JObject parsed = null;
-            try
-            {
-                parsed = JObject.Parse(value);
-            }
-            catch { }
+                JObject parsed = null;
+                try
+                {
+                    parsed = JObject.Parse(value);
+                }
+                catch { }
 
-            JToken itemVal = null;
-            if (parsed?.TryGetValue(alias, out itemVal) == true)
-            {
-                return itemVal.ToString();
+                JToken itemVal = null;
+                if (parsed?.TryGetValue(alias, out itemVal) == true)
+                {
+                    return itemVal.ToString();
+                }
             }
 
             return string.Empty;

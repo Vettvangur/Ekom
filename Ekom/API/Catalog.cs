@@ -1,7 +1,6 @@
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
