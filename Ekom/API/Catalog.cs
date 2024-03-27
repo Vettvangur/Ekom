@@ -9,7 +9,7 @@ using System.Data;
 namespace Ekom.API
 {
     /// <summary>
-    /// The Ekom API, grants access to the current product/category/variant 
+    /// The Catalog API, grants access to the current product/category/variant 
     /// and various other depending on your current routed context.
     /// </summary>
     public class Catalog
