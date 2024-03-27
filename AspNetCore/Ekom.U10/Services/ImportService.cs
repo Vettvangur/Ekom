@@ -6,6 +6,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 using Umbraco.Cms.Infrastructure.Scoping;
+using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services
 {
@@ -32,7 +33,7 @@ namespace Ekom.Umb.Services
             _scopeProvider = scopeProvider;
         }
 
-        public void FullSync(ImportData data)
+        public void FullSync(ImportData data, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
         {
             categoryContentType = _contentTypeService.Get("ekmCategory");
             productContentType = _contentTypeService.Get("ekmProduct");
@@ -44,9 +45,9 @@ namespace Ekom.Umb.Services
 
             IContent? umbracoRootContent = null;
 
-            if (data.ParentKey.HasValue)
+            if (parentKey.HasValue)
             {
-                umbracoRootContent = _contentService.GetById(data.ParentKey.Value);
+                umbracoRootContent = _contentService.GetById(parentKey.Value);
             } else
             {
                 umbracoRootContent = _contentService
@@ -58,7 +59,7 @@ namespace Ekom.Umb.Services
 
             using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
             {
-                IterateCategoryTree(data.Categories, umbracoRootContent, data.IdentiferPropertyAlias, data.SyncUser);
+                IterateCategoryTree(data.Categories, umbracoRootContent, identiferPropertyAlias, syncUser);
             }
         }
 
@@ -139,12 +140,12 @@ namespace Ekom.Umb.Services
 
         }
 
-        public void CategorySync(ImportCategory categoryData)
+        public void CategorySync(ImportCategory categoryData, Guid? ParentKey, int SyncUser = -1, string identiferPropertyAlias = "sku")
         {
             throw new NotImplementedException();
         }
 
-        public void ProductSync(ImportProduct productData)
+        public void ProductSync(ImportProduct productData, Guid? ParentKey, int SyncUser = -1, string identiferPropertyAlias = "sku")
         {
             throw new NotImplementedException();
         }

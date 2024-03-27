@@ -84,8 +84,6 @@ static class Registrations
         services.AddSingleton<IPerStoreFactory<IVariant>, VariantFactory>();
         services.AddSingleton<IPerStoreFactory<IVariantGroup>, VariantGroupFactory>();
 
-        services.AddTransient<Import>();
-
         // What follows are explicit factory constructors for the API methods
         // This is needed since many of their dependencies are internal classes
         // However the API services are public, leaving their constructor public violates

@@ -6,18 +6,6 @@ namespace Ekom.Models.Import
     public class ImportData
     {
         /// <summary>
-        /// Specifies the unique identifier (GUID) of the parent node under which the import should occur. If set, this GUID directs the import process to nest the new categories within the specified parent category, effectively integrating the imported data into an existing category tree structure. When left null, the import is understood to target the root level of the category hierarchy, assuming a starting point at the highest level. This flexibility allows for targeted updates to specific branches of the category tree or broader, top-level imports.
-        /// </summary>
-        public Guid? ParentKey { get; set; }
-
-        public int SyncUser { get; set; } = -1;
-
-        /// <summary>
-        /// Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.
-        /// </summary>
-        public string IdentiferPropertyAlias { get; set; } = "sku";
-
-        /// <summary>
         /// A collection of categories to be imported. Each entry in this list represents a category, complete with its hierarchy, products, and associated details, as defined by the <see cref="ImportCategory"/> class. This comprehensive model supports importing a rich, nested structure of categories and products, facilitating complex updates and additions to the e-commerce platform's catalog. The ability to define subcategories and products within each category allows for a deep, tree-structured import, mimicking the natural organization of an e-commerce catalog.
         /// </summary>
         public List<ImportCategory> Categories { get; set; } = new List<ImportCategory>();
@@ -69,6 +57,10 @@ namespace Ekom.Models.Import
             get => _identifier ?? SKU;  // Return _identifier if it's set; otherwise, return SKU.
             set => _identifier = value;
         }
+        /// <summary>
+        /// Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.
+        /// </summary>
+        public string IdentiferPropertyAlias { get; set; } = "sku";
     }
 
     /// <summary>
@@ -117,6 +109,10 @@ namespace Ekom.Models.Import
             get => _identifier ?? SKU;  // Return _identifier if it's set; otherwise, return SKU.
             set => _identifier = value;
         }
+        /// <summary>
+        /// Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.
+        /// </summary>
+        public string IdentiferPropertyAlias { get; set; } = "sku";
     }
 
     /// <summary>
