@@ -73,6 +73,10 @@ namespace Ekom.Umb
                             return Enumerable.Empty<UrlInfo>();
                         }
 
+                        if (content.ContentType.Alias == "ekmCategory" && content.Value<bool>("virtualUrl")) {
+                            return Enumerable.Empty<UrlInfo>();
+                        }
+
                         var stores = API.Store.Instance.GetAllStores().ToList();
                         
                         if (!stores.Any())
