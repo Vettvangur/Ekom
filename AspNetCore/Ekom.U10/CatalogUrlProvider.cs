@@ -73,7 +73,7 @@ namespace Ekom.Umb
                             return Enumerable.Empty<UrlInfo>();
                         }
 
-                        if (content.ContentType.Alias == "ekmCategory" && content.Value<bool>("virtualUrl")) {
+                        if (content.ContentType.Alias == "ekmCategory" && content.Value<bool>("ekmVirtualUrl")) {
                             return Enumerable.Empty<UrlInfo>();
                         }
 
