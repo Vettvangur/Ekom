@@ -1,7 +1,6 @@
 using Ekom.Models.Import;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
-using static LinqToDB.Common.Configuration;
 
 namespace Ekom.API;
 
