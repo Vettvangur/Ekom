@@ -119,7 +119,7 @@ namespace Ekom.Umb
                 {
                     var content = umbracoContext.Content.GetById(contentId);
 
-                    if (content != null)
+                    if (content != null && !content.Value<bool>("ekmVirtualUrl"))
                     {
                         contentRequest.SetPublishedContent(content);
                         return Task.FromResult(true);

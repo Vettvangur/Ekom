@@ -1,12 +1,11 @@
 using Ekom.Models.Import;
 using Ekom.Services;
+using Ekom.Utilities;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
-using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
-using Ekom.Utilities;
+using Umbraco.Cms.Infrastructure.Scoping;
 
 namespace Ekom.Umb.Services
 {
@@ -16,7 +15,6 @@ namespace Ekom.Umb.Services
         private readonly IContentService _contentService;
         private readonly IContentTypeService _contentTypeService;
         private readonly IScopeProvider _scopeProvider;
-        private readonly IShortStringHelper _shortStringHelper;
 
         private IContentType? productContentType;
         private IContentType? categoryContentType;
@@ -26,14 +24,12 @@ namespace Ekom.Umb.Services
             IUmbracoContextFactory umbracoContextFactory,
             IContentService contentService,
             IContentTypeService contentTypeService,
-            IScopeProvider scopeProvider,
-            IShortStringHelper shortStringHelper)
+            IScopeProvider scopeProvider)
         {
             _umbracoContextFactory = umbracoContextFactory;
             _contentService = contentService;
             _contentTypeService = contentTypeService;
             _scopeProvider = scopeProvider;
-            _shortStringHelper = shortStringHelper;
         }
 
         public void FullSync(ImportData data)

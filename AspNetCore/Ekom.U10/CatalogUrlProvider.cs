@@ -26,20 +26,30 @@ namespace Ekom.Umb
             _configuration = configuration;
         }
 
-        public UrlInfo GetUrl(IPublishedContent content, UrlMode mode, string culture, Uri current)
+        public UrlInfo? GetUrl(IPublishedContent content, UrlMode mode, string culture, Uri current)
         {
-            try
+            if (content is null)
             {
-                var urls = GetUrls(content.Id, current);
-                // In practice this will simply return the first url from the collection
-                // since we're comparing store title to culture.
-                return urls.FirstOrDefault(x => x.Culture == culture) ?? urls.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get url");
                 return null;
             }
+
+            if (content.IsDocumentType("ekmProduct") || content.IsDocumentType("ekmCategory"))
+            {
+                try
+                {
+                    var urls = GetUrls(content.Id, current);
+                    // In practice this will simply return the first url from the collection
+                    // since we're comparing store title to culture.
+                    return urls.FirstOrDefault(x => x.Culture == culture) ?? urls.FirstOrDefault();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to get url");
+                }
+               
+            }
+
+            return null;
         }
 
         /// <summary>
