@@ -738,9 +738,9 @@ namespace Ekom.App_Start
                                         {
                                             Name = "Description",
                                         },
-                                        new PropertyType(_shortStringHelper, mediaPickerDt, "categoryImage")
+                                        new PropertyType(_shortStringHelper, multipleMediaPickerDt, "images")
                                         {
-                                            Name = "Category Image",
+                                            Name = "Images",
                                         },
                                         new PropertyType(_shortStringHelper, booleanDt, "ekmVirtualUrl")
                                         {

@@ -25,10 +25,7 @@ namespace Ekom.Models.Import
         /// URL-friendly, thereby facilitating better web standards compliance and user experience.
         /// </summary>
         public Dictionary<string, object>? Slug { get; set; } = new Dictionary<string, object>();
-        /// <summary>
-        /// Udi format of image. udi://media/xxxxx
-        /// </summary>
-        public string? Image { get; set; }
+
         /// <summary>
         /// Determines whether the URL associated with this entity should be excluded from the navigational structure 
         /// of categories/products that descend from it. When set to <c>true</c>, this entity acts as a virtual node, 
@@ -40,7 +37,7 @@ namespace Ekom.Models.Import
         /// </summary>
         public string? SKU { get; set; }
         public bool? VirtualUrl { get; set; }
-
+        public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, bool> Disabled = new Dictionary<string, bool>();
         public List<ImportCategory> SubCategories { get; set; } = new List<ImportCategory>();
         public List<ImportProduct> Products { get; set; } = new List<ImportProduct>();
@@ -49,8 +46,7 @@ namespace Ekom.Models.Import
         /// <summary>
         /// Optional Identifer value if other then SKU. Represents a unique identifier corresponding to this entity in an external system, facilitating data synchronization and matching operations. 
         /// This identifier can be a unique ID, or any other distinctive code used by the external system to uniquely identify 
-        /// the entity. The usage of this identifier allows for seamless integration and update processes between the external system and our e-commerce platform, 
-        /// ensuring that entities are correctly aligned across both systems without ambiguity.
+        /// the entity. If <see cref="IdentiferPropertyAlias"/> is not "sku" then the value will be saved to that property
         /// </summary>
         public string? Identifier
         {
@@ -78,11 +74,12 @@ namespace Ekom.Models.Import
         /// </summary>
         public Dictionary<string, object>? Slug { get; set; } = new Dictionary<string, object>();
         public string? SKU { get; set; }
-        public object? Description { get; set; }
+        public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
         public List<ImportPrice> Price { get; set; } = new List<ImportPrice>();
         public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
         public bool EnableBackorder { get; set; }
         public decimal? Vat { get; set; }
+
         /// <summary>
         /// List of Udi format of content. udi://document/xxxxx. Defines a collection of category identifiers where the product is additionally listed, beyond its primary category. 
         /// This property enables the product to be associated with multiple categories, facilitating broader visibility across 
@@ -101,8 +98,7 @@ namespace Ekom.Models.Import
         /// <summary>
         /// Optional Identifer value if other then SKU. Represents a unique identifier corresponding to this entity in an external system, facilitating data synchronization and matching operations. 
         /// This identifier can be a unique ID, or any other distinctive code used by the external system to uniquely identify 
-        /// the entity. The usage of this identifier allows for seamless integration and update processes between the external system and our e-commerce platform, 
-        /// ensuring that entities are correctly aligned across both systems without ambiguity.
+        /// the entity. If <see cref="IdentiferPropertyAlias"/> is not "sku" then the value will be saved to that property
         /// </summary>
         public string? Identifier
         {
@@ -121,10 +117,6 @@ namespace Ekom.Models.Import
     /// </summary>
     public class ImportVariantGroup : ImportBase
     {
-        /// <summary>
-        /// List of Udi format of image. udi://media/xxxxx
-        /// </summary>
-        public List<string> Images { get; set; } = new List<string>();
         public List<ImportVariant> Variants { get; set; } = new List<ImportVariant>();
     }
 
@@ -135,11 +127,7 @@ namespace Ekom.Models.Import
     public class ImportVariant : ImportBase
     {
         public string? SKU { get; set; }
-        /// <summary>
-        /// List of Udi format of image. udi://media/xxxxx
-        /// </summary>
-        public List<string> Images { get; set; } = new List<string>();
-        public object? Description { get; set; }
+        public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
         public List<ImportPrice> Price { get; set; } = new List<ImportPrice>();
         public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
         public bool EnableBackorder { get; set; }
@@ -152,23 +140,23 @@ namespace Ekom.Models.Import
     /// </summary>
     public class ImportBase
     {
-        public required object Title { get; set; }
+        public required Dictionary<string, object> Title { get; set; } = new Dictionary<string, object>();
+
+        public List<ImportImage> Images { get; set; } = new List<ImportImage>();
 
         /// <summary>
         /// Set the name of the node in Umbraco
         /// </summary>
         public required string NodeName { get; set; }
 
-
         /// <summary>
-        /// Represents a value used by the importer to determine whether to update a particular node. It is recommended 
-        /// to assign a hash of the object's relevant data to this property. By comparing this value with the existing 
-        /// data's hash, the importer can efficiently identify changes and decide if an update is necessary. Storing a 
-        /// hash here optimizes the comparison process, especially for complex objects, by simplifying equality checks 
-        /// and minimizing the need for deep object comparisons. This approach enhances the overall efficiency and 
-        /// reliability of the import operation.
+        /// Represents a unique identifier for comparing the current state of an object against its previous state to determine the necessity of an update.
+        /// This property serves as a key factor in the import process, enabling efficient change detection by comparing the current object state 
+        /// with a stored reference state. When not manually assigned, this identifier is automatically generated by computing a SHA hash 
+        /// of the object's serialized representation. This automated generation ensures that any modification to the object's relevant properties 
+        /// results in a different identifier, facilitating accurate and efficient change tracking. 
         /// </summary>
-        public required string Comparer { get; set; }
+        public string? Comparer { get; set; }
 
         /// <summary>
         /// A collection of key-value pairs representing additional, custom data associated with this node. This flexible structure allows for 
@@ -177,21 +165,74 @@ namespace Ekom.Models.Import
         /// set of properties might vary between instances or need to extend beyond the predefined fields of the node. Use this to capture 
         /// additional information required for import operations or to accommodate custom requirements without altering the node's core schema.
         /// </summary>
-        public Dictionary<string,object>? AdditionalProperties { get; set; }
+        public Dictionary<string,object>? AdditionalProperties { get; set; } = new Dictionary<string, object>();
 
     }
 
+    /// <summary>
+    /// Represents the pricing information of an item for a specific store.
+    /// </summary>
     public class ImportPrice
     {
+        /// <summary>
+        /// Gets or sets the alias of the store where this price is applicable.
+        /// </summary>
+        /// <value>The store alias as a string.</value>
         public required string StoreAlias { get; set; }
+
+        /// <summary>
+        /// Gets or sets the price of the item.
+        /// </summary>
+        /// <value>The price as a decimal number.</value>
         public required decimal Price { get; set; }
+
+        /// <summary>
+        /// Gets or sets the currency code for the price.
+        /// </summary>
+        /// <value>The currency code as a string.</value>
         public required string Currency { get; set; }
     }
 
+
+    /// <summary>
+    /// Represents the stock level of an item for a specific store.
+    /// </summary>
     public class ImportStock
     {
+        /// <summary>
+        /// Gets or sets the alias of the store where this stock level is applicable.
+        /// </summary>
+        /// <value>The store alias as a string.</value>
         public required string StoreAlias { get; set; }
-        public required decimal Stock { get; set; }
+
+        /// <summary>
+        /// Gets or sets the stock level of the item.
+        /// </summary>
+        /// <value>The stock level as an integer.</value>
+        public required int Stock { get; set; }
+    }
+
+
+    public class ImportImage
+    {
+        /// <summary>
+        /// UDI format of the image. Example: udi://media/xxxxx. Use this to reference an existing image in Umbraco.
+        /// Note: Either ImageUdi or ImageBytes can be used, but not both. If both are provided, ImageBytes will take precedence and ImageUdi will be ignored.
+        /// </summary>
+        public string? ImageUdi { get; set; }
+
+        ///// <summary>
+        ///// Raw bytes of the image to be imported. This allows for direct image upload, which the service will handle by importing the image into Umbraco.
+        ///// Note: Either ImageUdi or ImageBytes can be used, but not both. If both are provided, ImageBytes will take precedence and ImageUdi will be ignored.
+        ///// </summary>
+        //public byte[]? ImageBytes { get; set; }
+
+        ///// <summary>
+        ///// Image Node Name
+        ///// </summary>
+        //public string NodeName { get; set; }
+
+        //public string Comparer { get; set; }
     }
 
 }
