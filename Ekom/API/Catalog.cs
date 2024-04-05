@@ -485,7 +485,7 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple categories by id from store in ekmRequest (slower then GetCategoriesByKeys)
         /// </summary>
-        public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string storeAlias = null)
+        public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string? storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -515,7 +515,7 @@ namespace Ekom.API
         /// <summary>
         /// Get multiple categories by key from store in ekmRequest (faster then GetCategoriesByIds)
         /// </summary>
-        public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string storeAlias = null)
+        public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string? storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 

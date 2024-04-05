@@ -260,6 +260,46 @@ namespace Ekom.Controllers
         }
 
         /// <summary>
+        /// Get Categories By Keys
+        /// </summary>
+        /// <param name="keys">Guid[] keys of categories</param>
+        /// <param name="storeAlias">Store Alias</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("categoriesbykeys")]
+        public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string? storeAlias = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetCategoriesByKeys(keys, storeAlias);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Categories By Ids
+        /// </summary>
+        /// <param name="ids">Int[] ids of categories</param>
+        /// <param name="storeAlias">Store Alias</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("categoriesbyids")]
+        public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string? storeAlias = null)
+        {
+            try
+            {
+                return API.Catalog.Instance.GetCategoriesByIds(ids, storeAlias);
+            }
+            catch (Exception ex) when (!(ex is HttpResponseException))
+            {
+                throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            }
+        }
+
+        /// <summary>
         /// Get Root Categories
         /// </summary>
         /// <returns></returns>
