@@ -12,6 +12,7 @@ public class ImportController : UmbracoAuthorizedApiController
     private readonly IShortStringHelper _shortStringHelper;
 
     private readonly Guid rootCategory = new Guid("f4294c2d-b64a-4173-9f45-30ce0b9db220");
+    private readonly List<ImportProduct> products = new List<ImportProduct>();
 
     public ImportController(IImportService importService, IShortStringHelper shortStringHelper)
     {
@@ -31,11 +32,12 @@ public class ImportController : UmbracoAuthorizedApiController
     private ImportData CreateFullDummyData(int depth, int quantityPerLevel)
     {
         ImportData data = new ImportData();
-        data.Categories = GenerateCategories(depth, quantityPerLevel, 1);
+        data.Categories = GenerateCategories(depth, quantityPerLevel, 1, "");
+        data.Products = products;
         return data;
     }
 
-    private List<ImportCategory> GenerateCategories(int depth, int quantityPerLevel, int currentDepth)
+    private List<ImportCategory> GenerateCategories(int depth, int quantityPerLevel, int currentDepth, string parentIdentifier = null)
     {
         var categories = new List<ImportCategory>();
 
@@ -71,6 +73,8 @@ public class ImportController : UmbracoAuthorizedApiController
             categoryNameIndex = categoryNameIndex % sampleCategoryNames.Count;
             var categoryName = sampleCategoryNames[categoryNameIndex] + $" {currentDepth}-{i + 1}";
 
+            var identifier = $"SKU-{currentDepth}-{i + 1}-{parentIdentifier}-{categoryName}";
+
             var category = new ImportCategory
             {
                 Title = new Dictionary<string, object>
@@ -84,7 +88,7 @@ public class ImportController : UmbracoAuthorizedApiController
                     { "en-US", ($"{categoryName} US").ToUrlSegment(_shortStringHelper).ToLowerInvariant() },
                     { "is-IS", ($"{categoryName} IS").ToUrlSegment(_shortStringHelper).ToLowerInvariant() }
                 },
-                SKU = $"SKU-{currentDepth}-{i + 1}",
+                SKU = identifier,
                 NodeName = $"{categoryName}",
                 Images = new List<ImportImage>()
                 {
@@ -94,21 +98,23 @@ public class ImportController : UmbracoAuthorizedApiController
                      }
                 },
                 SubCategories = currentDepth < depth
-                    ? GenerateCategories(depth, quantityPerLevel, currentDepth + 1)
+                    ? GenerateCategories(depth, quantityPerLevel, currentDepth + 1, $"{currentDepth}-{i + 1}")
                     : null, // No subcategories if it's the last level
-                Products = currentDepth == depth ? GenerateProducts(quantityPerLevel, currentDepth + 1) : new List<ImportProduct>()
             };
 
             categories.Add(category);
+
+            if (currentDepth >= depth)
+            {
+                GenerateProducts(identifier, quantityPerLevel, currentDepth);
+            }
         }
 
         return categories;
     }
 
-    private List<ImportProduct> GenerateProducts(int quantityPerLevel, int currentDepth)
+    private List<ImportProduct> GenerateProducts(string identifier, int quantityPerLevel, int currentDepth)
     {
-        var products = new List<ImportProduct>();
-
         for (int i = 0; i < quantityPerLevel; i++)
         {
             var product = new ImportProduct
@@ -123,11 +129,16 @@ public class ImportController : UmbracoAuthorizedApiController
                     { "en-US", ($"Slug {currentDepth} US {i + 1}").ToUrlSegment(_shortStringHelper).ToLowerInvariant() },
                     { "is-IS", ($"Slug {currentDepth} IS {i + 1}").ToUrlSegment(_shortStringHelper).ToLowerInvariant() }
                 },
-                SKU = $"SKU {currentDepth}-{i + 1}",
+                SKU = $"Product SKU {currentDepth}-{i + 1} - {identifier}",
                 Description = new Dictionary<string, object>
                 {
                     { "en-US", $"Description {currentDepth} US {i + 1}" },
                     { "is-IS", $"Description {currentDepth} IS {i + 1}" }
+                },
+                Categories = new List<string>()
+                {
+                    identifier,
+                    "SKU-2-5-1-2-Printers 2-5"
                 },
                 Price = new List<ImportPrice>()
                 {

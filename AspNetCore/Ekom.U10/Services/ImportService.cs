@@ -6,6 +6,7 @@ using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Umbraco.Cms.Core.Models;
@@ -68,9 +69,13 @@ public class ImportService : IImportService
 
         GetInitialData(parentKey);
 
+        var allUmbracoCategories = GetAllUmbracoCategories();
+
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
-            IterateCategoryTree(data.Categories, umbracoRootContent, identiferPropertyAlias, syncUser);
+            IterateCategoryTree(data.Categories, allUmbracoCategories, umbracoRootContent, identiferPropertyAlias, syncUser);
+
+            IterateProductTree(data.Products, allUmbracoCategories, identiferPropertyAlias, syncUser);
         }
 
         _logger.LogInformation("Full Sync finished");
@@ -96,7 +101,9 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        IterateCategoryTree(importCategory.SubCategories, umbracoRootContent, identiferPropertyAlias, syncUser);
+        var allUmbracoCategories = GetAllUmbracoCategories();
+
+        IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, umbracoRootContent, identiferPropertyAlias, syncUser);
 
         SaveCategory(umbracoRootContent, importCategory, false, syncUser);
 
@@ -123,12 +130,14 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        SaveProduct(umbracoRootContent, importProduct, false, syncUser);
+        var allUmbracoCategories = GetAllUmbracoCategories();
+
+        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, false, syncUser);
 
         _logger.LogInformation("Product Sync finished ProductKey: {productKey}", productKey.ToString());
     }
 
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, IContent? parentContent, string identiferPropertyAlias, int syncUser)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, IContent? parentContent, string identiferPropertyAlias, int syncUser)
     {
 
         if (parentContent == null)
@@ -136,73 +145,93 @@ public class ImportService : IImportService
             return;
         }
 
-        var umbracoChildrenContent = _contentService
-            .GetPagedChildren(parentContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).Where(x => x.ContentType.Alias == "ekmCategory")
-            .ToList();
+        // Delete Categories
+
+        // Create a HashSet of identifiers from importCategory for efficient lookups
+        var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
+
+        // Delete Category not present in the importCategoryIdentifiers
+        foreach (var umbracoCategory in allUmbracoCategories.Where(x => x.ParentId == parentContent.Id))
+        {
+            var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias);
+            if (!string.IsNullOrEmpty(categoryIdentifier) && !importCategoryIdentifiers.Contains(categoryIdentifier))
+            {
+                _contentService.Delete(umbracoCategory);
+            }
+        }
+
 
         if (importCategories != null || importCategories?.Count > 0)
         {
             foreach (var importCategory in importCategories)
             {
+                var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
+
                 var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create, identiferPropertyAlias);
+
+                if (create)
+                {
+                    allUmbracoCategories.Add(content);
+                }
 
                 var save = create;
 
-                if (!create)
-                {
-                    umbracoChildrenContent.Remove(content);
-
-                }
-
                 SaveCategory(content, importCategory, create, syncUser);
 
-                IterateCategoryTree(importCategory.SubCategories, content, identiferPropertyAlias, syncUser);
-
-                IterateProductTree(importCategory.Products, content, identiferPropertyAlias, syncUser);
+                IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, content, identiferPropertyAlias, syncUser);
             }
-        }
-
-        foreach (var contentToDelete in umbracoChildrenContent)
-        {
-            _contentService.Delete(contentToDelete);
         }
 
     }
 
-    private void IterateProductTree(List<ImportProduct>? importProducts, IContent? parentContent, string identiferPropertyAlias, int syncUser)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, string identiferPropertyAlias, int syncUser)
     {
-
-        if (parentContent == null)
-        {
-            return;
-        }
-
-        var umbracoChildrenContent = _contentService
-            .GetPagedChildren(parentContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).Where(x => x.ContentType.Alias == "ekmProduct")
-            .ToList();
+        ArgumentNullException.ThrowIfNull(categoryContentType);
+        ArgumentNullException.ThrowIfNull(productContentType);
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
         if (importProducts != null || importProducts?.Count > 0)
         {
+            var allUmbracoProducts = _contentService
+                .GetPagedOfType(productContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+                .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
+                .ToList();
+
+
+            // Delete Products
+
+            // Create a HashSet of identifiers from importProducts for efficient lookups
+            var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
+
+            // Delete Products not present in the importProductIdentifiers
+            foreach (var umbracoProduct in allUmbracoProducts)
+            {
+                var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias);
+                if (!string.IsNullOrEmpty(productIdentifier) && !importProductIdentifiers.Contains(productIdentifier))
+                {
+                    _contentService.Delete(umbracoProduct);
+                }
+            }
+
             foreach (var importProduct in importProducts)
             {
-                var content = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, parentContent, out bool create, identiferPropertyAlias);
-
-                var save = create;
-
-                if (!create)
+                if (importProduct.Categories.Count > 0)
                 {
-                    umbracoChildrenContent.Remove(content);
+                    var primaryCategoryContent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(identiferPropertyAlias) == importProduct.Categories.FirstOrDefault());
+
+                    if (primaryCategoryContent != null)
+                    {
+                        var umbracoChildrenContent = allUmbracoProducts.Where(x => x.ParentId == primaryCategoryContent.Id).ToList();
+
+                        var content = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create, identiferPropertyAlias);
+
+                        var save = create;
+
+                        SaveProduct(content, importProduct, allUmbracoCategories, create, syncUser);
+                    }
                 }
 
-                SaveProduct(content, importProduct, create, syncUser);
             }
-        }
-
-        foreach (var contentToDelete in umbracoChildrenContent)
-        {
-            _contentService.Delete(contentToDelete);
         }
 
     }
@@ -266,7 +295,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, bool create, int syncUser)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, bool create, int syncUser)
     {
         OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
@@ -330,6 +359,17 @@ public class ImportService : IImportService
             {
                 productContent.SetValue(property.Key, property.Value);
             }
+        }
+
+        if (importProduct.Categories.Count > 1)
+        {
+            var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(importProduct.IdentiferPropertyAlias)));
+
+            var udis = umbracoCategories.Select(x => x.GetUdi());
+
+            var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
+
+            productContent.SetValue("categories", stringUdis);
         }
 
         productContent.SetValue("comparer", compareValue);
@@ -477,6 +517,16 @@ public class ImportService : IImportService
             }
             return builder.ToString();
         }
+    }
+
+    private List<IContent> GetAllUmbracoCategories()
+    {
+        ArgumentNullException.ThrowIfNull(categoryContentType);
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+        return _contentService
+            .GetPagedOfType(categoryContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
+            .ToList();
     }
 
 

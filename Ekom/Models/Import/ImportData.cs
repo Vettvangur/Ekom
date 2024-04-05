@@ -9,6 +9,12 @@ namespace Ekom.Models.Import
         /// A collection of categories to be imported. Each entry in this list represents a category, complete with its hierarchy, products, and associated details, as defined by the <see cref="ImportCategory"/> class. This comprehensive model supports importing a rich, nested structure of categories and products, facilitating complex updates and additions to the e-commerce platform's catalog. The ability to define subcategories and products within each category allows for a deep, tree-structured import, mimicking the natural organization of an e-commerce catalog.
         /// </summary>
         public List<ImportCategory> Categories { get; set; } = new List<ImportCategory>();
+
+        /// <summary>
+        /// Represents a collection of products to be imported. Each entry in this list corresponds to a product,
+        /// as detailed by the <see cref="ImportProduct"/> class.
+        /// </summary>
+        public List<ImportProduct> Products { get; set; } = new List<ImportProduct>();
     }
 
     /// <summary>
@@ -40,7 +46,6 @@ namespace Ekom.Models.Import
         public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, bool> Disabled = new Dictionary<string, bool>();
         public List<ImportCategory> SubCategories { get; set; } = new List<ImportCategory>();
-        public List<ImportProduct> Products { get; set; } = new List<ImportProduct>();
 
         private string? _identifier;
         /// <summary>
@@ -81,13 +86,10 @@ namespace Ekom.Models.Import
         public decimal? Vat { get; set; }
 
         /// <summary>
-        /// List of Udi format of content. udi://document/xxxxx. Defines a collection of category identifiers where the product is additionally listed, beyond its primary category. 
-        /// This property enables the product to be associated with multiple categories, facilitating broader visibility across 
-        /// the catalog. By specifying additional categories here, the product can be discovered under various contexts or 
-        /// classifications, enhancing its reach and relevance to different customer interests or search queries. Each string 
-        /// in the list should correspond to a unique identifier of a category within the system. Initializing this property 
-        /// with an empty list ensures that the product can be programmatically associated with categories post-creation.
-        /// 
+        /// Represents a collection of category identifiers associated with a product. The first identifier
+        /// in the list denotes the primary category of the product, while subsequent identifiers represent
+        /// additional categories to which the product is linked. This categorization aids in organizing
+        /// products within different classifications for easier access and management.
         /// </summary>
         public List<string> Categories { get; set; } = new List<string>();
 

@@ -482,6 +482,64 @@ namespace Ekom.API
             return Enumerable.Empty<ICategory>();
         }
 
+        /// <summary>
+        /// Get multiple categories by id from store in ekmRequest (slower then GetCategoriesByKeys)
+        /// </summary>
+        public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
+            {
+                return Enumerable.Empty<ICategory>();
+            }
+
+            var categoriesInStore = _categoryCache.Cache[store.Alias].Values; // Assuming this gets all category values
+            var orderedCategories = new List<ICategory>();
+
+            // Iterate over ids to maintain order
+            foreach (var id in ids)
+            {
+                // Filter categories based on id and maintain the order
+                var category = categoriesInStore.FirstOrDefault(c => c.Id == id);
+                if (category != null)
+                {
+                    orderedCategories.Add(category);
+                }
+            }
+
+            return orderedCategories;
+        }
+
+
+        /// <summary>
+        /// Get multiple categories by key from store in ekmRequest (faster then GetCategoriesByIds)
+        /// </summary>
+        public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string storeAlias = null)
+        {
+            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+            if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
+            {
+                return Enumerable.Empty<ICategory>();
+            }
+
+            var categoriesInStore = _categoryCache.Cache[store.Alias];
+            var orderedCategories = new List<ICategory>();
+
+            // Iterate over ids to maintain order
+            foreach (var key in keys)
+            {
+                // Attempt to find the category by KEY and preserve the order based on the input array
+                if (categoriesInStore.TryGetValue(key, out var category))
+                {
+                    orderedCategories.Add(category);
+                }
+            }
+
+            return orderedCategories;
+        }
+
         public IVariant GetVariant(Guid Id, string storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
