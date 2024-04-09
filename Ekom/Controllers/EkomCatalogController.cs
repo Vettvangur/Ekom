@@ -265,9 +265,9 @@ namespace Ekom.Controllers
         /// <param name="keys">Guid[] keys of categories</param>
         /// <param name="storeAlias">Store Alias</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("categoriesbykeys")]
-        public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string? storeAlias = null)
+        public IEnumerable<ICategory> GetCategoriesByKeys([FromBody]Guid[] keys, string? storeAlias = null)
         {
             try
             {
@@ -285,9 +285,9 @@ namespace Ekom.Controllers
         /// <param name="ids">Int[] ids of categories</param>
         /// <param name="storeAlias">Store Alias</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("categoriesbyids")]
-        public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string? storeAlias = null)
+        public IEnumerable<ICategory> GetCategoriesByIds([FromBody] int[] ids, string? storeAlias = null)
         {
             try
             {
