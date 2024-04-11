@@ -62,10 +62,7 @@ public class ImportService : IImportService
     /// <param name="identiferPropertyAlias">The property alias used to identify unique content items during the sync process. Defaults to "sku".</param>
     public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
-        _logger.LogInformation("Full Sync running. ParentKey: {ParentKey}, SyncUser: {SyncUser}, Identifier: {IdentifierPropertyAlias}",
-            parentKey.HasValue ? parentKey.Value.ToString() : "None",
-            syncUser,
-            identiferPropertyAlias);
+        _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias} Categories: {data.Categories.Count} Products: {data.Products.Count}");
 
         GetInitialData(parentKey);
 
@@ -92,10 +89,7 @@ public class ImportService : IImportService
     /// <param name="identiferPropertyAlias">The property alias used to identify unique elements within the category in the CMS. Defaults to "sku".</param>
     public void CategorySync(ImportCategory importCategory, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
-        _logger.LogInformation("Category Sync running. CategoryKey: {categoryKey}, SyncUser: {SyncUser}, Identifier: {IdentifierPropertyAlias}",
-            categoryKey.ToString(),
-            syncUser,
-            identiferPropertyAlias);
+        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
         GetInitialData(categoryKey);
 
@@ -121,10 +115,7 @@ public class ImportService : IImportService
     /// <param name="identiferPropertyAlias">The property alias used to identify the product within the CMS. Defaults to "sku".</param>
     public void ProductSync(ImportProduct importProduct, Guid productKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
-        _logger.LogInformation("Product Sync running. ProductKey: {productKey}, SyncUser: {SyncUser}, Identifier: {IdentifierPropertyAlias}",
-            productKey.ToString(),
-            syncUser,
-            identiferPropertyAlias);
+        _logger.LogInformation($"Category Sync running. ProductKey: {productKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
         GetInitialData(productKey);
 
