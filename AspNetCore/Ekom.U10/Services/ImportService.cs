@@ -233,7 +233,7 @@ public class ImportService : IImportService
 
         var saveImage = SaveImages(categoryContent, importCategory.Images);
 
-        var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products" });
+        var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products", "EventProperties" });
 
         // If no changes are found and not creating then return,
         if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImage)
@@ -308,7 +308,7 @@ public class ImportService : IImportService
 
         var saveImage = SaveImages(productContent, importProduct.Images);
 
-        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups" });
+        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "EventProperties" });
 
         // If no changes are found and not creating then return,
         if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImage)
