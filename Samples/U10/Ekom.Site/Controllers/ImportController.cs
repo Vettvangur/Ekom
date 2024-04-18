@@ -31,9 +31,13 @@ public class ImportController : UmbracoAuthorizedApiController
 
     private ImportData CreateFullDummyData(int depth, int quantityPerLevel)
     {
-        ImportData data = new ImportData();
-        data.Categories = GenerateCategories(depth, quantityPerLevel, 1, "");
-        data.Products = products;
+        ImportData data = new ImportData()
+        {
+            MediaRootKey = new Guid(),
+            Categories = GenerateCategories(depth, quantityPerLevel, 1, ""),
+            Products = products
+        };
+
         return data;
     }
 
@@ -90,11 +94,12 @@ public class ImportController : UmbracoAuthorizedApiController
                 },
                 SKU = identifier,
                 NodeName = $"{categoryName}",
-                Images = new List<ImportImage>()
+                Images = new List<IImportImage>()
                 {
-                     new ImportImage()
+                     new ImportImageFromUdi()
                      {
-                          ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5"
+                        ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
+                         
                      }
                 },
                 SubCategories = currentDepth < depth

@@ -15,5 +15,11 @@ namespace Ekom.Models.Import
         /// as detailed by the <see cref="ImportProduct"/> class.
         /// </summary>
         public List<ImportProduct> Products { get; set; } = new List<ImportProduct>();
+
+        /// <summary>
+        /// The GUID key of the media root node in Umbraco to which images are imported. This key identifies
+        /// the specific location within the media library where new images will be stored.
+        /// </summary>
+        public required Guid MediaRootKey { get; set; }
     }
 }

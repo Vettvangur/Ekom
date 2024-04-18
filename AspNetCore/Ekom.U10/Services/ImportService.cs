@@ -6,7 +6,6 @@ using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Umbraco.Cms.Core.Models;
@@ -25,6 +24,7 @@ public class ImportService : IImportService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly IScopeProvider _scopeProvider;
+    private readonly ImportImageService _importImageService;
     private readonly ILogger<ImportService> _logger;
     private readonly Stock _stock;
 
@@ -35,13 +35,16 @@ public class ImportService : IImportService
     private IContentType? catalogContentType;
     private IContent? umbracoRootContent;
 
+    private Guid _mediaRootKey;
+
     public ImportService(
         IUmbracoContextFactory umbracoContextFactory,
         IContentService contentService,
         IContentTypeService contentTypeService,
         IScopeProvider scopeProvider,
         ILogger<ImportService> logger,
-        Stock stock)
+        Stock stock,
+        ImportImageService importImageService)
     {
         _umbracoContextFactory = umbracoContextFactory;
         _contentService = contentService;
@@ -49,6 +52,7 @@ public class ImportService : IImportService
         _scopeProvider = scopeProvider;
         _logger = logger;
         _stock = stock;
+        _importImageService = importImageService;
     }
 
     /// <summary>
@@ -68,11 +72,15 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
+        var rootUmbracoMediafolder = _importImageService.GetRootMedia(data.MediaRootKey);
+
+        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
-            IterateCategoryTree(data.Categories, allUmbracoCategories, umbracoRootContent, identiferPropertyAlias, syncUser);
+            IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
 
-            IterateProductTree(data.Products, allUmbracoCategories, identiferPropertyAlias, syncUser);
+            IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
         }
 
         _logger.LogInformation("Full Sync finished");
@@ -87,7 +95,7 @@ public class ImportService : IImportService
     /// <param name="categoryKey">The GUID key identifying the category in the CMS. This key is used to fetch and update the corresponding category.</param>
     /// <param name="syncUser">Optional. The user ID associated with the synchronization process. Defaults to -1, indicating an unspecified or system user.</param>
     /// <param name="identiferPropertyAlias">The property alias used to identify unique elements within the category in the CMS. Defaults to "sku".</param>
-    public void CategorySync(ImportCategory importCategory, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public void CategorySync(ImportCategory importCategory, Guid mediaRootKey, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
         _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
@@ -97,9 +105,13 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, umbracoRootContent, identiferPropertyAlias, syncUser);
+        var rootUmbracoMediafolder = _importImageService.GetRootMedia(mediaRootKey);
 
-        SaveCategory(umbracoRootContent, importCategory, false, syncUser);
+        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
+        IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
+
+        SaveCategory(umbracoRootContent, importCategory, allUmbracoMedia, false, syncUser);
 
         _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
     }
@@ -113,7 +125,7 @@ public class ImportService : IImportService
     /// <param name="productKey">The GUID key identifying the product in the CMS. Used to fetch and update the corresponding product.</param>
     /// <param name="syncUser">Optional. The user ID associated with the synchronization process. Defaults to -1, indicating an unspecified or system user.</param>
     /// <param name="identiferPropertyAlias">The property alias used to identify the product within the CMS. Defaults to "sku".</param>
-    public void ProductSync(ImportProduct importProduct, Guid productKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public void ProductSync(ImportProduct importProduct, Guid productKey, Guid mediaRootKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
         _logger.LogInformation($"Category Sync running. ProductKey: {productKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
@@ -123,12 +135,16 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, false, syncUser);
+        var rootUmbracoMediafolder = _importImageService.GetRootMedia(mediaRootKey);
+
+        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
+        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, allUmbracoMedia, false, syncUser);
 
         _logger.LogInformation("Product Sync finished ProductKey: {productKey}", productKey.ToString());
     }
 
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, IContent? parentContent, string identiferPropertyAlias, int syncUser)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, string identiferPropertyAlias, int syncUser)
     {
 
         if (parentContent == null)
@@ -167,15 +183,15 @@ public class ImportService : IImportService
 
                 var save = create;
 
-                SaveCategory(content, importCategory, create, syncUser);
+                SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
 
-                IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, content, identiferPropertyAlias, syncUser);
+                IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, identiferPropertyAlias, syncUser);
             }
         }
 
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, string identiferPropertyAlias, int syncUser)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -218,7 +234,7 @@ public class ImportService : IImportService
 
                         var save = create;
 
-                        SaveProduct(content, importProduct, allUmbracoCategories, create, syncUser);
+                        SaveProduct(content, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
                     }
                 }
 
@@ -227,11 +243,11 @@ public class ImportService : IImportService
 
     }
 
-    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, bool create, int syncUser)
+    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
-        var saveImage = SaveImages(categoryContent, importCategory.Images);
+        var saveImage = ImportImage(categoryContent, importCategory.Images, allUmbracoMedia);
 
         var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products", "EventProperties" });
 
@@ -286,7 +302,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, bool create, int syncUser)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
         OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
@@ -306,7 +322,7 @@ public class ImportService : IImportService
             }
         }
 
-        var saveImage = SaveImages(productContent, importProduct.Images);
+        var saveImage = ImportImage(productContent, importProduct.Images, allUmbracoMedia);
 
         var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "EventProperties" });
 
@@ -380,14 +396,63 @@ public class ImportService : IImportService
         }
     }
 
-    private bool SaveImages(IContent content, List<ImportImage> images)
+    private bool ImportImage(IContent content, List<IImportImage> images, List<IMedia> allUmbracoMedia)
     {
+        var imagesUdi = new List<string>();
+
+        foreach (var image in images)
+        {
+            if (image is ImportImageFromUdi importImage)
+            {
+                imagesUdi.Add(importImage.ImageUdi);
+            }
+            else if (image is ImportImageFromExternalUrl externalUrlImage)
+            {
+                var compareValue = externalUrlImage.Comparer ?? ComputeSha256Hash(externalUrlImage);
+
+                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+
+                if (media == null)
+                {
+                    media = _importImageService.ImportImageFromExternalUrl(externalUrlImage, compareValue);
+                }
+
+                imagesUdi.Add(media.GetUdi().ToString());
+            }
+            else if (image is ImportImageFromBytes bytesImage)
+            {
+                var compareValue = bytesImage.Comparer ?? ComputeSha256Hash(bytesImage, new string[] { "ImageBytes" });
+
+                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+
+                if (media == null)
+                {
+                    media = _importImageService.ImportImageFromBytes(bytesImage, compareValue);
+                }
+
+                imagesUdi.Add(media.GetUdi().ToString());
+            }
+            else if (image is ImportImageFromBase64 base64Image) {
+
+                var compareValue = base64Image.Comparer ?? ComputeSha256Hash(base64Image, new string[] { "ImageBase64" });
+
+                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+
+                if (media == null)
+                {
+                    media = _importImageService.ImportImageFromBase64(base64Image, compareValue);
+                }
+
+                imagesUdi.Add(media.GetUdi().ToString());
+            }
+        }
+
         var currentImages = content.GetValue<string>("images") ?? "";
-        var importedImages = string.Join(",", images.Select(x => x.ImageUdi));
+        var importedImages = string.Join(",", imagesUdi);
 
         if (currentImages != importedImages)
         {
-            content.SetValue("images", string.Join(",", images.Select(x => x.ImageUdi)));
+            content.SetValue("images", importedImages);
             return true;
         }
         return false;

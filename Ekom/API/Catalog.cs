@@ -377,7 +377,7 @@ namespace Ekom.API
         /// <param name="storeAlias">The store alias.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">storeAlias</exception>
-        public ICategory GetCategory(int Id, string storeAlias = null)
+        public ICategory? GetCategory(int Id, string storeAlias = null)
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -386,7 +386,16 @@ namespace Ekom.API
                 return null;
             }
 
-            return _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+            // Attempt to find the category with the given ID in the cache for the specified store alias
+            var categoryPair = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id);
+
+            // Check if a valid KeyValuePair was found and if the category is not null
+            if (!categoryPair.Equals(default(KeyValuePair<int, ICategory>)) && categoryPair.Value != null)
+            {
+                return categoryPair.Value;
+            }
+
+            return null;
         }
 
         /// <summary>

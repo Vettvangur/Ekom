@@ -105,14 +105,35 @@ namespace Ekom.Utilities
                     // Prioritize direct alias match in PropertyValue.Values.
                     if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
                     {
-                        return valAlias.ToString();
+                        // Check if valCulture is a JSON string that can be parsed
+                        if (valAlias is string stringValue)
+                        {
+                            return stringValue;
+                        }
+                        else if (valAlias is JObject jObjectValue)
+                        {
+                            if (jObjectValue["markup"] != null)
+                            {
+                                return jObjectValue["markup"].ToString();
+                            }
+                        }
                     }
 
                     // Fallback to current culture match in PropertyValue.Values.
                     var currentCultureName = CultureInfo.CurrentCulture.Name;
                     if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
                     {
-                        return valCulture.ToString();
+                        // Check if valCulture is a JSON string that can be parsed
+                        if (valCulture is string stringValue)
+                        {
+                            return stringValue;
+                        } else if (valCulture is JObject jObjectValue)
+                        {
+                            if (jObjectValue["markup"] != null)
+                            {
+                                return jObjectValue["markup"].ToString();
+                            }
+                        }
                     }
                 }
             }
