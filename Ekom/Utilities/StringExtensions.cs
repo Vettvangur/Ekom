@@ -106,16 +106,16 @@ namespace Ekom.Utilities
                     if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
                     {
                         // Check if valCulture is a JSON string that can be parsed
-                        if (valAlias is string stringValue)
-                        {
-                            return stringValue;
-                        }
-                        else if (valAlias is JObject jObjectValue)
+                        if (valAlias is JObject jObjectValue)
                         {
                             if (jObjectValue["markup"] != null)
                             {
                                 return jObjectValue["markup"].ToString();
                             }
+                        }
+                        else
+                        {
+                            return valAlias.ToString();
                         }
                     }
 
