@@ -267,11 +267,19 @@ namespace Ekom.Umb.Services
 
                 foreach (var category in categories)
                 {
-                    foreach (var categoryUrl in category.Urls)
+                    foreach (var categoryUrl in category.Urls.DistinctBy(x => x))
                     {
                         foreach (var domain in store.Domains)
                         {
-                            var url = categoryUrl + item.GetValue("slug", store.Alias).ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                            var productUrl = item.GetValue("slug", store.Alias);
+
+                            if (string.IsNullOrEmpty(productUrl))
+                            {
+                                continue;
+                            }
+
+                            var url = categoryUrl + productUrl.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
 
                             urls.Add(new UmbracoUrl()
                             {

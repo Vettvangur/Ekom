@@ -403,11 +403,6 @@ namespace Ekom.Models
 
             UrlsWithContext = urls;
             Urls = urls.Select(x => x.Url).ToList();
-
-            if (!Urls.Any() || string.IsNullOrEmpty(GetValue("title")))
-            {
-                throw new Exception("No url's or no title present in product. Id: " + item.Id + " Title: " + Title + " HasUrls: " + Urls.Any() + " HasCategories: " + Categories.Any());
-            }
         }
 
         private void PopulateCategories()
