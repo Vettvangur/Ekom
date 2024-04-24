@@ -98,7 +98,7 @@ namespace Ekom.Controllers
         {
             return await _memoryCache.GetOrCreateAsync($"Stores_{id}", async cacheEntry =>
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
 
                 var stores = API.Store.Instance.GetAllStores();
                 var node = _nodeService.NodeById(id);

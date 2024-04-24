@@ -143,7 +143,7 @@ public class ImportImageService
 
         mediaCount++;
 
-        if (mediaCount == 150)
+        if (mediaCount == 200)
         {
             var currentNodeName = lastMediaFolder.Name;
 
