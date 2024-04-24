@@ -16,6 +16,11 @@ public class ImportImageService
     private readonly MediaFileManager _mediaFileManager;
     private readonly MediaUrlGeneratorCollection _mediaUrlGenerators;
     private readonly IShortStringHelper _shortStringHelper;
+
+    private int mediaCount = 0;
+    private IMedia? lastMediaFolder;
+    private IMedia? rootMediaFolder;
+
     public ImportImageService (
         IMediaService mediaService, 
         IHttpClientFactory httpClientFactory,
@@ -34,35 +39,72 @@ public class ImportImageService
 
     public IMedia GetRootMedia(Guid rootMediaKey)
     {
-        var rootMediaFolder = _mediaService.GetRootMedia().FirstOrDefault(x => x.Key == rootMediaKey);
+        rootMediaFolder = _mediaService.GetRootMedia().FirstOrDefault(x => x.Key == rootMediaKey);
 
         ArgumentNullException.ThrowIfNull(rootMediaFolder);
+
+        GetRootMediaLastChildrenFolder(rootMediaFolder);
 
         return rootMediaFolder;
     }
 
+
+    private void GetRootMediaLastChildrenFolder(IMedia rootMedia)
+    { 
+       
+        var mediaFolders = GetRootMediaChildren(rootMedia);
+
+        lastMediaFolder = mediaFolders.LastOrDefault();
+
+        if (lastMediaFolder == null)
+        {
+            lastMediaFolder = CreateMediaFolder("1");
+        }
+
+        var mediaItems = _mediaService.GetPagedChildren(lastMediaFolder.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == Constants.Conventions.MediaTypes.Image).ToList();
+
+        mediaCount = mediaItems.Count;
+    }
+
+    public List<IMedia> GetRootMediaChildren(IMedia rootMedia)
+    {
+        var mediaFolders = _mediaService.GetPagedChildren(rootMedia.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == Constants.Conventions.MediaTypes.Folder).ToList();
+
+        return mediaFolders;
+    }
+
     public List<IMedia> GetUmbracoMediaFiles(IMedia rootMedia)
     {
-        var mediaFiles = _mediaService.GetPagedChildren(rootMedia.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == "Image").ToList();
+        var mediaFiles = _mediaService.GetPagedDescendants(rootMedia.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == Constants.Conventions.MediaTypes.Image).ToList();
 
         return mediaFiles;
     }
 
-    public IMedia ImportImageFromExternalUrl(ImportImageFromExternalUrl externalUrlImage, string comparer)
+    public IMedia ImportImageFromExternalUrl(ImportImageFromExternalUrl image, string comparer)
     {
-        return null;
-        //var stream = LoadImageToMemoryStreamAsync(externalUrlImage.ImageUrl).Result;
-        //return CreateMediaImage(stream, comparer, externalUrlImage.NodeName, externalUrlImage.FileName);
+        var stream = LoadImageToMemoryStreamAsync(image.ImageUrl).Result;
+        return CreateMediaImage(stream, comparer, image.NodeName, image.FileName);
     }
 
-    public IMedia ImportImageFromBytes(ImportImageFromBytes bytesImage, string comparer)
+    public IMedia ImportImageFromBytes(ImportImageFromBytes image, string comparer)
     {
-        throw new NotImplementedException();
+        var stream = new MemoryStream(image.ImageBytes);
+        stream.Seek(0, SeekOrigin.Begin);
+
+        return CreateMediaImage(stream, comparer, image.NodeName, image.FileName);
     }
 
-    public IMedia ImportImageFromBase64(ImportImageFromBase64 base64Image, string comparer)
-    {
-        throw new NotImplementedException();
+    public IMedia ImportImageFromBase64(ImportImageFromBase64 image, string comparer)
+    {        
+        // Convert Base64 String to byte[]
+        byte[] bytes = Convert.FromBase64String(image.ImageBase64);
+
+        // Create a MemoryStream with the bytes
+        MemoryStream stream = new MemoryStream(bytes);
+
+        stream.Seek(0, SeekOrigin.Begin);
+
+        return CreateMediaImage(stream, comparer, image.NodeName, image.FileName);
     }
 
     private async Task<MemoryStream> LoadImageToMemoryStreamAsync(string imageUrl)
@@ -81,7 +123,7 @@ public class ImportImageService
 
             // Load the byte array into a memory stream
             var memoryStream = new MemoryStream(imageBytes);
-            memoryStream.Position = 0; // Reset the memory stream position
+            memoryStream.Seek(0, SeekOrigin.Begin);
 
             return memoryStream;
         }
@@ -92,11 +134,32 @@ public class ImportImageService
         }
     }
 
-    private IMedia CreateMediaImage(MemoryStream mem, string comparer, string nodeName, string fullFileName, IMedia rootMediaFolder)
+    private IMedia CreateMediaImage(MemoryStream mem, string comparer, string nodeName, string fullFileName)
     {
-        var media = _mediaService.CreateMediaWithIdentity(nodeName, rootMediaFolder.Id, Constants.Conventions.MediaTypes.Image);
+        var media = _mediaService.CreateMediaWithIdentity(nodeName, lastMediaFolder.Id, Constants.Conventions.MediaTypes.Image);
         media.SetValue(_mediaFileManager, _mediaUrlGenerators, _shortStringHelper, _contentTypeBaseServiceProvider, Constants.Conventions.Media.File, fullFileName, mem);
         media.SetValue("comparer", comparer);
+        _mediaService.Save(media);
+
+        mediaCount++;
+
+        if (mediaCount == 150)
+        {
+            var currentNodeName = lastMediaFolder.Name;
+
+            int.TryParse(currentNodeName, out int newName);
+
+            newName++;
+
+            lastMediaFolder = CreateMediaFolder(newName.ToString());
+        }
+
+        return media;
+    }
+
+    private IMedia CreateMediaFolder(string nodeName)
+    {
+        var media = _mediaService.CreateMediaWithIdentity(nodeName, rootMediaFolder.Id, Constants.Conventions.MediaTypes.Folder);
         _mediaService.Save(media);
 
         return media;

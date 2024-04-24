@@ -33,7 +33,7 @@ public class ImportController : UmbracoAuthorizedApiController
     {
         ImportData data = new ImportData()
         {
-            MediaRootKey = new Guid(),
+            MediaRootKey = new Guid("4dc98622-a146-4010-a758-d8a995fd0b08"),
             Categories = GenerateCategories(depth, quantityPerLevel, 1, ""),
             Products = products
         };
@@ -96,11 +96,16 @@ public class ImportController : UmbracoAuthorizedApiController
                 NodeName = $"{categoryName}",
                 Images = new List<IImportImage>()
                 {
-                     new ImportImageFromUdi()
-                     {
+                    new ImportImageFromUdi()
+                    {
                         ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
-                         
-                     }
+                    },
+                    new ImportImageFromExternalUrl()
+                    {
+                        FileName = "testCategory.jpg",
+                        NodeName = "Test Category nodename",
+                        ImageUrl = "https://www.vettvangur.is/images/illustrations/2.png"
+                    }
                 },
                 SubCategories = currentDepth < depth
                     ? GenerateCategories(depth, quantityPerLevel, currentDepth + 1, $"{currentDepth}-{i + 1}")
@@ -124,6 +129,7 @@ public class ImportController : UmbracoAuthorizedApiController
         {
             var product = new ImportProduct
             {
+                NodeName = $"Product {currentDepth}-{i + 1}",
                 Title = new Dictionary<string, object>
                 {
                     { "en-US", $"Title {currentDepth} US {i + 1}" },
@@ -168,7 +174,19 @@ public class ImportController : UmbracoAuthorizedApiController
                         StoreAlias = ""
                     }
                 },
-                NodeName = $"Product {currentDepth}-{i + 1}",
+                Images = new List<IImportImage>()
+                {
+                    new ImportImageFromUdi()
+                    {
+                        ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
+                    },
+                    new ImportImageFromExternalUrl()
+                    {
+                        FileName = "test.jpg",
+                        NodeName = "Test nodename",
+                        ImageUrl = "https://www.vettvangur.is/images/illustrations/1.png"
+                    }
+                },
                 AdditionalProperties = new Dictionary<string, object>
                 {
                     { "customPropertyFilter", $"customProperty-{currentDepth}-{i + 1}" }

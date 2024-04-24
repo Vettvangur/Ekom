@@ -35,8 +35,6 @@ public class ImportService : IImportService
     private IContentType? catalogContentType;
     private IContent? umbracoRootContent;
 
-    private Guid _mediaRootKey;
-
     public ImportService(
         IUmbracoContextFactory umbracoContextFactory,
         IContentService contentService,
@@ -415,6 +413,7 @@ public class ImportService : IImportService
                 if (media == null)
                 {
                     media = _importImageService.ImportImageFromExternalUrl(externalUrlImage, compareValue);
+                    allUmbracoMedia.Add(media);
                 }
 
                 imagesUdi.Add(media.GetUdi().ToString());
@@ -428,6 +427,7 @@ public class ImportService : IImportService
                 if (media == null)
                 {
                     media = _importImageService.ImportImageFromBytes(bytesImage, compareValue);
+                    allUmbracoMedia.Add(media);
                 }
 
                 imagesUdi.Add(media.GetUdi().ToString());
@@ -441,6 +441,7 @@ public class ImportService : IImportService
                 if (media == null)
                 {
                     media = _importImageService.ImportImageFromBase64(base64Image, compareValue);
+                    allUmbracoMedia.Add(media);
                 }
 
                 imagesUdi.Add(media.GetUdi().ToString());
@@ -542,7 +543,7 @@ public class ImportService : IImportService
         return existingComparerValue != newComparerValue;
     }
 
-    private static string ComputeSha256Hash(object o, string[]? propertiesToIgnore = null)
+    private string ComputeSha256Hash(object o, string[]? propertiesToIgnore = null)
     {
         var settings = new JsonSerializerSettings
         {
