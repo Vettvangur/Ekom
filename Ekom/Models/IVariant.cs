@@ -35,6 +35,14 @@ namespace Ekom.Models
         decimal Vat { get; }
 
         /// <summary>
+        /// Gets the orignal price.
+        /// </summary>
+        /// <value>
+        /// The original price.
+        /// </value>
+        IPrice OriginalPrice { get; }
+
+        /// <summary>
         /// Parent product
         /// </summary>
         IProduct Product { get; }

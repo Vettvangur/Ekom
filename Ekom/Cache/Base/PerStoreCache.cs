@@ -139,11 +139,6 @@ namespace Ekom.Cache
 
                 try
                 {
-                    if (r.Id == 1429)
-                    {
-                        var test = "";
-                    }
-
                     var isDisabled = r.IsItemDisabled(store);
 
                     if (isDisabled)

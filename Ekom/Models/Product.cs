@@ -377,7 +377,6 @@ namespace Ekom.Models
         {
             get
             {
-                // AllVariants is slower with Select, this is done for performance
                 return AllVariants.Count();
             }
 

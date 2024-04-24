@@ -99,11 +99,13 @@ namespace Ekom.Models
             }
             else if (orderBy == Utilities.OrderBy.PriceAsc)
             {
-                return products.OrderBy(x => x.OriginalPrice.Value);
+                return products.OrderBy(x =>
+                    x.AllVariants != null && x.AllVariants.Any() ? x.AllVariants.Min(v => v.OriginalPrice?.Value) : x.OriginalPrice?.Value);
             }
             else if (orderBy == Utilities.OrderBy.PriceDesc)
             {
-                return products.OrderByDescending(x => x.OriginalPrice.Value);
+                return products.OrderByDescending(x =>
+                    x.AllVariants != null && x.AllVariants.Any() ? x.AllVariants.Min(v => v.OriginalPrice?.Value) : x.OriginalPrice?.Value);
             }
             else if (orderBy == Utilities.OrderBy.DateAsc)
             {
