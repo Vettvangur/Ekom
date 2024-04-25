@@ -10,14 +10,14 @@ namespace Ekom.Models
         {
             get
             {
-                return new RegionInfo(CurrencyValue).CurrencySymbol;
+                return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).CurrencySymbol : string.Empty;
             }
         }
         public string ISOCurrencySymbol
         {
             get
             {
-                return new RegionInfo(CurrencyValue).ISOCurrencySymbol;
+                return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).ISOCurrencySymbol : string.Empty;
             }
         }
     }

@@ -63,6 +63,8 @@ namespace Vettvangur.Core
                 return NullProviderCultureResult;
             }
 
+            cultureName =  ParseAcceptLanguageHeader(cultureName);
+
             CultureInfo culture;
             try
             {
@@ -75,6 +77,16 @@ namespace Vettvangur.Core
             }
 
             return Task.FromResult(new ProviderCultureResult(culture.Name));
+        }
+
+        private static string ParseAcceptLanguageHeader(string headerValue)
+        {
+            var languages = headerValue.Split(',')
+                .Select(l => l.Split(';').First().Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .FirstOrDefault();
+
+            return languages;
         }
 
     }

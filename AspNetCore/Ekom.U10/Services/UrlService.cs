@@ -114,7 +114,9 @@ namespace Ekom.Umb.Services
                         }
                     }
 
-                    var url = builder.ToString().AddTrailing().ToLower();
+                    var domainLastSement = UriHelper.GetLastSegment(domain.DomainName);
+
+                    var url = domainLastSement + builder.ToString().AddTrailing().ToLower();
 
                     urls.Add(new UmbracoUrl()
                     {
@@ -128,7 +130,7 @@ namespace Ekom.Umb.Services
 
             }
 
-            return urls;
+            return urls.DistinctBy(x => (x.Domain, x.Url, x.Store)).ToList();
         }
 
         /// <summary>
@@ -267,28 +269,25 @@ namespace Ekom.Umb.Services
 
                 foreach (var category in categories)
                 {
-                    foreach (var categoryUrl in category.Urls.DistinctBy(x => x))
+                    foreach (var categoryUrlContext in category.UrlsWithContext)
                     {
-                        foreach (var domain in store.Domains)
+                        var productUrl = item.GetValue("slug", store.Alias);
+
+                        if (string.IsNullOrEmpty(productUrl))
                         {
-
-                            var productUrl = item.GetValue("slug", store.Alias);
-
-                            if (string.IsNullOrEmpty(productUrl))
-                            {
-                                continue;
-                            }
-
-                            var url = categoryUrl + productUrl.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
-
-                            urls.Add(new UmbracoUrl()
-                            {
-                                Culture = domain.LanguageIsoCode,
-                                Store = store.Alias,
-                                Url = url,
-                                Domain = domain.DomainName
-                            });
+                            continue;
                         }
+
+                        var url = categoryUrlContext.Url + productUrl.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+
+                        urls.Add(new UmbracoUrl()
+                        {
+                            Culture = categoryUrlContext.Culture,
+                            Store = store.Alias,
+                            Url = url,
+                            Domain = categoryUrlContext.Domain
+                        });
+                        
 
                     }
                 }

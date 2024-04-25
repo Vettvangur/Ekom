@@ -153,7 +153,13 @@ namespace Ekom.Umb
                 {
                     foreach (var domain in store.Domains)
                     {
-                        urls.Add(new UrlInfo(UrlModifier(url, absoluteUrls, current, domain), true, store.Title));
+                        urls.Add(
+                            new UrlInfo(
+                                UrlModifier(url, absoluteUrls, current, domain), 
+                                true, 
+                                store.Title
+                                )
+                            );
                     }
 
                 }

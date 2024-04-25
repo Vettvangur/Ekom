@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text.Json.Serialization;
 
 namespace Ekom.Models
 {
@@ -23,6 +21,9 @@ namespace Ekom.Models
         /// The culture.
         /// </value>
         CultureInfo Culture { get; }
+
+        List<CultureInfo> Cultures { get; }
+
         CurrencyModel Currency { get; }
 
         CurrencyModel GetCurrentCurrency();

@@ -46,18 +46,39 @@ namespace Ekom.Models
         {
             get
             {
-                //var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
 
-                //var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+                var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
 
-                //if (culture != null)
-                //{
-                //    return culture;
-                //}
+                if (culture != null)
+                {
+                    var c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
 
-                var ci = new CultureInfo(Properties["culture"]);
+                    if (c != null)
+                    {
+                        return c;
+                    }
+                }
 
-                return ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
+                return Cultures.FirstOrDefault();
+            }
+        }
+        public virtual List<CultureInfo> Cultures
+        {
+            get
+            {
+                if (!Properties.ContainsKey("cultures"))
+                {
+                    var ci = new CultureInfo(Properties["culture"]);
+
+                    ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
+
+                    return new List<CultureInfo>() { ci };
+                }
+
+                var cultures = Properties["cultures"];
+
+                return cultures.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
             }
         }
         public virtual CurrencyModel Currency
@@ -77,42 +98,51 @@ namespace Ekom.Models
         {
             get
             {
-                try
+                // Retrieve the currency property value once
+                Properties.TryGetValue("currency", out var currencyJson);
+
+                // Check if the value is JSON array format
+                if (!string.IsNullOrEmpty(currencyJson) && currencyJson.Contains("["))
                 {
-                    var getString = Properties.GetPropertyValue("currency");
-                    if (getString.Contains("["))
-                    {
-                        var deserialized = JsonConvert.DeserializeObject<List<CurrencyModel>>(getString);
-                        return deserialized;
-                    }
-                    else
-                    {
-                        var c = Properties.ContainsKey("currency") && !string.IsNullOrEmpty(Properties["currency"]) ? Properties["currency"] : Culture.ToString();
-                        var l = new List<CurrencyModel>
-                        {
-                            new()
-                            {
-                                CurrencyValue = c,
-                                CurrencyFormat = "C"
-                            }
-                        };
-                        return l;
-                    }
+                    return TryDeserializeCurrencyList(currencyJson);
                 }
-                catch (Exception ex)
+
+                // Default single currency scenario
+                return CreateDefaultCurrencyList(currencyJson);
+            }
+        }
+
+        private List<CurrencyModel> TryDeserializeCurrencyList(string json)
+        {
+            try
+            {
+                var deserializedList = JsonConvert.DeserializeObject<List<CurrencyModel>>(json);
+                if (deserializedList != null)
                 {
-                    //Backword Compatability
-                    var l = new List<CurrencyModel>();
-                    l.Add(new CurrencyModel
-                    {
-                        CurrencyValue = Culture.ToString(),
-                        CurrencyFormat = "C"
-                    });
-                    return l;
+                    return deserializedList;
                 }
             }
+            catch (JsonException ex)
+            {
+                throw new JsonException("Failed to deserialize currency JSON: " + ex.Message);
+            }
 
+            return new List<CurrencyModel>();
+        }
 
+        private List<CurrencyModel> CreateDefaultCurrencyList(string currency)
+        {
+            // Use the currency value if available, otherwise default to Culture
+            var currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.ToString();
+
+            return new List<CurrencyModel>
+            {
+                new CurrencyModel
+                {
+                    CurrencyValue = currencyValue,
+                    CurrencyFormat = "C"
+                }
+            };
         }
 
         /// <summary>
@@ -145,7 +175,7 @@ namespace Ekom.Models
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
             {
                 Domains = storeDomainCache.Cache
-                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
+                    .Where(x => x.Value.RootContentId == StoreRootNodeId && Cultures.Select(x => x.Name).Contains(x.Value.LanguageIsoCode))
                     .Select(x => x.Value)
                     .ToList();
             }
