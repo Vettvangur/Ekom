@@ -203,18 +203,27 @@ public class ImportService : IImportService
                 .ToList();
 
 
-            // Delete Products
-
             // Create a HashSet of identifiers from importProducts for efficient lookups
             var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
 
-            // Delete Products not present in the importProductIdentifiers
+            // HashSet to track identifiers already processed
+            var processedIdentifiers = new HashSet<string>();
+
+            // Delete Products not present in the importProductIdentifiers or that are duplicates
             foreach (var umbracoProduct in allUmbracoProducts)
             {
                 var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias);
+
+                // Check if the identifier is valid and not in the import list
                 if (!string.IsNullOrEmpty(productIdentifier) && !importProductIdentifiers.Contains(productIdentifier))
                 {
                     _contentService.Delete(umbracoProduct);
+                }
+                else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
+                {
+                    // Duplicate found, delete the duplicate item
+                    _contentService.Delete(umbracoProduct);
+                    _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
                 }
             }
 
