@@ -444,7 +444,7 @@ namespace Ekom.Models
                 {
                     var c = Catalog.Instance.GetCategory(id, Store.Alias);
 
-                    if (c != null)
+                    if (c != null && !c.VirtualUrl)
                     {
                         categoryAncestors.Add(c);
                     }

@@ -94,6 +94,21 @@ namespace Ekom.Models
             }
         }
 
+        public virtual bool VirtualUrl
+        {
+            get
+            {
+                var virtualUrl = Properties.GetPropertyValue("virtualUrl");
+
+                if (!string.IsNullOrEmpty(virtualUrl))
+                {
+                    return virtualUrl.IsBoolean();
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// All direct child products of category. (No descendants)
         /// </summary>
@@ -144,7 +159,7 @@ namespace Ekom.Models
                     var category = _categoryCache.Cache[Store.Alias]
                         .FirstOrDefault(x => x.Value.Id == categoryId);
 
-                    if (category.Value != null)
+                    if (category.Value != null && !category.Value.VirtualUrl)
                     {
                         list.Add(category.Value);
                     }
