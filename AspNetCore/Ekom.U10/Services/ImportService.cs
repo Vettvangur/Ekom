@@ -287,6 +287,11 @@ public class ImportService : IImportService
 
         categoryContent.Name = importCategory.NodeName;
 
+        if (importCategory.TemplateId.HasValue)
+        {
+            categoryContent.TemplateId = importCategory.TemplateId.Value;
+        }
+
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
             if (categoryContent.Published || create)
@@ -380,6 +385,11 @@ public class ImportService : IImportService
         productContent.SetValue("comparer", compareValue);
 
         productContent.Name = importProduct.NodeName;
+
+        if (importProduct.TemplateId.HasValue)
+        {
+            productContent.TemplateId = importProduct.TemplateId.Value;
+        }
 
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {

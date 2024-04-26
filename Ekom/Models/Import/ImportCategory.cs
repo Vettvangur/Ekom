@@ -45,4 +45,10 @@ public class ImportCategory : ImportBase
     /// Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.
     /// </summary>
     public string IdentiferPropertyAlias { get; set; } = "sku";
+
+    /// <summary>
+    /// Specifies a template
+    /// </summary>
+    public int? TemplateId { get; set; }
+
 }
