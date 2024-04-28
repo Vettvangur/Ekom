@@ -618,11 +618,16 @@ public class ImportService : IImportService
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
-        return _contentService
+
+        var categories =  _contentService
             .GetPagedOfType(categoryContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
             .ToList();
+
+        var filteredContents = categories
+        .Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString()))
+        .ToList();
+
+        return filteredContents;
     }
-
-
 }
