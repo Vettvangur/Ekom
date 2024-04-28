@@ -173,15 +173,19 @@ public class ImportService : IImportService
         var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
 
         // Delete Category not present in the importCategoryIdentifiers
-        foreach (var umbracoCategory in allUmbracoCategories.Where(x => x.ParentId == parentContent.Id))
+        for (int i = allUmbracoCategories.Count - 1; i >= 0; i--)
         {
-            var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias) ?? "";
-            if (!importCategoryIdentifiers.Contains(categoryIdentifier))
+            var umbracoCategory = allUmbracoCategories[i];
+            if (umbracoCategory.ParentId == parentContent.Id)
             {
-                _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
+                var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias) ?? "";
+                if (!importCategoryIdentifiers.Contains(categoryIdentifier))
+                {
+                    _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
-                _contentService.Delete(umbracoCategory);
-                allUmbracoCategories.Remove(umbracoCategory);
+                    _contentService.Delete(umbracoCategory);
+                    allUmbracoCategories.RemoveAt(i); // Remove from list
+                }
             }
         }
 
@@ -230,8 +234,9 @@ public class ImportService : IImportService
             var processedIdentifiers = new HashSet<string>();
 
             // Delete Products not present in the importProductIdentifiers or that are duplicates
-            foreach (var umbracoProduct in allUmbracoProducts)
+            for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
             {
+                var umbracoProduct = allUmbracoProducts[i];
                 var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias) ?? "";
 
                 // Check if the identifier is valid and not in the import list
@@ -239,12 +244,14 @@ public class ImportService : IImportService
                 {
                     _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                     _contentService.Delete(umbracoProduct);
+                    allUmbracoProducts.RemoveAt(i);
                 }
                 else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
                 {
                     // Duplicate found, delete the duplicate item
                     _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
                     _contentService.Delete(umbracoProduct);
+                    allUmbracoProducts.RemoveAt(i);
                 }
             }
 
