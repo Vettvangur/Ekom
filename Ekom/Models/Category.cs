@@ -98,7 +98,7 @@ namespace Ekom.Models
         {
             get
             {
-                var virtualUrl = Properties.GetPropertyValue("virtualUrl");
+                var virtualUrl = Properties.GetPropertyValue("ekmVirtualUrl");
 
                 if (!string.IsNullOrEmpty(virtualUrl))
                 {

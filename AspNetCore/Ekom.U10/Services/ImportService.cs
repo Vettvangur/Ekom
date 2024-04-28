@@ -98,7 +98,7 @@ public class ImportService : IImportService
 
         stopwatchTotal.Stop();
 
-        _logger.LogInformation("Full Sync took {Duration} ms", stopwatch.ElapsedMilliseconds);
+        _logger.LogInformation("Full Sync took {Duration} ms", stopwatchTotal.ElapsedMilliseconds);
     }
 
     /// <summary>
