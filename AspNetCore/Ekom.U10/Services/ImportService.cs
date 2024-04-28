@@ -6,6 +6,7 @@ using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Umbraco.Cms.Core.Models;
@@ -66,6 +67,8 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias} Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
+        var stopwatchTotal = Stopwatch.StartNew();
+
         GetInitialData(parentKey);
 
         var allUmbracoCategories = GetAllUmbracoCategories();
@@ -74,14 +77,28 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
+        var stopwatch = Stopwatch.StartNew();
+
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
             IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
 
+            _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+
+            stopwatch.Stop();
+
+            stopwatch.Restart();
+
             IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
+
+            _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+
+            stopwatch.Stop();
         }
 
-        _logger.LogInformation("Full Sync finished");
+        stopwatchTotal.Stop();
+
+        _logger.LogInformation("Full Sync took {Duration} ms", stopwatch.ElapsedMilliseconds);
     }
 
     /// <summary>
@@ -162,6 +179,7 @@ public class ImportService : IImportService
             if (!string.IsNullOrEmpty(categoryIdentifier) && !importCategoryIdentifiers.Contains(categoryIdentifier))
             {
                 _contentService.Delete(umbracoCategory);
+                allUmbracoCategories.Remove(umbracoCategory);
             }
         }
 
@@ -217,13 +235,14 @@ public class ImportService : IImportService
                 // Check if the identifier is valid and not in the import list
                 if (!string.IsNullOrEmpty(productIdentifier) && !importProductIdentifiers.Contains(productIdentifier))
                 {
+                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
                     _contentService.Delete(umbracoProduct);
                 }
                 else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
                 {
                     // Duplicate found, delete the duplicate item
-                    _contentService.Delete(umbracoProduct);
                     _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
+                    _contentService.Delete(umbracoProduct);
                 }
             }
 
