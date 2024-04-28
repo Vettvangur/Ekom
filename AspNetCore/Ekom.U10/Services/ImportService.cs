@@ -175,9 +175,11 @@ public class ImportService : IImportService
         // Delete Category not present in the importCategoryIdentifiers
         foreach (var umbracoCategory in allUmbracoCategories.Where(x => x.ParentId == parentContent.Id))
         {
-            var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias);
-            if (!string.IsNullOrEmpty(categoryIdentifier) && !importCategoryIdentifiers.Contains(categoryIdentifier))
+            var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias) ?? "";
+            if (!importCategoryIdentifiers.Contains(categoryIdentifier))
             {
+                _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
+
                 _contentService.Delete(umbracoCategory);
                 allUmbracoCategories.Remove(umbracoCategory);
             }
@@ -230,12 +232,12 @@ public class ImportService : IImportService
             // Delete Products not present in the importProductIdentifiers or that are duplicates
             foreach (var umbracoProduct in allUmbracoProducts)
             {
-                var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias);
+                var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias) ?? "";
 
                 // Check if the identifier is valid and not in the import list
-                if (!string.IsNullOrEmpty(productIdentifier) && !importProductIdentifiers.Contains(productIdentifier))
+                if (!importProductIdentifiers.Contains(productIdentifier))
                 {
-                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
+                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                     _contentService.Delete(umbracoProduct);
                 }
                 else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
