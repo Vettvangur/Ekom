@@ -224,7 +224,7 @@ public class ImportService : IImportService
             var allUmbracoProducts = _contentService
                 .GetPagedOfType(productContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
                 .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
-                .ToList();
+                .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
 
             // Create a HashSet of identifiers from importProducts for efficient lookups
@@ -628,15 +628,12 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var categories =  _contentService
+        var categories = _contentService
             .GetPagedOfType(categoryContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
+            .Where(x => !x.Trashed && x.Path.Contains(umbracoRootContent.Id.ToString())))
+            .Where(x => !x.GetValue<bool>("ekmDisableSync") && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString()))
             .ToList();
 
-        var filteredContents = categories
-        .Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString()))
-        .ToList();
-
-        return filteredContents;
+        return categories;
     }
 }
