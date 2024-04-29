@@ -33,7 +33,7 @@ static class ApplicationBuilderExtensions
         services.AddTransient<IMemberService, MemberService>();
         services.AddTransient<INodeService, NodeService>();
         services.AddTransient<IImportService, ImportService>();
-        services.AddTransient<ImportImageService>();
+        services.AddTransient<ImportMediaService>();
         services.AddTransient<NodeService>();
         services.AddTransient<IMetafieldService, MetafieldService>();
         services.AddTransient<IUmbracoService, UmbracoService>();

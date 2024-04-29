@@ -94,17 +94,17 @@ public class ImportController : UmbracoAuthorizedApiController
                 },
                 SKU = identifier,
                 NodeName = $"{categoryName}",
-                Images = new List<IImportImage>()
+                Images = new List<IImportMedia>()
                 {
-                    new ImportImageFromUdi()
+                    new ImportMediaFromUdi()
                     {
-                        ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
+                        Udi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
                     },
-                    new ImportImageFromExternalUrl()
+                    new ImportMediaFromExternalUrl()
                     {
                         FileName = "testCategory.jpg",
                         NodeName = "Test Category nodename",
-                        ImageUrl = "https://www.vettvangur.is/images/illustrations/2.png"
+                        Url = "https://www.vettvangur.is/images/illustrations/2.png"
                     }
                 },
                 SubCategories = currentDepth < depth
@@ -174,17 +174,17 @@ public class ImportController : UmbracoAuthorizedApiController
                         StoreAlias = ""
                     }
                 },
-                Images = new List<IImportImage>()
+                Images = new List<IImportMedia>()
                 {
-                    new ImportImageFromUdi()
+                    new ImportMediaFromUdi()
                     {
-                        ImageUdi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
+                        Udi = "udi://media/3b95537d28b24ce2b92e8d66c74c8fa5",
                     },
-                    new ImportImageFromExternalUrl()
+                    new ImportMediaFromExternalUrl()
                     {
                         FileName = "test.jpg",
                         NodeName = "Test nodename",
-                        ImageUrl = "https://www.vettvangur.is/images/illustrations/1.png"
+                        Url = "https://www.vettvangur.is/images/illustrations/1.png"
                     }
                 },
                 AdditionalProperties = new Dictionary<string, object>
