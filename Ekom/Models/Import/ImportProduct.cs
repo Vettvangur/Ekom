@@ -20,6 +20,7 @@ public class ImportProduct : ImportBase
     public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
     public bool EnableBackorder { get; set; }
     public decimal? Vat { get; set; }
+    public List<IImportMedia> Files { get; set; } = new List<IImportMedia>();
 
     /// <summary>
     /// Represents a collection of category identifiers associated with a product. The first identifier

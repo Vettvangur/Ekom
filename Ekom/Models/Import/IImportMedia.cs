@@ -1,5 +1,5 @@
 namespace Ekom.Models.Import;
-public interface IImportImage
+public interface IImportMedia
 {
 }
 

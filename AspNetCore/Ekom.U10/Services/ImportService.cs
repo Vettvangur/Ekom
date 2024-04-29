@@ -25,7 +25,7 @@ public class ImportService : IImportService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly IScopeProvider _scopeProvider;
-    private readonly ImportImageService _importImageService;
+    private readonly ImportMediaService _importMediaService;
     private readonly ILogger<ImportService> _logger;
     private readonly Stock _stock;
 
@@ -43,7 +43,7 @@ public class ImportService : IImportService
         IScopeProvider scopeProvider,
         ILogger<ImportService> logger,
         Stock stock,
-        ImportImageService importImageService)
+        ImportMediaService importMediaService)
     {
         _umbracoContextFactory = umbracoContextFactory;
         _contentService = contentService;
@@ -51,7 +51,7 @@ public class ImportService : IImportService
         _scopeProvider = scopeProvider;
         _logger = logger;
         _stock = stock;
-        _importImageService = importImageService;
+        _importMediaService = importMediaService;
     }
 
     /// <summary>
@@ -73,9 +73,9 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        var rootUmbracoMediafolder = _importImageService.GetRootMedia(data.MediaRootKey);
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
-        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -120,9 +120,9 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        var rootUmbracoMediafolder = _importImageService.GetRootMedia(mediaRootKey);
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
         IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
 
@@ -150,9 +150,9 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        var rootUmbracoMediafolder = _importImageService.GetRootMedia(mediaRootKey);
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
 
-        var allUmbracoMedia = _importImageService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
         SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, allUmbracoMedia, false, syncUser);
 
@@ -282,12 +282,12 @@ public class ImportService : IImportService
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
-        var saveImage = ImportImage(categoryContent, importCategory.Images, allUmbracoMedia);
+        var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia);
 
         var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products", "EventProperties" });
 
         // If no changes are found and not creating then return,
-        if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImage)
+        if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
         {
             return;
         }
@@ -362,12 +362,14 @@ public class ImportService : IImportService
             }
         }
 
-        var saveImage = ImportImage(productContent, importProduct.Images, allUmbracoMedia);
+        var saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+
+        var saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
 
         var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "EventProperties" });
 
         // If no changes are found and not creating then return,
-        if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImage)
+        if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
         {
             return;
         }
@@ -441,66 +443,66 @@ public class ImportService : IImportService
         }
     }
 
-    private bool ImportImage(IContent content, List<IImportImage> images, List<IMedia> allUmbracoMedia)
+    private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia> allUmbracoMedia, string mediaType = "Image", string contentTypeAlias = "images")
     {
         var imagesUdi = new List<string>();
 
-        foreach (var image in images)
+        foreach (var media in importMedias)
         {
-            if (image is ImportImageFromUdi importImage)
+            if (media is ImportMediaFromUdi importMedia)
             {
-                imagesUdi.Add(importImage.ImageUdi);
+                imagesUdi.Add(importMedia.Udi);
             }
-            else if (image is ImportImageFromExternalUrl externalUrlImage)
+            else if (media is ImportMediaFromExternalUrl externalUrlMedia)
             {
-                var compareValue = externalUrlImage.Comparer ?? ComputeSha256Hash(externalUrlImage);
+                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia);
 
-                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
 
-                if (media == null)
+                if (umbMedia == null)
                 {
-                    media = _importImageService.ImportImageFromExternalUrl(externalUrlImage, compareValue);
-                    allUmbracoMedia.Add(media);
+                    umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType);
+                    allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(media.GetUdi().ToString());
+                imagesUdi.Add(umbMedia.GetUdi().ToString());
             }
-            else if (image is ImportImageFromBytes bytesImage)
+            else if (media is ImportMediaFromBytes bytesMedia)
             {
-                var compareValue = bytesImage.Comparer ?? ComputeSha256Hash(bytesImage, new string[] { "ImageBytes" });
+                var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes" });
 
-                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
 
-                if (media == null)
+                if (umbMedia == null)
                 {
-                    media = _importImageService.ImportImageFromBytes(bytesImage, compareValue);
-                    allUmbracoMedia.Add(media);
+                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType);
+                    allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(media.GetUdi().ToString());
+                imagesUdi.Add(umbMedia.GetUdi().ToString());
             }
-            else if (image is ImportImageFromBase64 base64Image) {
+            else if (media is ImportMediaFromBase64 base64Media) {
 
-                var compareValue = base64Image.Comparer ?? ComputeSha256Hash(base64Image, new string[] { "ImageBase64" });
+                var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
 
-                var media = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
 
-                if (media == null)
+                if (umbMedia == null)
                 {
-                    media = _importImageService.ImportImageFromBase64(base64Image, compareValue);
-                    allUmbracoMedia.Add(media);
+                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType);
+                    allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(media.GetUdi().ToString());
+                imagesUdi.Add(umbMedia.GetUdi().ToString());
             }
         }
 
-        var currentImages = content.GetValue<string>("images") ?? "";
+        var currentImages = content.GetValue<string>(contentTypeAlias) ?? "";
         var importedImages = string.Join(",", imagesUdi);
 
         if (currentImages != importedImages)
         {
-            content.SetValue("images", importedImages);
+            content.SetValue(contentTypeAlias, importedImages);
             return true;
         }
         return false;

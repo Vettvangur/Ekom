@@ -8,7 +8,7 @@ public class ImportBase
 {
     public required Dictionary<string, object> Title { get; set; } = new Dictionary<string, object>();
 
-    public List<IImportImage> Images { get; set; } = new List<IImportImage>();
+    public List<IImportMedia> Images { get; set; } = new List<IImportMedia>();
 
     /// <summary>
     /// Set the name of the node in Umbraco
