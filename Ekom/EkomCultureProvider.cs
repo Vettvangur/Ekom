@@ -52,6 +52,10 @@ namespace Vettvangur.Core
 
         public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
         {
+            if (!context.Request.Path.StartsWithSegments("/ekom", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return NullProviderCultureResult;
+            }
 
             var cultureName = context.Request.Query["Accept-Language"].FirstOrDefault()
                             ?? context.Request.Query["Culture"].FirstOrDefault()
