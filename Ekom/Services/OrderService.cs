@@ -572,7 +572,7 @@ namespace Ekom.Services
                 throw new ArgumentException("Empty product key", nameof(productKey));
             }
 
-            var product = Catalog.Instance.GetProduct(productKey);
+            var product = Catalog.Instance.GetProduct(productKey, storeAlias);
 
             if (product == null)
             {
@@ -582,7 +582,7 @@ namespace Ekom.Services
             IVariant variant = null;
             if (settings?.VariantKey != null)
             {
-                variant = Catalog.Instance.GetVariant(settings.VariantKey.Value);
+                variant = Catalog.Instance.GetVariant(settings.VariantKey.Value, storeAlias);
 
                 if (variant == null)
                 {
