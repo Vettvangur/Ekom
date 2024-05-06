@@ -55,4 +55,8 @@
         </AssemblyAttribute>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\Ekom\Ekom.csproj" />
+    </ItemGroup>
+
 </Project>
