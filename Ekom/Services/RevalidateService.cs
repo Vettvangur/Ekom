@@ -22,69 +22,68 @@ public class RevalidateService
 
         try
         {
-            if (contentType == "ekmProduct")
+            foreach (var apis in headlessConfig.ReValidateApis)
             {
-                var product = _catalog.GetProduct(nodeKey);
-
-                if (product != null)
+                if (contentType == "ekmProduct")
                 {
-                    await RevalidateProduct(headlessConfig, product);
-                }
+                    var product = _catalog.GetProduct(nodeKey, apis.Store);
 
-            }
-            else if (contentType == "ekmCategory")
-            {
-                var category = _catalog.GetCategory(nodeKey);
-
-                if (category != null)
-                {
-                    var productsResponse = category.ProductsRecursive();
-
-                    foreach (var product in productsResponse.Products)
+                    if (product != null)
                     {
-                        await RevalidateProduct(headlessConfig, product);
+                        await RevalidateProduct(apis, product);
+                    }
+
+                }
+                else if (contentType == "ekmCategory")
+                {
+                    var category = _catalog.GetCategory(nodeKey);
+
+                    if (category != null)
+                    {
+                        await RevalidateCategory(apis, category);
+                    }
+                }
+                else if (contentType == "ekmProductVariant")
+                {
+                    var variant = _catalog.GetVariant(nodeKey);
+
+                    if (variant != null)
+                    {
+                        await RevalidateProduct(apis, variant.Product);
+                    }
+                }
+                else if (contentType == "ekmProductVariantGroup")
+                {
+                    var variantGroup = _catalog.GetVariantGroup(nodeKey);
+
+                    if (variantGroup != null)
+                    {
+                        await RevalidateProduct(apis, variantGroup.Product);
                     }
                 }
             }
-            else if (contentType == "ekmProductVariant")
-            {
-                var variant = _catalog.GetVariant(nodeKey);
-
-                if (variant != null)
-                {
-                    await RevalidateProduct(headlessConfig, variant.Product);
-                }
-            }
-            else if (contentType == "ekmProductVariantGroup")
-            {
-                var variantGroup = _catalog.GetVariantGroup(nodeKey);
-
-                if (variantGroup != null)
-                {
-                    await RevalidateProduct(headlessConfig, variantGroup.Product);
-                }
-            }
+           
         } catch(Exception ex)
         {
             _logger.LogError(ex, "Failed to revalidate. Key: {key} ContentType: {contentType}", nodeKey, contentType);
         }
     }
 
-    private async Task RevalidateProduct(HeadlessConfig headlessConfig, IProduct product)
+    private async Task RevalidateProduct(RevalidateApi api, IProduct product)
     {
-        foreach (var urlsByStore in product.UrlsWithContext.GroupBy(x => x.Store))
-        {
-            var revalidateConfig = headlessConfig.ReValidateApis.FirstOrDefault(x => x.Store == urlsByStore.Key);
+        var urls = product.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
 
-            if (revalidateConfig != null)
-            {
-                await Deliver(revalidateConfig, urlsByStore.Select(x => x.Url).DistinctBy(x => x).ToList());
-            }
-        }
+        await Deliver(api, urls);
+        
+    }
+    private async Task RevalidateCategory(RevalidateApi api, ICategory category)
+    {
+        var urls = category.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
+
+        await Deliver(api, urls);
     }
 
-
-    private async Task Deliver(RevalidateApi revalidateConfig, List<string> urls)
+    private async Task Deliver(RevalidateApi revalidateConfig, IEnumerable<string> urls)
     {
         using var client = new HttpClient();
 
@@ -98,7 +97,7 @@ public class RevalidateService
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorMessage = $"Failed to post to revalidate API. URL: {url}, Status Code: {response.StatusCode}";
+            var errorMessage = $"Failed to post to revalidate API. URL: {url}, Status Code: {response.StatusCode} ReasonPhrase: {response.ReasonPhrase}";
             throw new HttpRequestException(errorMessage);
         }
     }
