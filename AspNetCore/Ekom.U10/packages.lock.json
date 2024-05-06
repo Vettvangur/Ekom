@@ -2652,6 +2652,12 @@
         "resolved": "15.0.0",
         "contentHash": "YSDIkxq44VMy2N3jBTwJBJ/ZjGyuyb0GRyfQAUIma07dCHIbjXgKXjZaAxVa6ik3XTqgcyATvwYJL0EBtAClwA=="
       },
+      "ekom.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.Core": "[0.0.1, )"
+        }
+      },
       "ekom.common": {
         "type": "Project",
         "dependencies": {
