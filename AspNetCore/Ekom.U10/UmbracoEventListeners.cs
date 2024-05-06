@@ -22,8 +22,8 @@ namespace Ekom.App_Start
 {
     class UmbracoEventListeners :
         //INotificationHandler<ContentPublishingNotification>,
-        INotificationHandler<ContentPublishedNotification>,
-        INotificationHandler<ContentUnpublishedNotification>,
+        INotificationAsyncHandler<ContentPublishedNotification>,
+        INotificationAsyncHandler<ContentUnpublishedNotification>,
         INotificationHandler<ContentSavingNotification>,
         INotificationHandler<ContentDeletedNotification>,
         INotificationHandler<ContentMovedToRecycleBinNotification>,
@@ -45,6 +45,7 @@ namespace Ekom.App_Start
         private IMemoryCache _cache;
         private CouponRepository _couponRepository;
         private INodeService _nodeService;
+        private RevalidateService _revalidateService;
         /// <summary>
         /// Initializes a new instance of the <see cref="UmbracoEventListeners"/> class.
         /// </summary>
@@ -60,7 +61,8 @@ namespace Ekom.App_Start
             IMemoryCache cache,
             AppCaches appCaches, 
             CouponRepository couponRepository, 
-            INodeService nodeService)
+            INodeService nodeService,
+            RevalidateService revalidateService)
         {
             _logger = logger;
             _config = config;
@@ -74,6 +76,7 @@ namespace Ekom.App_Start
             _cache = cache;
             _couponRepository = couponRepository;
             _nodeService = nodeService;
+            _revalidateService = revalidateService;
         }
 
         public void Handle(ContentSavingNotification e)
@@ -130,7 +133,7 @@ namespace Ekom.App_Start
             }
         }
 
-        public void Handle(ContentPublishedNotification args)
+        public async Task HandleAsync(ContentPublishedNotification args, CancellationToken cancellationToken)
         {
 
             foreach (var node in args.PublishedEntities)
@@ -142,6 +145,8 @@ namespace Ekom.App_Start
                     var parentNode = _nodeService.NodeById(node.ParentId);
 
                     cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
+
+                    await RevalidateAsync(node);
 
                     // If slug changes on category then we need to update the cache for all descending products.
                     if (node.ContentType.Alias != "ekmCategory") continue;
@@ -182,7 +187,7 @@ namespace Ekom.App_Start
             }
         }
 
-        public void Handle(ContentUnpublishedNotification args)
+        public async Task HandleAsync(ContentUnpublishedNotification args, CancellationToken cancellationToken)
         {
             foreach (var node in args.UnpublishedEntities)
             {
@@ -195,6 +200,8 @@ namespace Ekom.App_Start
                     cacheEntry?.Remove(node.Key);
 
                     RefreshCacheForRelatedNodes(node.Id, true);
+
+                    await RevalidateAsync(node);
                 }
             }
         }
@@ -585,6 +592,20 @@ namespace Ekom.App_Start
                 _cache.Remove($"GetMetafields");
             }
            
+        }
+
+        private async Task RevalidateAsync(IContent content)
+        {
+
+            var headlessConfig = _config.HeadlessConfig();
+
+            if (headlessConfig == null)
+            {
+                return;
+            }
+
+            await _revalidateService.RevalidateAsync(headlessConfig, content.Key, content.ContentType.Alias);
+
         }
     }
 }

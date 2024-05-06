@@ -59,6 +59,7 @@ static class Registrations
         services.AddTransient<IStoreService, StoreService>();
 
         services.AddTransient<OrderService>();
+        services.AddScoped<RevalidateService>();
         services.AddScoped<ControllerRequestHelper>();
         services.AddTransient<CheckoutService>();
         services.AddTransient<Ekom.Services.IMailService, MailService>();

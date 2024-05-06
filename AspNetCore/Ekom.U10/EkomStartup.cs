@@ -63,8 +63,8 @@ public class EkomComposer : IComposer
 
 
         builder
-            .AddNotificationHandler<ContentPublishedNotification, UmbracoEventListeners>()
-            .AddNotificationHandler<ContentUnpublishedNotification, UmbracoEventListeners>()
+            .AddNotificationAsyncHandler<ContentPublishedNotification, UmbracoEventListeners>()
+            .AddNotificationAsyncHandler<ContentUnpublishedNotification, UmbracoEventListeners>()
             .AddNotificationHandler<ContentSavingNotification, UmbracoEventListeners>()
             .AddNotificationHandler<ContentDeletedNotification, UmbracoEventListeners>()
             .AddNotificationHandler<ContentMovedToRecycleBinNotification, UmbracoEventListeners>()

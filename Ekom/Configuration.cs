@@ -97,6 +97,24 @@ namespace Ekom
             }
         }
 
+        public HeadlessConfig? HeadlessConfig()
+        {
+            var headlessSection = _configuration.GetSection("Ekom:Headless");
+           
+            if (!headlessSection.Exists())
+            {
+                return null;
+            }
+
+            var headlessConfig = headlessSection.Get<HeadlessConfig>();
+
+            if (headlessConfig == null || !headlessConfig.ReValidateApis.Any()) {
+                return null;
+            }
+
+            return headlessConfig;
+        }
+
         /// <summary>
         /// Ekom:AbsoluteUrls
         /// This will set all backoffice urls to absolute to work better with multi site setup
