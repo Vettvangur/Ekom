@@ -36,7 +36,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmCategory")
                 {
-                    var category = _catalog.GetCategory(nodeKey);
+                    var category = _catalog.GetCategory(nodeKey, apis.Store);
 
                     if (category != null)
                     {
@@ -45,7 +45,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmProductVariant")
                 {
-                    var variant = _catalog.GetVariant(nodeKey);
+                    var variant = _catalog.GetVariant(nodeKey, apis.Store);
 
                     if (variant != null)
                     {
@@ -54,7 +54,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmProductVariantGroup")
                 {
-                    var variantGroup = _catalog.GetVariantGroup(nodeKey);
+                    var variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
 
                     if (variantGroup != null)
                     {
