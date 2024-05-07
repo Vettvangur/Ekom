@@ -85,15 +85,20 @@ public class RevalidateService
 
     private async Task Deliver(RevalidateApi revalidateConfig, IEnumerable<string> urls)
     {
+
         using var client = new HttpClient();
 
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var requestContent = JsonSerializer.Serialize(new { urls });
+        var requestContent = JsonSerializer.Serialize(new { urls = string.Join(",", urls) });
 
         var url = $"{revalidateConfig.Url}?token={revalidateConfig.Secret}";
 
-        var response = await client.PostAsync(url, new StringContent(requestContent, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+        var stringContent = new StringContent(requestContent, Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync(url, stringContent).ConfigureAwait(false);
+
+        stringContent.Dispose();
 
         if (!response.IsSuccessStatusCode)
         {
