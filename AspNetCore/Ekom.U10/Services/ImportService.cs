@@ -54,15 +54,6 @@ public class ImportService : IImportService
         _importMediaService = importMediaService;
     }
 
-    /// <summary>
-    /// Performs a full synchronization process for imported data, including creating or updating content within the CMS.
-    /// This process involves initializing essential data based on the provided parent key, iterating through category trees from the imported data,
-    /// and ensuring the content reflects the current state of the import.
-    /// </summary>
-    /// <param name="data">The imported data containing the categories and other relevant information to be synchronized.</param>
-    /// <param name="parentKey">Optional. The GUID key representing the parent content under which the synchronization should occur. If not provided, the method defaults to a pre-defined or root content based on implementation.</param>
-    /// <param name="syncUser">The user ID to associate with the synchronization process. Defaults to -1, indicating an unspecified or system user.</param>
-    /// <param name="identiferPropertyAlias">The property alias used to identify unique content items during the sync process. Defaults to "sku".</param>
     public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
         _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias} Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
@@ -101,16 +92,7 @@ public class ImportService : IImportService
         _logger.LogInformation("Full Sync took {Duration} ms", stopwatchTotal.ElapsedMilliseconds);
     }
 
-    /// <summary>
-    /// Synchronizes the given import category with the category identified by the provided category key in the CMS.
-    /// This includes logging the synchronization process, fetching initial data, validating the root content,
-    /// iterating through the category tree for any subcategories, and updating the category if there are content changes.
-    /// </summary>
-    /// <param name="importCategory">The import category data to be synchronized, including any subcategories and related data.</param>
-    /// <param name="categoryKey">The GUID key identifying the category in the CMS. This key is used to fetch and update the corresponding category.</param>
-    /// <param name="syncUser">Optional. The user ID associated with the synchronization process. Defaults to -1, indicating an unspecified or system user.</param>
-    /// <param name="identiferPropertyAlias">The property alias used to identify unique elements within the category in the CMS. Defaults to "sku".</param>
-    public void CategorySync(ImportCategory importCategory, Guid mediaRootKey, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
         _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
@@ -120,26 +102,20 @@ public class ImportService : IImportService
 
         var allUmbracoCategories = GetAllUmbracoCategories();
 
-        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
+        IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
 
-        SaveCategory(umbracoRootContent, importCategory, allUmbracoMedia, false, syncUser);
+        if (data.Products != null && data.Products.Any())
+        {
+            IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
+        }
 
         _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
     }
 
-    /// <summary>
-    /// Synchronizes the given import product with the product identified by the provided product key in the CMS. 
-    /// This process includes logging the start and completion of the synchronization, retrieving initial data based on the product key,
-    /// ensuring the root content is not null, and saving the product.
-    /// </summary>
-    /// <param name="importProduct">The import product data to be synchronized.</param>
-    /// <param name="productKey">The GUID key identifying the product in the CMS. Used to fetch and update the corresponding product.</param>
-    /// <param name="syncUser">Optional. The user ID associated with the synchronization process. Defaults to -1, indicating an unspecified or system user.</param>
-    /// <param name="identiferPropertyAlias">The property alias used to identify the product within the CMS. Defaults to "sku".</param>
     public void ProductSync(ImportProduct importProduct, Guid productKey, Guid mediaRootKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
         _logger.LogInformation($"Category Sync running. ProductKey: {productKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
