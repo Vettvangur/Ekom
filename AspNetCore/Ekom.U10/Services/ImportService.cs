@@ -282,7 +282,7 @@ public class ImportService : IImportService
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
-        var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia);
+        var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, "files");
 
         var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products", "EventProperties" });
 
