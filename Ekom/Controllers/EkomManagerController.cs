@@ -1,3 +1,4 @@
+using Ekom.ActionFilters;
 using Ekom.API;
 using Ekom.Authorization;
 using Ekom.Models;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Ekom.Controllers
 {
     [Route("ekom/manager")]
+    [CamelCaseJson]
     public class EkomManagerController : ControllerBase
     {
         public EkomManagerController(ManagerRepository repo)

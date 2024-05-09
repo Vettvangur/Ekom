@@ -1,3 +1,4 @@
+using Ekom.ActionFilters;
 using Ekom.Authorization;
 using Ekom.Exceptions;
 using Ekom.Models;
@@ -22,6 +23,7 @@ namespace Ekom.Controllers
         Justification = "Async controller action")]
 
     [Route("ekom/backoffice")]
+    [CamelCaseJson]
     public class EkomBackofficeApiController : ControllerBase
     {
         private readonly Configuration _config;
