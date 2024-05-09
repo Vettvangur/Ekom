@@ -21,12 +21,7 @@ static class ApplicationBuilderExtensions
         services.AddControllers()
             .AddNewtonsoftJson(option => 
             option.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver()
-            )
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-
-            });
+            );
 
         services.AddHttpClient();
 
