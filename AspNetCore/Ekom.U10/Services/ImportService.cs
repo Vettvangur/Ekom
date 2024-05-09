@@ -197,11 +197,18 @@ public class ImportService : IImportService
 
         if (importProducts != null || importProducts?.Count > 0)
         {
-            var allUmbracoProducts = _contentService
-                .GetPagedOfType(productContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            var ekomCatalogContent = _contentService
+            .GetPagedOfType(catalogContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed)).FirstOrDefault();
+
+            ArgumentNullException.ThrowIfNull(ekomCatalogContent);
+
+            var allEkomNodes = _contentService
+                .GetPagedDescendants(ekomCatalogContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
                 .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
                 .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
+            var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
 
             // Create a HashSet of identifiers from importProducts for efficient lookups
             var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
@@ -246,6 +253,8 @@ public class ImportService : IImportService
                         var save = create;
 
                         SaveProduct(content, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
+
+                        IterateVariantGroups(importProduct, content, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
                     }
                 }
 
@@ -254,13 +263,49 @@ public class ImportService : IImportService
 
     }
 
+    private void IterateVariantGroups(ImportProduct importProduct, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
+    {
+        var umbracoVariantGroupChildrenContent = allEkomNodes.Where(x => x.ParentId == productContent.Id).ToList();
+
+        // Delete Variant Groups
+
+        // Create a HashSet of identifiers from importVariantGroup for efficient lookups
+        var importVariantGroupsIdentifiers = new HashSet<string>(importProduct.VariantGroups.Select(x => x.Identifier));
+
+        // Delete VariantGroup not present
+        for (int i = umbracoVariantGroupChildrenContent.Count - 1; i >= 0; i--)
+        {
+            var umbracoVariantGroup = umbracoVariantGroupChildrenContent[i];
+       
+            var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(identiferPropertyAlias) ?? "";
+            if (!importVariantGroupsIdentifiers.Contains(variantGroupIdentifier))
+            {
+                _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier}");
+
+                _contentService.Delete(umbracoVariantGroup);
+                allEkomNodes.RemoveAt(i); // Remove from list
+                umbracoVariantGroupChildrenContent.RemoveAt(i);
+            }
+            
+        }
+
+        foreach (var importVariantGroup in importProduct.VariantGroups)
+        {
+            var content = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create, identiferPropertyAlias);
+            
+            var save = create;
+
+            SaveVariantGroup(content, importVariantGroup, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+        }
+    }
+
     private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
         var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, "files");
 
-        var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Products", "EventProperties" });
+        var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
 
         // If no changes are found and not creating then return,
         if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
@@ -342,7 +387,7 @@ public class ImportService : IImportService
 
         var saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
 
-        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "EventProperties" });
+        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties" });
 
         // If no changes are found and not creating then return,
         if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
@@ -415,6 +460,46 @@ public class ImportService : IImportService
             else
             {
                 _contentService.Save(productContent, userId: syncUser);
+            }
+        }
+    }
+    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    {
+        var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia);
+
+        var compareValue = importVariantGroup.Comparer ?? ComputeSha256Hash(importVariantGroup, new string[] { "Variants", "Images", "EventProperties" });
+
+        // If no changes are found and not creating then return,
+        if (!HasContentChanges(variantGroupContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
+        {
+            return;
+        }
+
+        variantGroupContent.SetProperty("title", importVariantGroup.Title);
+        variantGroupContent.SetValue(identiferPropertyAlias != importVariantGroup.IdentiferPropertyAlias ? importVariantGroup.IdentiferPropertyAlias : identiferPropertyAlias, importVariantGroup.Identifier);
+        
+
+        if (importVariantGroup.AdditionalProperties != null && importVariantGroup.AdditionalProperties.Any())
+        {
+            foreach (var property in importVariantGroup.AdditionalProperties)
+            {
+                variantGroupContent.SetValue(property.Key, property.Value);
+            }
+        }
+
+        variantGroupContent.SetValue("comparer", compareValue);
+
+        variantGroupContent.Name = importVariantGroup.NodeName;
+
+        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+        {
+            if (variantGroupContent.Published || create)
+            {
+                _contentService.SaveAndPublish(variantGroupContent, userId: syncUser);
+            }
+            else
+            {
+                _contentService.Save(variantGroupContent, userId: syncUser);
             }
         }
     }
