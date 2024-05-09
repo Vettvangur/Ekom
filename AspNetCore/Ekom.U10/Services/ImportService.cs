@@ -225,14 +225,14 @@ public class ImportService : IImportService
                 // Check if the identifier is valid and not in the import list
                 if (!importProductIdentifiers.Contains(productIdentifier))
                 {
-                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
+                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                     _contentService.Delete(umbracoProduct);
                     allUmbracoProducts.RemoveAt(i);
                 }
                 else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
                 {
                     // Duplicate found, delete the duplicate item
-                    _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Sku: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
+                    _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
                     _contentService.Delete(umbracoProduct);
                     allUmbracoProducts.RemoveAt(i);
                 }
