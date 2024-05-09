@@ -130,7 +130,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, allUmbracoMedia, false, syncUser);
+        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, allUmbracoMedia, false, identiferPropertyAlias, syncUser);
 
         _logger.LogInformation("Product Sync finished ProductKey: {productKey}", productKey.ToString());
     }
@@ -181,7 +181,7 @@ public class ImportService : IImportService
 
                 var save = create;
 
-                SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
+                SaveCategory(content, importCategory, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
 
                 IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, identiferPropertyAlias, syncUser);
             }
@@ -252,7 +252,7 @@ public class ImportService : IImportService
 
                         var save = create;
 
-                        SaveProduct(content, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
+                        SaveProduct(content, importProduct, allUmbracoCategories, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
 
                         IterateVariantGroups(importProduct, content, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
                     }
@@ -299,7 +299,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
+    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
@@ -330,7 +330,7 @@ public class ImportService : IImportService
 
         if (importCategory.IdentiferPropertyAlias != "sku")
         {
-            categoryContent.SetValue(importCategory.IdentiferPropertyAlias, importCategory.Identifier);
+            categoryContent.SetValue(identiferPropertyAlias != importCategory.IdentiferPropertyAlias ? importCategory.IdentiferPropertyAlias : identiferPropertyAlias, importCategory.Identifier);
         }
 
         if (importCategory.AdditionalProperties != null && importCategory.AdditionalProperties.Any())
@@ -363,7 +363,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, bool create, int syncUser)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
         OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
@@ -412,7 +412,7 @@ public class ImportService : IImportService
 
         if (importProduct.IdentiferPropertyAlias != "sku")
         {
-            productContent.SetValue(importProduct.IdentiferPropertyAlias, importProduct.Identifier);
+            productContent.SetValue(identiferPropertyAlias != importProduct.IdentiferPropertyAlias ? importProduct.IdentiferPropertyAlias : identiferPropertyAlias, importProduct.Identifier);
         }
 
         if (importProduct.Price.Any())
