@@ -183,5 +183,6 @@ public enum OrderBy
     DateDesc,
     SkuAsc,
     SkuDesc,
+    Score,
     NoOrder,
 }

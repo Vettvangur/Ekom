@@ -131,6 +131,27 @@ namespace Ekom.Models
             {
                 return products.OrderByDescending(x => x.SKU);
             }
+            else if (orderBy == Utilities.OrderBy.Score)
+            {
+                return products.OrderByDescending(x =>
+                {
+                    var scoreValue = x.GetValue("score");
+                    if (string.IsNullOrEmpty(scoreValue))
+                    {
+                        return double.MinValue;
+                    }
+
+                    // Try to parse the score to a double
+                    if (double.TryParse(scoreValue.ToString(), out double score))
+                    {
+                        return score;
+                    }
+                    else
+                    {
+                        return double.MinValue; // or any default value in case of parsing failure
+                    }
+                });
+            }
 
             return products.OrderBy(x => x.SortOrder);
         } 
