@@ -142,7 +142,7 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
-            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
             {
                 var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 

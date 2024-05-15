@@ -5,6 +5,7 @@ using Ekom.Services;
 using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -116,11 +117,11 @@ public class ImportService : IImportService
         _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
     }
 
-    public void ProductSync(ImportProduct importProduct, Guid productKey, Guid mediaRootKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, string identiferPropertyAlias = "sku")
     {
-        _logger.LogInformation($"Category Sync running. ProductKey: {productKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+        _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
 
-        GetInitialData(productKey);
+        GetInitialData(parentKey);
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
@@ -130,9 +131,9 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        SaveProduct(umbracoRootContent, importProduct, allUmbracoCategories, allUmbracoMedia, false, identiferPropertyAlias, syncUser);
+        IterateProductTree(new List<ImportProduct> { importProduct }, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser, false);
 
-        _logger.LogInformation("Product Sync finished ProductKey: {productKey}", productKey.ToString());
+        _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
     }
 
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, string identiferPropertyAlias, int syncUser)
@@ -189,11 +190,12 @@ public class ImportService : IImportService
 
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser, bool delete = true)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
+        ArgumentNullException.ThrowIfNull(catalogContentType);
 
         if (importProducts != null || importProducts?.Count > 0)
         {
@@ -210,36 +212,40 @@ public class ImportService : IImportService
 
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
 
-            // Create a HashSet of identifiers from importProducts for efficient lookups
-            var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
-
-            // HashSet to track identifiers already processed
-            var processedIdentifiers = new HashSet<string>();
-
-            // Delete Products not present in the importProductIdentifiers or that are duplicates
-            for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
+            if (delete)
             {
-                var umbracoProduct = allUmbracoProducts[i];
-                var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias) ?? "";
+                // Create a HashSet of identifiers from importProducts for efficient lookups
+                var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
 
-                // Check if the identifier is valid and not in the import list
-                if (!importProductIdentifiers.Contains(productIdentifier))
+                // HashSet to track identifiers already processed
+                var processedIdentifiers = new HashSet<string>();
+
+                // Delete Products not present in the importProductIdentifiers or that are duplicates
+                for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
-                    _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
-                    _contentService.Delete(umbracoProduct);
-                    allUmbracoProducts.RemoveAt(i);
-                }
-                else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
-                {
-                    // Duplicate found, delete the duplicate item
-                    _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
-                    _contentService.Delete(umbracoProduct);
-                    allUmbracoProducts.RemoveAt(i);
+                    var umbracoProduct = allUmbracoProducts[i];
+                    var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias) ?? "";
+
+                    // Check if the identifier is valid and not in the import list
+                    if (!importProductIdentifiers.Contains(productIdentifier))
+                    {
+                        _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
+                        _contentService.Delete(umbracoProduct);
+                        allUmbracoProducts.RemoveAt(i);
+                    }
+                    else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
+                    {
+                        // Duplicate found, delete the duplicate item
+                        _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
+                        _contentService.Delete(umbracoProduct);
+                        allUmbracoProducts.RemoveAt(i);
+                    }
                 }
             }
 
             foreach (var importProduct in importProducts)
             {
+
                 if (importProduct.Categories.Count > 0)
                 {
                     var primaryCategoryContent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(identiferPropertyAlias) == importProduct.Categories.FirstOrDefault());
@@ -248,15 +254,15 @@ public class ImportService : IImportService
                     {
                         var umbracoChildrenContent = allUmbracoProducts.Where(x => x.ParentId == primaryCategoryContent.Id).ToList();
 
-                        var content = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create, identiferPropertyAlias);
+                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create, identiferPropertyAlias);
 
                         var save = create;
 
-                        SaveProduct(content, importProduct, allUmbracoCategories, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
 
-                        IterateVariantGroups(importProduct, content, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
+                        IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
                     }
-                }
+                };
 
             }
         }
@@ -283,7 +289,7 @@ public class ImportService : IImportService
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier}");
 
                 _contentService.Delete(umbracoVariantGroup);
-                allEkomNodes.RemoveAt(i); // Remove from list
+                allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
             }
             
@@ -291,13 +297,52 @@ public class ImportService : IImportService
 
         foreach (var importVariantGroup in importProduct.VariantGroups)
         {
-            var content = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create, identiferPropertyAlias);
+            var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create, identiferPropertyAlias);
             
             var save = create;
 
-            SaveVariantGroup(content, importVariantGroup, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+
+            IterateVariants(importVariantGroup, variantGroupContent, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
         }
     }
+
+    private void IterateVariants(ImportVariantGroup importVariantGroup, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
+    {
+        var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
+
+        // Delete Variants
+
+        // Create a HashSet of identifiers from importVariantGroup for efficient lookups
+        var importVariantsIdentifiers = new HashSet<string>(importVariantGroup.Variants.Select(x => x.Identifier));
+
+        // Delete VariantGroup not present
+        for (int i = umbracoVariantsChildrenContent.Count - 1; i >= 0; i--)
+        {
+            var umbracoVariant = umbracoVariantsChildrenContent[i];
+
+            var variantIdentifier = umbracoVariant.GetValue<string>(identiferPropertyAlias) ?? "";
+            if (!importVariantsIdentifiers.Contains(variantIdentifier))
+            {
+                _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
+
+                _contentService.Delete(umbracoVariant);
+                allEkomNodes.RemoveAt(i);
+                umbracoVariantsChildrenContent.RemoveAt(i);
+            }
+
+        }
+
+        foreach (var importVariant in importVariantGroup.Variants)
+        {
+            var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create, identiferPropertyAlias);
+
+            var save = create;
+
+            SaveVariant(variantContent, importVariant, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+        }
+    }
+
 
     private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
@@ -330,7 +375,7 @@ public class ImportService : IImportService
 
         if (importCategory.IdentiferPropertyAlias != "sku")
         {
-            categoryContent.SetValue(identiferPropertyAlias != importCategory.IdentiferPropertyAlias ? importCategory.IdentiferPropertyAlias : identiferPropertyAlias, importCategory.Identifier);
+            categoryContent.SetValue(identiferPropertyAlias != importCategory.IdentiferPropertyAlias && !string.IsNullOrEmpty(importCategory.IdentiferPropertyAlias) ? importCategory.IdentiferPropertyAlias : identiferPropertyAlias, importCategory.Identifier);
         }
 
         if (importCategory.AdditionalProperties != null && importCategory.AdditionalProperties.Any())
@@ -387,7 +432,7 @@ public class ImportService : IImportService
 
         var saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
 
-        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties" });
+        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files" });
 
         // If no changes are found and not creating then return,
         if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
@@ -412,7 +457,7 @@ public class ImportService : IImportService
 
         if (importProduct.IdentiferPropertyAlias != "sku")
         {
-            productContent.SetValue(identiferPropertyAlias != importProduct.IdentiferPropertyAlias ? importProduct.IdentiferPropertyAlias : identiferPropertyAlias, importProduct.Identifier);
+            productContent.SetValue(identiferPropertyAlias != importProduct.IdentiferPropertyAlias && !string.IsNullOrEmpty(importProduct.IdentiferPropertyAlias) ? importProduct.IdentiferPropertyAlias : identiferPropertyAlias, importProduct.Identifier);
         }
 
         if (importProduct.Price.Any())
@@ -476,7 +521,7 @@ public class ImportService : IImportService
         }
 
         variantGroupContent.SetProperty("title", importVariantGroup.Title);
-        variantGroupContent.SetValue(identiferPropertyAlias != importVariantGroup.IdentiferPropertyAlias ? importVariantGroup.IdentiferPropertyAlias : identiferPropertyAlias, importVariantGroup.Identifier);
+        variantGroupContent.SetValue(identiferPropertyAlias != importVariantGroup.IdentiferPropertyAlias && !string.IsNullOrEmpty(importVariantGroup.IdentiferPropertyAlias) ? importVariantGroup.IdentiferPropertyAlias : identiferPropertyAlias, importVariantGroup.Identifier);
         
 
         if (importVariantGroup.AdditionalProperties != null && importVariantGroup.AdditionalProperties.Any())
@@ -503,7 +548,86 @@ public class ImportService : IImportService
             }
         }
     }
+    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    {
+        // Always do stock update
+        if (importVariant.Stock.Any())
+        {
+            foreach (var stock in importVariant.Stock)
+            {
+                var currentStock = _stock.GetStock(variantContent.Key);
+                var newStock = stock.Stock >= 0 ? stock.Stock : 0;
 
+                // Only update if we find change 
+                if (newStock != currentStock)
+                {
+                    var stockUpdated = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, stock.Stock).Result;
+                }
+            }
+        }
+
+        var saveImages = ImportMedia(variantContent, importVariant.Images, allUmbracoMedia);
+
+        var saveFiles = ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, "File", "files");
+
+        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files" });
+
+        // If no changes are found and not creating then return,
+        if (!HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
+        {
+            return;
+        }
+
+        variantContent.SetProperty("title", importVariant.Title);
+
+        if (!string.IsNullOrEmpty(importVariant.SKU))
+        {
+            variantContent.SetValue("sku", importVariant.SKU);
+        }
+
+        if (variantContent.HasProperty("description"))
+        {
+            variantContent.SetProperty("description", importVariant.Description);
+        }
+
+        if (importVariant.IdentiferPropertyAlias != "sku")
+        {
+            variantContent.SetValue(identiferPropertyAlias != importVariant.IdentiferPropertyAlias && !string.IsNullOrEmpty(importVariant.IdentiferPropertyAlias) ? importVariant.IdentiferPropertyAlias : identiferPropertyAlias, importVariant.Identifier);
+        }
+
+        if (importVariant.Price.Any())
+        {
+            foreach (var price in importVariant.Price)
+            {
+                variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
+            }
+        }
+
+        if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
+        {
+            foreach (var property in importVariant.AdditionalProperties)
+            {
+                variantContent.SetValue(property.Key, property.Value);
+            }
+        }
+
+        variantContent.SetValue("comparer", compareValue);
+
+        variantContent.Name = importVariant.NodeName;
+
+
+        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+        {
+            if (variantContent.Published || create)
+            {
+                _contentService.SaveAndPublish(variantContent, userId: syncUser);
+            }
+            else
+            {
+                _contentService.Save(variantContent, userId: syncUser);
+            }
+        }
+    }
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia> allUmbracoMedia, string mediaType = "Image", string contentTypeAlias = "images")
     {
         var imagesUdi = new List<string>();

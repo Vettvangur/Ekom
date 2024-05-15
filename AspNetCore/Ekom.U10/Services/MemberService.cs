@@ -11,6 +11,7 @@ namespace Ekom.Umb.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<MemberService> _logger;
+        
         public MemberService(IHttpContextAccessor httpContextAccessor, ILogger<MemberService> logger)
         {
             _httpContextAccessor = httpContextAccessor;
