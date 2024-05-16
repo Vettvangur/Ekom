@@ -130,17 +130,37 @@ namespace Ekom.Models
 
         public IEnumerable<OrderedVariantGroup> VariantGroups { get; set; }
 
+
         // <summary>
         // Product images
         // </summary>
-        public virtual IEnumerable<Image> Images()
+        public virtual IEnumerable<Image> Images
         {
-            var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
+            get
+            {
+                //var primaryVariantGroup = PrimaryVariantGroup;
 
-            var imageNodes = _images.GetImages();
+                //if (primaryVariantGroup != null)
+                //{
+                //    var imageNodes = primaryVariantGroup.Images.ToList();
 
-            return imageNodes;
+                //    if (!imageNodes.Any() && primaryVariantGroup.Variants.Any())
+                //    {
+                //        imageNodes = primaryVariantGroup.Variants.FirstOrDefault()?.Images.ToList();
+                //    }
+
+                //    if (imageNodes.Any())
+                //    {
+                //        return imageNodes;
+                //    }
+                //}
+
+                var _images = Properties.GetPropertyValue(Configuration.Instance.CustomImage);
+
+                return _images.GetImages();
+            }
         }
+
         public virtual int ParentId
         {
             get

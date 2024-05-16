@@ -134,22 +134,23 @@ namespace Ekom.Models
         // <summary>
         // Variant images
         // </summary>
-        public virtual IEnumerable<Image> Images()
+        public virtual IEnumerable<Image> Images
         {
-            var config = Configuration.Resolver.GetService<Configuration>();
-            
-            var _images = Properties.GetPropertyValue(config != null ? config.CustomImage : "images", StoreInfo.Alias);
-
-            if (!string.IsNullOrEmpty(_images))
+            get
             {
-                var imageNodes = _images.GetImages();
+                var config = Configuration.Resolver.GetService<Configuration>();
 
-                return imageNodes;
+                var _images = Properties.GetPropertyValue(config != null ? config.CustomImage : "images", StoreInfo.Alias);
+
+                if (!string.IsNullOrEmpty(_images))
+                {
+                    var imageNodes = _images.GetImages();
+
+                    return imageNodes;
+                }
+
+                return Enumerable.Empty<Image>();
             }
-
-            return Enumerable.Empty<Image>();
-
-
         }
 
         /// <summary>
