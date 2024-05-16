@@ -468,6 +468,11 @@ public class ImportService : IImportService
             }
         }
 
+        if (importProduct.Vat.HasValue)
+        {
+            productContent.SetValue("vat", importProduct.Vat);
+        }
+
         if (importProduct.AdditionalProperties != null && importProduct.AdditionalProperties.Any())
         {
             foreach (var property in importProduct.AdditionalProperties)
@@ -601,6 +606,10 @@ public class ImportService : IImportService
             {
                 variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
             }
+        }
+        if (importVariant.Vat.HasValue)
+        {
+            variantContent.SetValue("vat", importVariant.Vat);
         }
 
         if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())

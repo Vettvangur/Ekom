@@ -12,6 +12,7 @@ public class ImportVariant : ImportBase
     public List<ImportStock> Stock { get; set; } = new List<ImportStock>();
     public bool EnableBackorder { get; set; }
     public List<IImportMedia> Files { get; set; } = new List<IImportMedia>();
+    public decimal? Vat { get; set; }
 
     private string? _identifier;
     /// <summary>
