@@ -39,19 +39,16 @@
                 <ul role="list" class="divide-y divide-gray-200 border-b border-t border-gray-200">
                     @foreach (var orderline in order.OrderLines)
                     {
-                        var images = orderline.Product.Images().ToList();
+                        var images = orderline.Product.Images.ToList();
                         
                         var ekmProduct = _catalog.GetProduct(orderline.ProductKey);
 
                         <li class="flex py-6 sm:py-10">
                             <div class="flex-shrink-0">
 
-                                @{
-                                    var enumerable = images.ToList();
-                                }
-                                @if (images != null && enumerable.Any())
+                                @if (images != null && images.Any())
                                 {
-                                    <img src="@enumerable.FirstOrDefault()?.Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
+                                    <img src="@images.FirstOrDefault()?.Url" alt="@orderline.Product.Title" class="h-24 w-24 rounded-md object-cover object-center sm:h-48 sm:w-48" loading="lazy">
                                 }
                                 
                             </div>

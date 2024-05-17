@@ -174,6 +174,21 @@ namespace Ekom.Models
             }
         }
 
+        public virtual string Url
+        {
+            get
+            {
+                var productNode = Catalog.Instance.GetProduct(Key, StoreInfo.Alias);
+
+                if (productNode != null)
+                {
+                    return productNode.Url;
+                }
+
+                return "";
+            }
+        }
+
         public IEnumerable<IProduct> RelatedProducts(int count = 4)
         {
             var relatedProducts = new List<IProduct>();
@@ -200,7 +215,7 @@ namespace Ekom.Models
 
             if (!relatedProducts.Any())
             {
-                var category = Catalog.Instance.GetCategory(ParentId);
+                var category = Catalog.Instance.GetCategory(ParentId, StoreInfo.Alias);
 
                 if (category != null)
                 {
