@@ -135,6 +135,35 @@ public class EkomCatalogController : ControllerBase
     }
 
     /// <summary>
+    /// Get Child Products Of A Category
+    /// </summary>
+    /// <param name="categoryKey">Key of category</param>
+    /// <param name="query"></param>
+    /// <returns></returns>
+    [HttpPost]
+    [Route("products/{categoryKey:Guid}")]
+    public ProductResponse GetProducts(Guid categoryKey, [FromBody] ProductQuery query = null)
+    {
+        try
+        {
+            var category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
+
+            if (category == null)
+            {
+                throw new ArgumentNullException(nameof(category));
+            }
+
+            _reqHelper.SetEkmRequest(category);
+
+            return category.Products(query);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+        }
+    }
+
+    /// <summary>
     /// Get Products By Ids
     /// </summary>
     /// <param name="query">Product Query</param>
@@ -184,6 +213,34 @@ public class EkomCatalogController : ControllerBase
         try
         {
             var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
+
+            if (category == null)
+            {
+                throw new ArgumentNullException(nameof(category));
+            }
+
+            _reqHelper.SetEkmRequest(category);
+
+            return category.ProductsRecursive(query);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Get Recursive Products Of A Category
+    /// </summary>
+    /// <param name="categoryKey">Key of category</param>
+    /// <returns></returns>
+    [HttpPost]
+    [Route("productsrecursive/{categoryKey:Guid}")]
+    public ProductResponse GetProductsRecursive(Guid categoryKey, [FromBody] ProductQuery query = null)
+    {
+        try
+        {
+            var category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
 
             if (category == null)
             {

@@ -39,10 +39,10 @@ namespace Ekom.Site
                 .AddControllers()
                 .AddNewtonsoftJson(opts =>
                 {
-                    opts.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                    opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                     opts.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-                })
-                ;
+                });
+            
 #pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()

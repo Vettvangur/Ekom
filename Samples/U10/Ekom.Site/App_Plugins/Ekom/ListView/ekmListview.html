@@ -1,0 +1,20 @@
+<div ng-controller="Ekom.Listview">
+
+  <div class="umb-content-grid">
+
+    <div ng-repeat="product in products" class="ekm_productCard umb-content-grid__item umb-outline umb-outline--surrounding">
+
+      <a href="#content/content/edit/{{product.id}}?list={{product.parentId}}">
+        <div class="umb-content-grid__content">
+          <div class="umb-content-grid__item-name">
+            {{ product.title}}
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+
+
+</div>

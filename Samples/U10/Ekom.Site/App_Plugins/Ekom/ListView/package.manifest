@@ -1,0 +1,9 @@
+{
+    "css": [
+        "~/App_Plugins/Ekom/Listview/ekmListview.css"
+    ],
+    "javascript": [
+        "~/App_Plugins/Ekom/Listview/ekmListview.resources.js",
+        "~/App_Plugins/Ekom/Listview/ekmListview.controller.js"
+    ]
+}

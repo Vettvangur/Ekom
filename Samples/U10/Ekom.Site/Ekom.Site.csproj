@@ -19,6 +19,8 @@
       <Content Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.html" />
       <Content Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.html" />
+      <Content Include="App_Plugins\Ekom\ListView\ekmListview.css" />
+      <Content Include="App_Plugins\Ekom\ListView\ekmListview.html" />
       <Content Include="App_Plugins\Ekom\Manager\assets\ekomLetter.png" />
       <Content Include="App_Plugins\Ekom\Manager\assets\ekomLogo.png" />
       <Content Include="App_Plugins\Ekom\Manager\Lang\en-us.xml" />
@@ -41,6 +43,9 @@
       <None Include="App_Plugins\Ekom\DataTypes\RangeEditor\ekmRange.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\StockEditor\ekomStock.controller.js" />
       <None Include="App_Plugins\Ekom\DataTypes\ZonePicker\ekmZone.controller.js" />
+      <None Include="App_Plugins\Ekom\ListView\ekmListview.controller.js" />
+      <None Include="App_Plugins\Ekom\ListView\ekmListview.resources.js" />
+      <None Include="App_Plugins\Ekom\ListView\package.manifest" />
       <None Include="App_Plugins\Ekom\Manager\controllers\ekmManager.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\libs\chart4.3.0.min.js" />
       <None Include="App_Plugins\Ekom\Manager\package.manifest" />
