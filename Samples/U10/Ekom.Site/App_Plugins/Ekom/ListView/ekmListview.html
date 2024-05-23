@@ -1,20 +1,27 @@
 <div ng-controller="Ekom.Listview">
 
-  <div class="umb-content-grid">
+  <div class="ekmListview">
 
-    <div ng-repeat="product in products" class="ekm_productCard umb-content-grid__item umb-outline umb-outline--surrounding">
+    <div class="ekmListview__categories">
 
-      <a href="#content/content/edit/{{product.id}}?list={{product.parentId}}">
-        <div class="umb-content-grid__content">
-          <div class="umb-content-grid__item-name">
-            {{ product.title}}
-          </div>
-        </div>
+      <a href="#content/content/edit/{{category.id}}?list={{category.parentId}}" ng-repeat="category in categories" class="ekmProductCard">
+        {{ category.title }}
       </a>
 
     </div>
+
+    <div class="ekmListview__products">
+
+      <a href="#content/content/edit/{{product.id}}?list={{product.parentId}}" ng-repeat="product in products" class="ekmProductCard">
+
+        <div ng-bind-html="GetImage(product)"></div>
+
+        {{ product.title }}
+        {{ product.price.withVat.currencyString }}
+      </a>
+
+    </div>
+
   </div>
-
-
 
 </div>

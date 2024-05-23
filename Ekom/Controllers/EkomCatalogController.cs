@@ -412,6 +412,26 @@ public class EkomCatalogController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Get Sub Categories
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost, HttpGet]
+    [Route("subcategories/{key:Guid}")]
+    public IEnumerable<ICategory> GetSubCategories(Guid key, string? storeAlias = null)
+    {
+        try
+        {
+            var category = API.Catalog.Instance.GetCategory(key, storeAlias);
+
+            return category.SubCategories;
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+        }
+    }
+
 
     /// <summary>
     /// Get Sub Categories Recursive
@@ -424,6 +444,32 @@ public class EkomCatalogController : ControllerBase
         try
         {
             var category = API.Catalog.Instance.GetCategory(id, storeAlias);
+
+            if (category == null)
+            {
+                throw new ArgumentNullException(nameof(category));
+            }
+
+
+            return category.SubCategoriesRecursive;
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Get Sub Categories Recursive
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost, HttpGet]
+    [Route("subcategoriesrecursive/{key:Guid}")]
+    public IEnumerable<ICategory> GetSubCategoriesRecurisve(Guid key, string? storeAlias = null)
+    {
+        try
+        {
+            var category = API.Catalog.Instance.GetCategory(key, storeAlias);
 
             if (category == null)
             {

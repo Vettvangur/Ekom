@@ -1,0 +1,10 @@
+.ekmListview__products {
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 30px;
+}
+
+.ekmListview__products .ekmProductCard {
+  grid-column: span 3;
+  background-color:#fff;
+}

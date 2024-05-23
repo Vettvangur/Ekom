@@ -8,6 +8,15 @@ angular.module('umbraco.resources').factory('Ekom.Listview.Resources',
           method: 'POST',
           url: url
         });
+      },
+
+      GetSubCategories: function (categoryKey) {
+        var url = '/ekom/catalog/subcategories/' + categoryKey;
+
+        return $http({
+          method: 'POST',
+          url: url
+        });
       }
     };
   });
