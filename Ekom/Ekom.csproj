@@ -75,7 +75,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CommonServiceLocator" Version="2.0.6" />
+        <PackageReference Include="CommonServiceLocator" Version="2.0.7" />
         <PackageReference Include="Ekom.Payments.Core" Version="0.1.279" />
         <PackageReference Include="Hangfire" Version="1.8.5" />
         <PackageReference Include="linq2db" Version="4.3.0" />

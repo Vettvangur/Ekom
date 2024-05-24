@@ -32,8 +32,8 @@
       },
       "CommonServiceLocator": {
         "type": "Transitive",
-        "resolved": "2.0.6",
-        "contentHash": "cIVBcA+z8B9oyM67/6mVsJ9PIswFXqREz6nHdngaA7M56su0kOlqlfDHrhYOBB/vAZU466WOWTJCzrVEWrYUvQ=="
+        "resolved": "2.0.7",
+        "contentHash": "deByA+/7hfPSMqaqcITTkeZhGw41qiIon5F6Q5n5EcMPeYc5hXlifIrVpPKsur4g/PuxYU6umjTx8kQMog4npw=="
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
@@ -588,7 +588,7 @@
       "Ekom.Core": {
         "type": "Project",
         "dependencies": {
-          "CommonServiceLocator": "[2.0.6, )",
+          "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
           "Ekom.Payments.Core": "[0.1.279, )",
           "Hangfire": "[1.8.5, )",

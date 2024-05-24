@@ -136,6 +136,28 @@ public class ImportService : IImportService
         _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
     }
 
+    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    {
+        _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+
+        GetInitialData(parentKey);
+
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var allEkomNodes = _contentService
+            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed))
+            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+
+        var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(identiferPropertyAlias) == importProduct.Identifier);
+
+        ArgumentNullException.ThrowIfNull(product);
+
+        SaveProduct(product, importProduct, null, null, false, identiferPropertyAlias, syncUser);
+
+        _logger.LogInformation("Product Update Sync finished ProductKey: {SKU} ProductId: {Id}", importProduct.SKU, product.Id);
+    }
+
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, string identiferPropertyAlias, int syncUser)
     {
 
@@ -199,15 +221,9 @@ public class ImportService : IImportService
 
         if (importProducts != null || importProducts?.Count > 0)
         {
-            var ekomCatalogContent = _contentService
-            .GetPagedOfType(catalogContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).FirstOrDefault();
-
-            ArgumentNullException.ThrowIfNull(ekomCatalogContent);
-
             var allEkomNodes = _contentService
-                .GetPagedDescendants(ekomCatalogContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-                .Where(x => !x.Trashed & x.Path.Contains(umbracoRootContent.Id.ToString())))
+                .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+                .Where(x => !x.Trashed))
                 .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
@@ -262,7 +278,7 @@ public class ImportService : IImportService
 
                         IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
                     }
-                };
+                }
 
             }
         }
@@ -343,7 +359,6 @@ public class ImportService : IImportService
         }
     }
 
-
     private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
         OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
@@ -407,8 +422,7 @@ public class ImportService : IImportService
             }
         }
     }
-
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
         OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
@@ -428,9 +442,14 @@ public class ImportService : IImportService
             }
         }
 
-        var saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+        var saveImages = false;
+        var saveFiles = false;
 
-        var saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
+        if (allUmbracoMedia is not null)
+        {
+            saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+            saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
+        }
 
         var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files" });
 
@@ -481,7 +500,7 @@ public class ImportService : IImportService
             }
         }
 
-        if (importProduct.Categories.Count > 1)
+        if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
         {
             var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(importProduct.IdentiferPropertyAlias)));
 
