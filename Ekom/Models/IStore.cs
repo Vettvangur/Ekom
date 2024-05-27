@@ -37,5 +37,7 @@ namespace Ekom.Models
         string OrderNumberTemplate { get; }
         string Url { get; }
         bool VatIncludedInPrice { get; }
+        bool UserBasket { get; }
+        bool ShareBasketBetweenStores { get; }
     }
 }

@@ -142,7 +142,7 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
-            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
+            if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
             {
                 var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
@@ -150,7 +150,7 @@ namespace Ekom.Services
             }
             else
             {
-                var key = CreateKey(store.Alias);
+                var key = CreateKey(store);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
 
@@ -253,9 +253,11 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
-            // Add timelimit to get the order ? Maybe 1-2 hours ?
+           
+            var store = API.Store.Instance.GetStore(storeAlias);
 
-            if (_config.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+            // Add timelimit to get the order ? Maybe 1-2 hours ?
+            if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
                 var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
@@ -266,7 +268,7 @@ namespace Ekom.Services
             }
             else
             {
-                var key = CreateKey(storeAlias);
+                var key = CreateKey(store);
                 // Get Cart UniqueId from Cookie.
                 var orderUniqueId = GetOrderIdFromCookie(key);
 
@@ -398,7 +400,9 @@ namespace Ekom.Services
                 ? order?.CustomerUsername
                 : _httpCtx.User.Identity?.Name;
 
-            if (_config.UserBasket && !string.IsNullOrEmpty((userName)))
+            var store = API.Store.Instance.GetStore(order.StoreAlias);
+
+            if (store.UserBasket && !string.IsNullOrEmpty((userName)))
             {
                 _memberService.Save(new Dictionary<string, object>() {
                     { "orderId", "" }
@@ -1052,7 +1056,9 @@ namespace Ekom.Services
         /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInCache(OrderInfo orderInfo)
         {
-            var key = CreateKey(orderInfo.StoreInfo.Alias);
+            var store = API.Store.Instance.GetStore(orderInfo.StoreInfo.Alias);
+
+            var key = CreateKey(store);
 
             _memoryCache.Set<OrderInfo>(
                 orderInfo.UniqueId.ToString(),
@@ -1110,9 +1116,11 @@ namespace Ekom.Services
         {
             _logger.LogDebug("CreateEmptyOrderAsync..");
 
+            var store = _storeSvc.GetStoreByAlias(storeAlias);
+
             Guid orderUniqueId;
 
-            if (_config.UserBasket && _httpCtx.User.Identity.IsAuthenticated)
+            if (store.UserBasket && _httpCtx.User.Identity.IsAuthenticated)
             {
                 orderUniqueId = Guid.NewGuid();
 
@@ -1122,10 +1130,8 @@ namespace Ekom.Services
             }
             else
             {
-                orderUniqueId = CreateOrderIdCookie(CreateKey(storeAlias));
+                orderUniqueId = CreateOrderIdCookie(CreateKey(store));
             }
-
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
 
             var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
                 .ConfigureAwait(false);
@@ -1567,13 +1573,13 @@ namespace Ekom.Services
                 .Replace("#year#", _date.Year.ToString());
         }
 
-        private string CreateKey(string storeAlias)
+        private string CreateKey(IStore store)
         {
             var key = "ekmOrder";
 
-            if (!_config.ShareBasketBetweenStores)
+            if (store.ShareBasketBetweenStores)
             {
-                key += "-" + storeAlias;
+                key += "-" + store.Alias;
             }
 
             return key;

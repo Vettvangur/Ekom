@@ -88,6 +88,21 @@ namespace Ekom.Models
                 return GetCurrentCurrency();
             }
         }
+        public virtual bool UserBasket
+        {
+            get
+            {
+                return Properties.ContainsKey("userBasket") ? Properties.GetPropertyValue("userBasket").IsBoolean() : Configuration.Instance.UserBasket;
+            }
+        }
+
+        public virtual bool ShareBasketBetweenStores
+        {
+            get
+            {
+                return Properties.ContainsKey("ShareBasketBetweenStores") ? Properties.GetPropertyValue("ShareBasketBetweenStores").IsBoolean() : Configuration.Instance.ShareBasketBetweenStores;
+            }
+        }
 
         public CurrencyModel GetCurrentCurrency()
         {
