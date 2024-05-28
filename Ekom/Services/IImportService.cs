@@ -35,6 +35,9 @@ namespace Ekom.Services
 
 
         public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
+
+        public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
+
     }
 
 }

@@ -157,6 +157,27 @@ public class ImportService : IImportService
 
         _logger.LogInformation("Product Update Sync finished ProductKey: {SKU} ProductId: {Id}", importProduct.SKU, product.Id);
     }
+    public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    {
+        _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+
+        GetInitialData(parentKey);
+
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var allEkomNodes = _contentService
+            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed))
+            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+
+        var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(identiferPropertyAlias) == importVariant.Identifier);
+
+        ArgumentNullException.ThrowIfNull(variant);
+
+        SaveVariant(variant, importVariant, null, false, identiferPropertyAlias, syncUser);
+
+        _logger.LogInformation("Variant Update Sync finished ProductKey: {SKU} ProductId: {Id}", importVariant.SKU, variant.Id);
+    }
 
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, string identiferPropertyAlias, int syncUser)
     {
@@ -572,7 +593,7 @@ public class ImportService : IImportService
             }
         }
     }
-    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
         // Always do stock update
         if (importVariant.Stock.Any())
@@ -590,9 +611,15 @@ public class ImportService : IImportService
             }
         }
 
-        var saveImages = ImportMedia(variantContent, importVariant.Images, allUmbracoMedia);
+        var saveImages = false;
+        var saveFiles = false;
 
-        var saveFiles = ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, "File", "files");
+        if (allUmbracoMedia != null)
+        {
+            saveImages = ImportMedia(variantContent, importVariant.Images, allUmbracoMedia);
+
+            saveFiles = ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, "File", "files");
+        }
 
         var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files" });
 
