@@ -599,23 +599,25 @@ namespace Ekom.API
             return GetVariant(key, storeAlias);
         }
 
-        public IEnumerable<IVariant> GetVariantsByGroup(int Id, string storeAlias = null)
+        public IEnumerable<IVariant> GetVariantsByGroup(int id, string storeAlias = null)
         {
-            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+            var store = !string.IsNullOrEmpty(storeAlias)
+                        ? _storeSvc.GetStoreByAlias(storeAlias)
+                        : _storeSvc.GetStoreFromCache();
 
-            if (store != null)
+            if (store == null)
             {
-                if (_variantCache == null || !_variantCache.Cache.TryGetValue(store.Alias, out var variants))
-                {
-                    return Enumerable.Empty<IVariant>();
-                }
-
-                return variants.Values
-                               .Where(v => v.VariantGroup?.Id == Id)
-                               .OrderBy(v => v.SortOrder);
+                return Enumerable.Empty<IVariant>();
             }
 
-            return null;
+            if (_variantCache?.Cache.TryGetValue(store.Alias, out var variants) != true)
+            {
+                return Enumerable.Empty<IVariant>();
+            }
+
+            return variants.Values
+                           .Where(v => v.VariantGroupId == id)
+                           .OrderBy(v => v.SortOrder);
         }
 
         [Obsolete]

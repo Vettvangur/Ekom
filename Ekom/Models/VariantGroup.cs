@@ -66,34 +66,26 @@ namespace Ekom.Models
         /// <summary>
         /// Get all variants in this group
         /// </summary>
-        [JsonIgnore]
-        [XmlIgnore]
         public IEnumerable<IVariant> Variants
         {
             get
             {
                 var cacheKey = $"Variants_{Store.Alias}_{Id}";
 
-                var httpContextAccessor = Configuration.Resolver.GetService<IHttpContextAccessor>();
-
-                if (httpContextAccessor != null)
+                var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                if (httpContext != null)
                 {
-                    var httpContext = httpContextAccessor.HttpContext;
-
-                    if (httpContext != null)
+                    if (httpContext.Items.TryGetValue(cacheKey, out var cachedVariants))
                     {
-                        if (httpContext.Items.ContainsKey(cacheKey))
-                        {
-                            return (IEnumerable<IVariant>)httpContext.Items[cacheKey];
-                        }
-
-                        var variants = Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
-                        httpContext.Items[cacheKey] = variants;
-                        return variants;
+                        return (IEnumerable<IVariant>)cachedVariants;
                     }
+
+                    var variants = Catalog.Instance.GetVariantsByGroup(Id, Store.Alias);
+                    httpContext.Items[cacheKey] = variants;
+                    return variants;
                 }
 
-                return Catalog.Instance.GetVariantsByGroup(Store.Alias, Id);
+                return Catalog.Instance.GetVariantsByGroup(Id, Store.Alias);
             }
         }
 

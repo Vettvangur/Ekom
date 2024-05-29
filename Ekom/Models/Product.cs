@@ -355,6 +355,8 @@ namespace Ekom.Models
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public virtual IEnumerable<IVariant> AllVariants
         {
             get
