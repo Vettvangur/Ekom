@@ -173,7 +173,7 @@ namespace Ekom.API
                 {
                     foreach (var orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        var variant = Catalog.Instance.GetVariant(orderedVariant.Key);
+                        var variant = Catalog.Instance.GetVariant(orderedVariant.Key, orderInfo.StoreInfo.Alias);
 
                         if (variant == null)
                         {
@@ -194,7 +194,7 @@ namespace Ekom.API
                 }
                 else
                 {
-                    var product = Catalog.Instance.GetProduct(orderLine.ProductKey);
+                    var product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
 
                     if (product == null)
                     {
