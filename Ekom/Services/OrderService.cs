@@ -1355,7 +1355,7 @@ namespace Ekom.Services
             }
         }
 
-        public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
+        public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
         {
             var orders = await _orderRepository.GetStatusOrdersAsync(
                 x => x.CustomerId == customerId,
@@ -1364,6 +1364,12 @@ namespace Ekom.Services
                 OrderStatus.Dispatched
 
             ).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(storeAlias))
+            {
+                orders = orders.Where(x => x.StoreAlias == storeAlias).ToList();
+            }
+
 
             return orders.Select(x => new OrderInfo(x)).ToList();
         }

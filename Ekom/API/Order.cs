@@ -220,10 +220,11 @@ namespace Ekom.API
         /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
         /// </summary>
         /// <param name="customerId"></param>
+        /// <param name="storeAlias"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId)
+        public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
         {
-            return await _orderService.GetCompleteCustomerOrdersAsync(customerId)
+            return await _orderService.GetCompleteCustomerOrdersAsync(customerId, storeAlias)
                 .ConfigureAwait(false);
         }
 
