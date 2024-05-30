@@ -54,20 +54,21 @@ namespace Ekom.Services
             //HttpContext = httpContext;
         }
 
-        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, string returnUrl = "")
+        internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
         {
             Logger.LogInformation("Checkout Pay - Payment request start ");
 
             Culture = culture;
 
-            var res = await PrepareCheckoutAsync(paymentRequest).ConfigureAwait(false);
+            // ToDo: Lock order throughout request
+            var order = await Order.Instance.GetOrderAsync().ConfigureAwait(false);
+
+            var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+
             if (res != null)
             {
                 return responseHandler(res);
             }
-
-            // ToDo: Lock order throughout request
-            var order = await Order.Instance.GetOrderAsync().ConfigureAwait(false);
 
             Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId 
                 + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
@@ -121,7 +122,7 @@ namespace Ekom.Services
             return responseHandler(result);
         }
 
-        protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest)
+        protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest, IOrderInfo? orderInfo)
         {
             return Task.FromResult<CheckoutResponse?>(null);
         }
