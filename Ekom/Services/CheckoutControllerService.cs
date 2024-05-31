@@ -406,7 +406,7 @@ namespace Ekom.Services
             
             var storeAlias = order.StoreInfo.Alias;
 
-            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider);
+            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider, storeAlias);
             
             if (ekomPP == null)
             {

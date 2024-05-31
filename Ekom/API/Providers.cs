@@ -171,9 +171,31 @@ namespace Ekom.API
             if (store == null)
             {
                 store = _storeSvc.GetStoreFromCache();
+
+                ArgumentNullException.ThrowIfNull(store);
             }
 
             return _shippingProviderCache[store.Alias].ContainsKey(key) ? _shippingProviderCache[store.Alias][key] : null;
+        }
+
+        /// <summary>
+        /// Get shipping provider from cache
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        public IShippingProvider? GetShippingProvider(Guid key, string storeAlias = null)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                var store = _storeSvc.GetStoreFromCache();
+
+                ArgumentNullException.ThrowIfNull(store);
+
+                storeAlias = store.Alias;
+            }
+
+            return _shippingProviderCache[storeAlias].ContainsKey(key) ? _shippingProviderCache[storeAlias][key] : null;
         }
 
         /// <summary>
@@ -187,9 +209,31 @@ namespace Ekom.API
             if (store == null)
             {
                 store = _storeSvc.GetStoreFromCache();
+
+                ArgumentNullException.ThrowIfNull(store);
             }
 
             return _paymentProviderCache[store.Alias].ContainsKey(key) ? _paymentProviderCache[store.Alias][key] : null;
+        }
+
+        /// <summary>
+        /// Get payment provider from cache
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="storeAlias"></param>
+        /// <returns></returns>
+        public IPaymentProvider? GetPaymentProvider(Guid key, string storeAlias = null)
+        {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                var store = _storeSvc.GetStoreFromCache();
+
+                ArgumentNullException.ThrowIfNull(store);
+
+                storeAlias = store.Alias;
+            }
+
+            return _paymentProviderCache[storeAlias].ContainsKey(key) ? _paymentProviderCache[storeAlias][key] : null;
         }
 
         public IEnumerable<IZone> GetAllZones()
