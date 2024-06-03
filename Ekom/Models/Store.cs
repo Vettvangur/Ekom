@@ -100,7 +100,7 @@ namespace Ekom.Models
         {
             get
             {
-                return Properties.ContainsKey("ShareBasketBetweenStores") ? Properties.GetPropertyValue("ShareBasketBetweenStores").IsBoolean() : Configuration.Instance.ShareBasketBetweenStores;
+                return Properties.ContainsKey("shareBasketBetweenStores") ? Properties.GetPropertyValue("shareBasketBetweenStores").IsBoolean() : Configuration.Instance.ShareBasketBetweenStores;
             }
         }
 
