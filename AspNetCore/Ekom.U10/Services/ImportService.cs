@@ -595,6 +595,8 @@ public class ImportService : IImportService
     }
     private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
+        OnVariantSaveStarting(this, new ImportVariantEventArgs(variantContent, importVariant, create));
+
         // Always do stock update
         if (importVariant.Stock.Any())
         {

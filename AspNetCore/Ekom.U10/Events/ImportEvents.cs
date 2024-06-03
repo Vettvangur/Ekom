@@ -12,6 +12,10 @@ namespace Ekom.Events
         public static event EventHandler<ImportProductEventArgs> ProductSaveStarting;
         internal static void OnProductSaveStarting(object sender, ImportProductEventArgs args)
             => ProductSaveStarting?.Invoke(sender, args);
+
+        public static event EventHandler<ImportVariantEventArgs> VariantSaveStarting;
+        internal static void OnVariantSaveStarting(object sender, ImportVariantEventArgs args)
+            => VariantSaveStarting?.Invoke(sender, args);
     }
 
     public class ImportCategoryEventArgs : EventArgs
@@ -38,6 +42,20 @@ namespace Ekom.Events
         {
             ProductContent = productContent;
             ImportProduct = importProduct;
+            IsCreateOperation = isCreateOperation;
+        }
+    }
+
+    public class ImportVariantEventArgs : EventArgs
+    {
+        public IContent VariantContent { get; }
+        public ImportVariant ImportVariant { get; }
+        public bool IsCreateOperation { get; }
+
+        public ImportVariantEventArgs(IContent variantContent, ImportVariant importVariant, bool isCreateOperation)
+        {
+            VariantContent = variantContent;
+            ImportVariant = importVariant;
             IsCreateOperation = isCreateOperation;
         }
     }
