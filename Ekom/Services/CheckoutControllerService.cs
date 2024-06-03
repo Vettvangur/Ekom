@@ -61,7 +61,9 @@ namespace Ekom.Services
             Culture = culture;
 
             // ToDo: Lock order throughout request
-            var order = await Order.Instance.GetOrderAsync().ConfigureAwait(false);
+            var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+
+            ArgumentNullException.ThrowIfNull(order);
 
             var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -113,7 +115,7 @@ namespace Ekom.Services
             }
 
             // save job ids to sql for retrieval after checkout completion
-            await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs).ConfigureAwait(false);
+            await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, store.Alias).ConfigureAwait(false);
 
             var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
                 .ConfigureAwait(false);

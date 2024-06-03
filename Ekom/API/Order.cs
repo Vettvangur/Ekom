@@ -7,6 +7,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using static System.Formats.Asn1.AsnWriter;
 namespace Ekom.API
 {
     /// <summary>
@@ -80,6 +81,16 @@ namespace Ekom.API
         /// <returns></returns>
         public async Task<IOrderInfo> GetOrderAsync(string storeAlias)
         {
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                var store = _storeSvc.GetStoreFromCache();
+
+                if (store != null)
+                {
+                    storeAlias = store.Alias;
+                }
+            }
+
             if (string.IsNullOrEmpty(storeAlias))
             {
                 throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
@@ -452,15 +463,24 @@ namespace Ekom.API
         /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
         /// </summary>
         /// <param name="hangfireJobs">Job IDs to add</param>
-        public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, string storeAlias = null)
         {
             if (hangfireJobs == null)
             {
                 throw new ArgumentNullException(nameof(hangfireJobs));
             }
 
-            var store = _storeSvc.GetStoreFromCache();
-            await AddHangfireJobsToOrderAsync(store.Alias, hangfireJobs)
+            if (string.IsNullOrEmpty(storeAlias))
+            {
+                var store = _storeSvc.GetStoreFromCache();
+
+                if (store != null)
+                {
+                    storeAlias = store.Alias;
+                }
+            }
+
+            await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)
                 .ConfigureAwait(false);
         }
         /// <summary>

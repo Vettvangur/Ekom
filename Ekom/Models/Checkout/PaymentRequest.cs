@@ -12,4 +12,5 @@ public class PaymentRequest
     public int Year { get; set; }
     public int Month { get; set; }
     public string ReturnUrl { get; set; } = "";
+    public string? StoreAlias { get; set; }
 }
