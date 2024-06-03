@@ -5,7 +5,6 @@ using Ekom.Services;
 using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -36,6 +35,11 @@ public class ImportService : IImportService
     private IContentType? categoryContentType;
     private IContentType? catalogContentType;
     private IContent? umbracoRootContent;
+
+    private List<ImportCategory> categoriesSaved;
+    private List<ImportProduct> productsSaved;
+    private List<ImportVariant> variantsSaved;
+    private List<ImportVariantGroup> variantGroupsSaved;
 
     public ImportService(
         IUmbracoContextFactory umbracoContextFactory,
@@ -84,13 +88,14 @@ public class ImportService : IImportService
             IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
 
             _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
-
             stopwatch.Stop();
         }
 
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync));
+
         stopwatchTotal.Stop();
 
-        _logger.LogInformation("Full Sync took {Duration} ms", stopwatchTotal.ElapsedMilliseconds);
+        _logger.LogInformation("Full Sync took {Duration} ms. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", stopwatchTotal.ElapsedMilliseconds, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
     }
 
     public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
@@ -114,6 +119,8 @@ public class ImportService : IImportService
             IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
         }
 
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync));
+
         _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
     }
 
@@ -132,6 +139,8 @@ public class ImportService : IImportService
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
         IterateProductTree(new List<ImportProduct> { importProduct }, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser, false);
+
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductSync));
 
         _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
     }
@@ -155,6 +164,8 @@ public class ImportService : IImportService
 
         SaveProduct(product, importProduct, null, null, false, identiferPropertyAlias, syncUser);
 
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync));
+
         _logger.LogInformation("Product Update Sync finished ProductKey: {SKU} ProductId: {Id}", importProduct.SKU, product.Id);
     }
     public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
@@ -175,6 +186,8 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(variant);
 
         SaveVariant(variant, importVariant, null, false, identiferPropertyAlias, syncUser);
+
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync));
 
         _logger.LogInformation("Variant Update Sync finished ProductKey: {SKU} ProductId: {Id}", importVariant.SKU, variant.Id);
     }
@@ -442,6 +455,8 @@ public class ImportService : IImportService
                 _contentService.Save(categoryContent, userId: syncUser);
             }
         }
+
+        categoriesSaved.Add(importCategory);
     }
     private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
@@ -552,6 +567,8 @@ public class ImportService : IImportService
                 _contentService.Save(productContent, userId: syncUser);
             }
         }
+
+        productsSaved.Add(importProduct);
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
@@ -592,6 +609,8 @@ public class ImportService : IImportService
                 _contentService.Save(variantGroupContent, userId: syncUser);
             }
         }
+
+        variantGroupsSaved.Add(importVariantGroup);
     }
     private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
     {
@@ -684,6 +703,8 @@ public class ImportService : IImportService
                 _contentService.Save(variantContent, userId: syncUser);
             }
         }
+
+        variantsSaved.Add(importVariant);
     }
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia> allUmbracoMedia, string mediaType = "Image", string contentTypeAlias = "images")
     {
@@ -762,6 +783,10 @@ public class ImportService : IImportService
     /// </remarks>
     private void GetInitialData(Guid? parentKey)
     {
+        productsSaved = new List<ImportProduct>();
+        variantsSaved = new List<ImportVariant>();
+        variantGroupsSaved = new List<ImportVariantGroup>();
+
         // Initialize content types from the content service
         categoryContentType = _contentTypeService.Get("ekmCategory");
         productContentType = _contentTypeService.Get("ekmProduct");

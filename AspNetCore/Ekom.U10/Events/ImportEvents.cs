@@ -1,4 +1,5 @@
 using Ekom.Models.Import;
+using Ekom.Utilities;
 using Umbraco.Cms.Core.Models;
 
 namespace Ekom.Events
@@ -16,6 +17,10 @@ namespace Ekom.Events
         public static event EventHandler<ImportVariantEventArgs> VariantSaveStarting;
         internal static void OnVariantSaveStarting(object sender, ImportVariantEventArgs args)
             => VariantSaveStarting?.Invoke(sender, args);
+
+        public static event EventHandler<ImportSyncFinishedEventArgs> SyncFinished;
+        internal static void OnSyncFinished(object sender, ImportSyncFinishedEventArgs args)
+            => SyncFinished?.Invoke(sender, args);
     }
 
     public class ImportCategoryEventArgs : EventArgs
@@ -57,6 +62,24 @@ namespace Ekom.Events
             VariantContent = variantContent;
             ImportVariant = importVariant;
             IsCreateOperation = isCreateOperation;
+        }
+    }
+
+    public class ImportSyncFinishedEventArgs : EventArgs
+    {
+        public List<ImportCategory> ImportCategories { get; }
+        public List<ImportProduct> ImportProducts { get; }
+        public List<ImportVariant> ImportVariants { get; }
+        public List<ImportVariantGroup> ImportVariantGroups { get; }
+        public ImportSyncType Type { get; }
+
+        public ImportSyncFinishedEventArgs(List<ImportCategory> importCategories, List<ImportProduct> importProducts, List<ImportVariant> importVariants, List<ImportVariantGroup> importVariantGroups, ImportSyncType type)
+        {
+            ImportCategories = importCategories;
+            ImportProducts = importProducts;
+            ImportVariants = importVariants;
+            ImportVariantGroups = importVariantGroups;
+            Type = type;
         }
     }
 }

@@ -186,3 +186,16 @@ public enum OrderBy
     Score,
     NoOrder,
 }
+
+/// <summary>
+/// Ekom Import Sync Type
+/// </summary>
+public enum ImportSyncType
+{
+    FullSync,
+    CategorySync,
+    ProductSync,
+    ProductUpdateSync,
+    VariantUpdateSync,
+    VariantSync,
+}
