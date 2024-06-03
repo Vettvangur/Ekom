@@ -6,21 +6,53 @@ namespace Ekom.Events
 {
     public static class ImportEvents
     {
-        public static event EventHandler<ImportCategoryEventArgs> CategorySaveStarting;
-        internal static void OnCategorySaveStarting(object sender, ImportCategoryEventArgs args)
-            => CategorySaveStarting?.Invoke(sender, args);
+        public static event Func<ImportCategoryEventArgs, Task> CategorySaveStarting;
+        internal static async Task OnCategorySaveStarting(object sender, ImportCategoryEventArgs args)
+        {
+            if (CategorySaveStarting != null)
+            {
+                foreach (var handler in CategorySaveStarting.GetInvocationList())
+                {
+                    await ((Func<ImportCategoryEventArgs, Task>)handler)(args);
+                }
+            }
+        }
 
-        public static event EventHandler<ImportProductEventArgs> ProductSaveStarting;
-        internal static void OnProductSaveStarting(object sender, ImportProductEventArgs args)
-            => ProductSaveStarting?.Invoke(sender, args);
+        public static event Func<ImportProductEventArgs, Task> ProductSaveStarting;
+        internal static async Task OnProductSaveStarting(object sender, ImportProductEventArgs args)
+        {
+            if (ProductSaveStarting != null)
+            {
+                foreach (var handler in ProductSaveStarting.GetInvocationList())
+                {
+                    await ((Func<ImportProductEventArgs, Task>)handler)(args);
+                }
+            }
+        }
 
-        public static event EventHandler<ImportVariantEventArgs> VariantSaveStarting;
-        internal static void OnVariantSaveStarting(object sender, ImportVariantEventArgs args)
-            => VariantSaveStarting?.Invoke(sender, args);
+        public static event Func<ImportVariantEventArgs, Task> VariantSaveStarting;
+        internal static async Task OnVariantSaveStarting(object sender, ImportVariantEventArgs args)
+        {
+            if (VariantSaveStarting != null)
+            {
+                foreach (var handler in VariantSaveStarting.GetInvocationList())
+                {
+                    await ((Func<ImportVariantEventArgs, Task>)handler)(args);
+                }
+            }
+        }
 
-        public static event EventHandler<ImportSyncFinishedEventArgs> SyncFinished;
-        internal static void OnSyncFinished(object sender, ImportSyncFinishedEventArgs args)
-            => SyncFinished?.Invoke(sender, args);
+        public static event Func<ImportSyncFinishedEventArgs, Task> SyncFinished;
+        internal static async Task OnSyncFinished(object sender, ImportSyncFinishedEventArgs args)
+        {
+            if (SyncFinished != null)
+            {
+                foreach (var handler in SyncFinished.GetInvocationList())
+                {
+                    await ((Func<ImportSyncFinishedEventArgs, Task>)handler)(args);
+                }
+            }
+        }
     }
 
     public class ImportCategoryEventArgs : EventArgs
@@ -83,4 +115,3 @@ namespace Ekom.Events
         }
     }
 }
-

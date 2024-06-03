@@ -12,7 +12,7 @@ namespace Ekom.Services
         /// <param name="parentKey">Optional GUID of the parent category under which the data should be synchronized. If null, synchronization is performed at the root level.</param>
         /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
         /// <param name="identiferPropertyAlias">Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.</param>
-        public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1, string identiferPropertyAlias = "sku");
+        public Task FullSyncAsync(ImportData data, Guid? parentKey = null, int syncUser = -1, string identiferPropertyAlias = "sku");
 
         /// <summary>
         /// Synchronizes a single category and its related products and subcategories. This method focuses on integrating or updating a specific category branch within the catalog.
@@ -21,7 +21,7 @@ namespace Ekom.Services
         /// <param name="categoryKey">GUID of the parent category under which the data should be synchronized.</param>
         /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
         /// <param name="identiferPropertyAlias">Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.</param>
-        public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku");
+        public Task CategorySyncAsync(ImportData data, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku");
 
         /// <summary>
         /// Synchronizes a single product, ensuring it is updated or integrated into the catalog according to the provided data. This method is targeted at product-level operations.
@@ -31,12 +31,12 @@ namespace Ekom.Services
         /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
         /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
         /// <param name="identiferPropertyAlias">Specifies an alias for the property to be used as the unique identifier for the entity. This property allows for flexibility in determining which attribute should serve as the entity's key identifier, supporting custom import logic or integration needs. If this property is left unset, the 'SKU' property is used as the default identifier. This approach provides a customizable mechanism to map unique identifiers according to specific data models or external system requirements, ensuring seamless data integration and consistency.</param>
-        public void ProductSync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey,int syncUser = -1, string identiferPropertyAlias = "sku");
+        public Task ProductSyncAsync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey,int syncUser = -1, string identiferPropertyAlias = "sku");
 
 
-        public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
+        public Task ProductUpdateSyncAsync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
 
-        public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
+        public Task VariantUpdateSyncAsync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku");
 
     }
 
