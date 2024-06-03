@@ -1583,7 +1583,7 @@ namespace Ekom.Services
         {
             var key = "ekmOrder";
 
-            if (store.ShareBasketBetweenStores)
+            if (!store.ShareBasketBetweenStores)
             {
                 key += "-" + store.Alias;
             }
