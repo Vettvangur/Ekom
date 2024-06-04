@@ -815,16 +815,15 @@ public class ImportService : IImportService
     /// <param name="identifer">The identifier to search for in the existing content items. Cannot be null.</param>
     /// <param name="parentContent">The parent content under which the new content should be created if needed.</param>
     /// <param name="create">Outputs true if a new content item was created, false otherwise.</param>
-    /// <param name="identiferPropertyAlias">The property alias to search the identifier under. Defaults to "sku".</param>
     /// <returns>The found or newly created content item.</returns>
-    private IContent GetOrCreateContent(IContentType? contenType, List<IContent> umbracoChildrenContent, string nodeName, string identifer, IContent parentContent, out bool create, string identiferPropertyAlias = "sku")
+    private IContent GetOrCreateContent(IContentType? contenType, List<IContent> umbracoChildrenContent, string nodeName, string identifer, IContent parentContent, out bool create)
     {
         ArgumentNullException.ThrowIfNull(contenType);
         ArgumentNullException.ThrowIfNull(nodeName);
         ArgumentNullException.ThrowIfNull(identifer);
 
         create = false;
-        var content = umbracoChildrenContent.FirstOrDefault(x => x.GetValue<string>(identiferPropertyAlias) == identifer);
+        var content = umbracoChildrenContent.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
 
         if (content == null)
         {
