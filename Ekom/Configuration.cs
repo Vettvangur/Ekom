@@ -29,6 +29,7 @@ namespace Ekom
         public static Configuration Instance => Resolver.GetService<Configuration>();
 
         internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
+        public static string ImportAliasIdentifier => "ekmIdentifier";
 
         /// <summary>
         /// Ekom:PerStoreStock

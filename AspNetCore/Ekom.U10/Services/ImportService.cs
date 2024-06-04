@@ -59,9 +59,9 @@ public class ImportService : IImportService
         _importMediaService = importMediaService;
     }
 
-    public async Task FullSyncAsync(ImportData data, Guid? parentKey = null, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public async Task FullSyncAsync(ImportData data, Guid? parentKey = null, int syncUser = -1)
     {
-        _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias} Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
+        _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
         var stopwatchTotal = Stopwatch.StartNew();
 
@@ -77,7 +77,7 @@ public class ImportService : IImportService
 
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
-            await IterateCategoryTreeAsync(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
+            await IterateCategoryTreeAsync(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
 
             _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
 
@@ -85,7 +85,7 @@ public class ImportService : IImportService
 
             stopwatch.Restart();
 
-            await IterateProductTreeAsync(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
+            await IterateProductTreeAsync(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
 
             _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
             stopwatch.Stop();
@@ -98,9 +98,9 @@ public class ImportService : IImportService
         _logger.LogInformation("Full Sync took {Duration} ms. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", stopwatchTotal.ElapsedMilliseconds, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
     }
 
-    public async Task CategorySyncAsync(ImportData data, Guid categoryKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public async Task CategorySyncAsync(ImportData data, Guid categoryKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}");
 
         GetInitialData(categoryKey);
 
@@ -112,11 +112,11 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        await IterateCategoryTreeAsync(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, identiferPropertyAlias, syncUser);
+        await IterateCategoryTreeAsync(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
 
         if (data.Products != null && data.Products.Any())
         {
-            await IterateProductTreeAsync(data.Products, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser);
+            await IterateProductTreeAsync(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
         }
 
         await OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync));
@@ -124,9 +124,9 @@ public class ImportService : IImportService
         _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
     }
 
-    public async Task ProductSyncAsync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public async Task ProductSyncAsync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+        _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
         GetInitialData(parentKey);
 
@@ -138,16 +138,16 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        await IterateProductTreeAsync(new List<ImportProduct> { importProduct }, allUmbracoCategories, allUmbracoMedia, identiferPropertyAlias, syncUser, false);
+        await IterateProductTreeAsync(new List<ImportProduct> { importProduct }, allUmbracoCategories, allUmbracoMedia, syncUser, false);
 
         await OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductSync));
 
         _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
     }
 
-    public async Task ProductUpdateSyncAsync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public async Task ProductUpdateSyncAsync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+        _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
         GetInitialData(parentKey);
 
@@ -158,19 +158,19 @@ public class ImportService : IImportService
             .Where(x => !x.Trashed))
             .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
-        var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(identiferPropertyAlias) == importProduct.Identifier);
+        var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Identifier);
 
         ArgumentNullException.ThrowIfNull(product);
 
-        await SaveProductAsync(product, importProduct, null, null, false, identiferPropertyAlias, syncUser);
+        await SaveProductAsync(product, importProduct, null, null, false, syncUser);
 
         await OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync));
 
         _logger.LogInformation("Product Update Sync finished ProductKey: {SKU} ProductId: {Id}", importProduct.SKU, product.Id);
     }
-    public async Task VariantUpdateSyncAsync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1, string identiferPropertyAlias = "sku")
+    public async Task VariantUpdateSyncAsync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}, Identifier: {identiferPropertyAlias}");
+        _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
 
         GetInitialData(parentKey);
 
@@ -181,18 +181,18 @@ public class ImportService : IImportService
             .Where(x => !x.Trashed))
             .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
-        var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(identiferPropertyAlias) == importVariant.Identifier);
+        var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importVariant.Identifier);
 
         ArgumentNullException.ThrowIfNull(variant);
 
-        await SaveVariantAsync(variant, importVariant, null, false, identiferPropertyAlias, syncUser);
+        await SaveVariantAsync(variant, importVariant, null, false, syncUser);
 
         await OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantUpdateSync));
 
         _logger.LogInformation("Variant Update Sync finished ProductKey: {SKU} ProductId: {Id}", importVariant.SKU, variant.Id);
     }
 
-    private async Task IterateCategoryTreeAsync(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, string identiferPropertyAlias, int syncUser)
+    private async Task IterateCategoryTreeAsync(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser)
     {
 
         if (parentContent == null)
@@ -211,7 +211,7 @@ public class ImportService : IImportService
             var umbracoCategory = allUmbracoCategories[i];
             if (umbracoCategory.ParentId == parentContent.Id)
             {
-                var categoryIdentifier = umbracoCategory.GetValue<string>(identiferPropertyAlias) ?? "";
+                var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
                 if (!importCategoryIdentifiers.Contains(categoryIdentifier))
                 {
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
@@ -229,7 +229,7 @@ public class ImportService : IImportService
             {
                 var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
 
-                var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create, identiferPropertyAlias);
+                var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
 
                 if (create)
                 {
@@ -238,15 +238,15 @@ public class ImportService : IImportService
 
                 var save = create;
 
-                await SaveCategoryAsync(content, importCategory, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+                await SaveCategoryAsync(content, importCategory, allUmbracoMedia, create, syncUser);
 
-                await IterateCategoryTreeAsync(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, identiferPropertyAlias, syncUser);
+                await IterateCategoryTreeAsync(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
             }
         }
 
     }
 
-    private async Task IterateProductTreeAsync(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser, bool delete = true)
+    private async Task IterateProductTreeAsync(List<ImportProduct> importProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -274,7 +274,7 @@ public class ImportService : IImportService
                 for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
                     var umbracoProduct = allUmbracoProducts[i];
-                    var productIdentifier = umbracoProduct.GetValue<string>(identiferPropertyAlias) ?? "";
+                    var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
                     // Check if the identifier is valid and not in the import list
                     if (!importProductIdentifiers.Contains(productIdentifier))
@@ -298,19 +298,19 @@ public class ImportService : IImportService
 
                 if (importProduct.Categories.Count > 0)
                 {
-                    var primaryCategoryContent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(identiferPropertyAlias) == importProduct.Categories.FirstOrDefault());
+                    var primaryCategoryContent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Categories.FirstOrDefault());
 
                     if (primaryCategoryContent != null)
                     {
                         var umbracoChildrenContent = allUmbracoProducts.Where(x => x.ParentId == primaryCategoryContent.Id).ToList();
 
-                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create, identiferPropertyAlias);
+                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create);
 
                         var save = create;
 
-                        await SaveProductAsync(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+                        await SaveProductAsync(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
 
-                        await IterateVariantGroupsAsync(importProduct, productContent, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
+                        await IterateVariantGroupsAsync(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
                     }
                 }
 
@@ -319,7 +319,7 @@ public class ImportService : IImportService
 
     }
 
-    private async Task IterateVariantGroupsAsync(ImportProduct importProduct, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
+    private async Task IterateVariantGroupsAsync(ImportProduct importProduct, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
     {
         var umbracoVariantGroupChildrenContent = allEkomNodes.Where(x => x.ParentId == productContent.Id).ToList();
 
@@ -333,7 +333,7 @@ public class ImportService : IImportService
         {
             var umbracoVariantGroup = umbracoVariantGroupChildrenContent[i];
        
-            var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(identiferPropertyAlias) ?? "";
+            var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
             if (!importVariantGroupsIdentifiers.Contains(variantGroupIdentifier))
             {
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier}");
@@ -347,17 +347,17 @@ public class ImportService : IImportService
 
         foreach (var importVariantGroup in importProduct.VariantGroups)
         {
-            var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create, identiferPropertyAlias);
+            var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create);
             
             var save = create;
 
-            await SaveVariantGroupAsync(variantGroupContent, importVariantGroup, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+            await SaveVariantGroupAsync(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser);
 
-            await IterateVariantsAsync(importVariantGroup, variantGroupContent, allEkomNodes, allUmbracoMedia, identiferPropertyAlias, syncUser);
+            await IterateVariantsAsync(importVariantGroup, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser);
         }
     }
 
-    private async Task IterateVariantsAsync(ImportVariantGroup importVariantGroup, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, string identiferPropertyAlias, int syncUser)
+    private async Task IterateVariantsAsync(ImportVariantGroup importVariantGroup, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
     {
         var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
 
@@ -371,7 +371,7 @@ public class ImportService : IImportService
         {
             var umbracoVariant = umbracoVariantsChildrenContent[i];
 
-            var variantIdentifier = umbracoVariant.GetValue<string>(identiferPropertyAlias) ?? "";
+            var variantIdentifier = umbracoVariant.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
             if (!importVariantsIdentifiers.Contains(variantIdentifier))
             {
                 _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
@@ -385,15 +385,15 @@ public class ImportService : IImportService
 
         foreach (var importVariant in importVariantGroup.Variants)
         {
-            var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create, identiferPropertyAlias);
+            var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create);
 
             var save = create;
 
-            await SaveVariantAsync(variantContent, importVariant, allUmbracoMedia, create, identiferPropertyAlias, syncUser);
+            await SaveVariantAsync(variantContent, importVariant, allUmbracoMedia, create, syncUser);
         }
     }
 
-    private async Task SaveCategoryAsync(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private async Task SaveCategoryAsync(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
         await OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
@@ -421,11 +421,7 @@ public class ImportService : IImportService
 
         categoryContent.SetProperty("description", importCategory.Description);
 
-
-        if (importCategory.IdentiferPropertyAlias != "sku")
-        {
-            categoryContent.SetValue(identiferPropertyAlias != importCategory.IdentiferPropertyAlias && !string.IsNullOrEmpty(importCategory.IdentiferPropertyAlias) ? importCategory.IdentiferPropertyAlias : identiferPropertyAlias, importCategory.Identifier);
-        }
+        categoryContent.SetValue(Configuration.ImportAliasIdentifier, importCategory.Identifier);
 
         if (importCategory.AdditionalProperties != null && importCategory.AdditionalProperties.Any())
         {
@@ -458,7 +454,7 @@ public class ImportService : IImportService
 
         categoriesSaved.Add(importCategory);
     }
-    private async Task SaveProductAsync(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private async Task SaveProductAsync(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
     {
         await OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
@@ -509,11 +505,7 @@ public class ImportService : IImportService
 
         productContent.SetProperty("description", importProduct.Description);
 
-
-        if (importProduct.IdentiferPropertyAlias != "sku")
-        {
-            productContent.SetValue(identiferPropertyAlias != importProduct.IdentiferPropertyAlias && !string.IsNullOrEmpty(importProduct.IdentiferPropertyAlias) ? importProduct.IdentiferPropertyAlias : identiferPropertyAlias, importProduct.Identifier);
-        }
+        productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
 
         if (importProduct.Price.Any())
         {
@@ -538,7 +530,7 @@ public class ImportService : IImportService
 
         if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
         {
-            var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(importProduct.IdentiferPropertyAlias)));
+            var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
 
             var udis = umbracoCategories.Select(x => x.GetUdi());
 
@@ -570,7 +562,7 @@ public class ImportService : IImportService
 
         productsSaved.Add(importProduct);
     }
-    private async Task SaveVariantGroupAsync(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private async Task SaveVariantGroupAsync(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
         var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia);
 
@@ -583,8 +575,8 @@ public class ImportService : IImportService
         }
 
         variantGroupContent.SetProperty("title", importVariantGroup.Title);
-        variantGroupContent.SetValue(identiferPropertyAlias != importVariantGroup.IdentiferPropertyAlias && !string.IsNullOrEmpty(importVariantGroup.IdentiferPropertyAlias) ? importVariantGroup.IdentiferPropertyAlias : identiferPropertyAlias, importVariantGroup.Identifier);
-        
+
+        variantGroupContent.SetValue(Configuration.ImportAliasIdentifier, importVariantGroup.Identifier);
 
         if (importVariantGroup.AdditionalProperties != null && importVariantGroup.AdditionalProperties.Any())
         {
@@ -612,7 +604,7 @@ public class ImportService : IImportService
 
         variantGroupsSaved.Add(importVariantGroup);
     }
-    private async Task SaveVariantAsync(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, string identiferPropertyAlias, int syncUser)
+    private async Task SaveVariantAsync(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
     {
         await OnVariantSaveStarting(this, new ImportVariantEventArgs(variantContent, importVariant, create));
 
@@ -662,10 +654,7 @@ public class ImportService : IImportService
             variantContent.SetProperty("description", importVariant.Description);
         }
 
-        if (importVariant.IdentiferPropertyAlias != "sku")
-        {
-            variantContent.SetValue(identiferPropertyAlias != importVariant.IdentiferPropertyAlias && !string.IsNullOrEmpty(importVariant.IdentiferPropertyAlias) ? importVariant.IdentiferPropertyAlias : identiferPropertyAlias, importVariant.Identifier);
-        }
+        variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
 
         if (importVariant.Price.Any())
         {

@@ -41,4 +41,11 @@ public class ImportBase
     /// </summary>
     public Dictionary<string, object>? EventProperties { get; set; } = new Dictionary<string, object>();
 
+    /// <summary>
+    /// Identifer value represents a unique identifier corresponding to this entity in an external system, facilitating data synchronization and matching operations. 
+    /// This identifier can be a unique ID, or any other distinctive code used by the external system to uniquely identify 
+    /// the entity. "ekmIdentifier" is the alias of the property
+    /// </summary>
+    public required string Identifier { get; set; }
+
 }
