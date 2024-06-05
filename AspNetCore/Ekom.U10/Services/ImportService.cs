@@ -402,172 +402,187 @@ public class ImportService : IImportService
 
     private async Task SaveCategoryAsync(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
-        await OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
-
-        var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, "files");
-
-        var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
-
-        // If no changes are found and not creating then return,
-        if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
+        try
         {
-            return;
-        }
+            await OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create));
 
-        categoryContent.SetProperty("title", importCategory.Title);
+            var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia, "files");
 
-        if (importCategory.Slug != null && importCategory.Slug.Any())
-        {
-            categoryContent.SetSlug(importCategory.Slug);
-        }
+            var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
 
-        if (!string.IsNullOrEmpty(importCategory.SKU))
-        {
-            categoryContent.SetValue("sku", importCategory.SKU);
-        }
-
-        categoryContent.SetProperty("description", importCategory.Description);
-
-        categoryContent.SetValue(Configuration.ImportAliasIdentifier, importCategory.Identifier);
-
-        if (importCategory.AdditionalProperties != null && importCategory.AdditionalProperties.Any())
-        {
-            foreach (var property in importCategory.AdditionalProperties)
+            // If no changes are found and not creating then return,
+            if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
             {
-                categoryContent.SetValue(property.Key, property.Value);
+                return;
             }
-        }
 
-        categoryContent.SetValue("comparer", compareValue);
+            categoryContent.SetProperty("title", importCategory.Title);
 
-        categoryContent.Name = importCategory.NodeName;
-
-        if (importCategory.TemplateId.HasValue)
-        {
-            categoryContent.TemplateId = importCategory.TemplateId.Value;
-        }
-
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            if (categoryContent.Published || create)
+            if (importCategory.Slug != null && importCategory.Slug.Any())
             {
-                _contentService.SaveAndPublish(categoryContent, userId: syncUser);
+                categoryContent.SetSlug(importCategory.Slug);
             }
-            else
+
+            if (!string.IsNullOrEmpty(importCategory.SKU))
             {
-                _contentService.Save(categoryContent, userId: syncUser);
+                categoryContent.SetValue("sku", importCategory.SKU);
             }
+
+            categoryContent.SetProperty("description", importCategory.Description);
+
+            categoryContent.SetValue(Configuration.ImportAliasIdentifier, importCategory.Identifier);
+
+            if (importCategory.AdditionalProperties != null && importCategory.AdditionalProperties.Any())
+            {
+                foreach (var property in importCategory.AdditionalProperties)
+                {
+                    categoryContent.SetValue(property.Key, property.Value);
+                }
+            }
+
+            categoryContent.SetValue("comparer", compareValue);
+
+            categoryContent.Name = importCategory.NodeName;
+
+            if (importCategory.TemplateId.HasValue)
+            {
+                categoryContent.TemplateId = importCategory.TemplateId.Value;
+            }
+
+            using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+            {
+                if (categoryContent.Published || create)
+                {
+                    _contentService.SaveAndPublish(categoryContent, userId: syncUser);
+                }
+                else
+                {
+                    _contentService.Save(categoryContent, userId: syncUser);
+                }
+            }
+
+            categoriesSaved.Add(importCategory);
+
+        } catch(Exception ex)
+        {
+            throw new Exception("Failed to save Category: " + JsonConvert.SerializeObject(importCategory), ex);
         }
 
-        categoriesSaved.Add(importCategory);
     }
     private async Task SaveProductAsync(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
     {
-        await OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
-
-        // Always do stock update
-        if (importProduct.Stock.Any())
+        try
         {
-            foreach (var stock in importProduct.Stock)
-            {
-                var currentStock = _stock.GetStock(productContent.Key);
-                var newStock = stock.Stock >= 0 ? stock.Stock : 0;
+            await OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create));
 
-                // Only update if we find change 
-                if (newStock != currentStock)
+            // Always do stock update
+            if (importProduct.Stock.Any())
+            {
+                foreach (var stock in importProduct.Stock)
                 {
-                    var stockUpdated = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock).Result;
+                    var currentStock = _stock.GetStock(productContent.Key);
+                    var newStock = stock.Stock >= 0 ? stock.Stock : 0;
+
+                    // Only update if we find change 
+                    if (newStock != currentStock)
+                    {
+                        var stockUpdated = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock).Result;
+                    }
                 }
             }
-        }
 
-        var saveImages = false;
-        var saveFiles = false;
+            var saveImages = false;
+            var saveFiles = false;
 
-        if (allUmbracoMedia is not null)
-        {
-            saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
-            saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
-        }
-
-        var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files" });
-
-        // If no changes are found and not creating then return,
-        if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
-        {
-            return;
-        }
-
-        productContent.SetProperty("title", importProduct.Title);
-
-        if (importProduct.Slug != null && importProduct.Slug.Any())
-        {
-            productContent.SetSlug(importProduct.Slug);
-        }
-
-        if (!string.IsNullOrEmpty(importProduct.SKU))
-        {
-            productContent.SetValue("sku", importProduct.SKU);
-        }
-
-        productContent.SetProperty("description", importProduct.Description);
-
-        productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
-
-        if (importProduct.Price.Any())
-        {
-            foreach (var price in importProduct.Price)
+            if (allUmbracoMedia is not null)
             {
-                productContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
+                saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+                saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, "File", "files");
             }
-        }
 
-        if (importProduct.Vat.HasValue)
-        {
-            productContent.SetValue("vat", importProduct.Vat);
-        }
+            var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files" });
 
-        if (importProduct.AdditionalProperties != null && importProduct.AdditionalProperties.Any())
-        {
-            foreach (var property in importProduct.AdditionalProperties)
+            // If no changes are found and not creating then return,
+            if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
             {
-                productContent.SetValue(property.Key, property.Value);
+                return;
             }
-        }
 
-        if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
-        {
-            var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
+            productContent.SetProperty("title", importProduct.Title);
 
-            var udis = umbracoCategories.Select(x => x.GetUdi());
-
-            var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
-
-            productContent.SetValue("categories", stringUdis);
-        }
-
-        productContent.SetValue("comparer", compareValue);
-
-        productContent.Name = importProduct.NodeName;
-
-        if (importProduct.TemplateId.HasValue)
-        {
-            productContent.TemplateId = importProduct.TemplateId.Value;
-        }
-
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            if (productContent.Published || create)
+            if (importProduct.Slug != null && importProduct.Slug.Any())
             {
-                _contentService.SaveAndPublish(productContent, userId: syncUser);
+                productContent.SetSlug(importProduct.Slug);
             }
-            else
-            {
-                _contentService.Save(productContent, userId: syncUser);
-            }
-        }
 
-        productsSaved.Add(importProduct);
+            if (!string.IsNullOrEmpty(importProduct.SKU))
+            {
+                productContent.SetValue("sku", importProduct.SKU);
+            }
+
+            productContent.SetProperty("description", importProduct.Description);
+
+            productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
+
+            if (importProduct.Price.Any())
+            {
+                foreach (var price in importProduct.Price)
+                {
+                    productContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
+                }
+            }
+
+            if (importProduct.Vat.HasValue)
+            {
+                productContent.SetValue("vat", importProduct.Vat);
+            }
+
+            if (importProduct.AdditionalProperties != null && importProduct.AdditionalProperties.Any())
+            {
+                foreach (var property in importProduct.AdditionalProperties)
+                {
+                    productContent.SetValue(property.Key, property.Value);
+                }
+            }
+
+            if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
+            {
+                var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
+
+                var udis = umbracoCategories.Select(x => x.GetUdi());
+
+                var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
+
+                productContent.SetValue("categories", stringUdis);
+            }
+
+            productContent.SetValue("comparer", compareValue);
+
+            productContent.Name = importProduct.NodeName;
+
+            if (importProduct.TemplateId.HasValue)
+            {
+                productContent.TemplateId = importProduct.TemplateId.Value;
+            }
+
+            using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+            {
+                if (productContent.Published || create)
+                {
+                    _contentService.SaveAndPublish(productContent, userId: syncUser);
+                }
+                else
+                {
+                    _contentService.Save(productContent, userId: syncUser);
+                }
+            }
+
+            productsSaved.Add(importProduct);
+
+        } catch(Exception ex)
+        {
+            throw new Exception("Failed to save Product: " + JsonConvert.SerializeObject(importProduct), ex);
+        }
     }
     private async Task SaveVariantGroupAsync(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
     {
