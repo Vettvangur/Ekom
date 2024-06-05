@@ -797,6 +797,7 @@ public class ImportService : IImportService
         productsSaved = new List<ImportProduct>();
         variantsSaved = new List<ImportVariant>();
         variantGroupsSaved = new List<ImportVariantGroup>();
+        categoriesSaved = new List<ImportCategory>();
 
         // Initialize content types from the content service
         categoryContentType = _contentTypeService.Get("ekmCategory");
