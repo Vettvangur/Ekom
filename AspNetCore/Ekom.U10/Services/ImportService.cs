@@ -159,8 +159,11 @@ public class ImportService : IImportService
             .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
         var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Identifier);
-
-        ArgumentNullException.ThrowIfNull(product);
+        
+        if (product == null)
+        {
+            throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
+        }
 
         await SaveProductAsync(product, importProduct, null, null, false, syncUser);
 
