@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Events;
+using Ekom.Models;
 using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
@@ -186,7 +187,10 @@ public class ImportService : IImportService
 
         var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importVariant.Identifier);
 
-        ArgumentNullException.ThrowIfNull(variant);
+        if (variant == null)
+        {
+            throw new ArgumentNullException(nameof(variant), $"Product is null. Identifier: {importVariant.Identifier} SKU: {importVariant.SKU} ParentKey: {parentKey}");
+        }
 
         await SaveVariantAsync(variant, importVariant, null, false, syncUser);
 
