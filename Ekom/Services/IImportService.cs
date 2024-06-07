@@ -11,7 +11,7 @@ public interface IImportService
     /// <param name="data">The complete set of import data representing the categories and products to be synchronized.</param>
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be synchronized. If null, synchronization is performed at the root level.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
-    public Task FullSyncAsync(ImportData data, Guid? parentKey = null, int syncUser = -1);
+    public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1);
 
     /// <summary>
     /// Synchronizes a single category and its related products and subcategories. This method focuses on integrating or updating a specific category branch within the catalog.
@@ -19,7 +19,7 @@ public interface IImportService
     /// <param name="data">The complete set of import data representing the categories and products to be synchronized.</param>
     /// <param name="categoryKey">GUID of the parent category under which the data should be synchronized.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
-    public Task CategorySyncAsync(ImportData data, Guid categoryKey, int syncUser = -1);
+    public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1);
 
     /// <summary>
     /// Synchronizes a single product, ensuring it is updated or integrated into the catalog according to the provided data. This method is targeted at product-level operations.
@@ -28,11 +28,11 @@ public interface IImportService
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be synchronized. If null, synchronization is performed at the root level.</param>
     /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
-    public Task ProductSyncAsync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey,int syncUser = -1);
+    public void ProductSync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey,int syncUser = -1);
 
 
-    public Task ProductUpdateSyncAsync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1);
+    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1);
 
-    public Task VariantUpdateSyncAsync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1);
+    public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1);
 
 }
