@@ -93,6 +93,7 @@ public class ImportController : UmbracoAuthorizedApiController
                     { "is-IS", ($"{categoryName} IS").ToUrlSegment(_shortStringHelper).ToLowerInvariant() }
                 },
                 SKU = identifier,
+                Identifier = identifier,
                 NodeName = $"{categoryName}",
                 Images = new List<IImportMedia>()
                 {
@@ -141,6 +142,7 @@ public class ImportController : UmbracoAuthorizedApiController
                     { "is-IS", ($"Slug {currentDepth} IS {i + 1}").ToUrlSegment(_shortStringHelper).ToLowerInvariant() }
                 },
                 SKU = $"Product SKU {currentDepth}-{i + 1} - {identifier}",
+                Identifier = $"Product SKU {currentDepth}-{i + 1} - {identifier}",
                 Description = new Dictionary<string, object>
                 {
                     { "en-US", $"Description {currentDepth} US {i + 1}" },
