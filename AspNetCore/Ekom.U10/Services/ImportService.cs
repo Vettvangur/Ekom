@@ -174,6 +174,8 @@ public class ImportService : IImportService
     }
     public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1)
     {
+        ArgumentNullException.ThrowIfNull(importVariant);
+
         _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
 
         GetInitialData(parentKey);
@@ -189,7 +191,7 @@ public class ImportService : IImportService
 
         if (variant == null)
         {
-            throw new ArgumentNullException(nameof(variant), $"Product is null. Identifier: {importVariant.Identifier} SKU: {importVariant.SKU} ParentKey: {parentKey}");
+            throw new ArgumentNullException(nameof(variant), $"Variant is null. Identifier: {importVariant.Identifier} SKU: {importVariant.SKU} ParentKey: {parentKey}");
         }
 
         SaveVariant(variant, importVariant, null, false, syncUser);
