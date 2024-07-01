@@ -359,9 +359,6 @@ public partial class EkomOrderController : ControllerBase
     /// <summary>
     /// Update quantity in orderline
     /// </summary>
-    /// <param name="lineId">Guid Key of line</param>
-    /// <param name="quantity">Quantity</param>
-    /// <param name="storeAlias"></param>
     /// <returns></returns>
     [HttpPost]
     [Route("Updateorderlinequantity")]

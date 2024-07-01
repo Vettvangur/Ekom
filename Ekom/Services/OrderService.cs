@@ -428,6 +428,11 @@ namespace Ekom.Services
 
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
+            if (store == null)
+            {
+                throw new ArgumentNullException("Store is null. " + storeAlias);
+            }
+
             if (settings == null)
             {
                 settings = new OrderSettings();
@@ -463,12 +468,15 @@ namespace Ekom.Services
                 }
 
                 int existingStock;
+
                 var product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
+
                 IVariant variant = null;
-                if (orderline.Product.VariantGroups.Any(g => g.Variants.Any()))
+
+                if (orderline.Product.VariantGroups != null && orderline.Product.VariantGroups.Any(g => g.Variants.Any()))
                 {
                     var orderedVariant = orderline.Product.VariantGroups.First().Variants.First();
-                    variant = Catalog.Instance.GetVariant(orderedVariant.Key);
+                    variant = Catalog.Instance.GetVariant(orderedVariant.Key, storeAlias);
                     existingStock = variant.Stock;
                 }
                 else
