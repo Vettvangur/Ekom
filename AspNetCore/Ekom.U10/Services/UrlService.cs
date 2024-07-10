@@ -38,7 +38,7 @@ namespace Ekom.Umb.Services
         /// <summary>
         /// Build URLs for category
         /// </summary>
-        /// <param name="items">All categories in hierarchy inclusive</param>
+        /// <param name="categories">All categories in hierarchy inclusive</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
         public List<UmbracoUrl> BuildCategoryUrls(IEnumerable<UmbracoContent> categories, IStore store)
@@ -141,6 +141,7 @@ namespace Ekom.Umb.Services
         /// <param name="hierarchy">Ordered list of slugs for all parents</param>
         /// <param name="store"></param>
         /// <returns>Collection of urls for all domains</returns>
+        [Obsolete]
         public IEnumerable<string> BuildCategoryUrls(string slug, List<string> hierarchy, IStore store)
         {
             var urls = new HashSet<string>();

@@ -77,7 +77,7 @@ class EkomMiddleware
     {
         try
         {
-            if (_context != null && _context.Request.Path.StartsWithSegments("/umbraco") is false)
+            if (_context != null && !_context.Request.Path.StartsWithSegments("/umbraco") && !_context.Request.Path.StartsWithSegments("/media"))
             {
                 using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
                 // No umbraco context exists for static file requests

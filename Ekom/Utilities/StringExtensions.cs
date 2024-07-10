@@ -149,7 +149,8 @@ namespace Ekom.Utilities
         {
             var prices = new List<IPrice>();
 
-            try
+
+            if (priceJson.IsJsonArray())
             {
                 var _prices = JArray.Parse(priceJson);
 
@@ -159,8 +160,7 @@ namespace Ekom.Utilities
 
                     prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
                 }
-            }
-            catch
+            } else
             {
                 if (fallbackCurrency == null)
                 {
@@ -191,7 +191,7 @@ namespace Ekom.Utilities
         {
             var prices = new List<IPrice>();
 
-            try
+            if (priceJson.IsJsonArray())
             {
                 var _prices = JArray.Parse(priceJson);
 
@@ -220,8 +220,7 @@ namespace Ekom.Utilities
                             : null)
                     );
                 }
-            }
-            catch (JsonException)
+            } else
             {
                 if (fallbackCurrency == null)
                 {
@@ -259,7 +258,7 @@ namespace Ekom.Utilities
         {
             var values = new List<CurrencyValue>();
 
-            try
+            if (priceJson.IsJsonArray())
             {
                 var _values = JArray.Parse(priceJson);
 
@@ -271,7 +270,8 @@ namespace Ekom.Utilities
                         var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
 
                         values.Add(new CurrencyValue(val, currencyValue));
-                    } else
+                    }
+                    else
                     {
                         var currencyValue = value["currency"].Value<string>();
                         var val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
@@ -279,8 +279,7 @@ namespace Ekom.Utilities
                         values.Add(new CurrencyValue(val, currencyValue));
                     }
                 }
-            }
-            catch
+            } else
             {
                 if (decimal.TryParse(priceJson, out decimal value))
                 {
@@ -379,6 +378,28 @@ namespace Ekom.Utilities
                 .Select(word => char.ToUpper(word[0]) + word.Substring(1))
                 .ToArray();
             return $"{leadWord}{string.Join(string.Empty, tailWords)}";
+        }
+
+        public static bool IsJsonArray(this string input)
+        {
+            // Superficial check for JSON array structure
+            if (string.IsNullOrWhiteSpace(input) || input[0] != '[' || input[input.Length - 1] != ']')
+            {
+                return false;
+            }
+
+            try
+            {
+                // Attempt to parse the JSON
+                var token = JToken.Parse(input);
+                // Check if the parsed token is a JArray
+                return token is JArray;
+            }
+            catch (JsonReaderException)
+            {
+                // Handle any parsing exceptions
+                return false;
+            }
         }
     }
 }

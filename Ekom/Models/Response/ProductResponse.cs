@@ -18,6 +18,20 @@ namespace Ekom.Models
 
             Products = products;
 
+            if (query?.PropertySelectors?.Any() == true)
+            {
+                foreach (var selector in query.PropertySelectors)
+                {
+                    var propertyValues = products
+                          .Select(x => x.GetValue(selector.Key, selector.Value))
+                          .Distinct()
+                          .Where(x => !string.IsNullOrEmpty(x))
+                          .ToList();
+
+                    PropertySelectors.Add(selector.Key, propertyValues);
+                }
+            }
+
             if (query?.AllFiltersVisible == true)
             {
                 Filters = products.Filters();
@@ -87,6 +101,7 @@ namespace Ekom.Models
         public int? Page { get; set; }
         public int ProductCount { get; set; }
         public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
+        public Dictionary<string, List<string>> PropertySelectors = new Dictionary<string, List<string>>();
         private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
         {
             if (orderBy == Utilities.OrderBy.TitleAsc)
