@@ -304,10 +304,22 @@ public class ImportService : IImportService
 
             foreach (var importProduct in importProducts)
             {
-
                 if (importProduct.Categories.Count > 0)
                 {
-                    var primaryCategoryContent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Categories.FirstOrDefault());
+
+                    IContent? primaryCategoryContent = null;
+
+                    foreach (var categoryIdentifier in importProduct.Categories)
+                    {
+                        var primaryCategory = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == categoryIdentifier);
+
+                        if (primaryCategory != null)
+                        {
+                            primaryCategoryContent = primaryCategory;
+                            break;
+                        }
+
+                    }
 
                     if (primaryCategoryContent != null)
                     {
@@ -320,6 +332,9 @@ public class ImportService : IImportService
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
 
                         IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
+                    } else
+                    {
+                        _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. {string.Join(',', importProduct.Categories)}");
                     }
                 }
 
