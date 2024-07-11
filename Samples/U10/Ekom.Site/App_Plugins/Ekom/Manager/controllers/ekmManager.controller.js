@@ -29,7 +29,7 @@
     $scope.stores = [];
     $scope.mostsoldproducts = [];
     $scope.orderChangeStatus = '';
-    
+
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
     var lastPathComponent = pathComponents[pathComponents.length - 1]; // get the last component
@@ -81,7 +81,7 @@
 
     $scope.GetData = function () {
 
-      resources.SearchOrders('?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&page=' + $scope.page + '&pagesize=20&query=' + $scope.query + '&store=' + $scope.store.alias)
+      resources.SearchOrders('?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&page=' + $scope.page + '&pagesize=20&query=' + $scope.query + '&store=' + $scope.store)
         .then(function (result) {
 
           $scope.loading = false;
@@ -122,8 +122,8 @@
 
           $scope.stores = result.data;
 
-          $scope.store = $scope.stores[0];
-          $scope.labelDropdowns['dropdownStores'] = $scope.store.alias;
+          $scope.store = $scope.stores[0].alias;
+          $scope.labelDropdowns['dropdownStores'] = $scope.store
 
           if ($scope.location === 'analytics') {
             $scope.analytics();
@@ -291,7 +291,7 @@
 
       resources.Charts(query)
         .then(function (result) {
-          
+
 
           $scope.revenueChart = result.data.revenueChart;
 
@@ -411,7 +411,7 @@
       };
 
       var ctx = document.getElementById(chartId).getContext('2d');
-      
+
       var chart = new Chart(ctx, chartConfig);
     };
 
@@ -429,6 +429,10 @@
 
       $scope.labelDropdowns[dropdownId] = status;
 
+      if (dropdownId === 'dropdownStores') {
+        $scope.store = status;
+      }
+
       if (dropdownId === 'dropdownStatusList') {
         $scope.orderStatus = status;
       }
@@ -440,11 +444,11 @@
       if ($scope.location === 'analytics') {
         $scope.analytics();
       } else if (dropdownId === 'dropdownOrderStatusList') {
-       
+
       } else {
         $scope.GetData();
       }
-      
+
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
@@ -499,20 +503,16 @@
           }, function errorCallback(data) {
             notificationsService.error("Error", "Error updating order status.");
           })
-        
+
       });
     }
-
-    $scope.ChangeOrderStatus = function () {
-      console.log('test');
-    };
 
     angular.element(document).ready(function () {
       // Init Orders
       if ($scope.location === 'orders') {
         $scope.GetStores();
         $scope.GetStatusList();
-        
+
       }
 
       // Init Analytics
