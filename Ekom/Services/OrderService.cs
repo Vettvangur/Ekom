@@ -421,7 +421,7 @@ namespace Ekom.Services
             OrderSettings settings = null
         )
         {
-            if (quantity == 0)
+            if (quantity <= 0)
             {
                 return await RemoveOrderLineAsync(orderLineId, storeAlias, settings).ConfigureAwait(false);
             }
