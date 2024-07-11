@@ -150,7 +150,7 @@ namespace Ekom.Utilities
             var prices = new List<IPrice>();
 
 
-            if (priceJson.IsJsonArray())
+            if (priceJson.IsJson())
             {
                 var _prices = JArray.Parse(priceJson);
 
@@ -191,7 +191,7 @@ namespace Ekom.Utilities
         {
             var prices = new List<IPrice>();
 
-            if (priceJson.IsJsonArray())
+            if (priceJson.IsJson())
             {
                 var _prices = JArray.Parse(priceJson);
 
@@ -258,7 +258,7 @@ namespace Ekom.Utilities
         {
             var values = new List<CurrencyValue>();
 
-            if (priceJson.IsJsonArray())
+            if (priceJson.IsJson())
             {
                 var _values = JArray.Parse(priceJson);
 
@@ -378,28 +378,6 @@ namespace Ekom.Utilities
                 .Select(word => char.ToUpper(word[0]) + word.Substring(1))
                 .ToArray();
             return $"{leadWord}{string.Join(string.Empty, tailWords)}";
-        }
-
-        public static bool IsJsonArray(this string input)
-        {
-            // Superficial check for JSON array structure
-            if (string.IsNullOrWhiteSpace(input) || input[0] != '[' || input[input.Length - 1] != ']')
-            {
-                return false;
-            }
-
-            try
-            {
-                // Attempt to parse the JSON
-                var token = JToken.Parse(input);
-                // Check if the parsed token is a JArray
-                return token is JArray;
-            }
-            catch (JsonReaderException)
-            {
-                // Handle any parsing exceptions
-                return false;
-            }
         }
     }
 }
