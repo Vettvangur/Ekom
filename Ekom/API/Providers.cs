@@ -166,7 +166,7 @@ namespace Ekom.API
         /// <param name="key"></param>
         /// <param name="store"></param>
         /// <returns></returns>
-        public IShippingProvider GetShippingProvider(Guid key, IStore store = null)
+        public IShippingProvider GetShippingProvider(Guid key, IStore? store = null)
         {
             if (store == null)
             {

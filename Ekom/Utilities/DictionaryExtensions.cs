@@ -50,42 +50,36 @@ namespace Ekom.Utilities
 
         private static string GetBasePropertyValue(IReadOnlyDictionary<string, string> properties, string propertyAlias, string alias = null)
         {
-            string val = string.Empty;
             string modifiedPropertyAlias = propertyAlias;
 
             // Build the modified property alias based on the available keys
             if (!string.IsNullOrEmpty(alias))
             {
-                var tempAlias = propertyAlias + "_" + alias;
-                if (properties.ContainsKey(tempAlias))
+                var propertyAliasWithCultureOrStore = $"{propertyAlias}_{alias}";
+                if (properties.ContainsKey(propertyAliasWithCultureOrStore))
                 {
-                    modifiedPropertyAlias = tempAlias;
+                    modifiedPropertyAlias = propertyAliasWithCultureOrStore;
                 }
             }
 
-            var tempCultureAlias = propertyAlias + "_" + System.Globalization.CultureInfo.CurrentCulture.Name;
-            if (properties.ContainsKey(tempCultureAlias))
+            var cultureAlias = $"{propertyAlias}_{System.Globalization.CultureInfo.CurrentCulture.Name}";
+            if (properties.ContainsKey(cultureAlias))
             {
-                modifiedPropertyAlias = tempCultureAlias;
+                modifiedPropertyAlias = cultureAlias;
             }
 
             // Attempt to retrieve the value for the final property alias
-            properties.TryGetValue(modifiedPropertyAlias, out val);
+            properties.TryGetValue(modifiedPropertyAlias, out var val);
 
             // Special processing based on alias
             if (!string.IsNullOrEmpty(alias))
             {
-                return val.GetEkomPropertyEditorValue(alias) ?? string.Empty;
+                return val?.GetEkomPropertyEditorValue(alias) ?? string.Empty;
             }
-            else
-            {
-                if (string.IsNullOrEmpty(val) && properties.ContainsKey(""))
-                {
-                    return properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value;
-                }
 
-                return val ?? string.Empty;
-            }
+            return !string.IsNullOrEmpty(val)
+                ? val
+                : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;
         }
 
         /// <summary>
