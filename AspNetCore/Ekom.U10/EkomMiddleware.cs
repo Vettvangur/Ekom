@@ -105,12 +105,36 @@ class EkomMiddleware
         
         try
         {
-            if (_context?.User?.Identity?.IsAuthenticated is false)
+            if (_context == null)
             {
                 return;
             }
 
-            var username = _context?.User?.Identity?.Name;
+            var requestPath = _context.Request?.Path.ToString();
+
+            if (string.IsNullOrEmpty(requestPath))
+            {
+                return;
+            }
+
+            // Skip processing for URLs starting with /umbraco or /media
+            if (requestPath.StartsWith("/umbraco", StringComparison.OrdinalIgnoreCase) ||
+                requestPath.StartsWith("/media", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (_context.User?.Identity == null)
+            {
+                return;
+            }
+
+            if (_context.User.Identity.IsAuthenticated == false)
+            {
+                return;
+            }
+
+            var username = _context.User.Identity.Name;
 
             if (string.IsNullOrEmpty(username))
             {

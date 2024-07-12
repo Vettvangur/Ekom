@@ -1,6 +1,5 @@
 using Ekom.API;
 using Ekom.Events;
-using Ekom.Models;
 using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
@@ -598,7 +597,7 @@ public class ImportService : IImportService
 
         } catch(Exception ex)
         {
-            throw new Exception("Failed to save Product: " + JsonConvert.SerializeObject(importProduct), ex);
+            throw new Exception("Failed to save Product: " + importProduct.Title + " Sku: " + importProduct.SKU + " Message: " + ex.InnerException , ex);
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
