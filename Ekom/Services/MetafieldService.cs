@@ -4,11 +4,10 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
-using System.Text.Json.Nodes;
 
 namespace EkomCore.Services
 {
-    class MetafieldService : IMetafieldService
+    internal class MetafieldService : IMetafieldService
     {
         private readonly INodeService _nodeService;
         private IMemoryCache _cache;
