@@ -8,6 +8,7 @@ using Ekom.Services;
 using Ekom.Umb.Sections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Composing;
@@ -15,7 +16,6 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Web.BackOffice.Trees;
-using Umbraco.Extensions;
 
 namespace Ekom.Umb;
 
@@ -35,7 +35,11 @@ class StartupFilter : IStartupFilter
 // Public allows consumers to target type with ComposeAfter / ComposeBefore
 
 public class EkomComposer : IComposer
-{    
+{
+    public EkomComposer()
+    {
+
+    }
     /// <summary>
     /// Umbraco lifecycle method
     /// </summary>
@@ -59,7 +63,7 @@ public class EkomComposer : IComposer
         // VirtualContent=true allows for configuration of content nodes to use for matching all requests
         // Use case: Ekom populated by adapter, used as in memory cache with no backing umbraco nodes
 
-        _ = new Configuration(builder.Config);
+        var config = new Configuration(builder.Config);
 
 
         builder
@@ -75,7 +79,7 @@ public class EkomComposer : IComposer
             .AddNotificationHandler<LanguageCacheRefresherNotification, UmbracoEventListeners>();
         
 
-        builder.Services.AddEkom();
+        builder.Services.AddEkom(builder.Config);
     }
 }
 //[RuntimeLevelAttribute(MinLevel = RuntimeLevel.Run)]

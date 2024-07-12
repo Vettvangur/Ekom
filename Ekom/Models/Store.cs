@@ -39,8 +39,8 @@ namespace Ekom.Models
         }
         public virtual IEnumerable<UmbracoDomain> Domains { get; } = new List<UmbracoDomain>();
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
-        public virtual string OrderNumberTemplate => Properties.GetPropertyValue("orderNumberTemplate");
-        public virtual string OrderNumberPrefix => Properties.GetPropertyValue("orderNumberPrefix");
+        public virtual string OrderNumberTemplate => GetValue("orderNumberTemplate");
+        public virtual string OrderNumberPrefix => GetValue("orderNumberPrefix");
         public virtual string Url { get; }
         public virtual CultureInfo Culture
         {

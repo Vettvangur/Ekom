@@ -4,17 +4,18 @@ using Ekom.Umb.Services;
 using EkomCore.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ekom.Umb;
 
 static class ApplicationBuilderExtensions
 {
-    public static IServiceCollection AddEkom(this IServiceCollection services)
+    public static IServiceCollection AddEkom(this IServiceCollection services, IConfiguration config)
     {
         services.AddSingleton<IStartupFilter, StartupFilter>();
 
-        services.AddAspNetCoreEkom();
+        services.AddAspNetCoreEkom(config);
 
         services.AddHttpClient();
 

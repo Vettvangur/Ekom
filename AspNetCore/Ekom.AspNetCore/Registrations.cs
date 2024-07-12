@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Vettvangur.Core;
@@ -23,7 +24,7 @@ namespace Ekom.AspNetCore;
 
 static class Registrations
 {
-    public static IServiceCollection AddAspNetCoreEkom(this IServiceCollection services)
+    public static IServiceCollection AddAspNetCoreEkom(this IServiceCollection services, IConfiguration config)
     {
         services.AddAuthorization(options =>
         {
@@ -183,9 +184,11 @@ static class Registrations
             mvcOptions.Filters.Add<HttpResponseExceptionFilter>();
         });
 
+        var connectionString = config.GetConnectionString("umbracoDbDSN");
+
         services.AddHangfire(config =>
         {
-            config.UseSqlServerStorage("umbracoDbDSN");
+            config.UseSqlServerStorage(connectionString);
         });
 
         return services;
