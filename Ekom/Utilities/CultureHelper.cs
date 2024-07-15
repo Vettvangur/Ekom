@@ -6,13 +6,13 @@ namespace Ekom.Utilities
     {
         public static CultureInfo GetCultureInfoByCurrencyCode(string currencyCode)
         {
-            return CultureInfo.GetCultures(CultureTypes.AllCultures)
-                .Where(c => !c.IsNeutralCulture)
+            return CultureInfo.GetCultures(CultureTypes.SpecificCultures)
                 .FirstOrDefault(c =>
                 {
                     try
                     {
-                        return new RegionInfo(c.LCID).ISOCurrencySymbol == currencyCode;
+                        RegionInfo region = new RegionInfo(c.Name);
+                        return region.ISOCurrencySymbol == currencyCode;
                     }
                     catch (ArgumentException)
                     {

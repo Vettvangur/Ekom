@@ -119,7 +119,8 @@ class EkomMiddleware
 
             // Skip processing for URLs starting with /umbraco or /media
             if (requestPath.StartsWith("/umbraco", StringComparison.OrdinalIgnoreCase) ||
-                requestPath.StartsWith("/media", StringComparison.OrdinalIgnoreCase))
+                requestPath.StartsWith("/media", StringComparison.OrdinalIgnoreCase) || 
+                requestPath.StartsWith("/app_plugins", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

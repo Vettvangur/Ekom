@@ -1,4 +1,4 @@
-<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
+﻿<div class="ekmManager umb-panel umb-editor-wrapper -no-footer" ng-controller="Ekom.Manager.Dashboard">
   <div class="umb-editor-header">
     <div class="flex items-center" style="height:100%;">
       <img src="/App_Plugins/Ekom/Manager/assets/ekomLogo.png" class="ekmManager__logo" alt="Ekom Ecommerce" />
@@ -42,7 +42,7 @@
                 <label>Order Status:</label>
                 <div class="btn-group dropdown-toggle">
                   <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStatusList')">
-                    {{labelDropdown('dropdownStatusList','Completed Orders')}}
+                    {{getStatusLabel(labelDropdown('dropdownStatusList','Completed Orders'))}}
                     <span class="caret" aria-hidden="true"></span>
                   </div>
                   <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStatusList')">
@@ -50,7 +50,7 @@
                       <button type="button" ng-click="selectDropdown('dropdownStatusList', 'CompletedOrders')">Completed Orders</button>
                     </li>
                     <li ng-repeat="status in statusList">
-                      <button type="button" ng-click="selectDropdown('dropdownStatusList',status.value)">{{ status.label }}</button>
+                      <button type="button" ng-click="selectDropdown('dropdownStatusList',status.enumValue)">{{ status.label }}</button>
                     </li>
                   </ul>
                 </div>
@@ -111,7 +111,7 @@
                   <button class="btn umb-button__button btn-success" ng-click="ViewOrder(order)">View</button>
                 </div>
                 <div class="umb-table-cell" title="{{order.uniqueId}}">{{order.referenceId}}</div>
-                <div class="umb-table-cell"><uui-tag color="default">{{order.orderStatus}}</uui-tag></div>
+                <div class="umb-table-cell"><uui-tag color="default">{{order.orderStatusCol}}</uui-tag></div>
                 <div class="umb-table-cell">{{order.customerName}}</div>
                 <div class="umb-table-cell">{{order.storeAlias}}</div>
                 <div class="umb-table-cell">{{order.createDate | date : "dd.MM.y HH:mm" }}</div>
@@ -153,7 +153,7 @@
                     <button type="button" ng-click="selectDropdown('dropdownStatusList', 'CompletedOrders')">Completed Orders</button>
                   </li>
                   <li ng-repeat="status in statusList">
-                    <button type="button" ng-click="selectDropdown('dropdownStatusList',status.value)">{{ status.label }}</button>
+                    <button type="button" ng-click="selectDropdown('dropdownStatusList',status.enumValue)">{{ status.label }}</button>
                   </li>
                 </ul>
               </div>

@@ -286,8 +286,8 @@
     };
 
     $scope.analytics = function () {
-
-      var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store.alias;
+ 
+      var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store;
 
       resources.Charts(query)
         .then(function (result) {
@@ -464,6 +464,17 @@
       return label;
 
     };
+
+    $scope.getStatusLabel = function(value) {
+
+      const item = $scope.statusList.find(obj => obj.enumValue === value);
+
+      if (item) {
+        return item.label;
+      }
+      return value;
+
+    }
 
     $document.on('click', function (event) {
       // Check if the click event target is outside of any dropdown

@@ -207,7 +207,8 @@ namespace Ekom.Repositories
             return items.Select(x => new
             {
                 value = x,
-                label = string.Concat(x.ToString().Select(x => Char.IsUpper(x) ? " " + x : x.ToString()))
+                label = string.Concat(x.ToString().Select(x => Char.IsUpper(x) ? " " + x : x.ToString())),
+                enumValue = x.ToString()
             });
         }
     }
