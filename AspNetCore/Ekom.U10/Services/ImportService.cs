@@ -335,6 +335,9 @@ public class ImportService : IImportService
                     {
                         _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. {string.Join(',', importProduct.Categories)}");
                     }
+                } else
+                {
+                    _logger.LogWarning($"Failed to save product {importProduct.SKU}, no categories found.");
                 }
 
             }

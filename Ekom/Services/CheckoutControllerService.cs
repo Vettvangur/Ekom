@@ -9,6 +9,7 @@ using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using OrderStatus = Ekom.Utilities.OrderStatus;
 
 namespace Ekom.Services
@@ -59,6 +60,14 @@ namespace Ekom.Services
             Logger.LogInformation("Checkout Pay - Payment request start ");
 
             Culture = culture;
+
+            if (string.IsNullOrEmpty(Culture))
+            {
+                var cultureInfo = new CultureInfo(Culture);
+
+                Thread.CurrentThread.CurrentCulture = cultureInfo;
+                Thread.CurrentThread.CurrentUICulture = cultureInfo;
+            }
 
             // ToDo: Lock order throughout request
             var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
