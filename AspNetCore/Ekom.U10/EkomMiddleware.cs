@@ -77,7 +77,13 @@ class EkomMiddleware
     {
         try
         {
-            if (_context != null && !_context.Request.Path.StartsWithSegments("/umbraco") && !_context.Request.Path.StartsWithSegments("/media"))
+            if (_context != null && _context.Request != null &&
+                (!_context.Request.Path.StartsWithSegments("/umbraco", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)) &&
+                !_context.Request.Path.StartsWithSegments("/media", StringComparison.InvariantCultureIgnoreCase) &&
+                !_context.Request.Path.StartsWithSegments("/app_plugins", StringComparison.InvariantCultureIgnoreCase))
             {
                 using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
                 // No umbraco context exists for static file requests
@@ -118,9 +124,13 @@ class EkomMiddleware
             }
 
             // Skip processing for URLs starting with /umbraco or /media
-            if (requestPath.StartsWith("/umbraco", StringComparison.OrdinalIgnoreCase) ||
-                requestPath.StartsWith("/media", StringComparison.OrdinalIgnoreCase) || 
-                requestPath.StartsWith("/app_plugins", StringComparison.OrdinalIgnoreCase))
+            if (_context != null && _context.Request != null &&
+                (!_context.Request.Path.StartsWithSegments("/umbraco", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
+                 _context.Request.Path.StartsWithSegments("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)) &&
+                !_context.Request.Path.StartsWithSegments("/media", StringComparison.InvariantCultureIgnoreCase) &&
+                !_context.Request.Path.StartsWithSegments("/app_plugins", StringComparison.InvariantCultureIgnoreCase))
             {
                 return;
             }
