@@ -77,31 +77,65 @@ class EkomMiddleware
     {
         try
         {
-            if (_context != null && _context.Request != null &&
-                (!_context.Request.Path.StartsWithSegments("/umbraco", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)) &&
-                !_context.Request.Path.StartsWithSegments("/media", StringComparison.InvariantCultureIgnoreCase) &&
-                !_context.Request.Path.StartsWithSegments("/app_plugins", StringComparison.InvariantCultureIgnoreCase))
+            if (_context == null)
             {
-                using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
-                // No umbraco context exists for static file requests
-                if (umbCtx?.UmbracoContext != null)
-                {
-                    appCaches.RequestCache.Get("ekmRequest", () =>
-                        new ContentRequest()
-                        {
-                            User = new User(),
-                        });
-                }
+                return;
             }
+
+            var requestPath = _context.Request?.Path.ToString();
+
+            if (!AllowPath(requestPath))
+            {
+                return;
+            }
+
+            using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
+            // No umbraco context exists for static file requests
+            if (umbCtx?.UmbracoContext != null)
+            {
+                appCaches.RequestCache.Get("ekmRequest", () =>
+                    new ContentRequest()
+                    {
+                        User = new User(),
+                    });
+            }
+            
 
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Http module Begin Request failed");
         }
+    }
+
+    private bool AllowPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return false;
+        }
+
+        if (
+            path.StartsWith("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) || 
+            path.StartsWith("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)
+            )
+        {
+            return true;
+        }
+
+
+        if (
+            path.StartsWith("/umbraco/", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/media/", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/app_plugins/", StringComparison.InvariantCultureIgnoreCase)
+            )
+        {
+            return false;
+        }
+
+        return true;
+
     }
 
     private async Task OnAuthenticateRequest(
@@ -123,14 +157,7 @@ class EkomMiddleware
                 return;
             }
 
-            // Skip processing for URLs starting with /umbraco or /media
-            if (_context != null && _context.Request != null &&
-                (!_context.Request.Path.StartsWithSegments("/umbraco", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
-                 _context.Request.Path.StartsWithSegments("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)) &&
-                !_context.Request.Path.StartsWithSegments("/media", StringComparison.InvariantCultureIgnoreCase) &&
-                !_context.Request.Path.StartsWithSegments("/app_plugins", StringComparison.InvariantCultureIgnoreCase))
+            if (!AllowPath(requestPath))
             {
                 return;
             }
