@@ -480,13 +480,13 @@ namespace Ekom.Models
                 }
             }
 
-            if (!relatedProducts.Any())
+            if (!relatedProducts.Any() || relatedProducts.Count < 4)
             {
                 var category = Catalog.Instance.GetCategory(ParentId);
 
                 if (category != null)
                 {
-                    relatedProducts = category.ProductsRecursive().Products.Where(x => x.Id != Id).Take(count).ToList();
+                    relatedProducts.AddRange(category.ProductsRecursive().Products.Where(x => x.Id != Id).Take(count - relatedProducts.Count).ToList());
                 }
 
             }

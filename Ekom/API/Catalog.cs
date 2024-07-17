@@ -137,7 +137,6 @@ namespace Ekom.API
         {
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
-
             if (store != null)
             {
                 return _productCache.Cache[store.Alias].TryGetValue(Key, out var prod) ? prod : null;
@@ -677,13 +676,13 @@ namespace Ekom.API
         /// <summary>
         /// Get Related Products
         /// </summary>
-        public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4, string storeAlias = null)
+        public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4, string? storeAlias = null)
         {            
             var product = GetProduct(productId, storeAlias);
 
             if (product == null)
             {
-                throw new ArgumentNullException(nameof(product));
+                return Enumerable.Empty<IProduct>();
             }
             
             return product.RelatedProducts(count);
