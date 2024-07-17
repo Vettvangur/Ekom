@@ -305,7 +305,6 @@ public class ImportService : IImportService
             {
                 if (importProduct.Categories.Count > 0)
                 {
-
                     IContent? primaryCategoryContent = null;
 
                     foreach (var categoryIdentifier in importProduct.Categories)
@@ -333,7 +332,7 @@ public class ImportService : IImportService
                         IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
                     } else
                     {
-                        _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. {string.Join(',', importProduct.Categories)}");
+                        _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. '{string.Join(',', importProduct.Categories)}' '{importProduct.Categories.Count}'");
                     }
                 } else
                 {
