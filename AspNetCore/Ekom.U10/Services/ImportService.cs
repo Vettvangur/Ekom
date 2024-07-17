@@ -474,7 +474,6 @@ public class ImportService : IImportService
                 {
                     _contentService.Save(categoryContent, userId: syncUser);
                 }
-                contextReference.Dispose();
             }
 
             categoriesSaved.Add(importCategory);
@@ -591,7 +590,6 @@ public class ImportService : IImportService
                 {
                     _contentService.Save(productContent, userId: syncUser);
                 }
-                contextReference.Dispose();
             }
 
             productsSaved.Add(importProduct);
@@ -639,7 +637,6 @@ public class ImportService : IImportService
             {
                 _contentService.Save(variantGroupContent, userId: syncUser);
             }
-            contextReference.Dispose();
 
         }
 
@@ -731,7 +728,6 @@ public class ImportService : IImportService
             {
                 _contentService.Save(variantContent, userId: syncUser);
             }
-            contextReference.Dispose();
         }
 
         variantsSaved.Add(importVariant);
