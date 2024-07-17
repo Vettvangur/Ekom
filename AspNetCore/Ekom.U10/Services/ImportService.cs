@@ -332,7 +332,7 @@ public class ImportService : IImportService
                         IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
                     } else
                     {
-                        _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. '{string.Join(',', importProduct.Categories)}' '{importProduct.Categories.Count}'");
+                        _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. '{JsonConvert.SerializeObject(importProduct.Categories)}'");
                     }
                 } else
                 {
