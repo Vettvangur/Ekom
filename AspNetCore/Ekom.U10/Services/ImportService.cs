@@ -11,9 +11,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Sync;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Persistence.Querying;
 using Umbraco.Cms.Infrastructure.Scoping;
+using Umbraco.Cms.Infrastructure.Sync;
 using Umbraco.Extensions;
 using static Ekom.Events.ImportEvents;
 
@@ -25,6 +27,7 @@ public class ImportService : IImportService
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly IScopeProvider _scopeProvider;
+    private readonly IServerMessenger _serverMessenger;
     private readonly ImportMediaService _importMediaService;
     private readonly ILogger<ImportService> _logger;
     private readonly Stock _stock;
@@ -46,6 +49,7 @@ public class ImportService : IImportService
         IContentService contentService,
         IContentTypeService contentTypeService,
         IScopeProvider scopeProvider,
+        IServerMessenger serverMessenger,
         ILogger<ImportService> logger,
         Stock stock,
         ImportMediaService importMediaService)
@@ -54,6 +58,7 @@ public class ImportService : IImportService
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _scopeProvider = scopeProvider;
+        _serverMessenger = serverMessenger;
         _logger = logger;
         _stock = stock;
         _importMediaService = importMediaService;
@@ -64,6 +69,8 @@ public class ImportService : IImportService
         _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
         var stopwatchTotal = Stopwatch.StartNew();
+
+        using var backgroundScope = new BackgroundScope(_serverMessenger);
 
         GetInitialData(parentKey);
 
@@ -99,6 +106,8 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}");
 
+        using var backgroundScope = new BackgroundScope(_serverMessenger);
+
         GetInitialData(categoryKey);
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
@@ -124,6 +133,8 @@ public class ImportService : IImportService
     public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
     {
         _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
+
+        using var backgroundScope = new BackgroundScope(_serverMessenger);
 
         GetInitialData(parentKey);
 
@@ -930,5 +941,23 @@ public class ImportService : IImportService
             .ToList();
 
         return categories;
+    }
+
+    public class BackgroundScope : IDisposable
+    {
+        private readonly IServerMessenger _serverMessenger;
+
+        public BackgroundScope(IServerMessenger serverMessenger)
+        {
+            _serverMessenger = serverMessenger;
+        }
+
+        public void Dispose()
+        {
+            if (_serverMessenger is BatchedDatabaseServerMessenger batchedDatabaseServerMessenger)
+            {
+                batchedDatabaseServerMessenger.SendMessages();
+            }
+        }
     }
 }
