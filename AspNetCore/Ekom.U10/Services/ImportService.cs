@@ -75,22 +75,19 @@ public class ImportService : IImportService
 
         var stopwatch = Stopwatch.StartNew();
 
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
+        IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
 
-            _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+        _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
 
-            stopwatch.Stop();
+        stopwatch.Stop();
 
-            stopwatch.Restart();
+        stopwatch.Restart();
 
-            IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
+        IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
 
-            _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
-            stopwatch.Stop();
-        }
-
+        _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+        stopwatch.Stop();
+ 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync)).GetAwaiter().GetResult();
 
         stopwatchTotal.Stop();
@@ -477,6 +474,7 @@ public class ImportService : IImportService
                 {
                     _contentService.Save(categoryContent, userId: syncUser);
                 }
+                contextReference.Dispose();
             }
 
             categoriesSaved.Add(importCategory);
@@ -593,13 +591,14 @@ public class ImportService : IImportService
                 {
                     _contentService.Save(productContent, userId: syncUser);
                 }
+                contextReference.Dispose();
             }
 
             productsSaved.Add(importProduct);
 
         } catch(Exception ex)
         {
-            throw new Exception("Failed to save Product: " + importProduct.Title + " Sku: " + importProduct.SKU + " Message: " + ex.InnerException , ex);
+            throw new Exception("Failed to save Product: Sku: " + importProduct.SKU + " Message: " + ex.Message , ex);
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
@@ -640,6 +639,8 @@ public class ImportService : IImportService
             {
                 _contentService.Save(variantGroupContent, userId: syncUser);
             }
+            contextReference.Dispose();
+
         }
 
         variantGroupsSaved.Add(importVariantGroup);
@@ -720,7 +721,6 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
             if (variantContent.Published || create)
@@ -731,6 +731,7 @@ public class ImportService : IImportService
             {
                 _contentService.Save(variantContent, userId: syncUser);
             }
+            contextReference.Dispose();
         }
 
         variantsSaved.Add(importVariant);
