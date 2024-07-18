@@ -27,7 +27,9 @@ namespace Ekom.Models
                 (query.TryGetValue("q", out var sq) ? sq.FirstOrDefault() : string.Empty);
 
 
-            Page = Page ?? (int.TryParse(query["page"], out int page) ? page : 1);
+            Page = Page ??
+                (int.TryParse(query["page"], out int page) ? page :
+                (int.TryParse(query["p"], out page) ? page : 1));
 
             if (query.TryGetValue("orderby", out var orderByValue) &&
                 Enum.TryParse(orderByValue, true, out OrderBy orderBy))
