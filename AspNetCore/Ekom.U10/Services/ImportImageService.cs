@@ -144,7 +144,7 @@ public class ImportMediaService
 
         mediaCount++;
 
-        if (mediaCount == 200)
+        if (mediaCount >= 200)
         {
             var currentNodeName = lastMediaFolder.Name;
 
@@ -153,6 +153,8 @@ public class ImportMediaService
             newName++;
 
             lastMediaFolder = CreateMediaFolder(newName.ToString());
+
+            mediaCount = 0;
         }
 
         return media;
