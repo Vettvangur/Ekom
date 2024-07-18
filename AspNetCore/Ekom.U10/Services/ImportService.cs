@@ -44,6 +44,9 @@ public class ImportService : IImportService
     private List<ImportVariant> variantsSaved;
     private List<ImportVariantGroup> variantGroupsSaved;
 
+    private static readonly object _syncLock = new object();
+    private static bool _isFullSyncRunning = false;
+
     public ImportService(
         IUmbracoContextFactory umbracoContextFactory,
         IContentService contentService,
@@ -68,38 +71,59 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
-        var stopwatchTotal = Stopwatch.StartNew();
+        lock (_syncLock)
+        {
+            if (_isFullSyncRunning)
+            {
+                _logger.LogError("Full Sync is already in progress.");
+                throw new InvalidOperationException("Sync is already in progress.");
+            }
 
-        using var backgroundScope = new BackgroundScope(_serverMessenger);
+            _isFullSyncRunning = true;
+        }
 
-        GetInitialData(parentKey);
+        try
+        {
+            var stopwatchTotal = Stopwatch.StartNew();
 
-        var allUmbracoCategories = GetAllUmbracoCategories();
+            using var backgroundScope = new BackgroundScope(_serverMessenger);
 
-        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
+            GetInitialData(parentKey);
 
-        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+            var allUmbracoCategories = GetAllUmbracoCategories();
 
-        var stopwatch = Stopwatch.StartNew();
+            var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
-        IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
+            var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+            var stopwatch = Stopwatch.StartNew();
 
-        stopwatch.Stop();
+            IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
 
-        stopwatch.Restart();
+            _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
 
-        IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
+            stopwatch.Stop();
 
-        _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
-        stopwatch.Stop();
- 
-        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync)).GetAwaiter().GetResult();
+            stopwatch.Restart();
 
-        stopwatchTotal.Stop();
+            IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
 
-        _logger.LogInformation("Full Sync took {Duration} ms. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", stopwatchTotal.ElapsedMilliseconds, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
+            _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+            stopwatch.Stop();
+
+            OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync)).GetAwaiter().GetResult();
+
+            stopwatchTotal.Stop();
+
+            _logger.LogInformation("Full Sync took {Duration} ms. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", stopwatchTotal.ElapsedMilliseconds, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
+        }
+        finally
+        {
+            lock (_syncLock)
+            {
+                _isFullSyncRunning = false;
+            }
+        }
     }
 
     public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1)
