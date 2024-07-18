@@ -326,7 +326,7 @@ public class ImportService : IImportService
                     else if (!processedIdentifiers.Add(productIdentifier)) // Try to add to processed, fails if already present
                     {
                         // Duplicate found, delete the duplicate item
-                        _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId}");
+                        _logger.LogInformation($"Duplicate product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} Identifier: {productIdentifier}");
                         _contentService.Delete(umbracoProduct);
                         allUmbracoProducts.RemoveAt(i);
                     }
@@ -515,7 +515,7 @@ public class ImportService : IImportService
 
         } catch(Exception ex)
         {
-            throw new Exception("Failed to save Category: " + JsonConvert.SerializeObject(importCategory), ex);
+            throw new Exception("Failed to save Category: " + importCategory.Identifier, ex);
         }
 
     }
