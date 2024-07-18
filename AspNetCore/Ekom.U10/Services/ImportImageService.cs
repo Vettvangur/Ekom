@@ -19,6 +19,7 @@ public class ImportMediaService
     private readonly IShortStringHelper _shortStringHelper;
 
     private int mediaCount = 0;
+    private int mediaFolderPageSize = 400;
     private IMedia? lastMediaFolder;
     private IMedia? rootMediaFolder;
 
@@ -144,7 +145,7 @@ public class ImportMediaService
 
         mediaCount++;
 
-        if (mediaCount >= 200)
+        if (mediaCount >= mediaFolderPageSize)
         {
             var currentNodeName = lastMediaFolder.Name;
 
