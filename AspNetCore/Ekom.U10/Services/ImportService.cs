@@ -4,6 +4,7 @@ using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
 using Ekom.Utilities;
+using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -759,13 +760,17 @@ public class ImportService : IImportService
     }
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia> allUmbracoMedia, string mediaType = "Image", string contentTypeAlias = "images")
     {
+        var currentImages = content.GetValue<string>(contentTypeAlias) ?? "";
+
         var imagesUdi = new List<string>();
+
+        imagesUdi.AddRange(currentImages.Split(','));
 
         foreach (var media in importMedias)
         {
             if (media is ImportMediaFromUdi importMedia)
             {
-                imagesUdi.Add(importMedia.Udi);
+                AddUdiIfNotExist(imagesUdi, importMedia.Udi);
             }
             else if (media is ImportMediaFromExternalUrl externalUrlMedia)
             {
@@ -779,7 +784,7 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(imagesUdi, umbMedia.GetUdi().ToString());
             }
             else if (media is ImportMediaFromBytes bytesMedia)
             {
@@ -793,7 +798,7 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(imagesUdi, umbMedia.GetUdi().ToString());
             }
             else if (media is ImportMediaFromBase64 base64Media) {
 
@@ -807,11 +812,10 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                imagesUdi.Add(umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(imagesUdi, umbMedia.GetUdi().ToString());
             }
         }
 
-        var currentImages = content.GetValue<string>(contentTypeAlias) ?? "";
         var importedImages = string.Join(",", imagesUdi);
 
         if (currentImages != importedImages)
@@ -820,6 +824,14 @@ public class ImportService : IImportService
             return true;
         }
         return false;
+    }
+
+    private void AddUdiIfNotExist(List<string> imagesUdi, string udi)
+    {
+        if (!imagesUdi.Contains(udi))
+        {
+            imagesUdi.Add(udi);
+        }
     }
 
     /// <summary>
