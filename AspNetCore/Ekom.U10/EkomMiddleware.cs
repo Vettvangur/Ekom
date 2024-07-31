@@ -204,7 +204,7 @@ class EkomMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AuthenticateRequest Failed");
+            //_logger.LogError(ex, "AuthenticateRequest Failed");
         }
     }
 }
