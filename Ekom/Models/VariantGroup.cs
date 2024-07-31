@@ -18,7 +18,8 @@ namespace Ekom.Models
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IProduct Product => Catalog.Instance.GetProduct(ParentKey, storeAlias);
 

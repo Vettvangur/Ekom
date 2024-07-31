@@ -117,7 +117,8 @@ namespace Ekom.Models
         /// therefore we allow to configure a default/primary variant group.
         /// If none is configured, we return the first possible item.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IVariantGroup PrimaryVariantGroup
         {
@@ -157,7 +158,8 @@ namespace Ekom.Models
         /// Select the Primary variant.
         /// First Variant in the primary variant group that is available, if none are available, return the first variant.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IVariant PrimaryVariant
         {
@@ -185,7 +187,8 @@ namespace Ekom.Models
         /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
         /// </summary>
         /// <returns></returns>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<ICategory> CategoryAncestors => categoryAncestors.AsReadOnly();
         internal List<ICategory> categoryAncestors = new();
@@ -193,7 +196,8 @@ namespace Ekom.Models
         /// <summary>
         /// All categories product belongs to, includes parent category and related categories.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<ICategory> Categories => categories.AsReadOnly();
         internal List<ICategory> categories = new();
@@ -201,7 +205,8 @@ namespace Ekom.Models
         /// <summary>
         /// All ID's of categories product belongs to, includes parent category and related categories.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<Guid> CategoriesIds
         {
@@ -217,14 +222,16 @@ namespace Ekom.Models
         /// <summary>
         /// All product urls, computed from stores and categories.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<string> Urls { get; internal set; }
-        
+
         /// <summary>
         /// All product urls with context, computed from stores and categories.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual List<UmbracoUrl> UrlsWithContext { get; internal set; }
 
@@ -266,7 +273,8 @@ namespace Ekom.Models
         /// <summary>
         /// 
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual List<IPrice> Prices
         {
@@ -286,7 +294,8 @@ namespace Ekom.Models
                 return prices;
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IPrice OriginalPrice
         {
@@ -355,7 +364,8 @@ namespace Ekom.Models
         /// <summary>
         /// All variants belonging to product.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IEnumerable<IVariant> AllVariants
         {
@@ -373,7 +383,8 @@ namespace Ekom.Models
         /// <summary>
         /// Get Variant Count
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public int AllVariantsCount
         {

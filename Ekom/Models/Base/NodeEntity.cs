@@ -127,7 +127,8 @@ namespace Ekom.Models
         /// <summary>
         /// CSV of node id's describing hierarchy from left to right leading up to node.
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public string Path { get; set;  }
         

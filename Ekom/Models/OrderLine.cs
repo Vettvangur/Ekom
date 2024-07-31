@@ -13,7 +13,8 @@ namespace Ekom.Models
     {
         public Guid ProductKey => Product.Key;
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IOrderInfo OrderInfo { get; }
 

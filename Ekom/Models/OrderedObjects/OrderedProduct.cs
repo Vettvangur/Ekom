@@ -66,16 +66,19 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("title", StoreInfo.Alias);
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public string Path => Properties.GetPropertyValue("__Path");
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         //TODO Store default setup!
         public bool Backorder => Properties.GetPropertyValue("enableBackorder", StoreInfo.Alias).IsBoolean();
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public DateTime CreateDate
         {
@@ -84,7 +87,8 @@ namespace Ekom.Models
                 return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public DateTime UpdateDate
         {
@@ -122,7 +126,8 @@ namespace Ekom.Models
             }
         }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         private StoreInfo StoreInfo { get; }
 

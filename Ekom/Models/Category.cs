@@ -26,21 +26,24 @@ namespace Ekom.Models
         /// <summary>
         /// All category Urls, computed from stores
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IEnumerable<string> Urls { get; set; }
 
         /// <summary>
         /// All category Urls with context, computed from stores
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public List<UmbracoUrl> UrlsWithContext { get; set; }
 
         /// <summary>
         /// Our eldest ancestor category
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public ICategory RootCategory
         {
@@ -80,7 +83,8 @@ namespace Ekom.Models
         /// <summary>
         /// All descendant categories, includes grandchild categories
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IEnumerable<ICategory> SubCategoriesRecursive
         {

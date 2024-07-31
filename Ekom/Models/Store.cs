@@ -21,9 +21,10 @@ namespace Ekom.Models
         /// Usually a two letter code, f.x. EU/IS/DK
         /// </summary>
         public virtual string Alias => Properties["nodeName"];
-        
 
-        [JsonIgnore]
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual UmbracoContent StoreRootNode { get; set; }
         public virtual int StoreRootNodeId

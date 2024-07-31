@@ -23,7 +23,8 @@ namespace Ekom.Models
         /// <summary>
         /// Get the variant stock
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual int Stock => API.Stock.Instance.GetStock(Key);
 
@@ -55,7 +56,8 @@ namespace Ekom.Models
         /// <summary>
         /// Parent <see cref="IProduct"/> of Variant
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IProduct Product
         {
@@ -121,7 +123,8 @@ namespace Ekom.Models
         /// <summary>
         /// Variant group <see cref="IVariant"/> belongs to
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IVariantGroup VariantGroup
         {
@@ -131,7 +134,8 @@ namespace Ekom.Models
             }
         }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public virtual IPrice OriginalPrice
         {

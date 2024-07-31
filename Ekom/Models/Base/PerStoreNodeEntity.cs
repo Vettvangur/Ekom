@@ -12,7 +12,8 @@ namespace Ekom.Models
         /// <summary>
         /// Store this node entity belongs to
         /// </summary>
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public IStore Store { get; internal set; }
 

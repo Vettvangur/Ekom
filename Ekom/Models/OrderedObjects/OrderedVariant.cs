@@ -10,7 +10,8 @@ namespace Ekom.Models
 {
     public class OrderedVariant
     {
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public int Id
         {
@@ -24,7 +25,8 @@ namespace Ekom.Models
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public Guid Key
         {
@@ -47,7 +49,8 @@ namespace Ekom.Models
 
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public string SKU
         {
@@ -56,7 +59,8 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("sku");
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public string Title
         {
@@ -65,7 +69,8 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("title", StoreInfo.Alias);
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public string Path
         {
@@ -74,7 +79,8 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("__Path");
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public DateTime CreateDate
         {
@@ -83,7 +89,8 @@ namespace Ekom.Models
                 return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
             }
         }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         public DateTime UpdateDate
         {
@@ -125,7 +132,8 @@ namespace Ekom.Models
             }
         }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
         private StoreInfo StoreInfo { get; }
 
