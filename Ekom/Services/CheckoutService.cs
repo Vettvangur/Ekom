@@ -11,7 +11,7 @@ namespace Ekom.Services
     /// <summary>
     /// Handles order finalisation after successful payment or order completion
     /// </summary>
-    class CheckoutService
+    public class CheckoutService
     {
         readonly ILogger<CheckoutService> _logger;
         readonly Configuration _config;
@@ -20,7 +20,7 @@ namespace Ekom.Services
         readonly CouponRepository _couponRepo;
         readonly OrderService _orderService;
         readonly IMailService _mailService;
-        public CheckoutService(
+        CheckoutService(
             ILogger<CheckoutService> logger,
             Configuration config,
             OrderRepository orderRepo,
@@ -60,7 +60,7 @@ namespace Ekom.Services
                 {
                     OrderInfo = oi,
                     StockValidation = true,
-                    UpdateOrderStatus = true,
+                    UpdateOrderStatus = o.OrderStatus == OrderStatus.OfflinePayment ? false : true,
                     OrderData = o
                 };
 

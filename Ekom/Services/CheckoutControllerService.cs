@@ -32,6 +32,7 @@ namespace Ekom.Services
         protected readonly ILogger Logger;
         protected readonly Configuration Config;
         protected readonly EkomPayments ekomPayments;
+        private readonly CheckoutService CheckoutService;
         readonly HttpContext _httpCtx;
         protected string Culture;
 
@@ -42,7 +43,8 @@ namespace Ekom.Services
             IUmbracoService umbracoService,
             IMemberService memberService,
             IHttpContextAccessor httpContextAccessor,
-            EkomPayments ekomPayments)
+            EkomPayments ekomPayments,
+            CheckoutService checkoutService)
         {
             _httpCtx = httpContextAccessor.HttpContext;
 
@@ -52,6 +54,7 @@ namespace Ekom.Services
             UmbracoService = umbracoService;
             MemberService = memberService;
             this.ekomPayments = ekomPayments;
+            CheckoutService = checkoutService;
             //HttpContext = httpContext;
         }
 
@@ -469,29 +472,6 @@ namespace Ekom.Services
                     
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-                    var checkoutStatus = new CheckoutStatus
-                    {
-                        OrderId = order.UniqueId,
-                        SuccessUrl = successUrl,
-                        ErrorUrl = errorUrl,
-                        PaymentProvider = ekomPP.Name,
-                        PaymentProviderKey = ekomPP.Key,
-                        MemberKey = (string.IsNullOrEmpty(memberKey) ? "" : memberKey)
-                    };
-
-                    try
-                    {
-                        CheckoutEvents.OnCheckoutSuccess(this, new CheckoutSuccessEventArgs() { 
-                             CheckoutStatus = checkoutStatus
-                        });
-                    }
-                    catch(Exception ex)
-                    {
-                        Logger.LogError(ex, "OnCheckoutSuccess Failed. Order: {UniqueId}", order.UniqueId);
-                        
-                        errorUrl = checkoutStatus.ErrorUrl;
-                        throw;
-                    }
                     
                     return new CheckoutResponse
                     {
@@ -511,7 +491,9 @@ namespace Ekom.Services
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.PaymentFailed,
                         order.UniqueId).ConfigureAwait(false);
-                    
+
+                    await CheckoutService.CompleteAsync(order.UniqueId);
+
                     return new CheckoutResponse
                     {
                         ResponseBody = errorUrl,
