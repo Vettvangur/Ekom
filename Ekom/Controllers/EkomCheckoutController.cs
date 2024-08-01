@@ -36,8 +36,6 @@ public class EkomCheckoutApiController : ControllerBase
 
     private IActionResult ResponseHandler(CheckoutResponse checkoutResponse)
     {
-        _logger.LogInformation("ResponseHandler: " +  JsonConvert.SerializeObject(checkoutResponse));
-        
         if (checkoutResponse != null)
         {
             if (checkoutResponse.HttpStatusCode == 400)
