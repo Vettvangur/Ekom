@@ -19,6 +19,7 @@ using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Infrastructure.Sync;
 using Umbraco.Extensions;
 using static Ekom.Events.ImportEvents;
+using static Umbraco.Cms.Core.Constants;
 
 namespace Ekom.Umb.Services;
 
@@ -101,7 +102,7 @@ public class ImportService : IImportService
 
             IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
 
-            _logger.LogInformation("IterateCategoryTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+            _logger.LogInformation("IterateCategoryTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
             stopwatch.Stop();
 
@@ -109,14 +110,15 @@ public class ImportService : IImportService
 
             IterateProductTree(data.Products, allUmbracoCategories, allUmbracoMedia, syncUser);
 
-            _logger.LogInformation("IterateProductTree took {Duration} ms", stopwatch.ElapsedMilliseconds);
+            _logger.LogInformation("IterateProductTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
+
             stopwatch.Stop();
 
             OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.FullSync)).GetAwaiter().GetResult();
 
             stopwatchTotal.Stop();
 
-            _logger.LogInformation("Full Sync took {Duration} ms. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", stopwatchTotal.ElapsedMilliseconds, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
+            _logger.LogInformation("Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
         }
         finally
         {
