@@ -38,10 +38,14 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsproviders/{storeAlias}")]
-    public IEnumerable<IPaymentProvider> GetPaymentProviders(string countryCode, decimal orderAmount, string? storeAlias = null)
+    public IEnumerable<IPaymentProvider> GetPaymentProviders(string countryCode, decimal orderAmount, string storeAlias)
     {
         try
         {
+            IStore? store = !string.IsNullOrEmpty(storeAlias) ? API.Store.Instance.GetStore(storeAlias) : null;
+
+            ArgumentNullException.ThrowIfNull(store);
+
             return API.Providers.Instance.GetPaymentProviders(storeAlias, countryCode, orderAmount);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
@@ -81,10 +85,14 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("shippingproviders/{storeAlias}")]
-    public IEnumerable<IShippingProvider> GetShippingProviders(string countryCode, decimal orderAmount, string? storeAlias = null)
+    public IEnumerable<IShippingProvider> GetShippingProviders(string countryCode, decimal orderAmount, string storeAlias)
     {
         try
         {
+            IStore? store = !string.IsNullOrEmpty(storeAlias) ? API.Store.Instance.GetStore(storeAlias) : null;
+
+            ArgumentNullException.ThrowIfNull(store);
+
             return API.Providers.Instance.GetShippingProviders(storeAlias, countryCode, orderAmount);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
@@ -106,6 +114,8 @@ public class EkomProviderController : ControllerBase
         try
         {
             IStore? store = !string.IsNullOrEmpty(storeAlias) ? API.Store.Instance.GetStore(storeAlias) : null;
+
+            ArgumentNullException.ThrowIfNull(store);
 
             return API.Providers.Instance.GetShippingProvider(id, store);
         }
