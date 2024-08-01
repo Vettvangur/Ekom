@@ -156,7 +156,7 @@ public class ImportService : IImportService
         }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
-       
+
         stopwatch.Stop();
 
         _logger.LogInformation("Category Sync took {Duration} seconds. Category {categoryKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoryKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
@@ -199,7 +199,7 @@ public class ImportService : IImportService
             .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
 
         var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Identifier);
-        
+
         if (product == null)
         {
             throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
@@ -360,11 +360,13 @@ public class ImportService : IImportService
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
 
                         IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
-                    } else
+                    }
+                    else
                     {
                         _logger.LogWarning($"Failed to save product {importProduct.SKU}, no primary category found. '{string.Join(",", importProduct.Categories)}'");
                     }
-                } else
+                }
+                else
                 {
                     _logger.LogWarning($"Failed to save product {importProduct.SKU}, no categories found.");
                 }
@@ -387,7 +389,7 @@ public class ImportService : IImportService
         for (int i = umbracoVariantGroupChildrenContent.Count - 1; i >= 0; i--)
         {
             var umbracoVariantGroup = umbracoVariantGroupChildrenContent[i];
-       
+
             var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
             if (!importVariantGroupsIdentifiers.Contains(variantGroupIdentifier))
             {
@@ -397,13 +399,13 @@ public class ImportService : IImportService
                 allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
             }
-            
+
         }
 
         foreach (var importVariantGroup in importProduct.VariantGroups)
         {
             var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create);
-            
+
             var save = create;
 
             SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser);
@@ -511,7 +513,8 @@ public class ImportService : IImportService
 
             categoriesSaved.Add(importCategory);
 
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             throw new Exception("Failed to save Category: " + importCategory.Identifier, ex);
         }
@@ -627,9 +630,10 @@ public class ImportService : IImportService
 
             productsSaved.Add(importProduct);
 
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
-            throw new Exception("Failed to save Product: Sku: " + importProduct.SKU + " Message: " + ex.Message , ex);
+            throw new Exception("Failed to save Product: Sku: " + importProduct.SKU + " Message: " + ex.Message, ex);
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
@@ -773,19 +777,28 @@ public class ImportService : IImportService
 
         if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
         {
-           var mediaObjects = System.Text.Json.JsonSerializer.Deserialize<List<MediaObject>>(currentImages);
-
-            if (mediaObjects != null && mediaObjects.Any())
+            try
             {
-                imagesUdi.AddRange(mediaObjects.Select(x => "umb://media/" + x.MediaKey.Replace("-", "")));
-                currentImages = string.Join(",", imagesUdi);
+                var mediaObjects = System.Text.Json.JsonSerializer.Deserialize<List<MediaObject>>(currentImages);
+
+                if (mediaObjects != null && mediaObjects.Any())
+                {
+                    imagesUdi.AddRange(mediaObjects.Select(x => "umb://media/" + x.MediaKey.Replace("-", "")));
+                    currentImages = string.Join(",", imagesUdi);
+                }
+            } catch
+            {
+                _logger.LogWarning($"Could not parse media json value on product {content.Id}. Value: {currentImages}");
+                imagesUdi.Clear();
+                currentImages = "";
             }
-            
-        } else
+
+
+        }
+        else
         {
             imagesUdi.AddRange(currentImages.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)));
         }
-
 
         foreach (var media in importMedias)
         {
@@ -821,7 +834,8 @@ public class ImportService : IImportService
 
                 AddUdiIfNotExist(imagesUdi, umbMedia.GetUdi().ToString());
             }
-            else if (media is ImportMediaFromBase64 base64Media) {
+            else if (media is ImportMediaFromBase64 base64Media)
+            {
 
                 var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
 
