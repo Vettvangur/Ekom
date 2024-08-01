@@ -4,12 +4,13 @@ using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
 using Ekom.Utilities;
-using Lucene.Net.Util;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using StackExchange.Profiling.Helpers;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Sync;
@@ -19,7 +20,7 @@ using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Cms.Infrastructure.Sync;
 using Umbraco.Extensions;
 using static Ekom.Events.ImportEvents;
-using static Umbraco.Cms.Core.Constants;
+
 
 namespace Ekom.Umb.Services;
 
@@ -133,6 +134,8 @@ public class ImportService : IImportService
     {
         _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
+        var stopwatch = Stopwatch.StartNew();
+
         using var backgroundScope = new BackgroundScope(_serverMessenger);
 
         GetInitialData(categoryKey);
@@ -153,8 +156,10 @@ public class ImportService : IImportService
         }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
+       
+        stopwatch.Stop();
 
-        _logger.LogInformation("Category Sync finished CategoryKey: {categoryKey}", categoryKey.ToString());
+        _logger.LogInformation("Category Sync took {Duration} seconds. Category {categoryKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoryKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
     }
 
     public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
@@ -762,11 +767,25 @@ public class ImportService : IImportService
     }
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia> allUmbracoMedia, string mediaType = "Image", string contentTypeAlias = "images")
     {
-        var currentImages = content.GetValue<string>(contentTypeAlias) ?? "";
+        var currentImages = (content.GetValue<string>(contentTypeAlias) ?? "").TrimStart(',');
 
         var imagesUdi = new List<string>();
 
-        imagesUdi.AddRange(currentImages.Split(','));
+        if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
+        {
+           var mediaObjects = System.Text.Json.JsonSerializer.Deserialize<List<MediaObject>>(currentImages);
+
+            if (mediaObjects != null && mediaObjects.Any())
+            {
+                imagesUdi.AddRange(mediaObjects.Select(x => "umb://media/" + x.MediaKey.Replace("-", "")));
+                currentImages = string.Join(",", imagesUdi);
+            }
+            
+        } else
+        {
+            imagesUdi.AddRange(currentImages.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
 
         foreach (var media in importMedias)
         {
@@ -969,6 +988,14 @@ public class ImportService : IImportService
             .ToList();
 
         return categories;
+    }
+
+    public class MediaObject
+    {
+        [JsonPropertyName("key")]
+        public string Key { get; set; }
+        [JsonPropertyName("mediaKey")]
+        public string MediaKey { get; set; }
     }
 
     public class BackgroundScope : IDisposable
