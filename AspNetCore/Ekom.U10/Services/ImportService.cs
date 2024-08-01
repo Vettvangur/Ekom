@@ -131,7 +131,7 @@ public class ImportService : IImportService
 
     public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}");
+        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
 
