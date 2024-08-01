@@ -8,6 +8,7 @@ using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using OrderStatus = Ekom.Utilities.OrderStatus;
@@ -32,9 +33,9 @@ namespace Ekom.Services
         protected readonly ILogger Logger;
         protected readonly Configuration Config;
         protected readonly EkomPayments ekomPayments;
-        private readonly CheckoutService CheckoutService;
         readonly HttpContext _httpCtx;
         protected string Culture;
+        readonly IServiceProvider _factory;
 
         public CheckoutControllerService(
             ILogger logger,
@@ -44,7 +45,7 @@ namespace Ekom.Services
             IMemberService memberService,
             IHttpContextAccessor httpContextAccessor,
             EkomPayments ekomPayments,
-            CheckoutService checkoutService)
+            IServiceProvider factory)
         {
             _httpCtx = httpContextAccessor.HttpContext;
 
@@ -54,7 +55,7 @@ namespace Ekom.Services
             UmbracoService = umbracoService;
             MemberService = memberService;
             this.ekomPayments = ekomPayments;
-            CheckoutService = checkoutService;
+            _factory = factory;
             //HttpContext = httpContext;
         }
 
@@ -492,7 +493,9 @@ namespace Ekom.Services
                         OrderStatus.PaymentFailed,
                         order.UniqueId).ConfigureAwait(false);
 
-                    await CheckoutService.CompleteAsync(order.UniqueId);
+                    var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+
+                    await checkoutSvc.CompleteAsync(order.UniqueId);
 
                     return new CheckoutResponse
                     {
@@ -577,6 +580,7 @@ namespace Ekom.Services
                 };
             }
         }
+
 #pragma warning restore CA1062 // Validate arguments of public methods
     }
 }

@@ -11,7 +11,7 @@ namespace Ekom.Services
     /// <summary>
     /// Handles order finalisation after successful payment or order completion
     /// </summary>
-    public class CheckoutService
+    class CheckoutService
     {
         readonly ILogger<CheckoutService> _logger;
         readonly Configuration _config;

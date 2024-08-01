@@ -119,8 +119,7 @@ static class Registrations
                 f.GetService<IUmbracoService>(),
                 f.GetService<IMemberService>(),
                 f.GetService<IHttpContextAccessor>(),
-                f.GetService<EkomPayments>(),
-                f.GetService<CheckoutService>()
+                f.GetService<EkomPayments>()
             )
         );
 
