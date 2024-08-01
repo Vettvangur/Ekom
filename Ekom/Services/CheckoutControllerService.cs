@@ -473,7 +473,10 @@ namespace Ekom.Services
                     
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-                    
+                    var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+
+                    await checkoutSvc.CompleteAsync(order.UniqueId);
+
                     return new CheckoutResponse
                     {
                         ResponseBody = successUrl,
@@ -492,10 +495,6 @@ namespace Ekom.Services
                     await Order.Instance.UpdateStatusAsync(
                         OrderStatus.PaymentFailed,
                         order.UniqueId).ConfigureAwait(false);
-
-                    var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
-
-                    await checkoutSvc.CompleteAsync(order.UniqueId);
 
                     return new CheckoutResponse
                     {
