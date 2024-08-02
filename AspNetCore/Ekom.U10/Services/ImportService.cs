@@ -327,7 +327,31 @@ public class ImportService : IImportService
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                         _contentService.Delete(umbracoProduct);
                         allUmbracoProducts.RemoveAt(i);
+                        continue;
                     }
+
+                    // If product has moved from primary category we want to delete it and recreate it in the new primary category
+                    var parentCategory = allUmbracoCategories.FirstOrDefault(x => x.Id == umbracoProduct.ParentId);
+
+                    if (parentCategory != null)
+                    {
+                        var categoryIdentifer = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                        var importProduct = importProducts.FirstOrDefault(x => x.Identifier == productIdentifier);
+
+                        if (importProduct != null)
+                        {
+                            // If Primary category is not the same as the parent category identifer we want to delete the product
+                            if (importProduct.Categories != null && importProduct.Categories.Any() && (importProduct.Categories.First() != categoryIdentifer))
+                            {
+                                _logger.LogInformation($"Product deleted, product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
+                                _contentService.Delete(umbracoProduct);
+                                allUmbracoProducts.RemoveAt(i);
+                            }
+
+                        }
+
+                    }
+
                 }
             }
 
