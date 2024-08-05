@@ -22,13 +22,26 @@ public class ImportProduct : ImportBase
     public decimal? Vat { get; set; }
     public List<IImportMedia> Files { get; set; } = new List<IImportMedia>();
 
+
+    private List<string> categories = new List<string>();
+
     /// <summary>
     /// Represents a collection of category identifiers associated with a product. The first identifier
     /// in the list denotes the primary category of the product, while subsequent identifiers represent
     /// additional categories to which the product is linked. This categorization aids in organizing
     /// products within different classifications for easier access and management.
     /// </summary>
-    public List<string> Categories { get; set; } = new List<string>();
+    public List<string> Categories
+    {
+        get
+        {
+            return categories.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+        }
+        set
+        {
+            categories = value;
+        }
+    }
 
     public Dictionary<string, bool> Disabled = new Dictionary<string, bool>();
     public List<ImportVariantGroup> VariantGroups { get; set; } = new List<ImportVariantGroup>();
