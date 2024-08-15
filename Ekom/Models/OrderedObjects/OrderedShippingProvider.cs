@@ -31,14 +31,20 @@ namespace Ekom.Models
 
             if (shippingProviderObject.ContainsKey(nameof(Properties)))
             {
-                Properties = new ReadOnlyDictionary<string, string>(
-                shippingProviderObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+                var propertiesObject = shippingProviderObject[nameof(Properties)].ToObject<Dictionary<string, string>>();
+                if (propertiesObject != null)
+                {
+                    Properties = new ReadOnlyDictionary<string, string>(propertiesObject);
+                }
             }
             
             if (shippingProviderObject.ContainsKey(nameof(CustomData)))
             {
-                CustomData = new Dictionary<string, string>(
-                shippingProviderObject[nameof(CustomData)].ToObject<Dictionary<string, string>>());
+                var customDataObject = shippingProviderObject[nameof(CustomData)].ToObject<Dictionary<string, string>>();
+                if (customDataObject != null)
+                {
+                    CustomData = new Dictionary<string, string>(customDataObject);
+                }
             }
 
             Id = shippingProviderObject["Id"].Value<int>();
