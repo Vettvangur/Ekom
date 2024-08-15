@@ -1282,8 +1282,8 @@ namespace Ekom.Services
             }
             try
             {
-                if (shippingProviderId == Guid.Empty) return orderInfo
-                    ;
+                if (shippingProviderId == Guid.Empty) return orderInfo;
+
                 var provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
 
                 if (provider == null) return orderInfo;

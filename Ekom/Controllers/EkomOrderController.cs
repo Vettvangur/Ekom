@@ -268,9 +268,11 @@ public partial class EkomOrderController : ControllerBase
             var form = Request.Form;
             var keys = form.Keys;
 
-            var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, keys.Where(x => x != "ShippingProvider" && x.StartsWith("shippingprovider", StringComparison.InvariantCulture)).ToDictionary(
-                    k => k,
-                    v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
+            var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
+                k => k,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+
+            var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, customData);
 
             return orderInfo;
         }
