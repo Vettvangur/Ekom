@@ -145,15 +145,8 @@ namespace Ekom.App_Start
                     var parentNode = _nodeService.NodeById(node.ParentId);
 
                     cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
-
-                    // Run the operation in the background
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    Task.Run(async () =>
-                    {
-                        await RevalidateAsync(node, cancellationToken);
-
-                    }, cancellationToken);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                    //Fire and forget
+                    RevalidateAsync(node, cancellationToken).ConfigureAwait(false);
 
                     // If slug changes on category then we need to update the cache for all descending products.
                     if (node.ContentType.Alias != "ekmCategory") continue;
@@ -208,13 +201,9 @@ namespace Ekom.App_Start
 
                     RefreshCacheForRelatedNodes(node.Id, true);
 
-                    // Run the operation in the background
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    Task.Run(async () =>
-                    {
-                        await RevalidateAsync(node, cancellationToken);
+                    //Fire and forget
+                    RevalidateAsync(node, cancellationToken).ConfigureAwait(false);
 
-                    }, cancellationToken);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 }
             }
