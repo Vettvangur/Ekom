@@ -133,15 +133,37 @@ namespace Ekom.API
         /// Get product by Guid
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProduct(Guid Key, string storeAlias = null)
+        public IProduct? GetProduct(Guid key, string storeAlias = null)
         {
+            // Get the specified store or default store
             var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
-                return _productCache.Cache[store.Alias].TryGetValue(Key, out var prod) ? prod : null;
+                // Try to get the product from the specified store
+                if (_productCache.Cache[store.Alias].TryGetValue(key, out var prod))
+                {
+                    return prod;
+                }
             }
 
+            // If not found, check all other stores
+            foreach (var otherStore in _storeSvc.GetAllStores())
+            {
+                // Skip the store we've already checked (if storeAlias was provided)
+                if (store != null && otherStore.Alias == store.Alias)
+                {
+                    continue;
+                }
+
+                // Try to get the product from the current store in the iteration
+                if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out var prod))
+                {
+                    return prod;
+                }
+            }
+
+            // If the product is not found in any store, return null
             return null;
         }
 
