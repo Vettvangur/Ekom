@@ -257,6 +257,14 @@ public class ImportService : IImportService
         for (int i = allUmbracoCategories.Count - 1; i >= 0; i--)
         {
             var umbracoCategory = allUmbracoCategories[i];
+
+            var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
+
+            if (isSyncDisabled)
+            {
+                continue;
+            }
+
             if (umbracoCategory.ParentId == parentContent.Id)
             {
                 var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
@@ -278,6 +286,11 @@ public class ImportService : IImportService
                 var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
 
                 var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+
+                if (content == null)
+                {
+                    continue;
+                }
 
                 if (create)
                 {
@@ -305,8 +318,7 @@ public class ImportService : IImportService
         {
             var allEkomNodes = _contentService
                 .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-                .Where(x => !x.Trashed))
-                .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+                .Where(x => !x.Trashed)).ToList();
 
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
 
@@ -319,6 +331,13 @@ public class ImportService : IImportService
                 for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
                     var umbracoProduct = allUmbracoProducts[i];
+                    var isSyncDisabled = umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync");
+
+                    if (isSyncDisabled)
+                    {
+                        continue;
+                    }
+
                     var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
                     // Check if the identifier is valid and not in the import list
@@ -379,6 +398,11 @@ public class ImportService : IImportService
 
                         var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create);
 
+                        if (productContent == null)
+                        {
+                            continue;
+                        }
+
                         var save = create;
 
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
@@ -430,6 +454,11 @@ public class ImportService : IImportService
         {
             var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create);
 
+            if (variantGroupContent == null)
+            {
+                continue;
+            }
+
             var save = create;
 
             SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser);
@@ -467,6 +496,11 @@ public class ImportService : IImportService
         foreach (var importVariant in importVariantGroup.Variants)
         {
             var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create);
+
+            if (variantContent == null)
+            {
+                continue;
+            }
 
             var save = create;
 
@@ -950,7 +984,7 @@ public class ImportService : IImportService
     /// <param name="parentContent">The parent content under which the new content should be created if needed.</param>
     /// <param name="create">Outputs true if a new content item was created, false otherwise.</param>
     /// <returns>The found or newly created content item.</returns>
-    private IContent GetOrCreateContent(IContentType? contenType, List<IContent> umbracoChildrenContent, string nodeName, string identifer, IContent parentContent, out bool create)
+    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> umbracoChildrenContent, string nodeName, string identifer, IContent parentContent, out bool create)
     {
         ArgumentNullException.ThrowIfNull(contenType);
         ArgumentNullException.ThrowIfNull(nodeName);
@@ -958,6 +992,11 @@ public class ImportService : IImportService
 
         create = false;
         var content = umbracoChildrenContent.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
+
+        if (content != null && content.HasProperty("ekmDisableSync") && content.GetValue<bool>("ekmDisableSync"))
+        {
+            return null;
+        }
 
         if (content == null)
         {
@@ -1022,7 +1061,7 @@ public class ImportService : IImportService
         var categories = _contentService
             .GetPagedOfType(categoryContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed && x.Path.Contains(umbracoRootContent.Id.ToString())))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync") && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString()))
+            .Where(x =>  x.Path.Split(',').Contains(umbracoRootContent.Id.ToString()))
             .ToList();
 
         return categories;
