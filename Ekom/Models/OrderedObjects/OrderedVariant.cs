@@ -10,9 +10,6 @@ namespace Ekom.Models
 {
     public class OrderedVariant
     {
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
         public int Id
         {
             get
@@ -25,9 +22,6 @@ namespace Ekom.Models
                 return Convert.ToInt32(Properties.GetPropertyValue("id"));
             }
         }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
         public Guid Key
         {
             get
@@ -49,9 +43,7 @@ namespace Ekom.Models
 
             }
         }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
+
         public string SKU
         {
             get
@@ -59,9 +51,7 @@ namespace Ekom.Models
                 return Properties.GetPropertyValue("sku");
             }
         }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
+
         public string Title
         {
             get
