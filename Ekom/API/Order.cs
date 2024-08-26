@@ -286,6 +286,15 @@ namespace Ekom.API
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null)
+        {
+            return await _orderService.ReInitializeOrderLinesAsync(storeAlias, settings)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Add order line to cart asynchronously.
         /// </summary>
         /// <param name="productId">The product identifier.</param>

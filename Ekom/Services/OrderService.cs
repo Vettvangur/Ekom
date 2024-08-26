@@ -805,6 +805,66 @@ namespace Ekom.Services
             }
         }
 
+        public async Task<OrderInfo> RemoveOrderLinesAsync(
+            Guid[] lineIds,
+            string storeAlias,
+            OrderSettings settings = null)
+        {
+            _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
+
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
+
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
+
+            var semaphore = GetOrderLock(orderInfo);
+
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                var orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
+
+
+                if (orderLines != null && orderLines.Any())
+                {
+                    foreach (var orderline in orderLines)
+                    {
+                        RemoveOrderLine(orderInfo, orderline as OrderLine);
+                    }
+                   
+                    return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+                }
+
+                return orderInfo;
+
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
+            }
+        }
+
         private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
         {
             try
@@ -821,6 +881,76 @@ namespace Ekom.Services
             catch (Exception ex)
             {
                 throw new Exception("Failed to remove orderLine");
+            }
+        }
+
+        public async Task<OrderInfo> ReInitializeOrderLinesAsync(
+            string storeAlias,
+            OrderSettings? settings = null)
+        {
+            _logger.LogDebug("ReInitializeOrderLinesAsync...");
+
+            if (settings == null)
+            {
+                settings = new OrderSettings();
+            }
+            OrderInfo orderInfo;
+            if (settings.OrderInfo == null)
+            {
+                orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            }
+            else
+            {
+                orderInfo = settings.OrderInfo as OrderInfo;
+            }
+
+            if (orderInfo == null)
+            {
+                throw new OrderInfoNotFoundException();
+            }
+
+            var semaphore = GetOrderLock(orderInfo);
+
+            if (!settings.IsEventHandler)
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            try
+            {
+                var orderLines = orderInfo.OrderLines;
+
+                if (orderLines != null && orderLines.Any())
+                {
+                    var copyOfOrderlines = orderLines.ToList();
+
+                    foreach (var orderline in orderLines)
+                    {
+                        RemoveOrderLine(orderInfo, orderline as OrderLine);
+                    }
+
+                    foreach (var orderline in copyOfOrderlines)
+                    {
+                        orderInfo = await AddOrderLineAsync(orderline.ProductKey, orderline.Quantity, storeAlias, new AddOrderSettings()
+                        {
+                            OrderInfo = orderInfo,
+                            VariantKey = orderline.Product?.VariantGroups?.FirstOrDefault()?.Variants?.FirstOrDefault()?.Key
+                        }).ConfigureAwait(false);
+                    }
+
+
+                    return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+                }
+
+                return orderInfo;
+
+            }
+            finally
+            {
+                if (!settings.IsEventHandler)
+                {
+                    semaphore.Release();
+                }
             }
         }
 
