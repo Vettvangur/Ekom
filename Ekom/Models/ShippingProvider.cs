@@ -49,6 +49,8 @@ namespace Ekom.Models
             }
         }
 
+        public virtual string Description => GetValue("description", Store.Alias);
+
         /// <summary>
         /// 
         /// </summary>

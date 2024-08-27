@@ -937,9 +937,6 @@ namespace Ekom.Services
                         }).ConfigureAwait(false);
                     }
 
-
-                    return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                        .ConfigureAwait(false);
                 }
 
                 return orderInfo;
