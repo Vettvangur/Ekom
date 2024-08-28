@@ -93,6 +93,32 @@ public partial class EkomOrderController : ControllerBase
     //}
 
     /// <summary>
+    /// Get order by id
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("{orderId}")]
+    public async Task<IOrderInfo> GetOrder(Guid orderId)
+    {
+        try
+        {
+            var order = await Order.Instance.GetOrderAsync(orderId);
+
+            return order ?? throw new HttpResponseException(HttpStatusCode.NotFound);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            if (r != null)
+            {
+                throw r;
+            }
+
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Get order by store
     /// </summary>
     /// <returns></returns>
