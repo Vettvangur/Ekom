@@ -207,14 +207,14 @@ namespace Ekom.Services
 
             if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
-                await Order.Instance.UpdatePaymentInformationAsync(
+                order = await Order.Instance.UpdatePaymentInformationAsync(
                     paymentRequest.PaymentProvider,
                     order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
             if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
-                await Order.Instance.UpdateShippingInformationAsync(
+                order = await Order.Instance.UpdateShippingInformationAsync(
                     paymentRequest.ShippingProvider,
                     order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
