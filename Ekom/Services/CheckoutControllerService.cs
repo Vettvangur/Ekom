@@ -419,9 +419,15 @@ namespace Ekom.Services
                 throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
             }
             
+            if (order.PaymentProvider == null)
+            {
+                throw new ArgumentNullException("PaymentProvider is missing from Order. " + order.UniqueId);
+            }
+
+
             var storeAlias = order.StoreInfo.Alias;
 
-            var ekomPP = Providers.Instance.GetPaymentProvider(paymentRequest.PaymentProvider, storeAlias);
+            var ekomPP = Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, storeAlias);
             
             if (ekomPP == null)
             {
@@ -443,7 +449,7 @@ namespace Ekom.Services
 
             Logger.LogInformation(
                 "Payment Provider: {PaymentProvider}, {Name} offline: {isOfflinePayment}",
-                paymentRequest.PaymentProvider, 
+                order.PaymentProvider.Key, 
                 ekomPP.Name,
                 isOfflinePayment);
 
