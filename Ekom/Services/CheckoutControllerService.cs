@@ -483,6 +483,18 @@ namespace Ekom.Services
 
                     await checkoutSvc.CompleteAsync(order.UniqueId);
 
+                    CheckoutEvents.OnPay(this, new PayEventArgs
+                    {
+                        OrderInfo = order,
+                        PaymentSettings = new PaymentSettings()
+                        {
+                            SuccessUrl = new Uri(successUrl),
+                            ErrorUrl = new Uri(errorUrl),
+                            PaymentProviderKey = ekomPP.Key,
+                            PaymentProviderName = ekomPP.Name
+                        },
+                    });
+
                     return new CheckoutResponse
                     {
                         ResponseBody = successUrl,
