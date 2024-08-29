@@ -483,7 +483,7 @@ namespace Ekom.Services
 
                     await checkoutSvc.CompleteAsync(order.UniqueId);
 
-                    CheckoutEvents.OnPay(this, new PayEventArgs
+                    var eventsArgs = new PayEventArgs
                     {
                         OrderInfo = order,
                         PaymentSettings = new PaymentSettings()
@@ -493,11 +493,15 @@ namespace Ekom.Services
                             PaymentProviderKey = ekomPP.Key,
                             PaymentProviderName = ekomPP.Name
                         },
-                    });
+                    };
+
+                    CheckoutEvents.OnPay(this, eventsArgs);
+
+                    errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
                     return new CheckoutResponse
                     {
-                        ResponseBody = successUrl,
+                        ResponseBody = eventsArgs.PaymentSettings.SuccessUrl.ToString(),
                         HttpStatusCode = 300,
                     };
                 }
