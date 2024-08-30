@@ -4,6 +4,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace EkomCore.Services
 {
@@ -305,12 +306,68 @@ namespace EkomCore.Services
             if (query?.PropertyFilters?.Any() == true)
             {
 
+                products = FilterByPrice(products, query);
+
                 products = products.Where(product =>
                     query.PropertyFilters
                     .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
                     .All(f => product.Properties.Any(p => p.Key == f.Key &&
                         f.Value.Any(d => p.Value != null && p.Value.Contains(d, StringComparison.InvariantCultureIgnoreCase)))));
             }
+
+            return products;
+        }
+
+        private IEnumerable<IProduct> FilterByPrice(IEnumerable<IProduct> products, ProductQuery query) {
+
+            // Retrieve the priceFrom and priceTo filters
+            var priceFromFilter = query.PropertyFilters.FirstOrDefault(x => x.Key == "priceFrom");
+            var priceToFilter = query.PropertyFilters.FirstOrDefault(x => x.Key == "priceTo");
+
+            decimal? priceFrom = null;
+            decimal? priceTo = null;
+
+            // Parse the first value of priceFrom if it exists
+            if (priceFromFilter.Value != null && priceFromFilter.Value.Any() &&
+                decimal.TryParse(priceFromFilter.Value.First(), out decimal parsedPriceFrom))
+            {
+                priceFrom = parsedPriceFrom;
+            }
+
+            // Parse the first value of priceTo if it exists
+            if (priceToFilter.Value != null && priceToFilter.Value.Any() &&
+                decimal.TryParse(priceToFilter.Value.First(), out decimal parsedPriceTo))
+            {
+                priceTo = parsedPriceTo;
+            }
+
+            // Apply filtering on products based on Price.OriginalValue only if priceFrom or priceTo has a value
+            if (priceFrom.HasValue || priceTo.HasValue)
+            {
+                products = products.Where(product =>
+                {
+                    // Assume product.Price.OriginalValue is a decimal
+                    decimal productPrice = product.Price.OriginalValue;
+
+                    // Filter based on priceFrom and priceTo values
+                    bool isWithinRange = true;
+
+                    if (priceFrom.HasValue)
+                    {
+                        isWithinRange &= productPrice >= priceFrom.Value;
+                    }
+
+                    if (priceTo.HasValue)
+                    {
+                        isWithinRange &= productPrice <= priceTo.Value;
+                    }
+
+                    return isWithinRange;
+                });
+            }
+
+            query.PropertyFilters.Remove("priceFrom");
+            query.PropertyFilters.Remove("priceTo");
 
             return products;
         }
