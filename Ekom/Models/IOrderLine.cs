@@ -38,6 +38,18 @@ namespace Ekom.Models
         /// The product.
         /// </value>
         OrderedProduct Product { get; }
+
+        /// <summary>
+        /// Gets the variant.
+        /// </summary>
+        /// <value>
+        /// The variant.
+        /// </value>
+        OrderedVariant? Variant { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        Guid? VariantKey { get; }
         /// <summary>
         /// 
         /// </summary>
