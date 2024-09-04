@@ -9,8 +9,6 @@
 
       if ($routeParams.section !== 'content') { return; }
 
-      if ($routeParams.section !== 'content') { return; }
-
       $scope.model.hideLabel = false;
 
       $scope.fieldAlias = $scope.model.alias;

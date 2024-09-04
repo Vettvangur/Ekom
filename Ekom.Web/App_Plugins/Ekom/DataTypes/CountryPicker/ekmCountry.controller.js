@@ -1,4 +1,6 @@
-angular.module("umbraco").controller("Ekom.Country", function ($scope, assetsService, $routeParams, $http, editorState) {
+angular.module("umbraco").controller("Ekom.Country", function ($scope, $routeParams, $http) {
+
+  if ($routeParams.section !== 'content') { return; }
 
   $http.get(Umbraco.Sys.ServerVariables.ekom.apiEndpoint + 'GetCountries').then(function (res) {
     $scope.model.hideLabel = false;

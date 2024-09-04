@@ -1,4 +1,4 @@
-angular.module('umbraco').controller('Ekom.Coupon', function ($scope, assetsService, contentEditingHelper, $routeParams, editorState, $http, notificationsService, contentResource) {
+angular.module('umbraco').controller('Ekom.Coupon', function ($scope, $routeParams, editorState, $http, notificationsService) {
   $scope.model.hideLabel = true;
 
   if ($routeParams.section !== 'content') { return; }

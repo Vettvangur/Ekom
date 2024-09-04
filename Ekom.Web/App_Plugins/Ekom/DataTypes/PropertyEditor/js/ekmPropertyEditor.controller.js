@@ -4,7 +4,9 @@
   angular.module("umbraco").controller("Ekom.PropertyEditorPicker", [
     '$scope',
     'Ekom.Resources',
-    function ($scope, ekmResources) {
+    function ($scope, ekmResources, $routeParams) {
+
+      if ($routeParams.section !== 'content') { return; }
 
       $scope.model.dataTypes = [];
       $scope.model.value = $scope.model.value || {

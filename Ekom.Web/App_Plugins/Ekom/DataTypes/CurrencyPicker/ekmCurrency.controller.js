@@ -1,4 +1,6 @@
-angular.module("umbraco").controller("Ekom.Currency", function ($scope, assetsService, $http) {
+angular.module("umbraco").controller("Ekom.Currency", function ($scope, $routeParams) {
+
+  if ($routeParams.section !== 'content') { return; }
 
   $scope.currencies = $scope.model.value;
   $scope.model.hideLabel = false;

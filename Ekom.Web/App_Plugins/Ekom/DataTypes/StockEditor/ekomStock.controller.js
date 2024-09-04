@@ -1,4 +1,7 @@
 angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParams, $http, contentResource, $q) {
+
+  if ($routeParams.section !== 'content') { return; }
+
   $scope.stocks = [];
   $scope.content = null;
   $scope.config = null;

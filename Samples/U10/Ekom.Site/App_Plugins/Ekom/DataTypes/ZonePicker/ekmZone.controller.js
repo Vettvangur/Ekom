@@ -1,5 +1,6 @@
-angular.module("umbraco").controller("Ekom.Zone", function ($scope, assetsService, $http) {
+angular.module("umbraco").controller("Ekom.Zone", function ($scope, $http, $routeParams) {
 
+  if ($routeParams.section !== 'content') { return; }
   //var prevalueField = $scope.model.config.prevaluekeyname;
 
   $http.get('/Umbraco/Ekom/Api/GetCountries').then(function (res) {

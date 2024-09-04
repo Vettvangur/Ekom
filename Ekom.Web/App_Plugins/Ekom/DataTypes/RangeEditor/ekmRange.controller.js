@@ -1,4 +1,7 @@
-angular.module("umbraco").controller("Ekom.Range", function ($scope, $http) {
+angular.module("umbraco").controller("Ekom.Range", function ($scope, $http, $routeParams) {
+
+  if ($routeParams.section !== 'content') { return; }
+
   $scope.model.hideLabel = false;
   $scope.fieldAlias = $scope.model.alias;
 

@@ -1,4 +1,7 @@
-angular.module("umbraco").controller("Ekom.Cache", function ($scope, assetsService, $http, notificationsService) {
+angular.module("umbraco").controller("Ekom.Cache", function ($scope, $http, $routeParams, notificationsService) {
+
+  if ($routeParams.section !== 'content') { return; }
+
   $scope.loading = false;
   $scope.model.hideLabel = false;
   $scope.PopulateCache = function () {
