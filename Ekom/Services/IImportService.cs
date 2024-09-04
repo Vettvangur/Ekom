@@ -28,11 +28,39 @@ public interface IImportService
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be synchronized. If null, synchronization is performed at the root level.</param>
     /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
-    public void ProductSync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey,int syncUser = -1);
+    public void ProductSync(ImportProduct productData, Guid? parentKey, Guid mediaRootKey, int syncUser = -1);
 
-
+    /// <summary>
+    /// Updates a single product, ensuring the product data is modified or synchronized in the catalog.
+    /// </summary>
+    /// <param name="importProduct">The product data to be updated.</param>
+    /// <param name="parentKey">Optional GUID of the parent category under which the data should be updated. If null, the product is updated at the root level.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1);
 
+    /// <summary>
+    /// Updates a single variant, ensuring the variant data is modified or synchronized in the catalog.
+    /// </summary>
+    /// <param name="importVariant">The variant data to be updated.</param>
+    /// <param name="parentKey">Optional GUID of the parent category under which the variant should be updated.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void VariantUpdateSync(ImportVariant importVariant, Guid? parentKey, int syncUser = -1);
 
+    /// <summary>
+    /// Synchronizes a variant group, updating or integrating its details and associated variants within the catalog.
+    /// </summary>
+    /// <param name="importVariantGroup">The variant group data to be synchronized.</param>
+    /// <param name="parentKey">The GUID of the parent category under which the variant group should be synchronized.</param>
+    /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
+    public void VariantGroupSync(ImportVariantGroup importVariantGroup, Guid parentKey, Guid mediaRootKey, int syncUser = -1);
+
+    /// <summary>
+    /// Synchronizes a single variant, ensuring it is updated or integrated into the catalog based on the provided data.
+    /// </summary>
+    /// <param name="importVariant">The variant data to be synchronized.</param>
+    /// <param name="parentKey">The GUID of the parent category under which the variant should be synchronized.</param>
+    /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
+    public void VariantSync(ImportVariant importVariant, Guid parentKey, Guid mediaRootKey, int syncUser = -1);
 }

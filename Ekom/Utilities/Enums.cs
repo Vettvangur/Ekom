@@ -198,4 +198,5 @@ public enum ImportSyncType
     ProductUpdateSync,
     VariantUpdateSync,
     VariantSync,
+    VariantGroupSync
 }

@@ -184,7 +184,58 @@ public class ImportService : IImportService
 
         _logger.LogInformation("Product Sync finished ProductKey: {SKU}", importProduct.SKU);
     }
+    public void VariantGroupSync(ImportVariantGroup importVariantGroup, Guid parentKey, Guid mediaRootKey, int syncUser = -1)
+    {
+        _logger.LogInformation($"Variant Group Sync running. SKU: {importVariantGroup.Identifier}, SyncUser: {syncUser}");
 
+        using var backgroundScope = new BackgroundScope(_serverMessenger);
+
+        GetInitialData(parentKey);
+
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var allUmbracoCategories = GetAllUmbracoCategories();
+
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
+
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
+        var allEkomNodes = _contentService
+            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed)).ToList();
+
+        IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser);
+
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantGroupSync)).GetAwaiter().GetResult();
+
+        _logger.LogInformation("Product Variant Group finished: {SKU}", importVariantGroup.Identifier);
+    }
+    public void VariantSync(ImportVariant importVariant, Guid parentKey, Guid mediaRootKey, int syncUser = -1)
+    {
+        _logger.LogInformation($"Variant Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
+
+        using var backgroundScope = new BackgroundScope(_serverMessenger);
+
+        GetInitialData(parentKey);
+
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+        var allUmbracoCategories = GetAllUmbracoCategories();
+
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
+
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
+        var allEkomNodes = _contentService
+            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed)).ToList();
+
+        IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser, false);
+
+        OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.VariantSync)).GetAwaiter().GetResult();
+
+        _logger.LogInformation("Product Variant finished: {SKU}", importVariant.SKU);
+    }
     public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1)
     {
         _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
@@ -407,7 +458,7 @@ public class ImportService : IImportService
 
                         SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
 
-                        IterateVariantGroups(importProduct, productContent, allEkomNodes, allUmbracoMedia, syncUser);
+                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, syncUser);
                     }
                     else
                     {
@@ -424,14 +475,14 @@ public class ImportService : IImportService
 
     }
 
-    private void IterateVariantGroups(ImportProduct importProduct, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
+    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
     {
         var umbracoVariantGroupChildrenContent = allEkomNodes.Where(x => x.ParentId == productContent.Id).ToList();
 
         // Delete Variant Groups
 
         // Create a HashSet of identifiers from importVariantGroup for efficient lookups
-        var importVariantGroupsIdentifiers = new HashSet<string>(importProduct.VariantGroups.Select(x => x.Identifier));
+        var importVariantGroupsIdentifiers = new HashSet<string>(importVariantGroups.Select(x => x.Identifier));
 
         // Delete VariantGroup not present
         for (int i = umbracoVariantGroupChildrenContent.Count - 1; i >= 0; i--)
@@ -450,7 +501,7 @@ public class ImportService : IImportService
 
         }
 
-        foreach (var importVariantGroup in importProduct.VariantGroups)
+        foreach (var importVariantGroup in importVariantGroups)
         {
             var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create);
 
@@ -463,37 +514,41 @@ public class ImportService : IImportService
 
             SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser);
 
-            IterateVariants(importVariantGroup, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser);
+            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser);
         }
     }
 
-    private void IterateVariants(ImportVariantGroup importVariantGroup, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
+    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
     {
         var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
 
-        // Delete Variants
-
-        // Create a HashSet of identifiers from importVariantGroup for efficient lookups
-        var importVariantsIdentifiers = new HashSet<string>(importVariantGroup.Variants.Select(x => x.Identifier));
-
-        // Delete VariantGroup not present
-        for (int i = umbracoVariantsChildrenContent.Count - 1; i >= 0; i--)
+        if (delete)
         {
-            var umbracoVariant = umbracoVariantsChildrenContent[i];
+            // Delete Variants
 
-            var variantIdentifier = umbracoVariant.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-            if (!importVariantsIdentifiers.Contains(variantIdentifier))
+            // Create a HashSet of identifiers from importVariantGroup for efficient lookups
+            var importVariantsIdentifiers = new HashSet<string>(importVariants.Select(x => x.Identifier));
+
+            // Delete VariantGroup not present
+            for (int i = umbracoVariantsChildrenContent.Count - 1; i >= 0; i--)
             {
-                _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
+                var umbracoVariant = umbracoVariantsChildrenContent[i];
 
-                _contentService.Delete(umbracoVariant);
-                allEkomNodes.RemoveAt(i);
-                umbracoVariantsChildrenContent.RemoveAt(i);
+                var variantIdentifier = umbracoVariant.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                if (!importVariantsIdentifiers.Contains(variantIdentifier))
+                {
+                    _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
+
+                    _contentService.Delete(umbracoVariant);
+                    allEkomNodes.RemoveAt(i);
+                    umbracoVariantsChildrenContent.RemoveAt(i);
+                }
+
             }
-
         }
 
-        foreach (var importVariant in importVariantGroup.Variants)
+
+        foreach (var importVariant in importVariants)
         {
             var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create);
 
