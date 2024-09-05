@@ -147,28 +147,30 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
             {
                 var originalPrice = GetValue("price", Store.Alias);
-                decimal? orginalPriceValue = null;
+
+                if (string.IsNullOrEmpty(originalPrice))
+                {
+                    return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                }
+
+                if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+                {
+                    return new Price(_orgPrice, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                }
 
                 if (originalPrice.IsJson())
                 {
                     var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-
                     var val = orgPrice?.FirstOrDefault()?.Price;
 
-                    orginalPriceValue = val;
+                    if (val.HasValue)
+                    {
+                        return new Price(val.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                    }
                 }
 
-                if (!orginalPriceValue.HasValue && decimal.TryParse(originalPrice, out decimal _orgPrice))
-                {
-                    orginalPriceValue = _orgPrice;
-                }
-
-                if (orginalPriceValue.HasValue)
-                {
-                    return new Price(orginalPriceValue.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-                }
-
-                return 0;
+                // If no price is found, return a price of 0 with store settings
+                return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
             });
 
         }
