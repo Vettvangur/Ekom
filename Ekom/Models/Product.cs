@@ -6,6 +6,7 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Concurrent;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -22,6 +23,8 @@ public class Product : PerStoreNodeEntity, IProduct
     private IPerStoreCache<IVariantGroup> __variantGroupCache;
     private IPerStoreCache<IVariantGroup> _variantGroupCache =>
         __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
+
+    private readonly ConcurrentDictionary<string, object> _cache = new ConcurrentDictionary<string, object>();
 
     public virtual IDiscount ProductDiscount(string price = null)
     {
@@ -99,15 +102,18 @@ public class Product : PerStoreNodeEntity, IProduct
                     imageNodes = primaryVariantGroup.Variants.FirstOrDefault()?.Images.ToList();
                 }
 
-                if (imageNodes.Any())
+                if (imageNodes != null && imageNodes.Any())
                 {
                     return imageNodes;
                 }
             }
 
-            var _images = GetValue(Configuration.Instance.CustomImage);
+            return (IEnumerable<Image>)_cache.GetOrAdd("Images", key =>
+            {
+                var _images = GetValue(Configuration.Instance.CustomImage);
 
-            return _images.GetImages();
+                return _images.GetImages();
+            });
         }
     }
 
@@ -119,7 +125,7 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IVariantGroup PrimaryVariantGroup
+    public virtual IVariantGroup? PrimaryVariantGroup
     {
         get
         {
@@ -130,26 +136,29 @@ public class Product : PerStoreNodeEntity, IProduct
                 return null;
             }
 
-            if (Properties.ContainsKey("primaryVariantGroup"))
+            return (IVariantGroup)_cache.GetOrAdd("PrimaryVariantGroup", key =>
             {
-                var primaryGroupValue = GetValue("primaryVariantGroup");
-
-                if (!string.IsNullOrEmpty(primaryGroupValue))
+                if (Properties.ContainsKey("primaryVariantGroup"))
                 {
-                    var node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
+                    var primaryGroupValue = GetValue("primaryVariantGroup");
 
-                    if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
+                    if (!string.IsNullOrEmpty(primaryGroupValue))
                     {
-                        var variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
+                        var node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
 
-                        return variantGroup;
+                        if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
+                        {
+                            var variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
+
+                            return variantGroup;
+                        }
                     }
                 }
-            }
 
-            var primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
+                var primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
 
-            return primaryGroup;
+                return primaryGroup;
+            });
         }
     }
 
@@ -160,25 +169,25 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IVariant PrimaryVariant
+    public virtual IVariant? PrimaryVariant
     {
         get
         {
-            var primaryVariantGroup = PrimaryVariantGroup;
-
-            if (primaryVariantGroup == null)
+            return (IVariant)_cache.GetOrAdd("PrimaryVariant", key =>
             {
-                return null;
-            }
+                var primaryVariantGroup = PrimaryVariantGroup;
 
-            var primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(x => x.Available);
+                if (primaryVariantGroup == null)
+                {
+                    return null;
+                }
 
-            if (primaryVariant == null)
-            {
-                primaryVariant = primaryVariantGroup.Variants.FirstOrDefault();
-            }
+                // Try to find the first available variant, or fall back to any variant
+                var primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
+                                    ?? primaryVariantGroup.Variants.FirstOrDefault();
 
-            return primaryVariant;
+                return primaryVariant;
+            });
         }
     }
 
@@ -279,21 +288,32 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var prices = GetValue("price", Store.Alias)
-                .GetPriceValues(
-                    Store.Currencies,
-                    Vat,
-                    Store.VatIncludedInPrice,
-                    Store.Currency,
-                    Store.Alias,
-                    Path,
-                    Categories.Select(x => x.Id.ToString()).ToArray()
+            var categories = Categories.Select(x => x.Id.ToString()).ToArray();
+
+            var vatIncludedInPrice = Store.VatIncludedInPrice;
+            var vat = Vat;
+            var storeCurrency= Store.Currency;
+
+            var cacheKey = $"Prices_{vatIncludedInPrice}_{vat}_{storeCurrency.CurrencyValue}_{string.Join(",", categories)}_{Path}";
+
+            // Use GetOrAdd to cache store-specific prices
+            return (List<IPrice>)_cache.GetOrAdd(cacheKey.Hash(), key =>
+            {
+                var prices = GetValue("price", Store.Alias)
+                    .GetPriceValues(
+                        Store.Currencies,
+                        vat,
+                        vatIncludedInPrice,
+                        storeCurrency,
+                        Store.Alias,
+                        Path,
+                        categories
                     );
 
-            return prices;
+                return prices;
+            });
         }
     }
-    private IPrice _cachedOriginalPrice;
 
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -302,15 +322,13 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            if (_cachedOriginalPrice == null)
+            return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
             {
                 var priceJson = GetValue("price", Store.Alias);
                 var currencyValues = priceJson.GetCurrencyValues();
                 var value = currencyValues.Any() ? currencyValues.FirstOrDefault().Value : 0;
-                _cachedOriginalPrice = new Price(value, Store.Currency, Store.Vat, true);
-            }
-
-            return _cachedOriginalPrice;
+                return new Price(value, Store.Currency, Store.Vat, true);
+            });
         }
     }
 
@@ -318,17 +336,18 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            if (Properties.HasPropertyValue("vat", Store.Alias))
+            return (decimal)_cache.GetOrAdd("Vat", key =>
             {
-                var value = GetValue("vat", Store.Alias);
-
-                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    return _val / 100;
+                    var value = GetValue("vat", Store.Alias);
+                    if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                    {
+                        return _val / 100;
+                    }
                 }
-            }
-
-            return Store.Vat;
+                return Store.Vat;
+            });
         }
     }
 
@@ -354,13 +373,14 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var variantGroups = from pair in _variantGroupCache.Cache[Store.Alias]
-                let variantGroup = pair.Value
-                where variantGroup.ProductId == Id
-                orderby variantGroup.SortOrder
-                select variantGroup;
-
-            return variantGroups;
+            return (IEnumerable<IVariantGroup>)_cache.GetOrAdd("VariantGroups", key =>
+            {
+                return from pair in _variantGroupCache.Cache[Store.Alias]
+                       let variantGroup = pair.Value
+                       where variantGroup.ProductId == Id
+                       orderby variantGroup.SortOrder
+                       select variantGroup;
+            });
         }
     }
 
@@ -418,12 +438,12 @@ public class Product : PerStoreNodeEntity, IProduct
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url).ToList();
-        InvalidatePriceCache();
+        InvalidateCache();
     }
 
-    public void InvalidatePriceCache()
+    public void InvalidateCache()
     {
-        _cachedOriginalPrice = null;
+        _cache.Clear();
     }
 
     private void PopulateCategories()

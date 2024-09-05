@@ -1,6 +1,7 @@
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Murmur;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
@@ -176,6 +177,21 @@ namespace Ekom.Utilities
             }
 
             return prices;
+        }
+
+        internal static string Hash(this string input)
+        {
+            var murmur = MurmurHash.Create128();
+            var inputBytes = Encoding.UTF8.GetBytes(input);
+            var hashBytes = murmur.ComputeHash(inputBytes);
+
+            // Convert to hexadecimal string
+            var builder = new StringBuilder();
+            foreach (var b in hashBytes)
+            {
+                builder.Append(b.ToString("x2"));
+            }
+            return builder.ToString();
         }
 
         public static List<IPrice> GetPriceValues(

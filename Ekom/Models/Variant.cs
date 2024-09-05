@@ -267,7 +267,7 @@ namespace Ekom.Models
         /// <param name="store"></param>
         public Variant(UmbracoContent item, IStore store) : base(item, store)
         {
-
+            Product.InvalidateCache();
         }
     }
 }

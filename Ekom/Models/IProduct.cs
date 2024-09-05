@@ -91,13 +91,13 @@ namespace Ekom.Models
         /// therefore we allow to configure a default/primary variant group.
         /// If none is configured, we return the first possible item.
         /// </summary>
-        IVariantGroup PrimaryVariantGroup { get; }
+        IVariantGroup? PrimaryVariantGroup { get; }
 
         /// <summary>
         /// Select the Primary variant.
         /// First Variant in the primary variant group that is available, if none are available, return the first variant.
         /// </summary>
-        IVariant PrimaryVariant { get; }
+        IVariant? PrimaryVariant { get; }
 
         /// <summary>
         /// Product Stock Keeping Unit.
@@ -125,5 +125,7 @@ namespace Ekom.Models
         /// Get related products
         /// </summary>
         IEnumerable<IProduct> RelatedProducts(int count = 4);
+
+        void InvalidateCache();
     }
 }

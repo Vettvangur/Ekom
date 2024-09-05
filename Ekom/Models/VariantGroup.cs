@@ -123,6 +123,7 @@ namespace Ekom.Models
         public VariantGroup(UmbracoContent node, IStore store) : base(node, store)
         {
             storeAlias = store.Alias;
+            Product.InvalidateCache();
         }
     }
 }

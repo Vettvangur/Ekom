@@ -1034,6 +1034,11 @@
           "System.Threading.Tasks.Parallel": "4.3.0"
         }
       },
+      "murmurhash": {
+        "type": "Transitive",
+        "resolved": "1.0.3",
+        "contentHash": "56dW8jgSsvGs/tULn+r1UbS+o0rBvgMj+6Lta6uao4j8Kzx1kVxMf56LPKO070VqjWcGyMB4K4R6M4gVKutG9A=="
+      },
       "NCrontab": {
         "type": "Transitive",
         "resolved": "3.3.1",
@@ -2680,7 +2685,8 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[3.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
-          "linq2db": "[4.3.0, )"
+          "linq2db": "[4.3.0, )",
+          "murmurhash": "[1.0.3, )"
         }
       }
     }
