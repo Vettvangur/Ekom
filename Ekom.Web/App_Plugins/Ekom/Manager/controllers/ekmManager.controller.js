@@ -1,11 +1,11 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService) {
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
     $scope.result = {};
-
+    $scope.filterOpen = false;
 
     var currentDate = new Date(); // get the current date
     var januaryFirstCurrentYear = new Date(currentDate.getFullYear(), 0, 1); // get January 1st of the current year
@@ -27,8 +27,15 @@
     $scope.dateTo = dateTo;
     $scope.selectedStore = {};
     $scope.stores = [];
+    $scope.paymentProviders = [];
     $scope.mostsoldproducts = [];
+    $scope.paymentProvider = '';
     $scope.orderChangeStatus = '';
+
+    eventsService.on("elements.updated", function (_, args) {
+      $scope.paymentProvider = args.paymentProvider;
+      $scope.GetData();
+    });
 
     var path = $location.path(); // get the path
     var pathComponents = path.split('/'); // split the path into components
@@ -81,7 +88,13 @@
 
     $scope.GetData = function () {
 
-      resources.SearchOrders('?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&page=' + $scope.page + '&pagesize=20&query=' + $scope.query + '&store=' + $scope.store)
+      resources.SearchOrders('?start=' + $scope.dateFrom +
+        '&end=' + $scope.dateTo +
+        '&orderStatus=' + $scope.orderStatus +
+        '&page=' + $scope.page +
+        '&pagesize=20&query=' + $scope.query +
+        '&store=' + $scope.store +
+        '&paymentProvider=' + $scope.paymentProvider)
         .then(function (result) {
 
           $scope.loading = false;
@@ -129,11 +142,25 @@
             $scope.analytics();
           } else {
             $scope.GetData();
+            $scope.GetPaymentProviders();
           }
 
         }, function errorCallback(data) {
 
           notificationsService.error("Error", "Error on getting stores.");
+        })
+    };
+
+    $scope.GetPaymentProviders = function () {
+
+      resources.PaymentProviders($scope.store)
+        .then(function (result) {
+
+          $scope.paymentProviders = result.data;
+
+        }, function errorCallback(data) {
+
+          notificationsService.error("Error", "Error on getting payment providers.");
         })
     };
 
@@ -145,6 +172,29 @@
       // Join the path components back together and set the new path
       $location.path('/ekommanager/' + text);
     })
+
+    $scope.OpenFilter = function () {
+
+      $scope.filterOpen = true;
+
+      var model = {
+        paymentProviders: $scope.paymentProviders,
+      };
+
+      $scope.overlay = {
+        title: "Filter",
+        view: "/App_Plugins/Ekom/Manager/views/overlays/ekmFilter.html",
+        editModel: model,
+        show: true,
+        submit: function (submitModel) {
+
+        },
+        close: function (oldModel) {
+          $scope.CloseModal();
+        }
+      };
+
+    };
 
     $scope.ViewOrder = function (order) {
 
@@ -177,7 +227,7 @@
             editModel: model,
             show: true,
             submit: function (submitModel) {
-
+              $scope.CloseModal();
             },
             close: function (oldModel) {
               $scope.CloseModal();
@@ -194,6 +244,7 @@
     $scope.CloseModal = function () {
       $scope.overlay.show = false;
       $scope.overlay = null;
+      $scope.filterOpen = false;
       document.body.classList.remove('tabbing-active');
     };
 
@@ -437,6 +488,11 @@
         $scope.orderStatus = status;
       }
 
+      if (dropdownId === 'dropdownPaymentProvider') {
+        $scope.paymentProvider = status;
+      }
+
+
       if (dropdownId === 'dropdownOrderStatusList') {
         $scope.orderChangeStatus = status;
       }
@@ -459,6 +515,14 @@
 
       if (dropdownId === 'dropdownOrderStatusList') {
         $scope.orderChangeStatus = label;
+      }
+
+      if (dropdownId === 'dropdownPaymentProvider') {
+        const provider = $scope.paymentProviders.find(obj => obj.key === label);
+
+        if (provider) {
+          return provider.title;
+        }
       }
 
       return label;
@@ -519,21 +583,20 @@
     }
 
     angular.element(document).ready(function () {
-      // Init Orders
-      if ($scope.location === 'orders') {
-        $scope.GetStores();
-        $scope.GetStatusList();
-
-      }
-
-      // Init Analytics
-      if ($scope.location === 'analytics') {
-        setTimeout(function () {
+        // Init Orders
+        if ($scope.location === 'orders') {
           $scope.GetStores();
           $scope.GetStatusList();
-          $scope.DatePickers();
-        }, 250);
-      }
+        }
+
+        // Init Analytics
+        if ($scope.location === 'analytics') {
+          setTimeout(function () {
+            $scope.GetStores();
+            $scope.GetStatusList();
+            $scope.DatePickers();
+          }, 250);
+        }
     });
 
   }
@@ -544,6 +607,7 @@
     "Ekom.Manager.Resources",
     "$location",
     "$document",
+    'eventsService',
     controller
   ]);
 })();

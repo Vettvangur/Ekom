@@ -42,9 +42,14 @@
     width: 100% !important;
 }
 
-    .ekmManager .umb-overlay umb-button[alias=overlaySubmit] {
-        display: none;
-    }
+.ekmManager .umb-overlay umb-button[alias=overlaySubmit] {
+    display: none;
+}
+
+.ekmManager.ekmManager__filterOpen .umb-overlay umb-button[alias=overlaySubmit] {
+
+}
+
 
 .ekmManager .ekmManager__logo {
     height: 28px;
@@ -63,6 +68,11 @@
 
 .ekmManager .ekmManager__search {
     margin-left: auto;
+    display: flex;
+}
+
+.ekmManager .ekmManager__filterButton {
+  margin-right: 10px;
 }
 
 .ekmManager .ekmManager__filter input {

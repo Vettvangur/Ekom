@@ -26,6 +26,7 @@
       <Content Include="App_Plugins\Ekom\Manager\Lang\en-us.xml" />
       <Content Include="App_Plugins\Ekom\Manager\styles\ekmManagerStyles.css" />
       <Content Include="App_Plugins\Ekom\Manager\views\ekmManager.html" />
+      <Content Include="App_Plugins\Ekom\Manager\views\overlays\ekmFilter.html" />
       <Content Include="App_Plugins\Ekom\Manager\views\overlays\ekmOrder.html" />
       <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen-sprite.png" />
       <Content Include="App_Plugins\Ekom\Shared\Chosen\chosen-sprite@2x.png" />
@@ -46,6 +47,7 @@
       <None Include="App_Plugins\Ekom\ListView\ekmListview.controller.js" />
       <None Include="App_Plugins\Ekom\ListView\ekmListview.resources.js" />
       <None Include="App_Plugins\Ekom\ListView\package.manifest" />
+      <None Include="App_Plugins\Ekom\Manager\controllers\ekmFilter.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\controllers\ekmManager.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\libs\chart4.3.0.min.js" />
       <None Include="App_Plugins\Ekom\Manager\package.manifest" />

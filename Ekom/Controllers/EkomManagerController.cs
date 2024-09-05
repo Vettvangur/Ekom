@@ -45,9 +45,9 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("SearchOrders")]
     [UmbracoUserAuthorize]
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
     {
-        return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,page, pageSize);
+        return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,paymentProvider,page,pageSize);
     }
 
     [HttpGet]
@@ -103,7 +103,7 @@ public class EkomManagerController : ControllerBase
     {
         var chartData = new ChartData();
 
-        var orders =  await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999");
+        var orders =  await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999", "");
 
         var chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
 

@@ -60,9 +60,9 @@ namespace Ekom.Repositories
             }
         }
 
-        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string page, string pageSize)
+        public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
         {
-            string whereClause = GenerateWhereClause(orderStatus, query, store);
+            string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider);
             
             var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
             var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
@@ -99,7 +99,7 @@ namespace Ekom.Repositories
             return orderListData;
         }
 
-        private string GenerateWhereClause(string orderStatus, string query, string store)
+        private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider)
         {
             var whereClause = new StringBuilder();
 
@@ -115,6 +115,11 @@ namespace Ekom.Repositories
             if (!string.IsNullOrEmpty(query))
             {
                 whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
+            }
+
+            if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out Guid _paymentProvider))
+            {
+                whereClause.Append(" AND JSON_VALUE(OrderInfo, '$.PaymentProvider.Key') = '" + _paymentProvider + "'");
             }
 
             if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
