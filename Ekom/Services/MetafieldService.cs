@@ -346,8 +346,7 @@ namespace EkomCore.Services
             {
                 products = products.Where(product =>
                 {
-                    // Assume product.Price.OriginalValue is a decimal
-                    decimal productPrice = product.OriginalPrice.Value;
+                    decimal productPrice = product.PrimaryVariant != null ? product.PrimaryVariant.OriginalPrice.Value : product.OriginalPrice.Value;
 
                     // Filter based on priceFrom and priceTo values
                     bool isWithinRange = true;
