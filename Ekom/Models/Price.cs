@@ -70,6 +70,7 @@ namespace Ekom.Models
         {
         }
 
+
         /// <summary>
         /// ctor
         /// </summary>

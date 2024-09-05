@@ -6,6 +6,7 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Xml.Serialization;
 
@@ -324,16 +325,33 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
             {
-                var priceJson = GetValue("price", Store.Alias);
-                var currencyValues = priceJson.GetCurrencyValues();
-                var value = currencyValues.Any() ? currencyValues.FirstOrDefault()?.Value : 0;
-
-                if (!value.HasValue || value == 0 && PrimaryVariant != null)
+                var originalPrice = GetValue("price", Store.Alias);
+                decimal? orginalPriceValue = null;
+                if (originalPrice.IsJson())
                 {
-                    return PrimaryVariant.OriginalPrice;
+                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+
+                    var val = orgPrice?.FirstOrDefault()?.Price;
+
+                    orginalPriceValue = val;
                 }
 
-                return new Price(value, Store.Currency, Store.Vat, true);
+                if (!orginalPriceValue.HasValue && decimal.TryParse(originalPrice, out decimal _orgPrice))
+                {
+                    orginalPriceValue = _orgPrice;
+                }
+
+                if (orginalPriceValue.HasValue)
+                {
+                    if (orginalPriceValue.Value == 0 && PrimaryVariant != null)
+                    {
+                        return PrimaryVariant.OriginalPrice;
+                    }
+
+                    return new Price(orginalPriceValue.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                }
+
+                return 0;
             });
         }
     }

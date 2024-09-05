@@ -2,6 +2,7 @@ using Ekom.API;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Xml.Serialization;
 
@@ -145,13 +146,29 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
             {
-                var priceJson = GetValue("price", Store.Alias);
+                var originalPrice = GetValue("price", Store.Alias);
+                decimal? orginalPriceValue = null;
 
-                var currencyValues = priceJson.GetCurrencyValues();
+                if (originalPrice.IsJson())
+                {
+                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
 
-                var value = currencyValues.Any() ? currencyValues.FirstOrDefault()?.Value : 0;
+                    var val = orgPrice?.FirstOrDefault()?.Price;
 
-                return new Price(value, Store.Currency, Store.Vat, true);
+                    orginalPriceValue = val;
+                }
+
+                if (!orginalPriceValue.HasValue && decimal.TryParse(originalPrice, out decimal _orgPrice))
+                {
+                    orginalPriceValue = _orgPrice;
+                }
+
+                if (orginalPriceValue.HasValue)
+                {
+                    return new Price(orginalPriceValue.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                }
+
+                return 0;
             });
 
         }
