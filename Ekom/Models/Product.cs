@@ -326,7 +326,13 @@ public class Product : PerStoreNodeEntity, IProduct
             {
                 var priceJson = GetValue("price", Store.Alias);
                 var currencyValues = priceJson.GetCurrencyValues();
-                var value = currencyValues.Any() ? currencyValues.FirstOrDefault().Value : 0;
+                var value = currencyValues.Any() ? currencyValues.FirstOrDefault()?.Value : 0;
+
+                if (!value.HasValue || value == 0 && PrimaryVariant != null)
+                {
+                    return PrimaryVariant.OriginalPrice;
+                }
+
                 return new Price(value, Store.Currency, Store.Vat, true);
             });
         }

@@ -110,5 +110,7 @@ namespace Ekom.Models
         /// Variant images
         /// </summary>
         IEnumerable<Image> Images { get; }
+
+        void InvalidateCache();
     }
 }
