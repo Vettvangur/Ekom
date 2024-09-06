@@ -4,6 +4,7 @@ using Ekom.Authorization;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Repositories;
+using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +14,13 @@ namespace Ekom.Controllers;
 [CamelCaseJson]
 public class EkomManagerController : ControllerBase
 {
-    public EkomManagerController(ManagerRepository repo)
+    readonly ManagerRepository _repo;
+    readonly INodeService _nodeService;
+    public EkomManagerController(ManagerRepository repo, INodeService nodeService)
     {
         _repo = repo;
+        _nodeService = nodeService;
     }
-    readonly ManagerRepository _repo;
 
     [HttpGet]
     [Route("AllOrders")]

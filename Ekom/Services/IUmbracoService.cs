@@ -11,7 +11,7 @@ namespace Ekom.Services
         IEnumerable<string> GetContent(string guid);
         IEnumerable<UmbracoLanguage> GetLanguages();
         string DefaultLanguage();
-        object GetDataTypeByAlias(string contentTypeAlias, string propertyAlias);
+        object? GetDataTypeByAlias(string contentTypeAlias, string propertyAlias);
         object GetDataTypeById(Guid id);
         IEnumerable<object> GetNonEkomDataTypes();
         string UrlSegment(string value);

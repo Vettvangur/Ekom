@@ -61,7 +61,7 @@ public class EkomBackofficeApiController : ControllerBase
     [Route("DataType/{contentTypeAlias}/propertyAlias/{propertyAlias}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-    public object GetDataTypeByAlias(
+    public object? GetDataTypeByAlias(
         string contentTypeAlias,
         string propertyAlias)
         => _umbracoService.GetDataTypeByAlias(contentTypeAlias, propertyAlias);

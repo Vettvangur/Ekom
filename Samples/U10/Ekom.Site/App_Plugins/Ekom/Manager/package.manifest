@@ -7,6 +7,7 @@
         "~/App_Plugins/Ekom/Manager/libs/chart4.3.0.min.js",
         "~/App_Plugins/Ekom/Manager/controllers/ekmManager.controller.js",
         "~/App_Plugins/Ekom/Manager/controllers/ekmFilter.controller.js",
+        "~/App_Plugins/Ekom/Manager/controllers/ekmOrder.controller.js",
         "~/App_Plugins/Ekom/Manager/resources/ekmManager.resources.js"
     ]
 }

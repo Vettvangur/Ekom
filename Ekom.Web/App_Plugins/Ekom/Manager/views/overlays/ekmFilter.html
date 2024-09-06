@@ -12,7 +12,10 @@
           <span class="caret" aria-hidden="true"></span>
         </div>
         <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownPaymentProvider')">
-          <li ng-repeat="provider in model.editModel.paymentProviders">
+          <li>
+            <button type="button" ng-click="selectDropdown('dropdownPaymentProvider', '')">Select payment provider</button>
+          </li>
+          <li  ng-repeat="provider in filterPaymentProviders">
             <button type="button" ng-click="selectDropdown('dropdownPaymentProvider',provider.key)">{{ provider.title }}</button>
           </li>
         </ul>

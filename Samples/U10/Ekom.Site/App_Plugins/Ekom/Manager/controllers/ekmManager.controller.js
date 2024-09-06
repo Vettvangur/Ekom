@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
     $scope.result = {};
@@ -31,9 +31,17 @@
     $scope.mostsoldproducts = [];
     $scope.paymentProvider = '';
     $scope.orderChangeStatus = '';
+    $scope.sharedData = {};
+    $rootScope.sharedData = {};
 
-    eventsService.on("elements.updated", function (_, args) {
+    eventsService.on("filter.changed", function (_, args) {
       $scope.paymentProvider = args.paymentProvider;
+      $scope.sharedData.paymentProvider = args.paymentProvider;
+      $rootScope.sharedData.paymentProvider = args.paymentProvider;
+      $scope.GetData();
+    });
+
+    eventsService.on("order.changed", function (_, args) {
       $scope.GetData();
     });
 
@@ -93,8 +101,8 @@
         '&orderStatus=' + $scope.orderStatus +
         '&page=' + $scope.page +
         '&pagesize=20&query=' + $scope.query +
-        '&store=' + $scope.store +
-        '&paymentProvider=' + $scope.paymentProvider)
+        '&store=' + $scope.sharedData.store +
+        '&paymentProvider=' + $scope.sharedData.paymentProvider)
         .then(function (result) {
 
           $scope.loading = false;
@@ -121,7 +129,7 @@
         .then(function (result) {
 
           $scope.statusList = result.data;
-
+          $rootScope.sharedData.statusList = result.data;
         }, function errorCallback(data) {
 
           notificationsService.error("Error", "Error on getting status list.");
@@ -137,6 +145,9 @@
 
           $scope.store = $scope.stores[0].alias;
           $scope.labelDropdowns['dropdownStores'] = $scope.store
+
+          $scope.sharedData.store = $scope.store;
+          $rootScope.sharedData.store = $scope.store;
 
           if ($scope.location === 'analytics') {
             $scope.analytics();
@@ -157,7 +168,8 @@
         .then(function (result) {
 
           $scope.paymentProviders = result.data;
-
+          $rootScope.sharedData.paymentProviders = result.data;
+          $scope.sharedData.paymentProviders = $scope.paymentProviders;
         }, function errorCallback(data) {
 
           notificationsService.error("Error", "Error on getting payment providers.");
@@ -177,17 +189,12 @@
 
       $scope.filterOpen = true;
 
-      var model = {
-        paymentProviders: $scope.paymentProviders,
-      };
-
       $scope.overlay = {
         title: "Filter",
         view: "/App_Plugins/Ekom/Manager/views/overlays/ekmFilter.html",
-        editModel: model,
         show: true,
         submit: function (submitModel) {
-
+          $scope.CloseModal();
         },
         close: function (oldModel) {
           $scope.CloseModal();
@@ -220,6 +227,8 @@
           };
 
           console.log(model);
+
+          $rootScope.sharedData.orderStatus = orderInfo.orderStatus;
 
           $scope.overlay = {
             title: "View Order",
@@ -482,6 +491,8 @@
 
       if (dropdownId === 'dropdownStores') {
         $scope.store = status;
+
+        $scope.sharedData.store = $scope.store;
       }
 
       if (dropdownId === 'dropdownStatusList') {
@@ -490,8 +501,10 @@
 
       if (dropdownId === 'dropdownPaymentProvider') {
         $scope.paymentProvider = status;
-      }
 
+        $scope.sharedData.store = status;
+
+      }
 
       if (dropdownId === 'dropdownOrderStatusList') {
         $scope.orderChangeStatus = status;
@@ -562,25 +575,6 @@
       }
     });
 
-    var changeOrderStatusButton = document.getElementById('changeOrderStatusButton');
-
-    if (changeOrderStatusButton) {
-      changeOrderStatusButton.addEventListener('click', function () {
-
-        var notify = document.getElementById('notifyOrderStatus');
-
-        resources.ChangeOrderStatus('?orderId=' + changeOrderStatusButton.getAttribute('data-orderId') + '&orderStatus=' + $scope.orderChangeStatus + '&notify=' + notify.checked)
-          .then(function (result) {
-
-            notificationsService.success("Success", "Order status updated.");
-            $scope.GetData();
-
-          }, function errorCallback(data) {
-            notificationsService.error("Error", "Error updating order status.");
-          })
-
-      });
-    }
 
     angular.element(document).ready(function () {
         // Init Orders
@@ -608,6 +602,7 @@
     "$location",
     "$document",
     'eventsService',
+    '$rootScope',
     controller
   ]);
 })();

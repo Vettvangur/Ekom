@@ -1,25 +1,15 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
+
+    var sharedData = $rootScope.sharedData;
+
+    $scope.store = sharedData.store;
+    $scope.filterPaymentProviders = sharedData.paymentProviders;
 
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
-    $scope.paymentProvider = '';
-    $scope.paymentProviders = [];
-    $scope.store = '';
-    $scope.GetPaymentProviders = function () {
-
-      resources.PaymentProviders($scope.store)
-        .then(function (result) {
-
-          $scope.paymentProviders = result.data;
-
-        }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on getting payment providers.");
-        })
-    };
 
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -36,9 +26,10 @@
       $scope.labelDropdowns[dropdownId] = status;
 
       if (dropdownId === 'dropdownPaymentProvider') {
-        $scope.paymentProvider = status;
 
-        eventsService.emit("elements.updated", {
+        $rootScope.sharedData.paymentProvider = status;
+
+        eventsService.emit("filter.changed", {
           paymentProvider: status
         });
 
@@ -52,35 +43,20 @@
 
       label = label || defaultText;
 
-      if (dropdownId === 'dropdownPaymentProvider') {
-        const provider = $scope.paymentProviders.find(obj => obj.key === label);
+      if ($rootScope.sharedData.paymentProvider !== '') {
+        const provider = $scope.filterPaymentProviders.find(obj => obj.key === $rootScope.sharedData.paymentProvider);
 
         if (provider) {
-          return provider.title;
+
+          const providerName = provider.title;
+
+          return providerName;
         }
       }
 
       return label;
 
     };
-
-    $scope.GetStores = function () {
-
-      resources.Stores()
-        .then(function (result) {
-
-          $scope.stores = result.data;
-          $scope.store = $scope.stores[0].alias;
-
-          $scope.GetPaymentProviders();
-          
-        }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on getting stores.");
-        })
-    };
-
-    $scope.GetStores();
 
   }
 
@@ -91,6 +67,7 @@
     "$location",
     "$document",
     'eventsService',
+    '$rootScope',
     controller
   ]);
 })();

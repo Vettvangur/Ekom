@@ -95,7 +95,7 @@ class UmbracoService : IUmbracoService
         return FormatDataType(dtd);
     }
 
-    public object GetDataTypeByAlias(
+    public object? GetDataTypeByAlias(
         string contentTypeAlias,
         string propertyAlias)
     {
@@ -104,7 +104,7 @@ class UmbracoService : IUmbracoService
         }, TimeSpan.FromMinutes(60));
     }
 
-    private object GetDataTypeAliasValue(string contentTypeAlias,
+    private object? GetDataTypeAliasValue(string contentTypeAlias,
         string propertyAlias)
     {
         var ct = _contentTypeService.Get(contentTypeAlias);
@@ -113,7 +113,7 @@ class UmbracoService : IUmbracoService
 
         if (prop == null)
         {
-            throw new Exceptions.HttpResponseException(HttpStatusCode.NotFound);
+            return null;
         }
 
         var dtd = _dataTypeService.GetDataType(prop.DataTypeKey);

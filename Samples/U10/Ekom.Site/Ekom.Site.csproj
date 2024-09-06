@@ -47,6 +47,7 @@
       <None Include="App_Plugins\Ekom\ListView\ekmListview.controller.js" />
       <None Include="App_Plugins\Ekom\ListView\ekmListview.resources.js" />
       <None Include="App_Plugins\Ekom\ListView\package.manifest" />
+      <None Include="App_Plugins\Ekom\Manager\controllers\ekmOrder.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\controllers\ekmFilter.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\controllers\ekmManager.controller.js" />
       <None Include="App_Plugins\Ekom\Manager\libs\chart4.3.0.min.js" />
