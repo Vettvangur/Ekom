@@ -137,11 +137,17 @@ namespace Ekom.Services
         {
             var store = _storeSvc.GetStoreByAlias(storeAlias);
 
+            if (store == null)
+            {
+                throw new ArgumentNullException($"Could not find store with the alias {storeAlias}");
+            }
+
             return GetOrderAsync(store);
         }
 
         public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
+
             if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
             {
                 var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);

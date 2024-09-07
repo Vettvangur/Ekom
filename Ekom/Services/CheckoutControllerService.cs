@@ -76,7 +76,10 @@ namespace Ekom.Services
             // ToDo: Lock order throughout request
             var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
 
-            ArgumentNullException.ThrowIfNull(order);
+            if (order == null)
+            {
+                throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
+            }
 
             var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
