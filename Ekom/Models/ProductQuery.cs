@@ -52,5 +52,6 @@ namespace Ekom.Models
         public Dictionary<string, List<string>> PropertyFilters { get; set; }
         public Dictionary<string, string> PropertySelectors { get; set; }
         public OrderBy OrderBy { get; set; } = OrderBy.TitleAsc;
+        public bool FilterOutZeroPriceProducts { get; set; } = false;
     }
 }

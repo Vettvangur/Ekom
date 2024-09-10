@@ -330,16 +330,21 @@ public class Product : PerStoreNodeEntity, IProduct
                     return PrimaryVariant.OriginalPrice;
                 }
 
+                // Store frequently accessed values to avoid redundant access
+                var storeCurrency = Store.Currency;
+                var storeVat = Store.Vat;
+                var storeVatIncluded = Store.VatIncludedInPrice;
+
                 var originalPrice = GetValue("price", Store.Alias);
 
                 if (string.IsNullOrEmpty(originalPrice))
                 {
-                    return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                    return new Price(0, storeCurrency, storeVat, storeVatIncluded);
                 }
 
                 if (decimal.TryParse(originalPrice, out decimal _orgPrice))
                 {
-                    return new Price(_orgPrice, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                    return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
                 }
 
                 if (originalPrice.IsJson())
@@ -349,12 +354,12 @@ public class Product : PerStoreNodeEntity, IProduct
 
                     if (val.HasValue)
                     {
-                        return new Price(val.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                        return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
                     }
                 }
 
                 // If no price is found, return a price of 0 with store settings
-                return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+                return new Price(0, storeCurrency, storeVat, storeVatIncluded);
             });
         }
     }

@@ -70,6 +70,11 @@ namespace Ekom.Models
 
             ProductCount = products.Count();
 
+            if (query.FilterOutZeroPriceProducts)
+            {
+                products = products.Where(x => x.OriginalPrice.Value <= 0);
+            }
+
             if (query?.OrderBy != Utilities.OrderBy.NoOrder)
             {
                 products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
