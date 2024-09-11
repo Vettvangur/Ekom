@@ -72,7 +72,7 @@ namespace Ekom.Models
 
             if (query.FilterOutZeroPriceProducts)
             {
-                products = products.Where(x => x.OriginalPrice.Value <= 0);
+                products = products.Where(x => x.OriginalPrice.Value > 0);
             }
 
             if (query?.OrderBy != Utilities.OrderBy.NoOrder)
