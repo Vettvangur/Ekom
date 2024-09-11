@@ -13,7 +13,7 @@ namespace Ekom.Models
             Filters = Enumerable.Empty<MetafieldGrouped>();
         }
 
-        public ProductResponse(IEnumerable<IProduct> products, ProductQuery query)
+        public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null)
         {
 
             Products = products;
@@ -70,7 +70,7 @@ namespace Ekom.Models
 
             ProductCount = products.Count();
 
-            if (query.FilterOutZeroPriceProducts)
+            if (query != null && query.FilterOutZeroPriceProducts)
             {
                 products = products.Where(x => x.OriginalPrice.Value > 0);
             }
