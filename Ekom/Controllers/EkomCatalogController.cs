@@ -94,7 +94,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("product/route")]
-    public IProduct GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
+    public IProduct? GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
     {
         try
         {

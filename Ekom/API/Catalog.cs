@@ -77,25 +77,32 @@ namespace Ekom.API
         /// Get product by Route
         /// </summary>
         /// <returns></returns>
-        public IProduct GetProductByRoute(string route, string storeAlias = null)
+        public IProduct? GetProductByRoute(string route, string? storeAlias = null)
         {
-            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-            if (store != null)
+            if (string.IsNullOrWhiteSpace(route))
             {
-                if (string.IsNullOrEmpty(route))
-                {
-                    throw new ArgumentException(nameof(route));
-                }
-
-                if (!_productCache.Cache.ContainsKey(store.Alias))
-                {
-                    return null;
-                }
-                var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Urls.Contains(route)).Value;
-
-                return product;
+                throw new ArgumentException("Route cannot be null or empty.", nameof(route));
             }
+
+            // Get store based on alias or from cache
+            var store = !string.IsNullOrWhiteSpace(storeAlias)
+                        ? _storeSvc.GetStoreByAlias(storeAlias)
+                        : _storeSvc.GetStoreFromCache();
+
+            if (store is null)
+            {
+                _logger.LogError("Store not found. Alias: {StoreAlias}", storeAlias ?? "default");
+                return null;
+            }
+
+            // Try to get the store's products from cache
+            if (_productCache.Cache.TryGetValue(store.Alias, out var productDictionary))
+            {
+                // Return the first product matching the given route, if it exists
+                return productDictionary.Values.FirstOrDefault(p => p.Urls.Contains(route));
+            }
+
+            _logger.LogError("Product cache does not contain store: {StoreAlias}", store.Alias);
 
             return null;
         }
