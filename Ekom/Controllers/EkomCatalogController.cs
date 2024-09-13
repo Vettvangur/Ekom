@@ -94,11 +94,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("product/route")]
-    public IProduct? GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
+    public IActionResult? GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProductByRoute(route, storeAlias);
+            var product = API.Catalog.Instance.GetProductByRoute(route, storeAlias);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -304,11 +311,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("category/route")]
-    public ICategory GetCategoryByRoute([FromQuery] string route, [FromQuery] string? storeAlias = null)
+    public IActionResult GetCategoryByRoute([FromQuery] string route, [FromQuery] string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetCategoryByRoute(route, storeAlias);
+            var category = API.Catalog.Instance.GetCategoryByRoute(route, storeAlias);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {

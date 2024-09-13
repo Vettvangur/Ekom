@@ -1,6 +1,7 @@
 using Ekom.Cache;
 using Ekom.Models;
 using Ekom.Services;
+using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -98,8 +99,8 @@ namespace Ekom.API
             // Try to get the store's products from cache
             if (_productCache.Cache.TryGetValue(store.Alias, out var productDictionary))
             {
-                // Return the first product matching the given route, if it exists
-                return productDictionary.Values.FirstOrDefault(p => p.Urls.Contains(route));
+                return productDictionary.Values
+                    .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
             }
 
             _logger.LogError("Product cache does not contain store: {StoreAlias}", store.Alias);
@@ -476,26 +477,32 @@ namespace Ekom.API
         /// Get category by Route
         /// </summary>
         /// <returns></returns>
-        public ICategory GetCategoryByRoute(string route, string storeAlias = null)
+        public ICategory? GetCategoryByRoute(string route, string? storeAlias = null)
         {
-            var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-            if (store != null)
+            if (string.IsNullOrWhiteSpace(route))
             {
-                if (string.IsNullOrEmpty(route))
-                {
-                    throw new ArgumentException(nameof(route));
-                }
-
-                if (!_categoryCache.Cache.ContainsKey(store.Alias))
-                {
-                    return null;
-                }
-
-                var category = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Urls.Contains(route)).Value;
-
-                return category;
+                throw new ArgumentException("Route cannot be null or empty.", nameof(route));
             }
+
+            // Get store based on alias or from cache
+            var store = !string.IsNullOrWhiteSpace(storeAlias)
+                        ? _storeSvc.GetStoreByAlias(storeAlias)
+                        : _storeSvc.GetStoreFromCache();
+
+            if (store is null)
+            {
+                _logger.LogError("Store not found. Alias: {StoreAlias}", storeAlias ?? "default");
+                return null;
+            }
+
+            // Try to get the store's category from cache
+            if (_categoryCache.Cache.TryGetValue(store.Alias, out var categoryDictionary))
+            {
+                return categoryDictionary.Values
+                    .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            _logger.LogError("Category cache does not contain store: {StoreAlias}", store.Alias);
 
             return null;
         }

@@ -36,6 +36,35 @@ namespace Ekom.Utilities
 
             return value;
         }
+        public static string EnsureStartsAndEndsWithChar(this string input, char requiredChar)
+        {
+            if (!input.StartsWith(requiredChar))
+            {
+                return requiredChar + input;
+            }
+            if (!input.EndsWith(requiredChar))
+            {
+                return input + requiredChar;
+            }
+            return input;
+        }
+        public static string EnsureStartsWithChar(this string input, char requiredChar)
+        {
+            if (!input.StartsWith(requiredChar))
+            {
+                return requiredChar + input;
+            }
+            return input;
+        }
+
+        public static string EnsureEndsWithChar(this string input, char requiredChar)
+        {
+            if (!input.EndsWith(requiredChar))
+            {
+                return input + requiredChar;
+            }
+            return input;
+        }
 
         /// <summary>
         /// Coerces a string to a boolean value, case insensitive and also registers true for 1 and y
