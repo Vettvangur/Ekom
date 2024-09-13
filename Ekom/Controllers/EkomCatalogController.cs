@@ -33,14 +33,22 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Id
     /// </summary>
     /// <param name="Id">Guid Key of product</param>
+    /// <param name="storeAlias">Store Alias</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/{id:Guid}")]
-    public IProduct GetProduct(Guid Id, string? storeAlias = null)
+    public IActionResult GetProduct(Guid Id, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProduct(Id, storeAlias);
+            var product = API.Catalog.Instance.GetProduct(Id, storeAlias);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -52,14 +60,22 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Id
     /// </summary>
     /// <param name="Id">Int Id of product</param>
+    /// <param name="storeAlias">Store Alias</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/{id:Int}")]
-    public IProduct GetProduct(int Id, string? storeAlias = null)
+    public IActionResult GetProduct(int Id, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProduct(Id, storeAlias);
+            var product = API.Catalog.Instance.GetProduct(Id, storeAlias);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -71,15 +87,23 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Sku
     /// </summary>
     /// <param name="sku">Sku of product</param>
+    /// <param name="storeAlias">Store Alias</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/sku/{sku}")]
-    public IProduct GetProduct(string sku, string? storeAlias = null)
+    public IActionResult GetProduct(string sku, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProduct(sku, storeAlias);
-        }
+            var product = API.Catalog.Instance.GetProduct(sku, storeAlias);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
+        } 
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
             throw ExceptionHandler.Handle<HttpResponseException>(ex);
@@ -94,7 +118,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("product/route")]
-    public IActionResult? GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
+    public IActionResult GetProductByRoute([FromQuery] string route,[FromQuery] string? storeAlias = null)
     {
         try
         {
@@ -114,13 +138,36 @@ public class EkomCatalogController : ControllerBase
     }
 
     /// <summary>
+    /// Get Product By Route
+    /// </summary>
+    /// <param name="route">Route</param>
+    /// <param name="query">Product query</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("productsrecursive/route")]
+    public IActionResult GetProductsRecursiveByRoute([FromQuery] string route, [FromBody] ProductQuery? query = null)
+    {
+        try
+        {
+            var products = API.Catalog.Instance.GetProductsRescursiveByRoute(route, query);
+
+            return Ok(products);
+        }
+        catch (Exception ex) when (!(ex is HttpResponseException))
+        {
+            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+        }
+    }
+
+    /// <summary>
     /// Get Child Products Of A Category
     /// </summary>
     /// <param name="categoryId">Id of category</param>
+    /// <param name="query">Product query</param>
     /// <returns></returns>
     [HttpPost]
     [Route("products/{categoryId:Int}")]
-    public ProductResponse GetProducts(int categoryId, [FromBody] ProductQuery query = null)
+    public IActionResult GetProducts(int categoryId, [FromBody] ProductQuery? query = null)
     {
         try
         {
@@ -128,12 +175,12 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
             _reqHelper.SetEkmRequest(category);
 
-            return category.Products(query);
+            return Ok(category.Products(query));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -149,7 +196,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("products/{categoryKey:Guid}")]
-    public ProductResponse GetProducts(Guid categoryKey, [FromBody] ProductQuery query = null)
+    public IActionResult GetProducts(Guid categoryKey, [FromBody] ProductQuery? query = null)
     {
         try
         {
@@ -157,12 +204,12 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
             _reqHelper.SetEkmRequest(category);
 
-            return category.Products(query);
+            return Ok(category.Products(query));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -177,11 +224,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("productsbyids")]
-    public ProductResponse GetProductsByIds([FromBody] ProductQuery query = null)
+    public IActionResult GetProductsByIds([FromBody] ProductQuery? query = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProductsByIds(query);
+            var productsResponse = API.Catalog.Instance.GetProductsByIds(query);
+
+            return Ok(productsResponse);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -196,11 +245,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("productsbykeys")]
-    public ProductResponse GetProductsByKeys([FromBody] ProductQuery query = null)
+    public IActionResult GetProductsByKeys([FromBody] ProductQuery? query = null)
     {
         try
         {
-            return API.Catalog.Instance.GetProductsByKeys(query);
+            var productsResponse = API.Catalog.Instance.GetProductsByKeys(query);
+
+            return Ok(productsResponse);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -212,10 +263,11 @@ public class EkomCatalogController : ControllerBase
     /// Get Recursive Products Of A Category
     /// </summary>
     /// <param name="categoryId">Id of category</param>
+    /// <param name="query">Product Query</param>
     /// <returns></returns>
     [HttpPost]
     [Route("productsrecursive/{categoryId:Int}")]
-    public ProductResponse GetProductsRecursive(int categoryId, [FromBody] ProductQuery query = null)
+    public IActionResult GetProductsRecursive(int categoryId, [FromBody] ProductQuery? query = null)
     {
         try
         {
@@ -223,12 +275,12 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
             _reqHelper.SetEkmRequest(category);
 
-            return category.ProductsRecursive(query);
+            return Ok(category.ProductsRecursive(query));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -239,11 +291,12 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Recursive Products Of A Category
     /// </summary>
-    /// <param name="categoryKey">Key of category</param>
+    /// <param name="categoryKey">Key of category</param
+    /// <param name="query">Product Query</param>
     /// <returns></returns>
     [HttpPost]
     [Route("productsrecursive/{categoryKey:Guid}")]
-    public ProductResponse GetProductsRecursive(Guid categoryKey, [FromBody] ProductQuery query = null)
+    public IActionResult GetProductsRecursive(Guid categoryKey, [FromBody] ProductQuery? query = null)
     {
         try
         {
@@ -251,12 +304,12 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
             _reqHelper.SetEkmRequest(category);
 
-            return category.ProductsRecursive(query);
+            return Ok(category.ProductsRecursive(query));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -268,14 +321,23 @@ public class EkomCatalogController : ControllerBase
     /// Get Category By Id
     /// </summary>
     /// <param name="Id">Int Id of category</param>
+    /// <param name="storeAlias">Store Alias</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("category/{id:Int}")]
-    public ICategory GetCategory(int Id, string? storeAlias = null)
+    public IActionResult GetCategory(int Id, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetCategory(Id, storeAlias);
+            var category = API.Catalog.Instance.GetCategory(Id, storeAlias);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category);
+
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -291,11 +353,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("category/{id:Guid}")]
-    public ICategory GetCategory(Guid Id, string? storeAlias = null)
+    public IActionResult GetCategory(Guid Id, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetCategory(Id.ToString(), storeAlias);
+            var category = API.Catalog.Instance.GetCategory(Id.ToString(), storeAlias);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -338,11 +407,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("categoriesbykeys")]
-    public IEnumerable<ICategory> GetCategoriesByKeys([FromBody]Guid[] keys, string? storeAlias = null)
+    public IActionResult GetCategoriesByKeys([FromBody]Guid[] keys, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetCategoriesByKeys(keys, storeAlias);
+            var categories = API.Catalog.Instance.GetCategoriesByKeys(keys, storeAlias);
+
+            return Ok(categories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -358,11 +429,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("categoriesbyids")]
-    public IEnumerable<ICategory> GetCategoriesByIds([FromBody] int[] ids, string? storeAlias = null)
+    public IActionResult GetCategoriesByIds([FromBody] int[] ids, string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetCategoriesByIds(ids, storeAlias);
+            var categories = API.Catalog.Instance.GetCategoriesByIds(ids, storeAlias);
+
+            return Ok(categories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -376,11 +449,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("rootcategories")]
-    public IEnumerable<ICategory> GetRootCategories(string? storeAlias = null)
+    public IActionResult GetRootCategories(string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetRootCategories(storeAlias);
+            var categories = API.Catalog.Instance.GetRootCategories(storeAlias);
+
+            return Ok(categories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -394,11 +469,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("allcategories")]
-    public IEnumerable<ICategory> GetAllCategories(string? storeAlias = null)
+    public IActionResult GetAllCategories(string? storeAlias = null)
     {
         try
         {
-            return API.Catalog.Instance.GetAllCategories(storeAlias);
+            var categories = API.Catalog.Instance.GetAllCategories(storeAlias);
+
+            return Ok(categories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -412,13 +489,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategories/{id:Int}")]
-    public IEnumerable<ICategory> GetSubCategories(int id, string? storeAlias = null)
+    public IActionResult GetSubCategories(int id, string? storeAlias = null)
     {
         try
         {
             var category = API.Catalog.Instance.GetCategory(id, storeAlias);
 
-            return category.SubCategories;
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category.SubCategories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -432,13 +514,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategories/{key:Guid}")]
-    public IEnumerable<ICategory> GetSubCategories(Guid key, string? storeAlias = null)
+    public IActionResult GetSubCategories(Guid key, string? storeAlias = null)
     {
         try
         {
             var category = API.Catalog.Instance.GetCategory(key, storeAlias);
 
-            return category.SubCategories;
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category.SubCategories);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -453,7 +540,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategoriesrecursive/{id:Int}")]
-    public IEnumerable<ICategory> GetSubCategoriesRecurisve(int id, string? storeAlias = null)
+    public IActionResult GetSubCategoriesRecurisve(int id, string? storeAlias = null)
     {
         try
         {
@@ -461,11 +548,10 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
-
-            return category.SubCategoriesRecursive;
+            return Ok(category.SubCategoriesRecursive);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -479,7 +565,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategoriesrecursive/{key:Guid}")]
-    public IEnumerable<ICategory> GetSubCategoriesRecurisve(Guid key, string? storeAlias = null)
+    public IActionResult GetSubCategoriesRecurisve(Guid key, string? storeAlias = null)
     {
         try
         {
@@ -487,11 +573,10 @@ public class EkomCatalogController : ControllerBase
 
             if (category == null)
             {
-                throw new ArgumentNullException(nameof(category));
+                return NotFound();
             }
 
-
-            return category.SubCategoriesRecursive;
+            return Ok(category.SubCategoriesRecursive);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -506,13 +591,18 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoryfilters/{id:Int}")]
-    public IEnumerable<MetafieldGrouped> GetCategoryFilters(int id, string? storeAlias = null)
+    public IActionResult GetCategoryFilters(int id, string? storeAlias = null)
     {
         try
         {
             var category = API.Catalog.Instance.GetCategory(id, storeAlias);
 
-            return category.Filters();
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category.Filters());
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -527,13 +617,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproducts/{id:Guid}/{count:Int}")]
-    public IEnumerable<IProduct> GetRelatedProducts(Guid id, int count = 4, string? storeAlias = null)
+    public IActionResult GetRelatedProducts(Guid id, int count = 4, string? storeAlias = null)
     {
         try
         {
             var products = API.Catalog.Instance.GetRelatedProducts(id, count, storeAlias);
 
-            return products;
+            return Ok(products);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -547,7 +637,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproducts")]
-    public IEnumerable<IProduct> GetRelatedProducts(IEnumerable<Guid> ids, int count = 4, string? storeAlias = null)
+    public IActionResult GetRelatedProducts(IEnumerable<Guid> ids, int count = 4, string? storeAlias = null)
     {
         try
         {
@@ -559,7 +649,7 @@ public class EkomCatalogController : ControllerBase
                 relatedProducts.AddRange(products);
             }
 
-            return relatedProducts.Take(count);
+            return Ok(relatedProducts.Take(count));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -573,13 +663,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>a
     [HttpPost, HttpGet]
     [Route("relatedproductsbysku/{sku}/{count:Int}")]
-    public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4, string? storeAlias = null)
+    public IActionResult GetRelatedProductsBySku(string sku, int count = 4, string? storeAlias = null)
     {
         try
         {
             var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count, storeAlias);
 
-            return products;
+            return Ok(products);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -593,7 +683,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproductsbyskus")]
-    public IEnumerable<IProduct> GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4, string? storeAlias = null)
+    public IActionResult GetRelatedProductsBySku(IEnumerable<string> skus, int count = 4, string? storeAlias = null)
     {
         try
         {
@@ -605,7 +695,7 @@ public class EkomCatalogController : ControllerBase
                 relatedProducts.AddRange(products);
             }
 
-            return relatedProducts.Take(count);
+            return Ok(relatedProducts.Take(count));
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
@@ -619,13 +709,13 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("productsearch")]
-    public ProductResponse ProductSearch([FromBody] SearchRequest req)
+    public IActionResult ProductSearch([FromBody] SearchRequest req)
     {
         try
         {                
             var products = API.Catalog.Instance.ProductSearch(req);
 
-            return products;
+            return Ok(products);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {

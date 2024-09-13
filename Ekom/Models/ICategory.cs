@@ -9,12 +9,12 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// All direct child products of category. (No descendants)
     /// </summary>
-    ProductResponse Products(ProductQuery query = null);
+    ProductResponse Products(ProductQuery? query = null);
 
     /// <summary>
     /// All descendant products of category, this includes child products of sub-categories
     /// </summary>
-    ProductResponse ProductsRecursive(ProductQuery query = null);
+    ProductResponse ProductsRecursive(ProductQuery? query = null);
 
     /// <summary>
     /// Our eldest ancestor category

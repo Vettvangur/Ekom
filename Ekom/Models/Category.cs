@@ -116,7 +116,7 @@ namespace Ekom.Models
         /// <summary>
         /// All direct child products of category. (No descendants)
         /// </summary>
-        public ProductResponse Products(ProductQuery query = null)
+        public ProductResponse Products(ProductQuery? query = null)
         {
 
             var products = _productCache.Cache[Store.Alias]
@@ -130,7 +130,7 @@ namespace Ekom.Models
         /// <summary>
         /// All descendant products of category, this includes child products of sub-categories
         /// </summary>
-        public ProductResponse ProductsRecursive(ProductQuery query = null)
+        public ProductResponse ProductsRecursive(ProductQuery? query = null)
         {
             var categories = _categoryCache.Cache[Store.Alias]
                 .Where(x => x.Value.Level >= Level &&
