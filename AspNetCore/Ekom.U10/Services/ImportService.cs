@@ -6,7 +6,6 @@ using Ekom.Umb.Utilities;
 using Ekom.Utilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using StackExchange.Profiling.Helpers;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -46,6 +45,11 @@ public class ImportService : IImportService
     private List<ImportProduct> productsSaved;
     private List<ImportVariant> variantsSaved;
     private List<ImportVariantGroup> variantGroupsSaved;
+
+    private int categoriesDeleted = 0;
+    private int productDeleted = 0;
+    private int variantDeleted = 0;
+    private int variantGroupDeleted = 0;
 
     private static readonly object _syncLock = new object();
     private static bool _isFullSyncRunning = false;
@@ -119,7 +123,9 @@ public class ImportService : IImportService
 
             stopwatchTotal.Stop();
 
-            _logger.LogInformation("Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
+            _logger.LogInformation(
+                "Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}", 
+                (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
         }
         finally
         {
@@ -159,7 +165,9 @@ public class ImportService : IImportService
 
         stopwatch.Stop();
 
-        _logger.LogInformation("Category Sync took {Duration} seconds. Category {categoryKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount}", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoryKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count);
+        _logger.LogInformation(
+            "Category Sync took {Duration} seconds. Category {categoryKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
+            (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoryKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
     }
 
     public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
@@ -324,7 +332,8 @@ public class ImportService : IImportService
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
                     _contentService.Delete(umbracoCategory);
-                    allUmbracoCategories.RemoveAt(i); // Remove from list
+                    allUmbracoCategories.RemoveAt(i);
+                    categoriesDeleted++;
                 }
             }
         }
@@ -396,6 +405,7 @@ public class ImportService : IImportService
                     {
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                         _contentService.Delete(umbracoProduct);
+                        productDeleted++;
                         allUmbracoProducts.RemoveAt(i);
                         continue;
                     }
@@ -415,6 +425,7 @@ public class ImportService : IImportService
                             {
                                 _logger.LogInformation($"Product deleted, product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                                 _contentService.Delete(umbracoProduct);
+                                productDeleted++;
                                 allUmbracoProducts.RemoveAt(i);
                             }
 
@@ -497,6 +508,7 @@ public class ImportService : IImportService
                 _contentService.Delete(umbracoVariantGroup);
                 allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
+                variantGroupDeleted++;
             }
 
         }
@@ -542,6 +554,7 @@ public class ImportService : IImportService
                     _contentService.Delete(umbracoVariant);
                     allEkomNodes.RemoveAt(i);
                     umbracoVariantsChildrenContent.RemoveAt(i);
+                    variantDeleted++;
                 }
 
             }
