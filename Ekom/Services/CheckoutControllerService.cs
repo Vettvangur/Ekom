@@ -482,9 +482,7 @@ namespace Ekom.Services
                     
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-                    var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
-                    await checkoutSvc.CompleteAsync(order.UniqueId);
 
                     var eventsArgs = new PayEventArgs
                     {
@@ -501,6 +499,10 @@ namespace Ekom.Services
                     CheckoutEvents.OnPay(this, eventsArgs);
 
                     errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
+
+                    var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+
+                    await checkoutSvc.CompleteAsync(order.UniqueId);
 
                     return new CheckoutResponse
                     {
