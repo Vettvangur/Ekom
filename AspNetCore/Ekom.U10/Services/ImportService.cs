@@ -4,6 +4,7 @@ using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -625,17 +626,7 @@ public class ImportService : IImportService
                 categoryContent.TemplateId = importCategory.TemplateId.Value;
             }
 
-            using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-            {
-                if (categoryContent.Published || create)
-                {
-                    _contentService.SaveAndPublish(categoryContent, userId: syncUser);
-                }
-                else
-                {
-                    _contentService.Save(categoryContent, userId: syncUser);
-                }
-            }
+            SaveEvent(categoryContent, importCategory.SaveEvent, syncUser, create);
 
             categoriesSaved.Add(importCategory);
 
@@ -742,17 +733,7 @@ public class ImportService : IImportService
                 productContent.TemplateId = importProduct.TemplateId.Value;
             }
 
-            using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-            {
-                if (productContent.Published || create)
-                {
-                    _contentService.SaveAndPublish(productContent, userId: syncUser);
-                }
-                else
-                {
-                    _contentService.Save(productContent, userId: syncUser);
-                }
-            }
+            SaveEvent(productContent, importProduct.SaveEvent, syncUser, create);
 
             productsSaved.Add(importProduct);
 
@@ -790,18 +771,7 @@ public class ImportService : IImportService
 
         variantGroupContent.Name = importVariantGroup.NodeName;
 
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            if (variantGroupContent.Published || create)
-            {
-                _contentService.SaveAndPublish(variantGroupContent, userId: syncUser);
-            }
-            else
-            {
-                _contentService.Save(variantGroupContent, userId: syncUser);
-            }
-
-        }
+        SaveEvent(variantGroupContent, importVariantGroup.SaveEvent, syncUser, create);
 
         variantGroupsSaved.Add(importVariantGroup);
     }
@@ -881,17 +851,7 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            if (variantContent.Published || create)
-            {
-                _contentService.SaveAndPublish(variantContent, userId: syncUser);
-            }
-            else
-            {
-                _contentService.Save(variantContent, userId: syncUser);
-            }
-        }
+        SaveEvent(variantContent, importVariant.SaveEvent, syncUser, create);
 
         variantsSaved.Add(importVariant);
     }
@@ -992,6 +952,29 @@ public class ImportService : IImportService
         if (!imagesUdi.Contains(udi))
         {
             imagesUdi.Add(udi);
+        }
+    }
+
+    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, int syncUser, bool create)
+    {
+        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+        {
+            if (saveEvent == ImportSaveEntEnum.SavePublish && (content.Published || create))
+            {
+                _contentService.SaveAndPublish(content, userId: syncUser);
+            }
+            else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
+            {
+                _contentService.Save(content, userId: syncUser);
+            }
+            else if (saveEvent == ImportSaveEntEnum.Unpublish)
+            {
+                _contentService.Unpublish(content, userId: syncUser);
+            }
+            else
+            {
+                _contentService.Save(content, userId: syncUser);
+            }
         }
     }
 
