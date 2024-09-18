@@ -875,7 +875,7 @@ namespace Ekom.Services
         {
             try
             {
-                var linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key);
+                var linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
 
                 foreach (var linkedLine in linkedLines)
                 {
@@ -929,7 +929,7 @@ namespace Ekom.Services
                 {
                     var copyOfOrderlines = orderLines.ToList();
 
-                    foreach (var orderline in orderLines)
+                    foreach (var orderline in copyOfOrderlines)
                     {
                         RemoveOrderLine(orderInfo, orderline as OrderLine);
                     }
