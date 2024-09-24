@@ -923,18 +923,16 @@ namespace Ekom.Services
             }
             try
             {
-                var orderLines = orderInfo.OrderLines;
+                var orderLines = orderInfo.OrderLines.ToList();
 
                 if (orderLines != null && orderLines.Any())
                 {
-                    var copyOfOrderlines = orderLines.ToList();
+                    orderInfo.orderLines.Clear();
 
-                    foreach (var orderline in copyOfOrderlines)
-                    {
-                        RemoveOrderLine(orderInfo, orderline as OrderLine);
-                    }
-
-                    foreach (var orderline in copyOfOrderlines)
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        .ConfigureAwait(false);
+                    
+                    foreach (var orderline in orderLines)
                     {
                         orderInfo = await AddOrderLineAsync(orderline.ProductKey, orderline.Quantity, storeAlias, new AddOrderSettings()
                         {
