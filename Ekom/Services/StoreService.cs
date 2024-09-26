@@ -26,7 +26,7 @@ class StoreService : IStoreService
         _httpContext = httpContextAccessor.HttpContext;
     }
 
-    public IStore GetStoreByDomain(string domain = "", string culture = "")
+    public IStore? GetStoreByDomain(string domain = "", string culture = "")
     {
         IStore store = null;
 
@@ -55,8 +55,18 @@ class StoreService : IStoreService
         return store ?? throw new Exception("No store found in cache.");
     }
 
-    public IStore GetStoreByAlias(string alias)
+    public IStore? GetStoreByAlias(string alias)
     {
+        if (!_storeCache.Cache.Any())
+        {
+            throw new StoreNotFoundException("Unable to find any stores!");
+        }
+
+        if (!_storeCache.Cache.Any(x => string.Equals(alias, x.Value.Alias, StringComparison.InvariantCultureIgnoreCase)))
+        {
+            throw new StoreNotFoundException($"Unable to find any store: {alias}");
+        }
+
         var store = _storeCache.Cache
                          .FirstOrDefault(x => string.Equals(alias, x.Value.Alias, StringComparison.InvariantCultureIgnoreCase))
                          .Value;

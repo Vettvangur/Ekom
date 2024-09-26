@@ -71,6 +71,10 @@ namespace Ekom.Utilities
             {
                 return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
             }
+            else if (exception is StoreNotFoundException)
+            {
+                return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
+            }
             if (defaultHandler != null)
             {
                 var actionResult = defaultHandler();
