@@ -459,7 +459,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/apply")]
-    public async Task ApplyCouponToOrder([FromBody] CouponRequest model)
+    public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model)
     {
         try
         {
@@ -469,6 +469,7 @@ public partial class EkomOrderController : ControllerBase
                 {
                     Content = new StringContent("Coupon code can not be empty"),
                 };
+
                 throw new HttpResponseException(resp);
             }
 

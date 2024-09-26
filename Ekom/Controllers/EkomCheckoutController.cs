@@ -90,7 +90,7 @@ public class CheckoutController : ControllerBase
                 return Redirect(paymentRequest.ReturnUrl + "?errorStatus=badReturnUrl");
             }
             
-            var culture = Thread.CurrentThread.CurrentCulture.Name;
+            var culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;
             return await _checkoutControllerService.PayAsync(
                 ResponseHandler, 
                 paymentRequest, 

@@ -11,6 +11,7 @@ public class PaymentRequest
     public string CVV { get; set; } = "";
     public int Year { get; set; }
     public int Month { get; set; }
-    public string ReturnUrl { get; set; } = "";
     public string? StoreAlias { get; set; }
+    public string ReturnUrl { get; set; }
+    public string Culture { get; set; }
 }
