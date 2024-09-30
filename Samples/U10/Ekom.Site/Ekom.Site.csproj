@@ -61,9 +61,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Ekom.Payments.U10" Version="0.1.13" />
-        <PackageReference Include="Ekom.Payments.Valitor" Version="0.1.13" />
-        <PackageReference Include="Umbraco.Cms" Version="12.3.6" />
+        <PackageReference Include="Azure.Identity" Version="1.12.1" />
+        <PackageReference Include="Ekom.Payments.U10" Version="0.1.14" />
+        <PackageReference Include="Ekom.Payments.Valitor" Version="0.1.14" />
+        <PackageReference Include="Umbraco.Cms" Version="12.3.10" />
     </ItemGroup>
 
     <!-- Force Windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older Windows 10 and most, if not all, Windows Server editions will run NLS -->

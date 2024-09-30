@@ -1211,6 +1211,11 @@ namespace Ekom.App_Start
                                     {
                                         Name = "Read Only",
                                         Description = "When checked, the field will be read-only. This is good for metafields that data are for example synced to."
+                                    },
+                                    new PropertyType(_shortStringHelper, booleanDt, "allConditionsMustMatch")
+                                    {
+                                        Name = "All Conditions Must Match",
+                                        Description = "Enable this option to require all selected values within this filter to match. By default, any value can match (OR logic)."
                                     }
                                 })
                             ){

@@ -284,12 +284,39 @@ namespace EkomCore.Services
             {
                 var filterCriteria = query.MetaFilters;
 
-                products = products
-                .Where(product => filterCriteria.All(criteria =>
-                    product.Metafields.Any(metaField =>
-                        metaField.Field.Id.ToString() == criteria.Key && criteria.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
-                    )
-                ));
+                products = products.Where(product =>
+                {
+                    // Check if all filter criteria are met for this product
+                    return filterCriteria.All(criteria =>
+                    {
+                        // Find the matching metafields for the current criteria
+                        var matchingMetafields = product.Metafields.Where(metaField =>
+                            metaField.Field.Id.ToString() == criteria.Key
+                        );
+
+                        // Get the AllConditionsMustMatch flag from the metafield
+                        bool allConditionsMustMatch = matchingMetafields.Any(metaField => metaField.Field.AllConditionsMustMatch);
+
+                        if (allConditionsMustMatch)
+                        {
+                            // Use AND logic: all values must match
+                            return matchingMetafields.All(metaField =>
+                                criteria.Value.All(value =>
+                                    metaField.Values.SelectMany(v => v.Values).Contains(value)
+                                )
+                            );
+                        }
+                        else
+                        {
+                            // Use OR logic: any value can match
+                            return matchingMetafields.Any(metaField =>
+                                criteria.Value.Intersect(
+                                    metaField.Values.SelectMany(v => v.Values)
+                                ).Any()
+                            );
+                        }
+                    });
+                });
 
                 //products = products
                 //    .Where(x =>
