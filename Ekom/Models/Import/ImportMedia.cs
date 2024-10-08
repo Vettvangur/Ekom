@@ -7,6 +7,8 @@ namespace Ekom.Models.Import;
 public class ImportMediaFromUdi : IImportMedia
 {
     public required string Udi { get; set; }
+    public int? SortOrder { get; set; }
+    public ImportMediaAction Action { get; set; } = ImportMediaAction.Add;
 }
 
 /// <summary>
@@ -21,6 +23,9 @@ public class ImportMediaFromExternalUrl : IImportMedia
     public required string NodeName { get; set; }
     public DateTime? Date { get; set; }
     public string? Comparer { get; set; }
+    public int? SortOrder { get; set; }
+    public ImportMediaAction Action { get; set; } = ImportMediaAction.Add;
+    public string Identifier { get; set; }
 }
 
 /// <summary>
@@ -35,6 +40,9 @@ public class ImportMediaFromBytes : IImportMedia
     public required string NodeName { get; set; }
     public DateTime? Date { get; set; }
     public string? Comparer { get; set; }
+    public int? SortOrder { get; set; }
+    public ImportMediaAction Action { get; set; } = ImportMediaAction.Add;
+    public string Identifier { get; set; }
 }
 
 /// <summary>
@@ -49,4 +57,7 @@ public class ImportMediaFromBase64 : IImportMedia
     public required string NodeName { get; set; }
     public DateTime? Date { get; set; }
     public string? Comparer { get; set; }
+    public int? SortOrder { get; set; }
+    public ImportMediaAction Action { get; set; } = ImportMediaAction.Add;
+    public string Identifier { get; set; }
 }

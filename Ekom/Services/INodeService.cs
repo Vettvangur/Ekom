@@ -1,22 +1,20 @@
 using Ekom.Models;
 
-namespace Ekom.Services
+namespace Ekom.Services;
+public interface INodeService
 {
-    public interface INodeService
-    {
-        IEnumerable<UmbracoContent> NodesByTypes(string contentTypeAlias);
-        IEnumerable<UmbracoContent> NodesByTypesFaster(string contentTypeAlias);
-        IEnumerable<UmbracoContent> NodeAncestors(string t);
-        IEnumerable<UmbracoContent> NodeCatalogAncestors(string t);
-        IEnumerable<UmbracoContent> NodeChildren(string t);
-        bool IsItemUnpublished(UmbracoContent content);
-        UmbracoContent NodeById(Guid t);
-        UmbracoContent NodeById(int t);
-        UmbracoContent NodeById(string t);
-        UmbracoContent MediaById(Guid t);
-        UmbracoContent MediaById(int t);
-        UmbracoContent MediaById(string t);
-        string GetUrl(string t, string url = null);
-        IEnumerable<UmbracoContent> GetAllCatalogAncestors(UmbracoContent item);
-    }
+    IEnumerable<UmbracoContent> NodesByTypes(string contentTypeAlias);
+    IEnumerable<UmbracoContent> NodesByTypesFaster(string contentTypeAlias);
+    IEnumerable<UmbracoContent> NodeAncestors(string t);
+    IEnumerable<UmbracoContent> NodeCatalogAncestors(string t);
+    IEnumerable<UmbracoContent> NodeChildren(string t);
+    bool IsItemUnpublished(UmbracoContent content);
+    UmbracoContent NodeById(Guid t);
+    UmbracoContent NodeById(int t);
+    UmbracoContent NodeById(string t);
+    UmbracoContent MediaById(Guid t);
+    UmbracoContent MediaById(int t);
+    UmbracoContent MediaById(string t);
+    string GetUrl(string t, string url = null);
+    IEnumerable<UmbracoContent> GetAllCatalogAncestors(UmbracoContent item);
 }

@@ -39,6 +39,14 @@ public interface IImportService
     public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1);
 
     /// <summary>
+    /// Updates a single category, ensuring the category data is modified or synchronized in the catalog.
+    /// </summary>
+    /// <param name="importCategory">The category data to be updated.</param>
+    /// <param name="parentKey">Optional GUID of the parent category under which the category should be updated.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
+    public void CategoryUpdateSync(ImportCategory importCategory, Guid? parentKey, int syncUser = -1);
+
+    /// <summary>
     /// Updates a single variant, ensuring the variant data is modified or synchronized in the catalog.
     /// </summary>
     /// <param name="importVariant">The variant data to be updated.</param>
@@ -63,4 +71,26 @@ public interface IImportService
     /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void VariantSync(ImportVariant importVariant, Guid parentKey, Guid mediaRootKey, int syncUser = -1);
+
+    /// <summary>
+    /// Synchronizes media associated with a product, linking it to the specified media root folder within the CMS.
+    /// </summary>
+    /// <param name="Identifier">The unique identifier of the product for which media is being synchronized.</param>
+    /// <param name="medias">A list of media items to be linked to the product.</param>
+    /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
+    /// <param name="mediaType">The type of media (e.g., Image, File) being synchronized.</param>
+    /// <param name="mediaContentType">The content type of the media (e.g., images, files) being synchronized.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
+    public void SyncProductMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1);
+
+    /// <summary>
+    /// Synchronizes media associated with a variant, linking it to the specified media root folder within the CMS.
+    /// </summary>
+    /// <param name="Identifier">The unique identifier of the variant for which media is being synchronized.</param>
+    /// <param name="medias">A list of media items to be linked to the variant.</param>
+    /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
+    /// <param name="mediaType">The type of media (e.g., image, video) being synchronized.</param>
+    /// <param name="mediaContentType">The content type of the media (e.g., main, thumbnail) being synchronized.</param>
+    /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
+    public void SyncVariantMedia(string Identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1);
 }
