@@ -1143,7 +1143,7 @@ public class ImportService : IImportService
     }
     private void RemoveUdiIfExist(List<string> imagesUdi, string udi)
     {
-        if (!imagesUdi.Contains(udi))
+        if (imagesUdi.Contains(udi))
         {
             imagesUdi.Remove(udi);
         }
@@ -1163,6 +1163,7 @@ public class ImportService : IImportService
             }
             else if (saveEvent == ImportSaveEntEnum.Unpublish)
             {
+                _contentService.Save(content, userId: syncUser);
                 _contentService.Unpublish(content, userId: syncUser);
             }
             else
