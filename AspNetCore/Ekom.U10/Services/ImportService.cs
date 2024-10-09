@@ -963,6 +963,8 @@ public class ImportService : IImportService
             currentImagesUdi.AddRange(currentImages.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
+        var currentImagesCount = currentImagesUdi.Count;
+
         var sortedMedias = importMedias
             .Select((media, index) => new { media, index })
             .OrderBy(x => x.media.SortOrder.HasValue ? x.media.SortOrder.Value : int.MaxValue)
@@ -1069,6 +1071,11 @@ public class ImportService : IImportService
 
                 AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
             }
+        }
+
+        if (currentImagesCount == 0 && currentImagesUdi.Count == 0)
+        {
+            return false;
         }
 
         var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
