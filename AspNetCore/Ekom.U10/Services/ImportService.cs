@@ -996,8 +996,13 @@ public class ImportService : IImportService
                     {
                         // Create
                         umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
-                        allUmbracoMedia.Add(umbMedia);
-                        AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+
+                        if (umbMedia != null)
+                        {
+                            allUmbracoMedia.Add(umbMedia);
+                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                        }
+
                     } else
                     {   // Update
 
@@ -1010,8 +1015,13 @@ public class ImportService : IImportService
                         if (umbMedia == null)
                         {
                             umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
-                            allUmbracoMedia.Add(umbMedia);
-                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+
+                            if (umbMedia != null)
+                            {
+                                allUmbracoMedia.Add(umbMedia);
+                                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                            }
+
                         } else
                         {
                             // If comparer is the same probably the sort order has just changed so we just want to change the order.

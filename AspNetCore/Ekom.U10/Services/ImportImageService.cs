@@ -1,4 +1,5 @@
 using Ekom.Models.Import;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Models;
@@ -17,6 +18,7 @@ public class ImportMediaService
     private readonly MediaFileManager _mediaFileManager;
     private readonly MediaUrlGeneratorCollection _mediaUrlGenerators;
     private readonly IShortStringHelper _shortStringHelper;
+    private readonly ILogger<ImportMediaService> _logger;
 
     private int mediaCount = 0;
     private int mediaFolderPageSize = 400;
@@ -29,7 +31,8 @@ public class ImportMediaService
         IContentTypeBaseServiceProvider contentTypeBaseServiceProvider, 
         MediaFileManager mediaFileManager,
         MediaUrlGeneratorCollection mediaUrlGenerators,
-        IShortStringHelper shortStringHelper)
+        IShortStringHelper shortStringHelper,
+        ILogger<ImportMediaService> logger)
     {
         _mediaService = mediaService;
         _httpClientFactory = httpClientFactory;
@@ -37,6 +40,7 @@ public class ImportMediaService
         _mediaFileManager = mediaFileManager;
         _mediaUrlGenerators = mediaUrlGenerators;
         _shortStringHelper = shortStringHelper;
+        _logger = logger;
     }
 
     public IMedia GetRootMedia(Guid rootMediaKey)
@@ -82,9 +86,15 @@ public class ImportMediaService
         return mediaFiles;
     }
 
-    public IMedia ImportMediaFromExternalUrl(ImportMediaFromExternalUrl image, string comparer, ImportMediaTypes mediaType, string? identifier)
+    public IMedia? ImportMediaFromExternalUrl(ImportMediaFromExternalUrl image, string comparer, ImportMediaTypes mediaType, string? identifier)
     {
         var stream = LoadMediaToMemoryStreamAsync(image.Url).Result;
+
+        if (stream == null)
+        {
+            return null;
+        }
+
         return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier);
     }
 
@@ -114,7 +124,7 @@ public class ImportMediaService
         return UpdateSortOrderMedia(media, importMedia.SortOrder);
     }
 
-    private async Task<MemoryStream> LoadMediaToMemoryStreamAsync(string url)
+    private async Task<MemoryStream?> LoadMediaToMemoryStreamAsync(string url)
     {
         try
         {
@@ -136,8 +146,8 @@ public class ImportMediaService
         }
         catch (Exception ex)
         {
-            // Handle exceptions (network issues, bad URL, etc)
-            throw new Exception($"Error loading media to stream: {ex.Message} Url: {url}");
+            _logger.LogError(ex, $"Error loading media to stream: {ex.Message} Url: {url}");
+            return null;
         }
     }
 
