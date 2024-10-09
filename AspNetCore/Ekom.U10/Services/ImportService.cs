@@ -1071,7 +1071,7 @@ public class ImportService : IImportService
             }
         }
 
-        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList());
+        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
 
         if (currentImages != importedImages)
         {
@@ -1096,27 +1096,35 @@ public class ImportService : IImportService
         return false;
     }
 
-    private string SortImages(List<string> imagesUdi)
+    private string SortImages(List<string> imagesUdi, List<IMedia> allUmbracoMedia)
     {
-        var images = new List<UmbracoContent>();
+        // Convert allUmbracoMedia to a dictionary for fast lookup
+        var mediaDictionary = allUmbracoMedia.ToDictionary(
+            media => "umb://media/" + media.Key.ToString().Replace("-", "", StringComparison.InvariantCultureIgnoreCase)
+        );
 
+        var images = new List<(IMedia Media, int SortOrder)>();
+
+        // Populate images list with media and sort order
         foreach (var imageUdi in imagesUdi)
         {
-            var imageNode = _nodeService.MediaById(imageUdi);
-
-            if (imageNode != null)
+            if (mediaDictionary.TryGetValue(imageUdi, out var imageNode))
             {
-                images.Add(imageNode);
+                int sortOrder = imageNode.HasProperty("ekmSortOrder") &&
+                                int.TryParse(imageNode.GetValue<string>("ekmSortOrder"), out var parsedOrder)
+                                ? parsedOrder
+                                : int.MaxValue;
+
+                images.Add((imageNode, sortOrder));
             }
         }
 
-        var sortedImageNodes = images
-            .OrderBy(x => x.Properties.ContainsKey("ekmSortOrder") && int.TryParse(x.Properties.GetValue("ekmSortOrder"), out var sortOrder)
-                          ? sortOrder
-                          : int.MaxValue);
+        // Sort based on sortOrder, then join keys as a string
+        var sortedImageUris = images
+            .OrderBy(image => image.SortOrder)
+            .Select(image => "umb://media/" + image.Media.Key.ToString().Replace("-", "", StringComparison.InvariantCultureIgnoreCase));
 
-        return string.Join(",", sortedImageNodes.Select(x => "umb://media/" + x.Key.ToString().Replace("-","", StringComparison.InvariantCultureIgnoreCase)));
-
+        return string.Join(",", sortedImageUris);
     }
 
     private void AddUdiIfNotExist(List<string> imagesUdi, string udi)
