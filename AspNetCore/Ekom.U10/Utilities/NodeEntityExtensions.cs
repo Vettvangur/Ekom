@@ -35,7 +35,7 @@ namespace Ekom.Utilities
 
             return GetValue<T>(val);
         }
-        private static T GetValue<T>(string val)
+        private static T? GetValue<T>(string val)
         {
             if (typeof(T) == typeof(string))
             {
@@ -65,13 +65,17 @@ namespace Ekom.Utilities
             {
                 return (T)(object)ProductHelper.GetProduct(val);
             }
+            if (typeof(T) == typeof(Link))
+            {
+                return (T?)(object)GetLink(val);
+            }
             if (typeof(T) == typeof(IEnumerable<IProduct>))
             {
                 return (T)(object)ProductHelper.GetProducts(val);
             }
             return (T)(object)val;
         }
-        internal static IPublishedContent GetContent(string value)
+        internal static IPublishedContent? GetContent(string value)
         {
 
             if (!string.IsNullOrEmpty(value) && value.InvariantStartsWith("umb"))
@@ -174,6 +178,15 @@ namespace Ekom.Utilities
 
             return Enumerable.Empty<IPublishedContent>();
 
+        }
+        internal static Link? GetLink(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return null;
+            }
+
+            return JsonConvert.DeserializeObject<Link>(value);
         }
 
         internal class MediaItem
