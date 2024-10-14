@@ -813,7 +813,8 @@ public class ImportService : IImportService
         }
         catch (Exception ex)
         {
-            throw new Exception("Failed to save Product: Sku: " + importProduct.SKU + " Message: " + ex.Message, ex);
+            _logger.LogError(ex, $"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}");
+            throw new Exception($"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}", ex);
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
