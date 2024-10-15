@@ -143,15 +143,15 @@ public class ImportService : IImportService
         }
     }
 
-    public void CategorySync(ImportData data, Guid categoryKey, int syncUser = -1)
+    public void CategorySync(ImportData data, Guid parentKey, int syncUser = -1)
     {
-        _logger.LogInformation($"Category Sync running. CategoryKey: {categoryKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
+        _logger.LogInformation($"Category Sync running. ParentKey: {parentKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
 
         var stopwatch = Stopwatch.StartNew();
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
 
-        GetInitialData(categoryKey);
+        GetInitialData(parentKey);
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
@@ -164,7 +164,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
+        IterateCategoryTree(data.Categories, allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser, false);
 
         if (data.Products != null && data.Products.Any())
         {
@@ -176,8 +176,8 @@ public class ImportService : IImportService
         stopwatch.Stop();
 
         _logger.LogInformation(
-            "Category Sync took {Duration} seconds. Category {categoryKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
-            (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoryKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
+            "Category Sync took {Duration} seconds. Parent {parentKey} Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
+            (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), parentKey, categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
     }
 
     public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
@@ -372,7 +372,7 @@ public class ImportService : IImportService
         ImportMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
     }
 
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
     {
 
         if (parentContent == null)
@@ -385,34 +385,37 @@ public class ImportService : IImportService
             return;
         }
 
-        // Delete Categories
-
-        // Create a HashSet of identifiers from importCategory for efficient lookups
-        var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
-
-        var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
-
-        // Delete Category not present in the importCategoryIdentifiers
-        for (int i = targetedCategores.Count - 1; i >= 0; i--)
+        if (delete)
         {
-            var umbracoCategory = targetedCategores[i];
+            // Delete Categories
 
-            var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
+            // Create a HashSet of identifiers from importCategory for efficient lookups
+            var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
 
-            if (isSyncDisabled)
+            var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+
+            // Delete Category not present in the importCategoryIdentifiers
+            for (int i = targetedCategores.Count - 1; i >= 0; i--)
             {
-                continue;
-            }
+                var umbracoCategory = targetedCategores[i];
 
-            if (umbracoCategory.ParentId == parentContent.Id)
-            {
-                var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-                if (!importCategoryIdentifiers.Contains(categoryIdentifier))
+                var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
+
+                if (isSyncDisabled)
                 {
-                    _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
+                    continue;
+                }
 
-                    _contentService.Delete(umbracoCategory);
-                    categoriesDeleted++;
+                if (umbracoCategory.ParentId == parentContent.Id)
+                {
+                    var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                    if (!importCategoryIdentifiers.Contains(categoryIdentifier))
+                    {
+                        _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
+
+                        _contentService.Delete(umbracoCategory);
+                        categoriesDeleted++;
+                    }
                 }
             }
         }
