@@ -1154,7 +1154,7 @@ public class ImportService : IImportService
     {
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
-            if (saveEvent == ImportSaveEntEnum.SavePublish && (content.Published || create))
+            if (saveEvent == ImportSaveEntEnum.SavePublish || create)
             {
                 _contentService.SaveAndPublish(content, userId: syncUser);
             }
