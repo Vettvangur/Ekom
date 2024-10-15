@@ -7,245 +7,245 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace Ekom.Cache
+namespace Ekom.Cache;
+
+/// <summary>
+/// Per store caching for entities of generic type TItem
+/// </summary>
+/// <typeparam name="TItem">Type of entity to cache</typeparam>
+abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>
+    where TItem : class
 {
-    /// <summary>
-    /// Per store caching for entities of generic type TItem
-    /// </summary>
-    /// <typeparam name="TItem">Type of entity to cache</typeparam>
-    abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>
-        where TItem : class
+    protected Configuration _config;
+    protected ILogger _logger;
+    protected IBaseCache<IStore> _storeCache;
+    protected IPerStoreFactory<TItem> _objFac;
+    protected IServiceProvider _serviceProvider;
+
+    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+
+    public PerStoreCache(
+        Configuration config,
+        ILogger<IPerStoreCache<TItem>> logger,
+        IBaseCache<IStore> storeCache,
+        IPerStoreFactory<TItem> objFac,
+        IServiceProvider serviceProvider)
     {
-        protected Configuration _config;
-        protected ILogger _logger;
-        protected IBaseCache<IStore> _storeCache;
-        protected IPerStoreFactory<TItem> _objFac;
-        protected IServiceProvider _serviceProvider;
+        _config = config;
+        _logger = logger;
+        _storeCache = storeCache;
+        _objFac = objFac;
+        _serviceProvider = serviceProvider;
+    }
 
-        protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+    /// <summary>
+    /// Umbraco Node Alias name used in Examine search
+    /// </summary>
+    public abstract string NodeAlias { get; }
 
-        public PerStoreCache(
-            Configuration config,
-            ILogger<IPerStoreCache<TItem>> logger,
-            IBaseCache<IStore> storeCache,
-            IPerStoreFactory<TItem> objFac,
-            IServiceProvider serviceProvider)
+    /// <summary>
+    /// Concurrent dictionaries per store
+    /// </summary>
+    public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
+        = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
+
+    /// <summary>
+    /// Class indexer
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public ConcurrentDictionary<Guid, TItem> this[string index] => Cache[index];
+
+    public virtual void FillCache()
+    {
+        FillCache(null);
+    }
+
+    /// <summary>
+    /// Base Fill cache method appropriate for most derived caches
+    /// </summary>
+    /// <param name="storeParam">
+    /// This parameter is supplied when adding a store at runtime, 
+    /// triggering the given stores filling
+    /// </param>
+    public virtual void FillCache(IStore? storeParam = null)
+    {
+
+        if (!string.IsNullOrEmpty(NodeAlias))
         {
-            _config = config;
-            _logger = logger;
-            _storeCache = storeCache;
-            _objFac = objFac;
-            _serviceProvider = serviceProvider;
-        }
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-        /// <summary>
-        /// Umbraco Node Alias name used in Examine search
-        /// </summary>
-        public abstract string NodeAlias { get; }
+            _logger.LogDebug("Starting to fill per store cache for {NodeAlias}...", NodeAlias);
 
-        /// <summary>
-        /// Concurrent dictionaries per store
-        /// </summary>
-        public virtual ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>> Cache { get; }
-            = new ConcurrentDictionary<string, ConcurrentDictionary<Guid, TItem>>();
-
-        /// <summary>
-        /// Class indexer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public ConcurrentDictionary<Guid, TItem> this[string index] => Cache[index];
-
-        public virtual void FillCache()
-        {
-            FillCache(null);
-        }
-
-        /// <summary>
-        /// Base Fill cache method appropriate for most derived caches
-        /// </summary>
-        /// <param name="storeParam">
-        /// This parameter is supplied when adding a store at runtime, 
-        /// triggering the given stores filling
-        /// </param>
-        public virtual void FillCache(IStore storeParam = null)
-        {
-
-            if (!string.IsNullOrEmpty(NodeAlias))
-            {
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                _logger.LogDebug("Starting to fill per store cache for {NodeAlias}...", NodeAlias);
-
-                int count = 0;
-                
-                try
-                {
-                    var results = nodeService.NodesByTypes(NodeAlias).ToList();
-
-                    _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
-
-                    if (storeParam == null) // Startup initialization
-                    {
-                        foreach (var store in _storeCache.Cache.Select(x => x.Value))
-                        {
-                            count += FillStoreCache(store, results, NodeAlias);
-                        }
-                    }
-                    else // Triggered with dynamic addition/removal of store
-                    {
-                        count += FillStoreCache(storeParam, results, NodeAlias);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Filling per store cache Failed for {NodeAlias}!", NodeAlias);
-                }
-
-                stopwatch.Stop();
-                _logger.LogInformation(
-                    "Finished filling per store cache with {Count} items for {NodeAlias}. Time it took to fill: {Elapsed}",
-                    count,
-                    NodeAlias,
-                    stopwatch.Elapsed
-                );
-            }
-            else
-            {
-                _logger.LogError(
-                    "No NodeAlias, Can not fill cache."
-                );
-            }
-        }
-
-        /// <summary>
-        /// Fill the given stores cache of TItem
-        /// </summary>
-        /// <param name="store">The current store being filled of TItem</param>
-        /// <param name="results">UmbracoContent results</param>
-        /// <returns>Count of items added</returns>
-        protected virtual int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
-        {
             int count = 0;
-
-            var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
-
-            var timer = new LoopTimer(results.Count, _logger, nodeAlias);
-
-            foreach (var r in results)
-            {
-                timer.StartIteration();
-
-                try
-                {
-                    var isDisabled = r.IsItemDisabled(store);
-
-                    if (isDisabled)
-                    {
-                        continue;
-                    }
-
-                    var item = _objFac?.Create(r, store)
-                               ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
-
-                    if (item != null)
-                    {
-                        count++;
-
-                        curStoreCache[r.Key] = item;
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Error on adding item with id: " + r.Id + " in Store: " + store.Alias + " to cache."
-                    );
-                }
-
-                timer.EndIteration();
-            }
             
-
-            return count;
-        }
-
-        public void AddOrReplaceFromCache(Guid id, Store store, TItem newCacheItem)
-        {
-            Cache[store.Alias][id] = newCacheItem;
-        }
-
-        public bool RemoveItemFromCache(IStore store, Guid id)
-        {
-            return Cache[store.Alias].TryRemove(id, out TItem i);
-        }
-
-        /// <summary>
-        /// Adds or replaces an item from all store caches
-        /// </summary>
-        public void AddOrReplaceFromAllCaches(UmbracoContent node)
-        {
-            foreach (var store in _storeCache.Cache)
+            try
             {
-                try
+              
+                var results = nodeService.NodesByTypes(NodeAlias).ToList();
+
+                _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
+
+                if (storeParam == null) // Startup initialization
                 {
-                    var ancestors = nodeService.NodeAncestors(node.Id.ToString());
-
-                    var isDisabled = node.IsItemDisabled(store.Value, ancestors);
-
-                    if (isDisabled)
+                    foreach (var store in _storeCache.Cache.Select(x => x.Value))
                     {
-                        Cache[store.Value.Alias].TryRemove(node.Key, out _);
-                        continue;
+                        count += FillStoreCache(store, results, NodeAlias);
                     }
-           
-                    var item = _objFac?.Create(node, store.Value)
-                        ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
-
-                    if (item != null) Cache[store.Value.Alias][node.Key] = item;
-                    
-     
                 }
-                catch (Exception ex) // Skip on fail
+                else // Triggered with dynamic addition/removal of store
                 {
-                    _logger.LogWarning(
-                        ex,
-                        "Error on adding item with id: " + node.Id + " in Store: " + store.Value.Alias
-                    );
+                    count += FillStoreCache(storeParam, results, NodeAlias);
                 }
             }
-        }
-
-        /// <summary>
-        /// Removes an item from all store caches
-        /// </summary>
-        public void RemoveItemFromAllCaches(Guid id)
-        {
-            foreach (var store in _storeCache.Cache)
+            catch (Exception ex)
             {
-                Cache[store.Value.Alias].TryRemove(id, out _);
+                _logger.LogError(ex, "Filling per store cache Failed for {NodeAlias}!", NodeAlias);
+            }
+
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "Finished filling per store cache with {Count} items for {NodeAlias}. Time it took to fill: {Elapsed}",
+                count,
+                NodeAlias,
+                stopwatch.Elapsed
+            );
+        }
+        else
+        {
+            _logger.LogError(
+                "No NodeAlias, Can not fill cache."
+            );
+        }
+    }
+
+    /// <summary>
+    /// Fill the given stores cache of TItem
+    /// </summary>
+    /// <param name="store">The current store being filled of TItem</param>
+    /// <param name="results">UmbracoContent results</param>
+    /// <returns>Count of items added</returns>
+    protected virtual int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
+    {
+        int count = 0;
+
+        var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
+
+        var timer = new LoopTimer(results.Count, _logger, nodeAlias);
+
+        foreach (var r in results)
+        {
+            timer.StartIteration();
+
+            try
+            {
+                var isDisabled = r.IsItemDisabled(store);
+
+                if (isDisabled)
+                {
+                    continue;
+                }
+
+                var item = _objFac?.Create(r, store)
+                           ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
+
+                if (item != null)
+                {
+                    count++;
+
+                    curStoreCache[r.Key] = item;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Error on adding item with id: " + r.Id + " in Store: " + store.Alias + " to cache."
+                );
+            }
+
+            timer.EndIteration();
+        }
+        
+
+        return count;
+    }
+
+    public void AddOrReplaceFromCache(Guid id, Store store, TItem newCacheItem)
+    {
+        Cache[store.Alias][id] = newCacheItem;
+    }
+
+    public bool RemoveItemFromCache(IStore store, Guid id)
+    {
+        return Cache[store.Alias].TryRemove(id, out TItem i);
+    }
+
+    /// <summary>
+    /// Adds or replaces an item from all store caches
+    /// </summary>
+    public void AddOrReplaceFromAllCaches(UmbracoContent node)
+    {
+        foreach (var store in _storeCache.Cache)
+        {
+            try
+            {
+                var ancestors = nodeService.NodeAncestors(node.Id.ToString());
+
+                var isDisabled = node.IsItemDisabled(store.Value, ancestors);
+
+                if (isDisabled)
+                {
+                    Cache[store.Value.Alias].TryRemove(node.Key, out _);
+                    continue;
+                }
+       
+                var item = _objFac?.Create(node, store.Value)
+                    ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
+
+                if (item != null) Cache[store.Value.Alias][node.Key] = item;
+                
+ 
+            }
+            catch (Exception ex) // Skip on fail
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Error on adding item with id: " + node.Id + " in Store: " + store.Value.Alias
+                );
             }
         }
+    }
 
-
-        /// <summary>
-        /// <see cref="ICache"/> implementation,
-        /// handles addition of nodes when umbraco events fire
-        /// </summary>
-        public virtual void AddReplace(UmbracoContent node)
+    /// <summary>
+    /// Removes an item from all store caches
+    /// </summary>
+    public void RemoveItemFromAllCaches(Guid id)
+    {
+        foreach (var store in _storeCache.Cache)
         {
-            AddOrReplaceFromAllCaches(node);
+            Cache[store.Value.Alias].TryRemove(id, out _);
         }
+    }
 
-        /// <summary>
-        /// <see cref="ICache"/> implementation,
-        /// handles removal of nodes when umbraco events fire
-        /// </summary>
-        public virtual void Remove(Guid id)
-        {
-            RemoveItemFromAllCaches(id);
-        }
+
+    /// <summary>
+    /// <see cref="ICache"/> implementation,
+    /// handles addition of nodes when umbraco events fire
+    /// </summary>
+    public virtual void AddReplace(UmbracoContent node)
+    {
+        AddOrReplaceFromAllCaches(node);
+    }
+
+    /// <summary>
+    /// <see cref="ICache"/> implementation,
+    /// handles removal of nodes when umbraco events fire
+    /// </summary>
+    public virtual void Remove(Guid id)
+    {
+        RemoveItemFromAllCaches(id);
     }
 }

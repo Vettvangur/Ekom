@@ -76,7 +76,7 @@ namespace Ekom.Cache
 
             var count = 0;
 
-            var results = nodeService.NodesByTypes(NodeAlias).Where(x => x.IsPublished());
+            var results = nodeService.NodesByTypes(NodeAlias);
 
             foreach (var r in results)
             {

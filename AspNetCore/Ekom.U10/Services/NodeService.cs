@@ -24,13 +24,13 @@ class NodeService : INodeService
 
     public IEnumerable<UmbracoContent> NodesByTypes(string contentTypeAlias)
     {
+       
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Content;
-            var rootNodes = cache.GetAtRoot();
-            var ekomRoot = rootNodes.FirstOrDefault(x => x.IsDocumentType("ekom"));
+            var rootNode = cache?.GetAtRoot()?.FirstOrDefault(x => x.IsDocumentType("ekom"));
 
-            if (ekomRoot == null)
+            if (rootNode == null)
             {
                 throw new Exception("Ekom root node not found.");
             }
@@ -39,7 +39,7 @@ class NodeService : INodeService
 
             //var culture = contentType.VariesByCulture() ? cref.UmbracoContext?.Domains?.DefaultCulture : null;
 
-            var results = ekomRoot.DescendantsOfType(contentTypeAlias).ToList();
+            var results = rootNode.DescendantsOfType(contentTypeAlias).ToList();
 
             var content = results.Select(x => new Umbraco10Content(x)).ToList();
 
@@ -126,7 +126,7 @@ class NodeService : INodeService
         foreach (var item in GetAllCatalogAncestors(node))
         {
             // Unpublished items can't be found in the examine index
-            if (item == null || !item.IsPublished())
+            if (item == null)
             {
                 return true;
             }
@@ -307,7 +307,7 @@ class NodeService : INodeService
 
             if (node != null && node.IsPublished())
             {
-                return new Umbraco10Content(node);
+                return new Umbraco10Media(node);
             }
         }
         return null;
@@ -328,7 +328,7 @@ class NodeService : INodeService
 
             if (node != null)
             {
-                return new Umbraco10Content(node);
+                return new Umbraco10Media(node);
             }
         }
 
@@ -351,7 +351,7 @@ class NodeService : INodeService
 
             if (node != null)
             {
-                return new Umbraco10Content(node);
+                return new Umbraco10Media(node);
             }
         }
 
