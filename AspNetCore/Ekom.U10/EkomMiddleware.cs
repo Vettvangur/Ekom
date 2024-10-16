@@ -116,19 +116,10 @@ class EkomMiddleware
         }
 
         if (
-            path.StartsWith("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
-            path.StartsWith("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) || 
-            path.StartsWith("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)
-            )
-        {
-            return true;
-        }
-
-
-        if (
             path.StartsWith("/umbraco/", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/media/", StringComparison.InvariantCultureIgnoreCase) ||
-            path.StartsWith("/app_plugins/", StringComparison.InvariantCultureIgnoreCase)
+            path.StartsWith("/app_plugins/", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/build/", StringComparison.InvariantCultureIgnoreCase)
             )
         {
             return false;
@@ -150,12 +141,7 @@ class EkomMiddleware
                 return;
             }
 
-            var requestPath = _context.Request?.Path.ToString();
-
-            if (string.IsNullOrEmpty(requestPath))
-            {
-                return;
-            }
+            var requestPath = _context.Request?.Path.HasValue == true ? _context.Request?.Path.Value : "";
 
             if (!AllowPath(requestPath))
             {

@@ -63,14 +63,6 @@ class CatalogContentFinder : IContentFinder
                 return Task.FromResult(false);
             }
 
-
-            var node = umbracoContext.Content.GetByRoute(path);
-
-            if (node != null && !node.IsDocumentType("ekmProduct") && !node.IsDocumentType("ekmCategory"))
-            {
-                return Task.FromResult(false);
-            }
-
             var store = _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name, contentRequest.Culture);
 
             #region Product and/or Category
