@@ -1119,14 +1119,14 @@ namespace Ekom.Services
 
                 orderInfo.Culture = CultureInfo.CurrentCulture.Name;
 
-                orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
+                orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
                 var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
                 var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
                     .ConfigureAwait(false);
 
-                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+                if (_ekmRequest != null && _ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
                     orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
                     orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
