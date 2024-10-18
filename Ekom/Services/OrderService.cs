@@ -1109,81 +1109,89 @@ namespace Ekom.Services
             OrderInfo orderInfo,
             bool fireOnOrderUpdatedEvents = true)
         {
-            _logger.LogDebug("Update Order with new OrderInfo");
-
-            VerifyProviders(orderInfo);
-            VerifyDiscounts(orderInfo);
-            AddGlobalDiscounts(orderInfo);
-
-            orderInfo.Culture = CultureInfo.CurrentCulture.Name;
-
-            orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
-
-            var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
-
-            var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
-                .ConfigureAwait(false);
-
-            if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
-            {
-                orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
-                orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
-                orderData.CustomerUsername = _ekmRequest.User.Username;
-                orderData.CustomerId = _ekmRequest.User.UserId;
-            }
-
-            orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
-            orderData.CustomerName = orderInfo.CustomerInformation.Customer.Name;
-
-            orderData.ShippingCountry = orderInfo.CustomerInformation.Shipping != null
-                && !string.IsNullOrEmpty(orderInfo.CustomerInformation.Shipping.Country)
-                ? orderInfo.CustomerInformation.Shipping.Country : orderInfo.CustomerInformation.Customer.Country;
-
-            if (fireOnOrderUpdatedEvents)
-            {
-                OrderEvents.OnOrderUpdateing(this, new OrderUpdatingEventArgs
-                {
-                    OrderInfo = orderInfo,
-                });
-            }
-
-            orderData.OrderInfo = serializedOrderInfo;
-            orderData.UpdateDate = DateTime.Now;
-            orderData.TotalAmount = orderInfo.ChargedAmount.Value;
-
-            //Backwards compatability for old currency storeinfo 
             try
             {
-                var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
+                _logger.LogDebug("Update Order with new OrderInfo");
 
-                if (culture.TwoLetterISOLanguageName == "is")
+                VerifyProviders(orderInfo);
+                VerifyDiscounts(orderInfo);
+                AddGlobalDiscounts(orderInfo);
+
+                orderInfo.Culture = CultureInfo.CurrentCulture.Name;
+
+                orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest.IPAddress;
+
+                var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+
+                var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
+                    .ConfigureAwait(false);
+
+                if (_ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
                 {
-                    culture = Configuration.IsCultureInfo;
+                    orderInfo.CustomerInformation.Customer.UserId = _ekmRequest.User.UserId;
+                    orderInfo.CustomerInformation.Customer.UserName = _ekmRequest.User.Username;
+                    orderData.CustomerUsername = _ekmRequest.User.Username;
+                    orderData.CustomerId = _ekmRequest.User.UserId;
                 }
 
-                orderData.Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol;
-            }
-            catch (ArgumentException)
-            {
-                orderData.Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol;
-            }
+                orderData.CustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+                orderData.CustomerName = orderInfo.CustomerInformation.Customer.Name;
 
-            
-            await _orderRepository.UpdateOrderAsync(orderData)
-                .ConfigureAwait(false);
-            UpdateOrderInfoInCache(orderInfo);
+                orderData.ShippingCountry = orderInfo.CustomerInformation.Shipping != null
+                    && !string.IsNullOrEmpty(orderInfo.CustomerInformation.Shipping.Country)
+                    ? orderInfo.CustomerInformation.Shipping.Country : orderInfo.CustomerInformation.Customer.Country;
 
-            if (fireOnOrderUpdatedEvents)
-            {
-                OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
+                if (fireOnOrderUpdatedEvents)
                 {
-                    OrderInfo = orderInfo,
-                });
-            }
+                    OrderEvents.OnOrderUpdateing(this, new OrderUpdatingEventArgs
+                    {
+                        OrderInfo = orderInfo,
+                    });
+                }
 
-            // Regardless of modifications from event handlers,
-            // everybody references the same OrderInfo object
-            return orderInfo;
+                orderData.OrderInfo = serializedOrderInfo;
+                orderData.UpdateDate = DateTime.Now;
+                orderData.TotalAmount = orderInfo.ChargedAmount.Value;
+
+                //Backwards compatability for old currency storeinfo 
+                try
+                {
+                    var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
+
+                    if (culture.TwoLetterISOLanguageName == "is")
+                    {
+                        culture = Configuration.IsCultureInfo;
+                    }
+
+                    orderData.Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol;
+                }
+                catch (ArgumentException)
+                {
+                    orderData.Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol;
+                }
+
+
+                await _orderRepository.UpdateOrderAsync(orderData)
+                    .ConfigureAwait(false);
+                UpdateOrderInfoInCache(orderInfo);
+
+                if (fireOnOrderUpdatedEvents)
+                {
+                    OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
+                    {
+                        OrderInfo = orderInfo,
+                    });
+                }
+
+                // Regardless of modifications from event handlers,
+                // everybody references the same OrderInfo object
+                return orderInfo;
+            } catch(Exception ex)
+            {
+                _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync failed: " + JsonConvert.SerializeObject(orderInfo));
+                throw;
+            }
+           
         }
 
         /// <summary>
