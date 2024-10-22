@@ -42,7 +42,7 @@ class EkomMiddleware
         await OnAuthenticateRequest(appCaches, memberService);
 
         await _next.Invoke(context);
-        
+
         OnPostRequestHandlerExecute(umbracoContextFac);
     }
 
@@ -99,7 +99,7 @@ class EkomMiddleware
                         User = new User(),
                     });
             }
-            
+
 
         }
         catch (Exception ex)
@@ -114,7 +114,14 @@ class EkomMiddleware
         {
             return false;
         }
-
+        if (
+            path.StartsWith("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
+            path.StartsWith("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)
+            )
+        {
+            return true;
+        }
         if (
             path.StartsWith("/umbraco/", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/media/", StringComparison.InvariantCultureIgnoreCase) ||
@@ -124,16 +131,14 @@ class EkomMiddleware
         {
             return false;
         }
-
         return true;
-
     }
 
     private async Task OnAuthenticateRequest(
         AppCaches appCaches,
         IMemberService memberService)
     {
-        
+
         try
         {
             if (_context == null)
@@ -178,7 +183,7 @@ class EkomMiddleware
                         UserId = memberContent.Id,
                         Name = memberContent.Name,
                     };
-                    
+
                     var orderid = memberContent.OrderId;
 
                     if (!string.IsNullOrEmpty(orderid) && Guid.TryParse(orderid, out var guid))

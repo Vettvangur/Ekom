@@ -119,6 +119,7 @@ namespace Ekom.Services
             try
             {
                 _httpCtx = httpContextAccessor.HttpContext;
+
                 var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
 
                 if (r != null && r.Value != null)
@@ -147,7 +148,6 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetOrderAsync(IStore store)
         {
-
             if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
             {
                 var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
