@@ -74,6 +74,7 @@ static class Registrations
         services.AddTransient<OrderRepository>();
         services.AddTransient<CouponRepository>();
         services.AddTransient<ActivityLogRepository>();
+        services.AddTransient<IProductFilterService, ProductFilterService>();
 
         services.AddSingleton<IObjectFactory<IStore>, StoreFactory>();
         services.AddSingleton<IObjectFactory<IZone>, ZoneFactory>();
@@ -101,7 +102,8 @@ static class Registrations
                 f.GetService<IPerStoreCache<IVariant>>(),
                 f.GetService<IPerStoreCache<IVariantGroup>>(),
                 f.GetService<IStoreService>(),
-                f.GetService<IHttpContextAccessor>()
+                f.GetService<IHttpContextAccessor>(),
+                f.GetService<IProductFilterService>()
 
             )
         );

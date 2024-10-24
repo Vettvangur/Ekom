@@ -30,6 +30,7 @@ public class Catalog
     readonly IPerStoreCache<ICategory> _categoryCache;
     readonly IPerStoreCache<IVariant> _variantCache;
     readonly IPerStoreCache<IVariantGroup> _variantGroupCache;
+    readonly IProductFilterService _productFilterService;
     /// <summary>
     /// ctor
     /// </summary>
@@ -43,8 +44,8 @@ public class Catalog
         IPerStoreCache<IVariant> variantCache,
         IPerStoreCache<IVariantGroup> variantGroupCache,
         IStoreService storeService,
-        IHttpContextAccessor httpContextAccessor
-    )
+        IHttpContextAccessor httpContextAccessor,
+        IProductFilterService productFilterService)
     {
         _config = config;
         _logger = logger;
@@ -56,6 +57,7 @@ public class Catalog
         _storeSvc = storeService;
         _metafieldService = metafieldService;
         _httpContext = httpContextAccessor.HttpContext;
+        _productFilterService = productFilterService;
     }
 
     /// <summary>
@@ -259,7 +261,7 @@ public class Catalog
 
         var products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
         
-        return new ProductResponse(products,query);
+        return new ProductResponse(products,query, _productFilterService);
     }
 
     /// <summary>
@@ -310,7 +312,7 @@ public class Catalog
             }
         }
 
-        return new ProductResponse(products, query);
+        return new ProductResponse(products, query, _productFilterService);
     }
 
     /// <summary>
@@ -358,7 +360,7 @@ public class Catalog
             }
         }
 
-        return new ProductResponse(products, query);
+        return new ProductResponse(products, query, _productFilterService);
     }
 
     /// <summary>

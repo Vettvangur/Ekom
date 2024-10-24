@@ -1,3 +1,4 @@
+using Ekom.Services;
 using Newtonsoft.Json.Serialization;
 
 namespace Ekom.Site
@@ -57,7 +58,7 @@ namespace Ekom.Site
             //services.AddApplicationInsightsTelemetry(_config["ApplicationInsights:ConnectionString"]);
             
             services.AddScoped<UmbracoService>();
-
+            services.AddTransient<IProductFilterService, CustomProductFilterService>();
             //services.AddTransient<Service>();
             services.AddHsts(options =>
             {
