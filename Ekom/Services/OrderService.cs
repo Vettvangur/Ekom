@@ -1670,21 +1670,22 @@ namespace Ekom.Services
 
         private Guid GetOrderIdFromCookie(string key)
         {
-            string? cookie = null;
+            // Try to get the cookie value from the response headers first
+            var cookieValue = _httpCtx.Response.GetTypedHeaders()
+                .SetCookie.FirstOrDefault(x => x.Name == key)?.Value.ToString()
+                ?? _httpCtx.Request.Cookies[key];  // Fallback to request cookies
 
-            cookie = _httpCtx.Response
-                .GetTypedHeaders()
-                .SetCookie.FirstOrDefault(x => x.Name == key)?.Value.ToString();
-
-            if (string.IsNullOrEmpty(cookie))
+            if (string.IsNullOrEmpty(cookieValue))
             {
-                cookie = _httpCtx.Request.Cookies[key];
+                return Guid.Empty;
             }
 
-            if (!string.IsNullOrEmpty(cookie))
+            if (Guid.TryParse(cookieValue, out var orderId))
             {
-                return new Guid(cookie);
+                return orderId;
             }
+
+            _logger.LogError($"Failed to parse order id from cookie. Value: {cookieValue}");
 
             return Guid.Empty;
         }

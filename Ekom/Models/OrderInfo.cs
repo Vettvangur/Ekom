@@ -101,8 +101,8 @@ namespace Ekom.Models
         /// <inheritdoc />
         public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
 
-        public OrderedShippingProvider ShippingProvider { get; set; }
-        public OrderedPaymentProvider PaymentProvider { get; set; }
+        public OrderedShippingProvider? ShippingProvider { get; set; }
+        public OrderedPaymentProvider? PaymentProvider { get; set; }
 
         /// <inheritdoc />
         public int TotalQuantity
