@@ -22,13 +22,18 @@ public class ProductResponse
         {
             foreach (var selector in query.PropertySelectors)
             {
-                var propertyValues = products
+
+                if (!string.IsNullOrEmpty(selector.Value))
+                {
+                    var propertyValues = products
                       .Select(x => x.GetValue(selector.Key, selector.Value))
                       .Distinct()
                       .Where(x => !string.IsNullOrEmpty(x))
                       .ToList();
 
-                PropertySelectors.Add(selector.Key, propertyValues);
+                    PropertySelectors.Add(selector.Key, propertyValues);
+                }
+
             }
         }
 
@@ -101,7 +106,7 @@ public class ProductResponse
 
         if (filterService != null)
         {
-            Products = filterService.ApplyFilters(products);
+            Products = filterService.ApplyFilters(Products);
         }
     }
     
