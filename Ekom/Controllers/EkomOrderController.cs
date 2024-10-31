@@ -64,7 +64,7 @@ public partial class EkomOrderController : ControllerBase
                 new AddOrderSettings
                 {
                     OrderAction = request.action ?? OrderAction.AddOrUpdate,
-                    VariantKey = request.variantId,
+                    VariantKey = request.variantId
                 });
 
             return orderInfo;

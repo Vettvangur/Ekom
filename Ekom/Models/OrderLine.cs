@@ -52,26 +52,36 @@ class OrderLine : IOrderLine
         get
         {
             decimal _price = Product.Price.Discount != null ? Product.Price.Value : Product.Price.OriginalValue;
-            if (Product.VariantGroups.Any() && Product.VariantGroups.Any(x => x.Variants.Any()))
-            {
-                foreach (var v in Product.VariantGroups.SelectMany(x => x.Variants))
-                {
-                    _price += v.Price.Discount != null ? (v.Price.Value - _price) : (v.Price.OriginalValue - _price);
-                }
 
+            if (Product.VariantGroups != null && Product.VariantGroups.Any())
+            {
+                var variants = Product.VariantGroups.SelectMany(x => x.Variants);
+
+                foreach (var v in variants)
+                {
+                    var variantDiscount = v.Price.Discount;
+
+                    if (v.Price.Discount != null)
+                    {
+                        _price += (v.Price.Value - _price);
+                    } else
+                    {
+                        _price += (v.Price.OriginalValue - _price);
+                    }
+                }
             }
 
-            OrderedDiscount discount = null;
+             OrderedDiscount? discount = null;
             // This allows us to display discounted prices of orderlines
             // when the order has a global discount applying only to specific DiscountItems
-            if ((OrderInfo.Discount != null && OrderInfo.Discount.Stackable && Product.Price.Discount == null) && OrderInfo.Discount?.DiscountItems.Any() == true)
+            if ((OrderInfo.Discount != null && OrderInfo.Discount.Stackable && Product.Price.Discount == null) && OrderInfo?.Discount?.DiscountItems.Any() == true)
             {
                 discount = OrderInfo.Discount;
             }
 
             return new Price(
                 _price,
-                OrderInfo.StoreInfo.Currency,
+                OrderInfo?.StoreInfo.Currency,
                 Vat,
                 OrderInfo.StoreInfo.VatIncludedInPrice,
                 discount,

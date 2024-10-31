@@ -79,7 +79,7 @@ namespace Ekom.Models
             CurrencyModel currency,
             decimal vat,
             bool vatIncludedInPrice,
-            OrderedDiscount discount = null,
+            OrderedDiscount? discount = null,
             int quantity = 1,
             bool discountAlwaysBeforeVat = false
         )

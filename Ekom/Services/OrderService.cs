@@ -644,6 +644,7 @@ namespace Ekom.Services
                 settings = new OrderSettings();
             }
 
+
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
@@ -969,6 +970,24 @@ namespace Ekom.Services
             OrderSettings settings
         )
         {
+            var eventModel = new AddingOrderlineEventArgs()
+            {
+                Product = product,
+                Variant = variant,
+                Quantity = quantity,
+                Settings = settings,
+                Action = action
+            };
+
+            OrderEvents.OnAddingOrderline(this, eventModel);
+
+            quantity = eventModel.Quantity;
+            product = eventModel.Product;
+            variant = eventModel.Variant;
+            quantity = eventModel.Quantity;
+            settings = eventModel.Settings;
+            action = eventModel.Action;
+
             if (quantity == 0)
             {
                 // Use remove orderline instead

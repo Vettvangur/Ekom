@@ -234,7 +234,7 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest orderDynamic = null)
+        public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest? orderDynamic = null)
         {
             product = product ?? throw new ArgumentNullException(nameof(product));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
@@ -276,7 +276,7 @@ namespace Ekom.Models
 
                 var variantGroup = variant.VariantGroup;
 
-                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo, Vat));
+                variantGroups.Add(new OrderedVariantGroup(variant, variantGroup, storeInfo, Vat, orderDynamic));
 
                 VariantGroups = variantGroups;
             }

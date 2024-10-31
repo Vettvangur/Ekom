@@ -18,7 +18,7 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo, decimal productVat)
+        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
         {
             this.variant = variant ?? throw new ArgumentNullException(nameof(variant));
             variantGroup = variantGroup ?? throw new ArgumentNullException(nameof(variantGroup));
@@ -39,7 +39,7 @@ namespace Ekom.Models
 
             var variants = new List<OrderedVariant>
             {
-                new OrderedVariant(variant, storeInfo,productVat)
+                new OrderedVariant(variant, storeInfo,productVat,orderDynamic)
             };
 
             Variants = variants;

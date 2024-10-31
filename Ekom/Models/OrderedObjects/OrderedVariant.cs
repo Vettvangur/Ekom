@@ -154,13 +154,19 @@ namespace Ekom.Models
         /// <summary>
         /// ctor
         /// </summary>
-        public OrderedVariant(IVariant variant, StoreInfo storeInfo, decimal productVat)
+        public OrderedVariant(IVariant variant, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
         {
             variant = variant ?? throw new ArgumentNullException(nameof(variant));
             StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
             ProductVat = productVat;
+
             Prices = variant.Prices.ToList();
+
+            if (orderDynamic != null && orderDynamic.VariantPrices != null && orderDynamic.VariantPrices.Any())
+            {
+                Prices = orderDynamic.VariantPrices;
+            }
 
             Properties = new ReadOnlyDictionary<string, string>(
                 variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
