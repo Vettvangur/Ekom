@@ -118,7 +118,7 @@ static class Registrations
                 f.GetService<ILogger<CheckoutControllerService>>(),
                 f.GetService<Configuration>(),
                 f.GetService<DatabaseFactory>(),
-                f.GetService<IUmbracoService>(),
+                f.GetService<Ekom.Services.IUmbracoService>(),
                 f.GetService<IMemberService>(),
                 f.GetService<IHttpContextAccessor>(),
                 f.GetService<EkomPayments>(),

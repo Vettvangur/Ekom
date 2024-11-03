@@ -4,12 +4,12 @@
     "net7.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.1.44, )",
-        "resolved": "0.1.44",
-        "contentHash": "zMV/swE9gYIoYvt19bua6hgAje+DVAbAv9B1bgUnbK8LlZ7S0csz7ggN2+4BjLz+MbvmMtSbjQqSbLA/jQ/xMA==",
+        "requested": "[0.2.0, )",
+        "resolved": "0.2.0",
+        "contentHash": "cXVio33K9k1FmNihultWebPkdUJoClaV7FIhExrlbpj/Nknhi6CGTl2Yt2kIzs48/FNakzEQIfpPTpQ08e4cpw==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.1.44",
-          "Ekom.Payments.Core": "0.1.44",
+          "Ekom.Payments.AspNetCore": "0.2.0",
+          "Ekom.Payments.Core": "0.2.0",
           "Umbraco.Cms.Core": "12.3.10",
           "Umbraco.Cms.Web.BackOffice": "12.3.10",
           "Umbraco.Cms.Web.Website": "12.3.10"
@@ -115,30 +115,29 @@
       },
       "Azure.Core": {
         "type": "Transitive",
-        "resolved": "1.38.0",
-        "contentHash": "IuEgCoVA0ef7E4pQtpC3+TkPbzaoQfa77HlfJDmfuaJUCVJmn7fT0izamZiryW5sYUFKizsftIxMkXKbgIcPMQ==",
+        "resolved": "1.44.1",
+        "contentHash": "YyznXLQZCregzHvioip07/BkzjuWNXogJEVz9T5W6TwjNr17ax41YGzYMptlo2G10oLCuVPoyva62y0SIRDixg==",
         "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "1.1.1",
-          "System.ClientModel": "1.0.0",
+          "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
+          "System.ClientModel": "1.1.0",
           "System.Diagnostics.DiagnosticSource": "6.0.1",
-          "System.Memory.Data": "1.0.2",
+          "System.Memory.Data": "6.0.0",
           "System.Numerics.Vectors": "4.5.0",
-          "System.Text.Encodings.Web": "4.7.2",
-          "System.Text.Json": "4.7.2",
+          "System.Text.Encodings.Web": "6.0.0",
+          "System.Text.Json": "6.0.10",
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
       "Azure.Identity": {
         "type": "Transitive",
-        "resolved": "1.11.4",
-        "contentHash": "Sf4BoE6Q3jTgFkgBkx7qztYOFELBCo+wQgpYDwal/qJ1unBH73ywPztIJKXBXORRzAeNijsuxhk94h0TIMvfYg==",
+        "resolved": "1.13.1",
+        "contentHash": "4eeK9XztjTmvA4WN+qAvlUCSxSv45+LqTMeC8XT2giGGZHKthTMU2IuXcHjAOf5VLH3wE3Bo6EwhIcJxVB8RmQ==",
         "dependencies": {
-          "Azure.Core": "1.38.0",
-          "Microsoft.Identity.Client": "4.61.3",
-          "Microsoft.Identity.Client.Extensions.Msal": "4.61.3",
-          "System.Memory": "4.5.4",
-          "System.Security.Cryptography.ProtectedData": "4.7.0",
-          "System.Text.Json": "4.7.2",
+          "Azure.Core": "1.44.1",
+          "Microsoft.Identity.Client": "4.66.1",
+          "Microsoft.Identity.Client.Extensions.Msal": "4.66.1",
+          "System.Memory": "4.5.5",
+          "System.Text.Json": "6.0.10",
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
@@ -171,20 +170,22 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.1.44",
-        "contentHash": "9vK2shkn8PKiduMi5exqsef4BU1J6m7frK9+I7RSY007r2PXKTX1POoaO4jgww9sxj8Iafbi1Q+2MsPcgJD/Cg==",
+        "resolved": "0.2.0",
+        "contentHash": "tHuQV4FVodGrywOC00vOqA1CJLrLg/TE7dU1jHGd+V9sJL4wKDIyzIDMQBbrJnk2xs/CfNQbohvrvjH5SfY87A==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.1.44"
+          "Ekom.Payments.Core": "0.2.0"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.1.279",
-        "contentHash": "vh8wf1v/nSgrGJbq3aa1RBPmo0FndtF2MO4XY5gyf5zr+jzXlgobcIoEfp5Ikh3SVhziJzuk2S2ryyPjGzcbsw==",
+        "resolved": "0.2.0",
+        "contentHash": "tky4jJNLIUvnbvfEY+8CPJi3gQQUIWTGrZNjUFejm/ADE04hz/fMhi4kq2GzUz9xMq+3+o8nyKcFVexiXRWUYw==",
         "dependencies": {
+          "Azure.Core": "1.44.1",
+          "Azure.Identity": "1.13.1",
           "Ekom.Common": "0.1.279",
-          "Microsoft.Data.SqlClient": "4.1.0",
-          "linq2db": "4.3.0"
+          "Microsoft.Data.SqlClient": "5.2.2",
+          "linq2db": "5.4.1"
         }
       },
       "Examine": {
@@ -286,8 +287,8 @@
       },
       "linq2db": {
         "type": "Transitive",
-        "resolved": "4.3.0",
-        "contentHash": "I/CbrqshgIQAuEpFvQZBFXTB1mquZzX9mGjwnIZjN7uh8sWI4+m6gTplNul9m2Zhb0M96m1iV5i7/vEKkellFw=="
+        "resolved": "5.4.1",
+        "contentHash": "qyH32MbFK6T55KsEcQYTbPFfkOa1Mo65lY/Zo8SFVMy0pwkQBCTnA/RUxyG5+l3D/mgfPz85PH3upDrtklSMrw=="
       },
       "Lucene.Net": {
         "type": "Transitive",
@@ -548,8 +549,8 @@
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
-        "resolved": "1.1.1",
-        "contentHash": "yuvf07qFWFqtK3P/MRkEKLhn5r2UbSpVueRziSqj0yJQIKFwG1pq9mOayK3zE5qZCTs0CbrwL9M6R8VwqyGy2w=="
+        "resolved": "6.0.0",
+        "contentHash": "UcSjPsst+DfAdJGVDsu346FX0ci0ah+lw3WRtn18NUwEqRt70HaOQ7lI72vy3+1LxtqI3T5GWwV39rQSrCzAeg=="
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
@@ -858,8 +859,8 @@
       },
       "Microsoft.Identity.Client": {
         "type": "Transitive",
-        "resolved": "4.61.3",
-        "contentHash": "naJo/Qm35Caaoxp5utcw+R8eU8ZtLz2ALh8S+gkekOYQ1oazfCQMWVT4NJ/FnHzdIJlm8dMz0oMpMGCabx5odA==",
+        "resolved": "4.66.1",
+        "contentHash": "mE+m3pZ7zSKocSubKXxwZcUrCzLflC86IdLxrVjS8tialy0b1L+aECBqRBC/ykcPlB4y7skg49TaTiA+O2UfDw==",
         "dependencies": {
           "Microsoft.IdentityModel.Abstractions": "6.35.0",
           "System.Diagnostics.DiagnosticSource": "6.0.1"
@@ -867,10 +868,10 @@
       },
       "Microsoft.Identity.Client.Extensions.Msal": {
         "type": "Transitive",
-        "resolved": "4.61.3",
-        "contentHash": "PWnJcznrSGr25MN8ajlc2XIDW4zCFu0U6FkpaNLEWLgd1NgFCp5uDY3mqLDgM8zCN8hqj8yo5wHYfLB2HjcdGw==",
+        "resolved": "4.66.1",
+        "contentHash": "osgt1J9Rve3LO7wXqpWoFx9UFjl0oeqoUMK/xEru7dvafQ28RgV1A17CoCGCCRSUbgDQ4Arg5FgGK2lQ3lXR4A==",
         "dependencies": {
-          "Microsoft.Identity.Client": "4.61.3",
+          "Microsoft.Identity.Client": "4.66.1",
           "System.Security.Cryptography.ProtectedData": "4.5.0"
         }
       },
@@ -1644,11 +1645,11 @@
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "I3CVkvxeqFYjIVEP59DnjbeoGNfo/+SZrCLpRz2v/g0gpCHaEMPtWSY0s9k/7jR1rAsLNg2z2u1JRB76tPjnIw==",
+        "resolved": "1.1.0",
+        "contentHash": "UocOlCkxLZrG2CKMAAImPcldJTxeesHnHGHwhJ0pNlZEvEXcWKuQvVOER2/NiOkJGRJk978SNdw3j6/7O9H1lg==",
         "dependencies": {
           "System.Memory.Data": "1.0.2",
-          "System.Text.Json": "4.7.2"
+          "System.Text.Json": "6.0.9"
         }
       },
       "System.Collections": {
@@ -2009,11 +2010,10 @@
       },
       "System.Memory.Data": {
         "type": "Transitive",
-        "resolved": "1.0.2",
-        "contentHash": "JGkzeqgBsiZwKJZ1IxPNsDFZDhUvuEdX8L8BDC8N3KOj+6zMcNU28CNN59TpZE/VJYy9cP+5M+sbxtWJx3/xtw==",
+        "resolved": "6.0.0",
+        "contentHash": "ntFHArH3I4Lpjf5m4DCXQHJuGwWPNVJPaAvM95Jy/u+2Yzt2ryiyIN04LAogkjP9DeRcEOiviAjQotfmPq/FrQ==",
         "dependencies": {
-          "System.Text.Encodings.Web": "4.7.2",
-          "System.Text.Json": "4.6.0"
+          "System.Text.Json": "6.0.0"
         }
       },
       "System.Net.Http": {
@@ -2696,7 +2696,7 @@
         "dependencies": {
           "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
-          "Ekom.Payments.Core": "[0.1.279, )",
+          "Ekom.Payments.Core": "[0.2.0, )",
           "Hangfire": "[1.8.5, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.2.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",
@@ -2707,7 +2707,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[3.1.32, )",
           "Microsoft.Extensions.Logging.Abstractions": "[6.0.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
-          "linq2db": "[4.3.0, )",
+          "linq2db": "[5.4.1, )",
           "murmurhash": "[1.0.3, )"
         }
       }
