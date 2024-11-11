@@ -454,7 +454,8 @@ public class ImportService : IImportService
 
             if (delete)
             {
-                var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.ParentId == umbracoRootContent.Id).ToList();
+                var rootId = umbracoRootContent.Id.ToString();
+                var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.Path.Split(',').Contains(rootId)).ToList();
 
                 // Create a HashSet of identifiers from importProducts for efficient lookups
                 var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
