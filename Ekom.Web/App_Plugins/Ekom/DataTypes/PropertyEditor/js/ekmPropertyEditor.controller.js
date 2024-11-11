@@ -6,7 +6,7 @@
     'Ekom.Resources',
     function ($scope, ekmResources, $routeParams) {
 
-      if ($routeParams.section !== 'content') { return; }
+      if ($routeParams !== undefined && $routeParams.section !== 'content') { return; }
 
       $scope.model.dataTypes = [];
       $scope.model.value = $scope.model.value || {
@@ -34,7 +34,7 @@
     'eventsService',
     function ($scope, $rootScope, editorState, ekmResources, umbPropEditorHelper, appState, $routeParams, localStorageService, eventsService) {
 
-      if ($routeParams.section !== 'content') { return; }
+      if ($routeParams !== undefined && $routeParams.section !== 'content') { return; }
 
       $scope.loading = true;
       $scope.failed = false;
