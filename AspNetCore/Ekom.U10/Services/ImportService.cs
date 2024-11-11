@@ -418,29 +418,29 @@ public class ImportService : IImportService
             }
         }
 
-            foreach (var importCategory in importCategories)
+        foreach (var importCategory in importCategories)
+        {
+            var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
+
+            var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+
+            if (content == null)
             {
-                var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
-
-                var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
-
-                if (content == null)
-                {
-                    continue;
-                }
-
-                if (create)
-                {
-                    allUmbracoCategories.Add(content);
-                }
-
-                var save = create;
-
-                SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
-
-                IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
+                continue;
             }
+
+            if (create)
+            {
+                allUmbracoCategories.Add(content);
+            }
+
+            var save = create;
+
+            SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
+
+            IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
         }
+    }
 
     private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
     {
@@ -663,19 +663,21 @@ public class ImportService : IImportService
                 return;
             }
 
-            categoryContent.SetProperty("title", importCategory.Title);
+            if (categoryContent.HasProperty("title"))
+                categoryContent.SetProperty("title", importCategory.Title);
 
             if (importCategory.Slug != null && importCategory.Slug.Any())
             {
                 categoryContent.SetSlug(importCategory.Slug);
             }
 
-            if (!string.IsNullOrEmpty(importCategory.SKU))
+            if (!string.IsNullOrEmpty(importCategory.SKU) && categoryContent.HasProperty("sku"))
             {
                 categoryContent.SetValue("sku", importCategory.SKU);
             }
 
-            categoryContent.SetProperty("description", importCategory.Description);
+            if (categoryContent.HasProperty("description"))
+                categoryContent.SetProperty("description", importCategory.Description ?? new());
 
             categoryContent.SetValue(Configuration.ImportAliasIdentifier, importCategory.Identifier);
 
@@ -683,11 +685,13 @@ public class ImportService : IImportService
             {
                 foreach (var property in importCategory.AdditionalProperties)
                 {
-                    categoryContent.SetValue(property.Key, property.Value);
+                    if (categoryContent.HasProperty(property.Key))
+                        categoryContent.SetValue(property.Key, property.Value);
                 }
             }
-
-            categoryContent.SetValue("comparer", compareValue);
+            
+            if (categoryContent.HasProperty("comparer"))
+                categoryContent.SetValue("comparer", compareValue);
 
             categoryContent.Name = importCategory.NodeName;
 
@@ -748,7 +752,8 @@ public class ImportService : IImportService
                 return;
             }
 
-            productContent.SetProperty("title", importProduct.Title);
+            if (productContent.HasProperty("title"))
+                productContent.SetProperty("title", importProduct.Title);
 
             if (importProduct.Slug != null && importProduct.Slug.Any())
             {
@@ -760,7 +765,8 @@ public class ImportService : IImportService
                 productContent.SetValue("sku", importProduct.SKU);
             }
 
-            productContent.SetProperty("description", importProduct.Description);
+            if (productContent.HasProperty("description"))
+                productContent.SetProperty("description", importProduct.Description ?? new());
 
             productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
 
@@ -772,7 +778,7 @@ public class ImportService : IImportService
                 }
             }
 
-            if (importProduct.Vat.HasValue)
+            if (importProduct.Vat.HasValue && productContent.HasProperty("vat"))
             {
                 productContent.SetValue("vat", importProduct.Vat);
             }
@@ -781,7 +787,10 @@ public class ImportService : IImportService
             {
                 foreach (var property in importProduct.AdditionalProperties)
                 {
-                    productContent.SetValue(property.Key, property.Value);
+                    if (productContent.HasProperty(property.Key))
+                    {
+                        productContent.SetValue(property.Key, property.Value);
+                    }
                 }
             }
 
@@ -793,10 +802,12 @@ public class ImportService : IImportService
 
                 var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
 
-                productContent.SetValue("categories", stringUdis);
+                if (productContent.HasProperty("categories"))
+                    productContent.SetValue("categories", stringUdis);
             }
 
-            productContent.SetValue("comparer", compareValue);
+            if (productContent.HasProperty("comparer"))
+                productContent.SetValue("comparer", compareValue);
 
             productContent.Name = importProduct.NodeName;
 
