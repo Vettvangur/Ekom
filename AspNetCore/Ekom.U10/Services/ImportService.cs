@@ -725,7 +725,8 @@ public class ImportService : IImportService
                     // Only update if we find change 
                     if (newStock != currentStock)
                     {
-                        var stockUpdated = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock).Result;
+                        // this can be done in the background because we will not use stock in the comparison below
+                        _ = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock); 
                     }
                 }
             }
