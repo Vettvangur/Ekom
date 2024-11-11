@@ -379,12 +379,7 @@ public class ImportService : IImportService
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
     {
 
-        if (parentContent == null)
-        {
-            return;
-        }
-
-        if (importCategories == null)
+        if (parentContent == null || importCategories == null)
         {
             return;
         }
@@ -394,15 +389,14 @@ public class ImportService : IImportService
             // Delete Categories
 
             // Create a HashSet of identifiers from importCategory for efficient lookups
-            var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
+            var importCategoryIdentifiers = new HashSet<string>(importCategories.Select(x => x.Identifier));
 
-            var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+            var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent?.Id.ToString() ?? "", StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent?.Id.ToString())).ToList();
 
             // Delete Category not present in the importCategoryIdentifiers
             for (int i = targetedCategores.Count - 1; i >= 0; i--)
             {
                 var umbracoCategory = targetedCategores[i];
-
                 var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
 
                 if (isSyncDisabled)
@@ -424,9 +418,6 @@ public class ImportService : IImportService
             }
         }
 
-
-        if (importCategories != null || importCategories?.Count > 0)
-        {
             foreach (var importCategory in importCategories)
             {
                 var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
@@ -450,8 +441,6 @@ public class ImportService : IImportService
                 IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
             }
         }
-
-    }
 
     private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
     {
@@ -713,7 +702,8 @@ public class ImportService : IImportService
         }
         catch (Exception ex)
         {
-            throw new Exception("Failed to save Category: " + importCategory.Identifier, ex);
+            _logger.LogError(ex, $"Failed to save Category: {importCategory.Identifier} Message: {ex.Message}");
+            throw;
         }
 
     }
@@ -821,7 +811,7 @@ public class ImportService : IImportService
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}");
-            throw new Exception($"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}", ex);
+            throw;
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
