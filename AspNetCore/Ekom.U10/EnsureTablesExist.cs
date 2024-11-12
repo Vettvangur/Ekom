@@ -7,83 +7,82 @@ using Umbraco.Cms.Infrastructure.Migrations;
 using Umbraco.Cms.Infrastructure.Migrations.Upgrade;
 using Umbraco.Cms.Infrastructure.Scoping;
 
-namespace Ekom.App_Start
+namespace Ekom.App_Start;
+
+class MigrationCreateTables : MigrationBase
 {
-    class MigrationCreateTables : MigrationBase
+
+    readonly ILogger _logger;
+    readonly Configuration _config;
+    readonly DatabaseService _dbService;
+    public MigrationCreateTables(
+        ILogger<MigrationCreateTables> logger,
+        Configuration configuration,
+        DatabaseService dbService,
+        IMigrationContext context)
+        : base(context)
     {
-
-        readonly ILogger _logger;
-        readonly Configuration _config;
-        readonly DatabaseService _dbService;
-        public MigrationCreateTables(
-            ILogger<MigrationCreateTables> logger,
-            Configuration configuration,
-            DatabaseService dbService,
-            IMigrationContext context)
-            : base(context)
-        {
-            _logger = logger;
-            _config = configuration;
-            _dbService = dbService;
-        }
-
-        protected override void Migrate()
-        {
-            _dbService.CreateTables();
-        }
+        _logger = logger;
+        _config = configuration;
+        _dbService = dbService;
     }
 
-    class EkomMigrationPlan : MigrationPlan
+    protected override void Migrate()
     {
-        public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
+        _dbService.CreateTables();
+    }
+}
 
-        public EkomMigrationPlan()
-            : base("Ekom")
-        {
-            From(string.Empty)
-                .To<MigrationCreateTables>("1")
-                //.To<MigrationUpdatev2>("2")
-                ;
-        }
+class EkomMigrationPlan : MigrationPlan
+{
+    public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
+
+    public EkomMigrationPlan()
+        : base("Ekom")
+    {
+        From(string.Empty)
+            .To<MigrationCreateTables>("1")
+            //.To<MigrationUpdatev2>("2")
+            ;
+    }
+}
+
+class EnsureTablesExist : IComponent
+{
+    private readonly IScopeProvider scopeProvider;
+    private readonly IMigrationPlanExecutor _migrationPlanExecutor;
+    private readonly IKeyValueService keyValueService;
+    private readonly ILogger logger;
+
+    public EnsureTablesExist(
+        IScopeProvider scopeProvider,
+        IKeyValueService keyValueService,
+        ILogger<EnsureTablesExist> logger,
+        IMigrationPlanExecutor migrationPlanExecutor)
+    {
+        this.scopeProvider = scopeProvider;
+        this.keyValueService = keyValueService;
+        this.logger = logger;
+        _migrationPlanExecutor = migrationPlanExecutor;
     }
 
-    class EnsureTablesExist : IComponent
+    public void Initialize()
     {
-        private readonly IScopeProvider scopeProvider;
-        private readonly IMigrationPlanExecutor _migrationPlanExecutor;
-        private readonly IKeyValueService keyValueService;
-        private readonly ILogger logger;
+        logger.LogDebug("Ensuring Ekom db tables exist");
 
-        public EnsureTablesExist(
-            IScopeProvider scopeProvider,
-            IKeyValueService keyValueService,
-            ILogger<EnsureTablesExist> logger,
-            IMigrationPlanExecutor migrationPlanExecutor)
+        try
         {
-            this.scopeProvider = scopeProvider;
-            this.keyValueService = keyValueService;
-            this.logger = logger;
-            _migrationPlanExecutor = migrationPlanExecutor;
+            // perform any upgrades (as needed)
+            var upgrader = new Upgrader(new EkomMigrationPlan());
+            upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to run ekom Upgrader");
         }
 
-        public void Initialize()
-        {
-            logger.LogDebug("Ensuring Ekom db tables exist");
-
-            try
-            {
-                // perform any upgrades (as needed)
-                var upgrader = new Upgrader(new EkomMigrationPlan());
-                upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to run ekom Upgrader");
-            }
-
-            logger.LogDebug("Done");
-        }
-
-        public void Terminate() { }
+        logger.LogDebug("Done");
     }
+
+    public void Terminate() { }
 }

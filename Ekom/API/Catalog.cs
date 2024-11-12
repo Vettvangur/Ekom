@@ -602,7 +602,7 @@ public class Catalog
         return orderedCategories;
     }
 
-    public IVariant GetVariant(Guid Id, string storeAlias = null)
+    public IVariant? GetVariant(Guid Id, string storeAlias = null)
     {
         var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -617,11 +617,25 @@ public class Catalog
         return null;
     }
 
+    public IVariant? GetVariant(int Id, string storeAlias = null)
+    {
+        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            var variant = _variantCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+
+            return variant;
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Get variant by SKU
     /// </summary>
     /// <returns></returns>
-    public IVariant GetVariant(string sku, string storeAlias = null)
+    public IVariant? GetVariant(string sku, string storeAlias = null)
     {
         var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
