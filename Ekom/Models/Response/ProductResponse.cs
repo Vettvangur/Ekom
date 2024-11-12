@@ -73,12 +73,17 @@ public class ProductResponse
             Filters = products.Filters();
         }
 
-        ProductCount = products.Count();
-
         if (query != null && query.FilterOutZeroPriceProducts)
         {
             products = products.Where(x => x.OriginalPrice.Value > 0);
         }
+
+        if (filterService != null)
+        {
+            products = filterService.ApplyFilters(products);
+        }
+
+        ProductCount = products.Count();
 
         if (query?.OrderBy != Utilities.OrderBy.NoOrder)
         {
@@ -104,10 +109,7 @@ public class ProductResponse
             Products = products;
         }
 
-        if (filterService != null)
-        {
-            Products = filterService.ApplyFilters(Products);
-        }
+
     }
     
     public IEnumerable<IProduct> Products { get; set; }
