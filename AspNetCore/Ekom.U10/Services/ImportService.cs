@@ -1001,7 +1001,7 @@ public class ImportService : IImportService
                     if (umbMedia == null)
                     {
                         // Create
-                        umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
+                        umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
 
                         if (umbMedia != null)
                         {
@@ -1020,7 +1020,7 @@ public class ImportService : IImportService
                         // If the media is not found by comparer we need to create a new media
                         if (umbMedia == null)
                         {
-                            umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
+                            umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
 
                             if (umbMedia != null)
                             {
@@ -1054,7 +1054,7 @@ public class ImportService : IImportService
 
                 if (umbMedia == null)
                 {
-                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier);
+                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
                 }
 
@@ -1069,7 +1069,7 @@ public class ImportService : IImportService
 
                 if (umbMedia == null)
                 {
-                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier);
+                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
                 }
 
