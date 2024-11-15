@@ -668,7 +668,6 @@ public class ImportService : IImportService
                 return;
             }
 
-            if (categoryContent.HasProperty("title"))
                 categoryContent.SetProperty("title", importCategory.Title);
 
             if (importCategory.Slug != null && importCategory.Slug.Any())
@@ -676,13 +675,12 @@ public class ImportService : IImportService
                 categoryContent.SetSlug(importCategory.Slug);
             }
 
-            if (!string.IsNullOrEmpty(importCategory.SKU) && categoryContent.HasProperty("sku"))
+            if (!string.IsNullOrEmpty(importCategory.SKU))
             {
                 categoryContent.SetValue("sku", importCategory.SKU);
             }
 
-            if (categoryContent.HasProperty("description"))
-                categoryContent.SetProperty("description", importCategory.Description ?? new());
+            categoryContent.SetProperty("description", importCategory.Description);
 
             categoryContent.SetValue(Configuration.ImportAliasIdentifier, importCategory.Identifier);
 
@@ -695,7 +693,6 @@ public class ImportService : IImportService
                 }
             }
             
-            if (categoryContent.HasProperty("comparer"))
                 categoryContent.SetValue("comparer", compareValue);
 
             categoryContent.Name = importCategory.NodeName;
@@ -757,21 +754,18 @@ public class ImportService : IImportService
                 return;
             }
 
-            if (productContent.HasProperty("title"))
                 productContent.SetProperty("title", importProduct.Title);
 
             if (importProduct.Slug != null && importProduct.Slug.Any())
             {
                 productContent.SetSlug(importProduct.Slug);
             }
-
             if (!string.IsNullOrEmpty(importProduct.SKU))
             {
                 productContent.SetValue("sku", importProduct.SKU);
             }
 
-            if (productContent.HasProperty("description"))
-                productContent.SetProperty("description", importProduct.Description ?? new());
+            productContent.SetProperty("description", importProduct.Description);
 
             productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
 
@@ -783,7 +777,7 @@ public class ImportService : IImportService
                 }
             }
 
-            if (importProduct.Vat.HasValue && productContent.HasProperty("vat"))
+            if (importProduct.Vat.HasValue)
             {
                 productContent.SetValue("vat", importProduct.Vat);
             }
@@ -802,16 +796,13 @@ public class ImportService : IImportService
             if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
             {
                 var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
-
                 var udis = umbracoCategories.Select(x => x.GetUdi());
 
                 var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
 
-                if (productContent.HasProperty("categories"))
                     productContent.SetValue("categories", stringUdis);
             }
 
-            if (productContent.HasProperty("comparer"))
                 productContent.SetValue("comparer", compareValue);
 
             productContent.Name = importProduct.NodeName;
