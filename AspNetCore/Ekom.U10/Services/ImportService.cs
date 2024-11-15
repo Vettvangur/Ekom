@@ -103,8 +103,12 @@ public class ImportService : IImportService
 
             var allEkomNodes = GetAllEkomNodes();
 
-            var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
-            var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct").ToList();
+            ArgumentNullException.ThrowIfNull(umbracoRootContent);
+            var allUmbracoCategories = allEkomNodes
+                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture))
+                .Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+            var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct")
+                .ToList();
 
             var rootUmbracoMediafolder = _importMediaService.GetRootMedia(data.MediaRootKey);
 
@@ -133,6 +137,11 @@ public class ImportService : IImportService
             _logger.LogInformation(
                 "Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}", 
                 (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Count, variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Full Sync failed");
+            throw;
         }
         finally
         {
@@ -375,12 +384,7 @@ public class ImportService : IImportService
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
     {
 
-        if (parentContent == null)
-        {
-            return;
-        }
-
-        if (importCategories == null)
+        if (parentContent == null || importCategories == null)
         {
             return;
         }
@@ -390,15 +394,14 @@ public class ImportService : IImportService
             // Delete Categories
 
             // Create a HashSet of identifiers from importCategory for efficient lookups
-            var importCategoryIdentifiers = importCategories == null ? new HashSet<string>() : new HashSet<string>(importCategories.Select(x => x.Identifier));
+            var importCategoryIdentifiers = new HashSet<string>(importCategories.Select(x => x.Identifier));
 
-            var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+            var targetedCategores = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent?.Id.ToString() ?? "", StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent?.Id.ToString())).ToList();
 
             // Delete Category not present in the importCategoryIdentifiers
             for (int i = targetedCategores.Count - 1; i >= 0; i--)
             {
                 var umbracoCategory = targetedCategores[i];
-
                 var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
 
                 if (isSyncDisabled)
@@ -420,33 +423,28 @@ public class ImportService : IImportService
             }
         }
 
-
-        if (importCategories != null || importCategories?.Count > 0)
+        foreach (var importCategory in importCategories)
         {
-            foreach (var importCategory in importCategories)
+            var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
+
+            var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+
+            if (content == null)
             {
-                var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
-
-                var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
-
-                if (content == null)
-                {
-                    continue;
-                }
-
-                if (create)
-                {
-                    allUmbracoCategories.Add(content);
-                }
-
-                var save = create;
-
-                SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
-
-                IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
+                continue;
             }
-        }
 
+            if (create)
+            {
+                allUmbracoCategories.Add(content);
+            }
+
+            var save = create;
+
+            SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
+
+            IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
+        }
     }
 
     private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
@@ -461,7 +459,8 @@ public class ImportService : IImportService
 
             if (delete)
             {
-                var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.ParentId == umbracoRootContent.Id).ToList();
+                var rootId = umbracoRootContent.Id.ToString();
+                var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.Path.Split(',').Contains(rootId)).ToList();
 
                 // Create a HashSet of identifiers from importProducts for efficient lookups
                 var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
@@ -669,7 +668,7 @@ public class ImportService : IImportService
                 return;
             }
 
-            categoryContent.SetProperty("title", importCategory.Title);
+                categoryContent.SetProperty("title", importCategory.Title);
 
             if (importCategory.Slug != null && importCategory.Slug.Any())
             {
@@ -689,11 +688,12 @@ public class ImportService : IImportService
             {
                 foreach (var property in importCategory.AdditionalProperties)
                 {
-                    categoryContent.SetValue(property.Key, property.Value);
+                    if (categoryContent.HasProperty(property.Key))
+                        categoryContent.SetValue(property.Key, property.Value);
                 }
             }
-
-            categoryContent.SetValue("comparer", compareValue);
+            
+                categoryContent.SetValue("comparer", compareValue);
 
             categoryContent.Name = importCategory.NodeName;
 
@@ -709,7 +709,8 @@ public class ImportService : IImportService
         }
         catch (Exception ex)
         {
-            throw new Exception("Failed to save Category: " + importCategory.Identifier, ex);
+            _logger.LogError(ex, $"Failed to save Category: {importCategory.Identifier} Message: {ex.Message}");
+            throw;
         }
 
     }
@@ -730,7 +731,8 @@ public class ImportService : IImportService
                     // Only update if we find change 
                     if (newStock != currentStock)
                     {
-                        var stockUpdated = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock).Result;
+                        // this can be done in the background because we will not use stock in the comparison below
+                        _ = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock); 
                     }
                 }
             }
@@ -752,13 +754,12 @@ public class ImportService : IImportService
                 return;
             }
 
-            productContent.SetProperty("title", importProduct.Title);
+                productContent.SetProperty("title", importProduct.Title);
 
             if (importProduct.Slug != null && importProduct.Slug.Any())
             {
                 productContent.SetSlug(importProduct.Slug);
             }
-
             if (!string.IsNullOrEmpty(importProduct.SKU))
             {
                 productContent.SetValue("sku", importProduct.SKU);
@@ -785,22 +786,24 @@ public class ImportService : IImportService
             {
                 foreach (var property in importProduct.AdditionalProperties)
                 {
-                    productContent.SetValue(property.Key, property.Value);
+                    if (productContent.HasProperty(property.Key))
+                    {
+                        productContent.SetValue(property.Key, property.Value);
+                    }
                 }
             }
 
             if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
             {
                 var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
-
                 var udis = umbracoCategories.Select(x => x.GetUdi());
 
                 var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
 
-                productContent.SetValue("categories", stringUdis);
+                    productContent.SetValue("categories", stringUdis);
             }
 
-            productContent.SetValue("comparer", compareValue);
+                productContent.SetValue("comparer", compareValue);
 
             productContent.Name = importProduct.NodeName;
 
@@ -817,7 +820,7 @@ public class ImportService : IImportService
         catch (Exception ex)
         {
             _logger.LogError(ex, $"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}");
-            throw new Exception($"Failed to save Product: Sku: {importProduct.SKU} Message: {ex.Message}", ex);
+            throw;
         }
     }
     private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
