@@ -971,6 +971,7 @@ public class ImportService : IImportService
         }
 
         var currentImagesCount = currentImagesUdi.Count;
+        var imageUdis = new List<string>();
 
         var sortedMedias = importMedias
             .Select((media, index) => new { media, index })
@@ -984,10 +985,10 @@ public class ImportService : IImportService
             {
                 if (media.Action == ImportMediaAction.Add)
                 {
-                    AddUdiIfNotExist(currentImagesUdi, importMedia.Udi);
+                    AddUdiIfNotExist(imageUdis, importMedia.Udi);
                 } else if (media.Action == ImportMediaAction.Delete)
                 {
-                    RemoveUdiIfExist(currentImagesUdi, importMedia.Udi);
+                    RemoveUdiIfExist(imageUdis, importMedia.Udi);
                 }
             }
             else if (media is ImportMediaFromExternalUrl externalUrlMedia)
@@ -1009,14 +1010,14 @@ public class ImportService : IImportService
                         if (umbMedia != null)
                         {
                             allUmbracoMedia.Add(umbMedia);
-                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                            AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
                         }
 
                     } else
                     {   // Update
 
                         // Remove media
-                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                        RemoveUdiIfExist(imageUdis, umbMedia.GetUdi().ToString());
 
                         umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
 
@@ -1028,14 +1029,14 @@ public class ImportService : IImportService
                             if (umbMedia != null)
                             {
                                 allUmbracoMedia.Add(umbMedia);
-                                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
                             }
 
                         } else
                         {
                             // If comparer is the same probably the sort order has just changed so we just want to change the order.
                             _importMediaService.UpdateMediaSortOrder(umbMedia, externalUrlMedia);
-                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                            AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
                         }
 
                     } 
@@ -1044,7 +1045,7 @@ public class ImportService : IImportService
 
                     if (umbMedia != null)
                     {
-                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                        RemoveUdiIfExist(imageUdis, umbMedia.GetUdi().ToString());
                     }
                 }
 
@@ -1061,7 +1062,7 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
             }
             else if (media is ImportMediaFromBase64 base64Media)
             {
@@ -1076,16 +1077,16 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
             }
         }
 
-        if (currentImagesCount == 0 && currentImagesUdi.Count == 0)
+        if (currentImagesCount == 0 && imageUdis.Count == 0)
         {
             return false;
         }
 
-        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
+        var importedImages = SortImages(imageUdis.DistinctBy(x => x).ToList(), allUmbracoMedia);
 
         if (currentImages != importedImages)
         {
