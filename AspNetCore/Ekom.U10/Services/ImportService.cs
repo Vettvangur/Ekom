@@ -971,7 +971,6 @@ public class ImportService : IImportService
         }
 
         var currentImagesCount = currentImagesUdi.Count;
-        var imageUdis = new List<string>();
 
         var sortedMedias = importMedias
             .Select((media, index) => new { media, index })
@@ -985,10 +984,10 @@ public class ImportService : IImportService
             {
                 if (media.Action == ImportMediaAction.Add)
                 {
-                    AddUdiIfNotExist(imageUdis, importMedia.Udi);
+                    AddUdiIfNotExist(currentImagesUdi, importMedia.Udi);
                 } else if (media.Action == ImportMediaAction.Delete)
                 {
-                    RemoveUdiIfExist(imageUdis, importMedia.Udi);
+                    RemoveUdiIfExist(currentImagesUdi, importMedia.Udi);
                 }
             }
             else if (media is ImportMediaFromExternalUrl externalUrlMedia)
@@ -1010,14 +1009,14 @@ public class ImportService : IImportService
                         if (umbMedia != null)
                         {
                             allUmbracoMedia.Add(umbMedia);
-                            AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
+                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                         }
 
                     } else
                     {   // Update
 
                         // Remove media
-                        RemoveUdiIfExist(imageUdis, umbMedia.GetUdi().ToString());
+                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
 
                         umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
 
@@ -1029,14 +1028,14 @@ public class ImportService : IImportService
                             if (umbMedia != null)
                             {
                                 allUmbracoMedia.Add(umbMedia);
-                                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
+                                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                             }
 
                         } else
                         {
                             // If comparer is the same probably the sort order has just changed so we just want to change the order.
                             _importMediaService.UpdateMediaSortOrder(umbMedia, externalUrlMedia);
-                            AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
+                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                         }
 
                     } 
@@ -1045,7 +1044,7 @@ public class ImportService : IImportService
 
                     if (umbMedia != null)
                     {
-                        RemoveUdiIfExist(imageUdis, umbMedia.GetUdi().ToString());
+                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
                     }
                 }
 
@@ -1062,11 +1061,10 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
             }
             else if (media is ImportMediaFromBase64 base64Media)
             {
-
                 var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
@@ -1077,16 +1075,16 @@ public class ImportService : IImportService
                     allUmbracoMedia.Add(umbMedia);
                 }
 
-                AddUdiIfNotExist(imageUdis, umbMedia.GetUdi().ToString());
+                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
             }
         }
 
-        if (currentImagesCount == 0 && imageUdis.Count == 0)
+        if (currentImagesCount == 0 && currentImagesUdi.Count == 0)
         {
             return false;
         }
 
-        var importedImages = SortImages(imageUdis.DistinctBy(x => x).ToList(), allUmbracoMedia);
+        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
 
         if (currentImages != importedImages)
         {
