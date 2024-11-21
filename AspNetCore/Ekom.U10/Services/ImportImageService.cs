@@ -86,7 +86,7 @@ public class ImportMediaService
         return mediaFiles;
     }
 
-    public IMedia? ImportMediaFromExternalUrl(ImportMediaFromExternalUrl image, string comparer, ImportMediaTypes mediaType, string? identifier)
+    public IMedia? ImportMediaFromExternalUrl(ImportMediaFromExternalUrl image, string comparer, ImportMediaTypes mediaType, string? identifier, int? syncUser = -1)
     {
         var stream = LoadMediaToMemoryStreamAsync(image.Url).Result;
 
@@ -95,18 +95,18 @@ public class ImportMediaService
             return null;
         }
 
-        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier);
+        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier, syncUser);
     }
 
-    public IMedia ImportMediaFromBytes(ImportMediaFromBytes image, string comparer, ImportMediaTypes mediaType, string? identifier)
+    public IMedia ImportMediaFromBytes(ImportMediaFromBytes image, string comparer, ImportMediaTypes mediaType, string? identifier, int? syncUser = -1)
     {
         var stream = new MemoryStream(image.Bytes);
         stream.Seek(0, SeekOrigin.Begin);
 
-        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier);
+        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier, syncUser);
     }
 
-    public IMedia ImportMediaFromBase64(ImportMediaFromBase64 image, string comparer, ImportMediaTypes mediaType, string? identifier)
+    public IMedia ImportMediaFromBase64(ImportMediaFromBase64 image, string comparer, ImportMediaTypes mediaType, string? identifier, int? syncUser = -1)
     {        
         // Convert Base64 String to byte[]
         byte[] bytes = Convert.FromBase64String(image.Base64);
@@ -116,7 +116,7 @@ public class ImportMediaService
 
         stream.Seek(0, SeekOrigin.Begin);
 
-        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier);
+        return CreateMedia(stream, comparer, image.NodeName, image.FileName, mediaType, image.SortOrder, identifier, syncUser);
     }
 
     public IMedia UpdateMediaSortOrder(IMedia media, IImportMedia importMedia)
@@ -151,9 +151,9 @@ public class ImportMediaService
         }
     }
 
-    private IMedia CreateMedia(MemoryStream mem, string comparer, string nodeName, string fullFileName, Ekom.Models.Import.ImportMediaTypes mediaType, int? sortOrder, string? identifier)
+    private IMedia CreateMedia(MemoryStream mem, string comparer, string nodeName, string fullFileName, Ekom.Models.Import.ImportMediaTypes mediaType, int? sortOrder, string? identifier, int? syncUser)
     {
-        var media = _mediaService.CreateMedia(nodeName, lastMediaFolder.Id, mediaType.ToString());
+        var media = _mediaService.CreateMediaWithIdentity(nodeName, lastMediaFolder.Id, mediaType.ToString(), userId: syncUser.HasValue ? syncUser.Value : -1);
         media.SetValue(_mediaFileManager, _mediaUrlGenerators, _shortStringHelper, _contentTypeBaseServiceProvider, Constants.Conventions.Media.File, fullFileName, mem);
         media.SetValue("comparer", comparer);
 

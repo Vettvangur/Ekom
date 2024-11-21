@@ -1005,7 +1005,7 @@ public class ImportService : IImportService
                     if (umbMedia == null)
                     {
                         // Create
-                        umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
+                        umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
 
                         if (umbMedia != null)
                         {
@@ -1024,7 +1024,7 @@ public class ImportService : IImportService
                         // If the media is not found by comparer we need to create a new media
                         if (umbMedia == null)
                         {
-                            umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier);
+                            umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
 
                             if (umbMedia != null)
                             {
@@ -1058,7 +1058,7 @@ public class ImportService : IImportService
 
                 if (umbMedia == null)
                 {
-                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier);
+                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
                 }
 
@@ -1066,14 +1066,13 @@ public class ImportService : IImportService
             }
             else if (media is ImportMediaFromBase64 base64Media)
             {
-
                 var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
 
                 if (umbMedia == null)
                 {
-                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier);
+                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier, syncUser);
                     allUmbracoMedia.Add(umbMedia);
                 }
 
