@@ -153,7 +153,7 @@ public class ImportMediaService
 
     private IMedia CreateMedia(MemoryStream mem, string comparer, string nodeName, string fullFileName, Ekom.Models.Import.ImportMediaTypes mediaType, int? sortOrder, string? identifier, int? syncUser)
     {
-        var media = _mediaService.CreateMediaWithIdentity(nodeName, lastMediaFolder.Id, mediaType.ToString(), userId: syncUser.HasValue ? syncUser.Value : -1);
+        var media = _mediaService.CreateMedia(nodeName, lastMediaFolder.Id, mediaType.ToString(), userId: syncUser.HasValue ? syncUser.Value : -1);
         media.SetValue(_mediaFileManager, _mediaUrlGenerators, _shortStringHelper, _contentTypeBaseServiceProvider, Constants.Conventions.Media.File, fullFileName, mem);
         media.SetValue("comparer", comparer);
 
