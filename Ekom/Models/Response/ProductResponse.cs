@@ -23,7 +23,7 @@ public class ProductResponse
             foreach (var selector in query.PropertySelectors)
             {
 
-                if (!string.IsNullOrEmpty(selector.Value))
+                if (!string.IsNullOrEmpty(selector.Key))
                 {
                     var propertyValues = products
                       .Select(x => x.GetValue(selector.Key, selector.Value))
