@@ -579,7 +579,7 @@ public class ImportService : IImportService
             var variantGroupIdentifier = umbracoVariantGroup.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
             if (!importVariantGroupsIdentifiers.Contains(variantGroupIdentifier))
             {
-                _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier}");
+                _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier} Product Id: {productContent.Id} Product SKU: {productContent.GetValue<string>("sku")}");
 
                 _contentService.Delete(umbracoVariantGroup);
                 allEkomNodes.RemoveAt(i);
