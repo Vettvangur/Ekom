@@ -995,6 +995,7 @@ public class ImportService : IImportService
                 var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Url", "FileName", "NodeName", "Date" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
+                    x.ContentType.Alias == mediaType.ToString() &&
                     x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(externalUrlMedia.Identifier)
                         ? x.GetValue<string>("ekmIdentifier") == externalUrlMedia.Identifier
                         : x.GetValue<string>("comparer") == compareValue);
