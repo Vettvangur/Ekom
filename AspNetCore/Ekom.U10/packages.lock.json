@@ -4,12 +4,12 @@
     "net7.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.2.0, )",
-        "resolved": "0.2.0",
-        "contentHash": "cXVio33K9k1FmNihultWebPkdUJoClaV7FIhExrlbpj/Nknhi6CGTl2Yt2kIzs48/FNakzEQIfpPTpQ08e4cpw==",
+        "requested": "[0.2.1, )",
+        "resolved": "0.2.1",
+        "contentHash": "rMu2Q8kzTkM54YaeO7vZuLc0zlnaHjbdhfWZzug70JcuMyCE4t0203R1c9e9TtIocmFU2RkMEtFjOCvSxIy8XA==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.2.0",
-          "Ekom.Payments.Core": "0.2.0",
+          "Ekom.Payments.AspNetCore": "0.2.1",
+          "Ekom.Payments.Core": "0.2.1",
           "Umbraco.Cms.Core": "12.3.10",
           "Umbraco.Cms.Web.BackOffice": "12.3.10",
           "Umbraco.Cms.Web.Website": "12.3.10"
@@ -170,16 +170,16 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.0",
-        "contentHash": "tHuQV4FVodGrywOC00vOqA1CJLrLg/TE7dU1jHGd+V9sJL4wKDIyzIDMQBbrJnk2xs/CfNQbohvrvjH5SfY87A==",
+        "resolved": "0.2.1",
+        "contentHash": "kEU3dRc79a8YzHmhzqRDsniJHnUccnJ/e+SlUnYV386ro587qJQcC0cn49PYI7Z/jJwE5TVmOjbzc+D7+Mbr7g==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.2.0"
+          "Ekom.Payments.Core": "0.2.1"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.0",
-        "contentHash": "tky4jJNLIUvnbvfEY+8CPJi3gQQUIWTGrZNjUFejm/ADE04hz/fMhi4kq2GzUz9xMq+3+o8nyKcFVexiXRWUYw==",
+        "resolved": "0.2.1",
+        "contentHash": "hF7JUrRBccnw2QIorY2Ftnrsn3WsJGS0poVTN/jLZitOfrMjso9GhgWjfB8TkV3IwQnjIOvOWQbIG7crBRzljg==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Azure.Identity": "1.13.1",
@@ -2696,7 +2696,7 @@
         "dependencies": {
           "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
-          "Ekom.Payments.Core": "[0.2.0, )",
+          "Ekom.Payments.Core": "[0.2.1, )",
           "Hangfire": "[1.8.5, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.2.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",

@@ -485,8 +485,6 @@ namespace Ekom.Services
                     
                     var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-
-
                     var eventsArgs = new PayEventArgs
                     {
                         OrderInfo = order,
@@ -495,7 +493,8 @@ namespace Ekom.Services
                             SuccessUrl = new Uri(successUrl),
                             ErrorUrl = new Uri(errorUrl),
                             PaymentProviderKey = ekomPP.Key,
-                            PaymentProviderName = ekomPP.Name
+                            PaymentProviderName = ekomPP.Name,
+                            OrderUniqueId = order.UniqueId
                         },
                     };
 
@@ -590,7 +589,9 @@ namespace Ekom.Services
                     Store = storeAlias,
                     Member = currentMember?.Key,
                     PaymentProviderKey = ekomPP.Key,
+                    OrderUniqueId = order.UniqueId,
                 };
+
                 paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());
                 paymentSettings.OrderCustomData.Add("ekomOrderReferenceId", order.ReferenceId.ToString());
 
