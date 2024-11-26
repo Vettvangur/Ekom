@@ -34,7 +34,7 @@ public class Store
     /// Get store from <see cref="Ekom.Models.ContentRequest"/> or first store available
     /// </summary>
     /// <returns></returns>
-    public IStore GetStore()
+    public IStore? GetStore()
     {
         return _storeSvc.GetStoreFromCache();
     }
@@ -75,6 +75,15 @@ public class Store
     public IEnumerable<UmbracoDomain> GetDomains()
     {
         return _storeSvc.GetDomains();
+    }
+
+    /// <summary>
+    /// Set store from <see cref="Ekom.Models.ContentRequest"/>
+    /// </summary>
+    /// <returns></returns>
+    public IStore? SetStore(string storeAlias)
+    {
+        return _storeSvc.SetStore(storeAlias);
     }
 
     public void RefreshCache()
