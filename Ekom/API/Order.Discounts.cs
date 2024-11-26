@@ -1,210 +1,209 @@
 using Ekom.Exceptions;
 using Ekom.Models;
 
-namespace Ekom.API
+namespace Ekom.API;
+
+/// <summary>
+/// The Ekom API, get/update/remove operations on orders 
+/// </summary>
+public partial class Order
 {
     /// <summary>
-    /// The Ekom API, get/update/remove operations on orders 
+    /// 
     /// </summary>
-    public partial class Order
+    /// <exception cref="DiscountNotFoundException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <returns></returns>
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon)
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public async Task<bool> ApplyCouponToOrderAsync(string coupon)
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
-            return await ApplyCouponToOrderAsync(coupon, storeAlias)
+        return await ApplyCouponToOrderAsync(coupon, storeAlias)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="DiscountNotFoundException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <returns></returns>
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias)
+    {
+        if (string.IsNullOrEmpty(coupon))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
+        }
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
+        }
+
+        coupon = coupon.ToLowerInvariant();
+
+        if (!_couponCache.Cache.TryGetValue(coupon, out var couponData))
+            throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
+        
+        if (couponData.NumberAvailable <= 0) throw new DiscountHasNoUsageException($"Coupon has no usage.");
+
+        if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+        {
+            return await _orderService.ApplyDiscountToOrderAsync(
+                    discount, 
+                    storeAlias, 
+                    new DiscountOrderSettings
+                    {
+                        Coupon = coupon,
+                    })
                 .ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias)
+        throw new DiscountUnableToFindCouponException($"Unable to find discount with coupon {coupon}");
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task RemoveCouponFromOrderAsync()
+    {
+        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+
+        await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="storeAlias"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task RemoveCouponFromOrderAsync(string storeAlias)
+    {
+        if (string.IsNullOrEmpty(storeAlias))
         {
-            if (string.IsNullOrEmpty(coupon))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
-            }
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
-            }
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
+        }
 
-            coupon = coupon.ToLowerInvariant();
+        await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
+            .ConfigureAwait(false);
+    }
 
-            if (!_couponCache.Cache.TryGetValue(coupon, out var couponData))
-                throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
-            
-            if (couponData.NumberAvailable <= 0) throw new DiscountHasNoUsageException($"Coupon has no usage.");
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="OrderLineNotFoundException"></exception>
+    /// <exception cref="DiscountNotFoundException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <returns></returns>
+    public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon)
+    {
+        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
+        return await ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="OrderLineNotFoundException"></exception>
+    /// <exception cref="DiscountNotFoundException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    /// <returns></returns>
+    public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon, string storeAlias)
+    {
+        if (string.IsNullOrEmpty(coupon))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
+        }
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
+        }
+        if (productKey == Guid.Empty)
+        {
+            throw new ArgumentException("== Guid.Empty", nameof(productKey));
+        }
+
+        coupon = coupon.ToLowerInvariant();
+
+        if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
+        {
             if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
             {
-                return await _orderService.ApplyDiscountToOrderAsync(
-                        discount, 
-                        storeAlias, 
-                        new DiscountOrderSettings
-                        {
-                            Coupon = coupon,
-                        })
+                return await _orderService.ApplyDiscountToOrderLineAsync(
+                    productKey,
+                    discount,
+                    storeAlias,
+                    new DiscountOrderSettings
+                    {
+                        Coupon = coupon,
+                    })
                     .ConfigureAwait(false);
-            }
-
-            throw new DiscountUnableToFindCouponException($"Unable to find discount with coupon {coupon}");
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task RemoveCouponFromOrderAsync()
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="storeAlias"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task RemoveCouponFromOrderAsync(string storeAlias)
-        {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
-            }
-
-            await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
-                .ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon)
-        {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            return await ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias)
-                .ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        /// <exception cref="DiscountNotFoundException"></exception>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns></returns>
-        public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon, string storeAlias)
-        {
-            if (string.IsNullOrEmpty(coupon))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(coupon));
-            }
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
-            }
-            if (productKey == Guid.Empty)
-            {
-                throw new ArgumentException("== Guid.Empty", nameof(productKey));
-            }
-
-            coupon = coupon.ToLowerInvariant();
-
-            if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
-            {
-                if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
-                {
-                    return await _orderService.ApplyDiscountToOrderLineAsync(
-                        productKey,
-                        discount,
-                        storeAlias,
-                        new DiscountOrderSettings
-                        {
-                            Coupon = coupon,
-                        })
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
-                }
-
             }
             else
             {
                 throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
             }
-        }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
+        }
+        else
         {
-            var storeAlias = _storeSvc.GetStoreFromCache().Alias;
-
-            await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
-                .ConfigureAwait(false);
+            throw new DiscountNotFoundException($"Unable to find discount with coupon {coupon}");
         }
+    }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="productKey"></param>
-        /// <param name="storeAlias"></param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <exception cref="OrderLineNotFoundException"></exception>
-        public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string storeAlias)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="OrderLineNotFoundException"></exception>
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
+    {
+        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+
+        await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="productKey"></param>
+    /// <param name="storeAlias"></param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="OrderLineNotFoundException"></exception>
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string storeAlias)
+    {
+        if (string.IsNullOrEmpty(storeAlias))
         {
-            if (string.IsNullOrEmpty(storeAlias))
-            {
-                throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
-            }
-            if (productKey == Guid.Empty)
-            {
-                throw new ArgumentException("== Guid.Empty", nameof(productKey));
-            }
-
-            await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
-                .ConfigureAwait(false);
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
-
-        public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+        if (productKey == Guid.Empty)
         {
-            await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId)
-                .ConfigureAwait(false);
+            throw new ArgumentException("== Guid.Empty", nameof(productKey));
         }
 
-        public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
-        {
-            await _orderService.RemoveCouponCodeAsync(couponCode, discountId)
-                .ConfigureAwait(false);
-        }
+        await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
+            .ConfigureAwait(false);
+    }
 
-        public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
-        {
-            return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
-                .ConfigureAwait(false);
-        }
+    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+    {
+        await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId)
+            .ConfigureAwait(false);
+    }
+
+    public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
+    {
+        await _orderService.RemoveCouponCodeAsync(couponCode, discountId)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    {
+        return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
+            .ConfigureAwait(false);
     }
 }

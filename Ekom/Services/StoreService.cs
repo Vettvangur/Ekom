@@ -76,7 +76,7 @@ class StoreService : IStoreService
             ?? throw new StoreNotFoundException("Unable to find any stores!");
     }
 
-    public IStore GetStoreFromCache()
+    public IStore? GetStoreFromCache()
     {
         var requestCacheFromHttpContext = _httpContext?.Items["ekmRequest"] as Lazy<ContentRequest>;
 
@@ -89,6 +89,34 @@ class StoreService : IStoreService
         }
 
         return GetAllStores().FirstOrDefault();
+    }
+
+    public IStore? SetStore(string storeAlias)
+    {
+        // Retrieve the store by its alias
+        var store = GetStoreByAlias(storeAlias);
+
+        // If no store is found, return null
+        if (store == null)
+        {
+            return null;
+        }
+
+        // Retrieve the current ekmRequest from the HttpContext
+        if (_httpContext?.Items.TryGetValue("ekmRequest", out var ekmRequestObject) == true &&
+            ekmRequestObject is Lazy<ContentRequest> lazyRequest)
+        {
+            var contentRequest = lazyRequest.Value;
+
+            if (contentRequest != null)
+            {
+                // Update the store property in the ContentRequest object
+                contentRequest.Store = store;
+            }
+        }
+
+        // Return the store
+        return store;
     }
 
     public IEnumerable<IStore> GetAllStores()

@@ -1,13 +1,13 @@
 using Ekom.Models;
 
-namespace Ekom.Services
+namespace Ekom.Services;
+
+interface IStoreService
 {
-    interface IStoreService
-    {
-        IEnumerable<IStore> GetAllStores();
-        IStore GetStoreByAlias(string alias);
-        IStore GetStoreByDomain(string domain = "", string culture = "");
-        IStore GetStoreFromCache();
-        IEnumerable<UmbracoDomain> GetDomains();
-    }
+    IEnumerable<IStore> GetAllStores();
+    IStore? GetStoreByAlias(string alias);
+    IStore? GetStoreByDomain(string domain = "", string culture = "");
+    IStore? GetStoreFromCache();
+    IStore? SetStore(string storeAlias);
+    IEnumerable<UmbracoDomain> GetDomains();
 }

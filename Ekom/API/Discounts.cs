@@ -3,94 +3,91 @@ using Ekom.Models;
 using Ekom.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace Ekom.API
+namespace Ekom.API;
+
+/// <summary>
+/// The Ekom API, grants access to the current discounts 
+/// </summary>
+public class Discounts
 {
     /// <summary>
-    /// The Ekom API, grants access to the current discounts 
+    /// Discount Instance
     /// </summary>
-    public class Discounts
+
+    public static Discounts Instance => Configuration.Resolver.GetService<Discounts>();
+
+    readonly ILogger<Discounts> _logger;
+    readonly Configuration _config;
+    readonly IPerStoreCache<IDiscount> _discountCache;
+    readonly IStoreService _storeSvc;
+
+
+    /// <summary>
+    /// ctor
+    /// </summary>
+    internal Discounts(
+        Configuration config,
+        ILogger<Discounts> logger,
+        IPerStoreCache<IDiscount> discountCache,
+        IStoreService storeService
+    )
     {
-        /// <summary>
-        /// Discount Instance
-        /// </summary>
+        _config = config;
+        _logger = logger;
+        _discountCache = discountCache;
+        _storeSvc = storeService;
+    }
 
-        public static Discounts Instance => Configuration.Resolver.GetService<Discounts>();
+    /// <summary>
+    /// Gets all discounts
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<IDiscount> GetDiscounts()
+    {
+        var store = _storeSvc.GetStoreFromCache();
 
-        readonly ILogger<Discounts> _logger;
-        readonly Configuration _config;
-        readonly IPerStoreCache<IDiscount> _discountCache;
-        readonly IStoreService _storeSvc;
-
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        internal Discounts(
-            Configuration config,
-            ILogger<Discounts> logger,
-            IPerStoreCache<IDiscount> discountCache,
-            IStoreService storeService
-        )
+        if (store != null)
         {
-            _config = config;
-            _logger = logger;
-            _discountCache = discountCache;
-            _storeSvc = storeService;
+            return GetDiscounts(store.Alias);
         }
 
-        /// <summary>
-        /// Gets all discounts
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<IDiscount> GetDiscounts()
+        return Enumerable.Empty<IDiscount>();
+    }
+
+    /// <summary>
+    /// Gets all discounts
+    /// </summary>
+    /// <param name="storeAlias"></param>
+    /// <returns></returns>
+    public IEnumerable<IDiscount> GetDiscounts(string storeAlias)
+    {
+        return _discountCache.Cache[storeAlias].Select(x => x.Value);
+    }
+
+
+    /// <summary>
+    /// Gets all discounts
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<IDiscount> GetGlobalDiscounts()
+    {
+        var store = _storeSvc.GetStoreFromCache();
+
+        if (store != null)
         {
-            var store = _storeSvc.GetStoreFromCache();
-
-            if (store != null)
-            {
-                return GetDiscounts(store.Alias);
-            }
-
-            return Enumerable.Empty<IDiscount>();
+            return GetGlobalDiscounts(store.Alias);
         }
 
-        /// <summary>
-        /// Gets all discounts
-        /// </summary>
-        /// <param name="storeAlias"></param>
-        /// <returns></returns>
-        public IEnumerable<IDiscount> GetDiscounts(string storeAlias)
-        {
-            return _discountCache.Cache[storeAlias].Select(x => x.Value);
-        }
-
-
-        /// <summary>
-        /// Gets all discounts
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<IDiscount> GetGlobalDiscounts()
-        {
-            var store = _storeSvc.GetStoreFromCache();
-
-            if (store != null)
-            {
-                return GetGlobalDiscounts(store.Alias);
-            }
-
-            return Enumerable.Empty<IDiscount>();
-        }
-        /// <summary>
-        /// Gets all discounts
-        /// </summary>
-        /// <param name="storeAlias"></param>
-        /// <returns></returns>
-        public IEnumerable<IDiscount> GetGlobalDiscounts(string storeAlias)
-        {
-            return GetDiscounts(storeAlias).Where(d => d.GlobalDiscount);
-        }
+        return Enumerable.Empty<IDiscount>();
+    }
+    /// <summary>
+    /// Gets all discounts
+    /// </summary>
+    /// <param name="storeAlias"></param>
+    /// <returns></returns>
+    public IEnumerable<IDiscount> GetGlobalDiscounts(string storeAlias)
+    {
+        return GetDiscounts(storeAlias).Where(d => d.GlobalDiscount);
     }
 }
