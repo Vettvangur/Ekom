@@ -5,7 +5,7 @@ namespace Ekom.Models;
 public class ContentRequest
 {
     public string IPAddress { get; set; }
-    public IStore Store { get; set; }
+    public IStore? Store { get; set; }
     public object Currency { get; set; }
     public IProduct Product { get; set; }
     public ICategory Category { get; set; }

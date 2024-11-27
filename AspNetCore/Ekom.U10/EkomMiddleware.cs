@@ -3,6 +3,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Polly;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -90,13 +91,36 @@ class EkomMiddleware
             }
 
             using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
-            // No umbraco context exists for static file requests
+
             if (umbCtx?.UmbracoContext != null)
             {
+                IStore? store = null;
+
+                if (_context?.Request != null)
+                {
+                    // Check for 'storeAlias' in the query string
+                    if (_context.Request.Query?.Count > 0 && _context.Request.Query.TryGetValue("storeAlias", out var storeAliasValue))
+                    {
+                        if (!string.IsNullOrEmpty(storeAliasValue))
+                        {
+                            store = API.Store.Instance.GetStore(storeAliasValue.ToString());
+                        }
+                    }
+                    // Check for 'storeAlias' in the headers
+                    else if (_context.Request.Headers?.Count > 0 && _context.Request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue))
+                    {
+                        if (!string.IsNullOrEmpty(storeAliasHeaderValue))
+                        {
+                            store = API.Store.Instance.GetStore(storeAliasHeaderValue.ToString());
+                        }
+                    }
+                }
+
                 appCaches.RequestCache.Get("ekmRequest", () =>
                     new ContentRequest()
                     {
                         User = new User(),
+                        Store = store
                     });
             }
 

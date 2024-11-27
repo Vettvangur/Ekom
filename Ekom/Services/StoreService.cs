@@ -104,6 +104,11 @@ class StoreService : IStoreService
 
     public IStore? SetStore(string storeAlias)
     {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            return null;
+        }
+
         // Retrieve the store by its alias
         var store = GetStoreByAlias(storeAlias);
 
