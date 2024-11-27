@@ -10,8 +10,6 @@ class StoreService : IStoreService
     private readonly IStoreDomainCache _domainCache;
     private readonly IBaseCache<IStore> _storeCache;
     private readonly HttpContext _httpContext;
-
-    private readonly string EkmRequestKey = "umbrtmche-ekmRequest";
     
     /// <summary>
     /// ctor
@@ -78,14 +76,27 @@ class StoreService : IStoreService
 
     public IStore? GetStoreFromCache()
     {
-        var requestCacheFromHttpContext = _httpContext?.Items["ekmRequest"] as Lazy<ContentRequest>;
 
-        if (_httpContext.Items.ContainsKey(EkmRequestKey))
+        if (_httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject))
         {
-            var r = _httpContext.Items[EkmRequestKey] as Lazy<object>;
-            var contentRequest = r?.Value as ContentRequest;
+            ContentRequest? contentRequest = null;
 
-            return contentRequest?.Store ?? GetAllStores().FirstOrDefault();
+            // Check for Lazy<ContentRequest>
+            if (ekmRequestObject is Lazy<ContentRequest> lazyContentRequest)
+            {
+                contentRequest = lazyContentRequest.Value;
+            }
+            // Check for Lazy<object> and cast to ContentRequest
+            else if (ekmRequestObject is Lazy<object> lazyObject && lazyObject.Value is ContentRequest contentRequestFromObject)
+            {
+                contentRequest = contentRequestFromObject;
+            }
+
+            if (contentRequest != null)
+            {
+                // Use contentRequest as needed
+                return contentRequest.Store;
+            }
         }
 
         return GetAllStores().FirstOrDefault();
@@ -102,16 +113,33 @@ class StoreService : IStoreService
             return null;
         }
 
-        // Retrieve the current ekmRequest from the HttpContext
-        if (_httpContext?.Items.TryGetValue("ekmRequest", out var ekmRequestObject) == true &&
-            ekmRequestObject is Lazy<ContentRequest> lazyRequest)
+        if (_httpContext != null)
         {
-            var contentRequest = lazyRequest.Value;
-
-            if (contentRequest != null)
+            if (_httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject) &&
+                ekmRequestObject is Lazy<ContentRequest> lazyRequest)
             {
-                // Update the store property in the ContentRequest object
-                contentRequest.Store = store;
+                // Access Lazy.Value to ensure it initializes
+                var contentRequest = lazyRequest.Value;
+                if (contentRequest != null)
+                {
+                    contentRequest.Store = store;
+                }
+            }
+            else
+            {
+                // Create and initialize a new Lazy<ContentRequest>
+                var newContentRequest = new Lazy<ContentRequest>(() =>
+                {
+                    var request = new ContentRequest();
+                    request.Store = store;
+                    return request;
+                });
+
+                // Add to HttpContext.Items
+                _httpContext.Items[Configuration.EkmRequestKey] = newContentRequest;
+
+                // Access Lazy.Value to ensure initialization
+                _ = newContentRequest.Value;
             }
         }
 

@@ -302,7 +302,7 @@ namespace Ekom.Umb.Services
         /// Umbraco.Web.Routing.DomainUtilities.GetCultureFromDomains
         /// for inspiration
         /// </summary>
-        public string GetNodeEntityUrl(INodeEntityWithUrl node)
+        public string? GetNodeEntityUrl(INodeEntityWithUrl node)
         {
             // Urls is a list of relative urls.
             // Umbraco cultures & hostnames can include a prefix
@@ -311,7 +311,7 @@ namespace Ekom.Umb.Services
 
             string contextCategoryUrl = string.Empty;
 
-            var requestCacheFromHttpContext = _httpContextAccessor.HttpContext?.Items["ekmRequest"] as Lazy<ContentRequest>;
+            var requestCacheFromHttpContext = _httpContextAccessor.HttpContext?.Items[Configuration.EkmRequestKey] as Lazy<ContentRequest>;
             if (requestCacheFromHttpContext != null)
             {
                 if (requestCacheFromHttpContext.Value.Url != null)
@@ -323,8 +323,8 @@ namespace Ekom.Umb.Services
             using (var cref = _context.EnsureUmbracoContext())
             {
                 var pubReq = cref.UmbracoContext.PublishedRequest;
-                var culture = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
-                var debugLogging = false;
+                var culture = Thread.CurrentThread.CurrentCulture.Name;
+
                 Uri uri = null;
                 if (pubReq == null || pubReq?.PublishedContent == null)
                 {

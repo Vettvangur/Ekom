@@ -146,7 +146,25 @@ class EkomMiddleware
                 return;
             }
 
-            var requestPath = _context.Request?.Path.HasValue == true ? _context.Request?.Path.Value : "";
+            var requestPath = "";
+
+            try
+            {
+                if (_context.Request != null && _context.Request.Path != null)
+                {
+                    requestPath = _context.Request.Path.HasValue
+                                  && _context.Request.Path.Value != "/null"
+                        ? _context.Request.Path.Value
+                        : string.Empty;
+                }
+                else
+                {
+                    requestPath = string.Empty; // Or log the issue for debugging
+                }
+            } catch
+            {
+                return;
+            }
 
             if (!AllowPath(requestPath))
             {

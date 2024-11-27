@@ -30,6 +30,7 @@ public class Configuration
 
     internal const string Cookie_UmbracoDomain = "EkomUmbracoDomain";
     public static string ImportAliasIdentifier => "ekmIdentifier";
+    public static string EkmRequestKey = "umbrtmche-ekmRequest";
 
     /// <summary>
     /// Ekom:PerStoreStock
@@ -148,6 +149,17 @@ public class Configuration
             }
 
             return _value;
+        }
+    }
+    /// <summary>
+    /// Ekom:GlobalCatalog
+    /// If true if the catalog item is not found in current store we try to find it in all other stores.
+    /// </summary>
+    public virtual bool GlobalCatalog
+    {
+        get
+        {
+            return _configuration["Ekom:GlobalCatalog"].ConvertToBool();
         }
     }
 

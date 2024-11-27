@@ -64,15 +64,16 @@ public class Catalog
     /// Get current product using data from the ekmRequest <see cref="ContentRequest"/> object
     /// </summary>
     /// <returns></returns>
-    public IProduct GetProduct()
+    public IProduct? GetProduct()
     {
         ContentRequest contentRequest = null;
-        if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
+        if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
         {
-            var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
+            var r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
             contentRequest = r.Value as ContentRequest;
             return contentRequest?.Product;
         }
+
         return null;
     }
 
@@ -130,7 +131,7 @@ public class Catalog
     /// Get product by SKU
     /// </summary>
     /// <returns></returns>
-    public IProduct GetProduct(string sku, string? storeAlias = null)
+    public IProduct? GetProduct(string sku, string? storeAlias = null)
     {
         var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -146,10 +147,31 @@ public class Catalog
                 return null;
             }
 
-            if (_productCache.Cache[store.Alias].Any(x => x.Value.SKU == sku))
+            var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+
+            if (product != null)
             {
-                return _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+                return product;
             }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                foreach (var otherStore in _storeSvc.GetAllStores())
+                {
+                    if (otherStore.Alias == store.Alias)
+                    {
+                        continue;
+                    }
+
+                    product = _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+
+                    if (product != null)
+                    {
+                        return product;
+                    }
+                }
+            }
+            
         }
 
         return null;
@@ -173,19 +195,22 @@ public class Catalog
             }
         }
 
-        // If not found, check all other stores
-        foreach (var otherStore in _storeSvc.GetAllStores())
+        if (Configuration.Instance.GlobalCatalog)
         {
-            // Skip the store we've already checked (if storeAlias was provided)
-            if (store != null && otherStore.Alias == store.Alias)
+            // If not found, check all other stores
+            foreach (var otherStore in _storeSvc.GetAllStores())
             {
-                continue;
-            }
+                // Skip the store we've already checked (if storeAlias was provided)
+                if (store != null && otherStore.Alias == store.Alias)
+                {
+                    continue;
+                }
 
-            // Try to get the product from the current store in the iteration
-            if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out var prod))
-            {
-                return prod;
+                // Try to get the product from the current store in the iteration
+                if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out var prod))
+                {
+                    return prod;
+                }
             }
         }
 
@@ -208,7 +233,7 @@ public class Catalog
     /// <summary>
     /// Get product by id using store from ekmRequest
     /// </summary>
-    public IProduct GetProduct(int Id, string? storeAlias = null)
+    public IProduct? GetProduct(int Id, string? storeAlias = null)
     {
         var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -221,7 +246,28 @@ public class Catalog
 
             var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
 
-            return product;
+            if (product != null)
+            {
+                return product;
+            }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                foreach (var otherStore in _storeSvc.GetAllStores())
+                {
+                    if (otherStore.Alias == store.Alias)
+                    {
+                        continue;
+                    }
+
+                    product = _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+
+                    if (product != null)
+                    {
+                        return product;
+                    }
+                }
+            }
         }
 
         return null;
@@ -367,11 +413,11 @@ public class Catalog
     /// Get category from ekmRequest
     /// </summary>
     /// <returns></returns>
-    public ICategory GetCategory()
+    public ICategory? GetCategory()
     {
-        if (_httpContext.Items.ContainsKey("umbrtmche-ekmRequest"))
+        if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
         {
-            var r = _httpContext.Items["umbrtmche-ekmRequest"] as Lazy<object>;
+            var r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
             var contentRequest = r.Value as ContentRequest;
             return contentRequest?.Category;
         }
@@ -452,7 +498,7 @@ public class Catalog
     /// <param name="storeAlias">The store alias.</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
-    public ICategory GetCategory(Guid Id, string? storeAlias = null)
+    public ICategory? GetCategory(Guid Id, string? storeAlias = null)
     {
         var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 

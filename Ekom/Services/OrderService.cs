@@ -120,7 +120,7 @@ namespace Ekom.Services
             {
                 _httpCtx = httpContextAccessor.HttpContext;
 
-                var r = _httpCtx?.Items["umbrtmche-ekmRequest"] as Lazy<object>;
+                var r = _httpCtx?.Items[Configuration.EkmRequestKey] as Lazy<object>;
 
                 if (r != null && r.Value != null)
                 {
