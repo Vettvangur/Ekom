@@ -116,12 +116,24 @@ class EkomMiddleware
                     }
                 }
 
-                appCaches.RequestCache.Get("ekmRequest", () =>
+                if (store != null)
+                {
+                    appCaches.RequestCache.Get("ekmRequest", () =>
                     new ContentRequest()
                     {
                         User = new User(),
                         Store = store
                     });
+                } else
+                {
+                    appCaches.RequestCache.Get("ekmRequest", () =>
+                    new ContentRequest()
+                    {
+                        User = new User()
+                    });
+                }
+
+
             }
 
 

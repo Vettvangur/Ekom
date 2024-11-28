@@ -92,7 +92,7 @@ class StoreService : IStoreService
                 contentRequest = contentRequestFromObject;
             }
 
-            if (contentRequest != null)
+            if (contentRequest != null && contentRequest.Store != null)
             {
                 // Use contentRequest as needed
                 return contentRequest.Store;
