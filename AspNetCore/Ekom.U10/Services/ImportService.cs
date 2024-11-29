@@ -656,7 +656,7 @@ public class ImportService : IImportService
     {
         try
         {
-            var args = new ImportCategoryEventArgs(categoryContent, importCategory, create, false);
+            var args = new ImportCategoryEventArgs(categoryContent, importCategory, create, false, false);
 
             OnCategorySaveStarting(this, args).GetAwaiter().GetResult();
 
