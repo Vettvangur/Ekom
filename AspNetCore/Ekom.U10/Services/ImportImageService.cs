@@ -1,5 +1,6 @@
 using Ekom.Models.Import;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Abstractions;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Models;
@@ -153,6 +154,9 @@ public class ImportMediaService
 
     private IMedia CreateMedia(MemoryStream mem, string comparer, string nodeName, string fullFileName, Ekom.Models.Import.ImportMediaTypes mediaType, int? sortOrder, string? identifier, int? syncUser)
     {
+        ArgumentException.ThrowIfNullOrEmpty(nodeName);
+        ArgumentException.ThrowIfNullOrEmpty(fullFileName);
+
         var media = _mediaService.CreateMedia(nodeName, lastMediaFolder.Id, mediaType.ToString(), userId: syncUser.HasValue ? syncUser.Value : -1);
         media.SetValue(_mediaFileManager, _mediaUrlGenerators, _shortStringHelper, _contentTypeBaseServiceProvider, Constants.Conventions.Media.File, fullFileName, mem);
         media.SetValue("comparer", comparer);
