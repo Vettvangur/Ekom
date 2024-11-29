@@ -3,7 +3,6 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Polly;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -20,31 +19,41 @@ namespace Ekom.Umb;
 class EkomMiddleware
 {
     private readonly RequestDelegate _next;
-    private ILogger<EkomMiddleware> _logger;
+    private readonly ILogger<EkomMiddleware> _logger;
+    private readonly IUmbracoContextFactory _umbracoContextFac;
+    private readonly AppCaches _appCaches;
+    private readonly IMemberService _memberService;
     private HttpContext _context;
-    public EkomMiddleware(RequestDelegate next)
-        => _next = next;
+
+    public EkomMiddleware(
+        RequestDelegate next,
+        ILogger<EkomMiddleware> logger,
+        IUmbracoContextFactory umbracoContextFac,
+        AppCaches appCaches,
+        IMemberService memberService)
+    {
+        _next = next;
+        _logger = logger;
+        _umbracoContextFac = umbracoContextFac;
+        _appCaches = appCaches;
+        _memberService = memberService;
+    }
 
     /// <summary>
     /// 
     /// </summary>
     public async Task InvokeAsync(
-        HttpContext context,
-        ILogger<EkomMiddleware> logger,
-        IUmbracoContextFactory umbracoContextFac,
-        AppCaches appCaches,
-        IMemberService memberService
+        HttpContext context
     )
     {
-        _logger = logger;
         _context = context;
 
-        OnBeginRequest(umbracoContextFac, appCaches);
-        await OnAuthenticateRequest(appCaches, memberService);
+        OnBeginRequest(_umbracoContextFac, _appCaches);
+        await OnAuthenticateRequest(_appCaches, _memberService);
 
         await _next.Invoke(context);
 
-        OnPostRequestHandlerExecute(umbracoContextFac);
+        OnPostRequestHandlerExecute(_umbracoContextFac);
     }
 
     /// <summary>
@@ -99,20 +108,10 @@ class EkomMiddleware
                 if (_context?.Request != null)
                 {
                     // Check for 'storeAlias' in the query string
-                    if (_context.Request.Query?.Count > 0 && _context.Request.Query.TryGetValue("storeAlias", out var storeAliasValue))
+                    var storeAlias = GetStoreAliasFromRequest(_context.Request);
+                    if (!string.IsNullOrEmpty(storeAlias))
                     {
-                        if (!string.IsNullOrEmpty(storeAliasValue))
-                        {
-                            store = API.Store.Instance.GetStore(storeAliasValue.ToString());
-                        }
-                    }
-                    // Check for 'storeAlias' in the headers
-                    else if (_context.Request.Headers?.Count > 0 && _context.Request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue))
-                    {
-                        if (!string.IsNullOrEmpty(storeAliasHeaderValue))
-                        {
-                            store = API.Store.Instance.GetStore(storeAliasHeaderValue.ToString());
-                        }
+                        store = API.Store.Instance.GetStore(storeAlias);
                     }
                 }
 
@@ -142,6 +141,21 @@ class EkomMiddleware
         {
             _logger.LogWarning(ex, "Http module Begin Request failed");
         }
+    }
+
+    private string? GetStoreAliasFromRequest(HttpRequest request)
+    {
+        if (request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
+        {
+            return storeAliasValue;
+        }
+
+        if (request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue) && !string.IsNullOrEmpty(storeAliasHeaderValue))
+        {
+            return storeAliasHeaderValue;
+        }
+
+        return null;
     }
 
     private bool AllowPath(string? path)

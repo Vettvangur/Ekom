@@ -60,12 +60,14 @@ namespace Ekom.Events
         public IContent CategoryContent { get; }
         public ImportCategory ImportCategory { get; }
         public bool IsCreateOperation { get; }
+        public bool ImagesHaveNoChanges { get; set; }
 
-        public ImportCategoryEventArgs(IContent categoryContent, ImportCategory importCategory, bool isCreateOperation)
+        public ImportCategoryEventArgs(IContent categoryContent, ImportCategory importCategory, bool isCreateOperation, bool imagesHaveNoChanges, bool filesHaveNoChanges)
         {
             CategoryContent = categoryContent;
             IsCreateOperation = isCreateOperation;
             ImportCategory = importCategory;
+            ImagesHaveNoChanges = imagesHaveNoChanges;
         }
     }
 
@@ -74,12 +76,15 @@ namespace Ekom.Events
         public IContent ProductContent { get; }
         public ImportProduct ImportProduct { get; }
         public bool IsCreateOperation { get; }
-
-        public ImportProductEventArgs(IContent productContent, ImportProduct importProduct, bool isCreateOperation)
+        public bool ImagesHaveNoChanges { get; set; }
+        public bool FilesHaveNoChanges { get; set; }
+        public ImportProductEventArgs(IContent productContent, ImportProduct importProduct, bool isCreateOperation, bool imagesHaveNoChanges, bool filesHaveNoChanges)
         {
             ProductContent = productContent;
             ImportProduct = importProduct;
             IsCreateOperation = isCreateOperation;
+            ImagesHaveNoChanges = imagesHaveNoChanges;
+            FilesHaveNoChanges = filesHaveNoChanges;
         }
     }
 
@@ -88,12 +93,16 @@ namespace Ekom.Events
         public IContent VariantContent { get; }
         public ImportVariant ImportVariant { get; }
         public bool IsCreateOperation { get; }
+        public bool ImagesHaveNoChanges { get; set; }
+        public bool FilesHaveNoChanges { get; set; }
 
-        public ImportVariantEventArgs(IContent variantContent, ImportVariant importVariant, bool isCreateOperation)
+        public ImportVariantEventArgs(IContent variantContent, ImportVariant importVariant, bool isCreateOperation, bool imagesHaveNoChanges, bool filesHaveNoChanges)
         {
             VariantContent = variantContent;
             ImportVariant = importVariant;
             IsCreateOperation = isCreateOperation;
+            ImagesHaveNoChanges = imagesHaveNoChanges;
+            FilesHaveNoChanges = filesHaveNoChanges;
         }
     }
 

@@ -656,19 +656,21 @@ public class ImportService : IImportService
     {
         try
         {
-            OnCategorySaveStarting(this, new ImportCategoryEventArgs(categoryContent, importCategory, create)).GetAwaiter().GetResult();
+            var args = new ImportCategoryEventArgs(categoryContent, importCategory, create, false);
 
-            var saveImages = ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia);
+            OnCategorySaveStarting(this, args).GetAwaiter().GetResult();
+
+            var saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(categoryContent, importCategory.Images, allUmbracoMedia);
 
             var compareValue = importCategory.Comparer ?? ComputeSha256Hash(importCategory, new string[] { "SubCategories", "Images", "Products", "EventProperties" });
 
             // If no changes are found and not creating then return,
-            if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
+            if (!HasContentChanges(categoryContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages)
             {
                 return;
             }
 
-                categoryContent.SetProperty("title", importCategory.Title);
+            categoryContent.SetProperty("title", importCategory.Title);
 
             if (importCategory.Slug != null && importCategory.Slug.Any())
             {
@@ -702,7 +704,7 @@ public class ImportService : IImportService
                 categoryContent.TemplateId = importCategory.TemplateId.Value;
             }
 
-            SaveEvent(categoryContent, importCategory.SaveEvent, syncUser, create);
+            SaveEvent(categoryContent, importCategory.SaveEvent, syncUser, args.IsCreateOperation);
 
             categoriesSaved.Add(importCategory);
 
@@ -718,7 +720,9 @@ public class ImportService : IImportService
     {
         try
         {
-            OnProductSaveStarting(this, new ImportProductEventArgs(productContent, importProduct, create)).GetAwaiter().GetResult();
+            var args = new ImportProductEventArgs(productContent, importProduct, create, false, false);
+
+            OnProductSaveStarting(this, args).GetAwaiter().GetResult();
 
             // Always do stock update
             if (importProduct.Stock.Any())
@@ -742,14 +746,14 @@ public class ImportService : IImportService
 
             if (allUmbracoMedia is not null)
             {
-                saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
-                saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
+                saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+                saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(productContent, importProduct.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
             }
 
             var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock" });
 
             // If no changes are found and not creating then return,
-            if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
+            if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
             {
                 return;
             }
@@ -812,7 +816,7 @@ public class ImportService : IImportService
                 productContent.TemplateId = importProduct.TemplateId.Value;
             }
 
-            SaveEvent(productContent, importProduct.SaveEvent, syncUser, create);
+            SaveEvent(productContent, importProduct.SaveEvent, syncUser, args.IsCreateOperation);
 
             productsSaved.Add(importProduct);
 
@@ -857,7 +861,9 @@ public class ImportService : IImportService
     }
     private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
     {
-        OnVariantSaveStarting(this, new ImportVariantEventArgs(variantContent, importVariant, create)).GetAwaiter().GetResult();
+        var args = new ImportVariantEventArgs(variantContent, importVariant, create, false,false);
+
+        OnVariantSaveStarting(this, args).GetAwaiter().GetResult();
 
         // Always do stock update
         if (importVariant.Stock.Any())
@@ -880,15 +886,15 @@ public class ImportService : IImportService
 
         if (allUmbracoMedia != null)
         {
-            saveImages = ImportMedia(variantContent, importVariant.Images, allUmbracoMedia);
+            saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia);
 
-            saveFiles = ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
+            saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
         }
 
         var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
 
         // If no changes are found and not creating then return,
-        if (!HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages && !saveFiles)
+        if (!HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
         {
             return;
         }
@@ -931,13 +937,12 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        SaveEvent(variantContent, importVariant.SaveEvent, syncUser, create);
+        SaveEvent(variantContent, importVariant.SaveEvent, syncUser, args.IsCreateOperation);
 
         variantsSaved.Add(importVariant);
     }
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
     {
-
         if (allUmbracoMedia == null)
         {
             return false;

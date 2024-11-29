@@ -48,7 +48,7 @@ public class ImportBase
     /// </summary>
     public required string Identifier { get; set; }
     /// <summary>
-    /// The default behavior is to save/publish newsly created and modified data.
+    /// The default behavior is to save/publish newly created and modified data.
     /// You can change it so data will be unpublished or only saved
     /// </summary>
     public ImportSaveEntEnum SaveEvent { get; set; } = ImportSaveEntEnum.SavePublish;
