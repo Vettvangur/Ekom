@@ -13,12 +13,12 @@ public class CustomProductFilterService : ProductFilterService
     public override IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products)
     {
 
-        var isAdmin = true;
+        //var isAdmin = true;
 
-        if (isAdmin)
-        {
-            return products.Where(x => x.SKU != "mini-sketchbooks");
-        }
+        //if (isAdmin)
+        //{
+        //    return products.Where(x => x.SKU != "mini-sketchbooks");
+        //}
 
         // Optionally call the base method if you want the default filtering logic
         return base.ApplyFilters(products);

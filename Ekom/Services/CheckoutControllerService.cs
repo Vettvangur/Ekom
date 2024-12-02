@@ -65,9 +65,17 @@ public class CheckoutControllerService
 
         Culture = culture;
 
-        if (string.IsNullOrEmpty(Culture))
+        if (!string.IsNullOrEmpty(Culture))
         {
             var cultureInfo = new CultureInfo(Culture);
+
+            Thread.CurrentThread.CurrentCulture = cultureInfo;
+            Thread.CurrentThread.CurrentUICulture = cultureInfo;
+        }
+
+        if (!string.IsNullOrEmpty(paymentRequest.Culture))
+        {
+            var cultureInfo = new CultureInfo(paymentRequest.Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
@@ -92,12 +100,12 @@ public class CheckoutControllerService
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
 
         var storeAlias = order.StoreInfo.Alias;
-        IStore store = API.Store.Instance.GetStore(storeAlias);
+        var store = API.Store.Instance.GetStore(storeAlias);
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
             order,
-            _httpCtx.Request.Form)
+            _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null)
             .ConfigureAwait(false);
         
         if (res != null)
@@ -148,7 +156,7 @@ public class CheckoutControllerService
     protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
         PaymentRequest paymentRequest,
         IOrderInfo order,
-        IFormCollection form)
+        IFormCollection? form)
     {
         if (paymentRequest == null)
         {
@@ -162,65 +170,70 @@ public class CheckoutControllerService
             };
         }
 
-        var keys = form.Keys;
-
-        var formCollection = keys.ToDictionary(
-            k => k,
-            v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-        );
-        
-        if (keys.Contains("ekomUpdateInformation"))
+        if (form != null)
         {
-            var saveCustomerData = false;
-            
-            if (!formCollection.ContainsKey("storeAlias"))
-            {
-                formCollection.Add("storeAlias", order.StoreInfo.Alias);
-                saveCustomerData = true;
-            }
+            var keys = form.Keys;
 
-            if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
-            {
-                var member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+            var formCollection = keys.ToDictionary(
+                k => k,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
+            );
 
-                if (member != null)
+            if (keys.Contains("ekomUpdateInformation"))
+            {
+                var saveCustomerData = false;
+
+                if (!formCollection.ContainsKey("storeAlias"))
                 {
-                    if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
-                    {
-                        formCollection.Add("customerName", member.Name);
-                    }
-                    if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
-                    {
-                        formCollection.Add("customerEmail", member.Email);
-                    }
+                    formCollection.Add("storeAlias", order.StoreInfo.Alias);
+                    saveCustomerData = true;
+                }
 
+                if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
+                {
+                    var member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+
+                    if (member != null)
+                    {
+                        if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
+                        {
+                            formCollection.Add("customerName", member.Name);
+                        }
+                        if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+                        {
+                            formCollection.Add("customerEmail", member.Email);
+                        }
+
+                    }
+                }
+
+                if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
+                {
+                    saveCustomerData = true;
+                }
+
+                if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
+                {
+                    order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
                 }
             }
 
-            if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
+            if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
-                saveCustomerData = true;
+                order = await Order.Instance.UpdatePaymentInformationAsync(
+                    paymentRequest.PaymentProvider,
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
 
-            if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
+            if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
-                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
+                order = await Order.Instance.UpdateShippingInformationAsync(
+                    paymentRequest.ShippingProvider,
+                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
         }
 
-        if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
-        {
-            order = await Order.Instance.UpdatePaymentInformationAsync(
-                paymentRequest.PaymentProvider,
-                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
-        }
 
-        if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
-        {
-            order = await Order.Instance.UpdateShippingInformationAsync(
-                paymentRequest.ShippingProvider,
-                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
-        }
 
         if (Config.StoreCustomerData)
         {

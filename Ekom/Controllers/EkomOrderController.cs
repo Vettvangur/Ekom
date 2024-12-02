@@ -41,7 +41,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("add")]
-    public async Task<IOrderInfo> AddToOrder([FromBody] OrderRequest request)
+    public async Task<IOrderInfo?> AddToOrder([FromBody] OrderRequest request)
     {
         if (request == null)
         {
@@ -123,14 +123,10 @@ public partial class EkomOrderController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    [Route("storeAlias/{storeAlias}")]
-    public async Task<IOrderInfo> GetOrder(string storeAlias)
+    [Route("storeAlias/{storeAlias?}")]
+    [Route("")]
+    public async Task<IOrderInfo> GetOrder([FromRoute] string? storeAlias = null)
     {
-        if (string.IsNullOrEmpty(storeAlias))
-        {
-            throw new HttpResponseException(HttpStatusCode.BadRequest);
-        }
-
         try
         {
             var order = await Order.Instance.GetOrderAsync(storeAlias);
@@ -154,21 +150,17 @@ public partial class EkomOrderController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    [Route("relatedproducts/storeAlias/{storeAlias}/{count:Int}")]
-    public async Task<IEnumerable<IProduct>> GetRelatedProducts(string storeAlias, int count = 4)
+    [Route("relatedproducts/storeAlias/{storeAlias?}/{count:Int}")]
+    [Route("relatedproducts/{count:Int}")]
+    public async Task<IEnumerable<IProduct>> GetRelatedProducts([FromRoute] string? storeAlias = null, int count = 4)
     {
-        if (string.IsNullOrEmpty(storeAlias))
-        {
-            throw new HttpResponseException(HttpStatusCode.BadRequest);
-        }
-
         try
         {
             var order = await Order.Instance.GetOrderAsync(storeAlias);
 
             if (order != null)
             {
-                return order.RelatedProducts(4);
+                return order.RelatedProducts(count);
             }
 
             throw new HttpResponseException(HttpStatusCode.NotFound);
@@ -287,6 +279,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("update/shippingprovider/")]
+    [Route("updateshippingprovider")]
     public async Task<IOrderInfo> UpdateShippingProvider(Guid ShippingProvider, string storeAlias)
     {
         try
@@ -294,7 +287,7 @@ public partial class EkomOrderController : ControllerBase
             var form = Request.Form;
             var keys = form.Keys;
 
-            var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
+            var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
                 k => k,
                 v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
@@ -320,6 +313,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("update/paymentprovider/")]
+    [Route("updatepaymentprovider")]
     public async Task<IOrderInfo> UpdatePaymentProvider(Guid PaymentProvider, string storeAlias)
     {
         try
@@ -327,7 +321,7 @@ public partial class EkomOrderController : ControllerBase
             var form = Request.Form;
             var keys = form.Keys;
 
-            var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("paymentprovider", StringComparison.InvariantCulture)).ToDictionary(
+            var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
                     k => k,
                     v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
@@ -348,8 +342,7 @@ public partial class EkomOrderController : ControllerBase
     /// <summary>
     /// Remove product from order/cart
     /// </summary>
-    /// <param name="lineId">Guid Key of product/line</param>
-    /// <param name="storeAlias"></param>
+    /// <param name="model"></param>
     /// <returns></returns>
     [HttpPost]
     [Route("removeorderline")]
@@ -427,7 +420,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("currency")]
-    public async Task<object> ChangeCurrency(string currency)
+    public async Task<IOrderInfo?> ChangeCurrency(string currency)
     {
         var store = API.Store.Instance.GetStore();
 
@@ -520,63 +513,63 @@ public partial class EkomOrderController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    [HttpPost]
-    [Route("coupon/orderline/apply")]
-    public async Task ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
-    {
-        try
-        {
-            if (await Order.Instance.ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias))
-            {
-                throw new HttpResponseException(HttpStatusCode.OK);
-            }
-            else
-            {
-                throw new HttpResponseException(new HttpResponseMessage((HttpStatusCode)NoChangeResponse)
-                {
-                    Content = new StringContent("Discount not modified, better discount found"),
-                });
-            }
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
-        {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
-            if (r != null)
-            {
-                throw r;
-            }
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    ///// <returns></returns>
+    //[HttpPost]
+    //[Route("coupon/orderline/apply")]
+    //public async Task ApplyCouponToOrderLine(Guid productKey, string coupon, string storeAlias)
+    //{
+    //    try
+    //    {
+    //        if (await Order.Instance.ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias))
+    //        {
+    //            throw new HttpResponseException(HttpStatusCode.OK);
+    //        }
+    //        else
+    //        {
+    //            throw new HttpResponseException(new HttpResponseMessage((HttpStatusCode)NoChangeResponse)
+    //            {
+    //                Content = new StringContent("Discount not modified, better discount found"),
+    //            });
+    //        }
+    //    }
+    //    catch (Exception ex) when (!(ex is HttpResponseException))
+    //    {
+    //        var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+    //        if (r != null)
+    //        {
+    //            throw r;
+    //        }
 
-            throw;
-        }
-    }
+    //        throw;
+    //    }
+    //}
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <exception cref="OrderLineNotFoundException"></exception>
-    /// <exception cref="ArgumentException"></exception>
-    [HttpPost]
-    [Route("coupon/orderline/remove")]
-    public async Task RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
-    {
-        try
-        {
-            await Order.Instance.RemoveCouponFromOrderLineAsync(productKey, storeAlias);
-            throw new HttpResponseException(HttpStatusCode.OK);
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
-        {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
-            if (r != null)
-            {
-                throw r;
-            }
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    ///// <exception cref="OrderLineNotFoundException"></exception>
+    ///// <exception cref="ArgumentException"></exception>
+    //[HttpPost]
+    //[Route("coupon/orderline/remove")]
+    //public async Task RemoveCouponFromOrderLine(Guid productKey, string storeAlias)
+    //{
+    //    try
+    //    {
+    //        await Order.Instance.RemoveCouponFromOrderLineAsync(productKey, storeAlias);
+    //        throw new HttpResponseException(HttpStatusCode.OK);
+    //    }
+    //    catch (Exception ex) when (!(ex is HttpResponseException))
+    //    {
+    //        var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+    //        if (r != null)
+    //        {
+    //            throw r;
+    //        }
 
-            throw;
-        }
-    }
+    //        throw;
+    //    }
+    //}
 }

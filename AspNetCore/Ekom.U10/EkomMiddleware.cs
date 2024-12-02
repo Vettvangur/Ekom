@@ -3,6 +3,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -48,7 +50,7 @@ class EkomMiddleware
     {
         _context = context;
 
-        OnBeginRequest(_umbracoContextFac, _appCaches);
+        await OnBeginRequest(_umbracoContextFac, _appCaches);
         await OnAuthenticateRequest(_appCaches, _memberService);
 
         await _next.Invoke(context);
@@ -83,7 +85,7 @@ class EkomMiddleware
         }
     }
 
-    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
+    private async Task OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
     {
         try
         {
@@ -108,7 +110,7 @@ class EkomMiddleware
                 if (_context?.Request != null)
                 {
                     // Check for 'storeAlias' in the query string
-                    var storeAlias = GetStoreAliasFromRequest(_context.Request);
+                    var storeAlias = await GetStoreAliasFromRequest(_context.Request);
                     if (!string.IsNullOrEmpty(storeAlias))
                     {
                         store = API.Store.Instance.GetStore(storeAlias);
@@ -143,19 +145,75 @@ class EkomMiddleware
         }
     }
 
-    private string? GetStoreAliasFromRequest(HttpRequest request)
+    private async Task<string?> GetStoreAliasFromRequest(HttpRequest request)
     {
-        if (request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
+        try
         {
-            return storeAliasValue;
-        }
+            if (request == null)
+            {
+                return null;
+            }
 
-        if (request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue) && !string.IsNullOrEmpty(storeAliasHeaderValue))
+
+            if (request.Query != null && request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
+            {
+                return storeAliasValue;
+            }
+
+            // Check for storeAlias in form data
+            if (request.HasFormContentType && request.Form.TryGetValue("storeAlias", out var storeAliasFormValue) && !string.IsNullOrEmpty(storeAliasFormValue))
+            {
+                return storeAliasFormValue;
+            }
+
+            if (request.Headers != null && request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue) && !string.IsNullOrEmpty(storeAliasHeaderValue))
+            {
+                return storeAliasHeaderValue;
+            }
+
+            // Check for storeAlias in JSON body
+            if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
+            {
+                request.EnableBuffering(); // Allow reading the request body multiple times
+                request.Body.Position = 0; // Rewind the body
+
+                using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
+                var body = await reader.ReadToEndAsync();
+                request.Body.Position = 0; // Rewind the body for next middleware/controller
+
+                if (!string.IsNullOrEmpty(body) && body.StartsWith('{'))
+                {
+                    try
+                    {
+                        var options = new JsonDocumentOptions
+                        {
+                            AllowTrailingCommas = true // Handle slightly malformed JSON
+                        };
+
+                        var json = JsonDocument.Parse(body, options);
+
+                        // Case-insensitive check for storeAlias
+                        foreach (var property in json.RootElement.EnumerateObject())
+                        {
+                            if (string.Equals(property.Name, "storeAlias", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return property.Value.GetString();
+                            }
+                        }
+                    }
+                    catch (JsonException)
+                    {
+
+                    }
+                }
+            }
+
+            return null;
+
+        } catch
         {
-            return storeAliasHeaderValue;
+            return null;
         }
-
-        return null;
     }
 
     private bool AllowPath(string? path)

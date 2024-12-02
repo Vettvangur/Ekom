@@ -68,8 +68,8 @@ public class Providers
     /// </param>
     /// <returns></returns>
     public IEnumerable<IShippingProvider> GetShippingProviders(
-        string store = null,
-        string countryCode = null,
+        string? store = null,
+        string? countryCode = null,
         decimal orderAmount = 0
     )
     {
@@ -94,8 +94,8 @@ public class Providers
     /// </param>
     /// <returns></returns>
     public IEnumerable<IPaymentProvider> GetPaymentProviders(
-        string store = null,
-        string countryCode = null,
+        string? store = null,
+        string? countryCode = null,
         decimal orderAmount = 0
     )
     {
@@ -111,30 +111,31 @@ public class Providers
     /// Common logic for get provider methods.
     /// </summary>
     /// <param name="cacheFunc"></param>
-    /// <param name="store"></param>
+    /// <param name="storeAlias"></param>
     /// <param name="countryCode"></param>
     /// <param name="orderAmount"></param>
     /// <returns></returns>
     private IEnumerable<IConstrained> GetProviders(
         Func<string, IEnumerable<IConstrained>> cacheFunc,
-        string store = null,
-        string countryCode = null,
+        string? storeAlias = null,
+        string? countryCode = null,
         decimal orderAmount = 0
     )
     {
-        if (string.IsNullOrEmpty(store))
+        if (string.IsNullOrEmpty(storeAlias))
         {
-            store = _storeSvc.GetStoreFromCache().Alias;
+            storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
         }
 
-        var providers = cacheFunc(store);
+        ArgumentException.ThrowIfNullOrEmpty(storeAlias);
+
+        var providers = cacheFunc(storeAlias);
 
         if (!string.IsNullOrEmpty(countryCode) && countryCode.Length == 2)
         {
             providers = providers
                 .Where(x => x.Constraints.CountriesInZone.Any() && x.Constraints.CountriesInZone.Contains(countryCode.ToUpper()));
         }
-
 
         if (orderAmount > 0)
         {
@@ -158,7 +159,7 @@ public class Providers
     /// <summary>
     /// List of all <see cref="Country"/> objects from xml document or .NET as fallback.
     /// </summary>
-    public List<Country> GetAllCountries() => _countryRepo.GetAllCountries();
+    public IEnumerable<Country> GetAllCountries() => _countryRepo.GetAllCountries();
 
     /// <summary>
     /// Get shipping provider from cache
@@ -166,7 +167,7 @@ public class Providers
     /// <param name="key"></param>
     /// <param name="store"></param>
     /// <returns></returns>
-    public IShippingProvider GetShippingProvider(Guid key, IStore? store = null)
+    public IShippingProvider? GetShippingProvider(Guid key, IStore? store = null)
     {
         if (store == null)
         {
@@ -184,7 +185,7 @@ public class Providers
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
-    public IShippingProvider? GetShippingProvider(Guid key, string storeAlias = null)
+    public IShippingProvider? GetShippingProvider(Guid key, string? storeAlias = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -204,7 +205,7 @@ public class Providers
     /// <param name="key"></param>
     /// <param name="store"></param>
     /// <returns></returns>
-    public IPaymentProvider GetPaymentProvider(Guid key, IStore store = null)
+    public IPaymentProvider? GetPaymentProvider(Guid key, IStore? store = null)
     {
         if (store == null)
         {
@@ -222,7 +223,7 @@ public class Providers
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
-    public IPaymentProvider? GetPaymentProvider(Guid key, string storeAlias = null)
+    public IPaymentProvider? GetPaymentProvider(Guid key, string? storeAlias = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {

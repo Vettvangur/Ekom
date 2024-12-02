@@ -1,6 +1,5 @@
 using Ekom.API;
 using Ekom.Events;
-using Ekom.Models;
 using Ekom.Models.Import;
 using Ekom.Services;
 using Ekom.Umb.Utilities;
