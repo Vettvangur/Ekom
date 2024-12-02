@@ -360,7 +360,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        ImportMedia(umbracoProduct, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoProduct, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
     }
     public void SyncVariantMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1)
     {
@@ -378,7 +378,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        ImportMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
+        ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
     }
 
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
@@ -1108,7 +1108,187 @@ public class ImportService : IImportService
         }
         return false;
     }
+    private bool ImportSingleMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1)
+    {
 
+        if (allUmbracoMedia == null)
+        {
+            return false;
+        }
+
+        var currentImages = (content.GetValue<string>(contentTypeAlias.ToString()) ?? "").TrimStart(',');
+
+        var currentImagesUdi = new List<string>();
+
+        if (currentImages.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
+        {
+            try
+            {
+                var mediaObjects = System.Text.Json.JsonSerializer.Deserialize<List<MediaObject>>(currentImages);
+
+                if (mediaObjects != null && mediaObjects.Any())
+                {
+                    currentImagesUdi.AddRange(mediaObjects.Select(x => "umb://media/" + x.MediaKey.Replace("-", "")));
+                    currentImages = string.Join(",", currentImagesUdi);
+                }
+            }
+            catch
+            {
+                _logger.LogWarning($"Could not parse media json value on product {content.Id}. Value: {currentImages}");
+                currentImagesUdi.Clear();
+                currentImages = "";
+            }
+        }
+        else
+        {
+            currentImagesUdi.AddRange(currentImages.Split(',').Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        var currentImagesCount = currentImagesUdi.Count;
+
+        var sortedMedias = importMedias
+            .Select((media, index) => new { media, index })
+            .OrderBy(x => x.media.SortOrder.HasValue ? x.media.SortOrder.Value : int.MaxValue)
+            .ThenBy(x => x.index)
+            .Select(x => x.media);
+
+        foreach (var media in sortedMedias)
+        {
+            if (media is ImportMediaFromUdi importMedia)
+            {
+                if (media.Action == ImportMediaAction.Add)
+                {
+                    AddUdiIfNotExist(currentImagesUdi, importMedia.Udi);
+                }
+                else if (media.Action == ImportMediaAction.Delete)
+                {
+                    RemoveUdiIfExist(currentImagesUdi, importMedia.Udi);
+                }
+            }
+            else if (media is ImportMediaFromExternalUrl externalUrlMedia)
+            {
+                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Url", "FileName", "NodeName", "Date" });
+
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
+                    x.ContentType.Alias == mediaType.ToString() &&
+                    x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(externalUrlMedia.Identifier)
+                        ? x.GetValue<string>("ekmIdentifier") == externalUrlMedia.Identifier
+                        : x.GetValue<string>("comparer") == compareValue);
+
+                if (media.Action == ImportMediaAction.Add)
+                {
+                    if (umbMedia == null)
+                    {
+                        // Create
+                        umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
+
+                        if (umbMedia != null)
+                        {
+                            allUmbracoMedia.Add(umbMedia);
+                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                        }
+
+                    }
+                    else
+                    {   // Update
+
+                        // Remove media
+                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+
+                        umbMedia = allUmbracoMedia.FirstOrDefault(x => x.GetValue<string>("comparer") == compareValue);
+
+                        // If the media is not found by comparer we need to create a new media
+                        if (umbMedia == null)
+                        {
+                            umbMedia = _importMediaService.ImportMediaFromExternalUrl(externalUrlMedia, compareValue, mediaType, externalUrlMedia.Identifier, syncUser);
+
+                            if (umbMedia != null)
+                            {
+                                allUmbracoMedia.Add(umbMedia);
+                                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                            }
+
+                        }
+                        else
+                        {
+                            // If comparer is the same probably the sort order has just changed so we just want to change the order.
+                            _importMediaService.UpdateMediaSortOrder(umbMedia, externalUrlMedia);
+                            AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                        }
+
+                    }
+
+                }
+                else if (media.Action == ImportMediaAction.Delete)
+                {
+
+                    if (umbMedia != null)
+                    {
+                        RemoveUdiIfExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+                    }
+                }
+
+            }
+            else if (media is ImportMediaFromBytes bytesMedia)
+            {
+                var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes" });
+
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(bytesMedia.Identifier) ? x.GetValue<string>("ekmIdentifier") == bytesMedia.Identifier : x.GetValue<string>("comparer") == compareValue);
+
+                if (umbMedia == null)
+                {
+                    umbMedia = _importMediaService.ImportMediaFromBytes(bytesMedia, compareValue, mediaType, bytesMedia.Identifier, syncUser);
+                    allUmbracoMedia.Add(umbMedia);
+                }
+
+                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+            }
+            else if (media is ImportMediaFromBase64 base64Media)
+            {
+                var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
+
+                var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
+
+                if (umbMedia == null)
+                {
+                    umbMedia = _importMediaService.ImportMediaFromBase64(base64Media, compareValue, mediaType, base64Media.Identifier, syncUser);
+                    allUmbracoMedia.Add(umbMedia);
+                }
+
+                AddUdiIfNotExist(currentImagesUdi, umbMedia.GetUdi().ToString());
+            }
+        }
+
+        if (currentImagesCount == 0 && currentImagesUdi.Count == 0)
+        {
+            return false;
+        }
+
+        var importedImages = SortImages(currentImagesUdi.DistinctBy(x => x).ToList(), allUmbracoMedia);
+
+        if (currentImages != importedImages)
+        {
+            content.SetValue(contentTypeAlias.ToString(), importedImages);
+
+            if (saveContent)
+            {
+                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                {
+                    if (content.Published)
+                    {
+                        _contentService.SaveAndPublish(content, userId: syncUser);
+                    }
+                    else
+                    {
+                        _contentService.Save(content, userId: syncUser);
+                    }
+                }
+            }
+
+            return true;
+        }
+        return false;
+    }
     private string SortImages(List<string> imagesUdi, List<IMedia> allUmbracoMedia)
     {
         // Convert allUmbracoMedia to a dictionary for fast lookup
