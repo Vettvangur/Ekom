@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Extensions;
 
 namespace Ekom.Umb;
 
@@ -181,7 +182,7 @@ class EkomMiddleware
                 var body = await reader.ReadToEndAsync();
                 request.Body.Position = 0; // Rewind the body for next middleware/controller
 
-                if (!string.IsNullOrEmpty(body) && body.StartsWith('{'))
+                if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
