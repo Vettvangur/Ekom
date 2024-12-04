@@ -325,7 +325,7 @@ namespace Ekom.Umb.Services
                 var pubReq = cref.UmbracoContext.PublishedRequest;
                 var culture = Thread.CurrentThread.CurrentCulture.Name;
 
-                Uri uri = null;
+                Uri? uri = null;
                 if (pubReq == null || pubReq?.PublishedContent == null)
                 {
 
@@ -350,15 +350,11 @@ namespace Ekom.Umb.Services
                     culture = pubReq.Culture;
                 }
 
-                if (uri == null)
+                if (uri == null && string.IsNullOrEmpty(contextCategoryUrl))
                 {
                     return node.Urls.FirstOrDefault();
                 }
 
-                var path = uri
-                    .AbsolutePath
-                    .ToLower()
-                    .AddTrailing();
 
                 if (!string.IsNullOrEmpty(contextCategoryUrl))
                 {
@@ -385,10 +381,24 @@ namespace Ekom.Umb.Services
                     return node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
                 }
 
-                var findUrlByPrefix = node.Urls
-                    .FirstOrDefault(x => x.StartsWith(path));
+                if (uri != null)
+                {
+                    var path = uri
+                     .AbsolutePath
+                     .ToLower()
+                     .AddTrailing();
 
-                return findUrlByPrefix ?? node.Urls.FirstOrDefault();
+                    var findUrlByPrefix = node.Urls
+                        .FirstOrDefault(x => x.StartsWith(path));
+
+                    if (findUrlByPrefix != null)
+                    {
+                        return findUrlByPrefix;
+                    }
+                }
+ 
+
+                return node.Urls.FirstOrDefault();
             }
         }
     }

@@ -1,36 +1,35 @@
 using Ekom.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Ekom.Utilities
+namespace Ekom.Utilities;
+
+public class ControllerRequestHelper
 {
-    public class ControllerRequestHelper
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public ControllerRequestHelper(IHttpContextAccessor httpContextAccessor)
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        _httpContextAccessor = httpContextAccessor;
+    }
 
-        public ControllerRequestHelper(IHttpContextAccessor httpContextAccessor)
+    public void SetEkmRequest(ICategory category) {
+
+        var categoryUrl = category.Url;
+
+        if (_httpContextAccessor.HttpContext != null)
         {
-            _httpContextAccessor = httpContextAccessor;
-        }
+            Lazy<ContentRequest> requestCache = _httpContextAccessor.HttpContext.Items["ekmRequest"] as Lazy<ContentRequest>;
 
-        public void SetEkmRequest(ICategory category) {
-
-            var categoryUrl = category.Url;
-
-            if (_httpContextAccessor.HttpContext != null)
+            // If requestCache is null, initialize it with a new Lazy<ContentRequest>
+            if (requestCache == null)
             {
-                Lazy<ContentRequest> requestCache = _httpContextAccessor.HttpContext.Items["ekmRequest"] as Lazy<ContentRequest>;
-
-                // If requestCache is null, initialize it with a new Lazy<ContentRequest>
-                if (requestCache == null)
-                {
-                    requestCache = new Lazy<ContentRequest>(() => new ContentRequest());
-                    _httpContextAccessor.HttpContext.Items["ekmRequest"] = requestCache;
-                }
-
-                requestCache.Value.Category = category;
-                requestCache.Value.Store = category.Store;
-                requestCache.Value.Url = categoryUrl;
+                requestCache = new Lazy<ContentRequest>(() => new ContentRequest());
+                _httpContextAccessor.HttpContext.Items[Configuration.EkmRequestKey] = requestCache;
             }
+
+            requestCache.Value.Category = category;
+            requestCache.Value.Store = category.Store;
+            requestCache.Value.Url = categoryUrl;
         }
     }
 }
