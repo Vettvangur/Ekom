@@ -992,7 +992,7 @@ public class ImportService : IImportService
             }
             else if (media is ImportMediaFromExternalUrl externalUrlMedia)
             {
-                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Url", "FileName", "NodeName", "Date" });
+                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Action", "SortOrder" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
                     x.ContentType.Alias == mediaType.ToString() &&
@@ -1166,7 +1166,7 @@ public class ImportService : IImportService
             }
             else if (media is ImportMediaFromExternalUrl externalUrlMedia)
             {
-                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Url", "FileName", "NodeName", "Date" });
+                var compareValue = externalUrlMedia.Comparer ?? ComputeSha256Hash(externalUrlMedia, new string[] { "Action", "SortOrder" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x =>
                     x.ContentType.Alias == mediaType.ToString() &&
