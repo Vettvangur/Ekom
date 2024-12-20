@@ -136,7 +136,8 @@ static class Registrations
                 f.GetService<OrderService>(),
                 f.GetService<CheckoutService>(),
                 f.GetService<IStoreService>(),
-                f.GetService<OrderRepository>()
+                f.GetService<OrderRepository>(),
+                f.GetService<CheckoutControllerService>()
             )
         );
         services.AddTransient<Providers>(f =>

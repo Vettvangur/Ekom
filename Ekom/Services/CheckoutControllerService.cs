@@ -148,6 +148,74 @@ public class CheckoutControllerService
         return responseHandler(result);
     }
 
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture)
+    {
+        Logger.LogInformation("Checkout Pay - Payment request start ");
+
+        if (!string.IsNullOrEmpty(Culture))
+        {
+            var cultureInfo = new CultureInfo(Culture);
+
+            Thread.CurrentThread.CurrentCulture = cultureInfo;
+            Thread.CurrentThread.CurrentUICulture = cultureInfo;
+        }
+
+        if (!string.IsNullOrEmpty(paymentRequest.Culture))
+        {
+            var cultureInfo = new CultureInfo(paymentRequest.Culture);
+
+            Thread.CurrentThread.CurrentCulture = cultureInfo;
+            Thread.CurrentThread.CurrentUICulture = cultureInfo;
+        }
+
+        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+
+        if (order == null)
+        {
+            throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
+        }
+
+        var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+
+        Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
+            + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
+
+        var storeAlias = order.StoreInfo.Alias;
+        var store = API.Store.Instance.GetStore(storeAlias);
+
+        res = await ValidationAndOrderUpdatesAsync(
+            paymentRequest,
+            order,
+            _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null)
+            .ConfigureAwait(false);
+
+        if (order.HangfireJobs.Any())
+        {
+            foreach (var job in order.HangfireJobs)
+            {
+                await Stock.Instance.RollbackJobAsync(job).ConfigureAwait(false);
+            }
+
+            await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
+        }
+
+        var hangfireJobs = new List<string>();
+
+        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+
+        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+
+        // save job ids to sql for retrieval after checkout completion
+        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, store.Alias).ConfigureAwait(false);
+
+        var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
+            .ConfigureAwait(false);
+        var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
+            .ConfigureAwait(false);
+
+        return result;
+    }
+
     protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest, IOrderInfo? orderInfo)
     {
         return Task.FromResult<CheckoutResponse?>(null);

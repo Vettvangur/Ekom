@@ -28,6 +28,7 @@ public partial class Order
     readonly CheckoutService _checkoutService;
     readonly IStoreService _storeSvc;
     readonly OrderRepository _orderRepo;
+    readonly CheckoutControllerService _checkoutControllerService;
 
     /// <summary>
     /// ctor
@@ -40,8 +41,8 @@ public partial class Order
         OrderService orderService,
         CheckoutService checkoutService,
         IStoreService storeService,
-        OrderRepository orderRepo
-    )
+        OrderRepository orderRepo,
+        CheckoutControllerService checkoutControllerService)
     {
         _discountCache = discountCache;
         _orderService = orderService;
@@ -51,6 +52,7 @@ public partial class Order
         _config = config;
         _logger = logger;
         _orderRepo = orderRepo;
+        _checkoutControllerService = checkoutControllerService;
     }
 
     public IOrderInfo GetOrder() => GetOrderAsync().Result;
@@ -520,6 +522,23 @@ public partial class Order
 
         await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Pay action to submit order to payment.
+    /// <param name="paymentRequest"></param>
+    /// <param name="storeAlias"></param>
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias)
+    {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
+        }
+
+        var res = await _checkoutControllerService.PayAsync(paymentRequest, "")
+            .ConfigureAwait(false);
+
+        return res;
     }
 
     /// <summary>
