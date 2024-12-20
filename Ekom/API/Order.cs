@@ -528,14 +528,15 @@ public partial class Order
     /// Pay action to submit order to payment.
     /// <param name="paymentRequest"></param>
     /// <param name="storeAlias"></param>
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias)
+    /// <param name="orderId"></param>
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        var res = await _checkoutControllerService.PayAsync(paymentRequest, "")
+        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
             .ConfigureAwait(false);
 
         return res;

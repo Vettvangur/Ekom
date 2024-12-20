@@ -148,7 +148,7 @@ public class CheckoutControllerService
         return responseHandler(result);
     }
 
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, Guid orderId)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -168,7 +168,7 @@ public class CheckoutControllerService
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
         }
 
-        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+        var order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
 
         if (order == null)
         {
