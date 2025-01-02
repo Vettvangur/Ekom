@@ -803,10 +803,13 @@ public class ImportService : IImportService
 
                 var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
 
-                    productContent.SetValue("categories", stringUdis);
+                productContent.SetValue("categories", stringUdis);
+            } else
+            {
+                productContent.SetValue("categories", "");
             }
 
-                productContent.SetValue("comparer", compareValue);
+            productContent.SetValue("comparer", compareValue);
 
             productContent.Name = importProduct.NodeName;
 
