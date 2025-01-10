@@ -50,4 +50,5 @@ public class ImportProduct : ImportBase
     /// Specifies a template
     /// </summary>
     public int? TemplateId { get; set; }
+    public Exception? Exception { get; set; } = null;
 }
