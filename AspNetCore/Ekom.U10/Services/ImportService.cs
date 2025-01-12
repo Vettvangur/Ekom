@@ -510,9 +510,18 @@ public class ImportService : IImportService
                             // If Primary category is not the same as the parent category identifer we want to delete the product
                             if (importProduct.Categories != null && importProduct.Categories.Any() && (importProduct.Categories.First() != categoryIdentifer))
                             {
-                                _logger.LogInformation($"Product deleted, product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
-                                _contentService.Delete(umbracoProduct);
-                                productDeleted++;
+                                var newCategory = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Categories.First());
+
+                                if (newCategory != null)
+                                {
+                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
+                                    _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                                } else
+                                {
+                                    _logger.LogInformation($"Product deleted. Product moved but category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
+                                    _contentService.Delete(umbracoProduct);
+                                    productDeleted++;
+                                }
                             }
 
                         }
