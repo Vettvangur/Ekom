@@ -463,6 +463,12 @@ public class ImportService : IImportService
 
             if (delete)
             {
+
+                if (importProducts.Sum(x=> x.Categories.Count) <= 0)
+                {
+                    throw new ArgumentException("No products connected to categories in importProducts, sync stopped");
+                }
+
                 var rootId = umbracoRootContent.Id.ToString();
                 var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.Path.Split(',').Contains(rootId)).ToList();
 
@@ -504,7 +510,7 @@ public class ImportService : IImportService
                             // If Primary category is not the same as the parent category identifer we want to delete the product
                             if (importProduct.Categories != null && importProduct.Categories.Any() && (importProduct.Categories.First() != categoryIdentifer))
                             {
-                                _logger.LogInformation($"Product deleted, product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
+                                _logger.LogInformation($"Product deleted, product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
                                 _contentService.Delete(umbracoProduct);
                                 productDeleted++;
                             }
