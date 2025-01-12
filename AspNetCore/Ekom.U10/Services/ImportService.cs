@@ -133,14 +133,15 @@ public class ImportService : IImportService
 
             stopwatchTotal.Stop();
 
-            _logger.LogInformation(
-                "Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Products With Error: {productsErrorCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}", 
-                (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Where(x => x.Exception == null).Count(), productsSaved.Where(x => x.Exception != null).Count(), variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
-
             foreach (var failedProduct in productsSaved.Where(x => x.Exception != null))
             {
                 _logger.LogError(failedProduct.Exception, "Failed to save Product: {productSku} Exception: {exMessage}", failedProduct.SKU, failedProduct.Exception?.Message);
             }
+
+            _logger.LogInformation(
+                "Full Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Products With Error: {productsErrorCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
+                (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Where(x => x.Exception == null).Count(), productsSaved.Where(x => x.Exception != null).Count(), variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
+
         }
         catch (Exception ex)
         {
