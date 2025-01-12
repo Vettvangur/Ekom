@@ -433,7 +433,11 @@ public class ImportService : IImportService
                     {
                         _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
-                        _contentService.Delete(umbracoCategory);
+                        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                        {
+                            _contentService.Delete(umbracoCategory);
+                        }
+                            
                         categoriesDeleted++;
                     }
                 }
@@ -505,7 +509,11 @@ public class ImportService : IImportService
                     if (!importProductIdentifiers.Contains(productIdentifier))
                     {
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
-                        _contentService.Delete(umbracoProduct);
+                        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                        {
+                            _contentService.Delete(umbracoProduct);
+                        }
+                            
                         productDeleted++;
                         continue;
                     }
@@ -527,12 +535,19 @@ public class ImportService : IImportService
 
                                 if (newCategory != null)
                                 {
-                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
-                                    _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
+                                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                                    {
+                                        _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                                    }
+                                        
                                 } else
                                 {
-                                    _logger.LogInformation($"Product deleted. Product moved but category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {JsonConvert.SerializeObject(importProduct.Categories)}");
-                                    _contentService.Delete(umbracoProduct);
+                                    _logger.LogInformation($"Product deleted. Product moved but category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
+                                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                                    {
+                                        _contentService.Delete(umbracoProduct);
+                                    }
                                     productDeleted++;
                                 }
                             }
@@ -613,7 +628,11 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier} Product Id: {productContent.Id} Product SKU: {productContent.GetValue<string>("sku")}");
 
-                _contentService.Delete(umbracoVariantGroup);
+                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                {
+                    _contentService.Delete(umbracoVariantGroup);
+                }
+                   
                 allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
                 variantGroupDeleted++;
@@ -659,7 +678,11 @@ public class ImportService : IImportService
                 {
                     _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
 
-                    _contentService.Delete(umbracoVariant);
+                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                    {
+                        _contentService.Delete(umbracoVariant);
+                    }
+                      
                     allEkomNodes.RemoveAt(i);
                     umbracoVariantsChildrenContent.RemoveAt(i);
                     variantDeleted++;
