@@ -133,9 +133,21 @@ public class ImportService : IImportService
 
             stopwatchTotal.Stop();
 
-            foreach (var failedProduct in productsSaved.Where(x => x.Exception != null))
+            var groupedFailedProducts = productsSaved
+                .Where(x => x.Exception != null)
+                .GroupBy(x => x.Exception.Message);
+
+            foreach (var group in groupedFailedProducts)
             {
-                _logger.LogError(failedProduct.Exception, "Failed to save Product: {productSku} Exception: {exMessage}", failedProduct.SKU, failedProduct.Exception?.Message);
+                var exceptionMessage = group.Key;
+                var productSKUs = string.Join(", ", group.Select(x => x.SKU));
+
+                _logger.LogError(
+                    "Failed to save {count} Products with the same error: {exceptionMessage}. SKUs: {productSKUs}",
+                    group.Count(),
+                    exceptionMessage,
+                    productSKUs
+                );
             }
 
             _logger.LogInformation(
