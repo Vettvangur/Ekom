@@ -543,7 +543,7 @@ public class ImportService : IImportService
                                         
                                 } else
                                 {
-                                    _logger.LogInformation($"Product deleted. Product moved but category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
+                                    _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
                                     using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                                     {
                                         _contentService.Delete(umbracoProduct);

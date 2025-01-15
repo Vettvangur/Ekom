@@ -308,7 +308,7 @@ public partial class Order
         Guid productId,
         int quantity,
         string storeAlias,
-        AddOrderSettings settings = null
+        AddOrderSettings? settings = null
     )
     {
         if (string.IsNullOrEmpty(storeAlias))
@@ -537,6 +537,31 @@ public partial class Order
         }
 
         var res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
+            .ConfigureAwait(false);
+
+        return res;
+    }
+
+    /// <summary>
+    /// Pay action to submit order to payment.
+    /// </summary>
+    /// <param name="paymentRequest"></param>
+    /// <param name="storeAlias"></param>
+    /// <param name="order"></param>
+    /// <returns></returns>
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order)
+    {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
+        }
+
+        if (order == null)
+        {
+            throw new ArgumentNullException(nameof(order));
+        }
+
+        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", order.UniqueId)
             .ConfigureAwait(false);
 
         return res;

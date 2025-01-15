@@ -597,7 +597,7 @@ namespace Ekom.Services
                 throw new ProductNotFoundException("Unable to find product with key " + productKey);
             }
 
-            IVariant variant = null;
+            IVariant? variant = null;
             if (settings?.VariantKey != null)
             {
                 variant = Catalog.Instance.GetVariant(settings.VariantKey.Value, storeAlias);
@@ -648,7 +648,7 @@ namespace Ekom.Services
             // If cart action is null then AddOrUpdate is the default state
             var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
-            OrderInfo orderInfo;
+            OrderInfo? orderInfo;
             if (settings.OrderInfo == null)
             {
                 orderInfo = await GetOrderAsync(store).ConfigureAwait(false);

@@ -148,7 +148,21 @@ public class CheckoutControllerService
         return responseHandler(result);
     }
 
+
     public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, Guid orderId)
+    {
+
+        var order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
+
+        if (order == null)
+        {
+            throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
+        }
+
+        return await PayAsync(paymentRequest, culture, order);
+    }
+
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -167,8 +181,6 @@ public class CheckoutControllerService
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
         }
-
-        var order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
 
         if (order == null)
         {
