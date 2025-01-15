@@ -561,7 +561,7 @@ public partial class Order
             throw new ArgumentNullException(nameof(order));
         }
 
-        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", order.UniqueId)
+        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", order)
             .ConfigureAwait(false);
 
         return res;
