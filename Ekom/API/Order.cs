@@ -469,7 +469,9 @@ public partial class Order
     /// Save multiple hangfire job ids to <see cref="IOrderInfo"/> and db
     /// </summary>
     /// <param name="hangfireJobs">Job IDs to add</param>
-    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, string storeAlias = null)
+    /// <param name="orderInfo">orderInfo</param>
+    /// <param name="storeAlias">storeAlias</param>
+    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null)
     {
         if (hangfireJobs == null)
         {
@@ -485,8 +487,11 @@ public partial class Order
                 storeAlias = store.Alias;
             }
         }
-
-        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)
+        if (orderInfo == null)
+        {
+            throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
+        }
+        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo)
             .ConfigureAwait(false);
     }
     /// <summary>
@@ -494,7 +499,8 @@ public partial class Order
     /// </summary>
     /// <param name="storeAlias"></param>
     /// <param name="hangfireJobs">Job IDs to add</param>
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
+    /// <param name="orderInfo">orderInfo</param>
+    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo)
     {
         if (hangfireJobs == null)
         {
@@ -504,8 +510,12 @@ public partial class Order
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
+        if (orderInfo == null)
+        {
+            throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
+        }
 
-        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs)
+        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo)
             .ConfigureAwait(false);
     }
 

@@ -139,7 +139,7 @@ public class CheckoutControllerService
         }
 
         // save job ids to sql for retrieval after checkout completion
-        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, store.Alias).ConfigureAwait(false);
+        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, order.StoreInfo.Alias).ConfigureAwait(false);
 
         var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
             .ConfigureAwait(false);
@@ -218,7 +218,7 @@ public class CheckoutControllerService
         res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
 
         // save job ids to sql for retrieval after checkout completion
-        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, store.Alias).ConfigureAwait(false);
+        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, storeAlias).ConfigureAwait(false);
 
         var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
             .ConfigureAwait(false);

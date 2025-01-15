@@ -1232,9 +1232,8 @@ namespace Ekom.Services
                 Configuration.orderInfoCacheTime);
         }
 
-        public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs)
+        public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo)
         {
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
