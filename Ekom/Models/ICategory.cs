@@ -38,4 +38,6 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     IEnumerable<MetafieldGrouped> Filters(bool filterable = true);
 
     bool VirtualUrl { get; }
+
+    bool HasProducts();
 }

@@ -112,6 +112,12 @@ public class Category : PerStoreNodeEntity, ICategory
         }
     }
 
+    public virtual bool HasProducts()
+    {
+        return _productCache.Cache[Store.Alias]
+                            .Any(x => x.Value.Categories.Any(z => z.Id == Id));
+    }
+
     /// <summary>
     /// All direct child products of category. (No descendants)
     /// </summary>
