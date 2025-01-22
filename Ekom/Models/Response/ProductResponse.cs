@@ -78,6 +78,11 @@ public class ProductResponse
             products = products.Where(x => x.OriginalPrice.Value > 0);
         }
 
+        if (query?.OrderBy != Utilities.OrderBy.NoOrder)
+        {
+            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+        }
+
         if (filterService != null)
         {
             products = filterService.ApplyFilters(products);
@@ -85,10 +90,6 @@ public class ProductResponse
 
         ProductCount = products.Count();
 
-        if (query?.OrderBy != Utilities.OrderBy.NoOrder)
-        {
-            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
-        }
 
         if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
         {
