@@ -7,68 +7,67 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
-namespace Ekom.Repositories
+namespace Ekom.Repositories;
+class OrderRepository
 {
-    class OrderRepository
+    readonly ILogger _logger;
+    readonly Configuration _config;
+    readonly IMemoryCache _memoryCache;
+    readonly DatabaseFactory _databaseFactory;
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public OrderRepository(
+        ILogger<OrderRepository> logger,
+        Configuration config,
+        DatabaseFactory databaseFactory,
+        IMemoryCache memoryCache)
     {
-        readonly ILogger _logger;
-        readonly Configuration _config;
-        readonly IMemoryCache _memoryCache;
-        readonly DatabaseFactory _databaseFactory;
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public OrderRepository(
-            ILogger<OrderRepository> logger,
-            Configuration config,
-            DatabaseFactory databaseFactory,
-            IMemoryCache memoryCache)
-        {
-            _logger = logger;
-            _config = config;
-            _databaseFactory = databaseFactory;
-            _memoryCache = memoryCache;
-        }
+        _logger = logger;
+        _config = config;
+        _databaseFactory = databaseFactory;
+        _memoryCache = memoryCache;
+    }
 
-        public async Task<OrderData> GetOrderAsync(Guid uniqueId)
+    public async Task<OrderData> GetOrderAsync(Guid uniqueId)
+    {
+        await using var db = _databaseFactory.GetDatabase();
+        
+        var data = await db.OrderData
+            .Where(x => x.UniqueId == uniqueId)
+            .SingleOrDefaultAsync()
+            .ConfigureAwait(false);
+
+        return data;
+        
+    }
+
+    public async Task InsertOrderAsync(OrderData orderData)
+    {
+        await using var db = _databaseFactory.GetDatabase();
+
+        var referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
+
+        orderData.ReferenceId = (int)referenceId;
+    }
+
+    public async Task UpdateOrderAsync(OrderData orderData)
+    {
+        await using var db = _databaseFactory.GetDatabase();
+        
+        await db.UpdateAsync(orderData).ConfigureAwait(false);
+        //Clear cache after update.
+        _memoryCache.Remove(orderData.UniqueId);
+    }
+
+
+    public async Task MigrateOrderTableToEkom10()
+    {
+        try
         {
             await using var db = _databaseFactory.GetDatabase();
-            
-            var data = await db.OrderData
-                .Where(x => x.UniqueId == uniqueId)
-                .SingleOrDefaultAsync()
-                .ConfigureAwait(false);
 
-            return data;
-            
-        }
-
-        public async Task InsertOrderAsync(OrderData orderData)
-        {
-            await using var db = _databaseFactory.GetDatabase();
-
-            var referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
-
-            orderData.ReferenceId = (int)referenceId;
-        }
-
-        public async Task UpdateOrderAsync(OrderData orderData)
-        {
-            await using var db = _databaseFactory.GetDatabase();
-            
-            await db.UpdateAsync(orderData).ConfigureAwait(false);
-            //Clear cache after update.
-            _memoryCache.Remove(orderData.UniqueId);
-        }
-
-
-        public async Task MigrateOrderTableToEkom10()
-        {
-            try
-            {
-                await using var db = _databaseFactory.GetDatabase();
-
-                const string insertTempColumnSql = @"
+            const string insertTempColumnSql = @"
                     DECLARE @result INT = 0; -- default to 0 (false)
 
                     BEGIN TRANSACTION;
@@ -98,22 +97,22 @@ namespace Ekom.Repositories
                     -- Return the result
                     SELECT @result AS Result;";
 
-                var insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
+            var insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
 
-                int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0;
+            int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0;
 
-                if (insertTempColumn == 1)
-                {
-                    const string renameAndChangeToNvarcharSql = @"
+            if (insertTempColumn == 1)
+            {
+                const string renameAndChangeToNvarcharSql = @"
                         BEGIN TRANSACTION;
 
                         UPDATE [dbo].[EkomOrders] SET [OrderStatusColTemp] = CAST([OrderStatusCol] AS nvarchar(4000));
 
                         COMMIT TRANSACTION;";
 
-                    affected1 = await db.ExecuteAsync<int>(renameAndChangeToNvarcharSql);
+                affected1 = await db.ExecuteAsync<int>(renameAndChangeToNvarcharSql);
 
-                    const string changeDataStructureSql = @"
+                const string changeDataStructureSql = @"
                         BEGIN TRANSACTION;
 
                         ALTER TABLE [dbo].[EkomOrders] DROP COLUMN [OrderStatusCol];
@@ -131,9 +130,9 @@ namespace Ekom.Repositories
                         COMMIT TRANSACTION;
                         ";
 
-                    affected2 = await db.ExecuteAsync<int>(changeDataStructureSql);
+                affected2 = await db.ExecuteAsync<int>(changeDataStructureSql);
 
-                    const string updateOrderStatusColDataSql = @"BEGIN TRANSACTION;
+                const string updateOrderStatusColDataSql = @"BEGIN TRANSACTION;
                     IF EXISTS (
                         SELECT TOP 1 1
                         FROM [dbo].[EkomOrders]
@@ -163,10 +162,10 @@ namespace Ekom.Repositories
 
                     COMMIT TRANSACTION;";
 
-                    affected3 = await db.ExecuteAsync<int>(updateOrderStatusColDataSql);
-                }
+                affected3 = await db.ExecuteAsync<int>(updateOrderStatusColDataSql);
+            }
 
-                const string stockUniqueIdMoreLengthSql = @"BEGIN TRANSACTION;
+            const string stockUniqueIdMoreLengthSql = @"BEGIN TRANSACTION;
                         IF EXISTS (
 	                        SELECT 1
 	                        FROM INFORMATION_SCHEMA.COLUMNS
@@ -181,9 +180,9 @@ namespace Ekom.Repositories
                         COMMIT TRANSACTION;";
 
 
-                affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
+            affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
 
-                const string CouponDateSql = @"BEGIN TRANSACTION;
+            const string CouponDateSql = @"BEGIN TRANSACTION;
                         IF NOT EXISTS(
                             SELECT *
                             FROM INFORMATION_SCHEMA.COLUMNS
@@ -195,42 +194,41 @@ namespace Ekom.Repositories
                         END
                         COMMIT TRANSACTION;";
 
-                affected5 = await db.ExecuteAsync<int>(CouponDateSql);
+            affected5 = await db.ExecuteAsync<int>(CouponDateSql);
 
-                if ((affected2 + affected3 + affected4 + affected5) > 0)
-                {
-                    _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
-                }
-
-            } catch(Exception ex)
+            if ((affected2 + affected3 + affected4 + affected5) > 0)
             {
-                _logger.LogError(ex, "Failed to run migration script for Order table");
+                _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
             }
-        }
-        /// <summary>
-        /// Get all Orders with the given OrderStatuses. Optionally filter further by any column.
-        /// </summary>
-        /// <param name="filter"></param>
-        /// <param name="orderStatuses"></param>
-        /// <returns></returns>
-        public async Task<List<OrderData>> GetStatusOrdersAsync(
-            Expression<Func<OrderData, bool>> filter = null,
-            params OrderStatus[] orderStatuses
-        )
+
+        } catch(Exception ex)
         {
-            await using var db = _databaseFactory.GetDatabase();
-
-            var query = db.OrderData
-                .Where(x => orderStatuses.Select(y => y.ToString()).Contains(x.OrderStatusCol));
-
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-
-            return await query
-                .ToListAsync()
-                .ConfigureAwait(false);
+            _logger.LogError(ex, "Failed to run migration script for Order table");
         }
+    }
+    /// <summary>
+    /// Get all Orders with the given OrderStatuses. Optionally filter further by any column.
+    /// </summary>
+    /// <param name="filter"></param>
+    /// <param name="orderStatuses"></param>
+    /// <returns></returns>
+    public async Task<List<OrderData>> GetStatusOrdersAsync(
+        Expression<Func<OrderData, bool>> filter = null,
+        params OrderStatus[] orderStatuses
+    )
+    {
+        await using var db = _databaseFactory.GetDatabase();
+
+        var query = db.OrderData
+            .Where(x => orderStatuses.Select(y => y.ToString()).Contains(x.OrderStatusCol));
+
+        if (filter != null)
+        {
+            query = query.Where(filter);
+        }
+
+        return await query
+            .ToListAsync()
+            .ConfigureAwait(false);
     }
 }
