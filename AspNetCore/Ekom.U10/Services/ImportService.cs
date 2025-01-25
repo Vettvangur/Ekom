@@ -749,8 +749,13 @@ public class ImportService : IImportService
                         categoryContent.SetValue(property.Key, property.Value);
                 }
             }
+
+            if (importCategory.SortOrder.HasValue)
+            {
+                categoryContent.SortOrder = importCategory.SortOrder.Value;
+            }
             
-                categoryContent.SetValue("comparer", compareValue);
+            categoryContent.SetValue("comparer", compareValue);
 
             categoryContent.Name = importCategory.NodeName;
 
@@ -813,7 +818,7 @@ public class ImportService : IImportService
                 return;
             }
 
-                productContent.SetProperty("title", importProduct.Title);
+            productContent.SetProperty("title", importProduct.Title);
 
             if (importProduct.Slug != null && importProduct.Slug.Any())
             {
@@ -839,6 +844,11 @@ public class ImportService : IImportService
             if (importProduct.Vat.HasValue)
             {
                 productContent.SetValue("vat", importProduct.Vat);
+            }
+
+            if (importProduct.SortOrder.HasValue)
+            {
+                productContent.SortOrder = importProduct.SortOrder.Value;
             }
 
             if (importProduct.AdditionalProperties != null && importProduct.AdditionalProperties.Any())
@@ -910,6 +920,11 @@ public class ImportService : IImportService
             }
         }
 
+        if (importVariantGroup.SortOrder.HasValue)
+        {
+            variantGroupContent.SortOrder = importVariantGroup.SortOrder.Value;
+        }
+
         variantGroupContent.SetValue("comparer", compareValue);
 
         variantGroupContent.Name = importVariantGroup.NodeName;
@@ -968,6 +983,11 @@ public class ImportService : IImportService
         if (variantContent.HasProperty("description"))
         {
             variantContent.SetProperty("description", importVariant.Description);
+        }
+
+        if (importVariant.SortOrder.HasValue)
+        {
+            variantContent.SortOrder = importVariant.SortOrder.Value;
         }
 
         variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);

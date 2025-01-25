@@ -52,4 +52,8 @@ public class ImportBase
     /// You can change it so data will be unpublished or only saved
     /// </summary>
     public ImportSaveEntEnum SaveEvent { get; set; } = ImportSaveEntEnum.SavePublish;
+    /// <summary>
+    /// Sort order for the node
+    /// </summary>
+    public int? SortOrder { get; set; } = null;
 }
