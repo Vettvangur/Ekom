@@ -1362,6 +1362,11 @@ namespace Ekom.Services
                 orderInfo = settings.OrderInfo as OrderInfo;
             }
 
+            if (orderInfo == null)
+            {
+                throw new ArgumentException("orderinfo is missing", nameof(orderInfo));
+            }
+
             if (form.TryGetValue("ShippingProvider", out var shippingProvider))
             {
                 if (Guid.TryParse(shippingProvider, out Guid _providerKey))
@@ -1390,6 +1395,16 @@ namespace Ekom.Services
             foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
             {
                 var value = form[key];
+
+                if (key == "customerEmail")
+                {
+                    if (!value.IsValidEmail())
+                    {
+                        _logger.LogError($"Invalid email address: {value}");
+                        throw new FormatException($"Invalid email address: {value}");
+                    }
+                }
+
                 orderInfo.CustomerInformation.Customer.Properties[key] = value;
             }
 

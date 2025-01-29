@@ -8,421 +8,426 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Ekom.Utilities
+namespace Ekom.Utilities;
+
+public static class StringExtension
 {
-    public static class StringExtension
+    private static string RemoveAccent(this string txt)
     {
-        private static string RemoveAccent(this string txt)
+        byte[] bytes = Encoding.GetEncoding("Cyrillic").GetBytes(txt);
+        return Encoding.ASCII.GetString(bytes);
+    }
+
+    /// <summary>
+    /// Ensure string ends in one and only one '/'
+    /// </summary>
+    /// <param name="value">String to examine</param>
+    /// <returns>String ending in one and only one '/'</returns>
+    public static string AddTrailing(this string value)
+    {
+        if (value.Length == 0)
         {
-            byte[] bytes = Encoding.GetEncoding("Cyrillic").GetBytes(txt);
-            return Encoding.ASCII.GetString(bytes);
+            return "/";
+        }
+        else if (value[value.Length - 1] != '/')
+        {
+            value += "/";
         }
 
-        /// <summary>
-        /// Ensure string ends in one and only one '/'
-        /// </summary>
-        /// <param name="value">String to examine</param>
-        /// <returns>String ending in one and only one '/'</returns>
-        public static string AddTrailing(this string value)
+        return value;
+    }
+    public static string EnsureStartsAndEndsWithChar(this string input, char requiredChar)
+    {
+        if (!input.StartsWith(requiredChar))
         {
-            if (value.Length == 0)
-            {
-                return "/";
-            }
-            else if (value[value.Length - 1] != '/')
-            {
-                value += "/";
-            }
-
-            return value;
+            return requiredChar + input;
         }
-        public static string EnsureStartsAndEndsWithChar(this string input, char requiredChar)
+        if (!input.EndsWith(requiredChar))
         {
-            if (!input.StartsWith(requiredChar))
-            {
-                return requiredChar + input;
-            }
-            if (!input.EndsWith(requiredChar))
-            {
-                return input + requiredChar;
-            }
-            return input;
+            return input + requiredChar;
         }
-        public static string EnsureStartsWithChar(this string input, char requiredChar)
+        return input;
+    }
+    public static string EnsureStartsWithChar(this string input, char requiredChar)
+    {
+        if (!input.StartsWith(requiredChar))
         {
-            if (!input.StartsWith(requiredChar))
-            {
-                return requiredChar + input;
-            }
-            return input;
+            return requiredChar + input;
         }
+        return input;
+    }
 
-        public static string EnsureEndsWithChar(this string input, char requiredChar)
+    public static string EnsureEndsWithChar(this string input, char requiredChar)
+    {
+        if (!input.EndsWith(requiredChar))
         {
-            if (!input.EndsWith(requiredChar))
-            {
-                return input + requiredChar;
-            }
-            return input;
+            return input + requiredChar;
         }
+        return input;
+    }
 
-        /// <summary>
-        /// Coerces a string to a boolean value, case insensitive and also registers true for 1 and y
-        /// </summary>
-        /// <param name="value">String value to convert to bool</param>
-        public static bool ConvertToBool(this string value)
+    /// <summary>
+    /// Coerces a string to a boolean value, case insensitive and also registers true for 1 and y
+    /// </summary>
+    /// <param name="value">String value to convert to bool</param>
+    public static bool ConvertToBool(this string value)
+    {
+        if (!string.IsNullOrEmpty(value))
         {
-            if (!string.IsNullOrEmpty(value))
+            var bVal = bool.TryParse(value, out bool result);
+
+            if (bVal)
             {
-                var bVal = bool.TryParse(value, out bool result);
-
-                if (bVal)
-                {
-                    return result;
-                }
-                else
-                {
-                    return (value == "1" || value.ToLower() == "y");
-                }
+                return result;
             }
-
-            return false;
-        }
-        public static bool IsJson(this string input)
-        {
-            input = input.Trim();
-            return input.StartsWith("{") && input.EndsWith("}")
-                   || input.StartsWith("[") && input.EndsWith("]");
+            else
+            {
+                return (value == "1" || value.ToLower() == "y");
+            }
         }
 
-        internal static bool IsBoolean(this string? value)
+        return false;
+    }
+    public static bool IsJson(this string input)
+    {
+        input = input.Trim();
+        return input.StartsWith("{") && input.EndsWith("}")
+               || input.StartsWith("[") && input.EndsWith("]");
+    }
+
+    internal static bool IsBoolean(this string? value)
+    {
+        if (!string.IsNullOrEmpty(value) && (value == "1" || value == "y" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase)))
         {
-            if (!string.IsNullOrEmpty(value) && (value == "1" || value == "y" || value.Equals("true", StringComparison.InvariantCultureIgnoreCase) || value.Equals("enable", StringComparison.InvariantCultureIgnoreCase)))
-            {
-                return true;
-            }
-   
-            return false;
-            
+            return true;
         }
-        // Maybe this should return T and not force String
-        internal static string GetEkomPropertyEditorValue(this string value, string alias)
+
+        return false;
+        
+    }
+    // Maybe this should return T and not force String
+    internal static string GetEkomPropertyEditorValue(this string value, string alias)
+    {
+        if (string.IsNullOrEmpty(value))
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return string.Empty;
-            }
-
-            if (!value.IsJson())
-            {
-                return value;
-            }
-
-            try
-            {
-                var obj = JObject.Parse(value);
-
-                // Try getting the value directly by alias.
-                if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out JToken directValue) && directValue != null)
-                {
-                    return directValue.ToString();
-                }
-
-                // Attempt to deserialize to PropertyValue and extract based on culture or alias.
-                var propertyValue = obj.ToObject<PropertyValue>();
-                if (propertyValue != null)
-                {
-                    // Prioritize direct alias match in PropertyValue.Values.
-                    if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
-                    {
-                        // Check if valCulture is a JSON string that can be parsed
-                        if (valAlias is JObject jObjectValue)
-                        {
-                            if (jObjectValue["markup"] != null)
-                            {
-                                return jObjectValue["markup"].ToString();
-                            }
-                        }
-                        else
-                        {
-                            return valAlias.ToString();
-                        }
-                    }
-
-                    // Fallback to current culture match in PropertyValue.Values.
-                    var currentCultureName = CultureInfo.CurrentCulture.Name;
-                    if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
-                    {
-                        // Check if valCulture is a JSON string that can be parsed
-                        if (valCulture is string stringValue)
-                        {
-                            return stringValue;
-                        } else if (valCulture is JObject jObjectValue)
-                        {
-                            if (jObjectValue["markup"] != null)
-                            {
-                                return jObjectValue["markup"].ToString();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (JsonException ex)
-            {
-                // Consider logging the exception or handling it as needed.
-                // Log.Error(ex, "Failed to parse JSON in GetEkomPropertyEditorValue.");
-            }
-
             return string.Empty;
         }
-        internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
+
+        if (!value.IsJson())
         {
-            var prices = new List<IPrice>();
-
-
-            if (priceJson.IsJson())
-            {
-                var _prices = JArray.Parse(priceJson);
-
-                foreach (var price in _prices)
-                {
-                    var currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
-
-                    prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
-                }
-            } else
-            {
-                if (fallbackCurrency == null)
-                {
-                    var store = API.Store.Instance.GetStore();
-
-                    fallbackCurrency = store.Currency;
-                }
-
-                prices = new List<IPrice>
-                {
-                    new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice)
-                };
-            }
-
-            return prices;
+            return value;
         }
 
-        internal static string Hash(this string input)
+        try
         {
-            var murmur = MurmurHash.Create128();
-            var inputBytes = Encoding.UTF8.GetBytes(input);
-            var hashBytes = murmur.ComputeHash(inputBytes);
+            var obj = JObject.Parse(value);
 
-            // Convert to hexadecimal string
-            var builder = new StringBuilder();
-            foreach (var b in hashBytes)
+            // Try getting the value directly by alias.
+            if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out JToken directValue) && directValue != null)
             {
-                builder.Append(b.ToString("x2"));
+                return directValue.ToString();
             }
-            return builder.ToString();
+
+            // Attempt to deserialize to PropertyValue and extract based on culture or alias.
+            var propertyValue = obj.ToObject<PropertyValue>();
+            if (propertyValue != null)
+            {
+                // Prioritize direct alias match in PropertyValue.Values.
+                if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
+                {
+                    // Check if valCulture is a JSON string that can be parsed
+                    if (valAlias is JObject jObjectValue)
+                    {
+                        if (jObjectValue["markup"] != null)
+                        {
+                            return jObjectValue["markup"].ToString();
+                        }
+                    }
+                    else
+                    {
+                        return valAlias.ToString();
+                    }
+                }
+
+                // Fallback to current culture match in PropertyValue.Values.
+                var currentCultureName = CultureInfo.CurrentCulture.Name;
+                if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
+                {
+                    // Check if valCulture is a JSON string that can be parsed
+                    if (valCulture is string stringValue)
+                    {
+                        return stringValue;
+                    } else if (valCulture is JObject jObjectValue)
+                    {
+                        if (jObjectValue["markup"] != null)
+                        {
+                            return jObjectValue["markup"].ToString();
+                        }
+                    }
+                }
+            }
+        }
+        catch (JsonException ex)
+        {
+            // Consider logging the exception or handling it as needed.
+            // Log.Error(ex, "Failed to parse JSON in GetEkomPropertyEditorValue.");
         }
 
-        public static List<IPrice> GetPriceValues(
-            this string priceJson,
-            List<CurrencyModel> storeCurrencies,
-            decimal vat,
-            bool vatIncludedInPrice,
-            CurrencyModel fallbackCurrency = null,
-            string storeAlias = null,
-            string path = null,
-            string[] categories = null
-            )
+        return string.Empty;
+    }
+    internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
+    {
+        var prices = new List<IPrice>();
+
+
+        if (priceJson.IsJson())
         {
-            var prices = new List<IPrice>();
+            var _prices = JArray.Parse(priceJson);
 
-            if (priceJson.IsJson())
+            foreach (var price in _prices)
             {
-                var _prices = JArray.Parse(priceJson);
+                var currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
 
-                foreach (var price in _prices)
-                {
-                    var currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
-                    var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
-
-                    IDiscount productDiscount = !string.IsNullOrEmpty(path)
-                        ? Configuration.Resolver.GetService<ProductDiscountService>()
-                            .GetProductDiscount(
-                                path,
-                                storeAlias,
-                                price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
-                                categories
-                            )
-                        : null;
-
-                    prices.Add(new Price(
-                        price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
-                        currency,
-                        vat,
-                        vatIncludedInPrice,
-                        productDiscount != null
-                            ? new OrderedDiscount(productDiscount)
-                            : null)
-                    );
-                }
-            } else
+                prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
+            }
+        } else
+        {
+            if (fallbackCurrency == null)
             {
-                if (fallbackCurrency == null)
-                {
-                    var store = API.Store.Instance.GetStore();
+                var store = API.Store.Instance.GetStore();
 
-                    fallbackCurrency = store.Currency;
-                }
+                fallbackCurrency = store.Currency;
+            }
+
+            prices = new List<IPrice>
+            {
+                new Price(priceJson, fallbackCurrency, vat, vatIncludedInPrice)
+            };
+        }
+
+        return prices;
+    }
+
+    internal static string Hash(this string input)
+    {
+        var murmur = MurmurHash.Create128();
+        var inputBytes = Encoding.UTF8.GetBytes(input);
+        var hashBytes = murmur.ComputeHash(inputBytes);
+
+        // Convert to hexadecimal string
+        var builder = new StringBuilder();
+        foreach (var b in hashBytes)
+        {
+            builder.Append(b.ToString("x2"));
+        }
+        return builder.ToString();
+    }
+
+    public static List<IPrice> GetPriceValues(
+        this string priceJson,
+        List<CurrencyModel> storeCurrencies,
+        decimal vat,
+        bool vatIncludedInPrice,
+        CurrencyModel fallbackCurrency = null,
+        string storeAlias = null,
+        string path = null,
+        string[] categories = null
+        )
+    {
+        var prices = new List<IPrice>();
+
+        if (priceJson.IsJson())
+        {
+            var _prices = JArray.Parse(priceJson);
+
+            foreach (var price in _prices)
+            {
+                var currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
+                var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
                 IDiscount productDiscount = !string.IsNullOrEmpty(path)
                     ? Configuration.Resolver.GetService<ProductDiscountService>()
                         .GetProductDiscount(
                             path,
                             storeAlias,
-                            priceJson,
+                            price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
                             categories
                         )
                     : null;
 
-                prices = new List<IPrice>
-                {
-                    new Price(
+                prices.Add(new Price(
+                    price[KeyExists(price, "Price") ? "Price" : "price"].Value<string>(),
+                    currency,
+                    vat,
+                    vatIncludedInPrice,
+                    productDiscount != null
+                        ? new OrderedDiscount(productDiscount)
+                        : null)
+                );
+            }
+        } else
+        {
+            if (fallbackCurrency == null)
+            {
+                var store = API.Store.Instance.GetStore();
+
+                fallbackCurrency = store.Currency;
+            }
+
+            IDiscount productDiscount = !string.IsNullOrEmpty(path)
+                ? Configuration.Resolver.GetService<ProductDiscountService>()
+                    .GetProductDiscount(
+                        path,
+                        storeAlias,
                         priceJson,
-                        fallbackCurrency,
-                        vat,
-                        vatIncludedInPrice,
-                        productDiscount != null
-                            ? new OrderedDiscount(productDiscount)
-                            : null)
-                };
-            }
+                        categories
+                    )
+                : null;
 
-            return prices;
-        }
-        internal static List<CurrencyValue> GetCurrencyValues(this string priceJson)
-        {
-            var values = new List<CurrencyValue>();
-
-            if (priceJson.IsJson())
+            prices = new List<IPrice>
             {
-                var _values = JArray.Parse(priceJson);
-
-                foreach (var value in _values)
-                {
-                    if (KeyExists(value, "Currency"))
-                    {
-                        var currencyValue = value["Currency"].Value<string>();
-                        var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
-
-                        values.Add(new CurrencyValue(val, currencyValue));
-                    }
-                    else
-                    {
-                        var currencyValue = value["currency"].Value<string>();
-                        var val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
-
-                        values.Add(new CurrencyValue(val, currencyValue));
-                    }
-                }
-            } else
-            {
-                if (decimal.TryParse(priceJson, out decimal value))
-                {
-                    var store = API.Store.Instance.GetStore();
-
-                    values = new List<CurrencyValue>
-                    {
-                        new CurrencyValue(value, store.Currency.CurrencyValue)
-                    };
-                }
-            }
-
-            return values;
-        }
-        
-        internal static bool KeyExists(JToken token, string key)
-        {
-            JObject obj = token as JObject;
-            return obj?.ContainsKey(key) ?? false;
+                new Price(
+                    priceJson,
+                    fallbackCurrency,
+                    vat,
+                    vatIncludedInPrice,
+                    productDiscount != null
+                        ? new OrderedDiscount(productDiscount)
+                        : null)
+            };
         }
 
-        internal static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
+        return prices;
+    }
+    internal static List<CurrencyValue> GetCurrencyValues(this string priceJson)
+    {
+        var values = new List<CurrencyValue>();
+
+        if (priceJson.IsJson())
         {
-            var values = new List<CurrencyPrice>();
+            var _values = JArray.Parse(priceJson);
 
-            try
+            foreach (var value in _values)
             {
-                values = JsonConvert.DeserializeObject<List<CurrencyPrice>>(priceJson);
-            }
-            catch
-            {
-                if (decimal.TryParse(priceJson, out decimal value))
+                if (KeyExists(value, "Currency"))
                 {
-                    var store = API.Store.Instance.GetStore();
+                    var currencyValue = value["Currency"].Value<string>();
+                    var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
 
-                    values = new List<CurrencyPrice>
-                    {
-                        new CurrencyPrice(value, store.Currency.CurrencyValue)
-                    };
-                }
-            }
-
-            return values;
-        }
-
-        public static IEnumerable<Image> GetImages(this string nodeIds, string storeAlias = null)
-        {
-            var list = new List<Image>();
-
-            if (!string.IsNullOrEmpty(nodeIds))
-            {
-                if (nodeIds.StartsWith("[") && nodeIds.IndexOf("mediakey", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    var imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
-
-                    foreach (var image in imageList)
-                    {
-                        var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
-
-                        if (node != null)
-                        {
-                            list.Add(new Image(node, storeAlias));
-                        }
-                    }
+                    values.Add(new CurrencyValue(val, currencyValue));
                 }
                 else
                 {
-                    var imageIds = nodeIds.Split(',');
+                    var currencyValue = value["currency"].Value<string>();
+                    var val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
 
-                    foreach (var imgId in imageIds)
+                    values.Add(new CurrencyValue(val, currencyValue));
+                }
+            }
+        } else
+        {
+            if (decimal.TryParse(priceJson, out decimal value))
+            {
+                var store = API.Store.Instance.GetStore();
+
+                values = new List<CurrencyValue>
+                {
+                    new CurrencyValue(value, store.Currency.CurrencyValue)
+                };
+            }
+        }
+
+        return values;
+    }
+    
+    internal static bool KeyExists(JToken token, string key)
+    {
+        JObject obj = token as JObject;
+        return obj?.ContainsKey(key) ?? false;
+    }
+
+    internal static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
+    {
+        var values = new List<CurrencyPrice>();
+
+        try
+        {
+            values = JsonConvert.DeserializeObject<List<CurrencyPrice>>(priceJson);
+        }
+        catch
+        {
+            if (decimal.TryParse(priceJson, out decimal value))
+            {
+                var store = API.Store.Instance.GetStore();
+
+                values = new List<CurrencyPrice>
+                {
+                    new CurrencyPrice(value, store.Currency.CurrencyValue)
+                };
+            }
+        }
+
+        return values;
+    }
+
+    public static IEnumerable<Image> GetImages(this string nodeIds, string storeAlias = null)
+    {
+        var list = new List<Image>();
+
+        if (!string.IsNullOrEmpty(nodeIds))
+        {
+            if (nodeIds.StartsWith("[") && nodeIds.IndexOf("mediakey", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                var imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
+
+                foreach (var image in imageList)
+                {
+                    var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
+
+                    if (node != null)
                     {
-
-                        var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
-
-                        if (node != null)
-                        {
-                            list.Add(new Image(node, storeAlias));
-                        }
+                        list.Add(new Image(node, storeAlias));
                     }
                 }
-                return list;
             }
+            else
+            {
+                var imageIds = nodeIds.Split(',');
 
-            return Enumerable.Empty<Image>();
-        }
-
-        public static string ToCamelCase(this string str)
-        {
-            var words = str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
-            var leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
-                m =>
+                foreach (var imgId in imageIds)
                 {
-                    return m.Groups[1].Value.ToLower() + m.Groups[2].Value.ToLower() + m.Groups[3].Value;
-                });
-            var tailWords = words.Skip(1)
-                .Select(word => char.ToUpper(word[0]) + word.Substring(1))
-                .ToArray();
-            return $"{leadWord}{string.Join(string.Empty, tailWords)}";
+
+                    var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
+
+                    if (node != null)
+                    {
+                        list.Add(new Image(node, storeAlias));
+                    }
+                }
+            }
+            return list;
         }
+
+        return Enumerable.Empty<Image>();
+    }
+
+    public static string ToCamelCase(this string str)
+    {
+        var words = str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
+        var leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
+            m =>
+            {
+                return m.Groups[1].Value.ToLower() + m.Groups[2].Value.ToLower() + m.Groups[3].Value;
+            });
+        var tailWords = words.Skip(1)
+            .Select(word => char.ToUpper(word[0]) + word.Substring(1))
+            .ToArray();
+        return $"{leadWord}{string.Join(string.Empty, tailWords)}";
+    }
+
+    public static bool IsValidEmail(this string email)
+    {
+        var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        return Regex.IsMatch(email, emailPattern);
     }
 }
