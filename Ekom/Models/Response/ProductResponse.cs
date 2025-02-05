@@ -26,11 +26,13 @@ public class ProductResponse
                 if (!string.IsNullOrEmpty(selector.Key))
                 {
                     var propertyValues = products
-                      .Select(x => x.GetValue(selector.Key, selector.Value))
-                      .Where(x => !string.IsNullOrEmpty(x))
-                      .ToList();
+                        .Select(x => x.GetValue(selector.Key, selector.Value))
+                        .Where(x => !string.IsNullOrEmpty(x))
+                        .GroupBy(value => value) // Group by distinct value
+                        .Select(group => (group.Key, group.Count())) // Create tuple (distinct value, count)
+                        .ToList(); // Convert to List<(string, int)>
 
-                    PropertySelectors.Add(selector.Key, (propertyValues.Distinct().ToList(), propertyValues.Count));
+                    PropertySelectors.Add(selector.Key, propertyValues);
                 }
 
             }
@@ -123,7 +125,7 @@ public class ProductResponse
     public int? Page { get; set; }
     public int ProductCount { get; set; }
     public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
-    public Dictionary<string, (List<string>, int)> PropertySelectors = new Dictionary<string, (List<string>, int)>();
+    public Dictionary<string, List<(string, int)>> PropertySelectors = new Dictionary<string, List<(string, int)>>();
     private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
     {
         if (orderBy == Utilities.OrderBy.TitleAsc)
