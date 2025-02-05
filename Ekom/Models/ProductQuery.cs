@@ -68,4 +68,5 @@ public class ProductQuery : ProductQueryBase
         }
     }
     public bool FilterOutZeroPriceProducts { get; set; } = false;
+    public Func<IProduct, bool>? Filter { get; set; }
 }

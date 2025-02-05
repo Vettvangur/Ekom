@@ -88,6 +88,11 @@ public class ProductResponse
             products = filterService.ApplyFilters(products);
         }
 
+        if (query?.Filter != null)
+        {
+            products = products.Where(query.Filter);
+        }
+
         ProductCount = products.Count();
 
 

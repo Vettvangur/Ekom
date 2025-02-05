@@ -198,7 +198,9 @@ public class Category : PerStoreNodeEntity, ICategory
         var urlSvc = Configuration.Resolver.GetService<IUrlService>();
         var nodeSvc = Configuration.Resolver.GetService<INodeService>();
 
-        var urls = urlSvc.BuildCategoryUrls(nodeSvc.GetAllCatalogAncestors(item), store);
+        var ancestors = nodeSvc.GetAllCatalogAncestors(item);
+
+        var urls = urlSvc.BuildCategoryUrls(ancestors, store);
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url);
