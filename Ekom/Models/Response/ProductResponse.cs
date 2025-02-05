@@ -27,11 +27,10 @@ public class ProductResponse
                 {
                     var propertyValues = products
                       .Select(x => x.GetValue(selector.Key, selector.Value))
-                      .Distinct()
                       .Where(x => !string.IsNullOrEmpty(x))
                       .ToList();
 
-                    PropertySelectors.Add(selector.Key, propertyValues);
+                    PropertySelectors.Add(selector.Key, (propertyValues.Distinct().ToList(), propertyValues.Count));
                 }
 
             }
@@ -124,7 +123,7 @@ public class ProductResponse
     public int? Page { get; set; }
     public int ProductCount { get; set; }
     public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
-    public Dictionary<string, List<string>> PropertySelectors = new Dictionary<string, List<string>>();
+    public Dictionary<string, (List<string>, int)> PropertySelectors = new Dictionary<string, (List<string>, int)>();
     private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
     {
         if (orderBy == Utilities.OrderBy.TitleAsc)
