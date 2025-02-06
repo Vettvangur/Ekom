@@ -1,6 +1,7 @@
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace Ekom.Models;
 
@@ -15,115 +16,116 @@ public class ProductResponse
 
     public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null)
     {
-
-        Products = products;
-
-        if (query?.PropertySelectors?.Any() == true)
+        if (query != null)
         {
-            foreach (var selector in query.PropertySelectors)
+            // Filter out zero-price products
+            if (query.FilterOutZeroPriceProducts)
             {
+                products = products.Where(x => x.OriginalPrice?.Value > 0);
+            }
 
-                if (!string.IsNullOrEmpty(selector.Key))
+            // Store the total number of products before any filtering
+            TotalProductCount = products.Count();
+
+            // Apply Property Selectors efficiently
+            if (query.PropertySelectors?.Any() == true)
+            {
+                foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
                 {
                     var propertyValues = products
                         .Select(x => x.GetValue(selector.Key, selector.Value))
                         .Where(x => !string.IsNullOrEmpty(x))
-                        .GroupBy(value => value) // Group by distinct value
-                        .Select(group => (group.Key, group.Count())) // Create tuple (distinct value, count)
-                        .ToList(); // Convert to List<(string, int)>
+                        .GroupBy(value => value)
+                        .Select(group => (group.Key, group.Count()))
+                        .ToList();
 
                     PropertySelectors.Add(selector.Key, propertyValues);
                 }
+            }
 
+            if (query.AllFiltersVisible)
+            {
+                Filters = products.Filters();
+            }
+
+            // Apply Filters
+            if (query.MetaFilters?.Any() == true || query.PropertyFilters?.Any() == true)
+            {
+                products = products.Filter(query);
+            }
+
+            // Apply Search Filtering
+            if (!string.IsNullOrEmpty(query.SearchQuery))
+            {
+                long total = 0;
+
+                using var scope = Configuration.Resolver.CreateScope();
+                var searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+                var searchResults = searchService?.ProductQuery(new SearchRequest
+                {
+                    SearchQuery = query.SearchQuery,
+                    NodeTypeAlias = new[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+                    SearchFields = query.SearchFields
+                }, out total) ?? Enumerable.Empty<int>();
+
+                products = total > 0 ? products.Where(x => searchResults.Contains(x.Id)) : Enumerable.Empty<IProduct>();
+            }
+
+            if (!query.AllFiltersVisible)
+            {
+                Filters = products.Filters();
+            }
+
+            // Apply Sorting
+            if (query.OrderBy != Utilities.OrderBy.NoOrder)
+            {
+                products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+            }
+
+            // Apply Additional Filtering via filterService
+            if (filterService != null)
+            {
+                products = filterService.ApplyFilters(products);
+            }
+
+            // Apply Query Filter
+            if (query.Filter != null)
+            {
+                products = products.Where(query.Filter);
+            }
+
+            // Store the count after filtering
+            ProductCount = products.Count();
+
+            // Apply Pagination
+            if (query.PageSize.HasValue && query.Page.HasValue)
+            {
+                PageSize = query.PageSize.Value;
+                PageCount = (ProductCount + PageSize - 1) / PageSize;
+                Page = query.Page.Value;
+
+                Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
+            }
+            else
+            {
+                Products = products;
             }
         }
-
-        if (query?.AllFiltersVisible == true)
-        {
-            Filters = products.Filters();
-        }
-
-        if (query?.MetaFilters?.Any() == true || query?.PropertyFilters?.Any() == true)
-        {
-            products = products.Filter(query);
-        }
-
-        if (!string.IsNullOrEmpty(query?.SearchQuery))
-        {
-            var scope = Configuration.Resolver.CreateScope();
-            var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-            var searchResults = _searhService.ProductQuery(new SearchRequest() {
-                SearchQuery = query.SearchQuery,
-                NodeTypeAlias = new string[] { "ekmProduct", "ekmCategory", "ekmVariant" },
-                SearchFields = query.SearchFields
-            }, out long total);
-            
-            scope.Dispose();
-
-            if (searchResults == null || total <= 0)
-            {
-                products = Enumerable.Empty<IProduct>();
-            } else
-            {
-                products = products.Where(x => searchResults.Any(y => y == x.Id));
-            }
-        }
-
-        if (query?.AllFiltersVisible == false)
-        {
-            Filters = products.Filters();
-        }
-
-        if (query != null && query.FilterOutZeroPriceProducts)
-        {
-            products = products.Where(x => x.OriginalPrice.Value > 0);
-        }
-
-        if (query?.OrderBy != Utilities.OrderBy.NoOrder)
-        {
-            products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
-        }
-
-        if (filterService != null)
-        {
-            products = filterService.ApplyFilters(products);
-        }
-
-        if (query?.Filter != null)
-        {
-            products = products.Where(query.Filter);
-        }
-
-        ProductCount = products.Count();
-
-
-        if (query?.PageSize.HasValue == true && query?.Page.HasValue == true)
-        {
-            Page = query.Page;
-            PageSize = query.PageSize;
-            PageCount = (ProductCount + PageSize - 1) / PageSize;
-
-            if (Page > PageCount)
-                Page = PageCount;
-
-            if (Page < 1)
-                Page = 1;
-
-            Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
-
-        } else
+        else
         {
             Products = products;
+            ProductCount = products.Count();
+            TotalProductCount = ProductCount;
         }
-
-
     }
-    
+
+
     public IEnumerable<IProduct> Products { get; set; }
     public int? PageCount { get; set; }
     public int? PageSize { get; set; }
     public int? Page { get; set; }
     public int ProductCount { get; set; }
+    public int TotalProductCount { get; set; }
     public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
     public Dictionary<string, List<(string, int)>> PropertySelectors = new Dictionary<string, List<(string, int)>>();
     private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
