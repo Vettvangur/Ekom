@@ -121,7 +121,7 @@ public class Catalog
 
         if (category == null)
         {
-            return new ProductResponse(Enumerable.Empty<IProduct>(), query);
+            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
         }
 
         return category.ProductsRecursive(query);
@@ -287,7 +287,7 @@ public class Catalog
             return products;
         }
 
-        return new ProductResponse(Enumerable.Empty<IProduct>(), query);
+        return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public class Catalog
             return GetProductsByIds(store.Alias, query);
         }
 
-        return new ProductResponse(Enumerable.Empty<IProduct>(), query);
+        return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
     }
 
     /// <summary>
@@ -378,7 +378,7 @@ public class Catalog
            return GetProductsByKeys(store.Alias, query);
         }
 
-        return new ProductResponse(Enumerable.Empty<IProduct>(), query);
+        return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
     }
 
     /// <summary>
