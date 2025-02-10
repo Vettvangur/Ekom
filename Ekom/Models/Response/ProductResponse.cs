@@ -113,6 +113,12 @@ public class ProductResponse
         }
         else
         {
+            // Apply Additional Filtering via filterService
+            if (filterService != null)
+            {
+                products = filterService.ApplyFilters(products);
+            }
+
             Products = products;
             ProductCount = products.Count();
             TotalProductCount = ProductCount;
