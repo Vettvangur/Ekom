@@ -139,7 +139,7 @@ public class EkomCatalogController : ControllerBase
     /// <param name="route">Route</param>
     /// <param name="query">Product query</param>
     /// <returns></returns>
-    [HttpGet]
+    [HttpPost, HttpGet]
     [Route("productsrecursive/route")]
     public IActionResult GetProductsRecursiveByRoute([FromQuery] string route, [FromBody] ProductQuery? query = null)
     {
