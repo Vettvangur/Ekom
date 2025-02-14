@@ -45,10 +45,10 @@ public class ProductQuery : ProductQueryBase
                 x => x.Value.ToList());
     }
 
-    public Dictionary<string, List<string>> MetaFilters { get; set; } = new Dictionary<string, List<string>>();
-    public Dictionary<string, List<string>> PropertyFilters { get; set; } = new Dictionary<string, List<string>>();
+    public Dictionary<string, List<string>> MetaFilters { get; set; }
+    public Dictionary<string, List<string>> PropertyFilters { get; set; }
     public string PropertySelectorsSeparator { get; set; } = string.Empty;
-    public Dictionary<string, string> PropertySelectors { get; set; } = new Dictionary<string, string>();
+    public Dictionary<string, string> PropertySelectors { get; set; }
     private OrderBy _orderBy = OrderBy.DateDesc;
     public OrderBy OrderBy
     {
