@@ -313,8 +313,6 @@ public class CheckoutControllerService
             }
         }
 
-
-
         if (Config.StoreCustomerData)
         {
             await using var db = DatabaseFactory.GetDatabase();

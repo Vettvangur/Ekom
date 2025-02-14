@@ -27,13 +27,18 @@ public class ProductResponse
             // Store the total number of products before any filtering
             TotalProductCount = products.Count();
 
-            // Apply Property Selectors efficiently
+            // Apply Property Selectors
             if (query.PropertySelectors?.Any() == true)
             {
                 foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
                 {
+                    var separator = query.PropertySelectorsSeparator;
+
                     var propertyValues = products
-                        .Select(x => x.GetValue(selector.Key, selector.Value))
+                        .SelectMany(x => x.GetValue(selector.Key, selector.Value)?
+                                                    .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(value => value.Trim())
+                                                    ?? Array.Empty<string>())
                         .Where(x => !string.IsNullOrEmpty(x))
                         .GroupBy(value => value)
                         .Select(group => (group.Key, group.Count()))

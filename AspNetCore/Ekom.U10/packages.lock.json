@@ -498,11 +498,11 @@
       },
       "Microsoft.AspNetCore.Mvc.Abstractions": {
         "type": "Transitive",
-        "resolved": "2.2.0",
-        "contentHash": "ET6uZpfVbGR1NjCuLaLy197cQ3qZUjzl7EG5SL4GfJH/c9KRE89MMBrQegqWsh0w1iRUB/zQaK0anAjxa/pz4g==",
+        "resolved": "2.3.0",
+        "contentHash": "xrF8Fh10hEAS6Qp967IgPqNw2iz3/3Q8FQo+Jowbytaj1JJN86p0z851hSH4XP/sFnI5gFu7mGdkplirAJMWPw==",
         "dependencies": {
-          "Microsoft.AspNetCore.Routing.Abstractions": "2.2.0",
-          "Microsoft.Net.Http.Headers": "2.2.0"
+          "Microsoft.AspNetCore.Routing.Abstractions": "2.3.0",
+          "Microsoft.Net.Http.Headers": "2.3.0"
         }
       },
       "Microsoft.AspNetCore.Mvc.NewtonsoftJson": {
@@ -541,10 +541,10 @@
       },
       "Microsoft.AspNetCore.Routing.Abstractions": {
         "type": "Transitive",
-        "resolved": "2.2.0",
-        "contentHash": "lRRaPN7jDlUCVCp9i0W+PB0trFaKB0bgMJD7hEJS9Uo4R9MXaMC8X2tJhPLmeVE3SGDdYI4QNKdVmhNvMJGgPQ==",
+        "resolved": "2.3.0",
+        "contentHash": "ZkFpUrSmp6TocxZLBEX3IBv5dPMbQuMs6L/BPl0WRfn32UVOtNYJQ0bLdh3cL9LMV0rmTW/5R0w8CBYxr0AOUw==",
         "dependencies": {
-          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0"
+          "Microsoft.AspNetCore.Http.Abstractions": "2.3.0"
         }
       },
       "Microsoft.Bcl.AsyncInterfaces": {
@@ -2699,7 +2699,7 @@
           "Ekom.Payments.Core": "[0.2.1, )",
           "Hangfire": "[1.8.5, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
-          "Microsoft.AspNetCore.Mvc.Abstractions": "[2.2.0, )",
+          "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[7.0.20, )",
           "Microsoft.Data.SqlClient": "[5.2.2, )",
           "Microsoft.Extensions.Caching.Abstractions": "[6.0.0, )",

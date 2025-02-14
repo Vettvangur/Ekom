@@ -336,9 +336,12 @@ internal class MetafieldService : IMetafieldService
 
             products = products.Where(product =>
                 query.PropertyFilters
-                .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
-                .All(f => product.Properties.Any(p => p.Key == f.Key &&
-                    f.Value.Any(d => p.Value != null && p.Value.Contains(d, StringComparison.InvariantCultureIgnoreCase)))));
+                    .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
+                    .All(f => product.Properties.Any(p => p.Key == f.Key &&
+                        p.Value != null &&
+                        p.Value.Split(new[] { query.PropertySelectorsSeparator }, StringSplitOptions.RemoveEmptyEntries)
+                               .Select(value => value.Trim()) // Trim each split value
+                               .Any(splitValue => f.Value.Any(d => splitValue.Equals(d, StringComparison.InvariantCultureIgnoreCase))))));
         }
 
         return products;
