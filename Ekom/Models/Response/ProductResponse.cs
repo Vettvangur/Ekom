@@ -1,7 +1,6 @@
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace Ekom.Models;
 
@@ -90,7 +89,7 @@ public class ProductResponse
             // Apply Additional Filtering via filterService
             if (filterService != null)
             {
-                products = filterService.ApplyFilters(products);
+                products = filterService.ApplyFilters(products, query);
             }
 
             // Apply Query Filter

@@ -4,5 +4,5 @@ namespace Ekom.Services;
 
 public interface IProductFilterService
 {
-    IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products);
+    IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products, ProductQuery? query = null);
 }

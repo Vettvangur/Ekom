@@ -4,7 +4,7 @@ namespace Ekom.Services;
 
 public class ProductFilterService : IProductFilterService
 {
-    public virtual IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products)
+    public virtual IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products, ProductQuery? query = null)
     {
         return products;
     }
