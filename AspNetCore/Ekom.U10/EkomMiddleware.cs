@@ -102,6 +102,16 @@ class EkomMiddleware
                 return;
             }
 
+            if (_context.RequestServices == null)
+            {
+                return;
+            }
+
+            if (umbracoContextFac == null)
+            {
+                return;
+            }
+
             using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
 
             if (umbCtx?.UmbracoContext != null)
