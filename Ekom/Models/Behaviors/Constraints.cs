@@ -13,7 +13,6 @@ namespace Ekom.Models
     /// </summary>
     public class Constraints : IConstraints
     {
-        private readonly ILogger Logger;
         /// <summary>
         /// Determine if the given provider is valid given the provided properties.
         /// </summary>
@@ -31,7 +30,7 @@ namespace Ekom.Models
             && (EndRange == 0 || EndRange >= amount);
         }
 
-        private INodeEntity _node;
+        private INodeEntity? _node;
         /// <summary>
         /// Start of range that provider supports.
         /// </summary>
@@ -40,77 +39,42 @@ namespace Ekom.Models
             get
             {
 
-                IStore store = null;
+                var store = _node == null
+                    ? API.Store.Instance.GetStore()
+                    : (_node as PerStoreNodeEntity)?.Store ?? API.Store.Instance.GetStore();
 
-                try
+                // Check for multiple currencies
+                if (store?.Currencies.Count() > 1)
                 {
-                    store = _node is PerStoreNodeEntity perStoreNode
-                    ? perStoreNode.Store
-                    : API.Store.Instance.GetStore();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Provider constraints for StartRange could not get store.");
-                }
+                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                    var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
 
-                if (store != null && store.Currencies.Count() > 1)
-                {
-                    try
+                    if (!string.IsNullOrEmpty(cookie))
                     {
-                        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-
-                        if (httpContext?.Request != null)
-                        {
-                            var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
-
-                            if (cookie != null && !string.IsNullOrEmpty(cookie))
-                            {
-                                var price = StartRanges.FirstOrDefault(x => x.Currency == cookie);
-
-                                if (price != null)
-                                {
-                                    return price.Value;
-                                }
-                            }
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Failed get StartRange from httpContext. Node: " + _node?.Id);
+                        return StartRanges.FirstOrDefault(x => x.Currency == cookie)?.Value ?? 0;
                     }
                 }
                 
+
                 return StartRanges.FirstOrDefault()?.Value ?? 0;
             }
         }
+
         private List<CurrencyValue> _startRanges;
+
         public List<CurrencyValue> StartRanges
         {
             get
             {
-                if (_startRanges != null)
+                if (_startRanges == null)
                 {
-                    return _startRanges;
+                    var propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
+                    var value = _node.Properties.GetPropertyValue("startOfRange", propertyAlias);
+                    _startRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
                 }
-
-                if (_node is PerStoreNodeEntity perStoreNode)
-                {
-                    var value = _node.Properties.GetPropertyValue("startOfRange", perStoreNode.Store.Alias);
-
-                    return value.GetCurrencyValues();
-                }
-                else
-                {
-                    var value = _node.Properties.GetPropertyValue("startOfRange");
-
-                    return value.GetCurrencyValues();
-                }
+                return _startRanges;
             }
-            set
-            {
-                _startRanges = value;
-            }
+            set => _startRanges = value;
         }
 
         /// <summary>
@@ -121,80 +85,42 @@ namespace Ekom.Models
         {
             get
             {
+                var store = _node == null
+                    ? API.Store.Instance.GetStore()
+                    : (_node as PerStoreNodeEntity)?.Store ?? API.Store.Instance.GetStore();
 
-                IStore store = null;
+                if (store?.Currencies.Count() > 1)
+                {
+                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                    var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
 
-                try
-                {
-                    store = _node is PerStoreNodeEntity perStoreNode
-                    ? perStoreNode.Store
-                    : API.Store.Instance.GetStore();
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Provider constraints for EndRange could not get store.");
-                }
-
-                if (store != null && store.Currencies.Count() > 1)
-                {
-                    try
+                    if (!string.IsNullOrEmpty(cookie))
                     {
-                        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-
-                        if (httpContext?.Request != null)
-                        {
-                            var cookie = httpContext.Request.Cookies["EkomCurrency-" + store.Alias];
-
-                            if (cookie != null && !string.IsNullOrEmpty(cookie))
-                            {
-                                var price = EndRanges.FirstOrDefault(x => x.Currency == cookie);
-
-                                if (price != null)
-                                {
-                                    return price.Value;
-                                }
-                            }
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Failed get EndRange from httpContext. Node: " + _node?.Id);
+                        return EndRanges.FirstOrDefault(x => x.Currency == cookie)?.Value ?? 0;
                     }
                 }
 
                 return EndRanges.FirstOrDefault()?.Value ?? 0;
             }
         }
+
         private List<CurrencyValue> _endRanges;
+
         public List<CurrencyValue> EndRanges
         {
             get
             {
-                if (_endRanges != null)
+                if (_endRanges == null)
                 {
-                    return _endRanges;
+                    var propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
+                    var value = _node.Properties.GetPropertyValue("endOfRange", propertyAlias);
+                    _endRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
                 }
-
-                if (_node is PerStoreNodeEntity perStoreNode)
-                {
-                    var value = _node.Properties.GetPropertyValue("endOfRange", perStoreNode.Store.Alias);
-
-                    return value.GetCurrencyValues();
-                }
-                else
-                {
-                    var value = _node.Properties.GetPropertyValue("endOfRange");
-
-                    return value.GetCurrencyValues();
-                }
-
+                return _endRanges;
             }
-            set
-            {
-                _endRanges = value;
-            }
+            set => _endRanges = value;
         }
+
 
         /// <summary>
         /// All countries in <see cref="Models.Zone"/>
@@ -208,27 +134,20 @@ namespace Ekom.Models
         {
             _node = node;
 
-            Guid zoneKey = Guid.Empty;
-
-            if (node.Properties.ContainsKey("zone")
-            && Guid.TryParse(node.Properties["zone"], out var guidUdi))
+            if (node.Properties.TryGetValue("zone", out var zoneValue) && Guid.TryParse(zoneValue, out var zoneKey))
             {
-                zoneKey = guidUdi;
-            }
+                var zoneCache = Configuration.Resolver.GetService<IBaseCache<IZone>>();
 
-            var zoneCache = Configuration.Resolver.GetService<IBaseCache<IZone>>();
-            if (zoneKey != Guid.Empty
-            && zoneCache.Cache.ContainsKey(zoneKey))
-            {
-                var zone = zoneCache.Cache[zoneKey];
-
-                CountriesInZone = zone.Countries;
+                CountriesInZone = (zoneCache?.Cache.TryGetValue(zoneKey, out var zone) == true)
+                    ? zone.Countries
+                    : Enumerable.Empty<string>();
             }
             else
             {
                 CountriesInZone = Enumerable.Empty<string>();
             }
         }
+
 
         /// <summary>
         /// 
