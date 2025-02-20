@@ -90,7 +90,7 @@ class EkomMiddleware
     {
         try
         {
-            if (_context == null)
+            if (_context?.Request == null)
             {
                 return;
             }
@@ -260,7 +260,7 @@ class EkomMiddleware
 
         try
         {
-            if (_context == null)
+            if (_context?.Request == null)
             {
                 return;
             }
