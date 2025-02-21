@@ -128,7 +128,7 @@ public class Category : PerStoreNodeEntity, ICategory
                             .Where(x => x.Value.Categories.Any(z => z.Id == Id))
                             .Select(x => x.Value).AsEnumerable();
 
-        return new ProductResponse(products, query, _productFilterService);
+        return new ProductResponse(products, query, _productFilterService, this);
     }
 
 
@@ -150,7 +150,7 @@ public class Category : PerStoreNodeEntity, ICategory
             .Select(x => x.Value)
             .AsEnumerable();
 
-        return new ProductResponse(products, query, _productFilterService);
+        return new ProductResponse(products, query, _productFilterService, this);
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ public class ProductResponse
         Filters = Enumerable.Empty<MetafieldGrouped>();
     }
 
-    public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null)
+    public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null, ICategory category = null)
     {
         if (query != null)
         {
