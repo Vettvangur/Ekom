@@ -324,14 +324,6 @@ class UmbracoEventListeners :
                     _logger.LogWarning(
                         "Duplicate slug found for product : {Id}",
                         content.Id);
-
-                    //e.Messages.Add(
-                    //    new EventMessage(
-                    //        "Duplicate Slug Found.",
-                    //        "Sorry but this slug is already in use, we updated it for you.",
-                    //        EventMessageType.Warning
-                    //    )
-                    //);
                 }
 
 
