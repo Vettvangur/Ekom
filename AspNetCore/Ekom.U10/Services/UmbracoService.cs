@@ -129,7 +129,7 @@ class UmbracoService : IUmbracoService
                 CultureName = x.CultureName,
                 IsoCode = x.IsoCode
             });
-        }, TimeSpan.FromMinutes(60));
+        }, TimeSpan.FromMinutes(30));
     }
 
     public string DefaultLanguage()

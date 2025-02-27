@@ -17,6 +17,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
+using static Lucene.Net.Documents.Field;
 
 namespace Ekom.App_Start;
 
@@ -265,38 +266,45 @@ class UmbracoEventListeners :
         string alias,
         ContentSavingNotification e)
     {
+        var propertyTypes = new Dictionary<string, string>();
+        var propertyType = PropertyEditorType.Language;
+        var slugItems = new Dictionary<string, object>();
 
         if (content.HasProperty("updateSlug") && content.GetValue<bool>("updateSlug"))
         {
-            var propertyType = PropertyEditorType.Language;
-            var propertyTypes = new List<string>();
-            var slugItems = new Dictionary<string, object>();
-
             content.SetValue("updateSlug", false);
 
             var titlePropertyValue = JsonConvert.DeserializeObject<PropertyValue>(content.GetValue<string>("title"));
-
 
             if (titlePropertyValue.Type == PropertyEditorType.Language)
             {
                 var languages = _umbracoService.GetLanguages();
 
-                propertyTypes.AddRange(languages.Select(x => x.IsoCode));
+                foreach (var lang in languages)
+                {
+                    propertyTypes.Add("Language", lang.IsoCode);
+                }
             }
             else if (titlePropertyValue.Type == PropertyEditorType.Store)
             {
                 propertyType = PropertyEditorType.Store;
                 var stores = API.Store.Instance.GetAllStores().OrderBy(x => x.SortOrder);
 
-                propertyTypes.AddRange(stores.Select(x => x.Alias));
-
+                foreach (var store in stores)
+                {
+                    propertyTypes.Add("Store", store.Alias);
+                }
             }
+
+            var parentCategory = alias == "ekmProduct" ? Catalog.Instance.GetCategory(content.ParentId) : null;
+
+            var products = parentCategory != null ? parentCategory.Products().Products.Where(x => x.Id != content.Id).ToList() : new List<IProduct>();
 
             foreach (var type in propertyTypes)
             {
                 if (alias != "ekmProduct" && alias != "ekmCategory") continue;
                 
-                var title = content.GetProperty("title", type);
+                var title = content.GetProperty("title", type.Value);
 
                 var slug = string.Empty; // NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
 
@@ -305,12 +313,32 @@ class UmbracoEventListeners :
                     slug = title;
                 }
 
-                slug = slug.ToLowerInvariant();
-
-                slugItems.Add(type, slug.ToUrlSegment(_shortStringHelper));
+                slug = slug.ToLowerInvariant().ToUrlSegment(_shortStringHelper);
 
 
+                if (products.Any(x => x.GetValue("slug", type.Value) == slug))
+                {
+                    var rnd = new Random();
+
+                    slug = slug + "-" + rnd.Next(10, 1000);
+
+                    _logger.LogWarning(
+                        "Duplicate slug found for product : {Id}",
+                        content.Id);
+
+                    //e.Messages.Add(
+                    //    new EventMessage(
+                    //        "Duplicate Slug Found.",
+                    //        "Sorry but this slug is already in use, we updated it for you.",
+                    //        EventMessageType.Warning
+                    //    )
+                    //);
+                }
+
+
+                slugItems.Add(type.Value, slug);
             }
+
 
             if (slugItems.Any())
             {
