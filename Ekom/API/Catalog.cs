@@ -488,6 +488,25 @@ public class Catalog
             return categoryPair.Value;
         }
 
+        if (Configuration.Instance.GlobalCatalog)
+        {
+            foreach (var otherStore in _storeSvc.GetAllStores())
+            {
+                if (otherStore.Alias == store.Alias)
+                {
+                    continue;
+                }
+
+                var categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id);
+
+                // Check if a valid KeyValuePair was found and if the category is not null
+                if (!categoryPairGlobal.Equals(default(KeyValuePair<int, ICategory>)) && categoryPairGlobal.Value != null)
+                {
+                    return categoryPairGlobal.Value;
+                }
+            }
+        }
+
         return null;
     }
 
@@ -507,7 +526,33 @@ public class Catalog
             return null;
         }
 
-        return _categoryCache.Cache[store.Alias].TryGetValue(Id, out var cat) ? cat : null;
+        var category = _categoryCache.Cache[store.Alias].TryGetValue(Id, out var cat) ? cat : null;
+
+        if (category != null)
+        {
+            return category;
+        }
+
+        if (Configuration.Instance.GlobalCatalog)
+        {
+            foreach (var otherStore in _storeSvc.GetAllStores())
+            {
+                if (otherStore.Alias == store.Alias)
+                {
+                    continue;
+                }
+
+
+                if (_categoryCache.Cache[otherStore.Alias].TryGetValue(Id, out var catOther))
+                {
+                    return catOther;
+                }
+
+            }
+        }
+
+        return null;
+
     }
 
     [Obsolete]

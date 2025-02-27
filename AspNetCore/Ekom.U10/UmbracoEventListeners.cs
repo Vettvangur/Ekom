@@ -306,7 +306,7 @@ class UmbracoEventListeners :
                 
                 var title = content.GetProperty("title", type.Value);
 
-                var slug = string.Empty; // NodeHelper.GetStoreProperty(content, "slug", store.Alias).Trim();
+                var slug = content.GetProperty("slug", type.Value);
 
                 if (string.IsNullOrEmpty(slug) && !string.IsNullOrEmpty(title))
                 {
