@@ -1130,7 +1130,7 @@ public class ImportService : IImportService
             }
             else if (media is ImportMediaFromBytes bytesMedia)
             {
-                var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes" });
+                var compareValue = bytesMedia.Comparer ?? ComputeSha256Hash(bytesMedia, new string[] { "Bytes", "SortOrder" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(bytesMedia.Identifier) ? x.GetValue<string>("ekmIdentifier") == bytesMedia.Identifier : x.GetValue<string>("comparer") == compareValue);
 
@@ -1144,7 +1144,7 @@ public class ImportService : IImportService
             }
             else if (media is ImportMediaFromBase64 base64Media)
             {
-                var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64" });
+                var compareValue = base64Media.Comparer ?? ComputeSha256Hash(base64Media, new string[] { "Base64", "SortOrder" });
 
                 var umbMedia = allUmbracoMedia.FirstOrDefault(x => x.HasProperty("ekmIdentifier") && !string.IsNullOrEmpty(base64Media.Identifier) ? x.GetValue<string>("ekmIdentifier") == base64Media.Identifier : x.GetValue<string>("comparer") == compareValue);
 

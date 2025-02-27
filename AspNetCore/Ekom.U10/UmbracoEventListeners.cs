@@ -17,7 +17,6 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
-using static Lucene.Net.Documents.Field;
 
 namespace Ekom.App_Start;
 
