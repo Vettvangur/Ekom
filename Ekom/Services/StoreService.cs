@@ -26,7 +26,7 @@ class StoreService : IStoreService
 
     public IStore? GetStoreByDomain(string domain = "", string culture = "")
     {
-        IStore store = null;
+        IStore? store = null;
 
         if (!string.IsNullOrEmpty(domain))
         {
@@ -77,7 +77,7 @@ class StoreService : IStoreService
     public IStore? GetStoreFromCache()
     {
 
-        if (_httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject))
+        if (_httpContext != null && _httpContext.Items != null &&  _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject))
         {
             ContentRequest? contentRequest = null;
 
