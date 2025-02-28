@@ -13,7 +13,7 @@ public class ProductResponse
         Filters = Enumerable.Empty<MetafieldGrouped>();
     }
 
-    public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null, ICategory category = null)
+    public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null, ICategory? category = null)
     {
         if (query != null)
         {
@@ -89,11 +89,11 @@ public class ProductResponse
             // Apply Additional Filtering via filterService
             if (filterService != null)
             {
-                products = filterService.ApplyFilters(products, query);
+                products = filterService.ApplyFilters(products, query, category);
             }
 
             // Apply Query Filter
-            if (query.Filter != null)
+            if (query?.Filter != null)
             {
                 products = products.Where(query.Filter);
             }
@@ -102,7 +102,7 @@ public class ProductResponse
             ProductCount = products.Count();
 
             // Apply Pagination
-            if (query.PageSize.HasValue && query.Page.HasValue)
+            if (query != null && query.PageSize.HasValue && query.Page.HasValue)
             {
                 PageSize = query.PageSize.Value;
                 PageCount = (ProductCount + PageSize - 1) / PageSize;
@@ -120,7 +120,7 @@ public class ProductResponse
             // Apply Additional Filtering via filterService
             if (filterService != null)
             {
-                products = filterService.ApplyFilters(products);
+                products = filterService.ApplyFilters(products, query, category);
             }
 
             Products = products;
