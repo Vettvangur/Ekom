@@ -39,7 +39,7 @@ namespace Ekom.Models
         /// <value>
         /// The quantity.
         /// </value>
-        int TotalQuantity { get; }
+        decimal TotalQuantity { get; }
 
         /// <summary>
         /// Gets the store info.

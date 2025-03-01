@@ -83,7 +83,7 @@ class StockRepository
     /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
     /// </exception>
     /// <returns></returns>
-    public async Task<int> SetAsync(string uniqueId, int value, int oldValue)
+    public async Task<decimal> SetAsync(string uniqueId, decimal value, decimal oldValue)
     {
         var stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
 

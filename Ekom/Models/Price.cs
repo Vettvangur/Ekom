@@ -50,7 +50,7 @@ namespace Ekom.Models
             decimal vat,
             bool vatIncludedInPrice,
             OrderedDiscount discount = null,
-            int quantity = 1,
+            decimal quantity = 1,
             bool discountAlwaysBeforeVat = false
 
         )
@@ -80,7 +80,7 @@ namespace Ekom.Models
             decimal vat,
             bool vatIncludedInPrice,
             OrderedDiscount? discount = null,
-            int quantity = 1,
+            decimal quantity = 1,
             bool discountAlwaysBeforeVat = false
         )
         {
@@ -109,7 +109,7 @@ namespace Ekom.Models
         /// <summary>
         /// Multiplier
         /// </summary>
-        public int Quantity { get; }
+        public decimal Quantity { get; }
 
         /// <summary>
         /// Price before discount with VAT left as-is

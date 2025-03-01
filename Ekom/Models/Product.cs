@@ -63,7 +63,7 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Get the current product Stock
     /// </summary>
-    public virtual int Stock => API.Stock.Instance.GetStock(Key);
+    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
 
     /// <summary>
     /// Get the availability of the product and the variants

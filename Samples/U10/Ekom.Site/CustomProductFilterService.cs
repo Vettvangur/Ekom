@@ -10,7 +10,7 @@ public class CustomProductFilterService : ProductFilterService
     {
     }
 
-    public override IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products)
+    public override IEnumerable<IProduct> ApplyFilters(IEnumerable<IProduct> products, ProductQuery? query = null, ICategory? category = null)
     {
 
         //var isAdmin = true;

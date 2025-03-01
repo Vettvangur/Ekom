@@ -80,7 +80,7 @@ namespace Ekom.Models
         /// <value>
         /// The stock.
         /// </value>
-        int Stock { get; }
+        decimal Stock { get; }
 
         /// <summary>
         /// 

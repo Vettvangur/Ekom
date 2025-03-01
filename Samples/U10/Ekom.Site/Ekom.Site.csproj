@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -63,14 +63,14 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.13.1" />
         <PackageReference Include="Ekom.Payments.U10" Version="0.2.1" />
-        <PackageReference Include="Ekom.Payments.Valitor" Version="0.1.49" />
-        <PackageReference Include="Umbraco.Cms" Version="12.3.10" />
+        <PackageReference Include="Ekom.Payments.Valitor" Version="0.1.54" />
+        <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+        <PackageReference Include="Umbraco.Cms" Version="13.7.0" />
     </ItemGroup>
 
     <!-- Force Windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older Windows 10 and most, if not all, Windows Server editions will run NLS -->
     <ItemGroup>
-        <PackageReference Include="Microsoft.Identity.Web" Version="1.15.2" />
-        <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+        <PackageReference Include="Microsoft.Identity.Web" Version="3.7.1" />
         <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
         <Reference Include="Ekom.Payments.Borgun">
           <HintPath>..\..\..\..\..\Hreyfing\Dll\Ekom.Payments.Borgun.dll</HintPath>

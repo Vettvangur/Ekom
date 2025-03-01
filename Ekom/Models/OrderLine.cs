@@ -26,7 +26,7 @@ class OrderLine : IOrderLine
     /// <summary>
     /// 
     /// </summary>
-    public int Quantity { get; internal set; }
+    public decimal Quantity { get; internal set; }
     /// <summary>
     /// Optional Information Attached To Order
     /// </summary>
@@ -112,7 +112,7 @@ class OrderLine : IOrderLine
     /// </summary>
     public OrderLine(
         Guid lineId,
-        int quantity,
+        decimal quantity,
         string productJson,
         OrderInfo orderInfo,
         OrderLineInfo orderLineInfo,
@@ -133,7 +133,7 @@ class OrderLine : IOrderLine
     /// </summary>
     public OrderLine(
         IProduct product,
-        int quantity,
+        decimal quantity,
         Guid lineId,
         OrderInfo orderInfo,
         IVariant variant = null,

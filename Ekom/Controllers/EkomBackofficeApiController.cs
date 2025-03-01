@@ -147,7 +147,7 @@ public class EkomBackofficeApiController : ControllerBase
     [Route("Stock/{id:Guid}/StoreAlias/{storeAlias}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-    public int GetStockByStore(Guid id, string storeAlias)
+    public decimal GetStockByStore(Guid id, string storeAlias)
     {
         return API.Stock.Instance.GetStock(id, storeAlias);
     }
@@ -160,7 +160,7 @@ public class EkomBackofficeApiController : ControllerBase
     [Route("Stock/{id:Guid}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-    public int GetStock(Guid id)
+    public decimal GetStock(Guid id)
     {
         return API.Stock.Instance.GetStock(id);
     }

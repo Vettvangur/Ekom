@@ -105,7 +105,7 @@ class OrderInfo : IOrderInfo
     public OrderedPaymentProvider? PaymentProvider { get; set; }
 
     /// <inheritdoc />
-    public int TotalQuantity
+    public decimal TotalQuantity
     {
         get
         {

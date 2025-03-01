@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <AssemblyName>Ekom.U10</AssemblyName>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
         <RootNamespace>Ekom.Umb</RootNamespace>
@@ -12,12 +12,12 @@
         <!-- Package properties -->
         <PackageId>Ekom.U10</PackageId>
         <Version>0.0.1</Version>
-        <Title>Ekom Umbraco 10</Title>
+        <Title>Ekom Umbraco</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
         <PackageIcon>images\VV_Logo.png</PackageIcon>
-        <Description>Ekom Umbraco 10 - Vettvangur E-Commerce solution</Description>
+        <Description>Ekom - E-Commerce solution for Umbraco</Description>
         <PackageReleaseNotes></PackageReleaseNotes>
         <Copyright>Copyright 2022</Copyright>
         <PackageTags></PackageTags>
@@ -53,10 +53,10 @@
     <ItemGroup>
         <PackageReference Include="Ekom.Payments.U10" Version="0.2.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-        <PackageReference Include="Umbraco.Cms.Api.Common" Version="12.3.10" />
-        <PackageReference Include="Umbraco.Cms.Core" Version="12.3.10" />
-        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="12.3.10" />
-        <PackageReference Include="Umbraco.Cms.Web.Website" Version="12.3.10" />
+        <PackageReference Include="Umbraco.Cms.Api.Common" Version="13.7.0" />
+        <PackageReference Include="Umbraco.Cms.Core" Version="13.7.0" />
+        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.7.0" />
+        <PackageReference Include="Umbraco.Cms.Web.Website" Version="13.7.0" />
     </ItemGroup>
 
     <ItemGroup>

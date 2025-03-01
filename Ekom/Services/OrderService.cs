@@ -473,16 +473,22 @@ namespace Ekom.Services
                     throw new OrderLineNotFoundException("Could not find order line with key: " + orderLineId);
                 }
 
-                int existingStock;
+                decimal existingStock;
 
                 var product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
 
-                IVariant variant = null;
+                IVariant? variant = null;
 
                 if (orderline.Product.VariantGroups != null && orderline.Product.VariantGroups.Any(g => g.Variants.Any()))
                 {
-                    var orderedVariant = orderline.Product.VariantGroups.First().Variants.First();
+                    var orderedVariant = orderline.Variant;
+
+                    ArgumentNullException.ThrowIfNull(orderedVariant, "Ordered Variant is null");
+
                     variant = Catalog.Instance.GetVariant(orderedVariant.Key, storeAlias);
+
+                    ArgumentNullException.ThrowIfNull(variant, "Variant is null");
+
                     existingStock = variant.Stock;
                 }
                 else
@@ -580,7 +586,7 @@ namespace Ekom.Services
         /// <exception cref="NotEnoughStockException"></exception>
         public async Task<OrderInfo> AddOrderLineAsync(
             Guid productKey,
-            int quantity,
+            decimal quantity,
             string storeAlias,
             AddOrderSettings settings = null
         )
@@ -632,7 +638,7 @@ namespace Ekom.Services
         /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
         public async Task<OrderInfo> AddOrderLineAsync(
             IProduct product,
-            int quantity,
+            decimal quantity,
             IStore store,
             OrderAction? action = null,
             IVariant variant = null,
@@ -964,7 +970,7 @@ namespace Ekom.Services
         private async Task<OrderInfo> AddOrderLineToOrderInfoAsync(
             OrderInfo orderInfo,
             IProduct product,
-            int quantity,
+            decimal quantity,
             OrderAction action,
             IVariant variant,
             OrderSettings settings
@@ -1015,7 +1021,7 @@ namespace Ekom.Services
                     action);
 
                 OrderLine orderLine = null;
-                int existingStock;
+                decimal existingStock;
 
                 if (variant != null)
                 {
@@ -1625,7 +1631,7 @@ namespace Ekom.Services
             return true;
         }
 
-        private void VerifyStock(int quantity, int existingStock, IProduct product, IVariant variant = null)
+        private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant variant = null)
         {
             if (!_config.DisableStock
             && !product.Backorder

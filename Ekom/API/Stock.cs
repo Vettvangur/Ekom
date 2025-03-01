@@ -76,7 +76,7 @@ public partial class Stock
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public int GetStock(Guid key)
+    public decimal GetStock(Guid key)
     {
         return GetStockData(key).Stock;
     }
@@ -88,7 +88,7 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
-    public int GetStock(Guid key, string storeAlias)
+    public decimal GetStock(Guid key, string storeAlias)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -216,7 +216,7 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public async Task IncrementStockAsync(Guid key, int value)
+    public async Task IncrementStockAsync(Guid key, decimal value)
     {
         if (_config.PerStoreStock)
         {
@@ -240,7 +240,7 @@ public partial class Stock
     /// <param name="value"></param>
     /// <returns></returns>
     /// <exception cref="NotEnoughStockException"></exception>
-    public async Task IncrementStockAsync(Guid key, string storeAlias, int value)
+    public async Task IncrementStockAsync(Guid key, string storeAlias, decimal value)
     {
         SemaphoreSlim semaphore = null;
         StockData stockData;
@@ -463,7 +463,7 @@ public partial class Stock
     /// Throws an exception when current value and provided value are equal
     /// </exception>
     /// <exception cref="ArgumentNullException"/>
-    private async Task<bool> SetStockWithLockAsync(StockData stockData, int value, bool outerLock = false)
+    private async Task<bool> SetStockWithLockAsync(StockData stockData, decimal value, bool outerLock = false)
     {
         if (stockData == null)
         {

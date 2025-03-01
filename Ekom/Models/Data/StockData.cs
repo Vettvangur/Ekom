@@ -22,7 +22,7 @@ namespace Ekom.Models
         /// Unit count
         /// </summary>
         [Column, NotNull]
-        public int Stock { get; internal set; }
+        public decimal Stock { get; internal set; }
 
         /// <summary>
         /// 
