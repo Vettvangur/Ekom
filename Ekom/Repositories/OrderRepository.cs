@@ -61,7 +61,7 @@ class OrderRepository
     }
 
 
-    public async Task MigrateOrderTableToEkom10()
+    public async Task MigrateOrderTableAsync()
     {
         try
         {
@@ -206,6 +206,29 @@ class OrderRepository
             _logger.LogError(ex, "Failed to run migration script for Order table");
         }
     }
+
+
+    public async Task MigrateStockToDecimalAsync()
+    {
+        await using var db = _databaseFactory.GetDatabase();
+
+        const string sql = @"
+            IF EXISTS (
+                SELECT 1 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'EkomStock' 
+                AND COLUMN_NAME = 'Stock' 
+                AND DATA_TYPE = 'int'
+            )
+            BEGIN
+                ALTER TABLE EkomStock 
+                ALTER COLUMN Stock DECIMAL(18,0);
+            END
+            ";
+
+        await db.ExecuteAsync<int>(sql);
+    }
+
     /// <summary>
     /// Get all Orders with the given OrderStatuses. Optionally filter further by any column.
     /// </summary>

@@ -131,7 +131,8 @@ class EkomStartup : IComponent
 
             var orderRepo = _factory.GetService<OrderRepository>();
 
-            orderRepo?.MigrateOrderTableToEkom10();
+            orderRepo?.MigrateOrderTableAsync();
+            orderRepo?.MigrateStockToDecimalAsync();
 
             // Fill Caches
             foreach (var cacheEntry in _config.CacheList.Value)
