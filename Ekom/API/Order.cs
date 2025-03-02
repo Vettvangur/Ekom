@@ -306,7 +306,7 @@ public partial class Order
     /// <exception cref="NotEnoughStockException"></exception>
     public async Task<IOrderInfo> AddOrderLineAsync(
         Guid productId,
-        int quantity,
+        decimal quantity,
         string storeAlias,
         AddOrderSettings? settings = null
     )
@@ -441,7 +441,7 @@ public partial class Order
     /// <returns></returns>
     public async Task<IOrderInfo> UpdateOrderlineQuantityAsync(
         Guid lineId,
-        int quantity,
+        decimal quantity,
         string storeAlias,
         OrderSettings settings = null)
     {
