@@ -422,7 +422,7 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> UpdateOrderLineQuantityAsync(
             Guid orderLineId,
-            int quantity,
+            decimal quantity,
             string storeAlias,
             OrderSettings settings = null
         )
