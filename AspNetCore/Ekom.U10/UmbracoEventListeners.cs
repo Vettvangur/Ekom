@@ -102,25 +102,31 @@ class UmbracoEventListeners :
 
                         if (!string.IsNullOrEmpty(stockValue))
                         {
-
-                            var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
-
-                            if (stockArray != null)
+                            try
                             {
-                                foreach (var stockItem in stockArray)
+                                var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
+
+                                if (stockArray != null)
                                 {
-                                    if (!string.IsNullOrEmpty(stockItem.StoreAlias))
+                                    foreach (var stockItem in stockArray)
                                     {
-                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
-                                    }
-                                    else
-                                    {
-                                        var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
+                                        if (!string.IsNullOrEmpty(stockItem.StoreAlias))
+                                        {
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
+                                        }
+                                        else
+                                        {
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
+                                        }
                                     }
                                 }
                             }
-
+                            catch (JsonException ex)
+                            {
+                                _logger.LogError(ex, $"Could not map stock value to stock request on node {content.Id}. Value: {stockValue}");
+                            }
                         }
+
 
                     }
                 }
