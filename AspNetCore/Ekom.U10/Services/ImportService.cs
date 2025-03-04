@@ -455,14 +455,14 @@ public class ImportService : IImportService
                 continue;
             }
 
+            var save = create;
+
+            SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
+
             if (create)
             {
                 allUmbracoCategories.Add(content);
             }
-
-            var save = create;
-
-            SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
 
             IterateCategoryTree(importCategory.SubCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
         }
