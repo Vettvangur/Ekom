@@ -55,21 +55,21 @@ namespace Ekom.Utilities
             // Build the modified property alias based on the available keys
             if (!string.IsNullOrEmpty(alias))
             {
-                var propertyAliasWithCultureOrStore = $"{propertyAlias}_{alias}";
+                string propertyAliasWithCultureOrStore = $"{propertyAlias}_{alias}";
                 if (properties.ContainsKey(propertyAliasWithCultureOrStore))
                 {
                     modifiedPropertyAlias = propertyAliasWithCultureOrStore;
                 }
             }
 
-            var cultureAlias = $"{propertyAlias}_{System.Globalization.CultureInfo.CurrentCulture.Name}";
+            string cultureAlias = $"{propertyAlias}_{System.Globalization.CultureInfo.CurrentCulture.Name}";
             if (properties.ContainsKey(cultureAlias))
             {
                 modifiedPropertyAlias = cultureAlias;
             }
 
             // Attempt to retrieve the value for the final property alias
-            properties.TryGetValue(modifiedPropertyAlias, out var val);
+            properties.TryGetValue(modifiedPropertyAlias, out string? val);
 
             // Special processing based on alias
             if (!string.IsNullOrEmpty(alias))

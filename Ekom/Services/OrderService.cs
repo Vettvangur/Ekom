@@ -120,7 +120,7 @@ namespace Ekom.Services
             {
                 _httpCtx = httpContextAccessor.HttpContext;
 
-                var r = _httpCtx?.Items[Configuration.EkmRequestKey] as Lazy<object>;
+                Lazy<object>? r = _httpCtx?.Items[Configuration.EkmRequestKey] as Lazy<object>;
 
                 if (r != null && r.Value != null)
                 {
@@ -136,7 +136,7 @@ namespace Ekom.Services
 
         public Task<OrderInfo> GetOrderAsync(string storeAlias)
         {
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             if (store == null)
             {
@@ -150,20 +150,20 @@ namespace Ekom.Services
         {
             if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
             {
-                var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+                OrderInfo orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
                 return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
             }
             else
             {
-                var key = CreateKey(store);
+                string key = CreateKey(store);
                 // Get Cart UniqueId from Cookie.
-                var orderUniqueId = GetOrderIdFromCookie(key);
+                Guid orderUniqueId = GetOrderIdFromCookie(key);
 
                 // If Cookie Exist then return Cart
                 if (orderUniqueId != Guid.Empty)
                 {
-                    var orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
+                    OrderInfo? orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
 
                     _logger.LogDebug("GetOrderAsync - Found order with {UniqueId}", orderInfo?.UniqueId);
 
@@ -259,13 +259,13 @@ namespace Ekom.Services
 
         public async Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
         {
-           
-            var store = API.Store.Instance.GetStore(storeAlias);
+
+            IStore? store = API.Store.Instance.GetStore(storeAlias);
 
             // Add timelimit to get the order ? Maybe 1-2 hours ?
             if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
-                var orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+                OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
                 if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                 {
@@ -274,14 +274,14 @@ namespace Ekom.Services
             }
             else
             {
-                var key = CreateKey(store);
+                string key = CreateKey(store);
                 // Get Cart UniqueId from Cookie.
-                var orderUniqueId = GetOrderIdFromCookie(key);
+                Guid orderUniqueId = GetOrderIdFromCookie(key);
 
                 // If Cookie Exist then return Cart
                 if (orderUniqueId == Guid.Empty) return null;
-                
-                var orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
+
+                OrderInfo? orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
 
                 if (Order.IsOrderFinal(orderInfo?.OrderStatus))
                 {
@@ -306,7 +306,7 @@ namespace Ekom.Services
 
         private async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId)
         {
-            var orderData = await _orderRepository.GetOrderAsync(uniqueId)
+            OrderData orderData = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             // Here we check if there is any OrderInfo at all to create an OrderInfo out of
@@ -331,7 +331,7 @@ namespace Ekom.Services
                 settings = new ChangeOrderSettings();
             }
 
-            var order = await _orderRepository.GetOrderAsync(uniqueId)
+            OrderData order = await _orderRepository.GetOrderAsync(uniqueId)
                     .ConfigureAwait(false);
 
             if (order == null)
@@ -339,9 +339,9 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var oldStatus = order.OrderStatus;
+            OrderStatus oldStatus = order.OrderStatus;
 
-            var OrderStatusEventModel = new OrderStatusEventArgs()
+            OrderStatusEventArgs OrderStatusEventModel = new OrderStatusEventArgs()
             {
                 OrderUniqueId = uniqueId,
                 PreviousStatus = oldStatus,
@@ -402,11 +402,11 @@ namespace Ekom.Services
                 order.PaidDate = DateTime.Now;
             }
 
-            var userName = !string.IsNullOrEmpty(order.CustomerUsername)
+            string? userName = !string.IsNullOrEmpty(order.CustomerUsername)
                 ? order?.CustomerUsername
                 : _httpCtx.User.Identity?.Name;
 
-            var store = API.Store.Instance.GetStore(order.StoreAlias);
+            IStore? store = API.Store.Instance.GetStore(order.StoreAlias);
 
             if (store.UserBasket && !string.IsNullOrEmpty((userName)))
             {
@@ -432,7 +432,7 @@ namespace Ekom.Services
                 return await RemoveOrderLineAsync(orderLineId, storeAlias, settings).ConfigureAwait(false);
             }
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             if (store == null)
             {
@@ -459,14 +459,14 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
+                OrderLine? orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
 
                 if (orderline == null)
                 {
@@ -475,13 +475,13 @@ namespace Ekom.Services
 
                 decimal existingStock;
 
-                var product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
+                IProduct? product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
 
                 IVariant? variant = null;
 
                 if (orderline.Product.VariantGroups != null && orderline.Product.VariantGroups.Any(g => g.Variants.Any()))
                 {
-                    var orderedVariant = orderline.Variant;
+                    OrderedVariant? orderedVariant = orderline.Variant;
 
                     ArgumentNullException.ThrowIfNull(orderedVariant, "Ordered Variant is null");
 
@@ -514,26 +514,26 @@ namespace Ekom.Services
 
         public async Task<IOrderInfo> ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias)
         {
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
-            var storeCurrency = store.Currencies.FirstOrDefault(x => x.CurrencyValue == currency);
+            CurrencyModel? storeCurrency = store.Currencies.FirstOrDefault(x => x.CurrencyValue == currency);
 
             if (storeCurrency != null)
             {
                 // ToDo: Lock
-                var order = await _orderRepository.GetOrderAsync(uniqueId).ConfigureAwait(false);
+                OrderData order = await _orderRepository.GetOrderAsync(uniqueId).ConfigureAwait(false);
 
-                var oldCurrency = order.Currency;
+                string oldCurrency = order.Currency;
 
                 order.Currency = storeCurrency.ISOCurrencySymbol;
 
-                var orderInfo = await GetOrderAsync(uniqueId).ConfigureAwait(false);
+                OrderInfo? orderInfo = await GetOrderAsync(uniqueId).ConfigureAwait(false);
 
                 if (orderInfo != null)
                 {
                     orderInfo.StoreInfo.Currency = storeCurrency;
 
-                    var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+                    string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
                     order.OrderInfo = serializedOrderInfo;
 
@@ -561,7 +561,7 @@ namespace Ekom.Services
         public async Task UpdatePaidDateAsync(Guid uniqueId)
         {
             // ToDo: Lock
-            var order = await _orderRepository.GetOrderAsync(uniqueId)
+            OrderData order = await _orderRepository.GetOrderAsync(uniqueId)
                 .ConfigureAwait(false);
 
             order.PaidDate = DateTime.Now;
@@ -596,7 +596,7 @@ namespace Ekom.Services
                 throw new ArgumentException("Empty product key", nameof(productKey));
             }
 
-            var product = Catalog.Instance.GetProduct(productKey, storeAlias);
+            IProduct? product = Catalog.Instance.GetProduct(productKey, storeAlias);
 
             if (product == null)
             {
@@ -619,7 +619,7 @@ namespace Ekom.Services
                 }
             }
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             return await AddOrderLineAsync(
                 product,
@@ -652,7 +652,7 @@ namespace Ekom.Services
 
 
             // If cart action is null then AddOrUpdate is the default state
-            var cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
+            OrderAction cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
             OrderInfo? orderInfo;
             if (settings.OrderInfo == null)
@@ -718,7 +718,7 @@ namespace Ekom.Services
 
             OrderLine? existingOrderLine = null;
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
@@ -788,14 +788,14 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
+                IOrderLine? orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
 
                 if (orderLine != null)
                 {
@@ -844,7 +844,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
 
             if (!settings.IsEventHandler)
             {
@@ -852,16 +852,16 @@ namespace Ekom.Services
             }
             try
             {
-                var orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
+                IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
 
 
                 if (orderLines != null && orderLines.Any())
                 {
-                    foreach (var orderline in orderLines)
+                    foreach (IOrderLine? orderline in orderLines)
                     {
                         RemoveOrderLine(orderInfo, orderline as OrderLine);
                     }
-                   
+
                     return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                         .ConfigureAwait(false);
                 }
@@ -882,16 +882,16 @@ namespace Ekom.Services
         {
             try
             {
-                var linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
+                List<OrderLine> linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
 
-                foreach (var linkedLine in linkedLines)
+                foreach (OrderLine? linkedLine in linkedLines)
                 {
                     orderInfo.orderLines.Remove(linkedLine);
                 }
 
                 orderInfo.orderLines.Remove(orderLine);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw new Exception("Failed to remove orderLine");
             }
@@ -922,7 +922,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
 
             if (!settings.IsEventHandler)
             {
@@ -930,7 +930,7 @@ namespace Ekom.Services
             }
             try
             {
-                var orderLines = orderInfo.OrderLines.ToList();
+                List<IOrderLine> orderLines = orderInfo.OrderLines.ToList();
 
                 if (orderLines != null && orderLines.Any())
                 {
@@ -938,8 +938,8 @@ namespace Ekom.Services
 
                     await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                         .ConfigureAwait(false);
-                    
-                    foreach (var orderline in orderLines)
+
+                    foreach (IOrderLine? orderline in orderLines)
                     {
                         orderInfo = await AddOrderLineAsync(orderline.ProductKey, orderline.Quantity, storeAlias, new AddOrderSettings()
                         {
@@ -976,7 +976,7 @@ namespace Ekom.Services
             OrderSettings settings
         )
         {
-            var eventModel = new AddingOrderlineEventArgs()
+            AddingOrderlineEventArgs eventModel = new AddingOrderlineEventArgs()
             {
                 Product = product,
                 Variant = variant,
@@ -1004,14 +1004,14 @@ namespace Ekom.Services
                 throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var lineId = Guid.NewGuid();
+                Guid lineId = Guid.NewGuid();
 
                 _logger.LogDebug(
                     "Order: {OrderNumber} Product Key: {ProductKey} Variant: {VariantKey} Action: {Action}",
@@ -1146,9 +1146,9 @@ namespace Ekom.Services
 
                 orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
-                var serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+                string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
 
-                var orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
+                OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
                     .ConfigureAwait(false);
 
                 if (_ekmRequest != null && _ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
@@ -1181,7 +1181,7 @@ namespace Ekom.Services
                 //Backwards compatability for old currency storeinfo 
                 try
                 {
-                    var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
+                    CultureInfo culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
 
                     if (culture.TwoLetterISOLanguageName == "is")
                     {
@@ -1211,12 +1211,13 @@ namespace Ekom.Services
                 // Regardless of modifications from event handlers,
                 // everybody references the same OrderInfo object
                 return orderInfo;
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync failed: " + JsonConvert.SerializeObject(orderInfo));
                 throw;
             }
-           
+
         }
 
         /// <summary>
@@ -1228,9 +1229,9 @@ namespace Ekom.Services
         /// <param name="orderInfo"></param>
         private void UpdateOrderInfoInCache(OrderInfo orderInfo)
         {
-            var store = API.Store.Instance.GetStore(orderInfo.StoreInfo.Alias);
+            IStore? store = API.Store.Instance.GetStore(orderInfo.StoreInfo.Alias);
 
-            var key = CreateKey(store);
+            string key = CreateKey(store);
 
             _memoryCache.Set<OrderInfo>(
                 orderInfo.UniqueId.ToString(),
@@ -1245,7 +1246,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             await semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
@@ -1262,13 +1263,13 @@ namespace Ekom.Services
 
         public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
         {
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
             if (orderInfo == null)
             {
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             await semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
@@ -1287,7 +1288,7 @@ namespace Ekom.Services
         {
             _logger.LogDebug("CreateEmptyOrderAsync..");
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             Guid orderUniqueId;
 
@@ -1304,7 +1305,7 @@ namespace Ekom.Services
                 orderUniqueId = CreateOrderIdCookie(CreateKey(store));
             }
 
-            var orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
+            OrderData orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
                 .ConfigureAwait(false);
 
             return new OrderInfo(orderdata, store);
@@ -1313,7 +1314,7 @@ namespace Ekom.Services
         {
             _logger.LogDebug("SaveEmptyOrderDataAsync Store: {Store}", store.Alias);
 
-            var orderData = new OrderData
+            OrderData orderData = new OrderData
             {
                 UniqueId = uniqueId,
                 CreateDate = _date,
@@ -1323,19 +1324,19 @@ namespace Ekom.Services
                 UpdateDate = DateTime.Now
             };
 
-            if(_ekmRequest?.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
+            if (_ekmRequest?.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
             {
                 orderData.CustomerEmail = _ekmRequest.User.Email;
                 orderData.CustomerUsername = _ekmRequest.User.Username;
                 orderData.CustomerId = _ekmRequest.User.UserId;
                 orderData.CustomerName = _ekmRequest.User.Name?.Trim();
             }
-            
+
             await _orderRepository.InsertOrderAsync(orderData)
                 .ConfigureAwait(false);
 
             orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId, store);
-            
+
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);
 
@@ -1354,11 +1355,11 @@ namespace Ekom.Services
             }
 
 
-            if (!form.TryGetValue("storeAlias", out var storeAlias))
+            if (!form.TryGetValue("storeAlias", out string? storeAlias))
                 throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
-            
+
             OrderInfo orderInfo;
-            
+
             if (settings.OrderInfo == null)
             {
                 orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -1373,11 +1374,11 @@ namespace Ekom.Services
                 throw new ArgumentException("orderinfo is missing", nameof(orderInfo));
             }
 
-            if (form.TryGetValue("ShippingProvider", out var shippingProvider))
+            if (form.TryGetValue("ShippingProvider", out string? shippingProvider))
             {
                 if (Guid.TryParse(shippingProvider, out Guid _providerKey))
                 {
-                    var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
+                    Dictionary<string, string> customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
@@ -1386,11 +1387,11 @@ namespace Ekom.Services
                 }
             }
 
-            if (form.TryGetValue("PaymentProvider", out var paymentProvider))
+            if (form.TryGetValue("PaymentProvider", out string? paymentProvider))
             {
                 if (Guid.TryParse(paymentProvider, out Guid _providerKey))
                 {
-                    var customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
+                    Dictionary<string, string> customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
@@ -1398,9 +1399,9 @@ namespace Ekom.Services
                 }
             }
 
-            foreach (var key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
+            foreach (string? key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
             {
-                var value = form[key];
+                string value = form[key];
 
                 if (key == "customerEmail")
                 {
@@ -1414,9 +1415,9 @@ namespace Ekom.Services
                 orderInfo.CustomerInformation.Customer.Properties[key] = value;
             }
 
-            foreach (var key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
+            foreach (string? key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
             {
-                var value = form[key];
+                string value = form[key];
                 orderInfo.CustomerInformation.Shipping.Properties[key] = value;
             }
 
@@ -1428,12 +1429,12 @@ namespace Ekom.Services
         public async Task<OrderInfo> UpdateShippingInformationAsync(
             Guid shippingProviderId,
             string storeAlias,
-            Dictionary<string,string> customData,
+            Dictionary<string, string> customData,
             OrderSettings settings = null)
         {
             _logger.LogDebug("UpdateShippingInformation...");
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             if (settings == null)
             {
@@ -1453,7 +1454,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
@@ -1462,11 +1463,11 @@ namespace Ekom.Services
             {
                 if (shippingProviderId == Guid.Empty) return orderInfo;
 
-                var provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
+                IShippingProvider? provider = Providers.Instance.GetShippingProvider(shippingProviderId, store);
 
                 if (provider == null) return orderInfo;
-                
-                var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
+
+                OrderedShippingProvider orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
 
                 orderInfo.ShippingProvider = orderedShippingProvider;
 
@@ -1486,12 +1487,12 @@ namespace Ekom.Services
         public async Task<OrderInfo> UpdatePaymentInformationAsync(
             Guid paymentProviderId,
             string storeAlias,
-            Dictionary<string,string> customData,
+            Dictionary<string, string> customData,
             OrderSettings settings = null)
         {
             _logger.LogDebug("UpdatePaymentInformation...");
 
-            var store = _storeSvc.GetStoreByAlias(storeAlias);
+            IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
             if (settings == null)
             {
@@ -1511,7 +1512,7 @@ namespace Ekom.Services
                 throw new OrderInfoNotFoundException();
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
@@ -1519,12 +1520,12 @@ namespace Ekom.Services
             try
             {
                 if (paymentProviderId == Guid.Empty) return orderInfo;
-                
-                var provider = Providers.Instance.GetPaymentProvider(paymentProviderId, store);
+
+                IPaymentProvider? provider = Providers.Instance.GetPaymentProvider(paymentProviderId, store);
 
                 if (provider == null) return orderInfo;
 
-                var orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
+                OrderedPaymentProvider orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
 
                 orderInfo.PaymentProvider = orderedPaymentProvider;
 
@@ -1543,7 +1544,7 @@ namespace Ekom.Services
 
         public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
         {
-            var orders = await _orderRepository.GetStatusOrdersAsync(
+            List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
                 x => x.CustomerId == customerId,
                 OrderStatus.ReadyForDispatch,
                 OrderStatus.OfflinePayment,
@@ -1577,7 +1578,7 @@ namespace Ekom.Services
         }
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, params OrderStatus[] orderStatuses)
         {
-            var orders = await _orderRepository.GetStatusOrdersAsync(
+            List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
                 x => x.CustomerId == customerId,
                 orderStatuses
 
@@ -1587,7 +1588,7 @@ namespace Ekom.Services
         }
         public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, params OrderStatus[] orderStatuses)
         {
-            var orders = await _orderRepository.GetStatusOrdersAsync(
+            List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
                 x => x.CustomerUsername == customerUsername,
                 orderStatuses
 
@@ -1600,15 +1601,15 @@ namespace Ekom.Services
             "not useful for order modifications since on errors you would have to roll back")]
         private bool CheckStockAvailability(IOrderInfo orderInfo)
         {
-            foreach (var line in orderInfo.OrderLines)
+            foreach (IOrderLine line in orderInfo.OrderLines)
             {
                 if (!line.Product.Backorder)
                 {
                     if (line.Product.VariantGroups.Any())
                     {
-                        foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                        foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                         {
-                            var variantStock = Stock.Instance.GetStock(variant.Key);
+                            decimal variantStock = Stock.Instance.GetStock(variant.Key);
 
                             if (variantStock < line.Quantity)
                             {
@@ -1618,7 +1619,7 @@ namespace Ekom.Services
                     }
                     else
                     {
-                        var productStock = Stock.Instance.GetStock(line.ProductKey);
+                        decimal productStock = Stock.Instance.GetStock(line.ProductKey);
 
                         if (productStock < line.Quantity)
                         {
@@ -1651,17 +1652,17 @@ namespace Ekom.Services
         private void VerifyProviders(OrderInfo orderInfo)
         {
             if (orderInfo.PaymentProvider == null && orderInfo.ShippingProvider == null) return;
-            
-            var total = orderInfo.GrandTotal.Value;
-            var countryCode = orderInfo.CustomerInformation.Customer.Country;
-            var shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
 
-            var store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
+            decimal total = orderInfo.GrandTotal.Value;
+            string countryCode = orderInfo.CustomerInformation.Customer.Country;
+            string shippingCountry = orderInfo.CustomerInformation.Shipping.Country ?? countryCode;
+
+            IStore? store = _storeSvc.GetStoreByAlias(orderInfo.StoreInfo.Alias);
 
             // Verify paymentProvider constraints
             if (orderInfo.PaymentProvider != null)
             {
-                var paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key, store);
+                IPaymentProvider? paymentProvider = Providers.Instance.GetPaymentProvider(orderInfo.PaymentProvider.Key, store);
 
                 if (paymentProvider == null)
                 {
@@ -1686,8 +1687,8 @@ namespace Ekom.Services
 
             // Verify shipping provider constraints
             if (orderInfo.ShippingProvider == null) return;
-                
-            var shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key, store);
+
+            IShippingProvider? shippingProvider = Providers.Instance.GetShippingProvider(orderInfo.ShippingProvider.Key, store);
 
             if (shippingProvider == null)
             {
@@ -1699,7 +1700,7 @@ namespace Ekom.Services
 
             if (shippingProvider != null
                 && shippingProvider.Constraints.IsValid(shippingCountry, total)) return;
-                    
+
             _logger.LogDebug(
                 "Removing invalid shipping provider {ShippingProviderKey} from Order {UniqueId}",
                 orderInfo.ShippingProvider.Key,
@@ -1710,7 +1711,7 @@ namespace Ekom.Services
         private Guid GetOrderIdFromCookie(string key)
         {
             // Try to get the cookie value from the response headers first
-            var cookieValue = _httpCtx.Response.GetTypedHeaders()
+            string? cookieValue = _httpCtx.Response.GetTypedHeaders()
                 .SetCookie.FirstOrDefault(x => x.Name == key)?.Value.ToString()
                 ?? _httpCtx.Request.Cookies[key];  // Fallback to request cookies
 
@@ -1719,7 +1720,7 @@ namespace Ekom.Services
                 return Guid.Empty;
             }
 
-            if (Guid.TryParse(cookieValue, out var orderId))
+            if (Guid.TryParse(cookieValue, out Guid orderId))
             {
                 return orderId;
             }
@@ -1731,7 +1732,7 @@ namespace Ekom.Services
 
         private Guid CreateOrderIdCookie(string key)
         {
-            var guid = Guid.NewGuid();
+            Guid guid = Guid.NewGuid();
 
             _httpCtx.Response.Cookies.Append(key, guid.ToString(), new CookieOptions
             {
@@ -1748,14 +1749,14 @@ namespace Ekom.Services
 
         private string GenerateOrderNumberTemplate(int referenceId, IStore store)
         {
-            var _referenceId = referenceId.ToString();
+            string _referenceId = referenceId.ToString();
 
             if (string.IsNullOrEmpty(store.OrderNumberTemplate))
             {
                 return $"{store.OrderNumberPrefix}{referenceId:0000}";
             }
 
-            var template = store.OrderNumberTemplate;
+            string template = store.OrderNumberTemplate;
 
             return template
                 .Replace("#orderId#", _referenceId)
@@ -1768,7 +1769,7 @@ namespace Ekom.Services
 
         private string CreateKey(IStore store)
         {
-            var key = "ekmOrder";
+            string key = "ekmOrder";
 
             if (!store.ShareBasketBetweenStores)
             {

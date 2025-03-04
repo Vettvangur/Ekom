@@ -15,19 +15,19 @@ public class UmbracoContent
     {
         _properties = new Dictionary<string, string>(defaultProperties);
 
-        foreach (var prop in contentProperies)
+        foreach (KeyValuePair<string, string> prop in contentProperies)
         {
             _properties[prop.Key] = prop.Value;
         }
 
-        if (int.TryParse(GetValue("id"), out var id)) Id = id;
-        if (Guid.TryParse(GetValue("__Key"), out var key)) Key = key;
+        if (int.TryParse(GetValue("id"), out int id)) Id = id;
+        if (Guid.TryParse(GetValue("__Key"), out Guid key)) Key = key;
         Name = GetValue("nodeName");
         Path = GetValue("__Path");
-        if (int.TryParse(GetValue("level"), out var level)) Level = level;
+        if (int.TryParse(GetValue("level"), out int level)) Level = level;
         ContentTypeAlias = GetValue("__NodeTypeAlias");
         Url = GetValue("url");
-        if (Guid.TryParse(GetValue("parentKey"), out var parentKey)) ParentKey = parentKey;
+        if (Guid.TryParse(GetValue("parentKey"), out Guid parentKey)) ParentKey = parentKey;
     }
 
     readonly Dictionary<string, string> _properties;

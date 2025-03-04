@@ -109,7 +109,7 @@ public partial class Stock
     {
         if (_config.PerStoreStock)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
 
             return GetStockData(key, store.Alias);
         }
@@ -155,7 +155,7 @@ public partial class Stock
     /// <returns></returns>
     public void ValidateOrderStock(IOrderInfo orderInfo)
     {
-        foreach (var orderLine in orderInfo.OrderLines)
+        foreach (IOrderLine orderLine in orderInfo.OrderLines)
         {
             if (orderLine.Product.Backorder)
             {
@@ -164,16 +164,16 @@ public partial class Stock
 
             if (orderLine.Product.VariantGroups.Any())
             {
-                foreach (var orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
+                foreach (OrderedVariant? orderedVariant in orderLine.Product.VariantGroups.SelectMany(x => x.Variants))
                 {
-                    var variant = Catalog.Instance.GetVariant(orderedVariant.Key, orderInfo.StoreInfo.Alias);
+                    IVariant? variant = Catalog.Instance.GetVariant(orderedVariant.Key, orderInfo.StoreInfo.Alias);
 
                     if (variant == null)
                     {
                         throw new ArgumentNullException(nameof(variant));
                     }
 
-                    var variantStock = variant.Stock;
+                    decimal variantStock = variant.Stock;
 
                     if (variantStock < orderLine.Quantity)
                     {
@@ -187,14 +187,14 @@ public partial class Stock
             }
             else
             {
-                var product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
+                IProduct? product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
 
                 if (product == null)
                 {
                     throw new ArgumentNullException(nameof(product));
                 }
 
-                var productStock = product.Stock;
+                decimal productStock = product.Stock;
 
                 if (productStock < orderLine.Quantity)
                 {
@@ -220,7 +220,7 @@ public partial class Stock
     {
         if (_config.PerStoreStock)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
             await IncrementStockAsync(key, store.Alias, value)
                 .ConfigureAwait(false);
         }
@@ -294,7 +294,7 @@ public partial class Stock
     {
         if (_config.PerStoreStock)
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
             return await SetStockAsync(key, store.Alias, value).ConfigureAwait(false);
         }
         else
@@ -353,7 +353,7 @@ public partial class Stock
 
         await IncrementStockAsync(key, value).ConfigureAwait(false);
 
-        var jobId = Hangfire.BackgroundJob.Schedule(() =>
+        string jobId = Hangfire.BackgroundJob.Schedule(() =>
             UpdateStockHangfireAsync(key, -value),
             timeSpan
         );
@@ -382,7 +382,7 @@ public partial class Stock
         await IncrementStockAsync(key, storeAlias, value)
             .ConfigureAwait(false);
 
-        var jobId = Hangfire.BackgroundJob.Schedule(() =>
+        string jobId = Hangfire.BackgroundJob.Schedule(() =>
             UpdateStockHangfireAsync(key, storeAlias, -value),
             timeSpan
         );
@@ -483,14 +483,14 @@ public partial class Stock
         //    throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));
         //}
 
-        var semaphore = GetStockLock(stockData.UniqueId);
+        SemaphoreSlim semaphore = GetStockLock(stockData.UniqueId);
         if (!outerLock)
         {
             await semaphore.WaitAsync().ConfigureAwait(false);
         }
         try
         {
-            var oldValue = stockData.Stock;
+            decimal oldValue = stockData.Stock;
             stockData.Stock = value;
 
             await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).ConfigureAwait(false);

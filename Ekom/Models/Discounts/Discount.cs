@@ -2,9 +2,6 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -18,10 +15,10 @@ namespace Ekom.Models
         {
             get
             {
-                var typeValue = Properties.GetPropertyValue("type");
+                string typeValue = Properties.GetPropertyValue("type");
 
-                var umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
-                var dt = umbSvc.GetDataType(typeValue);
+                IUmbracoService? umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
+                string dt = umbSvc.GetDataType(typeValue);
 
                 switch (dt)
                 {
@@ -40,9 +37,9 @@ namespace Ekom.Models
             {
                 decimal discountAmount = 0;
 
-                var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+                CurrencyModel? currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
 
-                var discount = Discounts.FirstOrDefault(x => x.Currency == currency.CurrencyValue)
+                CurrencyValue discount = Discounts.FirstOrDefault(x => x.Currency == currency.CurrencyValue)
                     ?? Discounts.First();
 
                 discountAmount = Convert.ToDecimal(discount.Value);
@@ -61,11 +58,11 @@ namespace Ekom.Models
             get
             {
                 // Im returning INT instead of GUID if we would like to query by Path that is stored as comma seperate int
-                var returnList = new List<string>();
+                List<string> returnList = new List<string>();
 
-                var umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
+                IUmbracoService? umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
 
-                var nodes = Properties.GetPropertyValue("discountItems");
+                string nodes = Properties.GetPropertyValue("discountItems");
 
                 returnList.AddRange(umbSvc.GetContent(nodes));
 

@@ -17,7 +17,7 @@ public class PaginationHelper
     public List<string> PageRange()
     {
         const int rangeSize = 5;
-        var ret = new List<string>();
+        List<string> ret = new List<string>();
         int start;
 
         if (CurrentPage <= rangeSize / 2)
@@ -54,10 +54,11 @@ public class PaginationHelper
 
         return ret;
     }
-    
-    public static int GetCurrentPage(HttpContext ctx) {
-       
+
+    public static int GetCurrentPage(HttpContext ctx)
+    {
+
         return ctx.Request.Query.ContainsKey("p") && int.TryParse(ctx.Request.Query["p"], out int parsedPage) ? parsedPage : 1;
-        
+
     }
 }

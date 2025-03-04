@@ -16,7 +16,7 @@ public class ContentRequest
     {
         if (httpContext != null)
         {
-            var cookies = httpContext.Response.Cookies;
+            IResponseCookies cookies = httpContext.Response.Cookies;
             cookies?.Append("StoreInfo", "StoreAlias=" + storeAlias);
 
             IPAddress = httpContext.Request.Host.ToString();

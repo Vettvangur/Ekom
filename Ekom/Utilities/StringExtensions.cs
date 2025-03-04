@@ -74,7 +74,7 @@ public static class StringExtension
     {
         if (!string.IsNullOrEmpty(value))
         {
-            var bVal = bool.TryParse(value, out bool result);
+            bool bVal = bool.TryParse(value, out bool result);
 
             if (bVal)
             {
@@ -103,7 +103,7 @@ public static class StringExtension
         }
 
         return false;
-        
+
     }
     // Maybe this should return T and not force String
     internal static string GetEkomPropertyEditorValue(this string value, string alias)
@@ -120,7 +120,7 @@ public static class StringExtension
 
         try
         {
-            var obj = JObject.Parse(value);
+            JObject obj = JObject.Parse(value);
 
             // Try getting the value directly by alias.
             if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out JToken directValue) && directValue != null)
@@ -129,7 +129,7 @@ public static class StringExtension
             }
 
             // Attempt to deserialize to PropertyValue and extract based on culture or alias.
-            var propertyValue = obj.ToObject<PropertyValue>();
+            PropertyValue? propertyValue = obj.ToObject<PropertyValue>();
             if (propertyValue != null)
             {
                 // Prioritize direct alias match in PropertyValue.Values.
@@ -150,14 +150,15 @@ public static class StringExtension
                 }
 
                 // Fallback to current culture match in PropertyValue.Values.
-                var currentCultureName = CultureInfo.CurrentCulture.Name;
+                string currentCultureName = CultureInfo.CurrentCulture.Name;
                 if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
                 {
                     // Check if valCulture is a JSON string that can be parsed
                     if (valCulture is string stringValue)
                     {
                         return stringValue;
-                    } else if (valCulture is JObject jObjectValue)
+                    }
+                    else if (valCulture is JObject jObjectValue)
                     {
                         if (jObjectValue["markup"] != null)
                         {
@@ -167,7 +168,7 @@ public static class StringExtension
                 }
             }
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
             // Consider logging the exception or handling it as needed.
             // Log.Error(ex, "Failed to parse JSON in GetEkomPropertyEditorValue.");
@@ -177,24 +178,25 @@ public static class StringExtension
     }
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
     {
-        var prices = new List<IPrice>();
+        List<IPrice> prices = new List<IPrice>();
 
 
         if (priceJson.IsJson())
         {
-            var _prices = JArray.Parse(priceJson);
+            JArray _prices = JArray.Parse(priceJson);
 
-            foreach (var price in _prices)
+            foreach (JToken price in _prices)
             {
-                var currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
+                CurrencyModel? currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
 
                 prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
             }
-        } else
+        }
+        else
         {
             if (fallbackCurrency == null)
             {
-                var store = API.Store.Instance.GetStore();
+                IStore? store = API.Store.Instance.GetStore();
 
                 fallbackCurrency = store.Currency;
             }
@@ -210,13 +212,13 @@ public static class StringExtension
 
     internal static string Hash(this string input)
     {
-        var murmur = MurmurHash.Create128();
-        var inputBytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = murmur.ComputeHash(inputBytes);
+        Murmur128 murmur = MurmurHash.Create128();
+        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+        byte[] hashBytes = murmur.ComputeHash(inputBytes);
 
         // Convert to hexadecimal string
-        var builder = new StringBuilder();
-        foreach (var b in hashBytes)
+        StringBuilder builder = new StringBuilder();
+        foreach (byte b in hashBytes)
         {
             builder.Append(b.ToString("x2"));
         }
@@ -234,16 +236,16 @@ public static class StringExtension
         string[] categories = null
         )
     {
-        var prices = new List<IPrice>();
+        List<IPrice> prices = new List<IPrice>();
 
         if (priceJson.IsJson())
         {
-            var _prices = JArray.Parse(priceJson);
+            JArray _prices = JArray.Parse(priceJson);
 
-            foreach (var price in _prices)
+            foreach (JToken price in _prices)
             {
-                var currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
-                var currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
+                string? currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
+                CurrencyModel? currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
                 IDiscount productDiscount = !string.IsNullOrEmpty(path)
                     ? Configuration.Resolver.GetService<ProductDiscountService>()
@@ -265,11 +267,12 @@ public static class StringExtension
                         : null)
                 );
             }
-        } else
+        }
+        else
         {
             if (fallbackCurrency == null)
             {
-                var store = API.Store.Instance.GetStore();
+                IStore? store = API.Store.Instance.GetStore();
 
                 fallbackCurrency = store.Currency;
             }
@@ -301,34 +304,35 @@ public static class StringExtension
     }
     internal static List<CurrencyValue> GetCurrencyValues(this string priceJson)
     {
-        var values = new List<CurrencyValue>();
+        List<CurrencyValue> values = new List<CurrencyValue>();
 
         if (priceJson.IsJson())
         {
-            var _values = JArray.Parse(priceJson);
+            JArray _values = JArray.Parse(priceJson);
 
-            foreach (var value in _values)
+            foreach (JToken value in _values)
             {
                 if (KeyExists(value, "Currency"))
                 {
-                    var currencyValue = value["Currency"].Value<string>();
-                    var val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
+                    string? currencyValue = value["Currency"].Value<string>();
+                    decimal val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
 
                     values.Add(new CurrencyValue(val, currencyValue));
                 }
                 else
                 {
-                    var currencyValue = value["currency"].Value<string>();
-                    var val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
+                    string? currencyValue = value["currency"].Value<string>();
+                    decimal val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
 
                     values.Add(new CurrencyValue(val, currencyValue));
                 }
             }
-        } else
+        }
+        else
         {
             if (decimal.TryParse(priceJson, out decimal value))
             {
-                var store = API.Store.Instance.GetStore();
+                IStore? store = API.Store.Instance.GetStore();
 
                 values = new List<CurrencyValue>
                 {
@@ -339,7 +343,7 @@ public static class StringExtension
 
         return values;
     }
-    
+
     internal static bool KeyExists(JToken token, string key)
     {
         JObject obj = token as JObject;
@@ -348,7 +352,7 @@ public static class StringExtension
 
     internal static List<CurrencyPrice> GetCurrencyPrices(this string priceJson)
     {
-        var values = new List<CurrencyPrice>();
+        List<CurrencyPrice>? values = new List<CurrencyPrice>();
 
         try
         {
@@ -358,7 +362,7 @@ public static class StringExtension
         {
             if (decimal.TryParse(priceJson, out decimal value))
             {
-                var store = API.Store.Instance.GetStore();
+                IStore? store = API.Store.Instance.GetStore();
 
                 values = new List<CurrencyPrice>
                 {
@@ -372,17 +376,17 @@ public static class StringExtension
 
     public static IEnumerable<Image> GetImages(this string nodeIds, string storeAlias = null)
     {
-        var list = new List<Image>();
+        List<Image> list = new List<Image>();
 
         if (!string.IsNullOrEmpty(nodeIds))
         {
             if (nodeIds.StartsWith("[") && nodeIds.IndexOf("mediakey", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                var imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
+                List<MediaCropImage>? imageList = JsonConvert.DeserializeObject<List<MediaCropImage>>(nodeIds);
 
-                foreach (var image in imageList)
+                foreach (MediaCropImage image in imageList)
                 {
-                    var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
+                    UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.MediaById(image.MediaKey);
 
                     if (node != null)
                     {
@@ -392,12 +396,12 @@ public static class StringExtension
             }
             else
             {
-                var imageIds = nodeIds.Split(',');
+                string[] imageIds = nodeIds.Split(',');
 
-                foreach (var imgId in imageIds)
+                foreach (string imgId in imageIds)
                 {
 
-                    var node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
+                    UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.MediaById(imgId);
 
                     if (node != null)
                     {
@@ -413,13 +417,13 @@ public static class StringExtension
 
     public static string ToCamelCase(this string str)
     {
-        var words = str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
-        var leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
+        string[] words = str.Split(new[] { "_", " " }, StringSplitOptions.RemoveEmptyEntries);
+        string leadWord = Regex.Replace(words[0], @"([A-Z])([A-Z]+|[a-z0-9]+)($|[A-Z]\w*)",
             m =>
             {
                 return m.Groups[1].Value.ToLower() + m.Groups[2].Value.ToLower() + m.Groups[3].Value;
             });
-        var tailWords = words.Skip(1)
+        string[] tailWords = words.Skip(1)
             .Select(word => char.ToUpper(word[0]) + word.Substring(1))
             .ToArray();
         return $"{leadWord}{string.Join(string.Empty, tailWords)}";
@@ -427,7 +431,7 @@ public static class StringExtension
 
     public static bool IsValidEmail(this string email)
     {
-        var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
         return Regex.IsMatch(email, emailPattern);
     }
 }

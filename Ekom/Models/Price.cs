@@ -1,7 +1,6 @@
 using Ekom.Events;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Globalization;
 
 namespace Ekom.Models
@@ -133,7 +132,7 @@ namespace Ekom.Models
         {
             get
             {
-                var price = DiscountedValue;
+                decimal price = DiscountedValue;
 
                 if (_storeVatIncludedInPrices)
                 {
@@ -159,7 +158,7 @@ namespace Ekom.Models
         {
             get
             {
-                var price = DiscountedValue;
+                decimal price = DiscountedValue;
 
                 if (!_storeVatIncludedInPrices)
                 {
@@ -186,7 +185,7 @@ namespace Ekom.Models
         {
             get
             {
-                var price = OriginalValue;
+                decimal price = OriginalValue;
 
                 if (Discount != null)
                 {
@@ -265,10 +264,10 @@ namespace Ekom.Models
         {
             get
             {
-                var ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
-                var value = FormatCurrencyValue(ci);
+                CultureInfo ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
+                string value = FormatCurrencyValue(ci);
 
-                var model = new CurrencyStringEventArgs()
+                CurrencyStringEventArgs model = new CurrencyStringEventArgs()
                 {
                     CultureInfo = ci,
                     Value = Value,
@@ -283,7 +282,7 @@ namespace Ekom.Models
 
         private CultureInfo CreateCultureInfo(string cultureValue)
         {
-            var ci = new CultureInfo(cultureValue);
+            CultureInfo ci = new CultureInfo(cultureValue);
             return ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
                 ? Configuration.IsCultureInfo
                 : ci;

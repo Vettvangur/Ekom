@@ -25,7 +25,8 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("AllOrders")]
     [UmbracoUserAuthorize]
-    public async Task<IEnumerable<OrderData>> GetOrdersAsync() {
+    public async Task<IEnumerable<OrderData>> GetOrdersAsync()
+    {
         return await _repo.GetOrdersAsync();
     }
 
@@ -50,7 +51,7 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
     {
-        return await _repo.SearchOrdersAsync(start,end,query,store,orderStatus,paymentProvider,page,pageSize);
+        return await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, page, pageSize);
     }
 
     [HttpGet]
@@ -104,13 +105,13 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<ChartData> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
     {
-        var chartData = new ChartData();
+        ChartData chartData = new ChartData();
 
-        var orders =  await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999", "");
+        OrderListData orders = await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999", "");
 
-        var chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
+        IEnumerable<ChartDataPoint> chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
 
-        var revenueChartDataPoints = chartDataPoints
+        List<ChartDataPoint> revenueChartDataPoints = chartDataPoints
                 .GroupBy(record =>
                     DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
                 .Select(group =>
@@ -121,7 +122,7 @@ public class EkomManagerController : ControllerBase
                     })
                 .ToList();
 
-        var ordersChartDataPoints = chartDataPoints
+        List<ChartDataPoint> ordersChartDataPoints = chartDataPoints
                 .GroupBy(record =>
                     DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
                 .Select(group =>
@@ -132,22 +133,22 @@ public class EkomManagerController : ControllerBase
                     })
                 .ToList();
 
-        var avarageChartDataPoints = chartDataPoints
+        List<ChartDataPoint> avarageChartDataPoints = chartDataPoints
                 .GroupBy(record =>
                     DateTime.ParseExact(record.x, "yyyy-MM-dd", null).Date)
                 .Select(group =>
                     new ChartDataPoint()
                     {
                         x = group.Key.ToString("yyyy-MM-dd"),
-                        y = Math.Round(group.Average(x => x.y), 2, MidpointRounding.AwayFromZero) 
+                        y = Math.Round(group.Average(x => x.y), 2, MidpointRounding.AwayFromZero)
                     })
                 .ToList();
 
-        var labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
+        string[] labels = chartDataPoints.Select(x => x).DistinctBy(x => x).Select(x => x.x).ToArray();
 
         chartData.RevenueChart.Points = revenueChartDataPoints;
         chartData.RevenueChart.Labels = labels;
-        
+
         chartData.OrdersChart.Points = ordersChartDataPoints;
         chartData.OrdersChart.Labels = labels;
 
@@ -174,7 +175,7 @@ public class EkomManagerController : ControllerBase
     {
         public ChartDataPoint()
         {
-            
+
         }
         public ChartDataPoint(OrderData x1)
         {

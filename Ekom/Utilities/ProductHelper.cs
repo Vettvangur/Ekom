@@ -10,14 +10,14 @@ namespace Ekom.Utilities
         {
             if (!string.IsNullOrEmpty(udis) && udis.StartsWith("umb"))
             {
-                var result = new List<IProduct>();
+                List<IProduct> result = new List<IProduct>();
 
 
                 if (UtilityService.ConvertUdisToGuids(udis, out IEnumerable<Guid> guids))
                 {
-                    foreach (var guid in guids)
+                    foreach (Guid guid in guids)
                     {
-                        var product = Catalog.Instance.GetProduct(guid, storeAlias);
+                        IProduct? product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                         if (product != null)
                         {
@@ -38,7 +38,7 @@ namespace Ekom.Utilities
             {
                 if (UtilityService.ConvertUdiToGuid(udi, out Guid guid))
                 {
-                    var product = Catalog.Instance.GetProduct(guid, storeAlias);
+                    IProduct? product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                     if (product != null)
                     {

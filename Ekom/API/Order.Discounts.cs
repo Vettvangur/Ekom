@@ -16,7 +16,7 @@ public partial class Order
     /// <returns></returns>
     public async Task<bool> ApplyCouponToOrderAsync(string coupon)
     {
-        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
         return await ApplyCouponToOrderAsync(coupon, storeAlias)
             .ConfigureAwait(false);
@@ -41,16 +41,16 @@ public partial class Order
 
         coupon = coupon.ToLowerInvariant();
 
-        if (!_couponCache.Cache.TryGetValue(coupon, out var couponData))
+        if (!_couponCache.Cache.TryGetValue(coupon, out CouponData? couponData))
             throw new DiscountNotFoundException($"Unable to find couponCode {coupon}");
-        
+
         if (couponData.NumberAvailable <= 0) throw new DiscountHasNoUsageException($"Coupon has no usage.");
 
-        if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+        if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out IDiscount? discount))
         {
             return await _orderService.ApplyDiscountToOrderAsync(
-                    discount, 
-                    storeAlias, 
+                    discount,
+                    storeAlias,
                     new DiscountOrderSettings
                     {
                         Coupon = coupon,
@@ -68,7 +68,7 @@ public partial class Order
     /// <exception cref="ArgumentException"></exception>
     public async Task RemoveCouponFromOrderAsync()
     {
-        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
         await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
     }
@@ -98,7 +98,7 @@ public partial class Order
     /// <returns></returns>
     public async Task<bool> ApplyCouponToOrderLineAsync(Guid productKey, string coupon)
     {
-        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
         return await ApplyCouponToOrderLineAsync(productKey, coupon, storeAlias)
             .ConfigureAwait(false);
@@ -128,9 +128,9 @@ public partial class Order
 
         coupon = coupon.ToLowerInvariant();
 
-        if (_couponCache.Cache.TryGetValue(coupon, out var couponData))
+        if (_couponCache.Cache.TryGetValue(coupon, out CouponData? couponData))
         {
-            if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out var discount))
+            if (_discountCache.Cache[storeAlias].TryGetValue(couponData.DiscountId, out IDiscount? discount))
             {
                 return await _orderService.ApplyDiscountToOrderLineAsync(
                     productKey,
@@ -161,7 +161,7 @@ public partial class Order
     /// <exception cref="OrderLineNotFoundException"></exception>
     public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
     {
-        var storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
 
         await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
             .ConfigureAwait(false);

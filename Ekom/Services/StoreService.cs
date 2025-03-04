@@ -10,7 +10,7 @@ class StoreService : IStoreService
     private readonly IStoreDomainCache _domainCache;
     private readonly IBaseCache<IStore> _storeCache;
     private readonly HttpContext _httpContext;
-    
+
     /// <summary>
     /// ctor
     /// </summary>
@@ -32,7 +32,7 @@ class StoreService : IStoreService
         {
             domain = domain.TrimEnd('/');
 
-            var storeDomain
+            UmbracoDomain storeDomain
                 = _domainCache.Cache
                                   .FirstOrDefault
                                       (x => domain.Equals(x.Value.DomainName, StringComparison.InvariantCultureIgnoreCase))
@@ -49,7 +49,7 @@ class StoreService : IStoreService
 
         // If no store found by domain or domain is empty, return the first store.
         store ??= GetAllStores().FirstOrDefault();
-        
+
         return store ?? throw new Exception("No store found in cache.");
     }
 
@@ -65,7 +65,7 @@ class StoreService : IStoreService
             throw new StoreNotFoundException($"Unable to find any store: {alias}");
         }
 
-        var store = _storeCache.Cache
+        IStore store = _storeCache.Cache
                          .FirstOrDefault(x => string.Equals(alias, x.Value.Alias, StringComparison.InvariantCultureIgnoreCase))
                          .Value;
 
@@ -77,7 +77,7 @@ class StoreService : IStoreService
     public IStore? GetStoreFromCache()
     {
 
-        if (_httpContext != null && _httpContext.Items != null &&  _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject))
+        if (_httpContext != null && _httpContext.Items != null && _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out object? ekmRequestObject))
         {
             ContentRequest? contentRequest = null;
 
@@ -110,7 +110,7 @@ class StoreService : IStoreService
         }
 
         // Retrieve the store by its alias
-        var store = GetStoreByAlias(storeAlias);
+        IStore? store = GetStoreByAlias(storeAlias);
 
         // If no store is found, return null
         if (store == null)
@@ -120,11 +120,11 @@ class StoreService : IStoreService
 
         if (_httpContext != null)
         {
-            if (_httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var ekmRequestObject) &&
+            if (_httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out object? ekmRequestObject) &&
                 ekmRequestObject is Lazy<ContentRequest> lazyRequest)
             {
                 // Access Lazy.Value to ensure it initializes
-                var contentRequest = lazyRequest.Value;
+                ContentRequest contentRequest = lazyRequest.Value;
                 if (contentRequest != null)
                 {
                     contentRequest.Store = store;
@@ -133,9 +133,9 @@ class StoreService : IStoreService
             else
             {
                 // Create and initialize a new Lazy<ContentRequest>
-                var newContentRequest = new Lazy<ContentRequest>(() =>
+                Lazy<ContentRequest> newContentRequest = new Lazy<ContentRequest>(() =>
                 {
-                    var request = new ContentRequest();
+                    ContentRequest request = new ContentRequest();
                     request.Store = store;
                     return request;
                 });

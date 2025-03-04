@@ -40,17 +40,17 @@ namespace Ekom.Cache
 
         public override void FillCache()
         {
-            var stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             _logger.LogInformation("Starting to fill stock cache...");
 
             int count = 0;
 
-            var allStock = _stockRepo.GetAllStockAsync().Result;
-            var filteredStock = allStock.Where(stock => stock.UniqueId.Contains("_", StringComparison.InvariantCulture));
+            List<StockData> allStock = _stockRepo.GetAllStockAsync().Result;
+            IEnumerable<StockData> filteredStock = allStock.Where(stock => stock.UniqueId.Contains("_", StringComparison.InvariantCulture));
 
-            foreach (var store in _storeCache.Cache.Select(x => x.Value))
+            foreach (IStore? store in _storeCache.Cache.Select(x => x.Value))
             {
                 count += FillStoreCache(store, filteredStock);
             }
@@ -69,13 +69,13 @@ namespace Ekom.Cache
 
             Cache[store.Alias] = new ConcurrentDictionary<Guid, StockData>();
 
-            var curStoreCache = Cache[store.Alias];
+            ConcurrentDictionary<Guid, StockData> curStoreCache = Cache[store.Alias];
 
-            foreach (var stock in stockData.Where(x => x.UniqueId.Split('_')[0].Equals(store.Alias, StringComparison.InvariantCulture)))
+            foreach (StockData? stock in stockData.Where(x => x.UniqueId.Split('_')[0].Equals(store.Alias, StringComparison.InvariantCulture)))
             {
-                var stockIdSplit = stock.UniqueId.Split('_');
+                string[] stockIdSplit = stock.UniqueId.Split('_');
 
-                var key = Guid.Parse(stockIdSplit[1]);
+                Guid key = Guid.Parse(stockIdSplit[1]);
 
                 curStoreCache[key] = stock;
 

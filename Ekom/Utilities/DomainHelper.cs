@@ -14,12 +14,12 @@ namespace Ekom.Utilities
                 return url;
             }
 
-            if (Uri.TryCreate(url, UriKind.Absolute, out var uriAbsoluteResult))
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uriAbsoluteResult))
             {
                 return uriAbsoluteResult.AbsolutePath.AddTrailing();
             }
 
-            var firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
+            int firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
 
             return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
         }

@@ -19,12 +19,12 @@ namespace Ekom.Models
         /// 
         /// </summary>
         public virtual string Name => Properties["nodeName"];
-        
+
         /// <summary>
         /// Description
         /// </summary>
         public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
-        
+
         /// <summary>
         /// Ranges and zones
         /// </summary>
@@ -38,15 +38,15 @@ namespace Ekom.Models
             get
             {
 #if NETCOREAPP
-                var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+                HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
 
                 if (httpContext?.Request != null)
                 {
-                    var cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
+                    string? cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
 
                     if (cookie != null && !string.IsNullOrEmpty(cookie))
                     {
-                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
+                        IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
 #else
                 var httpContext = Configuration.Resolver.GetService<HttpContextBase>();
 
@@ -78,7 +78,7 @@ namespace Ekom.Models
         {
             get
             {
-                var Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
+                List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
 
                 return Prices;
             }

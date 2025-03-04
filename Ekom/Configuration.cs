@@ -40,12 +40,12 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:PerStoreStock"];
+            string? value = _configuration["Ekom:PerStoreStock"];
 
             return value.ConvertToBool();
         }
     }
-    
+
     /// <summary>
     /// Ekom:ExamineSearchIndex
     /// Overrides the default of ExternalSearcher
@@ -54,7 +54,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:ExamineSearchIndex"];
+            string? value = _configuration["Ekom:ExamineSearchIndex"];
 
             return value ?? "ExternalIndex";
         }
@@ -93,7 +93,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:ShareBasket"];
+            string? value = _configuration["Ekom:ShareBasket"];
 
             return value.ConvertToBool();
         }
@@ -101,16 +101,17 @@ public class Configuration
 
     public HeadlessConfig? HeadlessConfig()
     {
-        var headlessSection = _configuration.GetSection("Ekom:Headless");
-       
+        IConfigurationSection headlessSection = _configuration.GetSection("Ekom:Headless");
+
         if (!headlessSection.Exists())
         {
             return null;
         }
 
-        var headlessConfig = headlessSection.Get<HeadlessConfig>();
+        HeadlessConfig? headlessConfig = headlessSection.Get<HeadlessConfig>();
 
-        if (headlessConfig == null || !headlessConfig.ReValidateApis.Any()) {
+        if (headlessConfig == null || !headlessConfig.ReValidateApis.Any())
+        {
             return null;
         }
 
@@ -125,7 +126,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:AbsoluteUrls"];
+            string? value = _configuration["Ekom:AbsoluteUrls"];
 
             return value.ConvertToBool();
         }
@@ -139,7 +140,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:BasketCookieLifetime"];
+            string? value = _configuration["Ekom:BasketCookieLifetime"];
 
             double _value = 1;
 
@@ -171,7 +172,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:CustomImage"];
+            string? value = _configuration["Ekom:CustomImage"];
 
             return value ?? "images";
         }
@@ -185,7 +186,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:SectionAccessRules"];
+            string? value = _configuration["Ekom:SectionAccessRules"];
 
             if (!string.IsNullOrEmpty(value))
             {
@@ -228,7 +229,7 @@ public class Configuration
     {
         get
         {
-            var configVal = _configuration["Ekom:VatCalcRounding"];
+            string? configVal = _configuration["Ekom:VatCalcRounding"];
 
             if (!Enum.TryParse(configVal, out Rounding preferredRounding))
             {
@@ -247,7 +248,7 @@ public class Configuration
     {
         get
         {
-            var configVal = _configuration["Ekom:OrderVatCalcRounding"];
+            string? configVal = _configuration["Ekom:OrderVatCalcRounding"];
 
             if (!Enum.TryParse(configVal, out Rounding preferredRounding))
             {
@@ -267,7 +268,7 @@ public class Configuration
     {
         get
         {
-            var value = _configuration["Ekom:UserBasket"];
+            string? value = _configuration["Ekom:UserBasket"];
 
             return value.ConvertToBool();
         }
@@ -314,7 +315,7 @@ public class Configuration
     /// </summary> 
     internal IEnumerable<ICache> Succeeding(ICache cache)
     {
-        var indexOf = CacheList.Value.FindIndex(x => x == cache);
+        int indexOf = CacheList.Value.FindIndex(x => x == cache);
 
         return CacheList.Value.Skip(indexOf + 1);
     }
@@ -330,7 +331,7 @@ public class Configuration
     {
         get
         {
-            var ci = new CultureInfo("is-IS");
+            CultureInfo ci = new CultureInfo("is-IS");
             ci.NumberFormat.CurrencySymbol = "kr";
             return ci;
         }

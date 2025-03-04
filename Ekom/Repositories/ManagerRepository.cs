@@ -30,18 +30,18 @@ public class ManagerRepository
 
     public async Task<IEnumerable<OrderData>> GetOrdersAsync()
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var data = await db.OrderData.OrderByDescending(x => x.ReferenceId).ToListAsync().ConfigureAwait(false);
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        List<OrderData> data = await db.OrderData.OrderByDescending(x => x.ReferenceId).ToListAsync().ConfigureAwait(false);
 
         return data;
     }
 
     public async Task<OrderData> GetOrderAsync(Guid orderId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var data = await db.OrderData.FirstAsync(x => x.UniqueId == orderId).ConfigureAwait(false);
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        OrderData data = await db.OrderData.FirstAsync(x => x.UniqueId == orderId).ConfigureAwait(false);
 
         return data;
     }
@@ -62,17 +62,17 @@ public class ManagerRepository
     public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider);
-        
-        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
-        var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
 
-        var _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
-        var _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
+        StringBuilder sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+        StringBuilder sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
+
+        int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
+        int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
 
         sqlBuilder.Append(" OFFSET (" + _page + " - 1) * " + _pageSize + " ROWS\r\nFETCH NEXT " + _pageSize + " ROWS ONLY;");
 
-        var sqlQuery = sqlBuilder.ToString();
-        var sqlTotalQuery = sqlTotalBuilder.ToString();
+        string sqlQuery = sqlBuilder.ToString();
+        string sqlTotalQuery = sqlTotalBuilder.ToString();
 
         var param = new
         {
@@ -83,13 +83,13 @@ public class ManagerRepository
             store
         };
 
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
+        await using DbContext db = _databaseFactory.GetDatabase();
 
-        var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
+        List<OrderData> orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
 
-        var orderListData = new OrderListData(orders, totals)
+        OrderListDataTotals totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
+
+        OrderListData orderListData = new OrderListData(orders, totals)
         {
             Page = _page,
             PageSize = _pageSize
@@ -100,7 +100,7 @@ public class ManagerRepository
 
     private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider)
     {
-        var whereClause = new StringBuilder();
+        StringBuilder whereClause = new StringBuilder();
 
         if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
         {
@@ -140,7 +140,7 @@ public class ManagerRepository
 
     public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
     {
-        var whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''";
+        string whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''";
 
         if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
         {
@@ -148,7 +148,7 @@ public class ManagerRepository
         }
         else
         {
-            whereClause +=" AND CreateDate >= @startDate AND CreateDate <= @endDate";
+            whereClause += " AND CreateDate >= @startDate AND CreateDate <= @endDate";
         }
 
         if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
@@ -173,7 +173,7 @@ public class ManagerRepository
             store
         };
 
-        var sqlBuilder = new StringBuilder(@"SELECT 
+        StringBuilder sqlBuilder = new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,
@@ -198,15 +198,15 @@ public class ManagerRepository
                 ORDER BY 
                     ProductCount DESC");
 
-        await using var db = _databaseFactory.GetDatabase();
-        var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<MostSoldProduct> products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
 
         return products;
     }
 
     public object GetStatusList()
     {
-        var items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
+        IEnumerable<OrderStatus> items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
 
         return items.Select(x => new
         {

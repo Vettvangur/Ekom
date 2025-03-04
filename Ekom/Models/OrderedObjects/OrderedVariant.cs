@@ -3,215 +3,213 @@ using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class OrderedVariant
 {
-    public class OrderedVariant
+    public int Id
     {
-        public int Id
+        get
         {
-            get
+            if (Properties.ContainsKey("__NodeId"))
             {
-                if (Properties.ContainsKey("__NodeId"))
-                {
-                    return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
-                }
-                
-                return Convert.ToInt32(Properties.GetPropertyValue("id"));
+                return Convert.ToInt32(Properties.GetPropertyValue("__NodeId"));
             }
+
+            return Convert.ToInt32(Properties.GetPropertyValue("id"));
         }
-        public Guid Key
+    }
+    public Guid Key
+    {
+        get
         {
-            get
+            if (Properties.ContainsKey("__Key"))
             {
-                if (Properties.ContainsKey("__Key"))
+                string key = Properties.GetPropertyValue("__Key");
+
+                if (!Guid.TryParse(key, out Guid _key))
                 {
-                    var key = Properties.GetPropertyValue("__Key");
-
-                    if (!Guid.TryParse(key, out Guid _key))
-                    {
-                        throw new Exception("No key present for product.");
-                    }
-
-                    return _key;
+                    throw new Exception("No key present for product.");
                 }
 
-                // Backword Compatability
-                return Guid.Empty;
+                return _key;
+            }
 
-            }
-        }
+            // Backword Compatability
+            return Guid.Empty;
 
-        public string SKU
-        {
-            get
-            {
-                return Properties.GetPropertyValue("sku");
-            }
         }
+    }
 
-        public string Title
+    public string SKU
+    {
+        get
         {
-            get
-            {
-                return Properties.GetPropertyValue("title", StoreInfo.Alias);
-            }
+            return Properties.GetPropertyValue("sku");
         }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
-        public string Path
-        {
-            get
-            {
-                return Properties.GetPropertyValue("__Path");
-            }
-        }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
-        public DateTime CreateDate
-        {
-            get
-            {
-                return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
-            }
-        }
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
-        public DateTime UpdateDate
-        {
-            get
-            {
-                return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
-            }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public IPrice Price
-        {
-            get
-            {
-                return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
-            }
-            set { }
-        }
+    }
 
-        public List<IPrice> Prices { get; }
-
-        public decimal ProductVat { get; set; }
-        public decimal Vat
+    public string Title
+    {
+        get
         {
-            get
+            return Properties.GetPropertyValue("title", StoreInfo.Alias);
+        }
+    }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public string Path
+    {
+        get
+        {
+            return Properties.GetPropertyValue("__Path");
+        }
+    }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public DateTime CreateDate
+    {
+        get
+        {
+            return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("createDate"));
+        }
+    }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public DateTime UpdateDate
+    {
+        get
+        {
+            return UtilityService.ConvertToDatetime(Properties.GetPropertyValue("updateDate"));
+        }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public IPrice Price
+    {
+        get
+        {
+            return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
+        }
+        set { }
+    }
+
+    public List<IPrice> Prices { get; }
+
+    public decimal ProductVat { get; set; }
+    public decimal Vat
+    {
+        get
+        {
+            if (Properties.HasPropertyValue("vat", StoreInfo.Alias))
             {
-                if (Properties.HasPropertyValue("vat", StoreInfo.Alias))
+                string value = Properties.GetPropertyValue("vat", StoreInfo.Alias);
+
+                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
                 {
-                    var value = Properties.GetPropertyValue("vat", StoreInfo.Alias);
-
-                    if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
-                    {
-                        return _val / 100;
-                    }
-                }
-
-                return ProductVat;
-            }
-        }
-
-        [System.Text.Json.Serialization.JsonIgnore]
-        [Newtonsoft.Json.JsonIgnore]
-        [XmlIgnore]
-        private StoreInfo StoreInfo { get; }
-
-        public IReadOnlyDictionary<string, string> Properties;
-
-        // <summary>
-        // Variant images
-        // </summary>
-        public virtual IEnumerable<Image> Images
-        {
-            get
-            {
-                var config = Configuration.Resolver.GetService<Configuration>();
-
-                var _images = Properties.GetPropertyValue(config != null ? config.CustomImage : "images", StoreInfo.Alias);
-
-                if (!string.IsNullOrEmpty(_images))
-                {
-                    var imageNodes = _images.GetImages();
-
-                    return imageNodes;
-                }
-
-                return Enumerable.Empty<Image>();
-            }
-        }
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public OrderedVariant(IVariant variant, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
-        {
-            variant = variant ?? throw new ArgumentNullException(nameof(variant));
-            StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
-
-            ProductVat = productVat;
-
-            Prices = variant.Prices.ToList();
-
-            if (orderDynamic != null && orderDynamic.VariantPrices != null && orderDynamic.VariantPrices.Any())
-            {
-                Prices = orderDynamic.VariantPrices;
-            }
-
-            Properties = new ReadOnlyDictionary<string, string>(
-                variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
-        }
-
-        /// <summary>
-        /// Json Constructor
-        /// </summary>
-        public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
-        {
-            StoreInfo = storeInfo;
-
-            ProductVat = (decimal)(variantObject["ProductVat"] ?? 0);
-            var pricesObj = variantObject["Prices"];
-            var priceObj = variantObject["Price"];
-
-            Properties = new ReadOnlyDictionary<string, string>(
-                variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
-
-
-            if (pricesObj != null && !string.IsNullOrEmpty(pricesObj.ToString()))
-            {
-
-                Prices = pricesObj.ToString().GetPriceValuesConstructed(Vat, storeInfo.VatIncludedInPrice, storeInfo.Currency);
-            }
-            else
-            {
-                try
-                {
-                    Prices = new List<IPrice>()
-                    {
-                        priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
-                    };
-                }
-                catch
-                {
-                    Prices = new List<IPrice>()
-                    {
-                        new Price(priceObj, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice)
-                    };
+                    return _val / 100;
                 }
             }
 
-            Properties = new ReadOnlyDictionary<string, string>(
-                variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+            return ProductVat;
         }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    private StoreInfo StoreInfo { get; }
+
+    public IReadOnlyDictionary<string, string> Properties;
+
+    // <summary>
+    // Variant images
+    // </summary>
+    public virtual IEnumerable<Image> Images
+    {
+        get
+        {
+            Configuration? config = Configuration.Resolver.GetService<Configuration>();
+
+            string _images = Properties.GetPropertyValue(config != null ? config.CustomImage : "images", StoreInfo.Alias);
+
+            if (!string.IsNullOrEmpty(_images))
+            {
+                IEnumerable<Image> imageNodes = _images.GetImages();
+
+                return imageNodes;
+            }
+
+            return Enumerable.Empty<Image>();
+        }
+    }
+
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public OrderedVariant(IVariant variant, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
+    {
+        variant = variant ?? throw new ArgumentNullException(nameof(variant));
+        StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+
+        ProductVat = productVat;
+
+        Prices = variant.Prices.ToList();
+
+        if (orderDynamic != null && orderDynamic.VariantPrices != null && orderDynamic.VariantPrices.Any())
+        {
+            Prices = orderDynamic.VariantPrices;
+        }
+
+        Properties = new ReadOnlyDictionary<string, string>(
+            variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+    }
+
+    /// <summary>
+    /// Json Constructor
+    /// </summary>
+    public OrderedVariant(JToken variantObject, StoreInfo storeInfo)
+    {
+        StoreInfo = storeInfo;
+
+        ProductVat = (decimal)(variantObject["ProductVat"] ?? 0);
+        JToken? pricesObj = variantObject["Prices"];
+        JToken? priceObj = variantObject["Price"];
+
+        Properties = new ReadOnlyDictionary<string, string>(
+            variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+
+
+        if (pricesObj != null && !string.IsNullOrEmpty(pricesObj.ToString()))
+        {
+
+            Prices = pricesObj.ToString().GetPriceValuesConstructed(Vat, storeInfo.VatIncludedInPrice, storeInfo.Currency);
+        }
+        else
+        {
+            try
+            {
+                Prices = new List<IPrice>()
+                {
+                    priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
+                };
+            }
+            catch
+            {
+                Prices = new List<IPrice>()
+                {
+                    new Price(priceObj, storeInfo.Currency, storeInfo.Vat, storeInfo.VatIncludedInPrice)
+                };
+            }
+        }
+
+        Properties = new ReadOnlyDictionary<string, string>(
+            variantObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
     }
 }

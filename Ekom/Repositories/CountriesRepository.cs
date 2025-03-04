@@ -39,11 +39,11 @@ public class CountriesRepository
         return _cache.GetOrAdd(BaseXMLFileName, s =>
         {
             // future todo: make file location configurable (web.config or through code)
-            var env = Configuration.Resolver.GetService<IWebHostEnvironment>();
+            IWebHostEnvironment? env = Configuration.Resolver.GetService<IWebHostEnvironment>();
             //string webRootPath = env.WebRootPath;
             string contentRootPath = env.ContentRootPath;
 
-            var path = Path.Combine(contentRootPath, $"scripts/Ekom/{BaseXMLFileName}.xml");
+            string path = Path.Combine(contentRootPath, $"scripts/Ekom/{BaseXMLFileName}.xml");
 
             if (!File.Exists(path))
             {
@@ -51,7 +51,7 @@ public class CountriesRepository
             }
 
             XDocument doc;
-            using (var streamReader = new StreamReader(path, new UTF8Encoding()))
+            using (StreamReader streamReader = new StreamReader(path, new UTF8Encoding()))
             {
                 doc = XDocument.Load(streamReader);
             }
@@ -66,13 +66,13 @@ public class CountriesRepository
     /// <returns></returns>
     protected virtual List<Country> DotNETFrameworkFallback()
     {
-        var cultureList = new Dictionary<string, string>();
+        Dictionary<string, string> cultureList = new Dictionary<string, string>();
 
-        foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
+        foreach (CultureInfo culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
         {
             try
             {
-                var region = new RegionInfo(culture.LCID);
+                RegionInfo region = new RegionInfo(culture.LCID);
 
                 cultureList.TryAdd(region.TwoLetterISORegionName, region.DisplayName);
             }

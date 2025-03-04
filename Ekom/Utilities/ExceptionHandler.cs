@@ -22,7 +22,7 @@ namespace Ekom.Utilities
 
             if (preHandler != null)
             {
-                var actionResult = preHandler();
+                T actionResult = preHandler();
                 if (actionResult != null)
                 {
                     return actionResult;
@@ -77,7 +77,7 @@ namespace Ekom.Utilities
             }
             if (defaultHandler != null)
             {
-                var actionResult = defaultHandler();
+                T actionResult = defaultHandler();
                 if (actionResult != null)
                 {
                     return actionResult;

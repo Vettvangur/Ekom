@@ -18,7 +18,7 @@ public sealed class CamelCaseJsonAttribute : ActionFilterAttribute
             objectResult.Formatters.RemoveType<NewtonsoftJsonOutputFormatter>();
 
             // Create a new JsonSerializerSettings object with CamelCasePropertyNamesContractResolver
-            var serializerSettings = new JsonSerializerSettings
+            JsonSerializerSettings serializerSettings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };

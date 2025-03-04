@@ -20,10 +20,10 @@ namespace Vettvangur.Core
         {
             try
             {
-                var cultures = _umbracoService.GetLanguages();
-                var defaultCulture = _umbracoService.DefaultLanguage();
+                IEnumerable<Ekom.Models.Umbraco.UmbracoLanguage> cultures = _umbracoService.GetLanguages();
+                string defaultCulture = _umbracoService.DefaultLanguage();
 
-                var supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
+                List<CultureInfo> supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
 
                 options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
                 options.SupportedCultures = supportedCultures;
@@ -57,7 +57,7 @@ namespace Vettvangur.Core
                 return NullProviderCultureResult;
             }
 
-            var cultureName = context.Request.Query["Accept-Language"].FirstOrDefault()
+            string? cultureName = context.Request.Query["Accept-Language"].FirstOrDefault()
                             ?? context.Request.Query["Culture"].FirstOrDefault()
                             ?? context.Request.Headers["Accept-Language"].FirstOrDefault()
                             ?? context.Request.Headers["Culture"].FirstOrDefault();
@@ -67,7 +67,7 @@ namespace Vettvangur.Core
                 return NullProviderCultureResult;
             }
 
-            cultureName =  ParseAcceptLanguageHeader(cultureName);
+            cultureName = ParseAcceptLanguageHeader(cultureName);
 
             CultureInfo culture;
             try
@@ -85,7 +85,7 @@ namespace Vettvangur.Core
 
         private static string ParseAcceptLanguageHeader(string headerValue)
         {
-            var languages = headerValue.Split(',')
+            string? languages = headerValue.Split(',')
                 .Select(l => l.Split(';').First().Trim())
                 .Where(l => !string.IsNullOrEmpty(l))
                 .FirstOrDefault();

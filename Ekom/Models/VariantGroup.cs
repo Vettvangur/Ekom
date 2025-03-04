@@ -39,7 +39,7 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         get
         {
-           return PrimaryVariant != null ? PrimaryVariant.Price : Product.Price;
+            return PrimaryVariant != null ? PrimaryVariant.Price : Product.Price;
         }
     }
 
@@ -55,9 +55,9 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         get
         {
-            var _images = GetValue(Configuration.Instance.CustomImage);
+            string _images = GetValue(Configuration.Instance.CustomImage);
 
-            var imageNodes = _images.GetImages();
+            IEnumerable<Image> imageNodes = _images.GetImages();
 
             return imageNodes;
         }
@@ -70,17 +70,17 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         get
         {
-            var cacheKey = $"Variants_{Store.Alias}_{Id}";
+            string cacheKey = $"Variants_{Store.Alias}_{Id}";
 
-            var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+            HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
             if (httpContext != null)
             {
-                if (httpContext.Items.TryGetValue(cacheKey, out var cachedVariants))
+                if (httpContext.Items.TryGetValue(cacheKey, out object? cachedVariants))
                 {
                     return (IEnumerable<IVariant>)cachedVariants;
                 }
 
-                var variants = Catalog.Instance.GetVariantsByGroup(Id, Store.Alias);
+                IEnumerable<IVariant> variants = Catalog.Instance.GetVariantsByGroup(Id, Store.Alias);
                 httpContext.Items[cacheKey] = variants;
                 return variants;
             }
@@ -97,7 +97,7 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     {
         get
         {
-            var primaryVariant = Variants.FirstOrDefault(x => x.Available);
+            IVariant? primaryVariant = Variants.FirstOrDefault(x => x.Available);
 
             if (primaryVariant == null)
             {

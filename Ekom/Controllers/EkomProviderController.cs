@@ -38,11 +38,11 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsproviders/{storeAlias?}")]
-    public IEnumerable<IPaymentProvider> GetPaymentProviders([FromQuery]string countryCode, [FromQuery]decimal orderAmount, string? storeAlias = null)
+    public IEnumerable<IPaymentProvider> GetPaymentProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
     {
         try
         {
-            var store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
             ArgumentNullException.ThrowIfNull(store);
 
@@ -61,11 +61,11 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsprovider/{id:Guid}")]
-    public IPaymentProvider? GetPaymentProvider([FromRoute]Guid id)
+    public IPaymentProvider? GetPaymentProvider([FromRoute] Guid id)
     {
         try
         {
-            var store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
             ArgumentNullException.ThrowIfNull(store);
 
@@ -90,7 +90,7 @@ public class EkomProviderController : ControllerBase
     {
         try
         {
-            var store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
             ArgumentNullException.ThrowIfNull(store);
 
@@ -114,7 +114,7 @@ public class EkomProviderController : ControllerBase
     {
         try
         {
-            var store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore();
 
             ArgumentNullException.ThrowIfNull(store);
 

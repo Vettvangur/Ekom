@@ -19,11 +19,11 @@ namespace Ekom.Services
         {
             try
             {
-                using var db = _databaseFactory.GetDatabase();
+                using Repositories.DbContext db = _databaseFactory.GetDatabase();
 
-                var sp = db.DataProvider.GetSchemaProvider();
+                LinqToDB.SchemaProvider.ISchemaProvider sp = db.DataProvider.GetSchemaProvider();
 
-                var dbSchema = sp.GetSchema(db);
+                LinqToDB.SchemaProvider.DatabaseSchema dbSchema = sp.GetSchema(db);
 
                 if (!dbSchema.Tables.Any(x => x.TableName == "EkomStock"))
                 {

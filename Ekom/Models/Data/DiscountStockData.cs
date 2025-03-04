@@ -1,6 +1,4 @@
 using LinqToDB.Mapping;
-using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace Ekom.Models
 {

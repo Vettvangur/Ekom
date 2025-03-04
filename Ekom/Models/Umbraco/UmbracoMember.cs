@@ -12,7 +12,7 @@ namespace Ekom.Models
         {
             _properties = new Dictionary<string, string>(defaultProperties);
 
-            foreach (var prop in contentProperies)
+            foreach (KeyValuePair<string, string> prop in contentProperies)
             {
                 _properties.Add(prop.Key, prop.Value);
             }

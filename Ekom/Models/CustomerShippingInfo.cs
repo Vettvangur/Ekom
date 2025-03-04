@@ -1,76 +1,75 @@
 using Ekom.Utilities;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class CustomerShippingInfo
 {
-    public class CustomerShippingInfo
+    public string Name
     {
-        public string Name
-        {
 
-            get
-            {
-                return Properties.GetValue("shippingName");
-            }
-        }
-        public string FirstName
+        get
         {
+            return Properties.GetValue("shippingName");
+        }
+    }
+    public string FirstName
+    {
 
-            get
-            {
-                return Properties.GetValue("shippingFirstName");
-            }
-        }
-        public string LastName
+        get
         {
+            return Properties.GetValue("shippingFirstName");
+        }
+    }
+    public string LastName
+    {
 
-            get
-            {
-                return Properties.GetValue("shippingLastName");
-            }
-        }
-        public string Address
+        get
         {
-            get
-            {
-                return Properties.GetValue("shippingAddress");
-            }
+            return Properties.GetValue("shippingLastName");
         }
-        public string City
+    }
+    public string Address
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("shippingCity");
-            }
+            return Properties.GetValue("shippingAddress");
         }
-        public string Apartment
+    }
+    public string City
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("shippingApartment");
-            }
+            return Properties.GetValue("shippingCity");
         }
-        public string Country
+    }
+    public string Apartment
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("shippingCountry");
-            }
+            return Properties.GetValue("shippingApartment");
         }
-        public string ZipCode
+    }
+    public string Country
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("shippingZipCode");
-            }
+            return Properties.GetValue("shippingCountry");
         }
+    }
+    public string ZipCode
+    {
+        get
+        {
+            return Properties.GetValue("shippingZipCode");
+        }
+    }
 
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
+    public Dictionary<string, string> Properties = new Dictionary<string, string>();
 
-        public string Value(string alias)
+    public string Value(string alias)
+    {
         {
-            {
-                return Properties.GetValue(alias);
-            }
+            return Properties.GetValue(alias);
         }
     }
 }

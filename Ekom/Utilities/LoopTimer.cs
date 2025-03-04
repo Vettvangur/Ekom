@@ -47,23 +47,23 @@ namespace Ekom.Utilities
                 return;
             }
 
-            var averageTime = CalculateAverage(_sampleTimes);
+            double averageTime = CalculateAverage(_sampleTimes);
 
             // Estimate total time based on average
-            var estimatedTotalTime = averageTime * _totalIterations;
+            double estimatedTotalTime = averageTime * _totalIterations;
 
             if (averageTime > Threshold)
             {
                 _logger.LogWarning(
                     $"WARNING: Estimated total time for {_totalIterations} iterations of {_nodeAlias}: {estimatedTotalTime} seconds. Average loop time for first {SampleSize} iterations is {averageTime * 1000} milliseconds, which exceeds the threshold of {Threshold * 1000} milliseconds.");
             }
-           
-            
+
+
         }
 
         private double CalculateAverage(List<double> times)
         {
-            var sum = times.Sum();
+            double sum = times.Sum();
             return sum / times.Count;
         }
     }

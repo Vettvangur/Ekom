@@ -1,104 +1,103 @@
 using Ekom.Utilities;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class Customer
 {
-    public class Customer
+    public string Name
     {
-        public string Name
-        {
 
-            get
-            {
-                return (string.IsNullOrEmpty(Properties.GetValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetValue("customerName"))?.Trim();
-            }
-        }
-        public string FirstName
+        get
         {
+            return (string.IsNullOrEmpty(Properties.GetValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetValue("customerName"))?.Trim();
+        }
+    }
+    public string FirstName
+    {
 
-            get
-            {
-                return Properties.GetValue("customerFirstName");
-            }
-        }
-        public string LastName
+        get
         {
+            return Properties.GetValue("customerFirstName");
+        }
+    }
+    public string LastName
+    {
 
-            get
-            {
-                return Properties.GetValue("customerLastName");
-            }
-        }
-        public string Email
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerEmail");
-            }
+            return Properties.GetValue("customerLastName");
         }
-        public string Address
+    }
+    public string Email
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerAddress");
-            }
+            return Properties.GetValue("customerEmail");
         }
-        public string City
+    }
+    public string Address
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerCity");
-            }
+            return Properties.GetValue("customerAddress");
         }
-        public string Apartment
+    }
+    public string City
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerApartment");
-            }
+            return Properties.GetValue("customerCity");
         }
-        public string Country
+    }
+    public string Apartment
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerCountry");
-            }
+            return Properties.GetValue("customerApartment");
         }
-        public string Region
+    }
+    public string Country
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerRegion");
-            }
+            return Properties.GetValue("customerCountry");
         }
-        public string Company
+    }
+    public string Region
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerCompany");
-            }
+            return Properties.GetValue("customerRegion");
         }
-        public string ZipCode
+    }
+    public string Company
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerZipCode");
-            }
+            return Properties.GetValue("customerCompany");
         }
-        public string Phone
+    }
+    public string ZipCode
+    {
+        get
         {
-            get
-            {
-                return Properties.GetValue("customerPhone");
-            }
+            return Properties.GetValue("customerZipCode");
         }
-        public int UserId { get; set; }
-        public string UserName { get; set; }
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
-        public string Value(string alias)
+    }
+    public string Phone
+    {
+        get
         {
-            {
-                return Properties.GetValue(alias);
-            }
+            return Properties.GetValue("customerPhone");
+        }
+    }
+    public int UserId { get; set; }
+    public string UserName { get; set; }
+    public Dictionary<string, string> Properties = new Dictionary<string, string>();
+    public string Value(string alias)
+    {
+        {
+            return Properties.GetValue(alias);
         }
     }
 }

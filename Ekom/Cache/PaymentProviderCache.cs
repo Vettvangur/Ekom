@@ -23,7 +23,7 @@ namespace Ekom.Cache
         {
             if (!string.IsNullOrEmpty(NodeAlias))
             {
-                var stopwatch = new Stopwatch();
+                Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 _logger.LogDebug("Starting to fill...");
@@ -32,18 +32,18 @@ namespace Ekom.Cache
 
                 try
                 {
-                    var paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
+                    UmbracoContent? paymentProviderRoot = nodeService.NodesByTypes("ekmPaymentProviders").FirstOrDefault();
 
                     if (paymentProviderRoot == null)
                     {
                         throw new Exception("Ekom payment providers node not found.");
                     }
 
-                    var results = nodeService.NodeChildren(paymentProviderRoot.Id.ToString()).ToList();
+                    List<UmbracoContent> results = nodeService.NodeChildren(paymentProviderRoot.Id.ToString()).ToList();
 
                     if (storeParam == null) // Startup initialization
                     {
-                        foreach (var store in _storeCache.Cache.Select(x => x.Value))
+                        foreach (IStore? store in _storeCache.Cache.Select(x => x.Value))
                         {
                             count += FillStoreCache(store, results, NodeAlias);
                         }

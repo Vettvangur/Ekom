@@ -132,7 +132,7 @@ namespace Ekom.Models
         /// 
         /// </summary>
         DateTime UpdateDate { get; }
-        
+
         /// <summary>
         /// 
         /// </summary>

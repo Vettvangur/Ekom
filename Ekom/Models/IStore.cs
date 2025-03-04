@@ -27,7 +27,7 @@ namespace Ekom.Models
         CurrencyModel Currency { get; }
 
         CurrencyModel GetCurrentCurrency();
-        
+
         List<CurrencyModel> Currencies { get; }
         string Alias { get; }
         IEnumerable<UmbracoDomain> Domains { get; }

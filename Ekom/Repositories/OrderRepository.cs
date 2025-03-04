@@ -31,30 +31,30 @@ class OrderRepository
 
     public async Task<OrderData> GetOrderAsync(Guid uniqueId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var data = await db.OrderData
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        OrderData? data = await db.OrderData
             .Where(x => x.UniqueId == uniqueId)
             .SingleOrDefaultAsync()
             .ConfigureAwait(false);
 
         return data;
-        
+
     }
 
     public async Task InsertOrderAsync(OrderData orderData)
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
 
-        var referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
+        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
 
         orderData.ReferenceId = (int)referenceId;
     }
 
     public async Task UpdateOrderAsync(OrderData orderData)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         await db.UpdateAsync(orderData).ConfigureAwait(false);
         //Clear cache after update.
         _memoryCache.Remove(orderData.UniqueId);
@@ -65,7 +65,7 @@ class OrderRepository
     {
         try
         {
-            await using var db = _databaseFactory.GetDatabase();
+            await using DbContext db = _databaseFactory.GetDatabase();
 
             const string insertTempColumnSql = @"
                     DECLARE @result INT = 0; -- default to 0 (false)
@@ -97,7 +97,7 @@ class OrderRepository
                     -- Return the result
                     SELECT @result AS Result;";
 
-            var insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
+            int insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
 
             int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0;
 
@@ -201,7 +201,8 @@ class OrderRepository
                 _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
             }
 
-        } catch(Exception ex)
+        }
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to run migration script for Order table");
         }
@@ -210,7 +211,7 @@ class OrderRepository
 
     public async Task MigrateStockToDecimalAsync()
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
 
         const string sql = @"
             IF EXISTS (
@@ -240,9 +241,9 @@ class OrderRepository
         params OrderStatus[] orderStatuses
     )
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
 
-        var query = db.OrderData
+        IQueryable<OrderData> query = db.OrderData
             .Where(x => orderStatuses.Select(y => y.ToString()).Contains(x.OrderStatusCol));
 
         if (filter != null)

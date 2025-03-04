@@ -1,6 +1,4 @@
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -18,7 +16,7 @@ namespace Ekom.Models
             {
                 try
                 {
-                    var countries = JsonConvert.DeserializeObject<string[]>(Properties["zoneSelector"]);
+                    string[]? countries = JsonConvert.DeserializeObject<string[]>(Properties["zoneSelector"]);
 
                     return countries;
 

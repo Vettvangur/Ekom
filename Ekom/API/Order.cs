@@ -64,7 +64,7 @@ public partial class Order
     /// <returns></returns>
     public Task<IOrderInfo> GetOrderAsync()
     {
-        var store = _storeSvc.GetStoreFromCache();
+        IStore? store = _storeSvc.GetStoreFromCache();
 
         if (store == null)
         {
@@ -155,7 +155,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        var orders = await _orderService.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -177,7 +177,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        var orders = await _orderService.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -197,7 +197,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        var orders = await _orderService.GetStatusOrdersByCustomerIdAsync(orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -217,7 +217,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        var orders = await _orderService.GetStatusOrdersAsync(orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersAsync(orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -313,14 +313,14 @@ public partial class Order
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
                 storeAlias = store.Alias;
             }
         }
-  
+
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
@@ -356,7 +356,7 @@ public partial class Order
     public async Task<IOrderInfo> UpdateShippingInformationAsync(
         Guid shippingProvider,
         string storeAlias,
-        Dictionary<string,string> customData,
+        Dictionary<string, string> customData,
         OrderSettings settings = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
@@ -374,7 +374,7 @@ public partial class Order
     public async Task<IOrderInfo> UpdatePaymentInformationAsync(
         Guid paymentProvider,
         string storeAlias,
-        Dictionary<string,string> customData,
+        Dictionary<string, string> customData,
         OrderSettings settings = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
@@ -480,7 +480,7 @@ public partial class Order
 
         if (string.IsNullOrEmpty(storeAlias))
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
 
             if (store != null)
             {
@@ -546,7 +546,7 @@ public partial class Order
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
             .ConfigureAwait(false);
 
         return res;
@@ -571,7 +571,7 @@ public partial class Order
             throw new ArgumentNullException(nameof(order));
         }
 
-        var res = await _checkoutControllerService.PayAsync(paymentRequest, "", order)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", order)
             .ConfigureAwait(false);
 
         return res;

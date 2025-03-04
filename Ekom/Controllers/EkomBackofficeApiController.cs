@@ -102,8 +102,8 @@ public class EkomBackofficeApiController : ControllerBase
         {
             cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
 
-            var stores = API.Store.Instance.GetAllStores();
-            var node = _nodeService.NodeById(id);
+            IEnumerable<IStore> stores = API.Store.Instance.GetAllStores();
+            UmbracoContent node = _nodeService.NodeById(id);
 
             if (node != null)
             {
@@ -316,7 +316,7 @@ public class EkomBackofficeApiController : ControllerBase
     {
         try
         {
-            var items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize);
+            (List<CouponData> Data, int TotalPages) items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize);
 
             return items;
         }

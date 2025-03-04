@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
-using Ekom.Repositories;
 using Ekom.Models;
+using Ekom.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ekom.Controllers;
 

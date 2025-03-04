@@ -12,7 +12,7 @@ namespace Ekom.Utilities
                 throw new FormatException(string.Format("String \"{0}\" is not a valid udi.", guidUdi));
             }
 
-            var guidStr = uri.AbsolutePath.TrimStart('/');
+            string guidStr = uri.AbsolutePath.TrimStart('/');
 
             return new Guid(guidStr);
         }

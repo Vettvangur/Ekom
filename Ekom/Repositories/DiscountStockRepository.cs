@@ -35,9 +35,9 @@ class DiscountStockRepository
     /// <returns></returns>
     public async Task<DiscountStockData> GetStockByUniqueIdAsync(string uniqueId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var stockData = await db.DiscountStockData
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        DiscountStockData? stockData = await db.DiscountStockData
             .Where(x => x.UniqueId == uniqueId)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
@@ -47,8 +47,8 @@ class DiscountStockRepository
 
     public async Task<DiscountStockData> CreateNewStockRecordAsync(string uniqueId)
     {
-        var dateNow = DateTime.Now;
-        var stockData = new DiscountStockData
+        DateTime dateNow = DateTime.Now;
+        DiscountStockData stockData = new DiscountStockData
         {
             UniqueId = uniqueId,
             CreateDate = dateNow,
@@ -56,8 +56,8 @@ class DiscountStockRepository
         };
 
         // Run synchronously to ensure that callers can expect a db record present after method runs
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         await db.InsertAsync(stockData).ConfigureAwait(false);
 
         return stockData;
@@ -69,8 +69,8 @@ class DiscountStockRepository
     /// <returns></returns>
     public async Task<IEnumerable<DiscountStockData>> GetAllStockAsync()
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var data = await db.DiscountStockData.ToListAsync()
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<DiscountStockData> data = await db.DiscountStockData.ToListAsync()
             .ConfigureAwait(false);
         return data;
     }
@@ -88,7 +88,7 @@ class DiscountStockRepository
     {
         // We start pessimistic, checking before attempting update.
         // This also takes care of ensuring a DiscountStockData record exists.
-        var stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
+        DiscountStockData stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
 
         if (stockDataFromRepo.Stock + value < 0)
         {
@@ -102,10 +102,10 @@ class DiscountStockRepository
         stockDataFromRepo.UpdateDate = DateTime.Now;
 
         // Called synchronously and hopefully contained by a locking construct
-        await using var cnn = _databaseFactory.GetSqlConnection();
-        await using var command = cnn.CreateCommand();
-        
-        var cmdText = new StringBuilder();
+        await using SqlConnection cnn = _databaseFactory.GetSqlConnection();
+        await using SqlCommand command = cnn.CreateCommand();
+
+        StringBuilder cmdText = new StringBuilder();
 
         cmdText.AppendLine("BEGIN");
 
@@ -134,7 +134,7 @@ class DiscountStockRepository
         command.Parameters.AddWithValue("@0", value);
         command.Parameters.AddWithValue("@DiscountStockTableName", Configuration.DiscountStockTableName);
 
-        var returnValue = new SqlParameter();
+        SqlParameter returnValue = new SqlParameter();
         returnValue.Direction = ParameterDirection.ReturnValue;
         command.Parameters.Add(returnValue);
 

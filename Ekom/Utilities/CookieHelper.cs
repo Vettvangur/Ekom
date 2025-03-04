@@ -9,14 +9,14 @@ static class CookieHelper
 {
     public static CurrencyModel? GetCurrencyCookieValue(List<CurrencyModel> currencies, string storeAlias)
     {
-        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-        var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
+        HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+        string? cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
 
-        var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+        System.Globalization.CultureInfo? culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
 
         if (!string.IsNullOrEmpty(cookie))
         {
-            var c = currencies.FirstOrDefault(x => x.CurrencyValue == cookie);
+            CurrencyModel? c = currencies.FirstOrDefault(x => x.CurrencyValue == cookie);
 
             if (c != null)
             {
@@ -38,8 +38,8 @@ static class CookieHelper
     }
     public static IPrice? GetCurrencyPriceCookieValue(IEnumerable<IPrice> prices, string storeAlias)
     {
-        var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-        var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
+        HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+        string? cookie = httpContext?.Request?.Cookies["EkomCurrency-" + storeAlias];
 
         if (!string.IsNullOrEmpty(cookie))
         {
@@ -47,11 +47,11 @@ static class CookieHelper
                 ?? prices.FirstOrDefault();
         }
 
-        var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+        System.Globalization.CultureInfo? culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
 
         if (culture != null)
         {
-            var price = prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
+            IPrice? price = prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
 
             if (price != null)
             {
@@ -67,8 +67,8 @@ static class CookieHelper
 
     public static Uri? GetUmbracoDomain(IRequestCookieCollection cookieCollection)
     {
-        var umbracoDomain = cookieCollection[Configuration.Cookie_UmbracoDomain];
-        Uri.TryCreate(umbracoDomain, UriKind.Absolute, out var uri);
+        string? umbracoDomain = cookieCollection[Configuration.Cookie_UmbracoDomain];
+        Uri.TryCreate(umbracoDomain, UriKind.Absolute, out Uri? uri);
 
         return uri;
     }

@@ -69,7 +69,7 @@ public class Catalog
         ContentRequest contentRequest = null;
         if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
         {
-            var r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
+            Lazy<object>? r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
             contentRequest = r.Value as ContentRequest;
             return contentRequest?.Product;
         }
@@ -89,7 +89,7 @@ public class Catalog
         }
 
         // Get store based on alias or from cache
-        var store = !string.IsNullOrWhiteSpace(storeAlias)
+        IStore? store = !string.IsNullOrWhiteSpace(storeAlias)
                     ? _storeSvc.GetStoreByAlias(storeAlias)
                     : _storeSvc.GetStoreFromCache();
 
@@ -100,7 +100,7 @@ public class Catalog
         }
 
         // Try to get the store's products from cache
-        if (_productCache.Cache.TryGetValue(store.Alias, out var productDictionary))
+        if (_productCache.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, IProduct>? productDictionary))
         {
             return productDictionary.Values
                 .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
@@ -117,7 +117,7 @@ public class Catalog
     /// <returns></returns>
     public ProductResponse? GetProductsRescursiveByRoute(string route, ProductQuery? query = null)
     {
-        var category = GetCategoryByRoute(route, query != null ? query.StoreAlias : null);
+        ICategory? category = GetCategoryByRoute(route, query != null ? query.StoreAlias : null);
 
         if (category == null)
         {
@@ -133,7 +133,7 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProduct(string sku, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -147,7 +147,7 @@ public class Catalog
                 return null;
             }
 
-            var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
+            IProduct? product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
 
             if (product != null)
             {
@@ -156,7 +156,7 @@ public class Catalog
 
             if (Configuration.Instance.GlobalCatalog)
             {
-                foreach (var otherStore in _storeSvc.GetAllStores())
+                foreach (IStore otherStore in _storeSvc.GetAllStores())
                 {
                     if (otherStore.Alias == store.Alias)
                     {
@@ -171,7 +171,7 @@ public class Catalog
                     }
                 }
             }
-            
+
         }
 
         return null;
@@ -184,12 +184,12 @@ public class Catalog
     public IProduct? GetProduct(Guid key, string? storeAlias = null)
     {
         // Get the specified store or default store
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
             // Try to get the product from the specified store
-            if (_productCache.Cache[store.Alias].TryGetValue(key, out var prod))
+            if (_productCache.Cache[store.Alias].TryGetValue(key, out IProduct? prod))
             {
                 return prod;
             }
@@ -198,7 +198,7 @@ public class Catalog
         if (Configuration.Instance.GlobalCatalog)
         {
             // If not found, check all other stores
-            foreach (var otherStore in _storeSvc.GetAllStores())
+            foreach (IStore otherStore in _storeSvc.GetAllStores())
             {
                 // Skip the store we've already checked (if storeAlias was provided)
                 if (store != null && otherStore.Alias == store.Alias)
@@ -207,7 +207,7 @@ public class Catalog
                 }
 
                 // Try to get the product from the current store in the iteration
-                if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out var prod))
+                if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out IProduct? prod))
                 {
                     return prod;
                 }
@@ -235,7 +235,7 @@ public class Catalog
     /// </summary>
     public IProduct? GetProduct(int Id, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -244,7 +244,7 @@ public class Catalog
                 return null;
             }
 
-            var product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+            IProduct? product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
 
             if (product != null)
             {
@@ -253,7 +253,7 @@ public class Catalog
 
             if (Configuration.Instance.GlobalCatalog)
             {
-                foreach (var otherStore in _storeSvc.GetAllStores())
+                foreach (IStore otherStore in _storeSvc.GetAllStores())
                 {
                     if (otherStore.Alias == store.Alias)
                     {
@@ -278,11 +278,11 @@ public class Catalog
     /// </summary>
     public ProductResponse GetAllProducts(ProductQuery? query = null)
     {
-        var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
-            var products = GetAllProducts(store.Alias, query);
+            ProductResponse products = GetAllProducts(store.Alias, query);
 
             return products;
         }
@@ -305,9 +305,9 @@ public class Catalog
             return new ProductResponse();
         }
 
-        var products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
-        
-        return new ProductResponse(products,query, _productFilterService);
+        IOrderedEnumerable<IProduct> products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
+
+        return new ProductResponse(products, query, _productFilterService);
     }
 
     /// <summary>
@@ -320,7 +320,7 @@ public class Catalog
             throw new ArgumentNullException(nameof(query));
         }
 
-        var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -344,11 +344,11 @@ public class Catalog
             throw new ArgumentException(nameof(storeAlias));
         }
 
-        var products = new List<IProduct>();
+        List<IProduct> products = new List<IProduct>();
 
-        foreach (var id in query.Ids)
+        foreach (int id in query.Ids)
         {
-            var product = _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == id).Value;
+            IProduct product = _productCache.Cache[storeAlias].FirstOrDefault(x => x.Value.Id == id).Value;
 
             if (product != null)
             {
@@ -371,11 +371,11 @@ public class Catalog
             throw new ArgumentNullException(nameof(query));
         }
 
-        var store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
-        
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+
         if (store != null)
         {
-           return GetProductsByKeys(store.Alias, query);
+            return GetProductsByKeys(store.Alias, query);
         }
 
         return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
@@ -395,8 +395,8 @@ public class Catalog
             throw new ArgumentException(nameof(storeAlias));
         }
 
-        var products = new List<IProduct>();
-        foreach (var id in query.Keys)
+        List<IProduct> products = new List<IProduct>();
+        foreach (Guid id in query.Keys)
         {
             if (_productCache.Cache[storeAlias].ContainsKey(id))
             {
@@ -417,8 +417,8 @@ public class Catalog
     {
         if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
         {
-            var r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
-            var contentRequest = r.Value as ContentRequest;
+            Lazy<object>? r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
+            ContentRequest? contentRequest = r.Value as ContentRequest;
             return contentRequest?.Category;
         }
         return null;
@@ -434,7 +434,7 @@ public class Catalog
             throw new ArgumentNullException(nameof(Id));
         }
 
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -472,7 +472,7 @@ public class Catalog
     /// <exception cref="ArgumentException">storeAlias</exception>
     public ICategory? GetCategory(int Id, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (!_categoryCache.Cache.ContainsKey(store.Alias))
         {
@@ -480,7 +480,7 @@ public class Catalog
         }
 
         // Attempt to find the category with the given ID in the cache for the specified store alias
-        var categoryPair = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id);
+        KeyValuePair<Guid, ICategory> categoryPair = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id);
 
         // Check if a valid KeyValuePair was found and if the category is not null
         if (!categoryPair.Equals(default(KeyValuePair<int, ICategory>)) && categoryPair.Value != null)
@@ -490,14 +490,14 @@ public class Catalog
 
         if (Configuration.Instance.GlobalCatalog)
         {
-            foreach (var otherStore in _storeSvc.GetAllStores())
+            foreach (IStore otherStore in _storeSvc.GetAllStores())
             {
                 if (otherStore.Alias == store.Alias)
                 {
                     continue;
                 }
 
-                var categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id);
+                KeyValuePair<Guid, ICategory> categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id);
 
                 // Check if a valid KeyValuePair was found and if the category is not null
                 if (!categoryPairGlobal.Equals(default(KeyValuePair<int, ICategory>)) && categoryPairGlobal.Value != null)
@@ -519,14 +519,14 @@ public class Catalog
     /// <exception cref="ArgumentException">storeAlias</exception>
     public ICategory? GetCategory(Guid Id, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (!_categoryCache.Cache.ContainsKey(store.Alias))
         {
             return null;
         }
 
-        var category = _categoryCache.Cache[store.Alias].TryGetValue(Id, out var cat) ? cat : null;
+        ICategory? category = _categoryCache.Cache[store.Alias].TryGetValue(Id, out ICategory? cat) ? cat : null;
 
         if (category != null)
         {
@@ -535,7 +535,7 @@ public class Catalog
 
         if (Configuration.Instance.GlobalCatalog)
         {
-            foreach (var otherStore in _storeSvc.GetAllStores())
+            foreach (IStore otherStore in _storeSvc.GetAllStores())
             {
                 if (otherStore.Alias == store.Alias)
                 {
@@ -543,7 +543,7 @@ public class Catalog
                 }
 
 
-                if (_categoryCache.Cache[otherStore.Alias].TryGetValue(Id, out var catOther))
+                if (_categoryCache.Cache[otherStore.Alias].TryGetValue(Id, out ICategory? catOther))
                 {
                     return catOther;
                 }
@@ -563,7 +563,7 @@ public class Catalog
 
     public IEnumerable<ICategory> GetRootCategories(string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -594,7 +594,7 @@ public class Catalog
         }
 
         // Get store based on alias or from cache
-        var store = !string.IsNullOrWhiteSpace(storeAlias)
+        IStore? store = !string.IsNullOrWhiteSpace(storeAlias)
                     ? _storeSvc.GetStoreByAlias(storeAlias)
                     : _storeSvc.GetStoreFromCache();
 
@@ -605,7 +605,7 @@ public class Catalog
         }
 
         // Try to get the store's category from cache
-        if (_categoryCache.Cache.TryGetValue(store.Alias, out var categoryDictionary))
+        if (_categoryCache.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, ICategory>? categoryDictionary))
         {
             return categoryDictionary.Values
                 .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
@@ -618,7 +618,7 @@ public class Catalog
 
     public IEnumerable<ICategory> GetAllCategories(string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -640,21 +640,21 @@ public class Catalog
     /// </summary>
     public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
         {
             return Enumerable.Empty<ICategory>();
         }
 
-        var categoriesInStore = _categoryCache.Cache[store.Alias].Values; // Assuming this gets all category values
-        var orderedCategories = new List<ICategory>();
+        ICollection<ICategory> categoriesInStore = _categoryCache.Cache[store.Alias].Values; // Assuming this gets all category values
+        List<ICategory> orderedCategories = new List<ICategory>();
 
         // Iterate over ids to maintain order
-        foreach (var id in ids)
+        foreach (int id in ids)
         {
             // Filter categories based on id and maintain the order
-            var category = categoriesInStore.FirstOrDefault(c => c.Id == id);
+            ICategory? category = categoriesInStore.FirstOrDefault(c => c.Id == id);
             if (category != null)
             {
                 orderedCategories.Add(category);
@@ -670,21 +670,21 @@ public class Catalog
     /// </summary>
     public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string? storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
         {
             return Enumerable.Empty<ICategory>();
         }
 
-        var categoriesInStore = _categoryCache.Cache[store.Alias];
-        var orderedCategories = new List<ICategory>();
+        System.Collections.Concurrent.ConcurrentDictionary<Guid, ICategory> categoriesInStore = _categoryCache.Cache[store.Alias];
+        List<ICategory> orderedCategories = new List<ICategory>();
 
         // Iterate over ids to maintain order
-        foreach (var key in keys)
+        foreach (Guid key in keys)
         {
             // Attempt to find the category by KEY and preserve the order based on the input array
-            if (categoriesInStore.TryGetValue(key, out var category))
+            if (categoriesInStore.TryGetValue(key, out ICategory? category))
             {
                 orderedCategories.Add(category);
             }
@@ -695,11 +695,11 @@ public class Catalog
 
     public IVariant? GetVariant(Guid Id, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
-            if (_variantCache.Cache[store.Alias].TryGetValue(Id, out var val))
+            if (_variantCache.Cache[store.Alias].TryGetValue(Id, out IVariant? val))
             {
                 return val;
             }
@@ -710,11 +710,11 @@ public class Catalog
 
     public IVariant? GetVariant(int Id, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
-            var variant = _variantCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+            IVariant variant = _variantCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
 
             return variant;
         }
@@ -728,7 +728,7 @@ public class Catalog
     /// <returns></returns>
     public IVariant? GetVariant(string sku, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -759,7 +759,7 @@ public class Catalog
 
     public IEnumerable<IVariant> GetVariantsByGroup(int id, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias)
+        IStore? store = !string.IsNullOrEmpty(storeAlias)
                     ? _storeSvc.GetStoreByAlias(storeAlias)
                     : _storeSvc.GetStoreFromCache();
 
@@ -768,7 +768,7 @@ public class Catalog
             return Enumerable.Empty<IVariant>();
         }
 
-        if (_variantCache?.Cache.TryGetValue(store.Alias, out var variants) != true)
+        if (_variantCache?.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, IVariant>? variants) != true)
         {
             return Enumerable.Empty<IVariant>();
         }
@@ -786,11 +786,11 @@ public class Catalog
 
     public IVariantGroup GetVariantGroup(Guid key, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
-            if (_variantGroupCache.Cache[store.Alias].TryGetValue(key, out var val))
+            if (_variantGroupCache.Cache[store.Alias].TryGetValue(key, out IVariantGroup? val))
             {
                 return val;
             }
@@ -807,11 +807,11 @@ public class Catalog
 
     public IVariantGroup GetVariantGroup(int id, string storeAlias = null)
     {
-        var store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
-            if (_variantGroupCache.Cache.TryGetValue(store.Alias, out var variantGroups))
+            if (_variantGroupCache.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, IVariantGroup>? variantGroups))
             {
                 return variantGroups.Values.FirstOrDefault(v => v.Id == id);
             }
@@ -836,14 +836,14 @@ public class Catalog
     /// Get Related Products
     /// </summary>
     public IEnumerable<IProduct> GetRelatedProducts(Guid productId, int count = 4, string? storeAlias = null)
-    {            
-        var product = GetProduct(productId, storeAlias);
+    {
+        IProduct? product = GetProduct(productId, storeAlias);
 
         if (product == null)
         {
             return Enumerable.Empty<IProduct>();
         }
-        
+
         return product.RelatedProducts(count);
     }
 
@@ -852,7 +852,7 @@ public class Catalog
     /// </summary>
     public IEnumerable<IProduct> GetRelatedProductsBySku(string sku, int count = 4, string? storeAlias = null)
     {
-        var product = GetProduct(sku, storeAlias);
+        IProduct? product = GetProduct(sku, storeAlias);
 
         if (product == null)
         {
@@ -877,22 +877,22 @@ public class Catalog
             req.NodeTypeAlias = new string[] { "ekmProduct", "ekmVariant" };
         }
 
-        var scope = Configuration.Resolver.CreateScope();
-        var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+        IServiceScope scope = Configuration.Resolver.CreateScope();
+        ICatalogSearchService? _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
 
-        var result = _searhService.ProductQuery(req, out long total);
+        IEnumerable<int> result = _searhService.ProductQuery(req, out long total);
 
         scope.Dispose();
 
-        var productQuery = new ProductQuery();
+        ProductQuery productQuery = new ProductQuery();
 
         productQuery.Ids = result.Select(x => x);
         productQuery.MetaFilters = req.MetaFilters;
         productQuery.PropertyFilters = req.PropertyFilters;
         productQuery.OrderBy = req.OrderBy;
         productQuery.StoreAlias = req.StoreAlias;
-        
-        var products = GetProductsByIds(productQuery);
+
+        ProductResponse products = GetProductsByIds(productQuery);
 
         return products;
     }

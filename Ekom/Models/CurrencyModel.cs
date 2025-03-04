@@ -1,24 +1,23 @@
 using System.Globalization;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class CurrencyModel
 {
-    public class CurrencyModel
+    public string CurrencyFormat { get; set; }
+    public string CurrencyValue { get; set; }
+    public string CurrencySymbol
     {
-        public string CurrencyFormat { get; set; }
-        public string CurrencyValue { get; set; }
-        public string CurrencySymbol
+        get
         {
-            get
-            {
-                return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).CurrencySymbol : string.Empty;
-            }
+            return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).CurrencySymbol : string.Empty;
         }
-        public string ISOCurrencySymbol
+    }
+    public string ISOCurrencySymbol
+    {
+        get
         {
-            get
-            {
-                return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).ISOCurrencySymbol : string.Empty;
-            }
+            return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).ISOCurrencySymbol : string.Empty;
         }
     }
 }

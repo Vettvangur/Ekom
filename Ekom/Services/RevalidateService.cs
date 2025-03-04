@@ -22,11 +22,11 @@ public class RevalidateService
 
         try
         {
-            foreach (var apis in headlessConfig.ReValidateApis)
+            foreach (RevalidateApi apis in headlessConfig.ReValidateApis)
             {
                 if (contentType == "ekmProduct")
                 {
-                    var product = _catalog.GetProduct(nodeKey, apis.Store);
+                    IProduct? product = _catalog.GetProduct(nodeKey, apis.Store);
 
                     if (product != null)
                     {
@@ -36,7 +36,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmCategory")
                 {
-                    var category = _catalog.GetCategory(nodeKey, apis.Store);
+                    ICategory? category = _catalog.GetCategory(nodeKey, apis.Store);
 
                     if (category != null)
                     {
@@ -45,7 +45,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmProductVariant")
                 {
-                    var variant = _catalog.GetVariant(nodeKey, apis.Store);
+                    IVariant? variant = _catalog.GetVariant(nodeKey, apis.Store);
 
                     if (variant != null)
                     {
@@ -54,7 +54,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmProductVariantGroup")
                 {
-                    var variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
+                    IVariantGroup variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
 
                     if (variantGroup != null)
                     {
@@ -62,8 +62,9 @@ public class RevalidateService
                     }
                 }
             }
-           
-        } catch(Exception ex)
+
+        }
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to revalidate. Key: {key} ContentType: {contentType}", nodeKey, contentType);
         }
@@ -71,14 +72,14 @@ public class RevalidateService
 
     private async Task RevalidateProduct(RevalidateApi api, IProduct product)
     {
-        var urls = product.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
+        IEnumerable<string> urls = product.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
 
         await Deliver(api, urls);
-        
+
     }
     private async Task RevalidateCategory(RevalidateApi api, ICategory category)
     {
-        var urls = category.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
+        IEnumerable<string> urls = category.UrlsWithContext.Where(x => x.Store == api.Store).DistinctBy(x => x.Url).Select(x => x.Url);
 
         await Deliver(api, urls);
     }
@@ -86,23 +87,23 @@ public class RevalidateService
     private async Task Deliver(RevalidateApi revalidateConfig, IEnumerable<string> urls)
     {
 
-        using var client = new HttpClient();
+        using HttpClient client = new HttpClient();
 
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var requestContent = JsonSerializer.Serialize(new { urls = string.Join(",", urls) });
+        string requestContent = JsonSerializer.Serialize(new { urls = string.Join(",", urls) });
 
-        var url = $"{revalidateConfig.Url}?token={revalidateConfig.Secret}";
+        string url = $"{revalidateConfig.Url}?token={revalidateConfig.Secret}";
 
-        var stringContent = new StringContent(requestContent, Encoding.UTF8, "application/json");
+        StringContent stringContent = new StringContent(requestContent, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(url, stringContent).ConfigureAwait(false);
+        HttpResponseMessage response = await client.PostAsync(url, stringContent).ConfigureAwait(false);
 
         stringContent.Dispose();
 
         if (!response.IsSuccessStatusCode)
         {
-            var errorMessage = $"Failed to post to revalidate API. URL: {url}, Status Code: {response.StatusCode} ReasonPhrase: {response.ReasonPhrase}";
+            string errorMessage = $"Failed to post to revalidate API. URL: {url}, Status Code: {response.StatusCode} ReasonPhrase: {response.ReasonPhrase}";
             throw new HttpRequestException(errorMessage);
         }
     }

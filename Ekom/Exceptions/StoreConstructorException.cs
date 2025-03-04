@@ -1,5 +1,3 @@
-using System;
-
 namespace Ekom.Exceptions
 {
     /// <summary>

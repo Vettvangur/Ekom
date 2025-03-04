@@ -1,92 +1,91 @@
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class OrderedVariantGroup
 {
-    public class OrderedVariantGroup
+    private readonly IVariant variant;
+    private readonly StoreInfo storeInfo;
+
+    public int Id { get; set; }
+    public Guid Key { get; set; }
+    public string Title { get; set; }
+    public IEnumerable<OrderedVariant> Variants { get; set; }
+
+    public IReadOnlyDictionary<string, string> Properties;
+
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
     {
-        private readonly IVariant variant;
-        private readonly StoreInfo storeInfo;
+        this.variant = variant ?? throw new ArgumentNullException(nameof(variant));
+        variantGroup = variantGroup ?? throw new ArgumentNullException(nameof(variantGroup));
+        storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
 
-        public int Id { get; set; }
-        public Guid Key { get; set; }
-        public string Title { get; set; }
-        public IEnumerable<OrderedVariant> Variants { get; set; }
+        Dictionary<string, string> props
+            = variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        // Prefer properties from variant group
+        variantGroup.Properties
+            .ToList()
+            .ForEach(x => props[x.Key] = x.Value);
 
-        public IReadOnlyDictionary<string, string> Properties;
+        Properties = new ReadOnlyDictionary<string, string>(props);
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public OrderedVariantGroup(IVariant variant, IVariantGroup variantGroup, StoreInfo storeInfo, decimal productVat, OrderDynamicRequest? orderDynamic = null)
+        Id = variantGroup.Id;
+        Key = variantGroup.Key;
+        Title = variantGroup.Title;
+
+        List<OrderedVariant> variants = new List<OrderedVariant>
         {
-            this.variant = variant ?? throw new ArgumentNullException(nameof(variant));
-            variantGroup = variantGroup ?? throw new ArgumentNullException(nameof(variantGroup));
-            storeInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
+            new OrderedVariant(variant, storeInfo,productVat,orderDynamic)
+        };
 
-            var props
-                = variant.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-            // Prefer properties from variant group
-            variantGroup.Properties
-                .ToList()
-                .ForEach(x => props[x.Key] = x.Value);
+        Variants = variants;
+    }
 
-            Properties = new ReadOnlyDictionary<string, string>(props);
+    /// <summary>
+    /// Json Constructor
+    /// </summary>
+    public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
+    {
+        this.storeInfo = storeInfo;
 
-            Id = variantGroup.Id;
-            Key = variantGroup.Key;
-            Title = variantGroup.Title;
+        Properties = new ReadOnlyDictionary<string, string>(
+            variantGroupObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
 
-            var variants = new List<OrderedVariant>
-            {
-                new OrderedVariant(variant, storeInfo,productVat,orderDynamic)
-            };
+        Id = (int)variantGroupObject[nameof(Id)];
+        Key = (Guid)variantGroupObject[nameof(Key)];
+        Title = (string)variantGroupObject[nameof(Title)];
 
-            Variants = variants;
-        }
+        JToken? variants = variantGroupObject[nameof(Variants)];
 
-        /// <summary>
-        /// Json Constructor
-        /// </summary>
-        public OrderedVariantGroup(JToken variantGroupObject, StoreInfo storeInfo)
+        List<OrderedVariant> variantsList = new List<OrderedVariant>();
+
+        if (!string.IsNullOrEmpty(variants.ToString()))
         {
-            this.storeInfo = storeInfo;
+            JArray variantsArray = (JArray)variants;
 
-            Properties = new ReadOnlyDictionary<string, string>(
-                variantGroupObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
-
-            Id = (int)variantGroupObject[nameof(Id)];
-            Key = (Guid)variantGroupObject[nameof(Key)];
-            Title = (string)variantGroupObject[nameof(Title)];
-
-            var variants = variantGroupObject[nameof(Variants)];
-
-            var variantsList = new List<OrderedVariant>();
-
-            if (!string.IsNullOrEmpty(variants.ToString()))
+            if (variantsArray != null && variantsArray.Any())
             {
-                var variantsArray = (JArray)variants;
 
-                if (variantsArray != null && variantsArray.Any())
+                foreach (JToken variantObject in variantsArray)
                 {
+                    OrderedVariant variant = new OrderedVariant(variantObject, storeInfo);
 
-                    foreach (var variantObject in variantsArray)
-                    {
-                        var variant = new OrderedVariant(variantObject, storeInfo);
-
-                        variantsList.Add(variant);
-                    }
+                    variantsList.Add(variant);
                 }
             }
+        }
 
-            if (variantsList.Any())
-            {
-                Variants = variantsList;
-            }
-            else
-            {
-                Variants = Enumerable.Empty<OrderedVariant>();
-            }
+        if (variantsList.Any())
+        {
+            Variants = variantsList;
+        }
+        else
+        {
+            Variants = Enumerable.Empty<OrderedVariant>();
         }
     }
 }

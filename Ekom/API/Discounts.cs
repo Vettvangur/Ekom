@@ -45,7 +45,7 @@ public class Discounts
     /// <returns></returns>
     public IEnumerable<IDiscount> GetDiscounts()
     {
-        var store = _storeSvc.GetStoreFromCache();
+        IStore? store = _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {
@@ -72,7 +72,7 @@ public class Discounts
     /// <returns></returns>
     public IEnumerable<IDiscount> GetGlobalDiscounts()
     {
-        var store = _storeSvc.GetStoreFromCache();
+        IStore? store = _storeSvc.GetStoreFromCache();
 
         if (store != null)
         {

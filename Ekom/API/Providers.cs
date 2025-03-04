@@ -129,7 +129,7 @@ public class Providers
 
         ArgumentException.ThrowIfNullOrEmpty(storeAlias);
 
-        var providers = cacheFunc(storeAlias);
+        IEnumerable<IConstrained> providers = cacheFunc(storeAlias);
 
         if (!string.IsNullOrEmpty(countryCode) && countryCode.Length == 2)
         {
@@ -140,10 +140,10 @@ public class Providers
         if (orderAmount > 0)
         {
 
-            foreach (var p in providers)
+            foreach (IConstrained p in providers)
             {
-                var start = p.Constraints.StartRange;
-                var end = p.Constraints.EndRange;
+                decimal start = p.Constraints.StartRange;
+                decimal end = p.Constraints.EndRange;
             }
 
             providers = providers
@@ -189,7 +189,7 @@ public class Providers
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
 
             ArgumentNullException.ThrowIfNull(store);
 
@@ -227,7 +227,7 @@ public class Providers
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
-            var store = _storeSvc.GetStoreFromCache();
+            IStore? store = _storeSvc.GetStoreFromCache();
 
             ArgumentNullException.ThrowIfNull(store);
 

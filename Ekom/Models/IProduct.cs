@@ -70,7 +70,7 @@ namespace Ekom.Models
         /// All ID's of categories product belongs to, includes parent category and related categories.
         /// </summary>
         IEnumerable<Guid> CategoriesIds { get; }
-        
+
         /// <summary>
         /// 
         /// </summary>

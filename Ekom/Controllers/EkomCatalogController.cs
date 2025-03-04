@@ -40,7 +40,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var product = API.Catalog.Instance.GetProduct(Id);
+            IProduct? product = API.Catalog.Instance.GetProduct(Id);
 
             if (product == null)
             {
@@ -66,7 +66,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var product = API.Catalog.Instance.GetProduct(Id);
+            IProduct? product = API.Catalog.Instance.GetProduct(Id);
 
             if (product == null)
             {
@@ -92,7 +92,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var product = API.Catalog.Instance.GetProduct(sku);
+            IProduct? product = API.Catalog.Instance.GetProduct(sku);
 
             if (product == null)
             {
@@ -100,7 +100,7 @@ public class EkomCatalogController : ControllerBase
             }
 
             return Ok(product);
-        } 
+        }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
             throw ExceptionHandler.Handle<HttpResponseException>(ex);
@@ -118,7 +118,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var product = API.Catalog.Instance.GetProductByRoute(route);
+            IProduct? product = API.Catalog.Instance.GetProductByRoute(route);
 
             if (product == null)
             {
@@ -145,7 +145,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var products = API.Catalog.Instance.GetProductsRescursiveByRoute(route, query);
+            ProductResponse? products = API.Catalog.Instance.GetProductsRescursiveByRoute(route, query);
 
             return Ok(products);
         }
@@ -167,7 +167,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
+            ICategory? category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
 
             if (category == null)
             {
@@ -196,7 +196,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
+            ICategory? category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
 
             if (category == null)
             {
@@ -219,13 +219,13 @@ public class EkomCatalogController : ControllerBase
     /// <param name="categoryId">Id of category</param>
     /// <param name="query">Product query</param>
     /// <returns></returns>
-    [HttpPost,HttpGet]
+    [HttpPost, HttpGet]
     [Route("products/{categoryId:Int}")]
     public IActionResult GetProducts(int categoryId, [FromBody] ProductQuery? query = null)
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
+            ICategory? category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
 
             if (category == null)
             {
@@ -248,13 +248,13 @@ public class EkomCatalogController : ControllerBase
     /// <param name="categoryKey">Key of category</param>
     /// <param name="query"></param>
     /// <returns></returns>
-    [HttpPost,HttpGet]
+    [HttpPost, HttpGet]
     [Route("products/{categoryKey:Guid}")]
     public IActionResult GetProducts(Guid categoryKey, [FromBody] ProductQuery? query = null)
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
+            ICategory? category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
 
             if (category == null)
             {
@@ -287,7 +287,7 @@ public class EkomCatalogController : ControllerBase
                 return BadRequest();
             }
 
-            var productsResponse = API.Catalog.Instance.GetProductsByIds(query);
+            ProductResponse productsResponse = API.Catalog.Instance.GetProductsByIds(query);
 
             return Ok(productsResponse);
         }
@@ -313,7 +313,7 @@ public class EkomCatalogController : ControllerBase
                 return BadRequest();
             }
 
-            var productsResponse = API.Catalog.Instance.GetProductsByKeys(query);
+            ProductResponse productsResponse = API.Catalog.Instance.GetProductsByKeys(query);
 
             return Ok(productsResponse);
         }
@@ -334,7 +334,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(Id);
+            ICategory? category = API.Catalog.Instance.GetCategory(Id);
 
             if (category == null)
             {
@@ -361,7 +361,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(Id.ToString());
+            ICategory category = API.Catalog.Instance.GetCategory(Id.ToString());
 
             if (category == null)
             {
@@ -381,7 +381,7 @@ public class EkomCatalogController : ControllerBase
     /// </summary>
     /// <param name="route">Route</param>
     /// <returns></returns>
-    [HttpGet,HttpPost]
+    [HttpGet, HttpPost]
     [Route("category/route")]
     public IActionResult GetCategoryByRoute([FromQuery] string route)
     {
@@ -392,7 +392,7 @@ public class EkomCatalogController : ControllerBase
                 return BadRequest();
             }
 
-            var category = API.Catalog.Instance.GetCategoryByRoute(route);
+            ICategory? category = API.Catalog.Instance.GetCategoryByRoute(route);
 
             if (category == null)
             {
@@ -414,7 +414,7 @@ public class EkomCatalogController : ControllerBase
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoriesbykeys")]
-    public IActionResult GetCategoriesByKeys([FromBody]Guid[] keys)
+    public IActionResult GetCategoriesByKeys([FromBody] Guid[] keys)
     {
         try
         {
@@ -423,7 +423,7 @@ public class EkomCatalogController : ControllerBase
                 return BadRequest();
             }
 
-            var categories = API.Catalog.Instance.GetCategoriesByKeys(keys);
+            IEnumerable<ICategory> categories = API.Catalog.Instance.GetCategoriesByKeys(keys);
 
             return Ok(categories);
         }
@@ -444,7 +444,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var categories = API.Catalog.Instance.GetCategoriesByIds(ids);
+            IEnumerable<ICategory> categories = API.Catalog.Instance.GetCategoriesByIds(ids);
 
             return Ok(categories);
         }
@@ -464,7 +464,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var categories = API.Catalog.Instance.GetRootCategories();
+            IEnumerable<ICategory> categories = API.Catalog.Instance.GetRootCategories();
 
             return Ok(categories);
         }
@@ -484,7 +484,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var categories = API.Catalog.Instance.GetAllCategories();
+            IEnumerable<ICategory> categories = API.Catalog.Instance.GetAllCategories();
 
             return Ok(categories);
         }
@@ -504,7 +504,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(id);
+            ICategory? category = API.Catalog.Instance.GetCategory(id);
 
             if (category == null)
             {
@@ -529,7 +529,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(key);
+            ICategory? category = API.Catalog.Instance.GetCategory(key);
 
             if (category == null)
             {
@@ -555,7 +555,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(id);
+            ICategory? category = API.Catalog.Instance.GetCategory(id);
 
             if (category == null)
             {
@@ -580,7 +580,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(key);
+            ICategory? category = API.Catalog.Instance.GetCategory(key);
 
             if (category == null)
             {
@@ -606,7 +606,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(id);
+            ICategory? category = API.Catalog.Instance.GetCategory(id);
 
             if (category == null)
             {
@@ -631,7 +631,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var category = API.Catalog.Instance.GetCategory(key);
+            ICategory? category = API.Catalog.Instance.GetCategory(key);
 
             if (category == null)
             {
@@ -657,7 +657,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+            IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProducts(id, count);
 
             return Ok(products);
         }
@@ -681,7 +681,7 @@ public class EkomCatalogController : ControllerBase
 
             foreach (Guid id in ids)
             {
-                var products = API.Catalog.Instance.GetRelatedProducts(id, count);
+                IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProducts(id, count);
                 relatedProducts.AddRange(products);
             }
 
@@ -703,7 +703,7 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
-            var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+            IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
 
             return Ok(products);
         }
@@ -725,9 +725,9 @@ public class EkomCatalogController : ControllerBase
         {
             List<IProduct> relatedProducts = new List<IProduct>();
 
-            foreach (var sku in skus)
+            foreach (string sku in skus)
             {
-                var products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+                IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
                 relatedProducts.AddRange(products);
             }
 
@@ -748,8 +748,8 @@ public class EkomCatalogController : ControllerBase
     public IActionResult ProductSearch([FromBody] SearchRequest req)
     {
         try
-        {                
-            var products = API.Catalog.Instance.ProductSearch(req);
+        {
+            ProductResponse products = API.Catalog.Instance.ProductSearch(req);
 
             return Ok(products);
         }

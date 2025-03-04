@@ -34,17 +34,17 @@ namespace Ekom.Cache
                 _logger.LogDebug("Starting to fill store cache...");
                 int count = 0;
 
-                var results = nodeService.NodesByTypes(NodeAlias);
+                IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
 
-                foreach (var r in results)
+                foreach (UmbracoContent r in results)
                 {
                     //try
                     //{
-                        var item = _objFac?.Create(r) ?? new Store(r);
+                    IStore item = _objFac?.Create(r) ?? new Store(r);
 
-                        count++;
+                    count++;
 
-                        AddOrReplaceFromCache(r.Key, item);
+                    AddOrReplaceFromCache(r.Key, item);
 
                     //}
                     //catch (Exception ex) // Skip on fail
@@ -74,7 +74,7 @@ namespace Ekom.Cache
         public override void AddReplace(UmbracoContent node)
         {
 
-            var item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
+            Store? item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
 
             if (item != null)
             {
@@ -83,7 +83,7 @@ namespace Ekom.Cache
                 IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
 
                 // Refill all per store caches
-                foreach (var cacheEntry in succeedingCaches)
+                foreach (ICache cacheEntry in succeedingCaches)
                 {
                     if (cacheEntry is IPerStoreCache perStoreCache)
                     {

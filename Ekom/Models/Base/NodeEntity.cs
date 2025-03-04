@@ -37,7 +37,7 @@ public abstract class NodeEntity : INodeEntity
             return 0;
         }
     }
-    
+
     /// <summary>
     /// Node Parent Guid Key
     /// </summary>
@@ -61,9 +61,9 @@ public abstract class NodeEntity : INodeEntity
     {
         get
         {
-            var key = Properties["__Key"];
+            string key = Properties["__Key"];
 
-            var _key = new Guid();
+            Guid _key = new Guid();
 
             if (!Guid.TryParse(key, out _key))
             {
@@ -129,8 +129,8 @@ public abstract class NodeEntity : INodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public string Path { get; set;  }
-    
+    public string Path { get; set; }
+
     /// <summary>
     /// Array of node id's describing hierarchy from left to right leading up to node.
     /// </summary>

@@ -19,8 +19,8 @@ class ActivityLogRepository
 
     public async Task InsertAsync(Guid Key, string Log, string UserName)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         await db.InsertAsync(new OrderActivityLog
         {
             UniqueID = Guid.NewGuid(),
@@ -33,9 +33,9 @@ class ActivityLogRepository
 
     public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersByUserAsync(string userName)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var queryResult = db.FromSql<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
@@ -55,9 +55,9 @@ class ActivityLogRepository
 
     public async Task<List<OrderActivityLog>> GetLatestActivityLogsOrdersAsync()
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var queryResult = db.FromSql<OrderActivityLog>(
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(
             @"SELECT TOP 100 a.[UniqueId]
                         ,a.[Key]
                         ,a.[Log]
@@ -78,8 +78,8 @@ class ActivityLogRepository
 
     public async Task<List<OrderActivityLog>> GetLogsAsync(string OrderNumber)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         return await db.FromSql<OrderActivityLog>(@"SELECT a.[UniqueId]
                       ,a.[Key]
                       ,a.[Log]
@@ -96,7 +96,7 @@ class ActivityLogRepository
 
     public async Task<List<OrderActivityLog>> GetLogsAsync(Guid uniqueId)
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
         return await db.FromSql<OrderActivityLog>(@"SELECT a.[UniqueId]
                         ,a.[Key]
                         ,a.[Log]

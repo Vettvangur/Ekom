@@ -29,11 +29,11 @@ public class ProductResponse
             // Apply Property Selectors
             if (query.PropertySelectors?.Any() == true)
             {
-                foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
+                foreach (KeyValuePair<string, string> selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
                 {
-                    var separator = query.PropertySelectorsSeparator;
+                    string separator = query.PropertySelectorsSeparator;
 
-                    var propertyValues = products
+                    List<(string Key, int)> propertyValues = products
                         .SelectMany(x => x.GetValue(selector.Key, selector.Value)?
                                                     .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
                                                     .Select(value => value.Trim())
@@ -63,9 +63,9 @@ public class ProductResponse
             {
                 long total = 0;
 
-                using var scope = Configuration.Resolver.CreateScope();
-                var searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                var searchResults = searchService?.ProductQuery(new SearchRequest
+                using IServiceScope scope = Configuration.Resolver.CreateScope();
+                ICatalogSearchService? searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+                IEnumerable<int> searchResults = searchService?.ProductQuery(new SearchRequest
                 {
                     SearchQuery = query.SearchQuery,
                     NodeTypeAlias = new[] { "ekmProduct", "ekmCategory", "ekmVariant" },
@@ -142,7 +142,7 @@ public class ProductResponse
     {
         if (orderBy == Utilities.OrderBy.TitleAsc)
         {
-            return products.OrderBy(x => x.Title);              
+            return products.OrderBy(x => x.Title);
         }
         else if (orderBy == Utilities.OrderBy.TitleDesc)
         {
@@ -186,7 +186,7 @@ public class ProductResponse
         {
             return products.OrderByDescending(x =>
             {
-                var scoreValue = x.GetValue("score");
+                string scoreValue = x.GetValue("score");
                 if (string.IsNullOrEmpty(scoreValue))
                 {
                     return double.MinValue;
@@ -205,5 +205,5 @@ public class ProductResponse
         }
 
         return products.OrderBy(x => x.SortOrder);
-    } 
+    }
 }

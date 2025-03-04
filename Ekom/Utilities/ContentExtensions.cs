@@ -1,6 +1,4 @@
 using Ekom.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Utilities
 {
@@ -17,7 +15,7 @@ namespace Ekom.Utilities
         {
             if (item.Properties.ContainsKey(field))
             {
-                var fieldValue = item.Properties.GetPropertyValue(field, storeAlias);
+                string fieldValue = item.Properties.GetPropertyValue(field, storeAlias);
 
                 return fieldValue;
             }
@@ -34,13 +32,13 @@ namespace Ekom.Utilities
         /// <returns>Property Value</returns>
         public static decimal GetPrice(this UmbracoContent item, string storeAlias, string currency = null)
         {
-            var fieldValue = item.GetValue("price", storeAlias);
+            string fieldValue = item.GetValue("price", storeAlias);
 
             if (!string.IsNullOrEmpty(fieldValue))
             {
-                var currencyValues = fieldValue.GetCurrencyValues();
+                List<CurrencyValue> currencyValues = fieldValue.GetCurrencyValues();
 
-                var value = string.IsNullOrEmpty(currency) ? currencyValues.FirstOrDefault() : currencyValues.FirstOrDefault(x => x.Currency == currency);
+                CurrencyValue? value = string.IsNullOrEmpty(currency) ? currencyValues.FirstOrDefault() : currencyValues.FirstOrDefault(x => x.Currency == currency);
 
                 return value != null ? value.Value : 0;
             }
@@ -68,7 +66,7 @@ namespace Ekom.Utilities
                 return true;
             }
 
-            var selfDisableField = item.GetValue("disable", store.Alias);
+            string selfDisableField = item.GetValue("disable", store.Alias);
 
             if (!string.IsNullOrEmpty(selfDisableField))
             {
@@ -80,17 +78,17 @@ namespace Ekom.Utilities
 
             if (item.ContentTypeAlias is not ("ekmProduct" or "ekmCategory" or "ekmProductVariantGroup"
                 or "ekmProductVariant")) return false;
-            
-            var catalogAncestors = ancestors.Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).ToList();
 
-            foreach (var ancestor in catalogAncestors)
+            List<UmbracoContent> catalogAncestors = ancestors.Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).ToList();
+
+            foreach (UmbracoContent? ancestor in catalogAncestors)
             {
                 if (ancestor != null)
                 {
-                    var disableField = ancestor.GetValue("disable", store.Alias);
+                    string disableField = ancestor.GetValue("disable", store.Alias);
 
                     if (string.IsNullOrEmpty(disableField)) continue;
-                    
+
                     if (disableField.ConvertToBool())
                     {
                         return true;
@@ -117,7 +115,7 @@ namespace Ekom.Utilities
             IStore store
             )
         {
-            var selfDisableField = item.GetValue("disable", store.Alias);
+            string selfDisableField = item.GetValue("disable", store.Alias);
 
             if (!string.IsNullOrEmpty(selfDisableField))
             {
@@ -126,18 +124,18 @@ namespace Ekom.Utilities
                     return true;
                 }
             }
-            
+
             if (item.Level > 3)
             {
-                var pathArray = item.Path.Split(',');
-                
+                string[] pathArray = item.Path.Split(',');
+
                 if (item.ContentTypeAlias == "ekmProduct" || item.ContentTypeAlias == "ekmCategory")
                 {
-                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 4);
+                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 4);
 
-                    foreach (var pathId in paths)
+                    foreach (string? pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
+                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {
@@ -148,11 +146,11 @@ namespace Ekom.Utilities
 
                 if (item.ContentTypeAlias == "ekmProductVariantGroup")
                 {
-                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 5);
+                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 5);
 
-                    foreach (var pathId in paths)
+                    foreach (string? pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
+                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {
@@ -163,11 +161,11 @@ namespace Ekom.Utilities
 
                 if (item.ContentTypeAlias == "ekmProductVariant")
                 {
-                    var paths = pathArray.Skip(3).Take(pathArray.Count() - 6);
+                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 6);
 
-                    foreach (var pathId in paths)
+                    foreach (string? pathId in paths)
                     {
-                        var category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
+                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
 
                         if (category == null)
                         {

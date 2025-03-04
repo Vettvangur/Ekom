@@ -56,18 +56,18 @@ class CheckoutService
 
             oi = new OrderInfo(o);
 
-            var model = new CompleteCheckoutEventArgs()
+            CompleteCheckoutEventArgs model = new CompleteCheckoutEventArgs()
             {
                 OrderInfo = oi,
                 StockValidation = true,
-                UpdateOrderStatus = o.OrderStatus == OrderStatus.OfflinePayment ? false: true,
+                UpdateOrderStatus = o.OrderStatus == OrderStatus.OfflinePayment ? false : true,
                 OrderData = o
             };
 
             CheckoutEvents.OnCompleteCheckout(this, model);
 
             // Currently unused
-            foreach (var job in oi.HangfireJobs)
+            foreach (string job in oi.HangfireJobs)
             {
                 Stock.Instance.CancelRollback(job);
             }
@@ -99,11 +99,11 @@ class CheckoutService
                 }
             }
 
-            foreach (var line in oi.OrderLines.Where(line => line.Discount != null))
+            foreach (IOrderLine? line in oi.OrderLines.Where(line => line.Discount != null))
             {
                 if (!string.IsNullOrEmpty(line.Coupon))
                 {
-                    var id = $"{line.Discount.Key}_{line.Coupon}";
+                    string id = $"{line.Discount.Key}_{line.Coupon}";
                     await _discountStockRepo.UpdateAsync(id, -1)
                         .ConfigureAwait(false);
                 }
@@ -120,7 +120,7 @@ class CheckoutService
                     //line.Discount?.OnCouponApply();
                 }
 #pragma warning disable CA1031 // Do not catch general exception types
-                catch (Exception ex) // Swallow all event subscriber exceptions
+                catch (Exception) // Swallow all event subscriber exceptions
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
                     //_logger.LogError(ex);
@@ -139,10 +139,10 @@ class CheckoutService
                 $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. " +
                 $"Order id: {oi?.UniqueId}");
 
-            var subject
+            string subject
                 = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                 + $"Order id: {oi?.UniqueId}";
-            var body
+            string body
                 = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}."
                 + $"Order id: {oi?.UniqueId}\r\n";
 
@@ -160,10 +160,10 @@ class CheckoutService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected checkout error");
-            var subject
+            string subject
                 = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}. "
                 + $"Order id: {oi?.UniqueId}";
-            var body
+            string body
                 = $"Unable to complete paid checkout for customer {o?.CustomerName} {o?.CustomerEmail}."
                 + $"Order id: {oi?.UniqueId}\r\n\r\n" + ex.ToString();
 
@@ -178,15 +178,15 @@ class CheckoutService
     /// <returns></returns>
     private async Task ProcessOrderLinesStockAsync(IOrderInfo order)
     {
-        foreach (var line in order.OrderLines)
+        foreach (IOrderLine line in order.OrderLines)
         {
             if (!line.Product.Backorder)
             {
                 if (line.Product.VariantGroups.Any())
                 {
-                    foreach (var variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
+                    foreach (OrderedVariant? variant in line.Product.VariantGroups.SelectMany(x => x.Variants))
                     {
-                        var variantStock = Stock.Instance.GetStock(variant.Key);
+                        decimal variantStock = Stock.Instance.GetStock(variant.Key);
 
                         if (variantStock >= line.Quantity)
                         {
@@ -206,7 +206,7 @@ class CheckoutService
                 }
                 else
                 {
-                    var productStock = Stock.Instance.GetStock(line.ProductKey);
+                    decimal productStock = Stock.Instance.GetStock(line.ProductKey);
 
                     if (productStock >= line.Quantity)
                     {

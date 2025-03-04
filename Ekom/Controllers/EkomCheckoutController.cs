@@ -53,7 +53,7 @@ public class EkomCheckoutApiController : ControllerBase
         }
 
         return Ok();
-    }    
+    }
 }
 
 /// <summary>
@@ -89,11 +89,11 @@ public class CheckoutController : ControllerBase
             {
                 return Redirect(paymentRequest.ReturnUrl + "?errorStatus=badReturnUrl");
             }
-            
-            var culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;
+
+            string culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;
             return await _checkoutControllerService.PayAsync(
-                ResponseHandler, 
-                paymentRequest, 
+                ResponseHandler,
+                paymentRequest,
                 culture);
         }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -140,7 +140,7 @@ public class CheckoutController : ControllerBase
             }
             else
             {
-                var type = stockError.IsVariant ? "variant" : "product";
+                string type = stockError.IsVariant ? "variant" : "product";
                 return Redirect(checkoutResponse.ReturnUrl +
                                 $"?errorStatus=stockError&errorType={type}&orderline=" +
                                 stockError.OrderLineKey);

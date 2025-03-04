@@ -10,7 +10,7 @@ namespace Ekom.Utilities
             {
                 return false;
             }
-            
+
             return path.Split(',').Contains(category.Id.ToString());
         }
     }

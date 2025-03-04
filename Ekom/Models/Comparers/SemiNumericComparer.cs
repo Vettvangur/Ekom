@@ -13,20 +13,20 @@ namespace Ekom.Models.Comparers
         {
             return value.Replace(".", ",", StringComparison.InvariantCulture);
         }
-        
+
         /// <inheritdoc />
         public int Compare(string s1, string s2)
         {
             const int S1GreaterThanS2 = 1;
             const int S2GreaterThanS1 = -1;
 
-            var IsDecimal1 = IsDecimal(ReplaceComma(s1));
-            var IsDecimal2 = IsDecimal(ReplaceComma(s2));
+            bool IsDecimal1 = IsDecimal(ReplaceComma(s1));
+            bool IsDecimal2 = IsDecimal(ReplaceComma(s2));
 
             if (IsDecimal1 && IsDecimal2)
             {
-                var i1 = Convert.ToDecimal(ReplaceComma(s1));
-                var i2 = Convert.ToDecimal(ReplaceComma(s2));
+                decimal i1 = Convert.ToDecimal(ReplaceComma(s1));
+                decimal i2 = Convert.ToDecimal(ReplaceComma(s2));
 
                 if (i1 > i2)
                 {

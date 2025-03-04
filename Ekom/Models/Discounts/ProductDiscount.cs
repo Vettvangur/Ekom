@@ -1,6 +1,4 @@
 using Ekom.Utilities;
-using System;
-using System.Linq;
 
 namespace Ekom.Models
 {
@@ -32,9 +30,9 @@ namespace Ekom.Models
                     return 0;
                 }
 
-                var discount = Discounts.FirstOrDefault();
+                CurrencyValue? discount = Discounts.FirstOrDefault();
 
-                var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+                CurrencyModel? currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
 
                 if (Discounts.Any(x => x.Currency == currency.CurrencyValue))
                 {
@@ -71,13 +69,13 @@ namespace Ekom.Models
             get
             {
 
-                var ranges = Properties.GetPropertyValue("startOfRange", Store.Alias).GetCurrencyValues();
+                List<CurrencyValue> ranges = Properties.GetPropertyValue("startOfRange", Store.Alias).GetCurrencyValues();
 
                 if (ranges != null && ranges.Any())
                 {
-                    var rangeItem = ranges.FirstOrDefault();
+                    CurrencyValue? rangeItem = ranges.FirstOrDefault();
 
-                    var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+                    CurrencyModel? currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
 
                     if (ranges.Any(x => x.Currency == currency.CurrencyValue))
                     {
@@ -96,13 +94,13 @@ namespace Ekom.Models
             get
             {
 
-                var ranges = Properties.GetPropertyValue("endOfRange", Store.Alias).GetCurrencyValues();
+                List<CurrencyValue> ranges = Properties.GetPropertyValue("endOfRange", Store.Alias).GetCurrencyValues();
 
                 if (ranges != null && ranges.Any())
                 {
-                    var rangeItem = ranges.FirstOrDefault();
+                    CurrencyValue? rangeItem = ranges.FirstOrDefault();
 
-                    var currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
+                    CurrencyModel? currency = CookieHelper.GetCurrencyCookieValue(Store.Currencies, Store.Alias);
 
                     if (ranges.Any(x => x.Currency == currency.CurrencyValue))
                     {

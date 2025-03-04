@@ -34,9 +34,9 @@ class StockRepository
     /// <returns></returns>
     public async Task<StockData> GetStockByUniqueIdAsync(string uniqueId)
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
 
-        var stockData = await db.StockData
+        StockData? stockData = await db.StockData
             .Where(x => x.UniqueId == uniqueId)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
@@ -46,8 +46,8 @@ class StockRepository
 
     public async Task<StockData> CreateNewStockRecordAsync(string uniqueId)
     {
-        var dateNow = DateTime.Now;
-        var stockData = new StockData
+        DateTime dateNow = DateTime.Now;
+        StockData stockData = new StockData
         {
             UniqueId = uniqueId,
             CreateDate = dateNow,
@@ -55,8 +55,8 @@ class StockRepository
         };
 
         // Run synchronously to ensure that callers can expect a db record present after method runs
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         await db.InsertAsync(stockData).ConfigureAwait(false);
 
         return stockData;
@@ -68,8 +68,8 @@ class StockRepository
     /// <returns></returns>
     public async Task<List<StockData>> GetAllStockAsync()
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         return await db.StockData.ToListAsync().ConfigureAwait(false);
     }
 
@@ -85,7 +85,7 @@ class StockRepository
     /// <returns></returns>
     public async Task<decimal> SetAsync(string uniqueId, decimal value, decimal oldValue)
     {
-        var stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
+        StockData stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
 
         if (stockDataFromRepo.Stock != oldValue)
         {
@@ -100,7 +100,7 @@ class StockRepository
         stockDataFromRepo.UpdateDate = DateTime.Now;
 
         // Called synchronously and hopefully contained by a locking construct
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
         await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
         return stockDataFromRepo.Stock;
     }
@@ -112,8 +112,8 @@ class StockRepository
     /// <exception cref="StockException"></exception>
     public async Task RollBackJob(string jobId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         string hangfireArgument = await db.FromSql<string>(
                 "SELECT Arguments FROM [HangFire].[Job] WHERE Id = @0 AND StateName = @1",
                 jobId,
@@ -124,10 +124,10 @@ class StockRepository
 
         if (!string.IsNullOrEmpty(hangfireArgument))
         {
-            var arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
+            List<string>? arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
 
-            var key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
-            var stock = Convert.ToInt32(arguments.LastOrDefault());
+            Guid key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
+            int stock = Convert.ToInt32(arguments.LastOrDefault());
 
             await API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
         }

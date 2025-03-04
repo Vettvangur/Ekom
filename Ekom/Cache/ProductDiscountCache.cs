@@ -23,15 +23,15 @@ namespace Ekom.Cache
         public override void AddReplace(UmbracoContent node)
         {
 
-            foreach (var store in _storeCache.Cache)
+            foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
             {
                 try
                 {
-                    var ancestors = nodeService.NodeAncestors(node.Id.ToString());
-                    
+                    IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
+
                     if (node.IsItemDisabled(store.Value, ancestors)) continue;
 
-                    var item = _objFac?.Create(node, store.Value)
+                    IProductDiscount? item = _objFac?.Create(node, store.Value)
                                ?? (ProductDiscount)Activator.CreateInstance(typeof(ProductDiscount), node, store.Value);
 
                     if (item == null) continue;
@@ -59,7 +59,7 @@ namespace Ekom.Cache
         {
             _logger.LogDebug("Attempting to remove product discount with key {Key}", key);
 
-            foreach (var store in _storeCache.Cache)
+            foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
             {
                 Cache[store.Value.Alias].TryRemove(key, out IProductDiscount i);
             }

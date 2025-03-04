@@ -12,9 +12,10 @@ public class ControllerRequestHelper
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public void SetEkmRequest(ICategory category) {
+    public void SetEkmRequest(ICategory category)
+    {
 
-        var categoryUrl = category.Url;
+        string categoryUrl = category.Url;
 
         if (_httpContextAccessor.HttpContext != null)
         {

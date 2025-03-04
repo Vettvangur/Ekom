@@ -22,10 +22,10 @@ namespace Ekom.Utilities
         ///     <button type = "submit" class="button">Submit</button>            
         /// }
         /// </example>
-        public static MvcForm BeginEkomForm(this IHtmlHelper htmlHelper, FormType formType, string className = null, string Id = null, Dictionary<string,object> htmlAttributes = null)
+        public static MvcForm BeginEkomForm(this IHtmlHelper htmlHelper, FormType formType, string className = null, string Id = null, Dictionary<string, object> htmlAttributes = null)
         {
-            var actionName = formType.ToString();
-            var defaultClassName = "";
+            string actionName = formType.ToString();
+            string defaultClassName = "";
 
             switch (formType)
             {
@@ -73,9 +73,9 @@ namespace Ekom.Utilities
             }
 
             className = className ?? defaultClassName;
-            
-            var form = htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
-            
+
+            MvcForm form = htmlHelper.BeginForm(actionName, "EkomOrder", null, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+
             return form;
         }
 
@@ -97,8 +97,8 @@ namespace Ekom.Utilities
         public static MvcForm BeginEkomCheckoutForm(this IHtmlHelper htmlHelper, CheckoutFormType formType, string className = null, string Id = null, Dictionary<string, object> htmlAttributes = null)
 
         {
-            var actionName = formType.ToString();
-            var defaultClassName = "";
+            string actionName = formType.ToString();
+            string defaultClassName = "";
 
             switch (formType)
             {
@@ -111,10 +111,10 @@ namespace Ekom.Utilities
 
             className = className ?? defaultClassName;
 
-            var form = htmlHelper.BeginForm(actionName, "Checkout", new { }, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+            MvcForm form = htmlHelper.BeginForm(actionName, "Checkout", new { }, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
 
             htmlHelper.ViewContext.Writer.WriteLine($"<input type='hidden' name='returnUrl' value='{htmlHelper.ViewContext.HttpContext.Request.GetDisplayUrl()}' />");
-            
+
             return form;
         }
     }

@@ -33,16 +33,16 @@ namespace Ekom.Cache
         {
             try
             {
-                var domains = umbracoService.GetDomains().ToList();
+                List<UmbracoDomain> domains = umbracoService.GetDomains().ToList();
 
-                var stopwatch = new Stopwatch();
+                Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
 
                 if (domains.Any())
                 {
-                    foreach (var d in domains)
+                    foreach (UmbracoDomain? d in domains)
                     {
                         AddOrReplaceFromCache(d.Key, d);
                     }

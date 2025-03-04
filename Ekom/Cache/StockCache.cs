@@ -1,12 +1,9 @@
 using Ekom.Exceptions;
-using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Repositories;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ekom.Cache
 {
@@ -43,15 +40,15 @@ namespace Ekom.Cache
 
         public override void FillCache()
         {
-            var stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             _logger.LogInformation("Starting to fill stock cache...");
 
-            var allStock = _stockRepo.GetAllStockAsync().Result;
-            foreach (var stock in allStock.Where(stock => stock.UniqueId.Length == 36))
+            List<StockData> allStock = _stockRepo.GetAllStockAsync().Result;
+            foreach (StockData? stock in allStock.Where(stock => stock.UniqueId.Length == 36))
             {
-                var key = Guid.Parse(stock.UniqueId);
+                Guid key = Guid.Parse(stock.UniqueId);
 
                 Cache[key] = stock;
             }

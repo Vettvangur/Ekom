@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Ekom.Models
 {
     /// <summary>
@@ -63,7 +60,7 @@ namespace Ekom.Models
         /// Product Stock Keeping Unit.
         /// </summary>
         IProductDiscount ProductDiscount(string price);
-        
+
         /// <summary>
         /// Get SKU
         /// </summary>

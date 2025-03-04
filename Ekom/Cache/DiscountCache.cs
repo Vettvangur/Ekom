@@ -1,12 +1,8 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
-using Ekom.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace Ekom.Cache
 {
@@ -37,19 +33,19 @@ namespace Ekom.Cache
         {
             int count = 0;
 
-            var curStoreCache
+            ConcurrentDictionary<Guid, IDiscount> curStoreCache
                 = Cache[store.Alias] = new ConcurrentDictionary<Guid, IDiscount>();
 
-            foreach (var r in results)
+            foreach (UmbracoContent r in results)
             {
                 try
                 {
-                    var ancestors = nodeService.NodeAncestors(r.Id.ToString());
-                    
+                    IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(r.Id.ToString());
+
                     // Traverse up parent nodes, checking disabled status and published status
                     if (r.IsItemDisabled(store, ancestors)) continue;
 
-                    var item = _objFac?.Create(r, store) ?? new Discount(r, store);
+                    IDiscount item = _objFac?.Create(r, store) ?? new Discount(r, store);
 
                     count++;
 
@@ -74,16 +70,16 @@ namespace Ekom.Cache
         /// </summary>
         public override void AddReplace(UmbracoContent node)
         {
-            foreach (var store in _storeCache.Cache)
+            foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
             {
                 try
                 {
-                    var ancestors = nodeService.NodeAncestors(node.Id.ToString());
+                    IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
 
                     if (!node.IsItemDisabled(store.Value, ancestors))
                     {
 
-                        var item = _objFac?.Create(node, store.Value)
+                        IDiscount item = _objFac?.Create(node, store.Value)
                             ?? new Discount(node, store.Value);
 
                         Cache[store.Value.Alias][node.Key] = item;
@@ -109,7 +105,7 @@ namespace Ekom.Cache
         {
             _logger.LogDebug("Attempting to remove discount with key {Key}", key);
 
-            foreach (var store in _storeCache.Cache)
+            foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
             {
                 Cache[store.Value.Alias].TryRemove(key, out _);
             }

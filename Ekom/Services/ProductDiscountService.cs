@@ -20,7 +20,7 @@ class ProductDiscountService
 
         if (decimal.TryParse(inputPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
         {
-            var applicableDiscounts = new List<IProductDiscount>();
+            List<IProductDiscount> applicableDiscounts = new List<IProductDiscount>();
 
             // If no discounts are available in cache
             if (!_productDiscountCache.Cache[storeAlias].Values.Any())
@@ -28,14 +28,14 @@ class ProductDiscountService
                 return null;
             }
 
-            foreach (var discount in _productDiscountCache.Cache[storeAlias])
+            foreach (KeyValuePair<Guid, IProductDiscount> discount in _productDiscountCache.Cache[storeAlias])
             {
                 if (discount.Value.Disabled)
                 {
                     continue;
                 }
 
-                var disc = discount.Value as Discount;
+                Discount? disc = discount.Value as Discount;
 
                 if (!string.IsNullOrEmpty(path)
                 && path.Split(',').Intersect(disc.DiscountItems).Any()
@@ -50,13 +50,13 @@ class ProductDiscountService
             {
                 return null;
             }
-            
-            var bestFixedKey = Guid.Empty;
-            var bestPercentageDiscount = Guid.Empty;
+
+            Guid bestFixedKey = Guid.Empty;
+            Guid bestPercentageDiscount = Guid.Empty;
             decimal bestPercentageDiscountValue = 0;
             decimal bestFixedDiscountValue = 0;
 
-            foreach (var usableDiscount in applicableDiscounts)
+            foreach (IProductDiscount usableDiscount in applicableDiscounts)
             {
                 if (usableDiscount.Type == DiscountType.Fixed)
                 {
@@ -91,7 +91,7 @@ class ProductDiscountService
             }
             else
             {
-                var eef = Math.Abs(bestFixedDiscountValue / price) * 100;
+                decimal eef = Math.Abs(bestFixedDiscountValue / price) * 100;
                 if (Math.Abs(((bestFixedDiscountValue / price) * 100)) > bestPercentageDiscountValue)
                 {
                     return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);

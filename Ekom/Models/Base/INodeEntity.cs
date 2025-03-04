@@ -1,5 +1,4 @@
 using Ekom.Models.Umbraco;
-using Newtonsoft.Json;
 
 namespace Ekom.Models
 {
@@ -83,8 +82,8 @@ namespace Ekom.Models
         /// <value>
         /// Boolean if node varies by culture
         /// </value>
-        bool VariesByCulture { get; } 
-        
+        bool VariesByCulture { get; }
+
 
         /// <summary>
         /// Path for the node

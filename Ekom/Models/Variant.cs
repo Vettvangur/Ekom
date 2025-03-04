@@ -40,7 +40,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             //TODO Store default setup!
 
-            var backOrderValue = GetValue("enableBackorder", Store.Alias);
+            string backOrderValue = GetValue("enableBackorder", Store.Alias);
 
             return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
         }
@@ -66,7 +66,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            var product = Catalog.Instance.GetProduct(ProductId, Store.Alias);
+            IProduct? product = Catalog.Instance.GetProduct(ProductId, Store.Alias);
 
             if (product == null)
             {
@@ -146,7 +146,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
             {
-                var originalPrice = GetValue("price", Store.Alias);
+                string originalPrice = GetValue("price", Store.Alias);
 
                 if (string.IsNullOrEmpty(originalPrice))
                 {
@@ -160,8 +160,8 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
                 if (originalPrice.IsJson())
                 {
-                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                    var val = orgPrice?.FirstOrDefault()?.Price;
+                    List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
 
                     if (val.HasValue)
                     {
@@ -188,7 +188,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            var prices = Properties.GetPropertyValue("price", Store.Alias)
+            List<IPrice> prices = Properties.GetPropertyValue("price", Store.Alias)
                 .GetPriceValues(
                     Store.Currencies,
                     Vat,
@@ -199,9 +199,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                     Product.Categories.Select(x => x.Id.ToString()).ToArray()
                     );
 
-            foreach (var p in prices.Where(x => x.OriginalValue == 0).ToList())
+            foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
             {
-                var index = prices.IndexOf(p);
+                int index = prices.IndexOf(p);
 
                 prices[index] = Product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
 
@@ -232,9 +232,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         {
             return (IEnumerable<Image>)_cache.GetOrAdd("Images", key =>
             {
-                var _images = GetValue(Configuration.Instance.CustomImage);
+                string _images = GetValue(Configuration.Instance.CustomImage);
 
-                var imageNodes = _images.GetImages();
+                IEnumerable<Image> imageNodes = _images.GetImages();
 
                 return imageNodes;
             });
@@ -249,12 +249,12 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         int categoryId = Convert.ToInt32(PathArray[PathArray.Length - 4]);
 
-        var categoryField = Properties.Any(x => x.Key == "categories") ?
+        string categoryField = Properties.Any(x => x.Key == "categories") ?
                             GetValue("categories") : "";
 
-        var categories = new List<ICategory>();
+        List<ICategory> categories = new List<ICategory>();
 
-        var primaryCategory = API.Catalog.Instance.GetCategory(categoryId, Store.Alias);
+        ICategory? primaryCategory = API.Catalog.Instance.GetCategory(categoryId, Store.Alias);
 
         if (primaryCategory != null)
         {
@@ -263,13 +263,13 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
         if (!string.IsNullOrEmpty(categoryField))
         {
-            var categoryIds = categoryField.Split(',');
+            string[] categoryIds = categoryField.Split(',');
 
-            foreach (var catId in categoryIds)
+            foreach (string catId in categoryIds)
             {
-                var intCatId = Convert.ToInt32(catId);
+                int intCatId = Convert.ToInt32(catId);
 
-                var categoryItem
+                ICategory? categoryItem
                     = Catalog.Instance.GetCategory(intCatId, Store.Alias);
 
                 if (categoryItem != null && !categories.Contains(categoryItem))

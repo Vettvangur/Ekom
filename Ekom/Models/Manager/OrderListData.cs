@@ -11,8 +11,8 @@ namespace Ekom.Models.Manager
 
             if (orders != null && orders.Any())
             {
-                var _grandTotal = totals.TotalAmount;
-                var _averageAmount = totals.AverageAmount;
+                decimal _grandTotal = totals.TotalAmount;
+                decimal _averageAmount = totals.AverageAmount;
                 this.GrandTotal = string.Format(Configuration.IsCultureInfo, "{0:C}", _grandTotal) + "";
                 this.AverageAmount = string.Format(Configuration.IsCultureInfo, "{0:C}", _averageAmount) + "";
             }
@@ -25,7 +25,8 @@ namespace Ekom.Models.Manager
         public int Count { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 30;
-        public int TotalPages {
+        public int TotalPages
+        {
             get
             {
                 return (Count + PageSize - 1) / PageSize;

@@ -8,8 +8,8 @@ public class Metafield
 {
     public Metafield(UmbracoContent x)
     {
-        var titleValues = JsonConvert.DeserializeObject<PropertyValue>(x.GetValue("title"));
-        var values = x.GetValue("values");
+        PropertyValue? titleValues = JsonConvert.DeserializeObject<PropertyValue>(x.GetValue("title"));
+        string values = x.GetValue("values");
 
         Id = x.Id;
         Key = x.Key;
@@ -25,9 +25,9 @@ public class Metafield
 
         if (!string.IsNullOrEmpty(values))
         {
-            var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
+            List<MetafieldValues>? _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
 
-            var orderedValues = _values
+            List<MetafieldValues> orderedValues = _values
                 .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
 
             Values = orderedValues;

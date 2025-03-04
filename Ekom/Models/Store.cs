@@ -47,13 +47,13 @@ namespace Ekom.Models
         {
             get
             {
-                var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
 
-                var culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+                CultureInfo? culture = httpContext?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
 
                 if (culture != null)
                 {
-                    var c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
+                    CultureInfo? c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
 
                     if (c != null)
                     {
@@ -70,14 +70,14 @@ namespace Ekom.Models
             {
                 if (!Properties.ContainsKey("cultures"))
                 {
-                    var ci = new CultureInfo(Properties["culture"]);
+                    CultureInfo ci = new CultureInfo(Properties["culture"]);
 
                     ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
 
                     return new List<CultureInfo>() { ci };
                 }
 
-                var cultures = Properties["cultures"];
+                string cultures = Properties["cultures"];
 
                 return cultures.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
             }
@@ -115,7 +115,7 @@ namespace Ekom.Models
             get
             {
                 // Retrieve the currency property value once
-                Properties.TryGetValue("currency", out var currencyJson);
+                Properties.TryGetValue("currency", out string? currencyJson);
 
                 // Check if the value is JSON array format
                 if (!string.IsNullOrEmpty(currencyJson) && currencyJson.Contains("["))
@@ -132,7 +132,7 @@ namespace Ekom.Models
         {
             try
             {
-                var deserializedList = JsonConvert.DeserializeObject<List<CurrencyModel>>(json);
+                List<CurrencyModel>? deserializedList = JsonConvert.DeserializeObject<List<CurrencyModel>>(json);
                 if (deserializedList != null)
                 {
                     return deserializedList;
@@ -149,7 +149,7 @@ namespace Ekom.Models
         private List<CurrencyModel> CreateDefaultCurrencyList(string currency)
         {
             // Use the currency value if available, otherwise default to Culture
-            var currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.ToString();
+            string currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.ToString();
 
             return new List<CurrencyModel>
             {
@@ -182,7 +182,7 @@ namespace Ekom.Models
         {
             if (item.Properties.HasPropertyValue("storeRootNode"))
             {
-                var storeRootNodeUdi = item.GetValue("storeRootNode");
+                string storeRootNodeUdi = item.GetValue("storeRootNode");
 
                 Url = nodeService.GetUrl(storeRootNodeUdi);
                 StoreRootNode = nodeService.NodeById(storeRootNodeUdi);

@@ -1,8 +1,5 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Ekom.Utilities
 {
@@ -23,7 +20,8 @@ namespace Ekom.Utilities
             else if (token.Type == JTokenType.Object)
             {
                 return new List<T> { (T)(object)token.ToString() };
-            } else
+            }
+            else
             {
                 return new List<T> { token.ToObject<T>() };
             }

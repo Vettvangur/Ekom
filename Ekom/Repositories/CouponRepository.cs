@@ -35,8 +35,8 @@ class CouponRepository
         if (!await CouponCodeExistAsync(couponData.CouponCode)
             .ConfigureAwait(false))
         {
-            await using var db = _databaseFactory.GetDatabase();
-            
+            await using DbContext db = _databaseFactory.GetDatabase();
+
             await db.InsertAsync(couponData)
                 .ConfigureAwait(false);
 
@@ -50,8 +50,8 @@ class CouponRepository
 
     public async Task UpdateCouponAsync(CouponData couponData)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
+        await using DbContext db = _databaseFactory.GetDatabase();
+
         await db.UpdateAsync(couponData)
             .ConfigureAwait(false);
 
@@ -60,13 +60,13 @@ class CouponRepository
 
     public async Task RemoveCouponAsync(Guid discountId, string couponCode)
     {
-        var coupon = await GetCouponAsync(discountId, couponCode)
+        CouponData coupon = await GetCouponAsync(discountId, couponCode)
                 .ConfigureAwait(false);
 
         if (coupon != null)
         {
-            await using var db = _databaseFactory.GetDatabase();
-            
+            await using DbContext db = _databaseFactory.GetDatabase();
+
             await db.DeleteAsync(coupon)
                 .ConfigureAwait(false);
 
@@ -81,9 +81,9 @@ class CouponRepository
 
     public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        
-        var data = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        CouponData? data = await db.CouponData
             .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
@@ -92,8 +92,8 @@ class CouponRepository
 
     public async Task<CouponData> GetCouponByKeyAsync(Guid key)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var data = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+        CouponData? data = await db.CouponData
             .Where(x => x.CouponKey == key)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
@@ -102,8 +102,8 @@ class CouponRepository
 
     public async Task<CouponData> GetCouponByCodeAsync(string couponCode)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var data = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+        CouponData? data = await db.CouponData
             .Where(x => x.CouponCode == couponCode)
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
@@ -113,9 +113,9 @@ class CouponRepository
 
     public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
     {
-        await using var db = _databaseFactory.GetDatabase();
+        await using DbContext db = _databaseFactory.GetDatabase();
 
-        var totalCount = await db.CouponData
+        int totalCount = await db.CouponData
             .Where(x => x.DiscountId == discountId)
             .Where(x => string.IsNullOrEmpty(query) || x.CouponCode.Contains(query, StringComparison.InvariantCultureIgnoreCase))
             .CountAsync()
@@ -127,7 +127,7 @@ class CouponRepository
         // Calculate the number of records to skip
         int skip = (page - 1) * pageSize;
 
-        var data = await db.CouponData
+        List<CouponData> data = await db.CouponData
             .Where(x => x.DiscountId == discountId)
             .Where(x => string.IsNullOrEmpty(query) || x.CouponCode.Contains(query, StringComparison.InvariantCultureIgnoreCase))
             .OrderByDescending(x => x.Date) // Ensure to order the data before applying Skip and Take
@@ -135,14 +135,14 @@ class CouponRepository
             .Take(pageSize)
             .ToListAsync()
             .ConfigureAwait(false);
-        
+
         return (data, totalPages);
     }
 
     public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var data = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<CouponData> data = await db.CouponData
             .Where(x => x.DiscountId == discountId)
             .ToListAsync()
             .ConfigureAwait(false);
@@ -151,10 +151,10 @@ class CouponRepository
 
     public async Task DeleteCouponsByDiscountAsync(Guid discountId)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var coupons = await GetCouponsForDiscountAsync(discountId).ConfigureAwait(false);
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<CouponData> coupons = await GetCouponsForDiscountAsync(discountId).ConfigureAwait(false);
 
-        foreach (var coupon in coupons)
+        foreach (CouponData coupon in coupons)
         {
             await db.DeleteAsync(coupon).ConfigureAwait(false);
 
@@ -163,8 +163,8 @@ class CouponRepository
     }
     public async Task<bool> DiscountHasCouponAsync(Guid discountId, string couponCode)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var query = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<CouponData> query = await db.CouponData
             .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
             .ToListAsync()
             .ConfigureAwait(false);
@@ -174,8 +174,8 @@ class CouponRepository
 
     public async Task<bool> CouponCodeExistAsync(string couponCode)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var query = await db.CouponData
+        await using DbContext db = _databaseFactory.GetDatabase();
+        List<CouponData> query = await db.CouponData
             .Where(x => x.CouponCode == couponCode)
             .ToListAsync()
             .ConfigureAwait(false);
@@ -185,8 +185,8 @@ class CouponRepository
 
     public async Task MarkUsedAsync(string couponCode)
     {
-        await using var db = _databaseFactory.GetDatabase();
-        var coupon = await GetCouponByCodeAsync(couponCode)
+        await using DbContext db = _databaseFactory.GetDatabase();
+        CouponData? coupon = await GetCouponByCodeAsync(couponCode)
             .ConfigureAwait(false);
 
         if (coupon != null)
@@ -216,11 +216,11 @@ class CouponRepository
 
     public void RefreshDiscountCache(CouponData coupon)
     {
-        var orderDiscountCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmOrderDiscount");
+        Cache.ICache? orderDiscountCache = _config.CacheList.Value.FirstOrDefault(x => !string.IsNullOrEmpty(x.NodeAlias) && x.NodeAlias == "ekmOrderDiscount");
 
         if (orderDiscountCache == null) return;
         // Content service is always null. need to FIX
-        var discountNode = _nodeService.NodeById(coupon.DiscountId);
+        UmbracoContent discountNode = _nodeService.NodeById(coupon.DiscountId);
 
         if (discountNode != null)
         {

@@ -55,23 +55,24 @@ class OrderLine : IOrderLine
 
             if (Product.VariantGroups != null && Product.VariantGroups.Any())
             {
-                var variants = Product.VariantGroups.SelectMany(x => x.Variants);
+                IEnumerable<OrderedVariant> variants = Product.VariantGroups.SelectMany(x => x.Variants);
 
-                foreach (var v in variants)
+                foreach (OrderedVariant? v in variants)
                 {
-                    var variantDiscount = v.Price.Discount;
+                    OrderedDiscount? variantDiscount = v.Price.Discount;
 
                     if (v.Price.Discount != null)
                     {
                         _price += (v.Price.Value - _price);
-                    } else
+                    }
+                    else
                     {
                         _price += (v.Price.OriginalValue - _price);
                     }
                 }
             }
 
-             OrderedDiscount? discount = null;
+            OrderedDiscount? discount = null;
             // This allows us to display discounted prices of orderlines
             // when the order has a global discount applying only to specific DiscountItems
             if ((OrderInfo.Discount != null && OrderInfo.Discount.Stackable && Product.Price.Discount == null) && OrderInfo?.Discount?.DiscountItems.Any() == true)
@@ -93,11 +94,11 @@ class OrderLine : IOrderLine
     {
         get
         {
-            var variantGroup = Product.VariantGroups.FirstOrDefault(x => x.Properties.ContainsKey("vat"));
+            OrderedVariantGroup? variantGroup = Product.VariantGroups.FirstOrDefault(x => x.Properties.ContainsKey("vat"));
 
             if (variantGroup != null && !string.IsNullOrEmpty(variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias)))
             {
-                var vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
+                string vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
                 return Convert.ToDecimal(vatVal) / 100;
             }
             else

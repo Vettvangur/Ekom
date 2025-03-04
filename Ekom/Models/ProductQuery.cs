@@ -26,10 +26,10 @@ public class ProductQuery : ProductQueryBase
 
         SearchQuery = !string.IsNullOrEmpty(SearchQuery) ?
             SearchQuery :
-            (query.TryGetValue("q", out var sq) ? sq.FirstOrDefault() : string.Empty);
+            (query.TryGetValue("q", out Microsoft.Extensions.Primitives.StringValues sq) ? sq.FirstOrDefault() : string.Empty);
 
 
-        
+
         Page = Page ??
             (int.TryParse(query["page"], out int page) ? page :
             (int.TryParse(query["p"], out page) ? page : 1));
@@ -56,7 +56,7 @@ public class ProductQuery : ProductQueryBase
         set
         {
             // Check the query string for 'orderby', otherwise use the passed value
-            if (_query != null && _query.TryGetValue("orderby", out var orderByValue) &&
+            if (_query != null && _query.TryGetValue("orderby", out Microsoft.Extensions.Primitives.StringValues orderByValue) &&
                 !string.IsNullOrEmpty(orderByValue) &&
                 Enum.TryParse(orderByValue, true, out OrderBy parsedOrderBy))
             {

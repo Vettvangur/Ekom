@@ -57,7 +57,7 @@ public partial class EkomOrderController : ControllerBase
             //    variantIds.Add(request.variantId.Value);
             //}
 
-            var orderInfo = await Order.Instance.AddOrderLineAsync(
+            IOrderInfo orderInfo = await Order.Instance.AddOrderLineAsync(
                 request.productId,
                 request.quantity,
                 request.storeAlias,
@@ -71,7 +71,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -102,13 +102,13 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var order = await Order.Instance.GetOrderAsync(orderId);
+            IOrderInfo order = await Order.Instance.GetOrderAsync(orderId);
 
             return order ?? throw new HttpResponseException(HttpStatusCode.NotFound);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -129,13 +129,13 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var order = await Order.Instance.GetOrderAsync(storeAlias);
+            IOrderInfo order = await Order.Instance.GetOrderAsync(storeAlias);
 
             return order ?? throw new HttpResponseException(HttpStatusCode.NotFound);
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -156,7 +156,7 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var order = await Order.Instance.GetOrderAsync(storeAlias);
+            IOrderInfo order = await Order.Instance.GetOrderAsync(storeAlias);
 
             if (order != null)
             {
@@ -167,7 +167,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -250,10 +250,10 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var form = Request.Form;
-            var keys = form.Keys;
+            Microsoft.AspNetCore.Http.IFormCollection form = Request.Form;
+            ICollection<string> keys = form.Keys;
 
-            var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
+            IOrderInfo orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
                 keys.ToDictionary(
                     k => k,
                     v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
@@ -263,7 +263,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -284,20 +284,20 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var form = Request.Form;
-            var keys = form.Keys;
+            Microsoft.AspNetCore.Http.IFormCollection form = Request.Form;
+            ICollection<string> keys = form.Keys;
 
-            var customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
+            Dictionary<string, string> customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
                 k => k,
                 v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
-            var orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, customData);
+            IOrderInfo orderInfo = await Order.Instance.UpdateShippingInformationAsync(ShippingProvider, storeAlias, customData);
 
             return orderInfo;
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -318,10 +318,10 @@ public partial class EkomOrderController : ControllerBase
     {
         try
         {
-            var form = Request.Form;
-            var keys = form.Keys;
+            Microsoft.AspNetCore.Http.IFormCollection form = Request.Form;
+            ICollection<string> keys = form.Keys;
 
-            var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
+            IOrderInfo orderInfo = await Order.Instance.UpdatePaymentInformationAsync(PaymentProvider, storeAlias, keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCultureIgnoreCase)).ToDictionary(
                     k => k,
                     v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])));
 
@@ -329,7 +329,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -352,7 +352,7 @@ public partial class EkomOrderController : ControllerBase
         {
             throw new HttpResponseException(HttpStatusCode.BadRequest);
         }
-        
+
         if (string.IsNullOrEmpty(model.storeAlias))
         {
             throw new HttpResponseException(HttpStatusCode.BadRequest);
@@ -360,13 +360,13 @@ public partial class EkomOrderController : ControllerBase
 
         try
         {
-            var orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias);
+            IOrderInfo orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias);
 
             return orderInfo;
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -397,13 +397,13 @@ public partial class EkomOrderController : ControllerBase
 
         try
         {
-            var orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias);
+            IOrderInfo orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias);
 
             return orderInfo;
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -422,9 +422,9 @@ public partial class EkomOrderController : ControllerBase
     [Route("currency")]
     public async Task<IOrderInfo?> ChangeCurrency(string currency)
     {
-        var store = API.Store.Instance.GetStore();
+        IStore? store = API.Store.Instance.GetStore();
 
-        var orderInfo = await Order.Instance.GetOrderAsync(store.Alias);
+        IOrderInfo? orderInfo = await Order.Instance.GetOrderAsync(store.Alias);
 
         if (orderInfo != null)
         {
@@ -458,7 +458,7 @@ public partial class EkomOrderController : ControllerBase
         {
             if (string.IsNullOrEmpty(model.coupon))
             {
-                var resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
+                HttpResponseMessage resp = new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent("Coupon code can not be empty"),
                 };
@@ -478,7 +478,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;
@@ -503,7 +503,7 @@ public partial class EkomOrderController : ControllerBase
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            var r = ExceptionHandler.Handle<HttpResponseException>(ex);
+            HttpResponseException r = ExceptionHandler.Handle<HttpResponseException>(ex);
             if (r != null)
             {
                 throw r;

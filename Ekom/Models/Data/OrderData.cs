@@ -1,7 +1,5 @@
 using Ekom.Utilities;
 using LinqToDB.Mapping;
-using System;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 namespace Ekom.Models
@@ -51,7 +49,7 @@ namespace Ekom.Models
         [Column(IsColumn = false)]
         public OrderStatus OrderStatus
         {
-            get { return (OrderStatus) Enum.Parse(typeof(OrderStatus), OrderStatusCol); }
+            get { return (OrderStatus)Enum.Parse(typeof(OrderStatus), OrderStatusCol); }
             set { OrderStatusCol = value.ToString(); }
         }
 
@@ -61,7 +59,8 @@ namespace Ekom.Models
         [Column(IsColumn = false)]
         public string FormattedTotal
         {
-            get {
+            get
+            {
 
                 string currencyCode = "ISK";
 

@@ -88,12 +88,12 @@ public class Store
 
     public void RefreshCache()
     {
-        foreach (var cacheEntry in _config.CacheList.Value)
+        foreach (ICache cacheEntry in _config.CacheList.Value)
         {
             cacheEntry.FillCache();
         }
 
-        var stockCache = _config.PerStoreStock
+        ICache? stockCache = _config.PerStoreStock
             ? Configuration.Resolver.GetService<IPerStoreCache<StockData>>()
             : Configuration.Resolver.GetService<IBaseCache<StockData>>()
                 as ICache;

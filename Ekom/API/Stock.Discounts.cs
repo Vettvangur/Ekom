@@ -15,7 +15,7 @@ public partial class Stock
     /// <returns></returns>
     public async Task<int> GetDiscountStockAsync(Guid key, string coupon = null)
     {
-        var stockData = await GetDiscountStockDataAsync(key, coupon)
+        DiscountStockData stockData = await GetDiscountStockDataAsync(key, coupon)
             .ConfigureAwait(false);
 
         return stockData.Stock;
@@ -29,7 +29,7 @@ public partial class Stock
     /// <returns></returns>
     public async Task<DiscountStockData> GetDiscountStockDataAsync(Guid key, string coupon = null)
     {
-        var id = coupon == null ? key.ToString() : $"{key}_{coupon}";
+        string id = coupon == null ? key.ToString() : $"{key}_{coupon}";
 
         return await GetDiscountStockDataAsync(id).ConfigureAwait(false);
     }
@@ -55,7 +55,7 @@ public partial class Stock
     /// <returns></returns>
     public async Task UpdateDiscountStockAsync(Guid key, int value, string coupon = null)
     {
-        var id = coupon == null ? key.ToString() : $"{key}_{coupon}";
+        string id = coupon == null ? key.ToString() : $"{key}_{coupon}";
 
         await UpdateDiscountStockAsync(id, value).ConfigureAwait(false);
     }
@@ -104,7 +104,7 @@ public partial class Stock
         await UpdateDiscountStockAsync(key, value, coupon)
             .ConfigureAwait(false);
 
-        var jobId = Hangfire.BackgroundJob.Schedule(() =>
+        string jobId = Hangfire.BackgroundJob.Schedule(() =>
             UpdateDiscountStockHangfire(key, -value),
             timeSpan
         );

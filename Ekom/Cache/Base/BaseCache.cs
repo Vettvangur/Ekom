@@ -74,18 +74,18 @@ namespace Ekom.Cache
 
             _logger.LogDebug("Starting to fill...");
 
-            var count = 0;
+            int count = 0;
 
-            var results = nodeService.NodesByTypes(NodeAlias);
+            IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
 
-            foreach (var r in results)
+            foreach (UmbracoContent r in results)
             {
                 try
                 {
                     // Traverse up parent nodes, checking only published status
                     //if (!r.IsItemUnpublished())
                     //{
-                    var item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
+                    TItem? item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
 
                     if (item != null)
                     {
@@ -115,7 +115,7 @@ namespace Ekom.Cache
         {
             if (!nodeService.IsItemUnpublished(content))
             {
-                var item = (TItem)(_objFac?.Create(content) ?? Activator.CreateInstance(typeof(TItem), content));
+                TItem? item = (TItem)(_objFac?.Create(content) ?? Activator.CreateInstance(typeof(TItem), content));
 
                 if (item != null) AddOrReplaceFromCache(content.Key, item);
             }

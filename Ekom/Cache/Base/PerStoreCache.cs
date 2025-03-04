@@ -73,23 +73,23 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
         if (!string.IsNullOrEmpty(NodeAlias))
         {
-            var stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             _logger.LogDebug("Starting to fill per store cache for {NodeAlias}...", NodeAlias);
 
             int count = 0;
-            
+
             try
             {
-              
-                var results = nodeService.NodesByTypes(NodeAlias).ToList();
+
+                List<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias).ToList();
 
                 _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
                 if (storeParam == null) // Startup initialization
                 {
-                    foreach (var store in _storeCache.Cache.Select(x => x.Value))
+                    foreach (IStore? store in _storeCache.Cache.Select(x => x.Value))
                     {
                         count += FillStoreCache(store, results, NodeAlias);
                     }
@@ -130,24 +130,24 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     {
         int count = 0;
 
-        var curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
+        ConcurrentDictionary<Guid, TItem> curStoreCache = Cache[store.Alias] = new ConcurrentDictionary<Guid, TItem>();
 
-        var timer = new LoopTimer(results.Count, _logger, nodeAlias);
+        LoopTimer timer = new LoopTimer(results.Count, _logger, nodeAlias);
 
-        foreach (var r in results)
+        foreach (UmbracoContent r in results)
         {
             timer.StartIteration();
 
             try
             {
-                var isDisabled = r.IsItemDisabled(store);
+                bool isDisabled = r.IsItemDisabled(store);
 
                 if (isDisabled)
                 {
                     continue;
                 }
 
-                var item = _objFac?.Create(r, store)
+                TItem? item = _objFac?.Create(r, store)
                            ?? (TItem)Activator.CreateInstance(typeof(TItem), r, store);
 
                 if (item != null)
@@ -168,7 +168,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
             timer.EndIteration();
         }
-        
+
 
         return count;
     }
@@ -188,26 +188,26 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// </summary>
     public void AddOrReplaceFromAllCaches(UmbracoContent node)
     {
-        foreach (var store in _storeCache.Cache)
+        foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
         {
             try
             {
-                var ancestors = nodeService.NodeAncestors(node.Id.ToString());
+                IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
 
-                var isDisabled = node.IsItemDisabled(store.Value, ancestors);
+                bool isDisabled = node.IsItemDisabled(store.Value, ancestors);
 
                 if (isDisabled)
                 {
                     Cache[store.Value.Alias].TryRemove(node.Key, out _);
                     continue;
                 }
-       
-                var item = _objFac?.Create(node, store.Value)
+
+                TItem? item = _objFac?.Create(node, store.Value)
                     ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
 
                 if (item != null) Cache[store.Value.Alias][node.Key] = item;
-                
- 
+
+
             }
             catch (Exception ex) // Skip on fail
             {
@@ -224,7 +224,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// </summary>
     public void RemoveItemFromAllCaches(Guid id)
     {
-        foreach (var store in _storeCache.Cache)
+        foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
         {
             Cache[store.Value.Alias].TryRemove(id, out _);
         }

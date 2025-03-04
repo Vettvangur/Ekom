@@ -31,20 +31,20 @@ namespace Ekom.Cache
         /// <inheritdoc />
         public void FillCache()
         {
-            var stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             _logger.LogInformation("Starting to fill coupon cache...");
 
-            var orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
+            List<UmbracoContent> orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
 
             List<CouponData> allCoupons;
-            using (var db = _databaseFactory.GetDatabase())
+            using (Repositories.DbContext db = _databaseFactory.GetDatabase())
             {
                 allCoupons = db.CouponData.ToList();
             }
 
-            foreach (var coupon in allCoupons)
+            foreach (CouponData coupon in allCoupons)
             {
                 if (orderDiscountNodes.Any(x => x.Key == coupon.DiscountId))
                 {

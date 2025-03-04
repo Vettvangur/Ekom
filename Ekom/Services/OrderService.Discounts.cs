@@ -4,10 +4,6 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Ekom.Services
 {
@@ -28,7 +24,7 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
             if (orderInfo.Discount?.Key == discount.Key)
             {
@@ -40,7 +36,7 @@ namespace Ekom.Services
                 throw new DiscountDuplicateException($"Can't add the same discount to order twice.");
             }
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
@@ -120,9 +116,9 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
@@ -201,16 +197,16 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var orderLine
+                OrderLine? orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
                     as OrderLine;
 
@@ -252,16 +248,16 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var orderLine
+                OrderLine? orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
                     as OrderLine;
 
@@ -356,7 +352,7 @@ namespace Ekom.Services
                         // It's possible that there exist previous OrderLine's that the ProductDiscount applies to
                         // in that case we assume this new orderline tipped the calculation in favor of this given ProductDiscount
                         // and that the older lines are missing this new about to be applied ProductDiscount (since the OrderInfo one was inclusive)
-                        foreach (var line in orderInfo.orderLines)
+                        foreach (OrderLine line in orderInfo.orderLines)
                         {
                             if (IsDiscountApplicable(orderInfo, line, discount))
                             {
@@ -392,16 +388,16 @@ namespace Ekom.Services
                 settings = new DiscountOrderSettings();
             }
 
-            var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-            var semaphore = GetOrderLock(orderInfo);
+            SemaphoreSlim semaphore = GetOrderLock(orderInfo);
             if (!settings.IsEventHandler)
             {
                 await semaphore.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var orderLine
+                OrderLine? orderLine
                     = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
                     as OrderLine;
 
@@ -444,11 +440,11 @@ namespace Ekom.Services
             // in those cases the ChargedAmount will stay the same.
             if (orderInfo.Discount == null && !discount.Stackable && !discount.GlobalDiscount)
             {
-                var oldTotal = orderInfo.ChargedAmount.Value;
+                decimal oldTotal = orderInfo.ChargedAmount.Value;
 
                 orderInfo.Discount = new OrderedDiscount(discount);
 
-                var result = orderInfo.ChargedAmount.Value < oldTotal;
+                bool result = orderInfo.ChargedAmount.Value < oldTotal;
 
                 orderInfo.Discount = null;
 
@@ -462,12 +458,12 @@ namespace Ekom.Services
 
             if (discount is IProductDiscount productDiscount)
             {
-                var oldTotal = orderInfo.ChargedAmount.Value;
+                decimal oldTotal = orderInfo.ChargedAmount.Value;
 
                 // Save original discounts
-                var prevOrderDiscount = orderInfo.Discount;
-                var prevDiscounts = new List<OrderedDiscount>();
-                foreach (var line in orderInfo.orderLines)
+                OrderedDiscount prevOrderDiscount = orderInfo.Discount;
+                List<OrderedDiscount> prevDiscounts = new List<OrderedDiscount>();
+                foreach (OrderLine line in orderInfo.orderLines)
                 {
                     prevDiscounts.Add(line.Discount);
 
@@ -481,11 +477,11 @@ namespace Ekom.Services
                 // This ignoring happens for comparison reasons and is explained in ChargedAmount.
                 orderInfo.Discount = null;
                 // Compare
-                var result = orderInfo.ChargedAmount.Value < oldTotal;
+                bool result = orderInfo.ChargedAmount.Value < oldTotal;
 
                 // Reset to previous discounts
                 orderInfo.Discount = prevOrderDiscount;
-                for (var x = 0; x < orderInfo.OrderLines.Count; x++)
+                for (int x = 0; x < orderInfo.OrderLines.Count; x++)
                 {
                     orderInfo.orderLines[x].Discount = prevDiscounts.ElementAt(x);
                 }
@@ -501,12 +497,12 @@ namespace Ekom.Services
                 //    return discount.CompareTo(orderInfo.Discount) > 0;
                 //}
 
-                var oldDiscount = orderInfo.Discount;
-                var oldTotal = orderInfo.ChargedAmount.Value;
+                OrderedDiscount oldDiscount = orderInfo.Discount;
+                decimal oldTotal = orderInfo.ChargedAmount.Value;
 
                 orderInfo.Discount = new OrderedDiscount(discount);
 
-                var result = orderInfo.ChargedAmount.Value < oldTotal;
+                bool result = orderInfo.ChargedAmount.Value < oldTotal;
 
                 orderInfo.Discount = oldDiscount;
 
@@ -533,12 +529,12 @@ namespace Ekom.Services
                 return discount.CompareTo(orderLine.Discount) > 0;
             }
 
-            var oldDiscount = orderLine.Discount;
-            var oldTotal = orderLine.Amount;
+            OrderedDiscount oldDiscount = orderLine.Discount;
+            IPrice oldTotal = orderLine.Amount;
 
             orderLine.Discount = new OrderedDiscount(discount);
 
-            var result = orderLine.Amount.Value < oldTotal.Value;
+            bool result = orderLine.Amount.Value < oldTotal.Value;
 
             orderLine.Discount = oldDiscount;
 
@@ -552,8 +548,8 @@ namespace Ekom.Services
         /// <param name="Key"></param>
         public void CouponApply(Guid Key)
         {
-            var defStore = _storeSvc.GetAllStores().First();
-            var discount = _discountCache[defStore.Alias][Key];
+            IStore defStore = _storeSvc.GetAllStores().First();
+            IDiscount discount = _discountCache[defStore.Alias][Key];
 
             (discount as Discount)?.OnCouponApply();
         }
@@ -566,8 +562,8 @@ namespace Ekom.Services
         /// <returns></returns>
         private void AddGlobalDiscounts(OrderInfo orderInfo)
         {
-            var discounts = Discounts.Instance.GetGlobalDiscounts(orderInfo.StoreInfo.Alias);
-            foreach (var discount in discounts)
+            IEnumerable<IDiscount> discounts = Discounts.Instance.GetGlobalDiscounts(orderInfo.StoreInfo.Alias);
+            foreach (IDiscount discount in discounts)
             {
                 ApplyDiscountToOrder(
                     discount,
@@ -587,8 +583,8 @@ namespace Ekom.Services
         /// </summary>
         private void VerifyDiscounts(OrderInfo orderInfo)
         {
-            var total = orderInfo.OrderLineTotal.Value;
-            var storeAlias = orderInfo.StoreInfo.Alias;
+            decimal total = orderInfo.OrderLineTotal.Value;
+            string storeAlias = orderInfo.StoreInfo.Alias;
 
             // Verify order discount constraints
             if (orderInfo.Discount != null
@@ -613,7 +609,7 @@ namespace Ekom.Services
             //}
 
             // Verify order line discount constraints
-            foreach (var line in orderInfo.orderLines)
+            foreach (OrderLine line in orderInfo.orderLines)
             {
                 if (line.Discount != null)
                 {

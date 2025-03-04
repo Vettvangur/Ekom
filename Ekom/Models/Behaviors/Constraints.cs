@@ -2,7 +2,6 @@ using Ekom.Cache;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 
@@ -39,22 +38,22 @@ namespace Ekom.Models
             get
             {
 
-                var store = _node == null
+                IStore? store = _node == null
                     ? API.Store.Instance.GetStore()
                     : (_node as PerStoreNodeEntity)?.Store ?? API.Store.Instance.GetStore();
 
                 // Check for multiple currencies
                 if (store?.Currencies.Count() > 1)
                 {
-                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-                    var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
+                    HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                    string? cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
 
                     if (!string.IsNullOrEmpty(cookie))
                     {
                         return StartRanges.FirstOrDefault(x => x.Currency == cookie)?.Value ?? 0;
                     }
                 }
-                
+
 
                 return StartRanges.FirstOrDefault()?.Value ?? 0;
             }
@@ -68,8 +67,8 @@ namespace Ekom.Models
             {
                 if (_startRanges == null)
                 {
-                    var propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
-                    var value = _node.Properties.GetPropertyValue("startOfRange", propertyAlias);
+                    string? propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
+                    string value = _node.Properties.GetPropertyValue("startOfRange", propertyAlias);
                     _startRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
                 }
                 return _startRanges;
@@ -85,14 +84,14 @@ namespace Ekom.Models
         {
             get
             {
-                var store = _node == null
+                IStore? store = _node == null
                     ? API.Store.Instance.GetStore()
                     : (_node as PerStoreNodeEntity)?.Store ?? API.Store.Instance.GetStore();
 
                 if (store?.Currencies.Count() > 1)
                 {
-                    var httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
-                    var cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
+                    HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
+                    string? cookie = httpContext?.Request?.Cookies["EkomCurrency-" + store.Alias];
 
                     if (!string.IsNullOrEmpty(cookie))
                     {
@@ -112,8 +111,8 @@ namespace Ekom.Models
             {
                 if (_endRanges == null)
                 {
-                    var propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
-                    var value = _node.Properties.GetPropertyValue("endOfRange", propertyAlias);
+                    string? propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
+                    string value = _node.Properties.GetPropertyValue("endOfRange", propertyAlias);
                     _endRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
                 }
                 return _endRanges;
@@ -134,11 +133,11 @@ namespace Ekom.Models
         {
             _node = node;
 
-            if (node.Properties.TryGetValue("zone", out var zoneValue) && Guid.TryParse(zoneValue, out var zoneKey))
+            if (node.Properties.TryGetValue("zone", out string? zoneValue) && Guid.TryParse(zoneValue, out Guid zoneKey))
             {
-                var zoneCache = Configuration.Resolver.GetService<IBaseCache<IZone>>();
+                IBaseCache<IZone>? zoneCache = Configuration.Resolver.GetService<IBaseCache<IZone>>();
 
-                CountriesInZone = (zoneCache?.Cache.TryGetValue(zoneKey, out var zone) == true)
+                CountriesInZone = (zoneCache?.Cache.TryGetValue(zoneKey, out IZone? zone) == true)
                     ? zone.Countries
                     : Enumerable.Empty<string>();
             }

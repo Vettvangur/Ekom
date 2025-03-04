@@ -67,7 +67,7 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(Culture))
         {
-            var cultureInfo = new CultureInfo(Culture);
+            CultureInfo cultureInfo = new CultureInfo(Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
@@ -75,39 +75,39 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(paymentRequest.Culture))
         {
-            var cultureInfo = new CultureInfo(paymentRequest.Culture);
+            CultureInfo cultureInfo = new CultureInfo(paymentRequest.Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
         }
 
         // ToDo: Lock order throughout request
-        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+        IOrderInfo order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
 
         if (order == null)
         {
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+        CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
         if (res != null)
         {
             return responseHandler(res);
         }
 
-        Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId 
+        Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
 
-        var storeAlias = order.StoreInfo.Alias;
-        var store = API.Store.Instance.GetStore(storeAlias);
+        string storeAlias = order.StoreInfo.Alias;
+        IStore? store = API.Store.Instance.GetStore(storeAlias);
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
             order,
             _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null)
             .ConfigureAwait(false);
-        
+
         if (res != null)
         {
             return responseHandler(res);
@@ -116,7 +116,7 @@ public class CheckoutControllerService
         // Reset hangfire jobs in cases where user cancels on payment page and changes cart f.x.
         if (order.HangfireJobs.Any())
         {
-            foreach (var job in order.HangfireJobs)
+            foreach (string job in order.HangfireJobs)
             {
                 await Stock.Instance.RollbackJobAsync(job).ConfigureAwait(false);
             }
@@ -124,9 +124,9 @@ public class CheckoutControllerService
             await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
         }
 
-        var hangfireJobs = new List<string>();
+        List<string> hangfireJobs = new List<string>();
         res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
-        
+
         if (res != null)
         {
             return responseHandler(res);
@@ -141,9 +141,9 @@ public class CheckoutControllerService
         // save job ids to sql for retrieval after checkout completion
         await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, order.StoreInfo.Alias).ConfigureAwait(false);
 
-        var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
+        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
             .ConfigureAwait(false);
-        var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
             .ConfigureAwait(false);
         return responseHandler(result);
     }
@@ -152,7 +152,7 @@ public class CheckoutControllerService
     public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, Guid orderId)
     {
 
-        var order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
+        IOrderInfo order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
 
         if (order == null)
         {
@@ -168,7 +168,7 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(Culture))
         {
-            var cultureInfo = new CultureInfo(Culture);
+            CultureInfo cultureInfo = new CultureInfo(Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
@@ -176,7 +176,7 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(paymentRequest.Culture))
         {
-            var cultureInfo = new CultureInfo(paymentRequest.Culture);
+            CultureInfo cultureInfo = new CultureInfo(paymentRequest.Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
@@ -187,13 +187,13 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+        CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
         Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
 
-        var storeAlias = order.StoreInfo.Alias;
-        var store = API.Store.Instance.GetStore(storeAlias);
+        string storeAlias = order.StoreInfo.Alias;
+        IStore? store = API.Store.Instance.GetStore(storeAlias);
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
@@ -203,7 +203,7 @@ public class CheckoutControllerService
 
         if (order.HangfireJobs.Any())
         {
-            foreach (var job in order.HangfireJobs)
+            foreach (string job in order.HangfireJobs)
             {
                 await Stock.Instance.RollbackJobAsync(job).ConfigureAwait(false);
             }
@@ -211,7 +211,7 @@ public class CheckoutControllerService
             await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
         }
 
-        var hangfireJobs = new List<string>();
+        List<string> hangfireJobs = new List<string>();
 
         res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
 
@@ -220,9 +220,9 @@ public class CheckoutControllerService
         // save job ids to sql for retrieval after checkout completion
         await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, storeAlias).ConfigureAwait(false);
 
-        var orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
+        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
             .ConfigureAwait(false);
-        var result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
             .ConfigureAwait(false);
 
         return result;
@@ -252,16 +252,16 @@ public class CheckoutControllerService
 
         if (form != null)
         {
-            var keys = form.Keys;
+            ICollection<string> keys = form.Keys;
 
-            var formCollection = keys.ToDictionary(
+            Dictionary<string, string> formCollection = keys.ToDictionary(
                 k => k,
                 v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
             );
 
             if (keys.Contains("ekomUpdateInformation"))
             {
-                var saveCustomerData = false;
+                bool saveCustomerData = false;
 
                 if (!formCollection.ContainsKey("storeAlias"))
                 {
@@ -271,7 +271,7 @@ public class CheckoutControllerService
 
                 if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
                 {
-                    var member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+                    UmbracoMember member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
 
                     if (member != null)
                     {
@@ -315,8 +315,8 @@ public class CheckoutControllerService
 
         if (Config.StoreCustomerData)
         {
-            await using var db = DatabaseFactory.GetDatabase();
-            
+            await using Repositories.DbContext db = DatabaseFactory.GetDatabase();
+
             await db.InsertAsync(new CustomerData
             {
                 // Unfinished
@@ -325,7 +325,7 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
             && !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email)) return null;
-        
+
         Logger.LogWarning("ValidationAndOrderUpdatesAsync Failed. Name or Email is empty. " + (order != null ? order.UniqueId.ToString() : ""));
 
         return new CheckoutResponse
@@ -365,7 +365,7 @@ public class CheckoutControllerService
 
             if (ex.Variant.HasValue && ex.OrderLineKey != default)
             {
-                var type = ex.Variant.Value ? "variant" : "product";
+                string type = ex.Variant.Value ? "variant" : "product";
                 return new CheckoutResponse
                 {
                     ReturnUrl = paymentRequest.ReturnUrl,
@@ -400,7 +400,7 @@ public class CheckoutControllerService
             };
         }
 
-#endregion
+        #endregion
 
         return null;
     }
@@ -472,15 +472,15 @@ public class CheckoutControllerService
         string orderTitle = "Pöntun";
 
         if (store == null) return Task.FromResult(orderTitle += " - " + order.OrderNumber);
-        
-        var paymentOrderTitle = store.GetValue("paymentOrderTitle");
+
+        string paymentOrderTitle = store.GetValue("paymentOrderTitle");
 
         if (string.IsNullOrEmpty(paymentOrderTitle))
             return Task.FromResult(orderTitle += " - " + order.OrderNumber);
-        
+
         if (paymentOrderTitle.Substring(0, 1) == "#")
         {
-            var dictionaryValue
+            string dictionaryValue
                 = UmbracoService.GetDictionaryValue(paymentOrderTitle.Substring(1));
 
             if (!string.IsNullOrEmpty(dictionaryValue))
@@ -510,30 +510,30 @@ public class CheckoutControllerService
         {
             throw new ArgumentNullException("Order is missing from ProcessPaymentAsync. " + orderTitle);
         }
-        
+
         if (_httpCtx == null)
         {
             throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
         }
-        
+
         if (order.PaymentProvider == null)
         {
             throw new ArgumentNullException("PaymentProvider is missing from Order. " + order.UniqueId);
         }
 
 
-        var storeAlias = order.StoreInfo.Alias;
+        string storeAlias = order.StoreInfo.Alias;
 
-        var ekomPP = Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, storeAlias);
-        
+        Models.IPaymentProvider? ekomPP = Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, storeAlias);
+
         if (ekomPP == null)
         {
             throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider);
         }
-        
-        var isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
-        var orderItems = new List<OrderItem>
+        bool isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
+
+        List<OrderItem> orderItems = new List<OrderItem>
         {
             new OrderItem
             {
@@ -546,17 +546,17 @@ public class CheckoutControllerService
 
         Logger.LogInformation(
             "Payment Provider: {PaymentProvider}, {Name} offline: {isOfflinePayment}",
-            order.PaymentProvider.Key, 
+            order.PaymentProvider.Key,
             ekomPP.Name,
             isOfflinePayment);
 
-        var paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
+        string paymentErrorUrl = ekomPP.GetValue("errorUrl", storeAlias);
 
-        var paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
+        string paymentSuccessUrl = ekomPP.GetValue("successUrl", storeAlias);
 
-        var GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
+        string GetEncodedUrl = _httpCtx.Request.GetEncodedUrl();
 
-        var errorUrl = Utilities.UriHelper.EnsureFullUri(
+        string errorUrl = Utilities.UriHelper.EnsureFullUri(
         paymentErrorUrl,
         new Uri(GetEncodedUrl));
 
@@ -564,19 +564,19 @@ public class CheckoutControllerService
         {
             try
             {
-                
-                var successUrl = Utilities.UriHelper.EnsureFullUri(
+
+                string successUrl = Utilities.UriHelper.EnsureFullUri(
                     paymentSuccessUrl,
                     new Uri(GetEncodedUrl))
                 + "?orderId=" + order.UniqueId;
-                
+
                 await Order.Instance.UpdateStatusAsync(
                     OrderStatus.OfflinePayment,
                     order.UniqueId).ConfigureAwait(false);
-                
-                var memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
-                var eventsArgs = new PayEventArgs
+                string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
+
+                PayEventArgs eventsArgs = new PayEventArgs
                 {
                     OrderInfo = order,
                     PaymentSettings = new PaymentSettings()
@@ -593,7 +593,7 @@ public class CheckoutControllerService
 
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
-                var checkoutSvc = _factory.GetRequiredService<CheckoutService>();
+                CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
                 await checkoutSvc.CompleteAsync(order.UniqueId);
 
@@ -611,7 +611,7 @@ public class CheckoutControllerService
                     ex,
                     "Offline Payment Failed. Order: {UniqueId}",
                     order.UniqueId);
-                
+
                 await Order.Instance.UpdateStatusAsync(
                     OrderStatus.PaymentFailed,
                     order.UniqueId).ConfigureAwait(false);
@@ -629,10 +629,10 @@ public class CheckoutControllerService
                 OrderStatus.WaitingForPayment,
                 order.UniqueId).ConfigureAwait(false);
 
-            var successUrl = PaymentsUriHelper.EnsureFullUri(
+            Uri successUrl = PaymentsUriHelper.EnsureFullUri(
                 ekomPP.GetValue("successUrl", storeAlias),
                 _httpCtx.Request);
-            var cancelUrl = PaymentsUriHelper.EnsureFullUri(
+            Uri cancelUrl = PaymentsUriHelper.EnsureFullUri(
                 ekomPP.GetValue("cancelUrl", storeAlias),
                 _httpCtx.Request);
             successUrl = PaymentsUriHelper.AddQueryString(
@@ -640,12 +640,12 @@ public class CheckoutControllerService
                 "?orderId=" + order.UniqueId
             );
 
-            var basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
+            string basePaymentProvider = string.IsNullOrEmpty(ekomPP.GetValue("basePaymentProvider")) ? ekomPP.Name : ekomPP.GetValue("basePaymentProvider");
 
-            var pp = ekomPayments.GetPaymentProvider(basePaymentProvider);
+            Payments.IPaymentProvider pp = ekomPayments.GetPaymentProvider(basePaymentProvider);
 
-            var language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias)) 
-                ? ekomPP.GetValue("language", order.StoreInfo.Alias) 
+            string language = !string.IsNullOrEmpty(ekomPP.GetValue("language", order.StoreInfo.Alias))
+                ? ekomPP.GetValue("language", order.StoreInfo.Alias)
                 : "is-IS";
 
             if (!Enum.TryParse(order.StoreInfo.Currency.ISOCurrencySymbol, out Currency currency))
@@ -653,9 +653,9 @@ public class CheckoutControllerService
                 Logger.LogError("Could not parse currency to Enum. Currency not found in Umbraco.NetPayment.Currency. " + order.StoreInfo.Currency.ISOCurrencySymbol);
             }
 
-            var currentMember = await MemberService.GetCurrentMember();
+            UmbracoMember currentMember = await MemberService.GetCurrentMember();
 
-            var paymentSettings = new PaymentSettings
+            PaymentSettings paymentSettings = new PaymentSettings
             {
                 CustomerInfo = new Ekom.Payments.CustomerInfo()
                 {
@@ -692,7 +692,7 @@ public class CheckoutControllerService
                 PaymentSettings = paymentSettings,
             });
 
-            var content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
+            string content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
 
             return new CheckoutResponse
             {

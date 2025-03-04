@@ -30,7 +30,7 @@ class OrderInfo : IOrderInfo
 
         if (!string.IsNullOrEmpty(orderData.OrderInfo))
         {
-            var orderInfoJObject = JObject.Parse(orderData.OrderInfo);
+            JObject orderInfoJObject = JObject.Parse(orderData.OrderInfo);
 
             if (orderInfoJObject[nameof(Culture)] != null)
             {
@@ -122,7 +122,7 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
+            decimal amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
 
             amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
 
@@ -134,7 +134,7 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
+            decimal amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
 
             amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
 
@@ -145,7 +145,7 @@ class OrderInfo : IOrderInfo
 
     private Price LinePriceWithOrderDiscount(IOrderLine line)
     {
-        var discount = Discount;
+        OrderedDiscount? discount = Discount;
         if (discount?.DiscountItems.Any() == true)
         {
             // Filters order discounts to their applicable DiscountItems
@@ -170,11 +170,11 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line =>
+            decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null)
                 {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
                     return lineWithOrderDiscount.AfterDiscount.Value;
                 }
@@ -183,7 +183,7 @@ class OrderInfo : IOrderInfo
             });
 
             amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
-            
+
             return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
         }
     }
@@ -194,7 +194,7 @@ class OrderInfo : IOrderInfo
         get
         {
             // This ensures correctness even with per order rounding
-            var amount = SubTotal.Value - OrderLines.Sum(line => line.Amount.WithoutVat.Value);
+            decimal amount = SubTotal.Value - OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -205,7 +205,7 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = ChargedAmount.Value;
+            decimal amount = ChargedAmount.Value;
 
             amount -= OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
@@ -228,11 +228,11 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line =>
+            decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null)
                 {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
                     return lineWithOrderDiscount.Value;
                 }
@@ -250,11 +250,11 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line =>
+            decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null)
                 {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
                     return lineWithOrderDiscount.WithoutVat.Value;
                 }
@@ -279,7 +279,7 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var amount = OrderLines.Sum(line =>
+            decimal amount = OrderLines.Sum(line =>
             {
                 if (line.Discount == null
                 // This is for OrderService.Discounts.IsBetterDiscount, 
@@ -289,7 +289,7 @@ class OrderInfo : IOrderInfo
                 // at the same time as OrderLines have a discount applied.
                 || Discount?.Stackable == false)
                 {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
                     return lineWithOrderDiscount.Value;
                 }
@@ -351,13 +351,13 @@ class OrderInfo : IOrderInfo
 
     public IEnumerable<IProduct> RelatedProducts(int count = 4)
     {
-        var relatedProducts = new List<IProduct>();
-        
-        var products = orderLines.Select(x => x.Product);
+        List<IProduct> relatedProducts = new List<IProduct>();
 
-        foreach (var product in products)
+        IEnumerable<OrderedProduct> products = orderLines.Select(x => x.Product);
+
+        foreach (OrderedProduct? product in products)
         {
-            var related = product.RelatedProducts();
+            IEnumerable<IProduct> related = product.RelatedProducts();
 
             relatedProducts.AddRange(related);
         }
@@ -369,19 +369,19 @@ class OrderInfo : IOrderInfo
     #region JSON Parsing
     private List<OrderLine> CreateOrderLinesFromJson(JObject orderInfoJObject)
     {
-        var orderLines = new List<OrderLine>();
+        List<OrderLine> orderLines = new List<OrderLine>();
 
-        var orderLinesArray = (JArray)orderInfoJObject[nameof(OrderLines)];
+        JArray? orderLinesArray = (JArray)orderInfoJObject[nameof(OrderLines)];
 
-        foreach (var line in orderLinesArray)
+        foreach (JToken line in orderLinesArray)
         {
-            var lineId = (Guid)line[nameof(OrderLine.Key)];
-            var quantity = (int)line[nameof(OrderLine.Quantity)];
-            var settings = line[nameof(OrderLine.Settings)]?.ToObject<OrderLineSettings>();
-            var productJson = line[nameof(OrderLine.Product)].ToString();
-            var discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
-            var orderLineInfo = line[nameof(OrderLine.OrderLineInfo)]?.ToObject<OrderLineInfo>();
-            var orderLine = new OrderLine(
+            Guid lineId = (Guid)line[nameof(OrderLine.Key)];
+            int quantity = (int)line[nameof(OrderLine.Quantity)];
+            OrderLineSettings? settings = line[nameof(OrderLine.Settings)]?.ToObject<OrderLineSettings>();
+            string productJson = line[nameof(OrderLine.Product)].ToString();
+            OrderedDiscount? discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
+            OrderLineInfo? orderLineInfo = line[nameof(OrderLine.OrderLineInfo)]?.ToObject<OrderLineInfo>();
+            OrderLine orderLine = new OrderLine(
                 lineId,
                 quantity,
                 productJson,
@@ -400,15 +400,15 @@ class OrderInfo : IOrderInfo
     {
         if (orderInfoJObject[nameof(ShippingProvider)] != null)
         {
-            var shippingProviderJson = orderInfoJObject[nameof(ShippingProvider)].ToString();
+            string shippingProviderJson = orderInfoJObject[nameof(ShippingProvider)].ToString();
 
             if (!string.IsNullOrEmpty(shippingProviderJson))
             {
-                var shippingProviderObject = JObject.Parse(shippingProviderJson);
+                JObject shippingProviderObject = JObject.Parse(shippingProviderJson);
 
                 if (shippingProviderObject != null)
                 {
-                    var p = new OrderedShippingProvider(shippingProviderObject, StoreInfo);
+                    OrderedShippingProvider p = new OrderedShippingProvider(shippingProviderObject, StoreInfo);
 
                     return p;
                 }
@@ -422,15 +422,15 @@ class OrderInfo : IOrderInfo
     {
         if (orderInfoJObject[nameof(PaymentProvider)] != null)
         {
-            var paymentProviderJson = orderInfoJObject[nameof(PaymentProvider)].ToString();
+            string paymentProviderJson = orderInfoJObject[nameof(PaymentProvider)].ToString();
 
             if (!string.IsNullOrEmpty(paymentProviderJson))
             {
-                var paymentProviderObject = JObject.Parse(paymentProviderJson);
+                JObject paymentProviderObject = JObject.Parse(paymentProviderJson);
 
                 if (paymentProviderObject != null)
                 {
-                    var p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
+                    OrderedPaymentProvider p = new OrderedPaymentProvider(paymentProviderObject, StoreInfo);
 
                     return p;
                 }
@@ -444,15 +444,15 @@ class OrderInfo : IOrderInfo
     {
         if (orderInfoJObject[nameof(StoreInfo)] != null)
         {
-            var storeInfoJson = orderInfoJObject[nameof(StoreInfo)].ToString();
+            string storeInfoJson = orderInfoJObject[nameof(StoreInfo)].ToString();
 
             if (!string.IsNullOrEmpty(storeInfoJson))
             {
-                var storeInfoObject = JObject.Parse(storeInfoJson);
+                JObject storeInfoObject = JObject.Parse(storeInfoJson);
 
                 if (storeInfoObject != null)
                 {
-                    var s = new StoreInfo(storeInfoObject);
+                    StoreInfo s = new StoreInfo(storeInfoObject);
 
                     return s;
                 }
@@ -466,11 +466,11 @@ class OrderInfo : IOrderInfo
     {
         if (orderInfoJObject[nameof(CustomerInformation)] != null)
         {
-            var customerInfoJson = orderInfoJObject[nameof(CustomerInformation)].ToString();
+            string customerInfoJson = orderInfoJObject[nameof(CustomerInformation)].ToString();
 
             if (!string.IsNullOrEmpty(customerInfoJson))
             {
-                var customerInfo = JsonConvert.DeserializeObject<CustomerInfo>(customerInfoJson);
+                CustomerInfo? customerInfo = JsonConvert.DeserializeObject<CustomerInfo>(customerInfoJson);
 
                 return customerInfo;
             }

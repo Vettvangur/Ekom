@@ -79,7 +79,7 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             //TODO Store default setup!
 
-            var backOrderValue = GetValue("enableBackorder", Store.Alias);
+            string backOrderValue = GetValue("enableBackorder", Store.Alias);
 
             return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
         }
@@ -92,11 +92,11 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var primaryVariantGroup = PrimaryVariantGroup;
+            IVariantGroup? primaryVariantGroup = PrimaryVariantGroup;
 
             if (primaryVariantGroup != null)
             {
-                var imageNodes = primaryVariantGroup.Images.ToList();
+                List<Image>? imageNodes = primaryVariantGroup.Images.ToList();
 
                 if (!imageNodes.Any() && primaryVariantGroup.Variants.Any())
                 {
@@ -111,7 +111,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
             return (IEnumerable<Image>)_cache.GetOrAdd("Images", key =>
             {
-                var _images = GetValue(Configuration.Instance.CustomImage);
+                string _images = GetValue(Configuration.Instance.CustomImage);
 
                 return _images.GetImages();
             });
@@ -130,7 +130,7 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var variantGroups = VariantGroups.ToList();
+            List<IVariantGroup> variantGroups = VariantGroups.ToList();
 
             if (!variantGroups.Any())
             {
@@ -141,22 +141,22 @@ public class Product : PerStoreNodeEntity, IProduct
             {
                 if (Properties.ContainsKey("primaryVariantGroup"))
                 {
-                    var primaryGroupValue = GetValue("primaryVariantGroup");
+                    string primaryGroupValue = GetValue("primaryVariantGroup");
 
                     if (!string.IsNullOrEmpty(primaryGroupValue))
                     {
-                        var node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
+                        UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
 
                         if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
                         {
-                            var variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
+                            IVariantGroup variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
 
                             return variantGroup;
                         }
                     }
                 }
 
-                var primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
+                IVariantGroup? primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
 
                 return primaryGroup;
             });
@@ -176,7 +176,7 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             return (IVariant)_cache.GetOrAdd("PrimaryVariant", key =>
             {
-                var primaryVariantGroup = PrimaryVariantGroup;
+                IVariantGroup? primaryVariantGroup = PrimaryVariantGroup;
 
                 if (primaryVariantGroup == null)
                 {
@@ -184,7 +184,7 @@ public class Product : PerStoreNodeEntity, IProduct
                 }
 
                 // Try to find the first available variant, or fall back to any variant
-                var primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
+                IVariant? primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
                                     ?? primaryVariantGroup.Variants.FirstOrDefault();
 
                 return primaryVariant;
@@ -251,12 +251,12 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private IPrice GetPrice()
     {
-        var httpCtx = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
-        var cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias];
+        HttpContext? httpCtx = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+        string? cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias];
 
         if (cookie != null && !string.IsNullOrEmpty(cookie))
         {
-            var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
+            IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
 
             if (price != null)
             {
@@ -264,11 +264,11 @@ public class Product : PerStoreNodeEntity, IProduct
             }
         }
 
-        var culture = httpCtx?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
-        
+        System.Globalization.CultureInfo? culture = httpCtx?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
+
         if (culture != null)
         {
-            var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
+            IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
 
             if (price != null)
             {
@@ -289,18 +289,18 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var categories = Categories.Select(x => x.Id.ToString()).ToArray();
+            string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
 
-            var vatIncludedInPrice = Store.VatIncludedInPrice;
-            var vat = Vat;
-            var storeCurrency= Store.Currency;
+            bool vatIncludedInPrice = Store.VatIncludedInPrice;
+            decimal vat = Vat;
+            CurrencyModel storeCurrency = Store.Currency;
 
-            var cacheKey = $"Prices_{vatIncludedInPrice}_{vat}_{storeCurrency.CurrencyValue}_{string.Join(",", categories)}_{Path}";
+            string cacheKey = $"Prices_{vatIncludedInPrice}_{vat}_{storeCurrency.CurrencyValue}_{string.Join(",", categories)}_{Path}";
 
             // Use GetOrAdd to cache store-specific prices
             return (List<IPrice>)_cache.GetOrAdd(cacheKey.Hash(), key =>
             {
-                var prices = GetValue("price", Store.Alias)
+                List<IPrice> prices = GetValue("price", Store.Alias)
                     .GetPriceValues(
                         Store.Currencies,
                         vat,
@@ -331,11 +331,11 @@ public class Product : PerStoreNodeEntity, IProduct
                 }
 
                 // Store frequently accessed values to avoid redundant access
-                var storeCurrency = Store.Currency;
-                var storeVat = Store.Vat;
-                var storeVatIncluded = Store.VatIncludedInPrice;
+                CurrencyModel storeCurrency = Store.Currency;
+                decimal storeVat = Store.Vat;
+                bool storeVatIncluded = Store.VatIncludedInPrice;
 
-                var originalPrice = GetValue("price", Store.Alias);
+                string originalPrice = GetValue("price", Store.Alias);
 
                 if (string.IsNullOrEmpty(originalPrice))
                 {
@@ -349,8 +349,8 @@ public class Product : PerStoreNodeEntity, IProduct
 
                 if (originalPrice.IsJson())
                 {
-                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                    var val = orgPrice?.FirstOrDefault()?.Price;
+                    List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
 
                     if (val.HasValue)
                     {
@@ -372,7 +372,7 @@ public class Product : PerStoreNodeEntity, IProduct
             {
                 if (Properties.HasPropertyValue("vat", Store.Alias))
                 {
-                    var value = GetValue("vat", Store.Alias);
+                    string value = GetValue("vat", Store.Alias);
                     if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
                     {
                         return _val / 100;
@@ -389,7 +389,7 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             if (Properties.HasPropertyValue("metafields"))
             {
-                var value = GetValue("metafields");
+                string value = GetValue("metafields");
 
                 return Configuration.Resolver.GetService<IMetafieldService>().SerializeMetafields(value, Id);
             }
@@ -426,10 +426,10 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var variants = from pair in _variantCache.Cache[Store.Alias]
-                let variant = pair.Value
-                where variant.ProductId == Id
-                select variant;
+            IEnumerable<IVariant> variants = from pair in _variantCache.Cache[Store.Alias]
+                                             let variant = pair.Value
+                                             where variant.ProductId == Id
+                                             select variant;
 
             return variants;
         }
@@ -466,7 +466,7 @@ public class Product : PerStoreNodeEntity, IProduct
         PopulateCategoryAncestors();
         PopulateCategories();
 
-        var urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
+        List<UmbracoUrl> urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url).ToList();
@@ -482,10 +482,10 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         int categoryId = ParentId;
 
-        var categoryField = Properties.ContainsKey("categories") ?
+        string categoryField = Properties.ContainsKey("categories") ?
                             GetValue("categories") : "";
 
-        var primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias);
+        ICategory? primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias);
 
         if (primaryCategory != null)
         {
@@ -494,11 +494,11 @@ public class Product : PerStoreNodeEntity, IProduct
 
         if (!string.IsNullOrEmpty(categoryField))
         {
-            var categoryIds = categoryField.Split(',');
+            string[] categoryIds = categoryField.Split(',');
 
-            foreach (var catId in categoryIds)
+            foreach (string catId in categoryIds)
             {
-                var categoryItem
+                ICategory categoryItem
                     = Catalog.Instance.GetCategory(catId, Store.Alias);
 
                 if (categoryItem != null && !categories.Contains(categoryItem))
@@ -512,11 +512,11 @@ public class Product : PerStoreNodeEntity, IProduct
     private void PopulateCategoryAncestors()
     {
 
-        foreach (var p in PathArray.Skip(2))
+        foreach (string? p in PathArray.Skip(2))
         {
             if (int.TryParse(p, out int id))
             {
-                var c = Catalog.Instance.GetCategory(id, Store.Alias);
+                ICategory? c = Catalog.Instance.GetCategory(id, Store.Alias);
 
                 if (c != null && !c.VirtualUrl)
                 {
@@ -530,19 +530,19 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public IEnumerable<IProduct> RelatedProducts(int count = 4)
     {
-        var relatedProducts = new List<IProduct>();
+        List<IProduct> relatedProducts = new List<IProduct>();
 
         if (Properties.HasPropertyValue("relatedProducts"))
         {
-            var val = GetValue("relatedProducts");
+            string val = GetValue("relatedProducts");
 
             if (!string.IsNullOrEmpty(val))
             {
                 UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
 
-                foreach (var id in guids.Where(x => x != Key).Take(count))
+                foreach (Guid id in guids.Where(x => x != Key).Take(count))
                 {
-                    var product = Catalog.Instance.GetProduct(id, Store.Alias);
+                    IProduct? product = Catalog.Instance.GetProduct(id, Store.Alias);
 
                     if (product != null && product.Key != Key)
                     {
@@ -554,7 +554,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
         if (!relatedProducts.Any() || relatedProducts.Count < 4)
         {
-            var category = Catalog.Instance.GetCategory(ParentId);
+            ICategory? category = Catalog.Instance.GetCategory(ParentId);
 
             if (category != null)
             {

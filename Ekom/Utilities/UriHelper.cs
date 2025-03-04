@@ -10,8 +10,8 @@ namespace Ekom.Utilities
             }
             else if (Uri.IsWellFormedUriString(uri, UriKind.Relative))
             {
-                var url = requestUrl;
-                var basePath = $"{url.Scheme}://{url.Authority}";
+                Uri url = requestUrl;
+                string basePath = $"{url.Scheme}://{url.Authority}";
 
                 return basePath + uri;
             }
