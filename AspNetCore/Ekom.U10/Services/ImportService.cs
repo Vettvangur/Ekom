@@ -408,7 +408,7 @@ public class ImportService : IImportService
 
         if (delete)
         {
-            // Delete or Move Categories
+            // Delete Categories
 
             // Create a HashSet of identifiers from importCategory for efficient lookups
             var importCategoryIdentifiers = new HashSet<string>(importCategories.Select(x => x.Identifier));
@@ -416,44 +416,15 @@ public class ImportService : IImportService
             var targetedCategories = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent?.Id.ToString() ?? "", StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent?.Id.ToString())).ToList();
 
             // Delete Category not present in the importCategoryIdentifiers
-            //for (int i = targetedCategories.Count - 1; i >= 0; i--)
-            //{
-            //    var umbracoCategory = targetedCategories[i];
-            //    var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
-
-            //    if (umbracoCategory.ParentId != parentContent.Id)
-            //    {
-            //        continue;
-            //    }
-
-            //    if (isSyncDisabled)
-            //    {
-            //        continue;
-            //    }
-
-            //    var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-
-            //    if (!importCategoryIdentifiers.Contains(categoryIdentifier))
-            //    {
-            //        _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
-
-            //        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-            //        {
-            //            _contentService.Delete(umbracoCategory);
-            //        }
-
-            //        allUmbracoCategories.Remove(umbracoCategory);
-
-            //        categoriesDeleted++;
-            //    }
-                
-            //}
-
-            // Delete or move Category not present in the importCategoryIdentifiers
             for (int i = targetedCategories.Count - 1; i >= 0; i--)
             {
                 var umbracoCategory = targetedCategories[i];
                 var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
+
+                if (umbracoCategory.ParentId != parentContent.Id)
+                {
+                    continue;
+                }
 
                 if (isSyncDisabled)
                 {
@@ -462,11 +433,8 @@ public class ImportService : IImportService
 
                 var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
-                var importCategory = allImportCategories.FirstOrDefault(x => x.Identifier == categoryIdentifier);
-
-                if (importCategory == null)
+                if (!importCategoryIdentifiers.Contains(categoryIdentifier))
                 {
-                    // Category not found in import, so it should be deleted
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
                     using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
@@ -475,38 +443,36 @@ public class ImportService : IImportService
                     }
 
                     allUmbracoCategories.Remove(umbracoCategory);
+
                     categoriesDeleted++;
                 }
-                else
-                {
 
-                    // Check if the category has moved to a new parent
-                    var newParent = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
-
-                    if (newParent != null && parentContent.Id != newParent.Id)
-                    {
-                        // The category has moved to a different parent, so we move it instead of deleting
-                        _logger.LogInformation($"Category moved. Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Old Parent: {umbracoCategory.ParentId} New Parent: {newParent.Id}");
-
-                        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-                        {
-                            _contentService.Move(umbracoCategory, newParent.Id, syncUser);
-                        }
-                    }
-                }
             }
 
         }
 
         foreach (var importCategory in importCategories)
         {
+
             var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
 
-            var content = GetOrCreateContent(categoryContentType, umbracoChildrenContent, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
 
             if (content == null)
             {
                 continue;
+            }
+
+            var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
+
+            if (newParent != null && newParent.Id != content.ParentId)
+            {
+                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
+
+                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                {
+                    _contentService.Move(content, newParent.Id, syncUser);
+                }
             }
 
             var save = create;
@@ -1543,13 +1509,13 @@ public class ImportService : IImportService
     /// Gets an existing content item from a list of Umbraco content by its identifier or creates a new one if it doesn't exist.
     /// </summary>
     /// <param name="contenType">The content type to create</param>
-    /// <param name="umbracoChildrenContent">The list of child content items to search through.</param>
+    /// <param name="allUmbracoCategories">The list of all category items to search through.</param>
     /// <param name="nodeName">The name for the new content node if creation is needed.</param>
     /// <param name="identifer">The identifier to search for in the existing content items. Cannot be null.</param>
     /// <param name="parentContent">The parent content under which the new content should be created if needed.</param>
     /// <param name="create">Outputs true if a new content item was created, false otherwise.</param>
     /// <returns>The found or newly created content item.</returns>
-    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> umbracoChildrenContent, string nodeName, string identifer, IContent parentContent, out bool create)
+    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> allUmbracoCategories, string nodeName, string identifer, IContent parentContent, out bool create)
     {
         ArgumentNullException.ThrowIfNull(contenType);
         ArgumentNullException.ThrowIfNull(nodeName);
@@ -1557,7 +1523,7 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(parentContent);
 
         create = false;
-        var content = umbracoChildrenContent.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
+        var content = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
 
         if (content != null && content.HasProperty("ekmDisableSync") && content.GetValue<bool>("ekmDisableSync"))
         {

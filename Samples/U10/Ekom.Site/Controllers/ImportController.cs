@@ -11,7 +11,7 @@ public class ImportController : UmbracoAuthorizedApiController
     private readonly IImportService _importService;
     private readonly IShortStringHelper _shortStringHelper;
 
-    private readonly Guid rootCategory = new Guid("f4294c2d-b64a-4173-9f45-30ce0b9db220");
+    private readonly Guid rootCategory = new Guid("c169268a-af96-4c47-a35f-5cbd03dff8c8");
     private readonly List<ImportProduct> products = new List<ImportProduct>();
 
     public ImportController(IImportService importService, IShortStringHelper shortStringHelper)
@@ -34,14 +34,124 @@ public class ImportController : UmbracoAuthorizedApiController
         ImportData data = new ImportData()
         {
             MediaRootKey = new Guid("4dc98622-a146-4010-a758-d8a995fd0b08"),
-            Categories = GenerateCategories(depth, quantityPerLevel, 1, ""),
+            Categories = NewCategories(),//GenerateCategories(depth, quantityPerLevel, 1, "", ""),
             Products = products
         };
 
         return data;
     }
 
-    private List<ImportCategory> GenerateCategories(int depth, int quantityPerLevel, int currentDepth, string parentIdentifier = null)
+    private List<ImportCategory> NewCategories()
+    {
+        var tree = new List<ImportCategory>
+        {
+            new ImportCategory
+            {
+                Title = new Dictionary<string, object> {
+                    { "en-US", $"1US" },
+                    { "is-IS", $"1IS" }
+                },
+                SKU = "1",
+                Identifier = "1",
+                ParentIdentifier = "",
+                NodeName = $"1",
+                AdditionalProperties = new Dictionary<string, object>()
+                {
+                    { "updateSlug", true }
+                },
+                SubCategories = new List<ImportCategory>() {
+                    { 
+                        new ImportCategory()
+                        {
+                            Identifier = "11",
+                            NodeName = "11",
+                            ParentIdentifier = "1",
+                            AdditionalProperties = new Dictionary<string, object>()
+                            {
+                                { "updateSlug", true }
+                            },
+                            Title= new Dictionary<string, object> {
+                                { "en-US", $"11US" },
+                                { "is-IS", $"11IS" }
+                            }
+                        } 
+                    },
+                    {
+                        new ImportCategory()
+                        {
+                            Identifier = "12",
+                            NodeName = "12",
+                            ParentIdentifier = "1",
+                            AdditionalProperties = new Dictionary<string, object>()
+                            {
+                                { "updateSlug", true }
+                            },
+                            Title= new Dictionary<string, object> {
+                                { "en-US", $"12US" },
+                                { "is-IS", $"12IS" }
+                            }
+                        }
+                    }
+                }
+            },
+            new ImportCategory
+            {
+                Title = new Dictionary<string, object> {
+                    { "en-US", $"2US" },
+                    { "is-IS", $"2IS" }
+                },
+                SKU = "2",
+                Identifier = "2",
+                ParentIdentifier = "",
+                NodeName = $"2",
+                AdditionalProperties = new Dictionary<string, object>()
+                {
+                    { "updateSlug", true }
+                },
+                SubCategories = new List<ImportCategory>() {
+                    {
+                        new ImportCategory()
+                        {
+                            Identifier = "21",
+                            NodeName = "21",
+                            ParentIdentifier = "2",
+                            Title= new Dictionary<string, object> {
+                                { "en-US", $"21US" },
+                                { "is-IS", $"21IS" }
+                            },
+                            AdditionalProperties = new Dictionary<string, object>()
+                            {
+                                { "updateSlug", true }
+                            },
+                        }
+                    },
+                    {
+                        new ImportCategory()
+                        {
+                            Identifier = "22",
+                            NodeName = "22",
+                            ParentIdentifier = "2",
+                            Title= new Dictionary<string, object> {
+                                { "en-US", $"22US" },
+                                { "is-IS", $"22IS" }
+                            },
+                            AdditionalProperties = new Dictionary<string, object>()
+                            {
+                                { "updateSlug", true }
+                            },
+                        }
+                    }
+                }
+            }
+        };
+
+        GenerateProducts("", 2, 1);
+
+        return tree;
+    }
+
+
+    private List<ImportCategory> GenerateCategories(int depth, int quantityPerLevel, int currentDepth, string? parentIdentifier = null, string? fullParentIdentifier = null)
     {
         var categories = new List<ImportCategory>();
 
@@ -94,7 +204,7 @@ public class ImportController : UmbracoAuthorizedApiController
                 },
                 SKU = identifier,
                 Identifier = identifier,
-                ParentIdentifier = parentIdentifier,
+                ParentIdentifier = fullParentIdentifier ?? "",
                 NodeName = $"{categoryName}",
                 Images = new List<IImportMedia>()
                 {
@@ -110,8 +220,8 @@ public class ImportController : UmbracoAuthorizedApiController
                     }
                 },
                 SubCategories = currentDepth < depth
-                    ? GenerateCategories(depth, quantityPerLevel, currentDepth + 1, $"{currentDepth}-{i + 1}")
-                    : null, // No subcategories if it's the last level
+                    ? GenerateCategories(depth, quantityPerLevel, currentDepth + 1, $"{currentDepth}-{i + 1}", identifier)
+                    : new List<ImportCategory>(), // No subcategories if it's the last level
             };
 
             categories.Add(category);
@@ -151,8 +261,7 @@ public class ImportController : UmbracoAuthorizedApiController
                 },
                 Categories = new List<string>()
                 {
-                    identifier,
-                    "SKU-2-5-1-2-Printers 2-5"
+                    "21"
                 },
                 Price = new List<ImportPrice>()
                 {

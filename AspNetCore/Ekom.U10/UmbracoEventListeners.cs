@@ -150,6 +150,8 @@ class UmbracoEventListeners :
 
                 var parentNode = _nodeService.NodeById(node.ParentId);
 
+                if (parentNode == null) { continue; }
+
                 cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode.Key));
                 //Fire and forget
                 RevalidateAsync(node, cancellationToken).ConfigureAwait(false);
@@ -287,7 +289,7 @@ class UmbracoEventListeners :
 
                 foreach (var lang in languages)
                 {
-                    propertyTypes.Add("Language", lang.IsoCode);
+                    propertyTypes.TryAdd("Language", lang.IsoCode);
                 }
             }
             else if (titlePropertyValue.Type == PropertyEditorType.Store)
@@ -333,7 +335,7 @@ class UmbracoEventListeners :
                 }
 
 
-                slugItems.Add(type.Value, slug);
+                slugItems.TryAdd(type.Value, slug);
             }
 
 
