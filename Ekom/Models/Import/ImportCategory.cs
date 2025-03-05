@@ -20,7 +20,7 @@ public class ImportCategory : ImportBase
     public Dictionary<string, object>? Description { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, bool> Disabled = new Dictionary<string, bool>();
     public List<ImportCategory>? SubCategories { get; set; } = new List<ImportCategory>();
-
+    public required string ParentIdentifier { get; set; }
     /// <summary>
     /// Specifies a template
     /// </summary>

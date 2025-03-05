@@ -94,6 +94,7 @@ public class ImportController : UmbracoAuthorizedApiController
                 },
                 SKU = identifier,
                 Identifier = identifier,
+                ParentIdentifier = parentIdentifier,
                 NodeName = $"{categoryName}",
                 Images = new List<IImportMedia>()
                 {
