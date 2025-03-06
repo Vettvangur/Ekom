@@ -89,7 +89,9 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+        await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+
+        var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
         if (res != null)
         {
@@ -187,6 +189,8 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
+        await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
         Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
@@ -233,23 +237,8 @@ public class CheckoutControllerService
         return Task.FromResult<CheckoutResponse?>(null);
     }
 
-    protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
-        PaymentRequest paymentRequest,
-        IOrderInfo order,
-        IFormCollection? form)
+    protected virtual async Task<IOrderInfo> UpdateOrderBasedOnRequestAsync(PaymentRequest paymentRequest, IOrderInfo order, IFormCollection? form)
     {
-        if (paymentRequest == null)
-        {
-
-            Logger.LogError("ValidationAndOrderUpdatesAsync Failed. PaymentRequest is Null. " + (order != null ? order.UniqueId.ToString() : ""));
-
-            return new CheckoutResponse
-            {
-                ReturnUrl = paymentRequest.ReturnUrl,
-                HttpStatusCode = 400,
-            };
-        }
-
         if (form != null)
         {
             ICollection<string> keys = form.Keys;
@@ -297,20 +286,37 @@ public class CheckoutControllerService
                     order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
                 }
             }
-
             if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
                 order = await Order.Instance.UpdatePaymentInformationAsync(
-                    paymentRequest.PaymentProvider,
-                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
+                paymentRequest.PaymentProvider,
+                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
-
             if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 order = await Order.Instance.UpdateShippingInformationAsync(
-                    paymentRequest.ShippingProvider,
-                    order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
+                paymentRequest.ShippingProvider,
+                order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
+        }
+
+        return order;
+    }
+    protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
+    PaymentRequest paymentRequest,
+    IOrderInfo order,
+        IFormCollection? form)
+    {
+        if (paymentRequest == null)
+        {
+
+            Logger.LogError("ValidationAndOrderUpdatesAsync Failed. PaymentRequest is Null. " + (order != null ? order.UniqueId.ToString() : ""));
+
+            return new CheckoutResponse
+            {
+                ReturnUrl = paymentRequest.ReturnUrl,
+                HttpStatusCode = 400,
+            };
         }
 
         if (Config.StoreCustomerData)
