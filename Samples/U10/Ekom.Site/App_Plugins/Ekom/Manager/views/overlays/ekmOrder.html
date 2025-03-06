@@ -41,11 +41,22 @@
       <p>Zipcode: {{ model.editModel.shippingAddress.zipCode}}</p>
       <p>Phone: {{ model.editModel.shippingAddress.phone}}</p>
 
-      <div ng-if="model.editModel.shippingAddress.properties.length > 0">
-        <h5>Extra Data</h5>
+      <div ng-if="model.editModel.shippingAddress.properties">
+        <h5>Extra Shipping Data</h5>
         <ul>
-          <li ng-repeat="(key, value)  in model.editModel.shippingAddress.properties">
-            {{key}}: {{value}}
+          <li ng-repeat="(key, value) in model.editModel.shippingAddress.properties"
+              ng-if="value">
+            {{ key.replace('shipping', '') }}: {{ value }}
+          </li>
+        </ul>
+      </div>
+
+      <div ng-if="model.editModel.order.customerInformation.customer.properties">
+        <h5>Extra Customer Data</h5>
+        <ul>
+          <li ng-repeat="(key, value) in model.editModel.order.customerInformation.customer.properties"
+              ng-if="value">
+            {{ key.replace('customer', '') }}: {{ value }}
           </li>
         </ul>
       </div>
