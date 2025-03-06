@@ -89,7 +89,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
 
         var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -189,7 +189,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
 
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
