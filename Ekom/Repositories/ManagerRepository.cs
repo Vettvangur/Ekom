@@ -177,7 +177,7 @@ public class ManagerRepository
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,
-                COUNT(*) AS ProductCount
+                SUM(OL.Quantity) AS ProductCount 
             FROM 
                 EkomOrders O
             CROSS APPLY 
@@ -185,7 +185,8 @@ public class ManagerRepository
                 WITH (
                     SKU nvarchar(200) '$.Product.SKU',
                     Title nvarchar(200) '$.Product.Title',
-                    Id int '$.Product.Id'
+                    Id int '$.Product.Id',
+                    Quantity int '$.Quantity'
                 ) AS OL
             WHERE ");
 
@@ -193,10 +194,10 @@ public class ManagerRepository
         sqlBuilder.Append(whereClause);
 
         sqlBuilder.Append(@" 
-                GROUP BY
-                    OL.Id
-                ORDER BY 
-                    ProductCount DESC");
+            GROUP BY
+                OL.Id
+            ORDER BY 
+                ProductCount DESC");
 
         await using DbContext db = _databaseFactory.GetDatabase();
         List<MostSoldProduct> products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
