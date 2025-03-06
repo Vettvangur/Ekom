@@ -431,19 +431,22 @@ public class ImportService : IImportService
                     continue;
                 }
 
+
                 var categoryIdentifier = umbracoCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
-                if (!importCategoryIdentifiers.Contains(categoryIdentifier))
+                // Check if the category exists in the imported categories
+                var importCategory = allImportCategories.FirstOrDefault(x => x.Identifier == categoryIdentifier);
+
+                if (importCategory == null)
                 {
+                    // Category not found in import, so it should be deleted
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
                     using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                     {
                         _contentService.Delete(umbracoCategory);
                     }
-
                     allUmbracoCategories.Remove(umbracoCategory);
-
                     categoriesDeleted++;
                 }
 
