@@ -35,8 +35,9 @@ public interface IImportService
     /// </summary>
     /// <param name="importProduct">The product data to be updated.</param>
     /// <param name="parentKey">Optional GUID of the parent category under which the data should be updated. If null, the product is updated at the root level.</param>
+    /// <param name="mediaRootKey">The GUID key identifying the media root folder in the CMS.</param>
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
-    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1);
+    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1);
 
     /// <summary>
     /// Updates a single category, ensuring the category data is modified or synchronized in the catalog.

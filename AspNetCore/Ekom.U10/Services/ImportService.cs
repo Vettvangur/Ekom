@@ -279,7 +279,7 @@ public class ImportService : IImportService
 
         _logger.LogInformation("Product Variant finished: {SKU}", importVariant.SKU);
     }
-    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, int syncUser = -1)
+    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
     {
         _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
@@ -287,10 +287,16 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
+        var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
+
+        var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
+
         var allEkomNodes = _contentService
             .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed))
             .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+
+        var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
 
         var product = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProduct" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Identifier);
 
@@ -299,7 +305,7 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
         }
 
-        SaveProduct(product, importProduct, null, null, false, syncUser);
+        SaveProduct(product, importProduct, allUmbracoCategories, null, false, syncUser);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync)).GetAwaiter().GetResult();
 
