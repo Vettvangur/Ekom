@@ -559,6 +559,7 @@ public class ImportService : IImportService
                                 if (newCategory != null)
                                 {
                                     _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
+                                    
                                     using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                                     {
                                         _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
@@ -887,7 +888,12 @@ public class ImportService : IImportService
 
             if (importProduct.Categories.Count > 1 && allUmbracoCategories != null)
             {
-                var umbracoCategories = allUmbracoCategories.Where(x => importProduct.Categories.Skip(1).Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier)));
+                var categoryIdentifiers = new HashSet<string>(importProduct.Categories.Skip(1));
+
+                var umbracoCategories = allUmbracoCategories
+                    .Where(x => categoryIdentifiers.Contains(x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? ""))
+                    .ToList();
+
                 var udis = umbracoCategories.Select(x => x.GetUdi());
 
                 var stringUdis = string.Join(",", udis.Select(x => x.ToString()));
