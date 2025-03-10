@@ -16,7 +16,7 @@ public partial class Order
     /// <returns></returns>
     public async Task<bool> ApplyCouponToOrderAsync(string coupon)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        string storeAlias = _storeSvc.GetStoreFromCache()?.Alias ?? "";
 
         return await ApplyCouponToOrderAsync(coupon, storeAlias)
             .ConfigureAwait(false);

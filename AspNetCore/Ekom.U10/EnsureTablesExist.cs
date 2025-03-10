@@ -38,12 +38,10 @@ class EkomMigrationPlan : MigrationPlan
     public const string OrderDataUniqueIndex = "IX_EkomOrders_UniqueId";
 
     public EkomMigrationPlan()
-        : base("Ekom")
+         : base("Ekom")
     {
         From(string.Empty)
-            .To<MigrationCreateTables>("1")
-            //.To<MigrationUpdatev2>("2")
-            ;
+            .To<MigrationCreateTables>("1"); // Run only if the state is empty
     }
 }
 
@@ -70,15 +68,17 @@ class EnsureTablesExist : IComponent
     {
         logger.LogDebug("Ensuring Ekom db tables exist");
 
-        try
+        var currentState = keyValueService.GetValue("Umbraco.Core.Upgrader.State+Ekom");
+
+        if (string.IsNullOrEmpty(currentState)) // Run only if the state is empty
         {
-            // perform any upgrades (as needed)
+            logger.LogInformation("Running initial database setup for Ekom.");
+
             var upgrader = new Upgrader(new EkomMigrationPlan());
             upgrader.Execute(_migrationPlanExecutor, scopeProvider, keyValueService);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to run ekom Upgrader");
+
+            // Mark as complete so it never runs again
+            keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "1");
         }
 
         logger.LogDebug("Done");

@@ -43,13 +43,15 @@ class Umbraco10Content : UmbracoContent
                     try
                     {
 
+                        var value = prop.PropertyType.VariesByCulture()
+                            ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
+                            : prop.GetSourceValue()?.ToString() ?? string.Empty;
+
                         if (prop.PropertyType.EditorAlias == "Umbraco.TinyMCE")
                         {
-                            var rteValue = prop.GetSourceValue()?.ToString() ?? "";
-
-                            if (rteValue.InvariantStartsWith("{"))
+                            if (value.InvariantStartsWith("{"))
                             {
-                                using JsonDocument doc = JsonDocument.Parse(rteValue);
+                                using JsonDocument doc = JsonDocument.Parse(value);
 
                                 // Extract the "markup" value
                                 string markup = doc.RootElement.GetProperty("markup").GetString() ?? "";
@@ -58,14 +60,13 @@ class Umbraco10Content : UmbracoContent
                             }
                             else
                             {
-                                return rteValue;
+                                return value;
                             }
 
                         }
 
-                        return prop.PropertyType.VariesByCulture()
-                            ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
-                            : prop.GetSourceValue()?.ToString() ?? string.Empty;
+                        return value;
+
                     }
                     catch (Exception ex)
                     {
