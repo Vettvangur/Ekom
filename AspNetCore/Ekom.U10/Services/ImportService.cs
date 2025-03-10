@@ -737,7 +737,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia> allUmbracoMedia, bool create, int syncUser)
+    private void SaveCategory(IContent categoryContent, ImportCategory importCategory, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
     {
         try
         {

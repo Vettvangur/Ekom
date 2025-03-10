@@ -10,27 +10,37 @@ public class UmbracoContent
     }
 
     public UmbracoContent(
-        IDictionary<string, string> defaultProperties,
-        Dictionary<string, string> contentProperies)
+          IDictionary<string, string> defaultProperties,
+          Dictionary<string, string> contentProperties)
     {
-        _properties = new Dictionary<string, string>(defaultProperties);
+        _properties = new Dictionary<string, string>(
+             defaultProperties.Concat(contentProperties)
+                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value ?? string.Empty));
 
-        foreach (KeyValuePair<string, string> prop in contentProperies)
-        {
-            _properties[prop.Key] = prop.Value;
-        }
 
-        if (int.TryParse(GetValue("id"), out int id)) Id = id;
-        if (Guid.TryParse(GetValue("__Key"), out Guid key)) Key = key;
-        Name = GetValue("nodeName");
-        Path = GetValue("__Path");
-        if (int.TryParse(GetValue("level"), out int level)) Level = level;
-        ContentTypeAlias = GetValue("__NodeTypeAlias");
-        Url = GetValue("url");
-        if (Guid.TryParse(GetValue("parentKey"), out Guid parentKey)) ParentKey = parentKey;
+
+        // Parse properties safely
+        if (_properties.TryGetValue("id", out string? idValue) && int.TryParse(idValue, out int id))
+            Id = id;
+
+        if (_properties.TryGetValue("__Key", out string? keyValue) && Guid.TryParse(keyValue, out Guid key))
+            Key = key;
+
+        if (_properties.TryGetValue("parentKey", out string? parentKeyValue) && Guid.TryParse(parentKeyValue, out Guid parentKey))
+            ParentKey = parentKey;
+
+        if (_properties.TryGetValue("level", out string? levelValue) && int.TryParse(levelValue, out int level))
+            Level = level;
+
+        // Get values safely with default fallbacks
+        Name = _properties.GetValueOrDefault("nodeName", string.Empty);
+        Path = _properties.GetValueOrDefault("__Path", string.Empty);
+        ContentTypeAlias = _properties.GetValueOrDefault("__NodeTypeAlias", string.Empty);
+        Url = _properties.GetValueOrDefault("url", string.Empty);
     }
 
-    readonly Dictionary<string, string> _properties;
+    private readonly Dictionary<string, string> _properties;
+
     /// <summary>
     /// All node properties
     /// </summary>
@@ -48,6 +58,6 @@ public class UmbracoContent
 
     public bool IsDocumentType(string alias) => ContentTypeAlias == alias;
 
-    public string GetValue(string propertyAlias, string key = null) =>
+    public string GetValue(string propertyAlias, string? key = null) =>
                 Properties.GetPropertyValue(propertyAlias, key);
 }

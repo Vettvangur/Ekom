@@ -1,4 +1,5 @@
 using Ekom.Models;
+using System.Text.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
@@ -7,66 +8,124 @@ namespace Ekom.Umb.Models;
 
 class Umbraco10Content : UmbracoContent
 {
-    public Umbraco10Content(
-        IPublishedContent content,
-        string? urlOverride = null)
-        : base(new Dictionary<string, string>
-        {
-            { "id", content.Id.ToString() },
-            { "parentID", content.Parent?.Id.ToString() ?? "" },
-            { "parentKey", content.Parent?.Key.ToString() ?? Guid.Empty.ToString() },
-            { "__Key", content.Key.ToString() },
-            { "nodeName", content.Name ?? "" },
-            { "__NodeTypeAlias", content.ContentType.Alias },
-            { "sortOrder", content.SortOrder.ToString() },
-            { "level", content.Level.ToString() },
-            { "__Path", content.Path },
-            { "createDate", content.CreateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-            { "updateDate", content.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-            { "__VariesByCulture", content.Cultures.Count > 1 ? "y" : "n" },
-            // Only used for media
-            { "url", urlOverride ?? "#" }
-        },
-        content.Properties
+    public Umbraco10Content(IPublishedContent content, string? urlOverride = null)
+        : base(
+            new Dictionary<string, string>
+            {
+                ["id"] = content.Id.ToString(),
+                ["parentID"] = content.Parent?.Id.ToString() ?? string.Empty,
+                ["parentKey"] = content.Parent?.Key.ToString() ?? Guid.Empty.ToString(),
+                ["__Key"] = content.Key.ToString(),
+                ["nodeName"] = content.Name ?? string.Empty,
+                ["__NodeTypeAlias"] = content.ContentType?.Alias ?? string.Empty,
+                ["sortOrder"] = content.SortOrder.ToString(),
+                ["level"] = content.Level.ToString(),
+                ["__Path"] = content.Path ?? string.Empty,
+                ["createDate"] = content.CreateDate.ToString("O"),  // ISO 8601 format
+                ["updateDate"] = content.UpdateDate.ToString("O"),
+                ["__VariesByCulture"] = content.Cultures.Count > 1 ? "y" : "n",
+                ["url"] = urlOverride ?? "#"
+            },
+            GetContentProperties(content)
+        )
+    { }
+
+    private static Dictionary<string, string> GetContentProperties(IPublishedContent content)
+    {
+        string? firstCulture = content.Cultures.FirstOrDefault().Value?.Culture;
+
+        return content.Properties
             .Where(x => !string.IsNullOrEmpty(x.Alias))
             .ToDictionary(
-                pair => pair.Alias,
-                pair =>
+                prop => prop.Alias,
+                prop =>
                 {
                     try
                     {
-                        return pair.PropertyType.VariesByCulture()
-                            ? pair.GetSourceValue(content.Cultures.FirstOrDefault().Value?.Culture)?.ToString() ?? ""
-                            : pair.GetSourceValue()?.ToString() ?? "";
+
+                        if (prop.PropertyType.EditorAlias == "Umbraco.TinyMCE")
+                        {
+                            var rteValue = prop.GetSourceValue()?.ToString() ?? "";
+
+                            if (rteValue.InvariantStartsWith("{"))
+                            {
+                                using JsonDocument doc = JsonDocument.Parse(rteValue);
+
+                                // Extract the "markup" value
+                                string markup = doc.RootElement.GetProperty("markup").GetString() ?? "";
+
+                                return markup;
+                            }
+                            else
+                            {
+                                return rteValue;
+                            }
+
+                        }
+
+                        return prop.PropertyType.VariesByCulture()
+                            ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
+                            : prop.GetSourceValue()?.ToString() ?? string.Empty;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        throw new Exception($"Failed to GetSourceValue for: {pair.Alias} Node: {content.Id}");
+                        throw new Exception($"Failed to GetSourceValue for: {prop.Alias} (Node ID: {content.Id})", ex);
                     }
-                }))
-    {
+                }
+            );
     }
 
 
-    public Umbraco10Content(IContent content, Guid ParentKey)
-        : base(new Dictionary<string, string>
-        {
-            { "id", content.Id.ToString() },
-            { "parentID", content.ParentId.ToString() },
-            { "parentKey",ParentKey.ToString() },
-            { "__Key", content.Key.ToString() },
-            { "nodeName", content.Name ?? ""},
-            { "__NodeTypeAlias", content.ContentType.Alias },
-            { "sortOrder", content.SortOrder.ToString() },
-            { "level", content.Level.ToString() },
-            { "__Path", content.Path },
-            { "createDate", content.CreateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-            { "updateDate", content.UpdateDate.ToString("yyyy-MM-dd HH:mm:ss:fff") },
-            { "__VariesByCulture", content.AvailableCultures.Count() > 1 ? "y" : "n" },
-            { "url", "#" }
-        },
-        content.Properties.ToDictionary(
-            x => x.Alias,
-            x => content.GetValue<string>(x.Alias)))
+
+    public Umbraco10Content(IContent content, Guid parentKey)
+        : base(
+            new Dictionary<string, string>
+            {
+                ["id"] = content.Id.ToString(),
+                ["parentID"] = content.ParentId.ToString(),
+                ["parentKey"] = parentKey.ToString(),
+                ["__Key"] = content.Key.ToString(),
+                ["nodeName"] = content.Name ?? string.Empty,
+                ["__NodeTypeAlias"] = content.ContentType?.Alias ?? string.Empty,
+                ["sortOrder"] = content.SortOrder.ToString(),
+                ["level"] = content.Level.ToString(),
+                ["__Path"] = content.Path ?? string.Empty,
+                ["createDate"] = content.CreateDate.ToString("O"),
+                ["updateDate"] = content.UpdateDate.ToString("O"),
+                ["__VariesByCulture"] = content.AvailableCultures.Any() ? "y" : "n",
+                ["url"] = "#"
+            },
+            content.Properties.ToDictionary(
+                x => x.Alias,
+                x => TransformPropertyValue(content, x.Alias)
+            )
+        )
     { }
+
+    private static string TransformPropertyValue(IContent content, string alias)
+    {
+        var prop = content.Properties.FirstOrDefault(x => x.Alias == alias);
+
+        if (prop != null && prop.PropertyType.PropertyEditorAlias == "Umbraco.TinyMCE")
+        {
+            var rteValue = content.GetValue<string>(alias) ?? string.Empty;
+
+            if (rteValue.InvariantStartsWith("{"))
+            {
+                using JsonDocument doc = JsonDocument.Parse(rteValue);
+
+                // Extract the "markup" value
+                string markup = doc.RootElement.GetProperty("markup").GetString() ?? "";
+
+                return markup;
+            } else
+            {
+                return rteValue;
+            }
+
+        }
+
+        return content.GetValue<string>(alias) ?? string.Empty;
+
+    }
 }
