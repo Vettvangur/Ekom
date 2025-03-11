@@ -73,11 +73,13 @@ class OrderLine : IOrderLine
             }
 
             OrderedDiscount? discount = null;
-            // This allows us to display discounted prices of orderlines
-            // when the order has a global discount applying only to specific DiscountItems
-            if ((OrderInfo.Discount != null && Product.Price.Discount == null) && OrderInfo?.Discount?.DiscountItems.Any() == true)
+
+            if (OrderInfo?.Discount != null && OrderInfo.Discount.DiscountItems.Any())
             {
-                discount = OrderInfo.Discount;
+                if (Product.Price.Discount == null || OrderInfo.Discount.Stackable)
+                {
+                    discount = OrderInfo.Discount;
+                }
             }
 
             return new Price(
