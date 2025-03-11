@@ -1,3 +1,4 @@
+using Ekom.API;
 using Ekom.Events;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
@@ -39,6 +40,7 @@ namespace Ekom.Models
             Discount = jObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
             Quantity = jObject[nameof(Quantity)]?.Value<int>() ?? 1;
             DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)]?.Value<bool>() ?? false;
+            HasDiscount = Discount != null;
         }
         /// <summary>
         /// ctor
@@ -90,6 +92,7 @@ namespace Ekom.Models
             Discount = discount;
             Quantity = quantity;
             DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
+            HasDiscount = discount != null;
         }
 
         private CalculatedPrice CreateSimplePrice(decimal price)
@@ -109,6 +112,8 @@ namespace Ekom.Models
         /// Multiplier
         /// </summary>
         public decimal Quantity { get; }
+
+        public bool HasDiscount { get;  }
 
         /// <summary>
         /// Price before discount with VAT left as-is

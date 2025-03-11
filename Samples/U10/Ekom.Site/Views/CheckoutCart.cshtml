@@ -16,10 +16,7 @@
 }
 
 @section Main {
-    @culture
-    @order.StoreInfo.Culture **
-    @store.Currency.CurrencyValue
-    @order.StoreInfo.Currency.CurrencyValue
+
     @if (order == null || order.TotalQuantity <= 0)
     {
         <main class="mx-auto max-w-2xl px-4 pb-24 pt-16 sm:px-6 lg:max-w-7xl lg:px-8">
@@ -75,8 +72,30 @@
                                                 <p class="ml-4 border-l border-gray-200 pl-4 text-gray-500">@variant.Title</p>
                                             </div>
                                         }
+                                        <p class="mt-1 text-sm font-medium text-gray-900">
+                                            Unit price<br />
+                                            @if (orderline.Product?.Price.HasDiscount == true)
+                                            {
 
-                                        <p class="mt-1 text-sm font-medium text-gray-900">@orderline.Amount.WithVat.CurrencyString</p>
+                                                <span class="line-through">
+                                                    @orderline.Product.Price.BeforeDiscount.CurrencyString
+                                                </span>
+                                            }
+
+                                            @orderline.Product.Price.WithVat.CurrencyString
+                                        </p>
+
+                                        <p class="mt-1 text-sm font-medium text-gray-900">
+                                            Total price<br />
+                                            @if (orderline.Amount.HasDiscount) {
+                                                
+                                                <span class="line-through">
+                                                    @orderline.Amount.BeforeDiscount.CurrencyString
+                                                </span>
+                                            }
+
+                                            @orderline.Amount.WithVat.CurrencyString
+                                        </p>
                                     </div>
 
                                     

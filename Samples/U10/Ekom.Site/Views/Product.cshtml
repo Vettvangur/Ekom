@@ -21,7 +21,7 @@
             <div class="lg:col-span-5 lg:col-start-8">
                 <div class="flex justify-between">
                     <h1 class="text-xl font-medium text-gray-900">@product.Title</h1>
-                    @if (product.ProductDiscount != null)
+                    @if (product.Price.HasDiscount)
                     {
                         <p class="text-xl font-medium text-gray-900"><span class="line-through">@product.Price.BeforeDiscount.CurrencyString</span> @product.Price.WithVat.CurrencyString</p>
                     }

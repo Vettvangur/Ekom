@@ -1,9 +1,8 @@
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public interface IProductDiscount : IDiscount
 {
-    public interface IProductDiscount : IDiscount
-    {
-        decimal StartOfRange { get; }
-        decimal EndOfRange { get; }
-        bool Disabled { get; }
-    }
+    decimal StartOfRange { get; }
+    decimal EndOfRange { get; }
+    bool Disabled { get; }
 }
