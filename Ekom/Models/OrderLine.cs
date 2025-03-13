@@ -56,11 +56,15 @@ class OrderLine : IOrderLine
             if (OrderInfo?.Discount != null &&
                 (OrderInfo.Discount.DiscountItems.Any() && OrderInfo.Discount.DiscountItems.Contains(Product.Id.ToString()) || OrderInfo.Discount.GlobalDiscount))
             {
-                if (Product.Price.HasDiscount || OrderInfo.Discount.Stackable)
+                if (Product.Price.HasDiscount && OrderInfo.Discount.Stackable)
                 {
                     discount = OrderInfo.Discount;
                 }
-                else if (Product.Price.Discount?.Amount < OrderInfo.Discount.Amount)
+                else if (!Product.Price.HasDiscount && OrderInfo.Discount != null)
+                {
+                    discount = OrderInfo.Discount;
+                }
+                else if ((Product.Price.Discount?.Amount ?? 0) < OrderInfo.Discount.Amount)
                 {
                     discount = OrderInfo.Discount;
                 }

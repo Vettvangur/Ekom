@@ -1093,29 +1093,32 @@ partial class OrderService
                 );
 
                 orderInfo.orderLines.Add(orderLine);
+            }
 
-                // Product discounts do not contain constraints that change with quantity updates or order modifications
-                // It's therefore enough to only check on OrderLine creation
-                if (product.ProductDiscount() != null
-                // Make sure that the current OrderInfo discount, if there is one, is inclusive
-                // Meaning you can apply this discount while having a separate discount 
-                // affecting other OrderLines
-                && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
-                {
-                    _logger.LogDebug(
-                        "Discount {ProductDiscountKey} found on product, applying to OrderLine",
-                        product.ProductDiscount().Key);
-                    await ApplyDiscountToOrderLineAsync(
-                        orderLine,
-                        product.ProductDiscount(),
-                        orderInfo,
-                        new DiscountOrderSettings
-                        {
-                            UpdateOrder = false,
-                        }
-                    ).ConfigureAwait(false);
-                }
 
+            var productDiscount = product.ProductDiscount();
+
+            // Product discounts do not contain constraints that change with quantity updates or order modifications
+            // It's therefore enough to only check on OrderLine creation
+            if (productDiscount != null
+            // Make sure that the current OrderInfo discount, if there is one, is inclusive
+            // Meaning you can apply this discount while having a separate discount 
+            // affecting other OrderLines
+            && (orderInfo.Discount == null || orderInfo.Discount.Stackable))
+            {
+                _logger.LogDebug(
+                    "Discount {ProductDiscountKey} found on product, applying to OrderLine",
+                    productDiscount.Key);
+
+                await ApplyDiscountToOrderLineAsync(
+                    orderLine,
+                    productDiscount,
+                    orderInfo,
+                    new DiscountOrderSettings
+                    {
+                        UpdateOrder = false,
+                    }
+                ).ConfigureAwait(false);
             }
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
