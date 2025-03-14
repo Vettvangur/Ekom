@@ -160,18 +160,11 @@ class EkomMiddleware
     {
         try
         {
-            if (request == null)
-            {
-                return null;
-            }
-
-
             if (request.Query != null && request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
             {
                 return storeAliasValue;
             }
 
-            // Check for storeAlias in form data
             if (request.HasFormContentType && request.Form.TryGetValue("storeAlias", out var storeAliasFormValue) && !string.IsNullOrEmpty(storeAliasFormValue))
             {
                 return storeAliasFormValue;
@@ -182,28 +175,24 @@ class EkomMiddleware
                 return storeAliasHeaderValue;
             }
 
-            // Check for storeAlias in JSON body
             if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
             {
-                request.EnableBuffering(); // Allow reading the request body multiple times
-                request.Body.Position = 0; // Rewind the body
+                if (!request.Body.CanSeek)
+                {
+                    request.EnableBuffering(); // Allow multiple reads
+                }
+
+                request.Body.Position = 0;
 
                 using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
                 var body = await reader.ReadToEndAsync();
-                request.Body.Position = 0; // Rewind the body for next middleware/controller
+                request.Body.Position = 0; // Reset body position
 
                 if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
-                        var options = new JsonDocumentOptions
-                        {
-                            AllowTrailingCommas = true // Handle slightly malformed JSON
-                        };
-
-                        var json = JsonDocument.Parse(body, options);
-
-                        // Case-insensitive check for storeAlias
+                        using var json = JsonDocument.Parse(body);
                         foreach (var property in json.RootElement.EnumerateObject())
                         {
                             if (string.Equals(property.Name, "storeAlias", StringComparison.OrdinalIgnoreCase))
@@ -212,20 +201,18 @@ class EkomMiddleware
                             }
                         }
                     }
-                    catch (JsonException)
-                    {
-
-                    }
+                    catch (JsonException) { }
                 }
             }
 
             return null;
-
-        } catch
+        }
+        catch
         {
             return null;
         }
     }
+
 
     private bool AllowPath(string? path)
     {
