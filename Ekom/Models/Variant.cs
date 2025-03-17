@@ -29,7 +29,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
+    public virtual decimal? Stock => API.Stock.Instance.GetStock(Key);
 
     /// <summary>
     /// Get the backorder status

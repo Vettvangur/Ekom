@@ -173,7 +173,7 @@ public partial class Stock
                         throw new ArgumentNullException(nameof(variant));
                     }
 
-                    decimal variantStock = variant.Stock;
+                    decimal variantStock = variant.Stock.HasValue ? variant.Stock.Value : 0;
 
                     if (variantStock < orderLine.Quantity)
                     {
@@ -194,7 +194,7 @@ public partial class Stock
                     throw new ArgumentNullException(nameof(product));
                 }
 
-                decimal productStock = product.Stock;
+                decimal productStock = product.Stock.HasValue ? product.Stock.Value : 0;
 
                 if (productStock < orderLine.Quantity)
                 {

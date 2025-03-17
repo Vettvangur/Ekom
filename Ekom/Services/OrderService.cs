@@ -477,6 +477,11 @@ partial class OrderService
 
             IProduct? product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
 
+            if (product == null)
+            {
+                throw new ProductNotFoundException("Unable to find product with key " + orderline.ProductKey);
+            }
+
             IVariant? variant = null;
 
             if (orderline.Product.VariantGroups != null && orderline.Product.VariantGroups.Any(g => g.Variants.Any()))
@@ -489,11 +494,11 @@ partial class OrderService
 
                 ArgumentNullException.ThrowIfNull(variant, "Variant is null");
 
-                existingStock = variant.Stock;
+                existingStock = variant.Stock.HasValue ? variant.Stock.Value : 0;
             }
             else
             {
-                existingStock = product.Stock;
+                existingStock = product.Stock.HasValue ? product.Stock.Value : 0;
             }
 
             VerifyStock(quantity, existingStock, product, variant);
@@ -1025,7 +1030,7 @@ partial class OrderService
 
             if (variant != null)
             {
-                existingStock = variant.Stock;
+                existingStock = variant.Stock.HasValue ? variant.Stock.Value : 0;
                 orderLine
                     = orderInfo.OrderLines
                         .FirstOrDefault(
@@ -1036,7 +1041,7 @@ partial class OrderService
             }
             else
             {
-                existingStock = product.Stock;
+                existingStock = product.Stock.HasValue ? product.Stock.Value : 0;
                 orderLine
                     = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
                     as OrderLine;
