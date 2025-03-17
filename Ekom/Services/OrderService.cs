@@ -494,11 +494,11 @@ partial class OrderService
 
                 ArgumentNullException.ThrowIfNull(variant, "Variant is null");
 
-                existingStock = variant.Stock.HasValue ? variant.Stock.Value : 0;
+                existingStock = variant.Stock;
             }
             else
             {
-                existingStock = product.Stock.HasValue ? product.Stock.Value : 0;
+                existingStock = product.Stock;
             }
 
             VerifyStock(quantity, existingStock, product, variant);
@@ -1025,12 +1025,13 @@ partial class OrderService
                 variant?.Key,
                 action);
 
-            OrderLine orderLine = null;
+            OrderLine? orderLine = null;
             decimal existingStock;
 
             if (variant != null)
             {
-                existingStock = variant.Stock.HasValue ? variant.Stock.Value : 0;
+                existingStock = variant.Stock;
+
                 orderLine
                     = orderInfo.OrderLines
                         .FirstOrDefault(
@@ -1041,7 +1042,7 @@ partial class OrderService
             }
             else
             {
-                existingStock = product.Stock.HasValue ? product.Stock.Value : 0;
+                existingStock = product.Stock;
                 orderLine
                     = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
                     as OrderLine;

@@ -77,7 +77,7 @@ public interface IVariant : IPerStoreNodeEntity
     /// <value>
     /// The stock.
     /// </value>
-    decimal? Stock { get; }
+    decimal Stock { get; }
 
     /// <summary>
     /// 

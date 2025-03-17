@@ -63,7 +63,10 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Get the current product Stock
     /// </summary>
-    public virtual decimal? Stock => API.Stock.Instance.GetStock(Key);
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public virtual decimal Stock => API.Stock.Instance.GetStock(Key);
 
     /// <summary>
     /// Get the availability of the product and the variants

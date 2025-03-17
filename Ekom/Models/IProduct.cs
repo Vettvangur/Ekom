@@ -45,7 +45,7 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <value>
     /// The stock.
     /// </value>
-    decimal? Stock { get; }
+    decimal Stock { get; }
 
     /// <summary>
     /// Gets the availability of the product and variants.
