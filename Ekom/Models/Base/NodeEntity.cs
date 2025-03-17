@@ -164,6 +164,9 @@ public abstract class NodeEntity : INodeEntity
     /// <summary>
     /// Read only dictionary of all umbraco base and custom properties for this item
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
     public IReadOnlyDictionary<string, string> Properties => new ReadOnlyDictionary<string, string>(_properties);
 
     /// <summary>
