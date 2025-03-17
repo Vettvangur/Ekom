@@ -1,0 +1,30 @@
+meta {
+  name: Update Shipping Provider
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/updateshippingprovider?ShippingProvider=6fecd44b-4f2c-4d5a-b7fe-efa9c7734e86&storeAlias=store
+  body: multipartForm
+  auth: none
+}
+
+params:query {
+  ShippingProvider: 6fecd44b-4f2c-4d5a-b7fe-efa9c7734e86
+  storeAlias: store
+}
+
+body:json {
+  {
+    "ProductId": "cb6906db-c156-4c88-814c-6cc181bd1ae3",
+    "VariantId": "5abc5a27-cf22-4438-bcb6-f12c2a8564c9", // Optional
+    "StoreAlias": "store",
+    "Quantity": 1,
+    "Action": "AddOrUpdate" // AddOrUpdate, Set, New
+  }
+}
+
+body:multipart-form {
+  customShipping: Any custom data
+}

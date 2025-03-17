@@ -1,0 +1,30 @@
+meta {
+  name: Update Payment Provider
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/updatepaymentprovider?PaymentProvider=916d8631-11b6-4247-ab6e-c0b5eac6b144&storeAlias=store
+  body: multipartForm
+  auth: none
+}
+
+params:query {
+  PaymentProvider: 916d8631-11b6-4247-ab6e-c0b5eac6b144
+  storeAlias: store
+}
+
+body:json {
+  {
+    "ProductId": "cb6906db-c156-4c88-814c-6cc181bd1ae3",
+    "VariantId": "5abc5a27-cf22-4438-bcb6-f12c2a8564c9", // Optional
+    "StoreAlias": "store",
+    "Quantity": 1,
+    "Action": "AddOrUpdate" // AddOrUpdate, Set, New
+  }
+}
+
+body:multipart-form {
+  customPayment: Any custom data
+}

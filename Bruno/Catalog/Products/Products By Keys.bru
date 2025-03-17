@@ -1,0 +1,22 @@
+meta {
+  name: Products By Keys
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsbykeys
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "PropertyFilters": {},
+    "MetaFilters": {},
+    "Keys": ["ecc9dcf1-4910-4c89-b3d8-a8e4ff3d65b2","cb6906db-c156-4c88-814c-6cc181bd1ae3"],
+    "Page": 1,
+    "PageSize": 10,
+    "StoreAlias": "Store"
+  }
+}

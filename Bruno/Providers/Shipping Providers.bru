@@ -1,0 +1,16 @@
+meta {
+  name: Shipping Providers
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/ekom/provider/shippingproviders/store?countryCode=is-IS&orderAmount=5000
+  body: none
+  auth: none
+}
+
+params:query {
+  countryCode: is-IS
+  orderAmount: 5000
+}

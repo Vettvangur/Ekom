@@ -1,0 +1,18 @@
+meta {
+  name: Apply Coupon To Order
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/coupon/apply
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "coupon": "12345",
+    "storeAlias": "store"
+  }
+}

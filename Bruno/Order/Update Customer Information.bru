@@ -1,0 +1,30 @@
+meta {
+  name: Update Customer Information
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/updatecustomer
+  body: multipartForm
+  auth: none
+}
+
+body:json {
+  {
+    "ProductId": "cb6906db-c156-4c88-814c-6cc181bd1ae3",
+    "VariantId": "5abc5a27-cf22-4438-bcb6-f12c2a8564c9", // Optional
+    "StoreAlias": "store",
+    "Quantity": 1,
+    "Action": "AddOrUpdate" // AddOrUpdate, Set, New
+  }
+}
+
+body:multipart-form {
+  customerName: Vettvangur Vettvangsson
+  customerPhone: 55512345
+  shippingName: Appratus Apparatsdóttir
+  shippingAddress: Suðurlandsbraut 6
+  storeAlias: store
+  customerEmail: vettvangur@vettvangur.is
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Categories By Ids
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/categoriesbyids
+  body: json
+  auth: none
+}
+
+body:json {
+  [1222,231]
+}

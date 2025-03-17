@@ -1,0 +1,15 @@
+meta {
+  name: Product By Route
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/product/route?route=/is/konur/fot/t-shirts/artwork-tee/
+  body: json
+  auth: none
+}
+
+params:query {
+  route: /is/konur/fot/t-shirts/artwork-tee/
+}

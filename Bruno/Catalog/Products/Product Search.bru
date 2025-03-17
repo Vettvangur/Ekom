@@ -1,0 +1,20 @@
+meta {
+  name: Product Search
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsearch
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "SearchQuery": "Vintage",
+    "StoreAlias": "Store",
+    "Page": 1,
+    "PageSize": 10
+  }
+}

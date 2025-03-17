@@ -1,0 +1,15 @@
+meta {
+  name: Category By Route
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/category/route?route=/is/konur/fot/t-shirts/
+  body: json
+  auth: none
+}
+
+params:query {
+  route: /is/konur/fot/t-shirts/
+}

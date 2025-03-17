@@ -1,0 +1,24 @@
+meta {
+  name: Products Recursive By Id
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsrecursive/1228
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "PropertyFilters": {
+  
+      },
+      "MetaFilters": {
+      },
+      "Page": 1,
+      "PageSize": 10,
+      "StoreAlias" : "Store"
+  }
+}

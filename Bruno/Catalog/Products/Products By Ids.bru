@@ -1,0 +1,22 @@
+meta {
+  name: Products By Ids
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsbyids
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "PropertyFilters": {},
+    "MetaFilters": {},
+    "Ids": [1301,1257],
+    "Page": 1,
+    "PageSize": 10,
+    "StoreAlias": "Store"
+  }
+}

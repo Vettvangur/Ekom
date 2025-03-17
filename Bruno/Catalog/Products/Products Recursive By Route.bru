@@ -1,0 +1,28 @@
+meta {
+  name: Products Recursive By Route
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsrecursive/route/?route=/lyf-an-lyfsedils/
+  body: json
+  auth: none
+}
+
+params:query {
+  route: /lyf-an-lyfsedils/
+}
+
+body:json {
+  {
+      "PropertyFilters": {
+  
+      },
+      "MetaFilters": {
+      },
+      "Page": 1,
+      "PageSize": 1,
+      "StoreAlias" : "Lyfja"
+  }
+}

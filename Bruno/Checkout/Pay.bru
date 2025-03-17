@@ -1,0 +1,29 @@
+meta {
+  name: Pay
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/ekom/checkout/pay?culture=is-IS
+  body: json
+  auth: none
+}
+
+params:query {
+  culture: is-IS
+}
+
+body:json {
+  {
+    "PaymentProvider": "", // Optional
+    "ShippingProvider": "", // Optional 
+    "CardNumber": "",
+    "CVV": "",
+    "Year": 2024,
+    "Month": 10,
+    "StoreAlias": "store",
+    "Culture": "is-IS",
+    "ReturnUrl": "/success-page"
+  }
+}

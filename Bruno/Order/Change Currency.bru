@@ -1,0 +1,15 @@
+meta {
+  name: Change Currency
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/currency?currency=en-US
+  body: json
+  auth: none
+}
+
+params:query {
+  currency: en-US
+}

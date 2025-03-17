@@ -1,0 +1,18 @@
+meta {
+  name: Remove Orderline
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/removeorderline
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "LineId": "c422e690-b350-429c-849d-e0e1da913ca1",
+    "StoreAlias": "store"
+  }
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Related Product By Multiple Product Key
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/relatedproducts/?ids=ecc9dcf1-4910-4c89-b3d8-a8e4ff3d65b2&ids=cb6906db-c156-4c88-814c-6cc181bd1ae3&count=2
+  body: json
+  auth: none
+}
+
+params:query {
+  ids: ecc9dcf1-4910-4c89-b3d8-a8e4ff3d65b2
+  ids: cb6906db-c156-4c88-814c-6cc181bd1ae3
+  count: 2
+}

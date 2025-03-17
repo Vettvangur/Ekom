@@ -1,0 +1,17 @@
+meta {
+  name: Related Product By SKUs
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/relatedproductsbyskus?skus=artwork&skus=vintage-mountain-adventure-tee&count=4
+  body: json
+  auth: none
+}
+
+params:query {
+  skus: artwork
+  skus: vintage-mountain-adventure-tee
+  count: 4
+}

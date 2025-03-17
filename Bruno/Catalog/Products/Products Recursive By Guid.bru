@@ -1,0 +1,23 @@
+meta {
+  name: Products Recursive By Guid
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsrecursive/f2661f1e-c6a0-4afb-aa3c-aec913db335a
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "PropertyFilters": {
+  
+      },
+      "MetaFilters": {
+      },
+      "Page": 1,
+      "PageSize": 10
+  }
+}

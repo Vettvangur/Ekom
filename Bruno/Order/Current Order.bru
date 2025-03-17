@@ -1,0 +1,21 @@
+meta {
+  name: Current Order
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ekom/order
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "ProductId": "cb6906db-c156-4c88-814c-6cc181bd1ae3",
+    "VariantId": "5abc5a27-cf22-4438-bcb6-f12c2a8564c9", // Optional
+    "StoreAlias": "store",
+    "Quantity": 1,
+    "Action": "AddOrUpdate" // AddOrUpdate, Set, New
+  }
+}

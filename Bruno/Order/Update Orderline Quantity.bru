@@ -1,0 +1,19 @@
+meta {
+  name: Update Orderline Quantity
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/Updateorderlinequantity
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "LineId": "1c46d76c-e1df-4a71-a65e-407675fe11ce",
+    "StoreAlias": "store",
+    "Quantity": 1
+  }
+}

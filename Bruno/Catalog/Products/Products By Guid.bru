@@ -1,0 +1,24 @@
+meta {
+  name: Products By Guid
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/products/343f79e7-c082-4a8e-b5c1-74cd0db82687
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "PropertyFilters": {
+  
+      },
+      "MetaFilters": {
+      },
+      "Page": 1,
+      "PageSize": 10,
+      "StoreAlias" : "Store"
+  }
+}

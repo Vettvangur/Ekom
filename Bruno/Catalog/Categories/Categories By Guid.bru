@@ -1,0 +1,15 @@
+meta {
+  name: Categories By Guid
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/ekom/catalog/categoriesbykeys
+  body: json
+  auth: none
+}
+
+body:json {
+  ["1390119c-f766-498d-89a3-8c5e48caade3","44efb21c-be36-4c9b-bf36-6754bbc85fb0"]
+}

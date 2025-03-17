@@ -1,0 +1,15 @@
+meta {
+  name: Remove Coupon From Order
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/ekom/order/coupon/remove?storeAlias=store
+  body: json
+  auth: none
+}
+
+params:query {
+  storeAlias: store
+}

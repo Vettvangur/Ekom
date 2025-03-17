@@ -1,0 +1,16 @@
+meta {
+  name: Payment Providers
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ekom/provider/paymentsproviders?countryCode=is-IS&orderAmount=5000
+  body: none
+  auth: none
+}
+
+params:query {
+  countryCode: is-IS
+  orderAmount: 5000
+}
