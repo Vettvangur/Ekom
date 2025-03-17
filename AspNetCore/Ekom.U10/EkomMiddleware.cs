@@ -177,16 +177,8 @@ class EkomMiddleware
 
             if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (!request.Body.CanSeek)
-                {
-                    request.EnableBuffering(); // Allow multiple reads
-                }
 
-                request.Body.Position = 0;
-
-                using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-                var body = await reader.ReadToEndAsync();
-                request.Body.Position = 0; // Reset body position
+                var body = await GetRawBodyStringAsync(request, true, Encoding.UTF8, request.Body);
 
                 if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
                 {
@@ -213,6 +205,43 @@ class EkomMiddleware
         }
     }
 
+
+    public static async Task<string> GetRawBodyStringAsync(this HttpRequest request,
+                                                        bool enableBuffering = false,
+                                                        Encoding encoding = null,
+                                                        Stream inputStream = null)
+    {
+        if (encoding == null)
+            encoding = Encoding.UTF8;
+
+        if (inputStream == null)
+        {
+            if (enableBuffering)
+                request.EnableBuffering();
+            inputStream = request.Body;
+        }
+
+        string? bodyString = string.Empty;
+        using (var reader = new StreamReader(inputStream,
+            encoding,
+            detectEncodingFromByteOrderMarks: false,
+            leaveOpen: enableBuffering))
+        {
+            try
+            {
+                bodyString = await reader.ReadToEndAsync();
+            }
+            catch (Exception)
+            {
+                bodyString = string.Empty;
+            }
+
+            if (inputStream.CanSeek)
+                inputStream.Position = 0;
+        }
+
+        return bodyString;
+    }
 
     private bool AllowPath(string? path)
     {

@@ -8,7 +8,7 @@ using Ekom.Services;
 using Ekom.Umb.Sections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Composing;
@@ -23,6 +23,12 @@ class StartupFilter : IStartupFilter
 {
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
     {
+        app.Use(async (context, next) =>
+        {
+            context.Request.EnableBuffering();
+            await next();
+        });
+
         app.UseAuthentication();
         app.UseEkomMiddleware();
         next(app);
