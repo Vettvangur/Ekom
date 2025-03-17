@@ -206,7 +206,7 @@ class EkomMiddleware
     }
 
 
-    public async Task<string> GetRawBodyStringAsync(this HttpRequest request,
+    private async Task<string> GetRawBodyStringAsync(HttpRequest request,
                                                         bool enableBuffering = false,
                                                         Encoding encoding = null,
                                                         Stream inputStream = null)
