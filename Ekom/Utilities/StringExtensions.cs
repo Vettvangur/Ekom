@@ -247,7 +247,7 @@ public static class StringExtension
                 string? currencyValue = price[KeyExists(price, "Currency") ? "Currency" : "currency"].Value<string>();
                 CurrencyModel? currency = storeCurrencies.FirstOrDefault(x => x.CurrencyValue == currencyValue) ?? storeCurrencies.FirstOrDefault();
 
-                IDiscount productDiscount = !string.IsNullOrEmpty(path)
+                IDiscount? productDiscount = !string.IsNullOrEmpty(path)
                     ? Configuration.Resolver.GetService<ProductDiscountService>()
                         .GetProductDiscount(
                             path,
@@ -277,7 +277,7 @@ public static class StringExtension
                 fallbackCurrency = store.Currency;
             }
 
-            IDiscount productDiscount = !string.IsNullOrEmpty(path)
+            IDiscount? productDiscount = !string.IsNullOrEmpty(path)
                 ? Configuration.Resolver.GetService<ProductDiscountService>()
                     .GetProductDiscount(
                         path,
