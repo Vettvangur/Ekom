@@ -2,82 +2,81 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// F.x. home delivery or pickup.
+/// </summary>
+public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
 {
+    //readonly HttpContext _httpCtx;
+
+    //public ShippingProvider(IHttpContextAccessor httpContextAccessor)
+    //{
+    //    _httpCtx = httpContextAccessor.HttpContext;
+    //}
     /// <summary>
-    /// F.x. home delivery or pickup.
+    /// Ranges and zones
     /// </summary>
-    public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
+    public virtual IConstraints Constraints { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual IPrice Price
     {
-        //readonly HttpContext _httpCtx;
-
-        //public ShippingProvider(IHttpContextAccessor httpContextAccessor)
-        //{
-        //    _httpCtx = httpContextAccessor.HttpContext;
-        //}
-        /// <summary>
-        /// Ranges and zones
-        /// </summary>
-        public virtual IConstraints Constraints { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual IPrice Price
+        get
         {
-            get
+            HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+
+            if (httpContext?.Request != null)
             {
-                HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+                string? cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
 
-                if (httpContext?.Request != null)
+                if (cookie != null && !string.IsNullOrEmpty(cookie))
                 {
-                    string? cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
+                    IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
 
-                    if (cookie != null && !string.IsNullOrEmpty(cookie))
+                    if (price != null)
                     {
-                        IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
-
-                        if (price != null)
-                        {
-                            return price;
-                        }
+                        return price;
                     }
                 }
-
-                return Prices.FirstOrDefault();
-
             }
+
+            return Prices.FirstOrDefault();
+
         }
+    }
 
-        public virtual string Description => GetValue("description", Store.Alias);
+    public virtual string Description => GetValue("description", Store.Alias);
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual List<IPrice> Prices
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<IPrice> Prices
+    {
+        get
         {
-            get
-            {
-                List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
+            List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
 
-                return Prices;
-            }
+            return Prices;
         }
+    }
 
-        /// <summary>
-        /// Used by Ekom extensions
-        /// </summary>
-        /// <param name="store"></param>
-        internal protected ShippingProvider(IStore store) : base(store) { }
+    /// <summary>
+    /// Used by Ekom extensions
+    /// </summary>
+    /// <param name="store"></param>
+    internal protected ShippingProvider(IStore store) : base(store) { }
 
-        /// <summary>
-        /// Construct ShippingProvider
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="store"></param>
-        internal protected ShippingProvider(UmbracoContent item, IStore store) : base(item, store)
-        {
-            Constraints = new Constraints(this);
-        }
+    /// <summary>
+    /// Construct ShippingProvider
+    /// </summary>
+    /// <param name="item"></param>
+    /// <param name="store"></param>
+    internal protected ShippingProvider(UmbracoContent item, IStore store) : base(item, store)
+    {
+        Constraints = new Constraints(this);
     }
 }

@@ -432,6 +432,6 @@ public static class StringExtension
     public static bool IsValidEmail(this string email)
     {
         string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-        return Regex.IsMatch(email, emailPattern);
+        return Regex.IsMatch(email.Trim(), emailPattern);
     }
 }
