@@ -44,7 +44,7 @@ public class CatalogSearchService : ICatalogSearchService
 
         if (req == null || string.IsNullOrEmpty(req.SearchQuery))
         {
-            return null;
+            return new List<SearchResultEntity>();
         }
 
         var luceneQuery = new StringBuilder();
@@ -196,7 +196,7 @@ public class CatalogSearchService : ICatalogSearchService
             _logger.LogInformation(luceneQuery.ToString());
         }
 
-        return null;
+        return new List<SearchResultEntity>();
     }
     
     // This function is used for the the internal search engin if its not overriden
@@ -222,7 +222,7 @@ public class CatalogSearchService : ICatalogSearchService
             new EkomSearchField()
             {
                 Name = "sku",
-                Booster = "^10.0",
+                Booster = "^12.0",
                 SearchType = EkomSearchType.Wildcard
             },
             new EkomSearchField()
@@ -251,7 +251,7 @@ public class CatalogSearchService : ICatalogSearchService
             }
         };
 
-        req.SearchFields = req.SearchFields == null ? defaultFields : req.SearchFields;
+        req.SearchFields = req.SearchFields == null || !req.SearchFields.Any() ? defaultFields : req.SearchFields;
 
         try
         {

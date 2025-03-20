@@ -29,10 +29,15 @@ class EkomSearchTree : ISearchableTree
                 ExamineIndex = "InternalIndex"
             }, out _);
 
+
+            if (results == null)
+            {
+                return Task.FromResult(new EntitySearchResults(searchResults, totalFound));
+            }
+
             foreach (var result in results.Take(30))
             {
                 var icon = "icon-document";
-;
                 var alias = result.DocType;
                 var name = result.Name;
                 var url = result.Url;
