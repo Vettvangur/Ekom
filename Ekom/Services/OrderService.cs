@@ -1550,7 +1550,24 @@ partial class OrderService
             }
         }
     }
+    public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(string userName, string? storeAlias = null)
+    {
+        List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
+            x => x.CustomerUsername == userName,
+            OrderStatus.ReadyForDispatch,
+            OrderStatus.OfflinePayment,
+            OrderStatus.Dispatched
 
+        ).ConfigureAwait(false);
+
+        if (!string.IsNullOrEmpty(storeAlias))
+        {
+            orders = orders.Where(x => x.StoreAlias == storeAlias).ToList();
+        }
+
+
+        return orders.Select(x => new OrderInfo(x)).ToList();
+    }
     public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
     {
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(

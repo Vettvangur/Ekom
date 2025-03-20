@@ -232,7 +232,20 @@ public partial class Order
     /// <returns></returns>
     public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
     {
+
         return await _orderService.GetCompleteCustomerOrdersAsync(customerId, storeAlias)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Completed orders with <see cref="OrderStatus"/> in one of the last stages
+    /// </summary>
+    /// <param name="userName"></param>
+    /// <param name="storeAlias"></param>
+    /// <returns></returns>
+    public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(string userName, string? storeAlias = null)
+    {
+        return await _orderService.GetCompleteCustomerOrdersAsync(userName, storeAlias)
             .ConfigureAwait(false);
     }
 
