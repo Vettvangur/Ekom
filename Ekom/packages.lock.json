@@ -10,14 +10,14 @@
       },
       "Ekom.Payments.Core": {
         "type": "Direct",
-        "requested": "[0.2.1, )",
-        "resolved": "0.2.1",
-        "contentHash": "hF7JUrRBccnw2QIorY2Ftnrsn3WsJGS0poVTN/jLZitOfrMjso9GhgWjfB8TkV3IwQnjIOvOWQbIG7crBRzljg==",
+        "requested": "[0.2.2, )",
+        "resolved": "0.2.2",
+        "contentHash": "MXF419kq+bb3V8Zco/Oi4PkwpBtauQgRLWYpH/y1y2ynfGN5gYecEyTJUXpQ0wvIadtCfF2F1GGcatj1ppjFyA==",
         "dependencies": {
-          "Azure.Core": "1.44.1",
+          "Azure.Core": "1.45.0",
           "Azure.Identity": "1.13.1",
           "Ekom.Common": "0.1.279",
-          "Microsoft.Data.SqlClient": "5.2.2",
+          "Microsoft.Data.SqlClient": "6.0.1",
           "linq2db": "5.4.1"
         }
       },
@@ -146,16 +146,12 @@
       },
       "Azure.Core": {
         "type": "Transitive",
-        "resolved": "1.44.1",
-        "contentHash": "YyznXLQZCregzHvioip07/BkzjuWNXogJEVz9T5W6TwjNr17ax41YGzYMptlo2G10oLCuVPoyva62y0SIRDixg==",
+        "resolved": "1.45.0",
+        "contentHash": "a4ZZ8SHrYqDYqan0vUZrCoN2V09sSXWqsy5PwgyRDZWF/ZjYPUNqBcOOV01Mm7Rcd4Psf08GUBPOhGz+7onmPQ==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
-          "System.ClientModel": "1.1.0",
-          "System.Diagnostics.DiagnosticSource": "6.0.1",
+          "System.ClientModel": "1.2.1",
           "System.Memory.Data": "6.0.0",
-          "System.Numerics.Vectors": "4.5.0",
-          "System.Text.Encodings.Web": "6.0.0",
-          "System.Text.Json": "6.0.10",
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
@@ -417,11 +413,11 @@
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.1.0",
-        "contentHash": "UocOlCkxLZrG2CKMAAImPcldJTxeesHnHGHwhJ0pNlZEvEXcWKuQvVOER2/NiOkJGRJk978SNdw3j6/7O9H1lg==",
+        "resolved": "1.2.1",
+        "contentHash": "s9+M5El+DXdCRRLzxak8uGBKWT8H/eIssGpFtpaMKdJULrQbBDPH/zFbVyHX+NDczhS5EvjHFbBH9/L+0UhmcA==",
         "dependencies": {
-          "System.Memory.Data": "1.0.2",
-          "System.Text.Json": "6.0.9"
+          "System.Memory.Data": "6.0.0",
+          "System.Text.Json": "6.0.10"
         }
       },
       "System.Configuration.ConfigurationManager": {
@@ -467,11 +463,6 @@
         "dependencies": {
           "System.Text.Json": "6.0.0"
         }
-      },
-      "System.Numerics.Vectors": {
-        "type": "Transitive",
-        "resolved": "4.5.0",
-        "contentHash": "QQTlPTl06J/iiDbJCiepZ4H//BVraReU4O4EoRw1U02H5TLUIT7xn3GnDp9AXPSlJUDyFs4uWjWafNX6WrAojQ=="
       },
       "System.Runtime.CompilerServices.Unsafe": {
         "type": "Transitive",
