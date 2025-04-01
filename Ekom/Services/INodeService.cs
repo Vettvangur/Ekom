@@ -9,9 +9,9 @@ public interface INodeService
     IEnumerable<UmbracoContent> NodeCatalogAncestors(string t);
     IEnumerable<UmbracoContent> NodeChildren(string t);
     bool IsItemUnpublished(UmbracoContent content);
-    UmbracoContent NodeById(Guid t);
-    UmbracoContent NodeById(int t);
-    UmbracoContent NodeById(string t);
+    UmbracoContent? NodeById(Guid t, bool preview = false);
+    UmbracoContent? NodeById(int t, bool preview = false);
+    UmbracoContent? NodeById(string t, bool preview = false);
     UmbracoContent MediaById(Guid t);
     UmbracoContent MediaById(int t);
     UmbracoContent MediaById(string t);

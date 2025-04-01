@@ -154,14 +154,15 @@ class NodeService : INodeService
     /// Get <see cref="IPublishedContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public IPublishedContent GetNodeById(int id)
+    public IPublishedContent? GetNodeById(int id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Content;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(preview, id);
 
             return node;
         }
@@ -171,8 +172,9 @@ class NodeService : INodeService
     /// Get <see cref="IPublishedContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public IPublishedContent GetNodeById(string id)
+    public IPublishedContent? GetNodeById(string id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
@@ -181,17 +183,17 @@ class NodeService : INodeService
 
             if (int.TryParse(id, out int _intId))
             {
-                return cache.GetById(false, _intId);
+                return cache?.GetById(preview, _intId);
             }
 
             if (Guid.TryParse(id, out Guid _guidId))
             {
-                return cache.GetById(false, _guidId);
+                return cache?.GetById(preview, _guidId);
             }
             
             if (UdiParser.TryParse(id, out Udi _udiId))
             {
-                return cache.GetById(false,_udiId);
+                return cache?.GetById(preview, _udiId);
             }
         }
 
@@ -202,14 +204,15 @@ class NodeService : INodeService
     /// Get <see cref="UmbracoContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent NodeById(int id)
+    public UmbracoContent? NodeById(int id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Content;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(preview, id);
 
             if (node != null)
             {
@@ -224,14 +227,15 @@ class NodeService : INodeService
     /// Get <see cref="UmbracoContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent NodeById(Guid id)
+    public UmbracoContent? NodeById(Guid id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Content;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(preview, id);
 
             if (node != null)
             {
@@ -248,14 +252,15 @@ class NodeService : INodeService
     /// Get <see cref="UmbracoContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent NodeById(Udi id)
+    public UmbracoContent? NodeById(Udi id, bool preview = false)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Content;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(preview, id);
 
             if (node != null)
             {
@@ -270,23 +275,24 @@ class NodeService : INodeService
     /// Get <see cref="UmbracoContent"/> node by Id
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="preview"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent NodeById(string id)
+    public UmbracoContent? NodeById(string id, bool preview = false)
     {
 
         if (int.TryParse(id, out int _intId))
         {
-            return NodeById(_intId);
+            return NodeById(_intId, preview);
         }
 
         if (Guid.TryParse(id, out Guid _guidId))
         {
-            return NodeById(_guidId);
+            return NodeById(_guidId, preview);
         }
 
         if (UdiParser.TryParse(id, out Udi _udiId))
         {
-            return NodeById(_udiId);
+            return NodeById(_udiId, preview);
         }
 
         return null;
@@ -297,13 +303,13 @@ class NodeService : INodeService
     /// </summary>
     /// <param name="id"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent MediaById(int id)
+    public UmbracoContent? MediaById(int id)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Media;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(false, id);
 
             if (node != null && node.IsPublished())
             {
@@ -318,13 +324,13 @@ class NodeService : INodeService
     /// </summary>
     /// <param name="id"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent MediaById(Guid id)
+    public UmbracoContent? MediaById(Guid id)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Media;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(false, id);
 
             if (node != null)
             {
@@ -341,13 +347,13 @@ class NodeService : INodeService
     /// </summary>
     /// <param name="id"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent MediaById(Udi id)
+    public UmbracoContent? MediaById(Udi id)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {
             var cache = cref.UmbracoContext.Media;
 
-            var node = cache.GetById(false, id);
+            var node = cache?.GetById(false, id);
 
             if (node != null)
             {
@@ -363,7 +369,7 @@ class NodeService : INodeService
     /// </summary>
     /// <param name="id"></param>
     /// <returns>Property Value</returns>
-    public UmbracoContent MediaById(string id)
+    public UmbracoContent? MediaById(string id)
     {
 
         if (int.TryParse(id, out int _intId))
@@ -389,7 +395,7 @@ class NodeService : INodeService
     /// </summary>
     /// <param name="id"></param>
     /// <returns>Property Value</returns>
-    public IPublishedContent GetMediaById(string id)
+    public IPublishedContent? GetMediaById(string id)
     {
         using (var cref = _context.EnsureUmbracoContext())
         {

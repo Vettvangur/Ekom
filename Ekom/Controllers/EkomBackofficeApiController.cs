@@ -102,8 +102,9 @@ public class EkomBackofficeApiController : ControllerBase
         {
             cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
 
-            IEnumerable<IStore> stores = API.Store.Instance.GetAllStores();
-            UmbracoContent node = _nodeService.NodeById(id);
+            var stores = API.Store.Instance.GetAllStores();
+
+            UmbracoContent node = _nodeService.NodeById(id, true);
 
             if (node != null)
             {
