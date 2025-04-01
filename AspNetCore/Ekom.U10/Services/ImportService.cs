@@ -404,10 +404,10 @@ public class ImportService : IImportService
         ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
     }
 
-    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory> allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
+    private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
     {
 
-        if (parentContent == null || importCategories == null)
+        if (parentContent == null || importCategories == null || allImportCategories == null)
         {
             return;
         }
@@ -1677,8 +1677,11 @@ public class ImportService : IImportService
         }
     }
 
-    public List<ImportCategory> GetAllCategories(ImportData importData) =>
-        importData.Categories.SelectMany(GetFlattenedCategories).ToList();
+    public List<ImportCategory>? GetAllCategories(ImportData importData) =>
+        importData.Categories == null
+            ? null
+            : importData.Categories.SelectMany(GetFlattenedCategories).ToList();
+
 
     private IEnumerable<ImportCategory> GetFlattenedCategories(ImportCategory category) =>
         new[] { category }.Concat(category.SubCategories?.SelectMany(GetFlattenedCategories) ?? Enumerable.Empty<ImportCategory>());
