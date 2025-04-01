@@ -127,53 +127,32 @@ namespace Ekom.Utilities
 
             if (item.Level > 3)
             {
-                string[] pathArray = item.Path.Split(',');
+                var skipCount = 3;
+                var pathArray = item.Path.Split(',');
 
-                if (item.ContentTypeAlias == "ekmProduct" || item.ContentTypeAlias == "ekmCategory")
+                var takeCountByAlias = new Dictionary<string, int>
                 {
-                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 4);
+                    ["ekmProduct"] = pathArray.Length - 4,
+                    ["ekmCategory"] = pathArray.Length - 4,
+                    ["ekmProductVariantGroup"] = pathArray.Length - 5,
+                    ["ekmProductVariant"] = pathArray.Length - 6
+                };
 
-                    foreach (string? pathId in paths)
+                if (takeCountByAlias.TryGetValue(item.ContentTypeAlias, out int takeCount))
+                {
+                    var paths = pathArray.Skip(skipCount).Take(takeCount);
+
+                    foreach (var pathId in paths)
                     {
-                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
+                        if (!int.TryParse(pathId, out int id)) continue;
 
+                        var category = API.Catalog.Instance.GetCategory(id, store.Alias);
                         if (category == null)
                         {
                             return true;
                         }
                     }
                 }
-
-                if (item.ContentTypeAlias == "ekmProductVariantGroup")
-                {
-                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 5);
-
-                    foreach (string? pathId in paths)
-                    {
-                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
-
-                        if (category == null)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
-                if (item.ContentTypeAlias == "ekmProductVariant")
-                {
-                    IEnumerable<string> paths = pathArray.Skip(3).Take(pathArray.Count() - 6);
-
-                    foreach (string? pathId in paths)
-                    {
-                        ICategory? category = API.Catalog.Instance.GetCategory(Convert.ToInt32(pathId), store.Alias);
-
-                        if (category == null)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
             }
 
             return false;
