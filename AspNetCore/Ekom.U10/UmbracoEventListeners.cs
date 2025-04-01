@@ -91,10 +91,6 @@ class UmbracoEventListeners :
 
                 try
                 {
-                    if (alias == "ekmStore")
-                    {
-                        _cache.Remove();
-                    }
 
                     if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant" || alias == "ekmProductDiscount" || alias == "ekmOrderDiscount")
                     {
