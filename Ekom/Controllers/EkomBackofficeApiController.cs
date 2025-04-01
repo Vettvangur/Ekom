@@ -6,6 +6,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
 using System.Net;
 
 namespace Ekom.Controllers;
@@ -92,27 +93,70 @@ public class EkomBackofficeApiController : ControllerBase
         });
     }
 
+    private static readonly ConcurrentDictionary<string, Lazy<Task<IEnumerable<IStore>>>> _storeLocks = new();
 
     [HttpGet]
     [Route("Stores/{id}")]
     [UmbracoUserAuthorize]
     public async Task<IEnumerable<IStore>> GetStores([FromRoute] int id)
     {
-        return await _memoryCache.GetOrCreateAsync($"Stores_{id}", async cacheEntry =>
+        var cacheKey = $"Stores_{id}";
+
+        if (_memoryCache.TryGetValue<IEnumerable<IStore>>(cacheKey, out var cached))
         {
-            cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+            return cached;
+        }
 
-            var stores = API.Store.Instance.GetAllStores();
-
-            UmbracoContent node = _nodeService.NodeById(id, true);
-
-            if (node != null)
+        var lazy = _storeLocks.GetOrAdd(cacheKey, key =>
+            new Lazy<Task<IEnumerable<IStore>>>(async () =>
             {
-                stores = stores.Where(store => !node.IsItemDisabled(store));
-            }
+                var data = LoadStores(id);
+                _memoryCache.Set(cacheKey, data, TimeSpan.FromSeconds(60));
+                _storeLocks.TryRemove(cacheKey, out _);
+                return data;
+            }));
 
+        try
+        {
+            return await lazy.Value;
+        }
+        catch
+        {
+            // If the factory failed, remove it so future attempts can retry
+            _storeLocks.TryRemove(cacheKey, out _);
+            throw;
+        }
+    }
+
+    private  IEnumerable<IStore> LoadStores(int id)
+    {
+        var stores = API.Store.Instance.GetAllStores().ToList();
+
+        UmbracoContent? node = _nodeService.NodeById(id, true);
+        if (node == null)
             return stores;
-        });
+
+        var ancestors = _nodeService.GetAllCatalogAncestors(node).ToList();
+        var disabledStores = new List<string>();
+
+        foreach (var store in stores.ToList())
+        {
+            foreach (var ancestor in ancestors)
+            {
+                if (disabledStores.Contains(store.Alias))
+                    continue;
+
+                var isDisabled = ancestor.Properties.GetValue("disable", store.Alias).IsBoolean();
+
+                if (isDisabled)
+                {
+                    disabledStores.Add(store.Alias);
+                    stores.Remove(store);
+                }
+            }
+        }
+
+        return stores;
     }
 
     /// <summary>

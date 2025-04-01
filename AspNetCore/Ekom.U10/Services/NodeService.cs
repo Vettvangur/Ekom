@@ -137,9 +137,16 @@ class NodeService : INodeService
 
     public IEnumerable<UmbracoContent> GetAllCatalogAncestors(UmbracoContent item)
     {
+        if (item == null)
+        {
+            return new List<UmbracoContent>();
+        }
+
         using (var cref = _context.EnsureUmbracoContext())
         {
-            var node = GetNodeById(item.Id);
+            var node = GetNodeById(item.Id, true);
+
+            ArgumentNullException.ThrowIfNull(node);
 
             var ancestors = node.AncestorsOrSelf().Where(x => x.IsDocumentType("ekmCategory") || x.IsDocumentType("ekmProduct")).ToList();
 
