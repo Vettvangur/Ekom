@@ -79,7 +79,7 @@ public class ImportService : IImportService
 
     public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1)
     {
-        _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
+        _logger.LogInformation($"Full Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {(data.Categories != null ?  (data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()) : 0)} Products: {data.Products.Count}");
 
         lock (_syncLock)
         {
