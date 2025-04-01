@@ -113,6 +113,9 @@ public class ImportService : IImportService
 
             var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
+            var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
+            var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
+
             var stopwatch = Stopwatch.StartNew();
 
             IterateCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser);
@@ -123,7 +126,7 @@ public class ImportService : IImportService
 
             stopwatch.Restart();
 
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, true, recycleBinNode, productProcessNode);
 
             _logger.LogInformation("IterateProductTree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
 
@@ -190,11 +193,14 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
+        var recycleBinNode = data.RecycleBinKey.HasValue ? _contentService.GetById(data.RecycleBinKey.Value) : null;
+        var productProcessNode = data.ProductProcessKey.HasValue ? _contentService.GetById(data.ProductProcessKey.Value) : null;
+
         IterateCategoryTree(data.Categories, new List<ImportCategory>(), allUmbracoCategories, allUmbracoMedia, umbracoRootContent, syncUser, false);
 
         if (data.Products != null && data.Products.Any())
         {
-            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser);
+            IterateProductTree(data.Products, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, true, recycleBinNode, productProcessNode);
         }
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.CategorySync)).GetAwaiter().GetResult();
@@ -497,7 +503,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -540,7 +546,14 @@ public class ImportService : IImportService
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
                         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                         {
-                            _contentService.Delete(umbracoProduct);
+                            if (recycleBinNode != null)
+                            {
+                                _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                            } else
+                            {
+                                _contentService.Delete(umbracoProduct);
+                            }
+                            
                         }
                             
                         productDeleted++;
@@ -574,10 +587,19 @@ public class ImportService : IImportService
                                 } else
                                 {
                                     _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
+                                    
                                     using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                                     {
-                                        _contentService.Delete(umbracoProduct);
+                                        if (recycleBinNode != null)
+                                        {
+                                            _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                                        }
+                                        else
+                                        {
+                                            _contentService.Delete(umbracoProduct);
+                                        }
                                     }
+
                                     productDeleted++;
                                 }
                             }
@@ -620,7 +642,7 @@ public class ImportService : IImportService
 
                         var save = create;
 
-                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser);
+                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser, recycleBinNode, productProcessNode);
 
                         IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, syncUser);
                     }
@@ -806,7 +828,7 @@ public class ImportService : IImportService
         }
 
     }
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         try
         {
@@ -919,7 +941,7 @@ public class ImportService : IImportService
                 productContent.TemplateId = importProduct.TemplateId.Value;
             }
 
-            SaveEvent(productContent, importProduct.SaveEvent, syncUser, args.IsCreateOperation);
+            SaveEvent(productContent, importProduct.SaveEvent, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
 
             productsSaved.Add(importProduct);
 
@@ -1449,7 +1471,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, int syncUser, bool create)
+    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
@@ -1470,6 +1492,15 @@ public class ImportService : IImportService
             {
                 _contentService.Save(content, userId: syncUser);
             }
+
+            if (recycleBinNode != null && productProcessNode != null && content.ContentType.Alias == "ekmProduct")
+            {
+                if (content.ParentId == recycleBinNode.Id)
+                {
+                    _contentService.Move(content, productProcessNode.Id, syncUser);
+                }
+            }
+
         }
     }
 
@@ -1547,8 +1578,6 @@ public class ImportService : IImportService
 
         if (content == null)
         {
-            // Note: Assuming 'Content' is a constructor for an object that implements IContent
-            // and 'categoryContentType' is defined elsewhere in your class.
             content = new Umbraco.Cms.Core.Models.Content(nodeName, parentContent.Id, contenType);
             create = true;
         }

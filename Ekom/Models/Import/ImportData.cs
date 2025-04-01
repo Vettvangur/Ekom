@@ -21,4 +21,14 @@ public class ImportData
     /// the specific location within the media library where new images will be stored.
     /// </summary>
     public required Guid MediaRootKey { get; set; }
+
+    /// <summary>
+    /// The GUID key of the category node in Umbraco to which products are moved to when deleted. Default this is null and the default behavior is to delete the products.
+    /// </summary>
+    public required Guid? RecycleBinKey { get; set; } = null;
+
+    /// <summary>
+    /// The GUID key of the category node in Umbraco to which products are moved to from the RecycleBinKey if they come back. Default this is null and the default behavior is to delete the products.
+    /// </summary>
+    public required Guid? ProductProcessKey { get; set; } = null;
 }
