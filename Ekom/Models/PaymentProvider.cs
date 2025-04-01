@@ -1,103 +1,85 @@
-
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
-
-#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
-#else
-using System.Web;
-#endif
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// F.x. Borgun/Valitor
+/// </summary>
+public class PaymentProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IPaymentProvider
 {
     /// <summary>
-    /// F.x. Borgun/Valitor
+    /// 
     /// </summary>
-    public class PaymentProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IPaymentProvider
+    public virtual string Name => Properties["nodeName"];
+
+    /// <summary>
+    /// Description
+    /// </summary>
+    public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
+
+    /// <summary>
+    /// Ranges and zones
+    /// </summary>
+    public virtual IConstraints Constraints { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual IPrice Price
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual string Name => Properties["nodeName"];
-
-        /// <summary>
-        /// Description
-        /// </summary>
-        public virtual string Description => Properties.GetPropertyValue("description", Store.Alias);
-
-        /// <summary>
-        /// Ranges and zones
-        /// </summary>
-        public virtual IConstraints Constraints { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual IPrice Price
+        get
         {
-            get
+            HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+
+            if (httpContext?.Request != null)
             {
-#if NETCOREAPP
-                HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+                string? cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
 
-                if (httpContext?.Request != null)
+                if (cookie != null && !string.IsNullOrEmpty(cookie))
                 {
-                    string? cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
+                    IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
 
-                    if (cookie != null && !string.IsNullOrEmpty(cookie))
+                    if (price != null)
                     {
-                        IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
-#else
-                var httpContext = Configuration.Resolver.GetService<HttpContextBase>();
-
-                if (httpContext != null)
-                {
-                    var cookie = httpContext.Request.Cookies["EkomCurrency-" + Store.Alias];
-
-                    if (cookie != null && !string.IsNullOrEmpty(cookie.Value))
-                    {
-                        var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie.Value);
-#endif
-                        if (price != null)
-                        {
-                            return price;
-                        }
+                        return price;
                     }
-
                 }
 
-                return Prices.FirstOrDefault();
-
             }
-        }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual List<IPrice> Prices
+            return Prices.FirstOrDefault();
+
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public virtual List<IPrice> Prices
+    {
+        get
         {
-            get
-            {
-                List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
+            List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
 
-                return Prices;
-            }
+            return Prices;
         }
+    }
 
-        /// <summary>
-        /// Used by Ekom extensions
-        /// </summary>
-        /// <param name="store"></param>
-        internal protected PaymentProvider(IStore store) : base(store) { }
+    /// <summary>
+    /// Used by Ekom extensions
+    /// </summary>
+    /// <param name="store"></param>
+    internal protected PaymentProvider(IStore store) : base(store) { }
 
-        /// <summary>
-        /// Construct PaymentProvider
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="store"></param>
-        internal protected PaymentProvider(UmbracoContent item, IStore store) : base(item, store)
-        {
-            Constraints = new Constraints(this);
-        }
+    /// <summary>
+    /// Construct PaymentProvider
+    /// </summary>
+    /// <param name="item"></param>
+    /// <param name="store"></param>
+    internal protected PaymentProvider(UmbracoContent item, IStore store) : base(item, store)
+    {
+        Constraints = new Constraints(this);
     }
 }

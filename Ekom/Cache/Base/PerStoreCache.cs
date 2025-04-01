@@ -188,12 +188,12 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// </summary>
     public void AddOrReplaceFromAllCaches(UmbracoContent node)
     {
+        IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
+
         foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
         {
             try
             {
-                IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
-
                 bool isDisabled = node.IsItemDisabled(store.Value, ancestors);
 
                 if (isDisabled)

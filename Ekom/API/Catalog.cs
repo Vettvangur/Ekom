@@ -396,12 +396,12 @@ public class Catalog
         }
 
         List<IProduct> products = new List<IProduct>();
-        foreach (Guid id in query.Keys)
+        foreach (Guid key in query.Keys)
         {
-            if (_productCache.Cache[storeAlias].ContainsKey(id))
+            if (_productCache.Cache[storeAlias].ContainsKey(key))
             {
                 products.Add(
-                    _productCache.Cache[storeAlias][id]
+                    _productCache.Cache[storeAlias][key]
                 );
             }
         }
@@ -502,6 +502,13 @@ public class Catalog
                 // Check if a valid KeyValuePair was found and if the category is not null
                 if (!categoryPairGlobal.Equals(default(KeyValuePair<int, ICategory>)) && categoryPairGlobal.Value != null)
                 {
+                    string selfDisableField = categoryPairGlobal.Value.GetValue("disable", store.Alias);
+
+                    if (!string.IsNullOrEmpty(selfDisableField) && selfDisableField.ConvertToBool())
+                    {
+                        return null;    
+                    }
+
                     return categoryPairGlobal.Value;
                 }
             }
@@ -542,9 +549,16 @@ public class Catalog
                     continue;
                 }
 
-
                 if (_categoryCache.Cache[otherStore.Alias].TryGetValue(Id, out ICategory? catOther))
                 {
+                    string selfDisableField = catOther.GetValue("disable", store.Alias);
+
+                    if (!string.IsNullOrEmpty(selfDisableField) && selfDisableField.ConvertToBool())
+                    { 
+                        return null;
+                    }
+
+
                     return catOther;
                 }
 

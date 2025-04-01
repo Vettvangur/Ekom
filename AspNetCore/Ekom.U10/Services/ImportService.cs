@@ -104,8 +104,8 @@ public class ImportService : IImportService
 
             ArgumentNullException.ThrowIfNull(umbracoRootContent);
             var allUmbracoCategories = allEkomNodes
-                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Contains(umbracoRootContent.Id.ToString(), StringComparison.InvariantCulture))
-                .Where(x => x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct")
                 .ToList();
 
