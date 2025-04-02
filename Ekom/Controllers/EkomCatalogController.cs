@@ -145,6 +145,8 @@ public class EkomCatalogController : ControllerBase
     {
         try
         {
+            _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
+
             ProductResponse? products = API.Catalog.Instance.GetProductsRescursiveByRoute(route, query);
 
             return Ok(products);
@@ -287,6 +289,8 @@ public class EkomCatalogController : ControllerBase
                 return BadRequest();
             }
 
+            _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
+
             ProductResponse productsResponse = API.Catalog.Instance.GetProductsByIds(query);
 
             return Ok(productsResponse);
@@ -312,6 +316,7 @@ public class EkomCatalogController : ControllerBase
             {
                 return BadRequest();
             }
+            _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
 
             ProductResponse productsResponse = API.Catalog.Instance.GetProductsByKeys(query);
 

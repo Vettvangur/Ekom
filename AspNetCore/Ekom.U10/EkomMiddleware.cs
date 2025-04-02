@@ -3,11 +3,8 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using System.Text;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 
 namespace Ekom.Umb;
 
@@ -128,24 +125,11 @@ class EkomMiddleware
                     }
                 }
 
-                if (store != null)
+                appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest
                 {
-                    appCaches.RequestCache.Get("ekmRequest", () =>
-                    new ContentRequest()
-                    {
-                        User = new User(),
-                        Store = store
-                    });
-                } else
-                {
-                    appCaches.RequestCache.Get("ekmRequest", () =>
-                    new ContentRequest()
-                    {
-                        User = new User()
-                    });
-                }
-
-
+                    User = new User(),
+                    Store = store
+                });
             }
 
 
@@ -175,27 +159,27 @@ class EkomMiddleware
                 return storeAliasHeaderValue;
             }
 
-            if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
-            {
+            //if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
+            //{
 
-                var body = await GetRawBodyStringAsync(request, true, Encoding.UTF8, request.Body);
+            //    var body = await GetRawBodyStringAsync(request, true, Encoding.UTF8, request.Body);
 
-                if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        using var json = JsonDocument.Parse(body);
-                        foreach (var property in json.RootElement.EnumerateObject())
-                        {
-                            if (string.Equals(property.Name, "storeAlias", StringComparison.OrdinalIgnoreCase))
-                            {
-                                return property.Value.GetString();
-                            }
-                        }
-                    }
-                    catch (JsonException) { }
-                }
-            }
+            //    if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        try
+            //        {
+            //            using var json = JsonDocument.Parse(body);
+            //            foreach (var property in json.RootElement.EnumerateObject())
+            //            {
+            //                if (string.Equals(property.Name, "storeAlias", StringComparison.OrdinalIgnoreCase))
+            //                {
+            //                    return property.Value.GetString();
+            //                }
+            //            }
+            //        }
+            //        catch (JsonException) { }
+            //    }
+            //}
 
             return null;
         }
@@ -206,42 +190,42 @@ class EkomMiddleware
     }
 
 
-    private async Task<string> GetRawBodyStringAsync(HttpRequest request,
-                                                        bool enableBuffering = false,
-                                                        Encoding encoding = null,
-                                                        Stream inputStream = null)
-    {
-        if (encoding == null)
-            encoding = Encoding.UTF8;
+    //private async Task<string> GetRawBodyStringAsync(HttpRequest request,
+    //                                                    bool enableBuffering = false,
+    //                                                    Encoding encoding = null,
+    //                                                    Stream inputStream = null)
+    //{
+    //    if (encoding == null)
+    //        encoding = Encoding.UTF8;
 
-        if (inputStream == null)
-        {
-            if (enableBuffering)
-                request.EnableBuffering();
-            inputStream = request.Body;
-        }
+    //    if (inputStream == null)
+    //    {
+    //        if (enableBuffering)
+    //            request.EnableBuffering();
+    //        inputStream = request.Body;
+    //    }
 
-        string? bodyString = string.Empty;
-        using (var reader = new StreamReader(inputStream,
-            encoding,
-            detectEncodingFromByteOrderMarks: false,
-            leaveOpen: enableBuffering))
-        {
-            try
-            {
-                bodyString = await reader.ReadToEndAsync();
-            }
-            catch (Exception)
-            {
-                bodyString = string.Empty;
-            }
+    //    string? bodyString = string.Empty;
+    //    using (var reader = new StreamReader(inputStream,
+    //        encoding,
+    //        detectEncodingFromByteOrderMarks: false,
+    //        leaveOpen: enableBuffering))
+    //    {
+    //        try
+    //        {
+    //            bodyString = await reader.ReadToEndAsync();
+    //        }
+    //        catch (Exception)
+    //        {
+    //            bodyString = string.Empty;
+    //        }
 
-            if (inputStream.CanSeek)
-                inputStream.Position = 0;
-        }
+    //        if (inputStream.CanSeek)
+    //            inputStream.Position = 0;
+    //    }
 
-        return bodyString;
-    }
+    //    return bodyString;
+    //}
 
     private bool AllowPath(string? path)
     {

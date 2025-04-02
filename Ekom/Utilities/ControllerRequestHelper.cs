@@ -12,10 +12,15 @@ public class ControllerRequestHelper
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public void SetEkmRequest(ICategory category)
+    public void SetEkmRequest(ICategory? category = null, string? storeAlias = null)
     {
 
-        string categoryUrl = category.Url;
+        if (category == null && string.IsNullOrEmpty(storeAlias))
+        {
+            return;
+        }
+
+        string categoryUrl = category != null ? category.Url : "";
 
         if (_httpContextAccessor.HttpContext != null)
         {
@@ -28,9 +33,21 @@ public class ControllerRequestHelper
                 _httpContextAccessor.HttpContext.Items[Configuration.EkmRequestKey] = requestCache;
             }
 
-            requestCache.Value.Category = category;
-            requestCache.Value.Store = category.Store;
-            requestCache.Value.Url = categoryUrl;
+            if (!string.IsNullOrEmpty(storeAlias))
+            {
+                var store = API.Store.Instance.GetStore(storeAlias);
+                if (store != null)
+                {
+                    requestCache.Value.Store = store;
+                }
+            }
+
+            if (category != null)
+            {
+                requestCache.Value.Category = category;
+                requestCache.Value.Store = category.Store;
+                requestCache.Value.Url = categoryUrl;
+            }
         }
     }
 }
