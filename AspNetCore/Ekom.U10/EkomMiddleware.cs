@@ -144,14 +144,30 @@ class EkomMiddleware
     {
         try
         {
+;
+
             if (request.Query != null && request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
             {
                 return storeAliasValue;
             }
 
-            if (request.HasFormContentType && request.Form.TryGetValue("storeAlias", out var storeAliasFormValue) && !string.IsNullOrEmpty(storeAliasFormValue))
+            if (request.HasFormContentType)
             {
-                return storeAliasFormValue;
+                try
+                {
+                    request.EnableBuffering();
+
+                    if (request.Form.TryGetValue("storeAlias", out var storeAliasFormValue) && !string.IsNullOrEmpty(storeAliasFormValue))
+                    {
+                        return storeAliasFormValue;
+                    }
+
+                    request.Body.Position = 0;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to read storeAlias from request.Form");
+                }
             }
 
             if (request.Headers != null && request.Headers.TryGetValue("storeAlias", out var storeAliasHeaderValue) && !string.IsNullOrEmpty(storeAliasHeaderValue))
