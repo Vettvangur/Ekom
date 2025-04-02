@@ -53,7 +53,6 @@ class OrderLine : IOrderLine
         {
             OrderedDiscount? discount = Discount;
 
-
             if (OrderInfo?.Discount != null &&
                 (OrderInfo.Discount.DiscountItems.Any() && OrderInfo.Discount.DiscountItems.Contains(Product.Id.ToString()) || OrderInfo.Discount.GlobalDiscount))
             {
@@ -149,6 +148,7 @@ class OrderLine : IOrderLine
         Quantity = quantity;
         Key = lineId;
         Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, orderDynamic);
+        Discount = product.Price.Discount;
 
         if (orderDynamic != null)
         {
