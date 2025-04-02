@@ -548,10 +548,11 @@ public class ImportService : IImportService
                         {
                             if (recycleBinNode != null)
                             {
+                                _contentService.Unpublish(umbracoProduct, userId: syncUser);
                                 _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
                             } else
                             {
-                                _contentService.Delete(umbracoProduct);
+                                _contentService.Delete(umbracoProduct, syncUser);
                             }
                             
                         }
@@ -592,11 +593,12 @@ public class ImportService : IImportService
                                     {
                                         if (recycleBinNode != null)
                                         {
+                                            _contentService.Unpublish(umbracoProduct, userId: syncUser);
                                             _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
                                         }
                                         else
                                         {
-                                            _contentService.Delete(umbracoProduct);
+                                            _contentService.Delete(umbracoProduct, syncUser);
                                         }
                                     }
 

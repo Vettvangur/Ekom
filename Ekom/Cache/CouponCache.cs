@@ -7,69 +7,68 @@ using System.Diagnostics;
 using GlobalCouponCache
     = System.Collections.Concurrent.ConcurrentDictionary<string, Ekom.Models.CouponData>;
 
-namespace Ekom.Cache
+namespace Ekom.Cache;
+
+/// <inheritdoc />
+class CouponCache : ICouponCache
 {
-    /// <inheritdoc />
-    class CouponCache : ICouponCache
+    readonly ILogger _logger;
+    readonly DatabaseFactory _databaseFactory;
+    protected IServiceProvider _serviceProvider;
+
+    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+    public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
+
+    public CouponCache(
+        ILogger<CouponCache> logger,
+        DatabaseFactory databaseFactory, IServiceProvider serviceProvider)
     {
-        readonly ILogger _logger;
-        readonly DatabaseFactory _databaseFactory;
-        protected IServiceProvider _serviceProvider;
+        _logger = logger;
+        _databaseFactory = databaseFactory;
+        _serviceProvider = serviceProvider;
+    }
 
-        protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
-        public GlobalCouponCache Cache { get; } = new GlobalCouponCache();
+    /// <inheritdoc />
+    public void FillCache()
+    {
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
 
-        public CouponCache(
-            ILogger<CouponCache> logger,
-            DatabaseFactory databaseFactory, IServiceProvider serviceProvider)
+        _logger.LogInformation("Starting to fill coupon cache...");
+
+        List<UmbracoContent> orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
+
+        List<CouponData> allCoupons;
+        using (Repositories.DbContext db = _databaseFactory.GetDatabase())
         {
-            _logger = logger;
-            _databaseFactory = databaseFactory;
-            _serviceProvider = serviceProvider;
+            allCoupons = db.CouponData.ToList();
         }
 
-        /// <inheritdoc />
-        public void FillCache()
+        foreach (CouponData coupon in allCoupons)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            _logger.LogInformation("Starting to fill coupon cache...");
-
-            List<UmbracoContent> orderDiscountNodes = nodeService.NodesByTypes("ekmOrderDiscount").ToList();
-
-            List<CouponData> allCoupons;
-            using (Repositories.DbContext db = _databaseFactory.GetDatabase())
+            if (orderDiscountNodes.Any(x => x.Key == coupon.DiscountId))
             {
-                allCoupons = db.CouponData.ToList();
+                Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
             }
-
-            foreach (CouponData coupon in allCoupons)
-            {
-                if (orderDiscountNodes.Any(x => x.Key == coupon.DiscountId))
-                {
-                    Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
-                }
-            }
-
-            stopwatch.Stop();
-
-            _logger.LogInformation(
-                "Finished filling Coupon cache with {Count} items. Time it took to fill: {Elapsed}",
-                allCoupons.Count,
-                stopwatch.Elapsed);
         }
 
-        /// <inheritdoc />
-        public void AddReplace(CouponData coupon)
-        {
-            Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
-        }
+        stopwatch.Stop();
 
-        /// <inheritdoc />
-        public void Remove(CouponData coupon)
-        {
-            Cache.TryRemove(coupon.CouponCode.ToLowerInvariant(), out _);
-        }
+        _logger.LogInformation(
+            "Finished filling Coupon cache with {Count} items. Time it took to fill: {Elapsed}",
+            allCoupons.Count,
+            stopwatch.Elapsed);
+    }
+
+    /// <inheritdoc />
+    public void AddReplace(CouponData coupon)
+    {
+        Cache[coupon.CouponCode.ToLowerInvariant()] = coupon;
+    }
+
+    /// <inheritdoc />
+    public void Remove(CouponData coupon)
+    {
+        Cache.TryRemove(coupon.CouponCode.ToLowerInvariant(), out _);
     }
 }

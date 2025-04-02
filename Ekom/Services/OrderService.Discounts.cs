@@ -1,5 +1,6 @@
 using Ekom.API;
 using Ekom.Exceptions;
+using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -438,18 +439,18 @@ partial class OrderService
         // Why don't we assume something is better than nothing ?
         // Possibly for orders where all OrderLine have ProductDiscount,
         // in those cases the ChargedAmount will stay the same.
-        if (orderInfo.Discount == null && !discount.Stackable && !discount.GlobalDiscount)
-        {
-            decimal oldTotal = orderInfo.ChargedAmount.Value;
+        //if (orderInfo.Discount == null && !discount.Stackable && !discount.GlobalDiscount)
+        //{
+        //    decimal oldTotal = orderInfo.ChargedAmount.Value;
 
-            orderInfo.Discount = new OrderedDiscount(discount);
+        //    orderInfo.Discount = new OrderedDiscount(discount);
 
-            bool result = orderInfo.ChargedAmount.Value < oldTotal;
+        //    bool result = orderInfo.ChargedAmount.Value < oldTotal;
 
-            orderInfo.Discount = null;
+        //    orderInfo.Discount = null;
 
-            return result;
-        }
+        //    return result;
+        //}
 
         if (orderInfo.Discount == null)
         {
@@ -563,8 +564,16 @@ partial class OrderService
     private void AddGlobalDiscounts(OrderInfo orderInfo)
     {
         IEnumerable<IDiscount> discounts = Discounts.Instance.GetGlobalDiscounts(orderInfo.StoreInfo.Alias);
+
+        var couponCache = Configuration.Resolver.GetService<ICouponCache>();
+
         foreach (IDiscount discount in discounts)
         {
+            if (couponCache?.Cache.Any(x => x.Value.DiscountId == discount.Key) == true)
+            {
+                return;
+            }
+
             ApplyDiscountToOrder(
                 discount,
                 orderInfo,
@@ -629,7 +638,15 @@ partial class OrderService
     /// <param name="discount"></param>
     /// <returns></returns>
     private bool IsDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
-        => discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value);
+    {
+        if (!discount.GlobalDiscount && !discount.DiscountItems.Any())
+        {
+            return false;
+        }
+
+        return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value);
+    }
+
 
     /// <summary>
     /// Do constraints hold and do discount items match if any

@@ -141,6 +141,14 @@ public class EkomBackofficeApiController : ControllerBase
 
         foreach (var store in stores.ToList())
         {
+            var isSelfDisabled = node.Properties.GetValue("disable", store.Alias).IsBoolean();
+
+            if (isSelfDisabled)
+            {
+                disabledStores.Add(store.Alias);
+                stores.Remove(store);
+            }
+
             foreach (var ancestor in ancestors)
             {
                 if (disabledStores.Contains(store.Alias))

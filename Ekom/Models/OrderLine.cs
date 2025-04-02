@@ -51,7 +51,8 @@ class OrderLine : IOrderLine
     {
         get
         {
-            OrderedDiscount? discount = null;
+            OrderedDiscount? discount = Discount;
+
 
             if (OrderInfo?.Discount != null &&
                 (OrderInfo.Discount.DiscountItems.Any() && OrderInfo.Discount.DiscountItems.Contains(Product.Id.ToString()) || OrderInfo.Discount.GlobalDiscount))
@@ -64,13 +65,13 @@ class OrderLine : IOrderLine
                 {
                     discount = OrderInfo.Discount;
                 }
-                else if ((Product.Price.Discount?.Amount ?? 0) < OrderInfo.Discount.Amount)
+                else if ((Product.Price.Discount?.Amount ?? 0) < OrderInfo.Discount?.Amount)
                 {
                     discount = OrderInfo.Discount;
                 }
             }
 
-            decimal _price = Product.Price.HasDiscount ? Product.Price.Value : Product.Price.OriginalValue;
+            decimal _price = Product.Price.OriginalValue;
 
             if (Product.VariantGroups != null && Product.VariantGroups.Any())
             {
@@ -78,14 +79,9 @@ class OrderLine : IOrderLine
 
                 foreach (OrderedVariant? v in variants)
                 {
-                    if (v.Price.HasDiscount)
-                    {
-                        _price += (v.Price.Value - _price);
-                    }
-                    else
-                    {
-                        _price += (v.Price.OriginalValue - _price);
-                    }
+
+                    _price += (v.Price.OriginalValue - _price);
+                    
                 }
             }
 
