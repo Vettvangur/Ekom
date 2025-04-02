@@ -274,7 +274,7 @@ class UmbracoEventListeners :
         string alias,
         ContentSavingNotification e)
     {
-        var propertyTypes = new Dictionary<string, string>();
+        var propertyTypes = new List<KeyValuePair<string, string>>();
         var propertyType = PropertyEditorType.Language;
         var slugItems = new Dictionary<string, object>();
 
@@ -290,7 +290,7 @@ class UmbracoEventListeners :
 
                 foreach (var lang in languages)
                 {
-                    propertyTypes.TryAdd("Language", lang.IsoCode);
+                    propertyTypes.Add(new KeyValuePair<string, string>("Language", lang.IsoCode));
                 }
             }
             else if (titlePropertyValue.Type == PropertyEditorType.Store)
@@ -300,7 +300,7 @@ class UmbracoEventListeners :
 
                 foreach (var store in stores)
                 {
-                    propertyTypes.Add("Store", store.Alias);
+                    propertyTypes.Add(new KeyValuePair<string, string>("Store", store.Alias));
                 }
             }
 
@@ -313,6 +313,11 @@ class UmbracoEventListeners :
                 if (alias != "ekmProduct" && alias != "ekmCategory") continue;
                 
                 var title = content.GetProperty("title", type.Value);
+
+                if (string.IsNullOrEmpty(title))
+                {
+                    continue;
+                }
 
                 var slug = content.GetProperty("slug", type.Value);
 
