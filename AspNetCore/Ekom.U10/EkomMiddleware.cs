@@ -48,7 +48,7 @@ class EkomMiddleware
     {
         _context = context;
 
-        await OnBeginRequest(_umbracoContextFac, _appCaches);
+        OnBeginRequest(_umbracoContextFac, _appCaches);
         await OnAuthenticateRequest(_appCaches, _memberService);
 
         await _next.Invoke(context);
@@ -83,7 +83,7 @@ class EkomMiddleware
         }
     }
 
-    private async Task OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
+    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
     {
         try
         {
@@ -118,7 +118,7 @@ class EkomMiddleware
                 if (_context?.Request != null)
                 {
                     // Check for 'storeAlias' in the query string
-                    var storeAlias = await GetStoreAliasFromRequest(_context.Request);
+                    var storeAlias = GetStoreAliasFromRequest(_context.Request);
                     if (!string.IsNullOrEmpty(storeAlias))
                     {
                         store = API.Store.Instance.GetStore(storeAlias);
@@ -132,7 +132,6 @@ class EkomMiddleware
                 });
             }
 
-
         }
         catch (Exception ex)
         {
@@ -140,7 +139,7 @@ class EkomMiddleware
         }
     }
 
-    private async Task<string?> GetStoreAliasFromRequest(HttpRequest request)
+    private string? GetStoreAliasFromRequest(HttpRequest request)
     {
         try
         {

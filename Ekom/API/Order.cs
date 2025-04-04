@@ -55,14 +55,14 @@ public partial class Order
         _checkoutControllerService = checkoutControllerService;
     }
 
-    public IOrderInfo GetOrder() => GetOrderAsync().Result;
+    public IOrderInfo? GetOrder() => GetOrderAsync().Result;
 
     /// <summary>
     /// Get order using cookie data and ekmRequest store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public Task<IOrderInfo> GetOrderAsync()
+    public Task<IOrderInfo?> GetOrderAsync()
     {
         IStore? store = _storeSvc.GetStoreFromCache();
 
@@ -74,14 +74,14 @@ public partial class Order
         return GetOrderAsync(store.Alias);
     }
 
-    public IOrderInfo GetOrder(string storeAlias) => GetOrderAsync(storeAlias).Result;
+    public IOrderInfo? GetOrder(string storeAlias) => GetOrderAsync(storeAlias).Result;
 
     /// <summary>
     /// Get order using cookie data and provided store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo> GetOrderAsync(string storeAlias)
+    public async Task<IOrderInfo?> GetOrderAsync(string storeAlias)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -102,7 +102,7 @@ public partial class Order
     /// Do not use for cart or checkout display.
     /// </summary>
     /// <returns></returns>
-    public IOrderInfo GetOrder(Guid uniqueId) => _orderService.GetOrderAsync(uniqueId).Result;
+    public IOrderInfo? GetOrder(Guid uniqueId) => _orderService.GetOrderAsync(uniqueId).Result;
 
     /// <summary>
     /// Get order regardless of status using <see cref="Guid"/>.
@@ -261,7 +261,7 @@ public partial class Order
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings?.OrderInfo == null)
         {
             orderInfo = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -352,7 +352,7 @@ public partial class Order
     /// </summary>
     public async Task<IOrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         if (form == null)
         {
@@ -370,7 +370,7 @@ public partial class Order
         Guid shippingProvider,
         string storeAlias,
         Dictionary<string, string> customData,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -588,6 +588,24 @@ public partial class Order
             .ConfigureAwait(false);
 
         return res;
+    }
+
+    /// <summary>
+    /// Delete Order cookie
+    /// </summary>
+    /// <param name="storeAlias"></param>
+    /// <returns></returns>
+    public void DeleteOrderCookie(string? storeAlias = null)
+    {
+        IStore? store = 
+            !string.IsNullOrEmpty(storeAlias) ? 
+            _storeSvc.GetStoreByAlias(storeAlias) : 
+            _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            _orderService.DeleteOrderCookie(store);
+        }
     }
 
     /// <summary>

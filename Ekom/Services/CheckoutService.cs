@@ -40,8 +40,8 @@ class CheckoutService
 
     public async Task CompleteAsync(Guid key)
     {
-        OrderData o = null;
-        OrderInfo oi = null;
+        OrderData? o = null;
+        OrderInfo? oi = null;
 
         try
         {

@@ -134,7 +134,7 @@ partial class OrderService
 
     }
 
-    public Task<OrderInfo> GetOrderAsync(string storeAlias)
+    public Task<OrderInfo?> GetOrderAsync(string storeAlias)
     {
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -146,11 +146,11 @@ partial class OrderService
         return GetOrderAsync(store);
     }
 
-    public async Task<OrderInfo> GetOrderAsync(IStore store)
+    public async Task<OrderInfo?> GetOrderAsync(IStore store)
     {
         if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
         {
-            OrderInfo orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
 
             return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
         }
@@ -215,8 +215,12 @@ partial class OrderService
     /// </summary>
     /// <param name="orderInfo"></param>
     /// <returns></returns>
-    private async Task<OrderInfo> ReturnNonFinalOrderAsync(OrderInfo orderInfo)
+    private async Task<OrderInfo?> ReturnNonFinalOrderAsync(OrderInfo? orderInfo)
     {
+        if (orderInfo == null)
+        {
+            return null;
+        }
         //if (orderInfo?.OrderStatus == OrderStatus.WaitingForPayment)
         //{
         //    _logger.LogDebug(
@@ -245,7 +249,7 @@ partial class OrderService
         //    return newOrder;
         //}
 
-        if (!Order.IsOrderFinal(orderInfo?.OrderStatus))
+        if (!Order.IsOrderFinal(orderInfo.OrderStatus))
         {
             return orderInfo;
         }
@@ -257,7 +261,7 @@ partial class OrderService
         return null;
     }
 
-    public async Task<OrderInfo> GetCompletedOrderAsync(string storeAlias)
+    public async Task<OrderInfo?> GetCompletedOrderAsync(string storeAlias)
     {
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
@@ -292,7 +296,7 @@ partial class OrderService
         return null;
     }
 
-    public Task<OrderInfo> GetOrderAsync(Guid uniqueId)
+    public Task<OrderInfo?> GetOrderAsync(Guid uniqueId)
     {
         // Check for cache ?
         return _memoryCache.GetOrCreateAsync(
@@ -321,8 +325,8 @@ partial class OrderService
     public async Task ChangeOrderStatusAsync(
         Guid uniqueId,
         OrderStatus status,
-        string userName = null,
-        ChangeOrderSettings settings = null)
+        string? userName = null,
+        ChangeOrderSettings? settings = null)
     {
         // ToDo: Lock
 
@@ -1354,7 +1358,7 @@ partial class OrderService
 
     public async Task<OrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdateCustomerInformation...");
 
@@ -1367,7 +1371,7 @@ partial class OrderService
         if (!form.TryGetValue("storeAlias", out string? storeAlias))
             throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
 
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
 
         if (settings.OrderInfo == null)
         {
@@ -1439,7 +1443,7 @@ partial class OrderService
         Guid shippingProviderId,
         string storeAlias,
         Dictionary<string, string> customData,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdateShippingInformation...");
 
@@ -1449,7 +1453,7 @@ partial class OrderService
         {
             settings = new OrderSettings();
         }
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -1497,7 +1501,7 @@ partial class OrderService
         Guid paymentProviderId,
         string storeAlias,
         Dictionary<string, string> customData,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdatePaymentInformation...");
 
@@ -1507,7 +1511,7 @@ partial class OrderService
         {
             settings = new OrderSettings();
         }
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -1768,10 +1772,19 @@ partial class OrderService
         return guid;
     }
 
-    private void DeleteOrderCookie(string key)
+    public void DeleteOrderCookie(IStore store)
     {
-        _httpCtx.Response.Cookies.Delete(key);
+        if (_httpCtx?.Request?.Cookies == null || _httpCtx.Response?.Cookies == null)
+            return;
+
+        string key = CreateKey(store);
+
+        if (_httpCtx.Request.Cookies.ContainsKey(key))
+        {
+            _httpCtx.Response.Cookies.Delete(key);
+        }
     }
+
 
     private string GenerateOrderNumberTemplate(int referenceId, IStore store)
     {
@@ -1785,12 +1798,12 @@ partial class OrderService
         string template = store.OrderNumberTemplate;
 
         return template
-            .Replace("#orderId#", _referenceId)
-            .Replace("#orderIdPadded#", referenceId.ToString("0000"))
-            .Replace("#storeAlias#", store.Alias)
-            .Replace("#day#", _date.Day.ToString())
-            .Replace("#month#", _date.Month.ToString())
-            .Replace("#year#", _date.Year.ToString());
+            .Replace("#orderId#", _referenceId, StringComparison.InvariantCultureIgnoreCase)
+            .Replace("#orderIdPadded#", referenceId.ToString("0000"), StringComparison.InvariantCultureIgnoreCase)
+            .Replace("#storeAlias#", store.Alias, StringComparison.InvariantCultureIgnoreCase)
+            .Replace("#day#", _date.Day.ToString(), StringComparison.InvariantCultureIgnoreCase)
+            .Replace("#month#", _date.Month.ToString(), StringComparison.InvariantCultureIgnoreCase)
+            .Replace("#year#", _date.Year.ToString(), StringComparison.InvariantCultureIgnoreCase);
     }
 
     private string CreateKey(IStore store)
