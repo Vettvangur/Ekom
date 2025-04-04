@@ -396,16 +396,16 @@ public class Catalog
         }
 
         List<IProduct> products = new List<IProduct>();
-        foreach (Guid key in query.Keys)
+        if (_productCache.Cache.TryGetValue(storeAlias, out var storeProducts))
         {
-            if (_productCache.Cache[storeAlias].ContainsKey(key))
+            foreach (Guid key in query.Keys)
             {
-                products.Add(
-                    _productCache.Cache[storeAlias][key]
-                );
+                if (storeProducts.TryGetValue(key, out var product))
+                {
+                    products.Add(product);
+                }
             }
         }
-
         return new ProductResponse(products, query, _productFilterService);
     }
 
