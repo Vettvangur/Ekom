@@ -25,7 +25,7 @@ public class Product : PerStoreNodeEntity, IProduct
     private IPerStoreCache<IVariantGroup> _variantGroupCache =>
         __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
 
-    private readonly ConcurrentDictionary<string, object> _cache = new ConcurrentDictionary<string, object>();
+    private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
     public virtual IDiscount ProductDiscount(string price = null)
     {
@@ -112,14 +112,18 @@ public class Product : PerStoreNodeEntity, IProduct
                 }
             }
 
-            return (IEnumerable<Image>)_cache.GetOrAdd("Images", key =>
-            {
-                string _images = GetValue(Configuration.Instance.CustomImage);
+            var lazy = _cache.GetOrAdd("Images", _ =>
+                new Lazy<object>(() =>
+                {
+                    string _images = GetValue(Configuration.Instance.CustomImage);
+                    return _images.GetImages().ToList(); // Ensure immediate evaluation
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
 
-                return _images.GetImages();
-            });
+            return (IEnumerable<Image>)((Lazy<object>)lazy).Value;
         }
     }
+
 
     /// <summary>
     /// A product can have multiple variant groups, 
@@ -140,31 +144,32 @@ public class Product : PerStoreNodeEntity, IProduct
                 return null;
             }
 
-            return (IVariantGroup)_cache.GetOrAdd("PrimaryVariantGroup", key =>
-            {
-                if (Properties.ContainsKey("primaryVariantGroup"))
+            var lazy = _cache.GetOrAdd("PrimaryVariantGroup", _ =>
+                new Lazy<object>(() =>
                 {
-                    string primaryGroupValue = GetValue("primaryVariantGroup");
-
-                    if (!string.IsNullOrEmpty(primaryGroupValue))
+                    if (Properties.ContainsKey("primaryVariantGroup"))
                     {
-                        UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
+                        string primaryGroupValue = GetValue("primaryVariantGroup");
 
-                        if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
+                        if (!string.IsNullOrEmpty(primaryGroupValue))
                         {
-                            IVariantGroup variantGroup = __variantGroupCache.Cache[Store.Alias][node.Key];
+                            UmbracoContent? node = Configuration.Resolver.GetService<INodeService>()?.NodeById(primaryGroupValue);
 
-                            return variantGroup;
+                            if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
+                            {
+                                return __variantGroupCache.Cache[Store.Alias][node.Key];
+                            }
                         }
                     }
-                }
 
-                IVariantGroup? primaryGroup = variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
+                    return variantGroups.FirstOrDefault(x => x.Available) ?? variantGroups.FirstOrDefault();
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
 
-                return primaryGroup;
-            });
+            return (IVariantGroup?)((Lazy<object?>)lazy).Value;
         }
     }
+
 
     /// <summary>
     /// Select the Primary variant.
@@ -177,23 +182,28 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            return (IVariant)_cache.GetOrAdd("PrimaryVariant", key =>
-            {
-                IVariantGroup? primaryVariantGroup = PrimaryVariantGroup;
-
-                if (primaryVariantGroup == null)
+            var lazy = _cache.GetOrAdd("PrimaryVariant", _ =>
+                new Lazy<object?>(() =>
                 {
-                    return null;
-                }
+                    IVariantGroup? primaryVariantGroup = PrimaryVariantGroup;
 
-                // Try to find the first available variant, or fall back to any variant
-                IVariant? primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
-                                    ?? primaryVariantGroup.Variants.FirstOrDefault();
+                    if (primaryVariantGroup == null)
+                    {
+                        return null;
+                    }
 
-                return primaryVariant;
-            });
+                    // Try to find the first available variant, or fall back to any variant
+                    IVariant? primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
+                                            ?? primaryVariantGroup.Variants.FirstOrDefault();
+
+                    return primaryVariant;
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (IVariant?)((Lazy<object?>)lazy).Value;
         }
     }
+
 
     /// <summary>
     /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
@@ -299,25 +309,30 @@ public class Product : PerStoreNodeEntity, IProduct
             CurrencyModel storeCurrency = Store.Currency;
 
             string cacheKey = $"Prices_{vatIncludedInPrice}_{vat}_{storeCurrency.CurrencyValue}_{string.Join(",", categories)}_{Path}";
+            string hashedKey = cacheKey.Hash(); // Assuming `.Hash()` returns a consistent string hash
 
-            // Use GetOrAdd to cache store-specific prices
-            return (List<IPrice>)_cache.GetOrAdd(cacheKey.Hash(), key =>
-            {
-                List<IPrice> prices = GetValue("price", Store.Alias)
-                    .GetPriceValues(
-                        Store.Currencies,
-                        vat,
-                        vatIncludedInPrice,
-                        storeCurrency,
-                        Store.Alias,
-                        Path,
-                        categories
-                    );
+            var lazy = _cache.GetOrAdd(hashedKey, _ =>
+                new Lazy<object>(() =>
+                {
+                    List<IPrice> prices = GetValue("price", Store.Alias)
+                        .GetPriceValues(
+                            Store.Currencies,
+                            vat,
+                            vatIncludedInPrice,
+                            storeCurrency,
+                            Store.Alias,
+                            Path,
+                            categories
+                        );
 
-                return prices;
-            });
+                    return prices;
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (List<IPrice>)((Lazy<object>)lazy).Value;
         }
     }
+
 
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
@@ -326,65 +341,76 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
-            {
-                if (PrimaryVariant != null)
+            var lazy = _cache.GetOrAdd("OriginalPrice", _ =>
+                new Lazy<object>(() =>
                 {
-                    return PrimaryVariant.OriginalPrice;
-                }
-
-                // Store frequently accessed values to avoid redundant access
-                CurrencyModel storeCurrency = Store.Currency;
-                decimal storeVat = Store.Vat;
-                bool storeVatIncluded = Store.VatIncludedInPrice;
-
-                string originalPrice = GetValue("price", Store.Alias);
-
-                if (string.IsNullOrEmpty(originalPrice))
-                {
-                    return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-                }
-
-                if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-                {
-                    return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
-                }
-
-                if (originalPrice.IsJson())
-                {
-                    List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                    if (val.HasValue)
+                    if (PrimaryVariant != null)
                     {
-                        return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                        return PrimaryVariant.OriginalPrice;
                     }
-                }
 
-                // If no price is found, return a price of 0 with store settings
-                return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-            });
+                    // Store frequently accessed values to avoid redundant access
+                    CurrencyModel storeCurrency = Store.Currency;
+                    decimal storeVat = Store.Vat;
+                    bool storeVatIncluded = Store.VatIncludedInPrice;
+
+                    string originalPrice = GetValue("price", Store.Alias);
+
+                    if (string.IsNullOrEmpty(originalPrice))
+                    {
+                        return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+                    }
+
+                    if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+                    {
+                        return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
+                    }
+
+                    if (originalPrice.IsJson())
+                    {
+                        List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                        decimal? val = orgPrice?.FirstOrDefault()?.Price;
+
+                        if (val.HasValue)
+                        {
+                            return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                        }
+                    }
+
+                    // If no price is found, return a price of 0 with store settings
+                    return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (IPrice)((Lazy<object>)lazy).Value;
         }
     }
+
 
     public virtual decimal Vat
     {
         get
         {
-            return (decimal)_cache.GetOrAdd("Vat", key =>
-            {
-                if (Properties.HasPropertyValue("vat", Store.Alias))
+            var lazy = _cache.GetOrAdd("Vat", _ =>
+                new Lazy<object>(() =>
                 {
-                    string value = GetValue("vat", Store.Alias);
-                    if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                    if (Properties.HasPropertyValue("vat", Store.Alias))
                     {
-                        return _val / 100;
+                        string value = GetValue("vat", Store.Alias);
+                        if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                        {
+                            return _val / 100;
+                        }
                     }
-                }
-                return Store.Vat;
-            });
+
+                    return Store.Vat;
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (decimal)((Lazy<object>)lazy).Value;
         }
     }
+
 
     public virtual List<Metavalue> Metafields
     {
@@ -408,14 +434,17 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            return (IEnumerable<IVariantGroup>)_cache.GetOrAdd("VariantGroups", key =>
-            {
-                return from pair in _variantGroupCache.Cache[Store.Alias]
-                       let variantGroup = pair.Value
-                       where variantGroup.ProductId == Id
-                       orderby variantGroup.SortOrder
-                       select variantGroup;
-            });
+            var lazy = _cache.GetOrAdd("VariantGroups", _ =>
+                new Lazy<object>(() =>
+                    (from pair in _variantGroupCache.Cache[Store.Alias]
+                     let variantGroup = pair.Value
+                     where variantGroup.ProductId == Id
+                     orderby variantGroup.SortOrder
+                     select variantGroup).ToList(),
+                LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (IEnumerable<IVariantGroup>)lazy.Value;
         }
     }
 
@@ -429,14 +458,20 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            IEnumerable<IVariant> variants = from pair in _variantCache.Cache[Store.Alias]
-                                             let variant = pair.Value
-                                             where variant.ProductId == Id
-                                             select variant;
+            var lazy = _cache.GetOrAdd("AllVariants", _ =>
+                new Lazy<object>(() =>
+                {
+                    return (from pair in _variantCache.Cache[Store.Alias]
+                            let variant = pair.Value
+                            where variant.ProductId == Id
+                            select variant).ToList(); // Evaluate immediately to avoid re-enumeration
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
 
-            return variants;
+            return (IEnumerable<IVariant>)((Lazy<object>)lazy).Value;
         }
     }
+
 
     /// <summary>
     /// Get Variant Count
