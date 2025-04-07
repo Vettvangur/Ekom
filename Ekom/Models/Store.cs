@@ -46,7 +46,8 @@ namespace Ekom.Models
         {
             get
             {
-                var value = GetValue("urlPrefix");
+                var culture = Thread.CurrentThread.CurrentCulture.Name;
+                var value = GetValue("urlPrefix", culture);
                 if (string.IsNullOrWhiteSpace(value))
                     return value;
 

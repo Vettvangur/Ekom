@@ -75,7 +75,7 @@ namespace Ekom.Umb.Services
                             builder.Append(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
                     }
 
-                    var url = store.UrlPrefix + builder.ToString().AddTrailing().ToLower();
+                    var url = builder.ToString().AddTrailing().ToLower();
 
                     urls.Add(new UmbracoUrl()
                     {
@@ -116,7 +116,7 @@ namespace Ekom.Umb.Services
 
                     var domainLastSement = UriHelper.GetLastSegment(domain.DomainName);
 
-                    var url = store.UrlPrefix + builder.ToString().AddTrailing().ToLower();
+                    var url = builder.ToString().AddTrailing().ToLower();
 
                     urls.Add(new UmbracoUrl()
                     {
@@ -302,7 +302,7 @@ namespace Ekom.Umb.Services
         /// Umbraco.Web.Routing.DomainUtilities.GetCultureFromDomains
         /// for inspiration
         /// </summary>
-        public string? GetNodeEntityUrl(INodeEntityWithUrl node)
+        public string? GetNodeEntityUrl(INodeEntityWithUrl node, IStore store)
         {
             // Urls is a list of relative urls.
             // Umbraco cultures & hostnames can include a prefix
@@ -350,9 +350,11 @@ namespace Ekom.Umb.Services
                     culture = pubReq.Culture;
                 }
 
+                var storePrefixUrl = store.UrlPrefix;
+
                 if (uri == null && string.IsNullOrEmpty(contextCategoryUrl))
                 {
-                    return node.Urls.FirstOrDefault();
+                    return storePrefixUrl + node.Urls.FirstOrDefault();
                 }
 
 
@@ -362,7 +364,7 @@ namespace Ekom.Umb.Services
 
                     if (nodeUrl != null)
                     {
-                        return nodeUrl.Url;
+                        return storePrefixUrl + nodeUrl.Url;
                     }
                 }
 
@@ -372,13 +374,13 @@ namespace Ekom.Umb.Services
 
                     if (nodeUrl != null)
                     {
-                        return nodeUrl.Url;
+                        return storePrefixUrl + nodeUrl.Url;
                     }
                 }
  
                 if (node.UrlsWithContext.Any(x => x.Culture == culture))
                 {
-                    return node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
+                    return storePrefixUrl + node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
                 }
 
                 if (uri != null)
@@ -393,12 +395,12 @@ namespace Ekom.Umb.Services
 
                     if (findUrlByPrefix != null)
                     {
-                        return findUrlByPrefix;
+                        return storePrefixUrl + findUrlByPrefix;
                     }
                 }
  
 
-                return node.Urls.FirstOrDefault();
+                return storePrefixUrl + node.Urls.FirstOrDefault();
             }
         }
     }

@@ -58,7 +58,7 @@ public class Category : PerStoreNodeEntity, ICategory
         get
         {
             IUrlService? urlSvc = Configuration.Resolver.GetService<IUrlService>();
-            return urlSvc.GetNodeEntityUrl(this);
+            return urlSvc.GetNodeEntityUrl(this, Store);
         }
     }
 

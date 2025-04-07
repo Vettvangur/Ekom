@@ -10,5 +10,5 @@ interface IUrlService
     [Obsolete]
     IEnumerable<string> BuildProductUrls(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId);
     List<UmbracoUrl> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId);
-    string? GetNodeEntityUrl(INodeEntityWithUrl node);
+    string? GetNodeEntityUrl(INodeEntityWithUrl node, IStore store);
 }
