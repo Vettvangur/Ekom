@@ -25,6 +25,11 @@ public static class StringExtension
     /// <returns>String ending in one and only one '/'</returns>
     public static string AddTrailing(this string value)
     {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "";
+        }
+
         if (value.Length == 0)
         {
             return "/";

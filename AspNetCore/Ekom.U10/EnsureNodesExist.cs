@@ -1093,6 +1093,10 @@ class EnsureNodesExist : IComponent
                                 new PropertyType(_shortStringHelper, textstringDt, "orderNumberPrefix")
                                 {
                                     Name = "Order Number Prefix",
+                                },                                
+                                new PropertyType(_shortStringHelper, propertyTextDt, "urlPrefix")
+                                {
+                                    Name = "Url Prefix",
                                 },
                             })
                         )

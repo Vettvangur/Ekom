@@ -1,43 +1,43 @@
 using System.Globalization;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// 
+/// </summary>
+public interface IStore : INodeEntity
 {
     /// <summary>
-    /// 
+    /// Umbraco input: 28.5 <para></para>
+    /// Stored VAT value: 0.285<para></para>
+    /// Effective VAT value: 28.5%<para></para>
     /// </summary>
-    public interface IStore : INodeEntity
-    {
-        /// <summary>
-        /// Umbraco input: 28.5 <para></para>
-        /// Stored VAT value: 0.285<para></para>
-        /// Effective VAT value: 28.5%<para></para>
-        /// </summary>
-        decimal Vat { get; }
+    decimal Vat { get; }
 
-        /// <summary>
-        /// Gets the culture.
-        /// </summary>
-        /// <value>
-        /// The culture.
-        /// </value>
-        CultureInfo Culture { get; }
+    /// <summary>
+    /// Gets the culture.
+    /// </summary>
+    /// <value>
+    /// The culture.
+    /// </value>
+    CultureInfo Culture { get; }
 
-        List<CultureInfo> Cultures { get; }
+    List<CultureInfo> Cultures { get; }
 
-        CurrencyModel Currency { get; }
+    CurrencyModel Currency { get; }
 
-        CurrencyModel GetCurrentCurrency();
+    CurrencyModel GetCurrentCurrency();
 
-        List<CurrencyModel> Currencies { get; }
-        string Alias { get; }
-        IEnumerable<UmbracoDomain> Domains { get; }
-        UmbracoContent StoreRootNode { get; }
-        int StoreRootNodeId { get; }
-        string OrderNumberPrefix { get; }
-        string OrderNumberTemplate { get; }
-        string Url { get; }
-        bool VatIncludedInPrice { get; }
-        bool UserBasket { get; }
-        bool ShareBasketBetweenStores { get; }
-    }
+    List<CurrencyModel> Currencies { get; }
+    string Alias { get; }
+    IEnumerable<UmbracoDomain> Domains { get; }
+    UmbracoContent StoreRootNode { get; }
+    int StoreRootNodeId { get; }
+    string OrderNumberPrefix { get; }
+    string UrlPrefix { get; }
+    string OrderNumberTemplate { get; }
+    string Url { get; }
+    bool VatIncludedInPrice { get; }
+    bool UserBasket { get; }
+    bool ShareBasketBetweenStores { get; }
 }

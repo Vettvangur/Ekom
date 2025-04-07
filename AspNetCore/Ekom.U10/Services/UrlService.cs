@@ -75,7 +75,7 @@ namespace Ekom.Umb.Services
                             builder.Append(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
                     }
 
-                    var url = builder.ToString().AddTrailing().ToLower();
+                    var url = store.UrlPrefix + builder.ToString().AddTrailing().ToLower();
 
                     urls.Add(new UmbracoUrl()
                     {
@@ -116,7 +116,7 @@ namespace Ekom.Umb.Services
 
                     var domainLastSement = UriHelper.GetLastSegment(domain.DomainName);
 
-                    var url = domainLastSement + builder.ToString().AddTrailing().ToLower();
+                    var url = store.UrlPrefix + builder.ToString().AddTrailing().ToLower();
 
                     urls.Add(new UmbracoUrl()
                     {
