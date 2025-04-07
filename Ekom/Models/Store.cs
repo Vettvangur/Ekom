@@ -46,7 +46,7 @@ namespace Ekom.Models
         {
             get
             {
-                var value = GetValue("urlPrefix", Alias);
+                var value = GetValue("urlPrefix");
                 if (string.IsNullOrWhiteSpace(value))
                     return value;
 
