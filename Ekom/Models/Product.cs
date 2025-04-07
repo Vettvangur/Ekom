@@ -305,31 +305,20 @@ public class Product : PerStoreNodeEntity, IProduct
             string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
 
             bool vatIncludedInPrice = Store.VatIncludedInPrice;
-            decimal vat = Vat;
             CurrencyModel storeCurrency = Store.Currency;
 
-            string cacheKey = $"Prices_{vatIncludedInPrice}_{vat}_{storeCurrency.CurrencyValue}_{string.Join(",", categories)}_{Path}";
-            string hashedKey = cacheKey.Hash(); // Assuming `.Hash()` returns a consistent string hash
+            List<IPrice> prices = GetValue("price", Store.Alias)
+                .GetPriceValues(
+                    Store.Currencies,
+                    Vat,
+                    vatIncludedInPrice,
+                    storeCurrency,
+                    Store.Alias,
+                    Path,
+                    categories
+                );
 
-            var lazy = _cache.GetOrAdd(hashedKey, _ =>
-                new Lazy<object>(() =>
-                {
-                    List<IPrice> prices = GetValue("price", Store.Alias)
-                        .GetPriceValues(
-                            Store.Currencies,
-                            vat,
-                            vatIncludedInPrice,
-                            storeCurrency,
-                            Store.Alias,
-                            Path,
-                            categories
-                        );
-
-                    return prices;
-                }, LazyThreadSafetyMode.ExecutionAndPublication)
-            );
-
-            return (List<IPrice>)((Lazy<object>)lazy).Value;
+            return prices;
         }
     }
 
