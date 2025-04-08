@@ -507,17 +507,6 @@ public class ImportService : IImportService
                     {
                         _contentService.Move(content, newParent.Id, syncUser);
 
-                        content.SetParent(newParent);
-                        content.ParentId = newParent.Id;
-
-                        if (content.Published)
-                        {
-                            _contentService.SaveAndPublish(content);
-                        }
-                        else
-                        {
-                            _contentService.Save(content);
-                        }
                     } catch(Exception ex)
                     {
                         _logger.LogWarning($"Could not move Category  {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
