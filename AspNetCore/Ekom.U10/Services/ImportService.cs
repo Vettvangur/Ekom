@@ -498,6 +498,8 @@ public class ImportService : IImportService
 
                 using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                 {
+                    content.SetParent(newParent);
+                    content.ParentId = newParent.Id;
                     _contentService.Move(content, newParent.Id, syncUser);
                 }
             }
@@ -1674,6 +1676,7 @@ public class ImportService : IImportService
         {
             content = new Umbraco.Cms.Core.Models.Content(nodeName, parentContent.Id, contenType);
             create = true;
+            allUmbracoCategories.Add(content);
         }
 
         return content;
