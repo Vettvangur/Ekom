@@ -489,6 +489,11 @@ public class ImportService : IImportService
             {
                 continue;
             }
+            if (create)
+            {
+                allUmbracoCategories.Add(content);
+            }
+            
 
             var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
 
@@ -1676,7 +1681,6 @@ public class ImportService : IImportService
         {
             content = new Umbraco.Cms.Core.Models.Content(nodeName, parentContent.Id, contenType);
             create = true;
-            allUmbracoCategories.Add(content);
         }
 
         return content;
