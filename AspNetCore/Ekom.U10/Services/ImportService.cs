@@ -503,16 +503,24 @@ public class ImportService : IImportService
 
                 using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                 {
-                    _contentService.Move(content, newParent.Id, syncUser);
-                    content.SetParent(newParent);
-                    content.ParentId = newParent.Id;
+                    try
+                    {
+                        _contentService.Move(content, newParent.Id, syncUser);
 
-                    if (content.Published)
+                        content.SetParent(newParent);
+                        content.ParentId = newParent.Id;
+
+                        if (content.Published)
+                        {
+                            _contentService.SaveAndPublish(content);
+                        }
+                        else
+                        {
+                            _contentService.Save(content);
+                        }
+                    } catch(Exception ex)
                     {
-                        _contentService.SaveAndPublish(content);
-                    } else
-                    {
-                        _contentService.Save(content);
+                        _logger.LogWarning($"Could not move Category  {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
                     }
 
                 }
