@@ -13,6 +13,9 @@ public interface IImportService
     /// <param name="syncUser">The user ID initiating the sync operation. Defaults to -1 to represent a system or anonymous user.</param>
     public void FullSync(ImportData data, Guid? parentKey = null, int syncUser = -1);
 
+    public void MoveSync(ImportData data, Guid? parentKey = null, int syncUser = -1);
+
+
     /// <summary>
     /// Synchronizes a single category and its related products and subcategories. This method focuses on integrating or updating a specific category branch within the catalog.
     /// </summary>

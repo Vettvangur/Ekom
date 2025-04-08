@@ -172,6 +172,70 @@ public class ImportService : IImportService
         }
     }
 
+    public void MoveSync(ImportData data, Guid? parentKey = null, int syncUser = -1)
+    {
+        _logger.LogInformation($"Move Sync running. ParentKey: {(parentKey.HasValue ? parentKey.Value.ToString() : "None")}, SyncUser: {syncUser}, Categories: {(data.Categories != null ? (data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()) : 0)} Products: {data.Products.Count}");
+
+        lock (_syncLock)
+        {
+            if (_isFullSyncRunning)
+            {
+                _logger.LogError("Full Sync is already in progress.");
+                throw new InvalidOperationException("Sync is already in progress.");
+            }
+
+            _isFullSyncRunning = true;
+        }
+
+        try
+        {
+            var stopwatchTotal = Stopwatch.StartNew();
+
+            using var backgroundScope = new BackgroundScope(_serverMessenger);
+
+            GetInitialData(parentKey);
+
+            var allEkomNodes = GetAllEkomNodes();
+
+            ArgumentNullException.ThrowIfNull(umbracoRootContent);
+
+            var allUmbracoCategories = allEkomNodes
+                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+
+
+            var stopwatch = Stopwatch.StartNew();
+
+            MoveCategoryTree(data.Categories, GetAllCategories(data), allUmbracoCategories, umbracoRootContent, syncUser);
+
+            _logger.LogInformation("Move Category Tree took {Duration} seconds", (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"));
+
+            stopwatch.Stop();
+            stopwatchTotal.Stop();
+
+            var groupedFailedProducts = productsSaved
+                .Where(x => x.Exception != null)
+                .GroupBy(x => x.Exception.Message);
+
+
+            _logger.LogInformation(
+                "Move Sync took {Duration} seconds. Categories Saved: {categoriesCount} Products Saved: {productsCount} Products With Error: {productsErrorCount} Variants Saved: {variantsCount} VariantsGroups Saved: {variantGroupsCount} Categories Deleted: {categoriesDeleted} Products Deleted: {productDeleted} Variants Deleted: {variantDeleted} VariantsGroups Deleted: {variantGroupDeleted}",
+                (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), categoriesSaved.Count, productsSaved.Where(x => x.Exception == null).Count(), productsSaved.Where(x => x.Exception != null).Count(), variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Move Sync failed");
+            throw;
+        }
+        finally
+        {
+            lock (_syncLock)
+            {
+                _isFullSyncRunning = false;
+            }
+        }
+    }
+
     public void CategorySync(ImportData data, Guid parentKey, int syncUser = -1)
     {
         _logger.LogInformation($"Category Sync running. ParentKey: {parentKey}, SyncUser: {syncUser}, Categories: {data.Categories.Count + data.Categories.SelectMany(x => x.SubCategories).Count()} Products: {data.Products.Count}");
@@ -409,7 +473,38 @@ public class ImportService : IImportService
 
         ImportSingleMedia(umbracoVariant, medias, allUmbracoMedia, mediaType, mediaContentType, true, syncUser);
     }
+    private void MoveCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, IContent? parentContent, int syncUser)
+    {
 
+        if (parentContent == null || importCategories == null || allImportCategories == null)
+        {
+            return;
+        }
+
+        foreach (var importCategory in importCategories)
+        {
+            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+
+            if (content == null)
+            {
+                continue;
+            }
+
+            var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
+
+            if (newParent != null && newParent.Id != content.ParentId)
+            {
+                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
+
+                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                {
+                    _contentService.Move(content, newParent.Id, syncUser);
+                }
+            }
+
+            MoveCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser);
+        }
+    }
     private void IterateCategoryTree(List<ImportCategory>? importCategories, List<ImportCategory>? allImportCategories, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, IContent? parentContent, int syncUser, bool delete = true)
     {
 
@@ -468,9 +563,6 @@ public class ImportService : IImportService
 
         foreach (var importCategory in importCategories)
         {
-
-            var umbracoChildrenContent = allUmbracoCategories.Where(x => x.ParentId == parentContent.Id).ToList();
-
             var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
 
             if (content == null)
