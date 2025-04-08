@@ -489,6 +489,7 @@ public class ImportService : IImportService
             {
                 continue;
             }
+
             if (create)
             {
                 allUmbracoCategories.Add(content);
@@ -499,7 +500,7 @@ public class ImportService : IImportService
 
             if (newParent != null && newParent.Id != content.ParentId)
             {
-                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
+                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
                 using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                 {
@@ -583,11 +584,16 @@ public class ImportService : IImportService
                 continue;
             }
 
+            if (create)
+            {
+                allUmbracoCategories.Add(content);
+            }
+
             var newParent = string.IsNullOrEmpty(importCategory.ParentIdentifier) ? umbracoRootContent : allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.ParentIdentifier);
 
             if (newParent != null && newParent.Id != content.ParentId)
             {
-                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
+                _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
                 using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                 {
@@ -599,10 +605,6 @@ public class ImportService : IImportService
 
             SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
 
-            if (create)
-            {
-                allUmbracoCategories.Add(content);
-            }
 
             IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
         }
@@ -745,6 +747,11 @@ public class ImportService : IImportService
                         if (productContent == null)
                         {
                             continue;
+                        }
+
+                        if (create)
+                        {
+                            allUmbracoProducts.Add(productContent);
                         }
 
                         var save = create;
