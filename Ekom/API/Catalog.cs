@@ -497,6 +497,11 @@ public class Catalog
                     continue;
                 }
 
+                if (!_categoryCache.Cache.ContainsKey(otherStore.Alias))
+                {
+                    continue;
+                }
+
                 KeyValuePair<Guid, ICategory> categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id);
 
                 // Check if a valid KeyValuePair was found and if the category is not null
@@ -692,6 +697,7 @@ public class Catalog
         }
 
         System.Collections.Concurrent.ConcurrentDictionary<Guid, ICategory> categoriesInStore = _categoryCache.Cache[store.Alias];
+
         List<ICategory> orderedCategories = new List<ICategory>();
 
         // Iterate over ids to maintain order
