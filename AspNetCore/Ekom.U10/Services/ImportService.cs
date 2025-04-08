@@ -503,9 +503,9 @@ public class ImportService : IImportService
 
                 using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
                 {
+                    _contentService.Move(content, newParent.Id, syncUser);
                     content.SetParent(newParent);
                     content.ParentId = newParent.Id;
-                    _contentService.Move(content, newParent.Id, syncUser);
                 }
             }
 
