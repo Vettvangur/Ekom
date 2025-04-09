@@ -1,10 +1,9 @@
-namespace Ekom.Models.Umbraco
+namespace Ekom.Models.Umbraco;
+
+public class UmbracoUrl
 {
-    public class UmbracoUrl
-    {
-        public string Culture { get; set; }
-        public string Store { get; set; }
-        public string Url { get; set; }
-        public string Domain { get; set; }
-    }
+    public string Culture { get; set; } = string.Empty;
+    public string Store { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Domain { get; set; } = string.Empty;
 }

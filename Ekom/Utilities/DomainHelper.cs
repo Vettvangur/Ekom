@@ -1,27 +1,26 @@
-namespace Ekom.Utilities
+namespace Ekom.Utilities;
+
+public static class DomainHelper
 {
-    public static class DomainHelper
+
+    public static string GetDomainPrefix(string url)
     {
+        url = url.AddTrailing();
 
-        public static string GetDomainPrefix(string url)
+        if (url.Contains(":") && url.IndexOf(":", StringComparison.Ordinal) > 5)
         {
-            url = url.AddTrailing();
+            url = url.Substring(url.IndexOf("/", StringComparison.Ordinal));
 
-            if (url.Contains(":") && url.IndexOf(":", StringComparison.Ordinal) > 5)
-            {
-                url = url.Substring(url.IndexOf("/", StringComparison.Ordinal));
-
-                return url;
-            }
-
-            if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uriAbsoluteResult))
-            {
-                return uriAbsoluteResult.AbsolutePath.AddTrailing();
-            }
-
-            int firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
-
-            return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
+            return url;
         }
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uriAbsoluteResult))
+        {
+            return uriAbsoluteResult.AbsolutePath.AddTrailing();
+        }
+
+        int firstIndexOf = url.IndexOf("/", StringComparison.Ordinal);
+
+        return firstIndexOf > 0 ? url.Substring(firstIndexOf).AddTrailing() : string.Empty;
     }
 }

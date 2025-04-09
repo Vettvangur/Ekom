@@ -26,7 +26,7 @@ namespace Ekom.Models
         [System.Text.Json.Serialization.JsonIgnore]
         [Newtonsoft.Json.JsonIgnore]
         [XmlIgnore]
-        public virtual UmbracoContent StoreRootNode { get; set; }
+        public virtual UmbracoContent? StoreRootNode { get; set; }
         public virtual int StoreRootNodeId
         {
             get
@@ -211,7 +211,7 @@ namespace Ekom.Models
             if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
             {
                 Domains = storeDomainCache.Cache
-                    .Where(x => x.Value.RootContentId == StoreRootNodeId && Cultures.Select(x => x.Name).Contains(x.Value.LanguageIsoCode))
+                    .Where(x => x.Value.RootContentId == StoreRootNodeId)
                     .Select(x => x.Value)
                     .ToList();
             }
