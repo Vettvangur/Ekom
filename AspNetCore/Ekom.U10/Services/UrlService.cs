@@ -407,12 +407,16 @@ class UrlService : IUrlService
 
     public static string CombineUrlParts(params string[] parts)
     {
-        var joined = string.Join("/", parts
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => p.Trim('/')));
+        var cleanedParts = parts
+            .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/")
+            .Select(p => p.Trim('/'))
+            .Where(p => !string.IsNullOrEmpty(p));
 
-        return "/" + joined + "/";
+        var joined = string.Join("/", cleanedParts);
+
+        return "/" + joined.Trim('/') + (string.IsNullOrEmpty(joined) ? "" : "/");
     }
+
 
 
 }

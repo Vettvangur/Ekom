@@ -143,14 +143,13 @@ class EkomMiddleware
     {
         try
         {
-;
 
             if (request.Query != null && request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
             {
                 return storeAliasValue;
             }
 
-            if (request.HasFormContentType)
+            if (request.ContentType?.Contains("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) == true)
             {
                 try
                 {
@@ -173,28 +172,6 @@ class EkomMiddleware
             {
                 return storeAliasHeaderValue;
             }
-
-            //if (request.ContentType != null && request.ContentType.Contains("application/json", StringComparison.InvariantCultureIgnoreCase))
-            //{
-
-            //    var body = await GetRawBodyStringAsync(request, true, Encoding.UTF8, request.Body);
-
-            //    if (!string.IsNullOrEmpty(body) && body.StartsWith('{') && body.Contains("storeAlias", StringComparison.OrdinalIgnoreCase))
-            //    {
-            //        try
-            //        {
-            //            using var json = JsonDocument.Parse(body);
-            //            foreach (var property in json.RootElement.EnumerateObject())
-            //            {
-            //                if (string.Equals(property.Name, "storeAlias", StringComparison.OrdinalIgnoreCase))
-            //                {
-            //                    return property.Value.GetString();
-            //                }
-            //            }
-            //        }
-            //        catch (JsonException) { }
-            //    }
-            //}
 
             return null;
         }
