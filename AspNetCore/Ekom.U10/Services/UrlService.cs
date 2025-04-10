@@ -5,6 +5,7 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Globalization;
 using System.Text;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
@@ -51,41 +52,46 @@ class UrlService : IUrlService
         {
             foreach (var domain in store.Domains)
             {
+                var domainLang = domain.LanguageIsoCode;
                 var domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
-
                 var storeUrlPrefix = store.UrlPrefix;
 
-                var builder = new StringBuilder(CombineUrlParts(domainPath, storeUrlPrefix));
-                
+                var slugs = new List<string>();
+                var isValid = true;
+
                 foreach (var category in categories)
                 {
-                    var virtualUrl = false;
-
-                    if (category.Properties.TryGetValue("ekmVirtualUrl", out string _virtualUrl))
-                    {
-                        virtualUrl = _virtualUrl.IsBoolean();
-                    }
-
-                    if (virtualUrl)
+                    // Skip virtual categories
+                    if (category.Properties.TryGetValue("ekmVirtualUrl", out string virtualFlag) &&
+                        virtualFlag.IsBoolean())
                     {
                         continue;
                     }
 
-                    var slug = category.GetValue("slug", domain.LanguageIsoCode);
+                    var slug = category.GetValue("slug", domainLang);
 
-                    if (!string.IsNullOrWhiteSpace(slug))
-                        builder.Append(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
+                    if (string.IsNullOrWhiteSpace(slug))
+                    {
+                        isValid = false;
+                        break; // exit early — not valid for this domain
+                    }
+
+                    slugs.Add(slug.ToUrlSegment(_shortStringHelper).AddTrailing());
                 }
 
-                var url = builder.ToString().AddTrailing().ToLower();
+                if (!isValid || slugs.Count == 0)
+                    continue;
 
+                // Combine domain path + store prefix + slugs
+                var basePath = CombineUrlParts(domainPath, storeUrlPrefix);
+                var url = (basePath + string.Concat(slugs)).AddTrailing();
 
-                urls.Add(new UmbracoUrl()
+                urls.Add(new UmbracoUrl
                 {
-                    Culture = domain.LanguageIsoCode,
+                    Culture = domainLang,
                     Store = store.Alias,
                     Url = url,
-                    Domain = domain.DomainName,
+                    Domain = domain.DomainName
                 });
             }
         }
@@ -94,34 +100,34 @@ class UrlService : IUrlService
             foreach (var domain in store.Domains)
             {
                 var builder = new StringBuilder("/");
+                var hasMissingSlug = false;
 
                 foreach (var category in categories)
                 {
-                    var virtualUrl = false;
-
-                    if (category.Properties.TryGetValue("ekmVirtualUrl", out string _virtualUrl))
-                    {
-                        virtualUrl = _virtualUrl.IsBoolean();
-                    }
-
-                    if (virtualUrl)
+                    // Skip virtual categories
+                    if (category.Properties.TryGetValue("ekmVirtualUrl", out string virtualFlag) &&
+                        virtualFlag.IsBoolean())
                     {
                         continue;
                     }
-                    
+
                     var categorySlug = category.GetValue("slug", store.Alias);
 
-                    if (!string.IsNullOrWhiteSpace(categorySlug))
+                    if (string.IsNullOrWhiteSpace(categorySlug))
                     {
-                        builder.Append(categorySlug.ToUrlSegment(_shortStringHelper).AddTrailing());
+                        hasMissingSlug = true;
+                        break; // stop processing this domain
                     }
+
+                    builder.Append(categorySlug.ToUrlSegment(_shortStringHelper).AddTrailing());
                 }
 
-                var domainLastSement = UriHelper.GetLastSegment(domain.DomainName);
+                if (hasMissingSlug)
+                    continue;
 
-                var url = builder.ToString().AddTrailing().ToLower();
+                var url = builder.ToString().AddTrailing();
 
-                urls.Add(new UmbracoUrl()
+                urls.Add(new UmbracoUrl
                 {
                     Culture = domain.LanguageIsoCode,
                     Store = store.Alias,
@@ -129,8 +135,6 @@ class UrlService : IUrlService
                     Domain = domain.DomainName
                 });
             }
-
-
         }
 
         return urls.DistinctBy(x => (x.Domain, x.Url, x.Store)).ToList();
@@ -238,61 +242,52 @@ class UrlService : IUrlService
 
     public List<UmbracoUrl> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
     {
-        var slug = item.GetValue("slug");
+        var rawSlug = item.GetValue("slug");
 
-        if (string.IsNullOrWhiteSpace(slug))
-        {
-            throw new Exception("Slug is missing on product: " + nodeId + " Store: " + store.Alias);
-        }
+        if (string.IsNullOrWhiteSpace(rawSlug))
+            throw new Exception($"Slug is missing on product: {nodeId} Store: {store.Alias}");
 
-        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(slug);
-
+        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(rawSlug);
         var urls = new List<UmbracoUrl>();
+        var categoryUrls = categories.SelectMany(c => c.UrlsWithContext);
 
-        var categoryUrls = categories.SelectMany(x => x.UrlsWithContext);
-
-        if (slugValue != null && slugValue.Type == PropertyEditorType.Language && store.Domains.Any())
+        if (slugValue?.Type == PropertyEditorType.Language && store.Domains.Any())
         {
             foreach (var categoryUrl in categoryUrls)
             {
                 var productSlug = item.GetValue("slug", categoryUrl.Culture);
 
-                var url = categoryUrl.Url + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
+                if (string.IsNullOrWhiteSpace(productSlug))
+                    continue;
 
-                urls.Add(new UmbracoUrl()
+                var fullUrl = (categoryUrl.Url + productSlug.ToUrlSegment(_shortStringHelper).AddTrailing());
+
+                urls.Add(new UmbracoUrl
                 {
                     Culture = categoryUrl.Culture,
                     Store = store.Alias,
-                    Url = url,
+                    Url = fullUrl,
                     Domain = categoryUrl.Domain
                 });
             }
         }
         else
         {
+            var productSlug = item.GetValue("slug", store.Alias);
 
-            foreach (var category in categories)
+            if (!string.IsNullOrWhiteSpace(productSlug))
             {
-                foreach (var categoryUrlContext in category.UrlsWithContext)
+                var formattedSlug = productSlug.ToUrlSegment(_shortStringHelper).AddTrailing();
+
+                foreach (var categoryUrl in categoryUrls)
                 {
-                    var productUrl = item.GetValue("slug", store.Alias);
-
-                    if (string.IsNullOrEmpty(productUrl))
+                    urls.Add(new UmbracoUrl
                     {
-                        continue;
-                    }
-
-                    var url = categoryUrlContext.Url + productUrl.ToUrlSegment(_shortStringHelper).AddTrailing().ToLower();
-
-                    urls.Add(new UmbracoUrl()
-                    {
-                        Culture = categoryUrlContext.Culture,
+                        Culture = categoryUrl.Culture,
                         Store = store.Alias,
-                        Url = url,
-                        Domain = categoryUrlContext.Domain
+                        Url = categoryUrl.Url + formattedSlug,
+                        Domain = categoryUrl.Domain
                     });
-                    
-
                 }
             }
         }
@@ -307,102 +302,66 @@ class UrlService : IUrlService
     /// </summary>
     public string? GetNodeEntityUrl(INodeEntityWithUrl node, IStore store)
     {
-        // Urls is a list of relative urls.
-        // Umbraco cultures & hostnames can include a prefix
-        // This code matches to find correct prefix,
-        // aside from that, relative urls should be similar between domains
+        var contextCategoryUrl = _httpContextAccessor.HttpContext?.Items[Configuration.EkmRequestKey] is Lazy<ContentRequest> lazyRequest
+            && lazyRequest.Value?.Url is string urlFromRequest
+            ? urlFromRequest
+            : string.Empty;
 
-        string contextCategoryUrl = string.Empty;
+        using var cref = _context.EnsureUmbracoContext();
+        var pubReq = cref.UmbracoContext.PublishedRequest;
 
-        var requestCacheFromHttpContext = _httpContextAccessor.HttpContext?.Items[Configuration.EkmRequestKey] as Lazy<ContentRequest>;
-        if (requestCacheFromHttpContext != null)
+        var culture = pubReq?.Culture ?? CultureInfo.CurrentCulture.Name;
+        var uri = pubReq?.Domain?.Uri ?? CookieHelper.GetUmbracoDomain(_httpContextAccessor.HttpContext?.Request.Cookies);
+
+        var urlsWithContext = node.UrlsWithContext;
+        var urls = node.Urls;
+
+        // Fallback if nothing useful is available
+        if (uri == null && string.IsNullOrEmpty(contextCategoryUrl))
         {
-            if (requestCacheFromHttpContext.Value.Url != null)
+            return urls.FirstOrDefault();
+        }
+
+        // Match against current category context
+        if (!string.IsNullOrEmpty(contextCategoryUrl))
+        {
+            var match = urlsWithContext.FirstOrDefault(x =>
+                x.Culture == culture && x.Url.InvariantContains(contextCategoryUrl));
+
+            if (match != null)
+                return match.Url;
+        }
+
+        // Match against Umbraco request path
+        if (pubReq?.AbsolutePathDecoded is string absolutePath)
+        {
+            var match = urlsWithContext.FirstOrDefault(x =>
+                x.Culture == culture && x.Url.InvariantContains(absolutePath));
+
+            if (match != null)
+                return match.Url;
+        }
+
+        // Fallback: any URL with matching culture
+        var matchByCulture = urlsWithContext.FirstOrDefault(x => x.Culture == culture);
+        if (matchByCulture != null)
+        {
+            return matchByCulture.Url;
+        }
+
+        // Try matching by domain path prefix
+        if (uri != null)
+        {
+            var pathPrefix = uri.AbsolutePath.AddTrailing();
+            var matchByPrefix = urls.FirstOrDefault(x => x.StartsWith(pathPrefix, StringComparison.OrdinalIgnoreCase));
+            if (matchByPrefix != null)
             {
-                contextCategoryUrl = requestCacheFromHttpContext.Value.Url;
+                return matchByPrefix;
             }
         }
 
-        using (var cref = _context.EnsureUmbracoContext())
-        {
-            var pubReq = cref.UmbracoContext.PublishedRequest;
-            var culture = Thread.CurrentThread.CurrentCulture.Name;
-
-            Uri? uri = null;
-            if (pubReq == null || pubReq?.PublishedContent == null)
-            {
-
-                var httpCtx = _httpContextAccessor.HttpContext;
-                if (httpCtx != null)
-                {
-                    uri = CookieHelper.GetUmbracoDomain(httpCtx.Request.Cookies);
-
-                    // This could happen when background service calls an api on the store end.
-                    // Cookie needs to be sent with the api request.
-
-                    if (uri == null)
-                    {
-                        uri = pubReq?.Domain?.Uri;
-                    }
-
-                }
-            }
-            else
-            {
-                uri = pubReq.Domain?.Uri;
-                culture = pubReq.Culture;
-            }
-
-            if (uri == null && string.IsNullOrEmpty(contextCategoryUrl))
-            {
-                return node.Urls.FirstOrDefault();
-            }
-
-
-            if (!string.IsNullOrEmpty(contextCategoryUrl))
-            {
-                var nodeUrl = node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture && x.Url.InvariantContains(contextCategoryUrl));
-
-                if (nodeUrl != null)
-                {
-                    return nodeUrl.Url;
-                }
-            }
-
-            if (pubReq != null)
-            {
-                var nodeUrl = node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture && x.Url.InvariantContains(pubReq.AbsolutePathDecoded));
-
-                if (nodeUrl != null)
-                {
-                    return nodeUrl.Url;
-                }
-            }
-
-            if (node.UrlsWithContext.Any(x => x.Culture == culture))
-            {
-                return node.UrlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
-            }
-
-            if (uri != null)
-            {
-                var path = uri
-                 .AbsolutePath
-                 .ToLower()
-                 .AddTrailing();
-
-                var findUrlByPrefix = node.Urls
-                    .FirstOrDefault(x => x.StartsWith(path));
-
-                if (findUrlByPrefix != null)
-                {
-                    return findUrlByPrefix;
-                }
-            }
-
-
-            return node.Urls.FirstOrDefault();
-        }
+        // Final fallback
+        return urls.FirstOrDefault();
     }
 
     public static string CombineUrlParts(params string[] parts)

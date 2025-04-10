@@ -426,8 +426,11 @@ public class Catalog
 
     /// <summary>
     /// Get category by string id, supports udi, guid and int 
+    /// <param name="Id">The identifier.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
     /// </summary>
-    public ICategory GetCategory(string Id, string? storeAlias = null)
+    public ICategory? GetCategory(string Id, string? storeAlias = null, bool global = false)
     {
         if (Id == null)
         {
@@ -446,17 +449,17 @@ public class Catalog
 
             if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
             {
-                return GetCategory(guid, store.Alias);
+                return GetCategory(guid, store.Alias, global);
             }
 
             if (Guid.TryParse(Id, out Guid _guid))
             {
-                return GetCategory(_guid, store.Alias);
+                return GetCategory(_guid, store.Alias, global);
             }
 
             if (int.TryParse(Id, out int id))
             {
-                return GetCategory(id, store.Alias);
+                return GetCategory(id, store.Alias, global);
             }
         }
 
@@ -468,9 +471,10 @@ public class Catalog
     /// </summary>
     /// <param name="Id">The identifier.</param>
     /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
-    public ICategory? GetCategory(int Id, string? storeAlias = null)
+    public ICategory? GetCategory(int Id, string? storeAlias = null, bool global = false)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -488,35 +492,9 @@ public class Catalog
             return categoryPair.Value;
         }
 
-        if (Configuration.Instance.GlobalCatalog)
+        if (Configuration.Instance.GlobalCatalog || global)
         {
-            foreach (IStore otherStore in _storeSvc.GetAllStores())
-            {
-                if (otherStore.Alias == store.Alias)
-                {
-                    continue;
-                }
-
-                if (!_categoryCache.Cache.ContainsKey(otherStore.Alias))
-                {
-                    continue;
-                }
-
-                KeyValuePair<Guid, ICategory> categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id);
-
-                // Check if a valid KeyValuePair was found and if the category is not null
-                if (!categoryPairGlobal.Equals(default(KeyValuePair<int, ICategory>)) && categoryPairGlobal.Value != null)
-                {
-                    string selfDisableField = categoryPairGlobal.Value.GetValue("disable", store.Alias);
-
-                    if (!string.IsNullOrEmpty(selfDisableField) && selfDisableField.ConvertToBool())
-                    {
-                        return null;    
-                    }
-
-                    return categoryPairGlobal.Value;
-                }
-            }
+            return FindCategoryInAnyStore(store.Alias, Id, null);
         }
 
         return null;
@@ -527,9 +505,10 @@ public class Catalog
     /// </summary>
     /// <param name="Id">The identifier.</param>
     /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
-    public ICategory? GetCategory(Guid Id, string? storeAlias = null)
+    public ICategory? GetCategory(Guid Id, string? storeAlias = null, bool global = false)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -545,34 +524,69 @@ public class Catalog
             return category;
         }
 
-        if (Configuration.Instance.GlobalCatalog)
+        if (Configuration.Instance.GlobalCatalog || global)
         {
-            foreach (IStore otherStore in _storeSvc.GetAllStores())
-            {
-                if (otherStore.Alias == store.Alias)
-                {
-                    continue;
-                }
+            return FindCategoryInAnyStore(store.Alias, null, Id);
+        }
 
-                if (_categoryCache.Cache[otherStore.Alias].TryGetValue(Id, out ICategory? catOther))
+        return null;
+
+    }
+
+    private ICategory? FindCategoryInAnyStore(string storeAlias, int? id, Guid? key)
+    {
+        var allStores = _storeSvc.GetAllStores();
+
+        foreach (IStore otherStore in allStores)
+        {
+            if (otherStore.Alias == storeAlias)
+            {
+                continue;
+            }
+
+            if (!_categoryCache.Cache.ContainsKey(otherStore.Alias))
+            {
+                continue;
+            }
+
+            if (key.HasValue)
+            {
+                if (_categoryCache.Cache[otherStore.Alias].TryGetValue(key.Value, out ICategory? catOther))
                 {
-                    string selfDisableField = catOther.GetValue("disable", store.Alias);
+                    string selfDisableField = catOther.GetValue("disable", storeAlias);
 
                     if (!string.IsNullOrEmpty(selfDisableField) && selfDisableField.ConvertToBool())
-                    { 
+                    {
                         return null;
                     }
 
 
                     return catOther;
                 }
+            }
 
+            if (id.HasValue)
+            {
+                KeyValuePair<Guid, ICategory> categoryPairGlobal = _categoryCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == id.Value);
+
+                // Check if a valid KeyValuePair was found and if the category is not null
+                if (!categoryPairGlobal.Equals(default(KeyValuePair<int, ICategory>)) && categoryPairGlobal.Value != null)
+                {
+                    string selfDisableField = categoryPairGlobal.Value.GetValue("disable", storeAlias);
+
+                    if (!string.IsNullOrEmpty(selfDisableField) && selfDisableField.ConvertToBool())
+                    {
+                        return null;
+                    }
+
+                    return categoryPairGlobal.Value;
+                }
             }
         }
 
         return null;
-
     }
+
 
     [Obsolete]
     public ICategory GetCategory(string storeAlias, int id)
