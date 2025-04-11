@@ -120,7 +120,7 @@ class UmbracoService : IUmbracoService
         return FormatDataType(dtd);
     }
 
-    public IEnumerable<UmbracoLanguage> GetLanguages()
+    public IEnumerable<UmbracoLanguage>? GetLanguages()
     {
         return _runtimeCache.GetCacheItem("ekmLanguages", () => {
             return _localizationService.GetAllLanguages().OrderByDescending(x => x.IsDefault).ThenBy(x => x.CultureName).Select(x => new UmbracoLanguage()

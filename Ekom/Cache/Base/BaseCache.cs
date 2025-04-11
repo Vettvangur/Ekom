@@ -6,128 +6,127 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace Ekom.Cache
+namespace Ekom.Cache;
+
+/// <summary>
+/// For custom caches or global non store dependant caches
+/// </summary>
+/// <typeparam name="TItem">Type of data to cache</typeparam>
+abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
+    where TItem : class
 {
-    /// <summary>
-    /// For custom caches or global non store dependant caches
-    /// </summary>
-    /// <typeparam name="TItem">Type of data to cache</typeparam>
-    abstract class BaseCache<TItem> : ICache, IBaseCache<TItem>
-        where TItem : class
+    protected Configuration _config;
+    protected ILogger _logger;
+    protected IObjectFactory<TItem> _objFac;
+    protected IServiceProvider _serviceProvider;
+
+    protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+
+    public BaseCache(
+        Configuration config,
+        ILogger<BaseCache<TItem>> logger,
+        IObjectFactory<TItem> objectFactory,
+        IServiceProvider serviceProvider)
     {
-        protected Configuration _config;
-        protected ILogger _logger;
-        protected IObjectFactory<TItem> _objFac;
-        protected IServiceProvider _serviceProvider;
+        _config = config;
+        _logger = logger;
+        _objFac = objectFactory;
+        _serviceProvider = serviceProvider;
+    }
 
-        protected INodeService nodeService => _serviceProvider.GetService<INodeService>();
+    /// <summary>
+    /// Umbraco Node Alias name used in Examine search
+    /// </summary>
+    public abstract string NodeAlias { get; }
 
-        public BaseCache(
-            Configuration config,
-            ILogger<BaseCache<TItem>> logger,
-            IObjectFactory<TItem> objectFactory,
-            IServiceProvider serviceProvider)
+    public virtual ConcurrentDictionary<Guid, TItem> Cache { get; }
+     = new ConcurrentDictionary<Guid, TItem>();
+
+    /// <summary>
+    /// Class indexer
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public TItem this[Guid index]
+    {
+        get => Cache[index];
+        set => Cache[index] = value;
+    }
+
+    protected void AddOrReplaceFromCache(Guid id, TItem newCacheItem)
+    {
+        Cache[id] = newCacheItem;
+    }
+
+    protected void RemoveItemFromCache(Guid id)
+    {
+        Cache.TryRemove(id, out TItem i);
+    }
+
+    /// <summary>
+    /// Base FillCache method appropriate for most derived caches
+    /// </summary>
+    public virtual void FillCache()
+    {
+
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+
+        _logger.LogDebug("Starting to fill...");
+
+        int count = 0;
+
+        IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
+
+        foreach (UmbracoContent r in results)
         {
-            _config = config;
-            _logger = logger;
-            _objFac = objectFactory;
-            _serviceProvider = serviceProvider;
-        }
-
-        /// <summary>
-        /// Umbraco Node Alias name used in Examine search
-        /// </summary>
-        public abstract string NodeAlias { get; }
-
-        public virtual ConcurrentDictionary<Guid, TItem> Cache { get; }
-         = new ConcurrentDictionary<Guid, TItem>();
-
-        /// <summary>
-        /// Class indexer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public TItem this[Guid index]
-        {
-            get => Cache[index];
-            set => Cache[index] = value;
-        }
-
-        protected void AddOrReplaceFromCache(Guid id, TItem newCacheItem)
-        {
-            Cache[id] = newCacheItem;
-        }
-
-        protected void RemoveItemFromCache(Guid id)
-        {
-            Cache.TryRemove(id, out TItem i);
-        }
-
-        /// <summary>
-        /// Base FillCache method appropriate for most derived caches
-        /// </summary>
-        public virtual void FillCache()
-        {
-
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            _logger.LogDebug("Starting to fill...");
-
-            int count = 0;
-
-            IEnumerable<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias);
-
-            foreach (UmbracoContent r in results)
+            try
             {
-                try
-                {
-                    // Traverse up parent nodes, checking only published status
-                    //if (!r.IsItemUnpublished())
-                    //{
-                    TItem? item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
+                // Traverse up parent nodes, checking only published status
+                //if (!r.IsItemUnpublished())
+                //{
+                TItem? item = (TItem)(_objFac?.Create(r) ?? Activator.CreateInstance(typeof(TItem), r));
 
-                    if (item != null)
-                    {
-                        count++;
-
-                        AddOrReplaceFromCache(r.Key, item);
-                    }
-                    //}
-                }
-                catch (Exception ex) // Skip on fail
+                if (item != null)
                 {
-                    _logger.LogWarning(ex, "Failed to map to store. Id: {Id}" + r.Id);
+                    count++;
+
+                    AddOrReplaceFromCache(r.Key, item);
                 }
+                //}
             }
-
-            stopwatch.Stop();
-            _logger.LogInformation(
-                "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
-
-        }
-
-        /// <summary>
-        /// <see cref="ICache"/> implementation, <para/>
-        /// handles addition of nodes when umbraco events fire
-        /// </summary>
-        public virtual void AddReplace(UmbracoContent content)
-        {
-            if (!nodeService.IsItemUnpublished(content))
+            catch (Exception ex) // Skip on fail
             {
-                TItem? item = (TItem)(_objFac?.Create(content) ?? Activator.CreateInstance(typeof(TItem), content));
-
-                if (item != null) AddOrReplaceFromCache(content.Key, item);
+                _logger.LogWarning(ex, "Failed to map to store. Id: {Id}" + r.Id);
             }
         }
 
-        /// <summary>
-        /// <see cref="ICache"/> implementation, <para/>
-        /// handles removal of nodes when umbraco events fire
-        /// </summary>
-        public virtual void Remove(Guid id)
+        stopwatch.Stop();
+        _logger.LogInformation(
+            "Finished filling base cache with {Count} items. Time it took to fill: {Elapsed}", count, stopwatch.Elapsed);
+
+    }
+
+    /// <summary>
+    /// <see cref="ICache"/> implementation, <para/>
+    /// handles addition of nodes when umbraco events fire
+    /// </summary>
+    public virtual void AddReplace(UmbracoContent content)
+    {
+        if (!nodeService.IsItemUnpublished(content))
         {
-            RemoveItemFromCache(id);
+            TItem? item = (TItem)(_objFac?.Create(content) ?? Activator.CreateInstance(typeof(TItem), content));
+
+            if (item != null) AddOrReplaceFromCache(content.Key, item);
         }
+    }
+
+    /// <summary>
+    /// <see cref="ICache"/> implementation, <para/>
+    /// handles removal of nodes when umbraco events fire
+    /// </summary>
+    public virtual void Remove(Guid id)
+    {
+        RemoveItemFromCache(id);
     }
 }

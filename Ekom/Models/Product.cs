@@ -239,7 +239,7 @@ public class Product : PerStoreNodeEntity, IProduct
     }
 
     /// <inheritdoc/>
-    public virtual string Url => Configuration.Resolver.GetService<IUrlService>().GetNodeEntityUrl(this, Store);
+    public virtual string Url => Configuration.Resolver.GetService<IUrlService>()?.GetNodeEntityUrl(this) ?? "";
 
     /// <summary>
     /// All product urls, computed from stores and categories.

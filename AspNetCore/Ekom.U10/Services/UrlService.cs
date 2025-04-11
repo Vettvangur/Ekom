@@ -300,7 +300,7 @@ class UrlService : IUrlService
     /// Umbraco.Web.Routing.DomainUtilities.GetCultureFromDomains
     /// for inspiration
     /// </summary>
-    public string? GetNodeEntityUrl(INodeEntityWithUrl node, IStore store)
+    public string? GetNodeEntityUrl(INodeEntityWithUrl node)
     {
         var contextCategoryUrl = _httpContextAccessor.HttpContext?.Items[Configuration.EkmRequestKey] is Lazy<ContentRequest> lazyRequest
             && lazyRequest.Value?.Url is string urlFromRequest
@@ -319,7 +319,7 @@ class UrlService : IUrlService
         // Fallback if nothing useful is available
         if (uri == null && string.IsNullOrEmpty(contextCategoryUrl))
         {
-            return urls.FirstOrDefault();
+            return urlsWithContext.FirstOrDefault(x => x.Culture == culture)?.Url;
         }
 
         // Match against current category context
