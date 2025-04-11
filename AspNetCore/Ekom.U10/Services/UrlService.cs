@@ -54,7 +54,7 @@ class UrlService : IUrlService
             {
                 var domainLang = domain.LanguageIsoCode;
                 var domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
-                var storeUrlPrefix = store.UrlPrefix;
+                var storeUrlPrefix = store.UrlPrefix(domainLang);
 
                 var slugs = new List<string>();
                 var isValid = true;

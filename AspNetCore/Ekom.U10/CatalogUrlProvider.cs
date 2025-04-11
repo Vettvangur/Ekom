@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Cache;
+using Umbraco.Cms.Core.Media.EmbedProviders;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Web;
@@ -40,7 +41,7 @@ class CatalogUrlProvider : IUrlProvider
                 var urls = GetUrls(content.Id, current);
                 // In practice this will simply return the first url from the collection
                 // since we're comparing store title to culture.
-                return urls.FirstOrDefault(x => x.Culture == culture) ?? urls.FirstOrDefault();
+                return urls?.FirstOrDefault(x => x.Culture == culture) ?? urls?.FirstOrDefault();
             }
             catch (Exception ex)
             {
@@ -58,14 +59,13 @@ class CatalogUrlProvider : IUrlProvider
     /// </summary>
     public IEnumerable<UrlInfo> GetOtherUrls(int id, Uri current)
     {
-        return GetUrls(id, current);
+        return GetUrls(id, current) ?? Enumerable.Empty<UrlInfo>();
     }
 
-    private IEnumerable<UrlInfo> GetUrls(int id, Uri current)
+    private IEnumerable<UrlInfo>? GetUrls(int id, Uri current)
     {
         const string cacheKey = "EkomUrlProvider-GetOtherUrls-";
 
-#pragma warning disable CS8603 // Possible null reference return.
         return _reqCache.GetCacheItem(
                 "EkomUrlProvider-GetOtherUrls-" + id,
                 () =>
@@ -78,7 +78,7 @@ class CatalogUrlProvider : IUrlProvider
                     var content = context?.Content?.GetById(id);
                     
                     if (content == null ||
-                        (content.ContentType.Alias != "ekmProduct" && content.ContentType.Alias != "ekmCategory"))
+                        (!content.IsDocumentType("ekmProduct") && !content.IsDocumentType("ekmCategory")))
                     {
                         return Enumerable.Empty<UrlInfo>();
                     }
@@ -101,7 +101,7 @@ class CatalogUrlProvider : IUrlProvider
                     {
                         try
                         {
-                            INodeEntityWithUrl node = content.ContentType.Alias == "ekmProduct"
+                            INodeEntityWithUrl? node = content.ContentType.Alias == "ekmProduct"
                                 ? API.Catalog.Instance.GetProduct(id, store.Alias)
                                 : API.Catalog.Instance.GetCategory(id, store.Alias);
 
@@ -119,16 +119,15 @@ class CatalogUrlProvider : IUrlProvider
 
                     return urls;
                 });
-#pragma warning restore CS8603 // Possible null reference return.
-
-
     }
 
     private void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls, Uri current, bool absoluteUrls)
     {
         var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
 
-        var distinctDomains = absoluteUrls ? store.Domains : store.Domains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName));
+        var storeDomains = store.Domains.ToList();
+
+        var distinctDomains = absoluteUrls ? storeDomains : storeDomains.DistinctBy(x => DomainHelper.GetDomainPrefix(x.DomainName));
         
         if (slugValue?.Type == PropertyEditorType.Language)
         {
@@ -151,7 +150,7 @@ class CatalogUrlProvider : IUrlProvider
         {
             foreach (var url in node.Urls)
             {
-                foreach (var domain in store.Domains)
+                foreach (var domain in storeDomains)
                 {
                     urls.Add(
                         new UrlInfo(

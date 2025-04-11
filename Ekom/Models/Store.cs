@@ -42,24 +42,21 @@ namespace Ekom.Models
         public virtual bool VatIncludedInPrice => Properties["vatIncludedInPrice"].ConvertToBool();
         public virtual string OrderNumberTemplate => GetValue("orderNumberTemplate");
         public virtual string OrderNumberPrefix => GetValue("orderNumberPrefix");
-        public virtual string UrlPrefix
+        public virtual string UrlPrefix(string culture)
         {
-            get
-            {
-                var culture = Thread.CurrentThread.CurrentCulture.Name;
-                var value = GetValue("urlPrefix", culture);
-                if (string.IsNullOrWhiteSpace(value))
-                    return value;
-
-                // Ensure it starts with "/" and does NOT end with "/"
-                if (!value.StartsWith("/"))
-                    value = "/" + value;
-
-                if (value.Length > 1 && value.EndsWith("/"))
-                    value = value.TrimEnd('/');
-
+            var value = GetValue("urlPrefix", culture);
+            if (string.IsNullOrWhiteSpace(value))
                 return value;
-            }
+
+            // Ensure it starts with "/" and does NOT end with "/"
+            if (!value.StartsWith("/"))
+                value = "/" + value;
+
+            if (value.Length > 1 && value.EndsWith("/"))
+                value = value.TrimEnd('/');
+
+            return value;
+            
         }
 
         public virtual string Url { get; }
@@ -213,6 +210,7 @@ namespace Ekom.Models
                 Domains = storeDomainCache.Cache
                     .Where(x => x.Value.RootContentId == StoreRootNodeId)
                     .Select(x => x.Value)
+                    .OrderBy(x => x.DomainName)
                     .ToList();
             }
             else

@@ -34,7 +34,7 @@ public interface IStore : INodeEntity
     UmbracoContent StoreRootNode { get; }
     int StoreRootNodeId { get; }
     string OrderNumberPrefix { get; }
-    string UrlPrefix { get; }
+    string UrlPrefix(string culture);
     string OrderNumberTemplate { get; }
     string Url { get; }
     bool VatIncludedInPrice { get; }
