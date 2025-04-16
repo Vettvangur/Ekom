@@ -99,6 +99,10 @@ class UrlService : IUrlService
         {
             foreach (var domain in store.Domains)
             {
+                var domainLang = domain.LanguageIsoCode;
+                var domainPath = DomainHelper.GetDomainPrefix(domain.DomainName);
+                var storeUrlPrefix = store.UrlPrefix(domainLang);
+
                 var builder = new StringBuilder("/");
                 var hasMissingSlug = false;
 
@@ -125,7 +129,7 @@ class UrlService : IUrlService
                 if (hasMissingSlug)
                     continue;
 
-                var url = builder.ToString().AddTrailing();
+                var url = CombineUrlParts(domainPath, storeUrlPrefix, builder.ToString());
 
                 urls.Add(new UmbracoUrl
                 {

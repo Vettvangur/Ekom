@@ -102,8 +102,8 @@ class CatalogUrlProvider : IUrlProvider
                         try
                         {
                             INodeEntityWithUrl? node = content.ContentType.Alias == "ekmProduct"
-                                ? API.Catalog.Instance.GetProduct(id, store.Alias)
-                                : API.Catalog.Instance.GetCategory(id, store.Alias);
+                                ? API.Catalog.Instance.GetProduct(content.Key, store.Alias)
+                                : API.Catalog.Instance.GetCategory(content.Key, store.Alias);
 
                             if (node != null)
                             {
