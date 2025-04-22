@@ -201,4 +201,9 @@ public abstract class NodeEntity : INodeEntity
     {
         return Properties.GetPropertyValue(propAlias, alias);
     }
+
+    public string GetRawValue(string propAlias)
+    {
+        return Properties.GetRawPropertyValue(propAlias);
+    }
 }

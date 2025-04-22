@@ -48,6 +48,14 @@ public static class DictionaryExtensions
         return System.Web.HttpUtility.HtmlDecode(GetBasePropertyValue(properties, propertyAlias, alias));
     }
 
+    /// <summary>
+    /// Get raw value from umbraco properties
+    /// </summary>
+    public static string GetRawPropertyValue(this IReadOnlyDictionary<string, string> properties, string propertyAlias)
+    {
+        return System.Web.HttpUtility.HtmlDecode(GetRawBasePropertyValue(properties, propertyAlias));
+    }
+
     private static string GetBasePropertyValue(IReadOnlyDictionary<string, string> properties, string propertyAlias, string? alias = null)
     {
         string modifiedPropertyAlias = propertyAlias;
@@ -57,6 +65,18 @@ public static class DictionaryExtensions
 
         val = val?.GetEkomPropertyEditorValue(alias ?? "") ?? string.Empty;
         
+        return !string.IsNullOrEmpty(val)
+            ? val
+            : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;
+    }
+
+    private static string GetRawBasePropertyValue(IReadOnlyDictionary<string, string> properties, string propertyAlias)
+    {
+        string modifiedPropertyAlias = propertyAlias;
+
+        // Attempt to retrieve the value for the final property alias
+        properties.TryGetValue(modifiedPropertyAlias, out string? val);
+
         return !string.IsNullOrEmpty(val)
             ? val
             : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;

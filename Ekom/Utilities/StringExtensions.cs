@@ -139,6 +139,9 @@ public static class StringExtension
             // 2. Try getting from "values" dictionary inside the JSON
             if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
             {
+                // 👉 Check if values is empty
+                if (!valuesObj.HasValues)
+                    return "";
 
                 if (!string.IsNullOrEmpty(alias))
                 {
@@ -161,7 +164,7 @@ public static class StringExtension
         }
         catch (JsonException)
         {
-
+            // Handle/log if needed
         }
 
         return value;

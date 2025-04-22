@@ -123,7 +123,7 @@ class CatalogUrlProvider : IUrlProvider
 
     private void PopulateUrls(INodeEntityWithUrl node, IStore store, HashSet<UrlInfo> urls, Uri current, bool absoluteUrls)
     {
-        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetValue("slug"));
+        var slugValue = JsonConvert.DeserializeObject<PropertyValue>(node.GetRawValue("slug"));
 
         var storeDomains = store.Domains.ToList();
 

@@ -46,7 +46,15 @@ class UrlService : IUrlService
     {
         var urls = new List<UmbracoUrl>();
 
-        var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(categories.FirstOrDefault()?.GetValue("slug"));
+        var rawSlug = categories.FirstOrDefault()?.GetRawValue("slug") ?? "";
+
+        if (string.IsNullOrEmpty(rawSlug) || rawSlug == "#")
+        {
+            _logger.LogWarning("Slug is missing on category: {category} Store: {store}", categories.FirstOrDefault()?.Id, store.Alias);
+            return urls;
+        }
+
+        var categoryProperty = JsonConvert.DeserializeObject<PropertyValue>(rawSlug);
 
         if (categoryProperty != null && categoryProperty.Type == PropertyEditorType.Language && store.Domains.Any())
         {
@@ -194,7 +202,7 @@ class UrlService : IUrlService
     [Obsolete]
     public IEnumerable<string> BuildProductUrls(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
     {
-        var slug = item.GetValue("slug");
+        var slug = item.GetRawValue("slug");
 
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -246,7 +254,7 @@ class UrlService : IUrlService
 
     public List<UmbracoUrl> BuildProductUrlsWithContext(UmbracoContent item, IEnumerable<ICategory> categories, IStore store, int nodeId)
     {
-        var rawSlug = item.GetValue("slug");
+        var rawSlug = item.GetRawValue("slug");
 
         if (string.IsNullOrWhiteSpace(rawSlug))
             throw new Exception($"Slug is missing on product: {nodeId} Store: {store.Alias}");

@@ -60,4 +60,7 @@ public class UmbracoContent
 
     public string GetValue(string propertyAlias, string? key = null) =>
                 Properties.GetPropertyValue(propertyAlias, key);
+    public string GetRawValue(string propertyAlias) =>
+                Properties.GetRawPropertyValue(propertyAlias);
+
 }

@@ -279,7 +279,9 @@ class UmbracoEventListeners :
 
         content.SetValue("updateSlug", false);
 
-        var propertyValue = JsonConvert.DeserializeObject<PropertyValue>(content.GetValue<string>("title") ?? "");
+        var titleValue = content.GetValue<string>("title") ?? "";
+
+        var propertyValue = JsonConvert.DeserializeObject<PropertyValue>(titleValue);
 
         if (propertyValue == null)
         {
