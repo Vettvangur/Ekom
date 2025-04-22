@@ -52,22 +52,10 @@ public static class DictionaryExtensions
     {
         string modifiedPropertyAlias = propertyAlias;
 
-        alias = string.IsNullOrEmpty(alias) ? Thread.CurrentThread.CurrentCulture.Name : alias; 
-
-        // Build the modified property alias based on the available keys
-        if (!string.IsNullOrEmpty(alias))
-        {
-            string propertyAliasWithCultureOrStore = $"{propertyAlias}_{alias}";
-            if (properties.ContainsKey(propertyAliasWithCultureOrStore))
-            {
-                modifiedPropertyAlias = propertyAliasWithCultureOrStore;
-            }
-        }
-
         // Attempt to retrieve the value for the final property alias
         properties.TryGetValue(modifiedPropertyAlias, out string? val);
 
-        val = val?.GetEkomPropertyEditorValue(alias) ?? string.Empty;
+        val = val?.GetEkomPropertyEditorValue(alias ?? "") ?? string.Empty;
         
         return !string.IsNullOrEmpty(val)
             ? val

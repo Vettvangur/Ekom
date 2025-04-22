@@ -125,62 +125,56 @@ public static class StringExtension
 
         try
         {
-            JObject obj = JObject.Parse(value);
+            var obj = JObject.Parse(value);
 
-            // Try getting the value directly by alias.
-            if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out JToken directValue) && directValue != null)
+            // 1. Try getting the value directly by alias
+            if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var directToken) && directToken != null)
             {
-                return directValue.ToString();
+                if (directToken.Type == JTokenType.Object && directToken["markup"] != null)
+                    return directToken["markup"]!.ToString();
+
+                return directToken.ToString();
             }
 
-            // Attempt to deserialize to PropertyValue and extract based on culture or alias.
-            PropertyValue? propertyValue = obj.ToObject<PropertyValue>();
-            if (propertyValue != null)
+            // 2. Try getting from "values" dictionary inside the JSON
+            if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
             {
-                // Prioritize direct alias match in PropertyValue.Values.
-                if (propertyValue.Values?.TryGetValue(alias, out object valAlias) == true && valAlias != null)
+
+                if (!string.IsNullOrEmpty(alias))
                 {
-                    // Check if valCulture is a JSON string that can be parsed
-                    if (valAlias is JObject jObjectValue)
+                    // First try alias
+                    if (valuesObj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var aliasToken) && aliasToken != null)
                     {
-                        if (jObjectValue["markup"] != null)
-                        {
-                            return jObjectValue["markup"].ToString();
-                        }
-                    }
-                    else
-                    {
-                        return valAlias.ToString();
+                        var result = ExtractValueFromToken(aliasToken);
+                        if (result != null) return result;
                     }
                 }
 
-                // Fallback to current culture match in PropertyValue.Values.
-                string currentCultureName = CultureInfo.CurrentCulture.Name;
-                if (propertyValue.Values?.TryGetValue(currentCultureName, out object valCulture) == true && valCulture != null)
+                // Then try current culture
+                var culture = CultureInfo.CurrentCulture.Name;
+                if (valuesObj.TryGetValue(culture, StringComparison.OrdinalIgnoreCase, out var cultureToken) && cultureToken != null)
                 {
-                    // Check if valCulture is a JSON string that can be parsed
-                    if (valCulture is string stringValue)
-                    {
-                        return stringValue;
-                    }
-                    else if (valCulture is JObject jObjectValue)
-                    {
-                        if (jObjectValue["markup"] != null)
-                        {
-                            return jObjectValue["markup"].ToString();
-                        }
-                    }
+                    var result = ExtractValueFromToken(cultureToken);
+                    if (result != null) return result;
                 }
             }
         }
         catch (JsonException)
         {
-            // Consider logging the exception or handling it as needed.
-            // Log.Error(ex, "Failed to parse JSON in GetEkomPropertyEditorValue.");
+
         }
 
-        return string.Empty;
+        return value;
     }
+
+    static string? ExtractValueFromToken(JToken token)
+    {
+        if (token.Type == JTokenType.Object && token["markup"] != null)
+            return token["markup"]!.ToString();
+
+        return token.Type == JTokenType.String ? token.ToString() : null;
+    }
+
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
     {
         List<IPrice> prices = new List<IPrice>();
