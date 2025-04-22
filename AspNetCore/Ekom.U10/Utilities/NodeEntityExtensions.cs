@@ -10,6 +10,7 @@ namespace Ekom.Utilities;
 
 public static class NodeEntityExtensions
 {
+
     public static T GetValue<T>(this IProduct node, string propAlias, string alias = null)
     {
         string val = node.GetValue(propAlias, alias);
@@ -71,6 +72,17 @@ public static class NodeEntityExtensions
         if (typeof(T) == typeof(IEnumerable<IProduct>))
         {
             return (T)(object)ProductHelper.GetProducts(val);
+        }
+        if (typeof(T) == typeof(IEnumerable<string>))
+        {
+            if (string.IsNullOrEmpty(val))
+            {
+                return (T)(object)Enumerable.Empty<string>();
+            }
+
+            var array = JsonConvert.DeserializeObject<IEnumerable<string>>(val);
+
+            return (T)(object)array!;
         }
         return (T)(object)val;
     }

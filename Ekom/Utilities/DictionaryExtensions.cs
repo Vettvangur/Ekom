@@ -52,6 +52,8 @@ public static class DictionaryExtensions
     {
         string modifiedPropertyAlias = propertyAlias;
 
+        alias = string.IsNullOrEmpty(alias) ? Thread.CurrentThread.CurrentCulture.Name : alias; 
+
         // Build the modified property alias based on the available keys
         if (!string.IsNullOrEmpty(alias))
         {
@@ -62,21 +64,11 @@ public static class DictionaryExtensions
             }
         }
 
-        string cultureAlias = $"{propertyAlias}_{System.Globalization.CultureInfo.CurrentCulture.Name}";
-        if (properties.ContainsKey(cultureAlias))
-        {
-            modifiedPropertyAlias = cultureAlias;
-        }
-
         // Attempt to retrieve the value for the final property alias
         properties.TryGetValue(modifiedPropertyAlias, out string? val);
 
-        // Special processing based on alias
-        if (!string.IsNullOrEmpty(alias))
-        {
-            return val?.GetEkomPropertyEditorValue(alias) ?? string.Empty;
-        }
-
+        val = val?.GetEkomPropertyEditorValue(alias) ?? string.Empty;
+        
         return !string.IsNullOrEmpty(val)
             ? val
             : properties.FirstOrDefault(x => string.IsNullOrEmpty(x.Key)).Value ?? string.Empty;
