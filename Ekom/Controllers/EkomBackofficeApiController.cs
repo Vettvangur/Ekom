@@ -128,43 +128,48 @@ public class EkomBackofficeApiController : ControllerBase
         }
     }
 
-    private  IEnumerable<IStore> LoadStores(int id)
+    private IEnumerable<IStore> LoadStores(int id)
     {
-        var stores = API.Store.Instance.GetAllStores().ToList();
-
-        UmbracoContent? node = _nodeService.NodeById(id, true);
+        var allStores = API.Store.Instance.GetAllStores();
+        var node = _nodeService.NodeById(id, true);
         if (node == null)
-            return stores;
+            return allStores;
 
-        var ancestors = _nodeService.GetAllCatalogAncestors(node).ToList();
-        var disabledStores = new List<string>();
+        var ancestors = _nodeService.GetAllCatalogAncestors(node);
+        var disabledAliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<IStore>();
 
-        foreach (var store in stores.ToList())
+        foreach (var store in allStores)
         {
-            var isSelfDisabled = node.Properties.GetValue("disable", store.Alias).IsBoolean();
+            var alias = store.Alias;
 
+            // First check if this store is disabled on the node itself
+            var isSelfDisabled = node.Properties.GetValue("disable", alias).IsBoolean();
             if (isSelfDisabled)
             {
-                disabledStores.Add(store.Alias);
-                stores.Remove(store);
+                disabledAliases.Add(alias);
+                continue;
             }
 
+            // Skip ancestor check if already disabled
+            bool isDisabledInAncestors = false;
             foreach (var ancestor in ancestors)
             {
-                if (disabledStores.Contains(store.Alias))
-                    continue;
-
-                var isDisabled = ancestor.Properties.GetValue("disable", store.Alias).IsBoolean();
-
-                if (isDisabled)
+                if (ancestor.Properties.GetValue("disable", alias).IsBoolean())
                 {
-                    disabledStores.Add(store.Alias);
-                    stores.Remove(store);
+                    isDisabledInAncestors = true;
+                    disabledAliases.Add(alias);
+                    break;
                 }
+            }
+
+            if (!isDisabledInAncestors)
+            {
+                result.Add(store);
             }
         }
 
-        return stores;
+        return result;
     }
 
     /// <summary>

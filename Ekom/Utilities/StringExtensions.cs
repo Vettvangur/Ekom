@@ -172,10 +172,15 @@ public static class StringExtension
 
     static string? ExtractValueFromToken(JToken token)
     {
+        // Special handling if it's an object with a "markup" field
         if (token.Type == JTokenType.Object && token["markup"] != null)
             return token["markup"]!.ToString();
 
-        return token.Type == JTokenType.String ? token.ToString() : null;
+        // For all other primitive types (string, int, float, bool, etc.)
+        if (token.Type != JTokenType.Object && token.Type != JTokenType.Array)
+            return token.ToString();
+
+        return null;
     }
 
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
