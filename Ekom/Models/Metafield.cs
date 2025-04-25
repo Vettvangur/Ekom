@@ -8,12 +8,12 @@ public class Metafield
 {
     public Metafield(UmbracoContent x)
     {
-        PropertyValue? titleValues = JsonConvert.DeserializeObject<PropertyValue>(x.GetValue("title"));
+        PropertyValue? titleValues = JsonConvert.DeserializeObject<PropertyValue>(x.GetRawValue("title"));
         string values = x.GetValue("values");
 
         Id = x.Id;
         Key = x.Key;
-        Title = titleValues.Values.ToDictionary(z => z.Key, z => z.Value.ToString());
+        Title = titleValues.Values.ToDictionary(z => z.Key, z => z.Value?.ToString() ?? "");
         Alias = string.IsNullOrEmpty(x.GetValue("alias")) ? x.Name.ToCamelCase() : x.GetValue("alias");
         Description = x.GetValue("description");
         Name = x.Name;

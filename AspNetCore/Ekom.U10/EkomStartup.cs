@@ -162,14 +162,11 @@ class EkomStartup : IComponent
 
                         if (retries >= maxRetries)
                         {
-                            _logger.LogError(ex, "FillCache failed after {MaxRetries} retries.", retries);
+                            _logger.LogError(ex, "FillCache failed after {MaxRetries} retries. Cache {cache}", retries, cacheEntry.ToString());
                             throw; // Re-throw after max retries
                         }
 
                         Thread.Sleep(delayMilliseconds); // Wait before retrying
-                    } catch(Exception ex)
-                    {
-                        _logger.LogError(ex, "FillCache failed with unexpected error. {cacheEntry}", cacheEntry.ToString());
                     }
                 }
             }
