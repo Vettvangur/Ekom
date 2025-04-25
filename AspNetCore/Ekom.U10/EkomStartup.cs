@@ -158,7 +158,7 @@ class EkomStartup : IComponent
                     catch (EkomRootNodeException ex)
                     {
                         retries++;
-                        _logger.LogWarning(ex, "FillCache failed. Attempt {Retry}/{MaxRetries}", retries, maxRetries);
+                        _logger.LogWarning(ex, "FillCache failed. Attempt {Retry}/{MaxRetries} Cache {cache}", retries, maxRetries, cacheEntry.ToString());
 
                         if (retries >= maxRetries)
                         {
@@ -167,6 +167,9 @@ class EkomStartup : IComponent
                         }
 
                         Thread.Sleep(delayMilliseconds); // Wait before retrying
+                    } catch(Exception ex)
+                    {
+                        _logger.LogError(ex, "FillCache failed with unexpected error. {cacheEntry}", cacheEntry.ToString());
                     }
                 }
             }
