@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Extensions;
+using static Umbraco.Cms.Core.Constants.HttpContext;
 
 namespace Ekom.Utilities;
 
@@ -51,7 +53,7 @@ public static class NodeEntityExtensions
         }
         if (typeof(T) == typeof(MediaWithCrops))
         {
-            return (T)(object)GetContent(val);
+            return (T)(object)GetMediaWithCrop(val);
         }
         if (typeof(T) == typeof(IPublishedContent))
         {
@@ -86,6 +88,26 @@ public static class NodeEntityExtensions
         }
         return (T)(object)val;
     }
+
+
+    internal static object? GetMediaWithCrop(string value)
+    {
+        var image = GetContent(value);
+
+        if (image != null)
+        {
+            var mediaWithCrops = new MediaWithCrops(image, null, new ImageCropperValue()
+            {
+                Crops = new List<ImageCropperValue.ImageCropperCrop>(),
+                FocalPoint = new ImageCropperValue.ImageCropperFocalPoint(),
+            });
+
+            return mediaWithCrops;
+        }
+
+        return null;
+    }
+
     internal static IPublishedContent? GetContent(string value)
     {
 

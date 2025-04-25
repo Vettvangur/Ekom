@@ -173,6 +173,17 @@ class EkomMiddleware
                 return storeAliasHeaderValue;
             }
 
+            if (request.Cookies != null && request.Cookies.TryGetValue("StoreInfo", out var storeInfoCookieValue) && !string.IsNullOrEmpty(storeInfoCookieValue))
+            {
+                var decodedCookie = Uri.UnescapeDataString(storeInfoCookieValue); // decode %3D to '=' etc.
+
+                var parts = decodedCookie.Split('=', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && parts[0].Equals("StoreAlias", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return parts[1];
+                }
+            }
+
             return null;
         }
         catch

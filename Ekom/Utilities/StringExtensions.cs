@@ -176,11 +176,7 @@ public static class StringExtension
         if (token.Type == JTokenType.Object && token["markup"] != null)
             return token["markup"]!.ToString();
 
-        // For all other primitive types (string, int, float, bool, etc.)
-        if (token.Type != JTokenType.Object && token.Type != JTokenType.Array)
-            return token.ToString();
-
-        return null;
+        return token.ToString();
     }
 
     internal static List<IPrice> GetPriceValuesConstructed(this string priceJson, decimal vat, bool vatIncludedInPrice, CurrencyModel fallbackCurrency = null)
