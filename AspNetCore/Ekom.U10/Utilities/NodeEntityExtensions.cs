@@ -2,11 +2,11 @@ using Ekom.Models;
 using Ekom.Umb.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using System.Text.Json;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Extensions;
-using static Umbraco.Cms.Core.Constants.HttpContext;
 
 namespace Ekom.Utilities;
 
@@ -96,11 +96,45 @@ public static class NodeEntityExtensions
 
         if (image != null)
         {
-            var mediaWithCrops = new MediaWithCrops(image, null, new ImageCropperValue()
+            var document = JsonDocument.Parse(value);
+            var root = document.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
+                return null;
+
+            var item = root[0]; // Take the first object
+
+            // Build ImageCropperValue
+            var imageCropperValue = new ImageCropperValue
             {
-                Crops = new List<ImageCropperValue.ImageCropperCrop>(),
-                FocalPoint = new ImageCropperValue.ImageCropperFocalPoint(),
-            });
+                FocalPoint = item.TryGetProperty("focalPoint", out var focalPointElement) && focalPointElement.ValueKind == JsonValueKind.Object
+                    ? new ImageCropperValue.ImageCropperFocalPoint
+                    {
+                        Left = focalPointElement.GetProperty("left").GetDecimal(),
+                        Top = focalPointElement.GetProperty("top").GetDecimal()
+                    }
+                    : null,
+
+                Crops = item.TryGetProperty("crops", out var cropsElement) && cropsElement.ValueKind == JsonValueKind.Array
+                    ? cropsElement.EnumerateArray().Select(crop => new ImageCropperValue.ImageCropperCrop
+                    {
+                        Alias = crop.GetProperty("alias").GetString(),
+                        Width = crop.GetProperty("width").GetInt32(),
+                        Height = crop.GetProperty("height").GetInt32(),
+                        Coordinates = crop.TryGetProperty("coordinates", out var coordElement) && coordElement.ValueKind == JsonValueKind.Object
+                            ? new ImageCropperValue.ImageCropperCropCoordinates
+                            {
+                                X1 = coordElement.GetProperty("x1").GetDecimal(),
+                                Y1 = coordElement.GetProperty("y1").GetDecimal(),
+                                X2 = coordElement.GetProperty("x2").GetDecimal(),
+                                Y2 = coordElement.GetProperty("y2").GetDecimal()
+                            }
+                            : null
+                    }).ToList()
+                    : new List<ImageCropperValue.ImageCropperCrop>()
+            };
+
+            var mediaWithCrops = new MediaWithCrops(image, null, imageCropperValue);
 
             return mediaWithCrops;
         }
@@ -219,7 +253,7 @@ public static class NodeEntityExtensions
             return null;
         }
 
-        if (value.StartsWith("[",StringComparison.InvariantCultureIgnoreCase))
+        if (value.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
         {
             return JsonConvert.DeserializeObject<Link[]>(value)?.FirstOrDefault();
         }
