@@ -1,5 +1,6 @@
 using Ekom.App_Start;
 using Ekom.Cache;
+using Ekom.Exceptions;
 using Ekom.Interfaces;
 using Ekom.Models;
 using Ekom.Payments;
@@ -140,18 +141,35 @@ class EkomStartup : IComponent
             orderRepo?.MigrateOrderTableAsync();
             orderRepo?.MigrateStockToDecimalAsync();
 
-            // Fill Caches
+            // Fill Caches with retry logic
             foreach (var cacheEntry in _config.CacheList.Value)
             {
-                cacheEntry.FillCache();
+                int retries = 0;
+                const int maxRetries = 3;
+                const int delayMilliseconds = 2000;
+
+                while (true)
+                {
+                    try
+                    {
+                        cacheEntry.FillCache();
+                        break; // Success, break the retry loop
+                    }
+                    catch (EkomRootNodeException ex)
+                    {
+                        retries++;
+                        _logger.LogWarning(ex, "FillCache failed. Attempt {Retry}/{MaxRetries}", retries, maxRetries);
+
+                        if (retries >= maxRetries)
+                        {
+                            _logger.LogError(ex, "FillCache failed after {MaxRetries} retries.", retries);
+                            throw; // Re-throw after max retries
+                        }
+
+                        Thread.Sleep(delayMilliseconds); // Wait before retrying
+                    }
+                }
             }
-
-            // FIX: To override the default stock cache register before EkomStartup
-
-            // The following two caches are not closely related to the ones listed in _config.CacheList
-            // They should not be added to the config list since that list is used by f.x. _config.Succeed in many caches
-
-            //CheckoutEvents.CheckoutSucessEvent += CheckoutSuccess;
 
             // Controls which stock cache will be populated
             var stockCache = _config.PerStoreStock

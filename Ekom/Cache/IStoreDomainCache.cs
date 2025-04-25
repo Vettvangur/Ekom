@@ -1,9 +1,8 @@
 using Ekom.Models;
 
-namespace Ekom.Cache
+namespace Ekom.Cache;
+
+interface IStoreDomainCache : IBaseCache<UmbracoDomain>
 {
-    interface IStoreDomainCache : IBaseCache<UmbracoDomain>
-    {
-        void AddReplace(UmbracoDomain domain);
-    }
+    void AddReplace(UmbracoDomain domain);
 }

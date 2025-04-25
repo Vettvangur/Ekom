@@ -5,66 +5,65 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 
-namespace Ekom.Cache
+namespace Ekom.Cache;
+
+class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
 {
-    class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
+    public override string NodeAlias { get; } = "";
+
+    protected IUmbracoService umbracoService => _serviceProvider.GetService<IUmbracoService>();
+
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public StoreDomainCache(
+        Configuration config,
+        ILogger<BaseCache<UmbracoDomain>> logger,
+        IServiceProvider serviceProvider
+    ) : base(config, logger, null, serviceProvider)
     {
-        public override string NodeAlias { get; } = "";
+        _config = config;
+        _logger = logger;
+    }
 
-        protected IUmbracoService umbracoService => _serviceProvider.GetService<IUmbracoService>();
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public StoreDomainCache(
-            Configuration config,
-            ILogger<BaseCache<UmbracoDomain>> logger,
-            IServiceProvider serviceProvider
-        ) : base(config, logger, null, serviceProvider)
+    /// <summary>
+    /// Fill store domain cache with domains from domain service
+    /// </summary>
+    public override void FillCache()
+    {
+        try
         {
-            _config = config;
-            _logger = logger;
-        }
+            List<UmbracoDomain> domains = umbracoService.GetDomains().ToList();
 
-        /// <summary>
-        /// Fill store domain cache with domains from domain service
-        /// </summary>
-        public override void FillCache()
-        {
-            try
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
+
+            if (domains.Any())
             {
-                List<UmbracoDomain> domains = umbracoService.GetDomains().ToList();
-
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
-
-                if (domains.Any())
+                foreach (UmbracoDomain? d in domains)
                 {
-                    foreach (UmbracoDomain? d in domains)
-                    {
-                        AddOrReplaceFromCache(d.Key, d);
-                    }
+                    AddOrReplaceFromCache(d.Key, d);
                 }
-
-                _logger.LogInformation(
-                    "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
-                    domains.Count,
-                    stopwatch.Elapsed
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "StoreDomainCache: Error filling cache");
             }
 
+            _logger.LogInformation(
+                "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
+                domains.Count,
+                stopwatch.Elapsed
+            );
         }
-
-        /// <inheritdoc />
-        public void AddReplace(UmbracoDomain domain)
+        catch (Exception ex)
         {
-            Cache[domain.Key] = domain;
+            _logger.LogError(ex, "StoreDomainCache: Error filling cache");
         }
+
+    }
+
+    /// <inheritdoc />
+    public void AddReplace(UmbracoDomain domain)
+    {
+        Cache[domain.Key] = domain;
     }
 }

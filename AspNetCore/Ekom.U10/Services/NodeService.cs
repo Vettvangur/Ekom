@@ -1,3 +1,4 @@
+using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.Models;
@@ -32,7 +33,7 @@ class NodeService : INodeService
 
             if (rootNode == null)
             {
-                throw new Exception("Ekom root node not found.");
+                throw new EkomRootNodeException("Ekom root node not found.");
             }
 
             //var contentType = cache.GetContentType(contentTypeAlias);
