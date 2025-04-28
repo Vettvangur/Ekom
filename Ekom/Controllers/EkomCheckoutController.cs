@@ -29,8 +29,10 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
-    public async Task<IActionResult> Pay(PaymentRequest paymentRequest, string culture = "en-US")
+    public async Task<IActionResult> Pay(PaymentRequest paymentRequest, string culture)
     {
+        culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
+
         return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
     }
 

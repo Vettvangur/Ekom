@@ -29,25 +29,23 @@ namespace Vettvangur.Core
                 options.SupportedCultures = supportedCultures;
                 options.SupportedUICultures = supportedCultures;
 
-                // Add the custom provider,
-                // in many cases you'll want this to execute before the defaults
-                options.RequestCultureProviders.Insert(0, new CultureProvider(options));
+                // Insert EkomCultureProvider at the highest priority
+                options.RequestCultureProviders.Insert(0, new EkomCultureProvider(options));
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine("Failed configuring Ekom localization: " + ex.ToString());
             }
-
-
         }
+
     }
 
-    public class CultureProvider : RequestCultureProvider
+    public class EkomCultureProvider : RequestCultureProvider
     {
         private readonly RequestLocalizationOptions _localizationOptions;
 
         // ctor with reference to the RequestLocalizationOptions
-        public CultureProvider(RequestLocalizationOptions localizationOptions)
+        public EkomCultureProvider(RequestLocalizationOptions localizationOptions)
             => _localizationOptions = localizationOptions;
 
         public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
@@ -62,7 +60,7 @@ namespace Vettvangur.Core
                             ?? context.Request.Headers["Accept-Language"].FirstOrDefault()
                             ?? context.Request.Headers["Culture"].FirstOrDefault();
 
-            if (string.IsNullOrEmpty(cultureName))
+            if (string.IsNullOrEmpty(cultureName) || cultureName == "*")
             {
                 return NullProviderCultureResult;
             }

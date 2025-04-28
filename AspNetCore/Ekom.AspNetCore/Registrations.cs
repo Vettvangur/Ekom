@@ -26,6 +26,8 @@ static class Registrations
 {
     public static IServiceCollection AddAspNetCoreEkom(this IServiceCollection services, IConfiguration config)
     {
+        services.ConfigureOptions<EkomCultureRequestLocalizationOptions>();
+
         services.AddAuthorization(options =>
         {
             options.AddPolicy(
