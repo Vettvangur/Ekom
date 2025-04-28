@@ -62,7 +62,7 @@ public class OrderedProduct
     {
         get
         {
-            return Properties.GetPropertyValue("title", StoreInfo.Alias);
+            return Properties.GetPropertyValue("title", StoreInfo.Alias, fallback: true);
         }
     }
     [System.Text.Json.Serialization.JsonIgnore]

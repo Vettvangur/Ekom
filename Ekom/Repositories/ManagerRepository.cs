@@ -50,6 +50,8 @@ public class ManagerRepository
     {
         try
         {
+            var culture = Thread.CurrentThread.CurrentCulture.Name;
+
             return await API.Order.Instance.GetOrderAsync(orderId);
         }
         catch (Exception ex)

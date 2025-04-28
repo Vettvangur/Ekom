@@ -111,7 +111,7 @@ public static class StringExtension
 
     }
     // Maybe this should return T and not force String
-    internal static string GetEkomPropertyEditorValue(this string value, string alias)
+    internal static string GetEkomPropertyEditorValue(this string value, string alias, bool fallback = false)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -139,7 +139,6 @@ public static class StringExtension
             // 2. Try getting from "values" dictionary inside the JSON
             if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
             {
-                // 👉 Check if values is empty
                 if (!valuesObj.HasValues)
                     return "";
 
@@ -160,6 +159,17 @@ public static class StringExtension
                     var result = ExtractValueFromToken(cultureToken);
                     if (result != null) return result;
                 }
+
+                // 3. If fallback is true, return first available value
+                if (fallback)
+                {
+                    var firstValueToken = valuesObj.Properties().Select(p => p.Value).FirstOrDefault();
+                    if (firstValueToken != null)
+                    {
+                        var result = ExtractValueFromToken(firstValueToken);
+                        if (result != null) return result;
+                    }
+                }
             }
         }
         catch (JsonException)
@@ -169,6 +179,7 @@ public static class StringExtension
 
         return value;
     }
+
 
     static string? ExtractValueFromToken(JToken token)
     {
