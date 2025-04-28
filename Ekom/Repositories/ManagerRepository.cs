@@ -121,11 +121,11 @@ public class ManagerRepository
             whereClause.Append(" AND JSON_VALUE(OrderInfo, '$.PaymentProvider.Key') = '" + _paymentProvider + "'");
         }
 
-        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders")
+        if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND OrderStatusCol = @orderStatus");
         }
-        else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
+        else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')");
         }

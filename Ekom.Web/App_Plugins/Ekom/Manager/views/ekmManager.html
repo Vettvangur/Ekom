@@ -49,6 +49,9 @@
                     <li>
                       <button type="button" ng-click="selectDropdown('dropdownStatusList', 'CompletedOrders')">Completed Orders</button>
                     </li>
+                    <li>
+                      <button type="button" ng-click="selectDropdown('dropdownStatusList', 'AllOrders')">All Orders</button>
+                    </li>
                     <li ng-repeat="status in statusList">
                       <button type="button" ng-click="selectDropdown('dropdownStatusList',status.enumValue)">{{ status.label }}</button>
                     </li>

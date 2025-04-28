@@ -33,33 +33,32 @@
     <div class="ekmOrder__shipping ekmSplit__column">
       <h4>Shipping Address</h4>
 
-      <p>Name: {{ model.editModel.shippingAddress.name}}</p>
-      <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
-      <p>Address: {{ model.editModel.shippingAddress.address}} {{ model.editModel.shippingAddress.apartment}}</p>
-      <p>City: {{ model.editModel.shippingAddress.city}}</p>
-      <p>Country: {{ model.editModel.shippingAddress.country}}</p>
-      <p>Zipcode: {{ model.editModel.shippingAddress.zipCode}}</p>
-      <p>Phone: {{ model.editModel.shippingAddress.phone}}</p>
+      <p>Name: {{ model.editModel.shippingAddress.name }}</p>
+      <p>Email: {{ model.editModel.order.customerInformation.customer.email }}</p>
+      <p>Address: {{ model.editModel.shippingAddress.address }} {{ model.editModel.shippingAddress.apartment }}</p>
+      <p>City: {{ model.editModel.shippingAddress.city }}</p>
+      <p>Country: {{ model.editModel.shippingAddress.country }}</p>
+      <p>Zipcode: {{ model.editModel.shippingAddress.zipCode }}</p>
+      <p>Phone: {{ model.editModel.shippingAddress.phone }}</p>
 
-      <div ng-if="model.editModel.shippingAddress.properties">
+      <div ng-if="extraShippingProperties.length > 0">
         <h5>Extra Shipping Data</h5>
         <ul>
-          <li ng-repeat="(key, value) in model.editModel.shippingAddress.properties"
-              ng-if="value">
-            {{ key.replace('shipping', '') }}: {{ value }}
+          <li ng-repeat="(key, value) in extraShippingProperties">
+            <strong>{{ cleanKey(value[0]) }}</strong>: {{ value[1] }}
           </li>
         </ul>
       </div>
 
-      <div ng-if="model.editModel.order.customerInformation.customer.properties">
+      <div ng-if="extraCustomerProperties.length > 0">
         <h5>Extra Customer Data</h5>
         <ul>
-          <li ng-repeat="(key, value) in model.editModel.order.customerInformation.customer.properties"
-              ng-if="value">
-            {{ key.replace('customer', '') }}: {{ value }}
+          <li ng-repeat="(key, value) in extraCustomerProperties">
+            <strong>{{ cleanKey(value[0]) }}</strong>: {{ value[1] }}
           </li>
         </ul>
       </div>
+
 
     </div>
 

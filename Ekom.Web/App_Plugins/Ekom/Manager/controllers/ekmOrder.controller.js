@@ -97,6 +97,48 @@
       });
     }
 
+    $scope.defaultKeys = [
+      'shippingname',
+      'shippingaddress',
+      'shippingcity',
+      'shippingcountry',
+      'shippingzipcode',
+      'shippingphone',
+      'customeremail',
+      'customername',
+      'customeraddress',
+      'customercity',
+      'customercountry',
+      'customerzipcode',
+      'customerphone'
+    ];
+
+    $scope.isDefaultKey = function (key) {
+      var lowerKey = key.toLowerCase();
+      return $scope.defaultKeys.includes(lowerKey);
+    };
+
+    $scope.cleanKey = function (key) {
+      return key.replace(/^shipping/i, '').replace(/^customer/i, '');
+    };
+
+    $scope.extraShippingProperties = [];
+    $scope.extraCustomerProperties = [];
+
+    $scope.computeExtraProperties = function () {
+      const shippingProps = $scope.model.editModel.shippingAddress.properties || {};
+      $scope.extraShippingProperties = Object.entries(shippingProps)
+        .filter(([key, value]) => value && key.startsWith('shipping') && !$scope.isDefaultKey(key));
+
+      const customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
+      $scope.extraCustomerProperties = Object.entries(customerProps)
+        .filter(([key, value]) => value && key.startsWith('customer') && !$scope.isDefaultKey(key));
+    };
+
+    // Call it ONCE when loading your model
+    $scope.computeExtraProperties();
+
+
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Order", [
