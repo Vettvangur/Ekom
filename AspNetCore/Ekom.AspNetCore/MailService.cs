@@ -61,22 +61,30 @@ class MailService : IMailService
         {
             throw new Exception("Umbraco:CMS:Global:Smtp:Host is not configured");
         }
-        
 
-        if (string.IsNullOrEmpty(recipient) && string.IsNullOrEmpty(_recipient))
+        string recipientsString = recipient ?? _recipient;
+        if (string.IsNullOrEmpty(recipientsString))
         {
             throw new Exception("Ekom:Ekom:EmailNotifications is not set.");
         }
 
-        // We do not catch the error here... let it pass direct to the caller
+        var recipients = recipientsString
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
         using (var smtp = new SmtpClient(_host, _port))
-        using (var message = new MailMessage(
-            sender ?? _sender,
-            recipient ?? _recipient,
-            subject,
-            body)
-        { IsBodyHtml = true })
+        using (var message = new MailMessage()
         {
+            From = new MailAddress(sender ?? _sender),
+            Subject = subject,
+            Body = body,
+            IsBodyHtml = true
+        })
+        {
+            foreach (var email in recipients)
+            {
+                message.To.Add(email);
+            }
+
             if (_user.Length > 0 && _pass.Length > 0)
             {
                 smtp.Timeout = Timeout;
