@@ -10,9 +10,9 @@
       },
       "Ekom.Payments.Core": {
         "type": "Direct",
-        "requested": "[0.2.2, )",
-        "resolved": "0.2.2",
-        "contentHash": "MXF419kq+bb3V8Zco/Oi4PkwpBtauQgRLWYpH/y1y2ynfGN5gYecEyTJUXpQ0wvIadtCfF2F1GGcatj1ppjFyA==",
+        "requested": "[0.2.5, )",
+        "resolved": "0.2.5",
+        "contentHash": "h9IOu1qJcUaMsgbV6gYhm2o9/nh8vnpk+vBp7/ALS0JFZYjjbfYWskLiu+IPyii6AXB1wxHi8Q9nKfmQjg0QPQ==",
         "dependencies": {
           "Azure.Core": "1.45.0",
           "Azure.Identity": "1.13.1",

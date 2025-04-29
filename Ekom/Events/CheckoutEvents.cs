@@ -18,6 +18,19 @@ public static class CheckoutEvents
     internal static void OnCompleteCheckout(object sender, CompleteCheckoutEventArgs args)
         => CompleteCheckout?.Invoke(sender, args);
 
+    public static event Func<object, CompleteCheckoutEventArgs, Task> CompleteCheckoutAsync;
+
+    internal static async Task OnCompleteCheckoutAsync(object sender, CompleteCheckoutEventArgs args)
+    {
+        if (CompleteCheckoutAsync != null)
+        {
+            foreach (var handler in CompleteCheckoutAsync.GetInvocationList().Cast<Func<object, CompleteCheckoutEventArgs, Task>>())
+            {
+                await handler(sender, args).ConfigureAwait(false);
+            }
+        }
+    }
+
 }
 
 public class PayEventArgs : EventArgs
@@ -35,8 +48,8 @@ public class ProcessingEventArgs : EventArgs
 
 public class CompleteCheckoutEventArgs : EventArgs
 {
-    public OrderData OrderData { get; set; }
-    public IOrderInfo OrderInfo { get; set; }
+    public required OrderData OrderData { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
     public bool StockValidation { get; set; } = true;
     public bool UpdateOrderStatus { get; set; } = true;
 }

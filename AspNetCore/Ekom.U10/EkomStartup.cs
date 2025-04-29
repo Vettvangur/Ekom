@@ -182,7 +182,7 @@ class EkomStartup : IComponent
             _factory.GetService<ICouponCache>()?
                 .FillCache();
 
-            Payments.Events.Success += CompleteCheckout;
+            Payments.Events.SuccessAsync += CompleteCheckoutAsync;
 
             _logger.LogInformation("Ekom Started");
         }
@@ -192,7 +192,7 @@ class EkomStartup : IComponent
         }
     }
 
-    private void CompleteCheckout(object sender, SuccessEventArgs args)
+    private async Task CompleteCheckoutAsync(object sender, SuccessEventArgs args)
     {
         var o = args.OrderStatus;
 
@@ -202,7 +202,7 @@ class EkomStartup : IComponent
 
             if (Guid.TryParse(value, out var orderId))
             {
-                checkoutSvc.CompleteAsync(orderId).Wait();
+                await checkoutSvc.CompleteAsync(orderId);
             }
         }
     }

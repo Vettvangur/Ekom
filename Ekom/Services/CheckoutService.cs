@@ -65,6 +65,7 @@ class CheckoutService
             };
 
             CheckoutEvents.OnCompleteCheckout(this, model);
+            await CheckoutEvents.OnCompleteCheckoutAsync(this, model);
 
             // Currently unused
             foreach (string job in oi.HangfireJobs)
@@ -76,7 +77,6 @@ class CheckoutService
             {
                 await ProcessOrderLinesStockAsync(oi).ConfigureAwait(false);
             }
-
 
             if (oi.Discount != null)
             {
