@@ -75,7 +75,7 @@ class CatalogContentFinder : IContentFinder
             var contentId = 0;
             ICategory category;
 
-            if (product != null && !string.IsNullOrEmpty(product.GetValue("slug")))
+            if (product != null && !string.IsNullOrEmpty(product.GetValue("slug", fallback: true)))
             {
                 contentId = product.Id;
 
@@ -94,7 +94,7 @@ class CatalogContentFinder : IContentFinder
                                                              x.Value.Urls.Contains(path))
                                         .Value;
 
-                if (category != null && !string.IsNullOrEmpty(category.GetValue("slug")))
+                if (category != null && !string.IsNullOrEmpty(category.GetValue("slug", fallback: true)))
                 {
 
                     contentId = category.Id;

@@ -106,7 +106,7 @@ namespace Ekom.Models
         /// </summary>
         /// <param name="propAlias"></param>
         /// <param name="alias"></param>
-        string GetValue(string propAlias, string alias = null);
+        string GetValue(string propAlias, string? alias = null, bool fallback = false);
         string GetRawValue(string propAlias);
         /// <summary>
         /// Umbraco node properties

@@ -197,9 +197,10 @@ public abstract class NodeEntity : INodeEntity
     /// </summary>
     /// <param name="propAlias"></param>
     /// <param name="alias"></param>
-    public string GetValue(string propAlias, string alias = null)
+    /// <param name="fallback"></param>
+    public string GetValue(string propAlias, string? alias = null, bool fallback = false)
     {
-        return Properties.GetPropertyValue(propAlias, alias);
+        return Properties.GetPropertyValue(propAlias, alias, fallback);
     }
 
     public string GetRawValue(string propAlias)
