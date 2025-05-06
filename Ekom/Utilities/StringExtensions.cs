@@ -110,76 +110,86 @@ public static class StringExtension
         return false;
 
     }
-    // Maybe this should return T and not force String
     internal static string GetEkomPropertyEditorValue(this string value, string alias, bool fallback = false)
     {
         if (string.IsNullOrEmpty(value))
-        {
             return string.Empty;
-        }
 
         if (!value.IsJson())
-        {
             return value;
-        }
 
         try
         {
-            var obj = JObject.Parse(value);
+            var token = JToken.Parse(value);
 
-            // 1. Try getting the value directly by alias
-            if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var directToken) && directToken != null)
+            if (token.Type == JTokenType.Object)
             {
-                if (directToken.Type == JTokenType.Object && directToken["markup"] != null)
-                    return directToken["markup"]!.ToString();
+                var obj = (JObject)token;
 
-                return directToken.ToString();
+                // 1. Try getting the value directly by alias
+                if (obj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var directToken) && directToken != null)
+                {
+                    if (directToken.Type == JTokenType.Object && directToken["markup"] != null)
+                        return directToken["markup"]!.ToString();
+
+                    return directToken.ToString();
+                }
+
+                // 2. Try getting from "values" dictionary inside the JSON
+                if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
+                {
+                    return GetValueFromValuesObject(valuesObj, alias, fallback);
+                }
             }
-
-            // 2. Try getting from "values" dictionary inside the JSON
-            if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
+            else if (token.Type == JTokenType.Array)
             {
-                if (!valuesObj.HasValues)
-                    return "";
-
-                if (!string.IsNullOrEmpty(alias))
-                {
-                    // First try alias
-                    if (valuesObj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var aliasToken) && aliasToken != null)
-                    {
-                        var result = ExtractValueFromToken(aliasToken);
-                        if (result != null) return result;
-                    }
-                }
-
-                // Then try current culture
-                var culture = CultureInfo.CurrentCulture.Name;
-                if (valuesObj.TryGetValue(culture, StringComparison.OrdinalIgnoreCase, out var cultureToken) && cultureToken != null)
-                {
-                    var result = ExtractValueFromToken(cultureToken);
-                    if (result != null) return result;
-                }
-
-                // 3. If fallback is true, return first available value
-                if (fallback)
-                {
-                    var firstValueToken = valuesObj.Properties().Select(p => p.Value).FirstOrDefault();
-                    if (firstValueToken != null)
-                    {
-                        var result = ExtractValueFromToken(firstValueToken);
-                        if (result != null) return result;
-                    }
-                }
+                return value;
             }
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            // Handle/log if needed
+            // Log or handle if needed
         }
 
         return value;
     }
 
+    private static string GetValueFromValuesObject(JObject valuesObj, string alias, bool fallback)
+    {
+        if (!valuesObj.HasValues)
+            return string.Empty;
+
+        // Try alias first
+        if (!string.IsNullOrEmpty(alias))
+        {
+            if (valuesObj.TryGetValue(alias, StringComparison.OrdinalIgnoreCase, out var aliasToken))
+            {
+                var result = ExtractValueFromToken(aliasToken);
+                if (result != null) return result;
+            }
+        }
+
+        // Try current culture
+        var culture = CultureInfo.CurrentCulture.Name;
+        if (valuesObj.TryGetValue(culture, StringComparison.OrdinalIgnoreCase, out var cultureToken))
+        {
+            var result = ExtractValueFromToken(cultureToken);
+            if (result != null) return result;
+        }
+
+        // Fallback: return first value
+        if (fallback)
+        {
+            var firstValueToken = valuesObj.Properties().Select(p => p.Value).FirstOrDefault();
+            if (firstValueToken != null)
+            {
+                var result = ExtractValueFromToken(firstValueToken);
+                if (result != null) return result;
+            }
+        }
+
+        return string.Empty;
+    }
 
     static string? ExtractValueFromToken(JToken token)
     {

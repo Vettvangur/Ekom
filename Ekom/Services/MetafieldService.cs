@@ -51,7 +51,7 @@ internal class MetafieldService : IMetafieldService
 
         List<Metavalue> list = new List<Metavalue>();
 
-        IEnumerable<Metafield> fields = GetMetafields();
+        var fields = GetMetafields().ToList();
 
         JArray jArray = JArray.Parse(jsonValue);
 
