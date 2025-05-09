@@ -28,19 +28,19 @@
           $scope.fields.forEach(function (item) {
 
             var currentValue = $scope.model.value.filter(field => {
-              return field.Key === item.key
+              return field.key === item.key
             })
 
             if (item.values.length > 0) {
               if (currentValue.length > 0) {
-                $scope.values.push(currentValue[0].Values);
+                $scope.values.push(currentValue[0].values);
               } else {
                 $scope.values.push([]);
               }
 
             } else {
               if (currentValue.length > 0) {
-                $scope.values.push(currentValue[0].Values);
+                $scope.values.push(currentValue[0].values);
               } else {
                 $scope.values.push('');
               }
@@ -67,9 +67,13 @@
 
           var field = $scope.fields[index];
 
+          if (!field || !field.key) {
+            return;
+          }
+
           modifiedValues.push({
-            Key: field.key,
-            Values: item
+            key: field.key,
+            values: item
           });
         });
 
