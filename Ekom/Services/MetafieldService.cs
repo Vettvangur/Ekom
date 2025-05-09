@@ -35,7 +35,7 @@ internal class MetafieldService : IMetafieldService
         return result;
     }
 
-    public List<Metavalue> SerializeMetafields(string jsonValue, int nodeId)
+    public List<Metavalue>? SerializeMetafields(string jsonValue, int nodeId)
     {
         if (string.IsNullOrEmpty(jsonValue))
         {
@@ -49,15 +49,16 @@ internal class MetafieldService : IMetafieldService
             return cachedResponse;
         }
 
-        List<Metavalue> list = new List<Metavalue>();
+        var list = new List<Metavalue>();
 
         var fields = GetMetafields().ToList();
 
         JArray jArray = JArray.Parse(jsonValue);
+        jArray = (JArray)JsonHelper.ToCamelCaseKeys(jArray);
 
         foreach (JObject item in jArray)
         {
-            if (item.ContainsKey("Key") && Guid.TryParse(item["Key"].ToString(), out Guid _metaFieldKey))
+            if (item.ContainsKey("key") && Guid.TryParse(item["key"].ToString(), out Guid _metaFieldKey))
             {
                 List<Dictionary<string, string>> valuesList = new List<Dictionary<string, string>>();
 
@@ -65,7 +66,7 @@ internal class MetafieldService : IMetafieldService
 
                 if (field != null)
                 {
-                    JToken? valuesToken = item.SelectToken("Values");
+                    JToken? valuesToken = item.SelectToken("values");
 
                     if (valuesToken.Type == JTokenType.Array)
                     {
@@ -147,11 +148,12 @@ internal class MetafieldService : IMetafieldService
 
             // Remove duplicates
             List<JToken> distinctItems = valueJsonArray
-                .GroupBy(item => item["Key"]?.ToString())
+                .GroupBy(item => item["key"]?.ToString())
                 .Select(group => group.First())
                 .ToList();
 
             valueJsonArray = new JArray(distinctItems);
+            valueJsonArray = (JArray)JsonHelper.ToCamelCaseKeys(valueJsonArray);
         }
 
         foreach (KeyValuePair<string, List<MetafieldValues>> value in values)
@@ -162,18 +164,19 @@ internal class MetafieldService : IMetafieldService
             {
                 MetafieldValues? firstValue = value.Value.FirstOrDefault();
                 KeyValuePair<string, string>? firstSubValue = firstValue?.Values.FirstOrDefault();
-                JArray? jArrayValue = field.Values.Count > 0 ? JArray.FromObject(value) : null;
+                JArray? jArrayValue = field.Values.Count > 0 ? JArray.FromObject(value.Value) : null;
+                jArrayValue = (JArray)JsonHelper.ToCamelCaseKeys(jArrayValue);
 
                 JObject newObject = new JObject
                 {
-                    { "Key", new JValue(field.Key.ToString()) },
-                    { "Values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
+                    { "key", new JValue(field.Key.ToString()) },
+                    { "values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
                 };
 
                 // If any value exist in the array
                 if (valueJsonArray.Count() > 0)
                 {
-                    bool containsKey = valueJsonArray.Any(item => item["Key"]?.ToString() == field.Key.ToString());
+                    bool containsKey = valueJsonArray.Any(item => item["key"]?.ToString() == field.Key.ToString());
 
                     if (!containsKey)
                     {
@@ -182,12 +185,12 @@ internal class MetafieldService : IMetafieldService
                     }
                     else
                     {
-                        JObject? targetObject = valueJsonArray.FirstOrDefault(item => item["Key"]?.ToString() == field.Key.ToString()) as JObject;
+                        JObject? targetObject = valueJsonArray.FirstOrDefault(item => item["key"]?.ToString() == field.Key.ToString()) as JObject;
 
                         // If found, update its value
                         if (targetObject != null)
                         {
-                            targetObject["Values"] = newObject["Values"];
+                            targetObject["values"] = newObject["values"];
                         }
                     }
 
@@ -205,7 +208,7 @@ internal class MetafieldService : IMetafieldService
 
     public List<Dictionary<string, string>> GetMetaFieldValue(string json, int nodeId, string metafieldAlias)
     {
-        List<Metavalue> nodeMetaFields = SerializeMetafields(json, nodeId);
+        var nodeMetaFields = SerializeMetafields(json, nodeId);
 
         if (nodeMetaFields == null || !nodeMetaFields.Any())
         {

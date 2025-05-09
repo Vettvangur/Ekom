@@ -290,7 +290,7 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public async Task<bool> SetStockAsync(Guid key, int value)
+    public async Task<bool> SetStockAsync(Guid key, decimal value)
     {
         if (_config.PerStoreStock)
         {
@@ -312,7 +312,7 @@ public partial class Stock
     /// <param name="storeAlias"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    public async Task<bool> SetStockAsync(Guid key, string storeAlias, int value)
+    public async Task<bool> SetStockAsync(Guid key, string storeAlias, decimal value)
     {
         StockData stockData;
 

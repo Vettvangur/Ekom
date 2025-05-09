@@ -1,8 +1,7 @@
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class Metavalue
 {
-    public class Metavalue
-    {
-        public Metafield Field { get; set; }
-        public List<Dictionary<string, string>> Values { get; set; } = new List<Dictionary<string, string>>();
-    }
+    public Metafield Field { get; set; }
+    public List<Dictionary<string, string>> Values { get; set; } = new List<Dictionary<string, string>>();
 }

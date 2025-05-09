@@ -3,6 +3,7 @@ using Ekom.Services;
 using Ekom.Umb.DataEditors;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
@@ -128,13 +129,17 @@ public static class ContentExtensions
             throw new ArgumentNullException("Metafield can only be set on ekom product");
         }
 
-        var valuesJson = JsonConvert.SerializeObject(values);
-
         var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
 
-        var metaValue = _metaService.SetMetafield(content.GetValue<string>("metafields"), values);
+        var metaValue = _metaService?.SetMetafield(content.GetValue<string>("metafields") ?? "", values);
 
-        var metaValueJson = JsonConvert.SerializeObject(metaValue);
+        var settings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            Formatting = Formatting.None
+        };
+
+        var metaValueJson = JsonConvert.SerializeObject(metaValue, settings);
 
         SetProperty(content, "metafields", metaValueJson);
     }

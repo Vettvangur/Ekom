@@ -409,7 +409,7 @@ public class Product : PerStoreNodeEntity, IProduct
             {
                 string value = GetValue("metafields");
 
-                return Configuration.Resolver.GetService<IMetafieldService>().SerializeMetafields(value, Id);
+                return Configuration.Resolver.GetService<IMetafieldService>()?.SerializeMetafields(value, Id) ?? new List<Metavalue>();
             }
 
             return new List<Metavalue>();

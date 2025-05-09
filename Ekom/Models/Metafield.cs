@@ -25,7 +25,16 @@ public class Metafield
 
         if (!string.IsNullOrEmpty(values))
         {
-            List<MetafieldValues>? _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
+            var _values = JsonConvert.DeserializeObject<List<MetafieldValues>>(values);
+
+            // Remove "undefined" keys from each value dictionary
+            foreach (var val in _values)
+            {
+                if (val?.Values != null && val.Values.ContainsKey("undefined"))
+                {
+                    val.Values.Remove("undefined");
+                }
+            }
 
             List<MetafieldValues> orderedValues = _values
                 .OrderBy(x => x.Values.Values.FirstOrDefault(), new SemiNumericComparer()).ToList();
