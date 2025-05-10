@@ -1,6 +1,8 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Umb.DataEditors;
+using Ekom.Umb.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -40,13 +42,16 @@ public static class ContentExtensions
 
         if (property != null)
         {
-            var dts = Configuration.Resolver.GetService<IDataTypeService>();
+            var editors = GetDataTypesByEditorAlias(property.PropertyType.PropertyEditorAlias);
 
-            var editor = dts.GetByEditorAlias(property.PropertyType.PropertyEditorAlias);
-
-            if (editor.Any())
+            if (editors != null && editors.Any())
             {
-                var dataType = editor.FirstOrDefault();
+                var dataType = editors.FirstOrDefault(x => x.Id == property.PropertyType.DataTypeId);
+
+                if (dataType == null)
+                {
+                    throw new InvalidOperationException("Unable to get data type for property. " + property.PropertyTypeId);
+                }
 
                 if (type == PropertyEditorType.Empty)
                 {
@@ -57,6 +62,16 @@ public static class ContentExtensions
                         prevalues = (EkomPropertyEditorConfiguration)dataType.Configuration;
 
                         type = prevalues.useLanguages ? PropertyEditorType.Language : PropertyEditorType.Store;
+
+                        //var configureJson = JsonConvert.SerializeObject(prevalues);
+
+                        //if (configureJson.InvariantContains("Umbraco.TinyMCE"))
+                        //{
+                        //    //values = values.ToDictionary(
+                        //    //    kvp => kvp.Key,
+                        //    //    kvp => new { markup = kvp.Value } as object
+                        //    //);
+                        //}
                     }
                     catch
                     {
@@ -81,6 +96,24 @@ public static class ContentExtensions
 
         throw new InvalidOperationException("Unable to find matching property on IContent.");
     }
+
+    private static IEnumerable<IDataType>? GetDataTypesByEditorAlias(string alias)
+    {
+        var cache = Configuration.Resolver.GetService<IMemoryCache>();
+        var dts = Configuration.Resolver.GetService<IDataTypeService>();
+
+        if (cache == null || dts == null)
+            return Enumerable.Empty<IDataType>();
+
+        string cacheKey = $"DataTypes_ByEditorAlias_{alias}";
+
+        return cache.GetOrCreate(cacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(3);
+            return dts.GetByEditorAlias(alias) ?? Enumerable.Empty<IDataType>();
+        });
+    }
+
 
     /// <summary>
     /// Set Slug on ekom product or category

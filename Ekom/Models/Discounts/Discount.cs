@@ -15,10 +15,15 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
     {
         get
         {
-            string typeValue = Properties.GetPropertyValue("type");
+            var typeValue = Properties.GetPropertyValue("type");
 
             IUmbracoService? umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
-            string dt = umbSvc.GetDataType(typeValue);
+            var dt = umbSvc?.GetDataType(typeValue);
+
+            if (dt == null)
+            {
+                return DiscountType.Fixed;
+            }
 
             switch (dt)
             {

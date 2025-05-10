@@ -2,6 +2,7 @@ using Ekom.Models.Umbraco;
 using Ekom.Services;
 using Ekom.Umb.Models;
 using Ekom.Utilities;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using System.Net;
 using Umbraco.Cms.Core.Cache;
@@ -23,6 +24,7 @@ class UmbracoService : IUmbracoService
     private readonly IContentTypeService _contentTypeService;
     private readonly IAppPolicyCache _runtimeCache;
     private readonly IShortStringHelper _shortStringHelper;
+    private readonly IMemoryCache _cache;
     public UmbracoService(
         IDomainService domainService,
         IDataTypeService dataTypeService,
@@ -31,7 +33,8 @@ class UmbracoService : IUmbracoService
         IContentTypeService contentTypeService,
         AppCaches appCaches,
         IShortStringHelper shortStringHelper,
-        INodeService nodeService)
+        INodeService nodeService,
+        IMemoryCache cache)
     {
         _domainService = domainService;
         _dataTypeService = dataTypeService;
@@ -41,6 +44,7 @@ class UmbracoService : IUmbracoService
         _runtimeCache = appCaches.RuntimeCache;
         _shortStringHelper = shortStringHelper;
         _nodeService = nodeService;
+        _cache = cache;
     }
 
     public string GetDictionaryValue(string key)
@@ -57,7 +61,12 @@ class UmbracoService : IUmbracoService
 
         if (int.TryParse(typeValue, out int typeValueInt))
         {
-            var dt = _dataTypeService.GetDataType(typeValueInt);
+            var dt = GetDataTypeCached(typeValueInt);
+
+            if (dt == null)
+            {
+                return string.Empty;
+            }
 
             // FIX: verify
             typeValue = dt.ConfigurationAs<string>();
@@ -65,6 +74,21 @@ class UmbracoService : IUmbracoService
         typeValue = typeValue.Contains('[') ? JsonConvert.DeserializeObject<string[]>(typeValue).FirstOrDefault() : typeValue;
         return typeValue;
     }
+
+    private IDataType? GetDataTypeCached(int typeId)
+    {
+        // Normalize typeValue to ensure consistent cache keys
+        string cacheKey = $"ekm_dt_{typeId}";
+
+        return _cache.GetOrCreate(cacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+
+
+            return _dataTypeService.GetDataType(typeId);
+        });
+    }
+
     public IEnumerable<string> GetContent(string guid)
     {
         var nodes = guid
