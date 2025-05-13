@@ -964,9 +964,13 @@ class EnsureNodesExist : IComponent
                             {
                                 new PropertyType(_shortStringHelper, textstringDt, "basePaymentProvider")
                                 {
-                                    Name = "Base Payment Provider DLL",
-                                    Description = "Allows payment provider overloading. " +
-                                        "F.x. Borgun ISK and Borgun USD nodes with different names and different xml configurations targetting the same base payment provider."
+                                    Name = "Payment provider name",
+                                    Description = "By default, the node's name is used to target the payment provider. However, if you want to add the same provider multiple times or use a more descriptive name, you can set it here."
+                                },
+                                new PropertyType(_shortStringHelper, textstringDt, "configurationKey")
+                                {
+                                    Name = "Configuration Key",
+                                    Description = "You can set the config section key here to be able to have multiple configs for the same provider"
                                 },
                                 new PropertyType(_shortStringHelper, numericDt, "discount")
                                 {
