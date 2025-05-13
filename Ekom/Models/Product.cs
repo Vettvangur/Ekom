@@ -335,7 +335,12 @@ public class Product : PerStoreNodeEntity, IProduct
                 {
                     if (PrimaryVariant != null)
                     {
-                        return PrimaryVariant.OriginalPrice;
+                        var primaryVariantOriginalPrice = PrimaryVariant.OriginalPrice;
+
+                        if (primaryVariantOriginalPrice.Value > 0)
+                        {
+                            return primaryVariantOriginalPrice;
+                        }
                     }
 
                     // Store frequently accessed values to avoid redundant access
@@ -357,7 +362,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
                     if (originalPrice.IsJson())
                     {
-                        List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                        var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
                         decimal? val = orgPrice?.FirstOrDefault()?.Price;
 
                         if (val.HasValue)
