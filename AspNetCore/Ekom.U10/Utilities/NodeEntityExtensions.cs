@@ -86,6 +86,17 @@ public static class NodeEntityExtensions
 
             return (T)(object)array!;
         }
+        if (typeof(T) == typeof(List<string>))
+        {
+            if (string.IsNullOrEmpty(val))
+            {
+                return (T)(object)Enumerable.Empty<string>();
+            }
+
+            var array = JsonConvert.DeserializeObject<List<string>>(val);
+
+            return (T)(object)array!;
+        }
         return (T)(object)val;
     }
 
