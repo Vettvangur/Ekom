@@ -75,28 +75,34 @@ public static class NodeEntityExtensions
         {
             return (T)(object)ProductHelper.GetProducts(val);
         }
-        if (typeof(T) == typeof(IEnumerable<string>))
+        if (typeof(T) == typeof(IEnumerable<string>) || typeof(T) == typeof(List<string>))
         {
-            if (string.IsNullOrEmpty(val))
+            if (string.IsNullOrWhiteSpace(val))
             {
                 return (T)(object)Enumerable.Empty<string>();
             }
 
-            var array = JsonConvert.DeserializeObject<IEnumerable<string>>(val);
+            IEnumerable<string> result;
 
-            return (T)(object)array!;
-        }
-        if (typeof(T) == typeof(List<string>))
-        {
-            if (string.IsNullOrEmpty(val))
+            // Try to detect JSON array
+            if (val.TrimStart().StartsWith("["))
             {
-                return (T)(object)Enumerable.Empty<string>();
+                result = JsonConvert.DeserializeObject<List<string>>(val) ?? Enumerable.Empty<string>();
+            }
+            else
+            {
+                // Assume comma-separated string
+                result = val.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x));
             }
 
-            var array = JsonConvert.DeserializeObject<List<string>>(val);
+            if (typeof(T) == typeof(List<string>))
+            {
+                return (T)(object)result.ToList();
+            }
 
-            return (T)(object)array!;
+            return (T)(object)result;
         }
+
         return (T)(object)val;
     }
 
