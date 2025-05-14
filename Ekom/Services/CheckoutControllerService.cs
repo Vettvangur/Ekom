@@ -67,7 +67,7 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(Culture))
         {
-            CultureInfo cultureInfo = new CultureInfo(Culture);
+            var cultureInfo = new CultureInfo(Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
@@ -75,14 +75,14 @@ public class CheckoutControllerService
 
         if (!string.IsNullOrEmpty(paymentRequest.Culture))
         {
-            CultureInfo cultureInfo = new CultureInfo(paymentRequest.Culture);
+            var cultureInfo = new CultureInfo(paymentRequest.Culture);
 
             Thread.CurrentThread.CurrentCulture = cultureInfo;
             Thread.CurrentThread.CurrentUICulture = cultureInfo;
         }
 
         // ToDo: Lock order throughout request
-        IOrderInfo order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
 
         if (order == null)
         {
@@ -102,7 +102,7 @@ public class CheckoutControllerService
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
 
         string storeAlias = order.StoreInfo.Alias;
-        IStore? store = API.Store.Instance.GetStore(storeAlias);
+        var store = API.Store.Instance.GetStore(storeAlias);
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
@@ -314,7 +314,6 @@ public class CheckoutControllerService
 
             return new CheckoutResponse
             {
-                ReturnUrl = paymentRequest.ReturnUrl,
                 HttpStatusCode = 400,
             };
         }
@@ -661,7 +660,7 @@ public class CheckoutControllerService
 
             UmbracoMember currentMember = await MemberService.GetCurrentMember();
 
-            PaymentSettings paymentSettings = new PaymentSettings
+            var paymentSettings = new PaymentSettings
             {
                 CustomerInfo = new Ekom.Payments.CustomerInfo()
                 {
@@ -674,8 +673,8 @@ public class CheckoutControllerService
                     PostalCode = order.CustomerInformation.Customer.ZipCode
                 },
                 CardNumber = paymentRequest.CardNumber,
-                CardExpirationMonth = paymentRequest.Month,
-                CardExpirationYear = paymentRequest.Year,
+                CardExpirationMonth = paymentRequest.Month.HasValue ? paymentRequest.Month.Value : 0,
+                CardExpirationYear = paymentRequest.Year.HasValue ? paymentRequest.Year.Value : 0,
                 CardCVV = paymentRequest.CVV,
                 SuccessUrl = successUrl,
                 ErrorUrl = PaymentsUriHelper.EnsureFullUri(errorUrl, _httpCtx.Request),

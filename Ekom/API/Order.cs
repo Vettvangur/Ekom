@@ -81,7 +81,7 @@ public partial class Order
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo?> GetOrderAsync(string storeAlias)
+    public async Task<IOrderInfo?> GetOrderAsync(string? storeAlias)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
