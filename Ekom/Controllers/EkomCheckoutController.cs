@@ -33,7 +33,14 @@ public class EkomCheckoutApiController : ControllerBase
     {
         culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
 
-        return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
+        try
+        {
+            return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
+        }
+        catch (ArgumentNullException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     private IActionResult ResponseHandler(CheckoutResponse checkoutResponse)
@@ -98,9 +105,8 @@ public class CheckoutController : ControllerBase
                 paymentRequest,
                 culture);
         }
-#pragma warning disable CA1031 // Do not catch general exception types
         catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
+
         {
             _logger.LogError(ex, "Checkout payment failed!");
             return Redirect(paymentRequest.ReturnUrl + "?errorStatus=serverError");
@@ -150,7 +156,7 @@ public class CheckoutController : ControllerBase
         }
         else
         {
-            return Redirect(checkoutResponse.ReturnUrl + "?success=true");
+            return StatusCode(500);
         }
     }
 }
