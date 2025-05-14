@@ -41,6 +41,11 @@ public class EkomCheckoutApiController : ControllerBase
         {
             return NotFound(ex.Message);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Checkout payment failed!");
+            return StatusCode(500);
+        }
     }
 
     private IActionResult ResponseHandler(CheckoutResponse checkoutResponse)
