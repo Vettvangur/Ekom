@@ -65,11 +65,18 @@ static class CookieHelper
     public static void SetUmbracoDomain(IResponseCookies cookieCollection, Uri uri)
         => cookieCollection.Append(Configuration.Cookie_UmbracoDomain, uri.ToString());
 
-    public static Uri? GetUmbracoDomain(IRequestCookieCollection cookieCollection)
+    public static Uri? GetUmbracoDomain(IRequestCookieCollection? cookieCollection)
     {
-        string? umbracoDomain = cookieCollection[Configuration.Cookie_UmbracoDomain];
-        Uri.TryCreate(umbracoDomain, UriKind.Absolute, out Uri? uri);
+        if (cookieCollection == null)
+        {
+            return null;
+        }
 
-        return uri;
+        if (!cookieCollection.TryGetValue(Configuration.Cookie_UmbracoDomain, out var umbracoDomain) || string.IsNullOrWhiteSpace(umbracoDomain))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(umbracoDomain, UriKind.Absolute, out var uri) ? uri : null;
     }
 }
