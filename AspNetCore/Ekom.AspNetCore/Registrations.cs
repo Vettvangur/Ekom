@@ -115,7 +115,7 @@ static class Registrations
             )
         );
 
-        services.AddScoped<CheckoutControllerService>(f =>
+        services.AddTransient<CheckoutControllerService>(f =>
             new CheckoutControllerService(
                 f.GetService<ILogger<CheckoutControllerService>>(),
                 f.GetService<Configuration>(),
