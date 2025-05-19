@@ -93,7 +93,7 @@ static class Registrations
         // This is needed since many of their dependencies are internal classes
         // However the API services are public, leaving their constructor public violates
         // C# visibility restrictions
-        services.AddScoped<Catalog>(f =>
+        services.AddTransient<Catalog>(f =>
             new Catalog(
                 f.GetService<ILogger<Catalog>>(),
                 f.GetService<Configuration>(),
@@ -129,7 +129,7 @@ static class Registrations
             )
         );
 
-        services.AddScoped<Order>(f =>
+        services.AddTransient<Order>(f =>
             new Order(
                 f.GetService<Configuration>(),
                 f.GetService<ILogger<Order>>(),
@@ -164,7 +164,7 @@ static class Registrations
                 f.GetService<IPerStoreCache<StockData>>()
             )
         );
-        services.AddScoped<Ekom.API.Store>(f =>
+        services.AddTransient<Ekom.API.Store>(f =>
             new Ekom.API.Store(
                 f.GetService<IStoreService>(),
                 f.GetService<Configuration>()
