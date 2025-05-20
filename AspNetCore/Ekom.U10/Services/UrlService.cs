@@ -323,7 +323,7 @@ class UrlService : IUrlService
         var pubReq = cref.UmbracoContext.PublishedRequest;
 
         var culture = pubReq?.Culture ?? CultureInfo.CurrentCulture.Name;
-        var uri = pubReq?.Domain?.Uri ?? CookieHelper.GetUmbracoDomain(_httpContextAccessor.HttpContext?.Request.Cookies);
+        var uri = pubReq?.Domain?.Uri ?? CookieHelper.GetUmbracoDomain(_httpContextAccessor?.HttpContext?.Request.Cookies);
 
         var urlsWithContext = node.UrlsWithContext;
         var urls = node.Urls;

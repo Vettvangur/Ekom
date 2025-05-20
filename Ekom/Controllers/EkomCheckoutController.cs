@@ -29,7 +29,7 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
-    public async Task<IActionResult> Pay([FromBody]PaymentRequest paymentRequest, [FromBody] Dictionary<string, string> dynamicRequest, string culture)
+    public async Task<IActionResult> Pay(PaymentRequest paymentRequest, string culture)
     {
         culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
 
