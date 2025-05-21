@@ -51,7 +51,7 @@ class OrderLine : IOrderLine
     {
         get
         {
-            OrderedDiscount? discount = Discount;
+            OrderedDiscount? discount = Product.Price.Discount;
 
             if (OrderInfo?.Discount != null &&
                 (OrderInfo.Discount.DiscountItems.Any() && OrderInfo.Discount.DiscountItems.Contains(Product.Id.ToString()) || OrderInfo.Discount.GlobalDiscount))
@@ -71,6 +71,8 @@ class OrderLine : IOrderLine
             }
 
             decimal _price = Product.Price.OriginalValue;
+
+            Discount = discount;
 
             if (Product.VariantGroups != null && Product.VariantGroups.Any())
             {
