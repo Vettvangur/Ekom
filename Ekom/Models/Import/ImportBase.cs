@@ -56,4 +56,11 @@ public class ImportBase
     /// Sort order for the node
     /// </summary>
     public int? SortOrder { get; set; } = null;
+    /// <summary>
+    /// Indicates whether existing product values for images, description and files
+    /// should be preserved when the corresponding imported values are null or empty.
+    /// When set to <c>true</c>, the importer will skip updating fields that have
+    /// no new data, preventing accidental overwriting of manually entered information.
+    /// </summary>
+    public bool PreserveExistingValues { get; set; } = false;
 }

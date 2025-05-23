@@ -972,8 +972,15 @@ public class ImportService : IImportService
 
             if (allUmbracoMedia is not null)
             {
-                saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
-                saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(productContent, importProduct.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
+                if (!args.ImagesHaveNoChanges && !importProduct.PreserveExistingValues)
+                {
+                    saveImages = ImportMedia(productContent, importProduct.Images, allUmbracoMedia);
+                }
+
+                if (!args.FilesHaveNoChanges && !importProduct.PreserveExistingValues)
+                {
+                    saveFiles = ImportMedia(productContent, importProduct.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files);
+                }
             }
 
             var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "UpdateSlug" });
@@ -995,7 +1002,10 @@ public class ImportService : IImportService
                 productContent.SetValue("sku", importProduct.SKU);
             }
 
-            productContent.SetProperty("description", importProduct.Description);
+            if (!importProduct.PreserveExistingValues)
+            {
+                productContent.SetProperty("description", importProduct.Description);
+            }
 
             productContent.SetValue(Configuration.ImportAliasIdentifier, importProduct.Identifier);
 
