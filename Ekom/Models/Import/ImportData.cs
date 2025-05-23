@@ -8,7 +8,7 @@ public class ImportData
     /// <summary>
     /// A collection of categories to be imported. Each entry in this list represents a category, complete with its hierarchy, products, and associated details, as defined by the <see cref="ImportCategory"/> class. This comprehensive model supports importing a rich, nested structure of categories and products, facilitating complex updates and additions to the e-commerce platform's catalog. The ability to define subcategories and products within each category allows for a deep, tree-structured import, mimicking the natural organization of an e-commerce catalog.
     /// </summary>
-    public List<ImportCategory> Categories { get; set; } = new List<ImportCategory>();
+    public List<ImportCategory>? Categories { get; set; } = new List<ImportCategory>();
 
     /// <summary>
     /// Represents a collection of products to be imported. Each entry in this list corresponds to a product,

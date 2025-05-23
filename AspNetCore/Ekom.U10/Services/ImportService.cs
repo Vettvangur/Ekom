@@ -622,81 +622,82 @@ public class ImportService : IImportService
 
             if (delete)
             {
-
-                if (importProducts.Sum(x=> x.Categories.Count) <= 0)
-                {
+                if (importProducts.Sum(x => x.Categories.Count) <= 0)
                     throw new ArgumentException("No products connected to categories in importProducts, sync stopped");
-                }
 
                 var rootId = umbracoRootContent.Id.ToString();
-                var targetedUmbracoProducts = allUmbracoProducts.Where(x => x.Path.Split(',').Contains(rootId)).ToList();
 
-                // Create a HashSet of identifiers from importProducts for efficient lookups
-                var importProductIdentifiers = new HashSet<string>(importProducts.Select(x => x.Identifier));
+                var targetedUmbracoProducts = allUmbracoProducts
+                    .Where(x => x.Path?.Split(',').Contains(rootId) == true)
+                    .ToList();
 
-                // Delete Products not present in the importProductIdentifiers or that are duplicates
+                var importProductIdentifiers = importProducts.Select(x => x.Identifier).ToHashSet();
+                var importProductsById = importProducts.ToDictionary(x => x.Identifier);
+                var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
+                var umbracoCategoriesByIdentifier = allUmbracoCategories
+                    .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier))
+                    .ToDictionary(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "", x => x);
+
                 for (int i = targetedUmbracoProducts.Count - 1; i >= 0; i--)
                 {
                     var umbracoProduct = targetedUmbracoProducts[i];
-                    var isSyncDisabled = umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync");
-
-                    if (isSyncDisabled)
-                    {
+                    if (umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync"))
                         continue;
-                    }
 
                     var productIdentifier = umbracoProduct.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
 
-                    // Check if the identifier is valid and not in the import list
+                    // Not in import? Delete.
                     if (!importProductIdentifiers.Contains(productIdentifier))
                     {
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
-                        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+
+                        using (_umbracoContextFactory.EnsureUmbracoContext())
                         {
                             if (recycleBinNode != null)
                             {
                                 _contentService.Unpublish(umbracoProduct, userId: syncUser);
                                 _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
-                            } else
+                            }
+                            else
                             {
                                 _contentService.Delete(umbracoProduct, syncUser);
                             }
-                            
                         }
-                            
+
                         productDeleted++;
                         continue;
                     }
 
-                    // If product has moved from primary category we want to delete it and recreate it in the new primary category
-                    var parentCategory = allUmbracoCategories.FirstOrDefault(x => x.Id == umbracoProduct.ParentId);
-
-                    if (parentCategory != null)
+                    // Check if product moved
+                    if (umbracoCategoriesById.TryGetValue(umbracoProduct.ParentId, out var parentCategory))
                     {
-                        var categoryIdentifer = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-                        var importProduct = importProducts.FirstOrDefault(x => x.Identifier == productIdentifier);
-
-                        if (importProduct != null)
+                        var currentCategoryIdentifier = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                        if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
                         {
-                            // If Primary category is not the same as the parent category identifer we want to delete the product
-                            if (importProduct.Categories != null && importProduct.Categories.Any() && (importProduct.Categories.First() != categoryIdentifer))
-                            {
-                                var newCategory = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == importProduct.Categories.First());
 
-                                if (newCategory != null)
+                            if (importProduct.PreserveExistingValues)
+                            {
+                                continue;
+                            }
+
+                            var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
+                            if (!string.IsNullOrEmpty(newCategoryIdentifier) &&
+                                newCategoryIdentifier != currentCategoryIdentifier)
+                            {
+                                if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
                                 {
-                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
-                                    
-                                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                    using (_umbracoContextFactory.EnsureUmbracoContext())
                                     {
                                         _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
                                     }
-                                        
-                                } else
+                                }
+                                else
                                 {
-                                    _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {categoryIdentifer} New Parent Category Identifier: {string.Join(",", importProduct.Categories)}");
-                                    
-                                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+                                    _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                    using (_umbracoContextFactory.EnsureUmbracoContext())
                                     {
                                         if (recycleBinNode != null)
                                         {
@@ -712,11 +713,8 @@ public class ImportService : IImportService
                                     productDeleted++;
                                 }
                             }
-
                         }
-
                     }
-
                 }
             }
 
