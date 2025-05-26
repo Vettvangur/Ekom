@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -66,15 +67,7 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProduct()
     {
-        ContentRequest contentRequest = null;
-        if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
-        {
-            Lazy<object>? r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
-            contentRequest = r.Value as ContentRequest;
-            return contentRequest?.Product;
-        }
-
-        return null;
+        return GetSingleProduct("");
     }
 
     /// <summary>
@@ -83,48 +76,7 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProductByRoute(string route, string? storeAlias = null)
     {
-        if (string.IsNullOrWhiteSpace(route))
-        {
-            throw new ArgumentException("Route cannot be null or empty.", nameof(route));
-        }
-
-        // Get store based on alias or from cache
-        IStore? store = !string.IsNullOrWhiteSpace(storeAlias)
-                    ? _storeSvc.GetStoreByAlias(storeAlias)
-                    : _storeSvc.GetStoreFromCache();
-
-        if (store is null)
-        {
-            _logger.LogError("Store not found. Alias: {StoreAlias}", storeAlias ?? "default");
-            return null;
-        }
-
-        // Try to get the store's products from cache
-        if (_productCache.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, IProduct>? productDictionary))
-        {
-            return productDictionary.Values
-                .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        _logger.LogError("Product cache does not contain store: {StoreAlias}", store.Alias);
-
-        return null;
-    }
-
-    /// <summary>
-    /// Get products by category route
-    /// </summary>
-    /// <returns></returns>
-    public ProductResponse? GetProductsRescursiveByRoute(string route, ProductQuery? query = null)
-    {
-        ICategory? category = GetCategoryByRoute(route, query != null ? query.StoreAlias : null);
-
-        if (category == null)
-        {
-            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
-        }
-
-        return category.ProductsRecursive(query);
+        return GetSingleProduct(route, storeAlias, route: true);
     }
 
     /// <summary>
@@ -133,48 +85,7 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProduct(string sku, string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-        if (store != null)
-        {
-            if (string.IsNullOrEmpty(sku))
-            {
-                throw new ArgumentException(nameof(sku));
-            }
-
-            if (!_productCache.Cache.ContainsKey(store.Alias))
-            {
-                return null;
-            }
-
-            IProduct? product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
-
-            if (product != null)
-            {
-                return product;
-            }
-
-            if (Configuration.Instance.GlobalCatalog)
-            {
-                foreach (IStore otherStore in _storeSvc.GetAllStores())
-                {
-                    if (otherStore.Alias == store.Alias)
-                    {
-                        continue;
-                    }
-
-                    product = _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
-
-                    if (product != null)
-                    {
-                        return product;
-                    }
-                }
-            }
-
-        }
-
-        return null;
+        return GetSingleProduct(sku, storeAlias, sku: true);
     }
 
     /// <summary>
@@ -183,51 +94,7 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProduct(Guid key, string? storeAlias = null)
     {
-        // Get the specified store or default store
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-        if (store != null)
-        {
-            // Try to get the product from the specified store
-            if (_productCache.Cache[store.Alias].TryGetValue(key, out IProduct? prod))
-            {
-                return prod;
-            }
-        }
-
-        if (Configuration.Instance.GlobalCatalog)
-        {
-            // If not found, check all other stores
-            foreach (IStore otherStore in _storeSvc.GetAllStores())
-            {
-                // Skip the store we've already checked (if storeAlias was provided)
-                if (store != null && otherStore.Alias == store.Alias)
-                {
-                    continue;
-                }
-
-                // Try to get the product from the current store in the iteration
-                if (_productCache.Cache[otherStore.Alias].TryGetValue(key, out IProduct? prod))
-                {
-                    return prod;
-                }
-            }
-        }
-
-        // If the product is not found in any store, return null
-        return null;
-    }
-
-    [Obsolete]
-    public IProduct GetProduct(string storeAlias, Guid Key)
-    {
-        return GetProduct(Key, storeAlias);
-    }
-
-    [Obsolete]
-    public IProduct GetProduct(string storeAlias, int id)
-    {
-        return GetProduct(id, storeAlias);
+        return GetSingleProduct(key.ToString(), storeAlias);
     }
 
     /// <summary>
@@ -235,38 +102,134 @@ public class Catalog
     /// </summary>
     public IProduct? GetProduct(int Id, string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        return GetSingleProduct(Id.ToString(), storeAlias);
+    }
 
-        if (store != null)
+    [Obsolete]
+    public IProduct? GetProduct(string storeAlias, Guid Key)
+    {
+        return GetProduct(Key, storeAlias);
+    }
+
+    [Obsolete]
+    public IProduct? GetProduct(string storeAlias, int id)
+    {
+        return GetProduct(id, storeAlias);
+    }
+
+    private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false)
+    {
+
+        if (_httpContext != null &&
+            _httpContext.Items != null &&
+            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
+            item is Lazy<object> lazy &&
+            lazy.Value is ContentRequest contentRequest)
         {
-            if (!_productCache.Cache.ContainsKey(store.Alias))
-            {
-                return null;
-            }
-
-            IProduct? product = _productCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
+            var product = contentRequest.Product;
 
             if (product != null)
             {
-                return product;
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+            }
+        }
+
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null || !_productCache.Cache.TryGetValue(store.Alias, out var productDict))
+        {
+            return null;
+        }
+        // Try match by integer ID
+        if (int.TryParse(id, out int intId))
+        {
+
+            IProduct? product = productDict.FirstOrDefault(x => x.Value.Id == intId).Value;
+
+            if (product != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
 
             if (Configuration.Instance.GlobalCatalog)
             {
-                foreach (IStore otherStore in _storeSvc.GetAllStores())
+                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
+            }
+        }
+
+        // Try match by GUID key
+        if (UtilityService.ConvertUdiToGuid(id, out var parsedGuid))
+        {
+            id = parsedGuid.ToString();
+        }
+
+        if (Guid.TryParse(id, out var guid))
+        {
+            if (productDict.TryGetValue(guid, out var product) && product != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+            }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
+            }
+        }
+
+        // Try match by route (URL)
+        if (route)
+        {
+            return CatalogEvents.RaiseOnBeforeReturnProduct(productDict.Values
+                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
+        }
+
+        // Try match by SKU
+        if (sku)
+        {
+            IProduct? product = productDict.FirstOrDefault(x => x.Value.SKU == id).Value;
+
+            if (product != null)
+            {
+                return null;
+            }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, null, sku: id));
+            }
+        }
+
+        return null;
+    }
+
+    private IProduct? FindProductInAnyStore(IStore store, int? id, Guid? key, string? sku = null)
+    {
+        foreach (IStore otherStore in _storeSvc.GetAllStores())
+        {
+            if (otherStore.Alias == store.Alias)
+            {
+                continue;
+            }
+
+            if (id.HasValue)
+            {
+                return _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == id.Value).Value;
+            }
+
+            if (key.HasValue)
+            {
+                // Try to get the product from the current store in the iteration
+                if (_productCache.Cache[otherStore.Alias].TryGetValue(key.Value, out IProduct? prod))
                 {
-                    if (otherStore.Alias == store.Alias)
-                    {
-                        continue;
-                    }
-
-                    product = _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.Id == Id).Value;
-
-                    if (product != null)
-                    {
-                        return product;
-                    }
+                    return prod;
                 }
+            }
+
+            if (!string.IsNullOrEmpty(sku))
+            {
+                return _productCache.Cache[otherStore.Alias].FirstOrDefault(x => x.Value.SKU == sku).Value;
             }
         }
 
@@ -288,6 +251,22 @@ public class Catalog
         }
 
         return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
+    }
+
+    /// <summary>
+    /// Get products by category route
+    /// </summary>
+    /// <returns></returns>
+    public ProductResponse? GetProductsRescursiveByRoute(string route, ProductQuery? query = null)
+    {
+        ICategory? category = GetCategoryByRoute(route, query != null ? query.StoreAlias : null);
+
+        if (category == null)
+        {
+            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
+        }
+
+        return category.ProductsRecursive(query);
     }
 
     /// <summary>
@@ -415,13 +394,7 @@ public class Catalog
     /// <returns></returns>
     public ICategory? GetCategory()
     {
-        if (_httpContext.Items.ContainsKey(Configuration.EkmRequestKey))
-        {
-            Lazy<object>? r = _httpContext.Items[Configuration.EkmRequestKey] as Lazy<object>;
-            ContentRequest? contentRequest = r.Value as ContentRequest;
-            return contentRequest?.Category;
-        }
-        return null;
+        return GetSingleCategory("");
     }
 
     /// <summary>
@@ -432,38 +405,7 @@ public class Catalog
     /// </summary>
     public ICategory? GetCategory(string Id, string? storeAlias = null, bool global = false)
     {
-        if (Id == null)
-        {
-            throw new ArgumentNullException(nameof(Id));
-        }
-
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-        if (store != null)
-        {
-
-            if (!_categoryCache.Cache.ContainsKey(store.Alias))
-            {
-                return null;
-            }
-
-            if (UtilityService.ConvertUdiToGuid(Id, out Guid guid))
-            {
-                return GetCategory(guid, store.Alias, global);
-            }
-
-            if (Guid.TryParse(Id, out Guid _guid))
-            {
-                return GetCategory(_guid, store.Alias, global);
-            }
-
-            if (int.TryParse(Id, out int id))
-            {
-                return GetCategory(id, store.Alias, global);
-            }
-        }
-
-        return null;
+        return GetSingleCategory(Id, storeAlias, global);
     }
 
     /// <summary>
@@ -476,28 +418,7 @@ public class Catalog
     /// <exception cref="ArgumentException">storeAlias</exception>
     public ICategory? GetCategory(int Id, string? storeAlias = null, bool global = false)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
-
-        if (!_categoryCache.Cache.ContainsKey(store.Alias))
-        {
-            return null;
-        }
-
-        // Attempt to find the category with the given ID in the cache for the specified store alias
-        KeyValuePair<Guid, ICategory> categoryPair = _categoryCache.Cache[store.Alias].FirstOrDefault(x => x.Value.Id == Id);
-
-        // Check if a valid KeyValuePair was found and if the category is not null
-        if (!categoryPair.Equals(default(KeyValuePair<int, ICategory>)) && categoryPair.Value != null)
-        {
-            return categoryPair.Value;
-        }
-
-        if (Configuration.Instance.GlobalCatalog || global)
-        {
-            return FindCategoryInAnyStore(store.Alias, Id, null);
-        }
-
-        return null;
+        return GetSingleCategory(Id.ToString(), storeAlias, global);
     }
 
     /// <summary>
@@ -510,27 +431,87 @@ public class Catalog
     /// <exception cref="ArgumentException">storeAlias</exception>
     public ICategory? GetCategory(Guid Id, string? storeAlias = null, bool global = false)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        return GetSingleCategory(Id.ToString(), storeAlias, global);
 
-        if (!_categoryCache.Cache.ContainsKey(store.Alias))
+    }
+
+    /// <summary>
+    /// Get category by Route
+    /// </summary>
+    /// <returns></returns>
+    public ICategory? GetCategoryByRoute(string route, string? storeAlias = null)
+    {
+        return GetSingleCategory(route, storeAlias, global: false, route: true);
+    }
+
+    private ICategory? GetSingleCategory(string id, string? storeAlias = null, bool global = false, bool route = false)
+    {
+        // Try match to ContentRequest in ekmRequest
+        if (_httpContext != null &&
+            _httpContext.Items != null &&
+            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
+            item is Lazy<object> lazy &&
+            lazy.Value is ContentRequest contentRequest)
+        {
+            var category = contentRequest.Category;
+
+            if (category != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
+            }
+        }
+
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null || !_categoryCache.Cache.TryGetValue(store.Alias, out var categoryDict))
         {
             return null;
         }
 
-        ICategory? category = _categoryCache.Cache[store.Alias].TryGetValue(Id, out ICategory? cat) ? cat : null;
-
-        if (category != null)
+        // Try match by integer ID
+        if (int.TryParse(id, out int intId))
         {
-            return category;
+            var category = categoryDict.Values.FirstOrDefault(c => c.Id == intId);
+            if (category != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
+            }
+
+            if (Configuration.Instance.GlobalCatalog || global)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, intId, null));
+            }
         }
 
-        if (Configuration.Instance.GlobalCatalog || global)
+        // Try match by GUID key
+        if (UtilityService.ConvertUdiToGuid(id, out var parsedGuid))
         {
-            return FindCategoryInAnyStore(store.Alias, null, Id);
+            id = parsedGuid.ToString();
+        }
+
+        if (Guid.TryParse(id, out var guid))
+        {
+            if (categoryDict.TryGetValue(guid, out var cat) && cat != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(cat);
+            }
+
+            if (Configuration.Instance.GlobalCatalog || global)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, null, guid));
+            }
+        }
+
+        // Try match by route (URL)
+        if (route)
+        {
+            return CatalogEvents.RaiseOnBeforeReturnCategory(categoryDict.Values
+                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
         }
 
         return null;
-
     }
 
     private ICategory? FindCategoryInAnyStore(string storeAlias, int? id, Guid? key)
@@ -587,85 +568,45 @@ public class Catalog
         return null;
     }
 
-
-    [Obsolete]
-    public ICategory GetCategory(string storeAlias, int id)
-    {
-        return GetCategory(id, storeAlias);
-    }
-
     public IEnumerable<ICategory> GetRootCategories(string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        IStore? store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
 
-        if (store != null)
+        if (store == null || !_categoryCache.Cache.TryGetValue(store.Alias, out var dict))
         {
-
-            if (!_categoryCache.Cache.ContainsKey(store.Alias))
-            {
-                return null;
-            }
-
-            return _categoryCache.Cache[store.Alias]
-                .Where(x => x.Value.Level == _config.CategoryRootLevel)
-                .Select(x => x.Value)
-                .OrderBy(x => x.SortOrder);
+            yield break;
         }
 
-        return Enumerable.Empty<ICategory>();
-    }
+        var rootCategories = dict.Values
+            .Where(x => x.Level == _config.CategoryRootLevel)
+            .OrderBy(x => x.SortOrder);
 
-    /// <summary>
-    /// Get category by Route
-    /// </summary>
-    /// <returns></returns>
-    public ICategory? GetCategoryByRoute(string route, string? storeAlias = null)
-    {
-        if (string.IsNullOrWhiteSpace(route))
+        foreach (var category in CatalogEvents.RaiseOnBeforeReturnCategories(rootCategories))
         {
-            throw new ArgumentException("Route cannot be null or empty.", nameof(route));
+            yield return category;
         }
-
-        // Get store based on alias or from cache
-        IStore? store = !string.IsNullOrWhiteSpace(storeAlias)
-                    ? _storeSvc.GetStoreByAlias(storeAlias)
-                    : _storeSvc.GetStoreFromCache();
-
-        if (store is null)
-        {
-            _logger.LogError("Store not found. Alias: {StoreAlias}", storeAlias ?? "default");
-            return null;
-        }
-
-        // Try to get the store's category from cache
-        if (_categoryCache.Cache.TryGetValue(store.Alias, out System.Collections.Concurrent.ConcurrentDictionary<Guid, ICategory>? categoryDictionary))
-        {
-            return categoryDictionary.Values
-                .FirstOrDefault(p => p.Urls.Any(url => url.EnsureStartsAndEndsWithChar('/').Equals(route, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        _logger.LogError("Category cache does not contain store: {StoreAlias}", store.Alias);
-
-        return null;
     }
 
     public IEnumerable<ICategory> GetAllCategories(string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
 
-        if (store != null)
+        if (store == null || !_categoryCache.Cache.TryGetValue(store.Alias, out var dict))
         {
-            if (!_categoryCache.Cache.ContainsKey(store.Alias))
-            {
-                return null;
-            }
-
-            return _categoryCache.Cache[store.Alias]
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder);
+            yield break;
         }
 
-        return Enumerable.Empty<ICategory>();
+        var allCategories = dict.Values
+            .OrderBy(x => x.SortOrder);
+
+        foreach (var category in CatalogEvents.RaiseOnBeforeReturnCategories(allCategories))
+        {
+            yield return category;
+        }
     }
 
     /// <summary>
@@ -673,59 +614,52 @@ public class Catalog
     /// </summary>
     public IEnumerable<ICategory> GetCategoriesByIds(int[] ids, string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
 
-        if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
+        if (store == null || !_categoryCache.Cache.TryGetValue(store.Alias, out var dict))
         {
-            return Enumerable.Empty<ICategory>();
+            yield break;
         }
 
-        ICollection<ICategory> categoriesInStore = _categoryCache.Cache[store.Alias].Values; // Assuming this gets all category values
-        List<ICategory> orderedCategories = new List<ICategory>();
+        var categoriesInStore = dict.Values;
 
-        // Iterate over ids to maintain order
-        foreach (int id in ids)
+        // Resolve categories in order
+        var matchedCategories = ids
+            .Select(id => categoriesInStore.FirstOrDefault(c => c.Id == id))
+            .Where(c => c != null)!;
+
+        foreach (var category in CatalogEvents.RaiseOnBeforeReturnCategories(matchedCategories))
         {
-            // Filter categories based on id and maintain the order
-            ICategory? category = categoriesInStore.FirstOrDefault(c => c.Id == id);
-            if (category != null)
-            {
-                orderedCategories.Add(category);
-            }
+            yield return category;
         }
-
-        return orderedCategories;
     }
-
 
     /// <summary>
     /// Get multiple categories by key from store in ekmRequest (faster then GetCategoriesByIds)
     /// </summary>
     public IEnumerable<ICategory> GetCategoriesByKeys(Guid[] keys, string? storeAlias = null)
     {
-        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
 
-        if (store == null || !_categoryCache.Cache.ContainsKey(store.Alias))
+        if (store == null || !_categoryCache.Cache.TryGetValue(store.Alias, out var categoriesInStore))
         {
-            return Enumerable.Empty<ICategory>();
+            yield break;
         }
 
-        System.Collections.Concurrent.ConcurrentDictionary<Guid, ICategory> categoriesInStore = _categoryCache.Cache[store.Alias];
+        var matchedCategories = keys
+            .Select(key => categoriesInStore.TryGetValue(key, out var category) ? category : null)
+            .Where(c => c != null)!;
 
-        List<ICategory> orderedCategories = new List<ICategory>();
-
-        // Iterate over ids to maintain order
-        foreach (Guid key in keys)
+        foreach (var category in CatalogEvents.RaiseOnBeforeReturnCategories(matchedCategories))
         {
-            // Attempt to find the category by KEY and preserve the order based on the input array
-            if (categoriesInStore.TryGetValue(key, out ICategory? category))
-            {
-                orderedCategories.Add(category);
-            }
+            yield return category;
         }
-
-        return orderedCategories;
     }
+
 
     public IVariant? GetVariant(Guid Id, string storeAlias = null)
     {
@@ -818,7 +752,7 @@ public class Catalog
         return GetVariantsByGroup(Id, storeAlias);
     }
 
-    public IVariantGroup GetVariantGroup(Guid key, string storeAlias = null)
+    public IVariantGroup? GetVariantGroup(Guid key, string storeAlias = null)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -834,12 +768,12 @@ public class Catalog
     }
 
     [Obsolete]
-    public IVariantGroup GetVariantGroup(string storeAlias, Guid key)
+    public IVariantGroup? GetVariantGroup(string storeAlias, Guid key)
     {
         return GetVariantGroup(key, storeAlias);
     }
 
-    public IVariantGroup GetVariantGroup(int id, string storeAlias = null)
+    public IVariantGroup? GetVariantGroup(int id, string storeAlias = null)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -855,7 +789,7 @@ public class Catalog
     }
 
     [Obsolete]
-    public IVariantGroup GetVariantGroup(string storeAlias, int id)
+    public IVariantGroup? GetVariantGroup(string storeAlias, int id)
     {
         return GetVariantGroup(id, storeAlias);
     }
@@ -912,9 +846,9 @@ public class Catalog
         }
 
         IServiceScope scope = Configuration.Resolver.CreateScope();
-        ICatalogSearchService? _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+        var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
 
-        IEnumerable<int> result = _searhService.ProductQuery(req, out long total);
+        IEnumerable<int> result = _searhService?.ProductQuery(req, out long total) ?? Enumerable.Empty<int>();
 
         scope.Dispose();
 

@@ -98,7 +98,7 @@ class UrlService : IUrlService
                 {
                     Culture = domainLang,
                     Store = store.Alias,
-                    Url = url,
+                    Url = url.EnsureStartsAndEndsWithChar('/'),
                     Domain = domain.DomainName
                 });
             }
@@ -143,7 +143,7 @@ class UrlService : IUrlService
                 {
                     Culture = domain.LanguageIsoCode,
                     Store = store.Alias,
-                    Url = url,
+                    Url = url.EnsureStartsAndEndsWithChar('/'),
                     Domain = domain.DomainName
                 });
             }
@@ -278,7 +278,7 @@ class UrlService : IUrlService
                 {
                     Culture = categoryUrl.Culture,
                     Store = store.Alias,
-                    Url = fullUrl,
+                    Url = fullUrl.EnsureStartsAndEndsWithChar('/'),
                     Domain = categoryUrl.Domain
                 });
             }
@@ -297,7 +297,7 @@ class UrlService : IUrlService
                     {
                         Culture = categoryUrl.Culture,
                         Store = store.Alias,
-                        Url = categoryUrl.Url + formattedSlug,
+                        Url = (categoryUrl.Url + formattedSlug).EnsureStartsAndEndsWithChar('/'),
                         Domain = categoryUrl.Domain
                     });
                 }
