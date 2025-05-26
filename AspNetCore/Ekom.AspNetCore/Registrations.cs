@@ -17,8 +17,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Vettvangur.Core;
-using Vettvangur.OrganisationManagement.AspNetCore;
 
 namespace Ekom.AspNetCore;
 
@@ -176,10 +174,8 @@ static class Registrations
                 f.GetService<ILogger<Discounts>>(),
                 f.GetService<IPerStoreCache<IDiscount>>(),
                 f.GetService<IStoreService>()
-        )
+            )
         );
-
-        services.ConfigureOptions<EkomCultureRequestLocalizationOptions>();
 
         services.AddSingleton<DatabaseFactory>();
 

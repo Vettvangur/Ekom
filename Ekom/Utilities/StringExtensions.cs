@@ -1,5 +1,7 @@
 using Ekom.Models;
 using Ekom.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Murmur;
 using Newtonsoft.Json;
@@ -169,9 +171,12 @@ public static class StringExtension
             }
         }
 
-        // Try current culture
-        var culture = CultureInfo.CurrentCulture.Name;
-        if (valuesObj.TryGetValue(culture, StringComparison.OrdinalIgnoreCase, out var cultureToken))
+        HttpContext? httpCtx = Configuration.Resolver?.GetService<IHttpContextAccessor>()?.HttpContext;
+
+        var culture = httpCtx?.Request?.HttpContext?.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture ?? CultureInfo.CurrentCulture;
+
+
+        if (valuesObj.TryGetValue(culture.Name, StringComparison.OrdinalIgnoreCase, out var cultureToken))
         {
             var result = ExtractValueFromToken(cultureToken);
             if (result != null) return result;

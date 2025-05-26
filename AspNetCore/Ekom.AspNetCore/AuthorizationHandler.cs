@@ -1,16 +1,9 @@
 using Ekom.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Permissions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Vettvangur.OrganisationManagement.AspNetCore;
+namespace Ekom.AspNetCore;
 
 class UmbracoUserAuthorization : IAuthorizationRequirement
 {

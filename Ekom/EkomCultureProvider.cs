@@ -5,91 +5,90 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 
-namespace Vettvangur.Core
+namespace Ekom;
+
+
+public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLocalizationOptions>
 {
-
-    public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLocalizationOptions>
+    private readonly IUmbracoService _umbracoService;
+    public EkomCultureRequestLocalizationOptions(IUmbracoService umbracoService)
     {
-        private readonly IUmbracoService _umbracoService;
-        public EkomCultureRequestLocalizationOptions(IUmbracoService umbracoService)
-        {
-            _umbracoService = umbracoService;
-        }
-
-        public void Configure(RequestLocalizationOptions options)
-        {
-            try
-            {
-                IEnumerable<Ekom.Models.Umbraco.UmbracoLanguage> cultures = _umbracoService.GetLanguages();
-                string defaultCulture = _umbracoService.DefaultLanguage();
-
-                List<CultureInfo> supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
-
-                options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
-                options.SupportedCultures = supportedCultures;
-                options.SupportedUICultures = supportedCultures;
-
-                // Insert EkomCultureProvider at the highest priority
-                options.RequestCultureProviders.Insert(0, new EkomCultureProvider(options));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed configuring Ekom localization: " + ex.ToString());
-            }
-        }
-
+        _umbracoService = umbracoService;
     }
 
-    public class EkomCultureProvider : RequestCultureProvider
+    public void Configure(RequestLocalizationOptions options)
     {
-        private readonly RequestLocalizationOptions _localizationOptions;
-
-        // ctor with reference to the RequestLocalizationOptions
-        public EkomCultureProvider(RequestLocalizationOptions localizationOptions)
-            => _localizationOptions = localizationOptions;
-
-        public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
+        try
         {
-            if (!context.Request.Path.StartsWithSegments("/ekom", StringComparison.InvariantCultureIgnoreCase))
-            {
-                return NullProviderCultureResult;
-            }
+            var cultures = _umbracoService.GetLanguages();
+            var defaultCulture = _umbracoService.DefaultLanguage();
 
-            string? cultureName = context.Request.Query["Accept-Language"].FirstOrDefault()
-                            ?? context.Request.Query["Culture"].FirstOrDefault()
-                            ?? context.Request.Headers["Accept-Language"].FirstOrDefault()
-                            ?? context.Request.Headers["Culture"].FirstOrDefault();
+            List<CultureInfo> supportedCultures = cultures.Select(culture => new CultureInfo(culture.IsoCode)).ToList();
 
-            if (string.IsNullOrEmpty(cultureName) || cultureName == "*")
-            {
-                return NullProviderCultureResult;
-            }
+            options.DefaultRequestCulture = new RequestCulture(defaultCulture, defaultCulture);
+            options.SupportedCultures = supportedCultures;
+            options.SupportedUICultures = supportedCultures;
 
-            cultureName = ParseAcceptLanguageHeader(cultureName);
-
-            CultureInfo culture;
-            try
-            {
-                culture = new CultureInfo(cultureName);
-            }
-            catch (CultureNotFoundException)
-            {
-                // Culture is not recognized, return null result
-                return NullProviderCultureResult;
-            }
-
-            return Task.FromResult(new ProviderCultureResult(culture.Name));
+            // Insert EkomCultureProvider at the highest priority
+            options.RequestCultureProviders.Insert(0, new EkomCultureProvider(options));
         }
-
-        private static string ParseAcceptLanguageHeader(string headerValue)
+        catch (Exception ex)
         {
-            string? languages = headerValue.Split(',')
-                .Select(l => l.Split(';').First().Trim())
-                .Where(l => !string.IsNullOrEmpty(l))
-                .FirstOrDefault();
-
-            return languages;
+            Console.WriteLine("Failed configuring Ekom localization: " + ex.ToString());
         }
-
     }
+
+}
+
+public class EkomCultureProvider : RequestCultureProvider
+{
+    private readonly RequestLocalizationOptions _localizationOptions;
+
+    // ctor with reference to the RequestLocalizationOptions
+    public EkomCultureProvider(RequestLocalizationOptions localizationOptions)
+        => _localizationOptions = localizationOptions;
+
+    public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
+    {
+        if (!context.Request.Path.StartsWithSegments("/ekom", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return NullProviderCultureResult;
+        }
+
+        string? cultureName = context.Request.Query["Accept-Language"].FirstOrDefault()
+                        ?? context.Request.Query["Culture"].FirstOrDefault()
+                        ?? context.Request.Headers["Accept-Language"].FirstOrDefault()
+                        ?? context.Request.Headers["Culture"].FirstOrDefault();
+
+        if (string.IsNullOrEmpty(cultureName) || cultureName == "*")
+        {
+            return NullProviderCultureResult;
+        }
+
+        cultureName = ParseAcceptLanguageHeader(cultureName);
+
+        CultureInfo culture;
+        try
+        {
+            culture = new CultureInfo(cultureName);
+        }
+        catch (CultureNotFoundException)
+        {
+            // Culture is not recognized, return null result
+            return NullProviderCultureResult;
+        }
+
+        return Task.FromResult(new ProviderCultureResult(culture.Name, culture.Name));
+    }
+
+    private static string ParseAcceptLanguageHeader(string headerValue)
+    {
+        string? languages = headerValue.Split(',')
+            .Select(l => l.Split(';').First().Trim())
+            .Where(l => !string.IsNullOrEmpty(l))
+            .FirstOrDefault();
+
+        return languages;
+    }
+
 }

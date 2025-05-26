@@ -54,8 +54,4 @@
             <_Parameter1>Ekom.U10</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\Ekom\Ekom.csproj" />
-    </ItemGroup>
 </Project>
