@@ -135,9 +135,13 @@ public static class NodeEntityExtensions
                 Crops = item.TryGetProperty("crops", out var cropsElement) && cropsElement.ValueKind == JsonValueKind.Array
                     ? cropsElement.EnumerateArray().Select(crop => new ImageCropperValue.ImageCropperCrop
                     {
-                        Alias = crop.GetProperty("alias").GetString(),
-                        Width = crop.GetProperty("width").GetInt32(),
-                        Height = crop.GetProperty("height").GetInt32(),
+                        Alias = crop.TryGetProperty("alias", out var aliasElement) ? aliasElement.GetString() : null,
+                        Width = crop.TryGetProperty("width", out var widthElement) && widthElement.ValueKind == JsonValueKind.Number
+                            ? widthElement.GetInt32()
+                            : 0,
+                        Height = crop.TryGetProperty("height", out var heightElement) && heightElement.ValueKind == JsonValueKind.Number
+                            ? heightElement.GetInt32()
+                            : 0,
                         Coordinates = crop.TryGetProperty("coordinates", out var coordElement) && coordElement.ValueKind == JsonValueKind.Object
                             ? new ImageCropperValue.ImageCropperCropCoordinates
                             {
