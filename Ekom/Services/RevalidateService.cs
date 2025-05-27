@@ -47,7 +47,7 @@ public class RevalidateService
                 {
                     IVariant? variant = _catalog.GetVariant(nodeKey, apis.Store);
 
-                    if (variant != null)
+                    if (variant != null && variant.Product != null)
                     {
                         await RevalidateProduct(apis, variant.Product);
                     }

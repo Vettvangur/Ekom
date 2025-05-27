@@ -21,7 +21,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// Stock Keeping Unit, identifier
     /// </summary>
-    public string SKU => string.IsNullOrEmpty(GetValue("sku")) ? Product.SKU : GetValue("sku");
+    public string SKU => string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
 
     /// <summary>
     /// Get the variant stock
@@ -62,18 +62,11 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IProduct Product
+    public virtual IProduct? Product
     {
         get
         {
-            IProduct? product = Catalog.Instance.GetProduct(ProductId, Store.Alias);
-
-            if (product == null)
-            {
-                throw new KeyNotFoundException("Variant Product not found. Key: " + ProductId);
-            }
-
-            return product;
+            return Catalog.Instance.GetProduct(ProductId, Store.Alias);
         }
     }
 
@@ -105,21 +98,31 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            return Product.Key;
+            var cacheKey = $"ProductKey_{Id}";
+
+            var lazy = (Lazy<object>)_cache.GetOrAdd(cacheKey, _ =>
+                new Lazy<object>(() =>
+                {
+                    // Only fetch the key — not the full Product
+                    return Product?.Key ?? Guid.Empty;
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
+
+            return (Guid)lazy.Value;
         }
     }
 
     /// <summary>
     /// Gets the productDiscount for the specific Variant
     /// </summary>
-    public IProductDiscount ProductDiscount(string price)
+    public IProductDiscount? ProductDiscount(string price)
     {
         return Configuration.Resolver.GetService<ProductDiscountService>()
             .GetProductDiscount(
                 Path,
                 Store.Alias,
                 price,
-                Product.Categories.Select(x => x.Id.ToString()).ToArray()
+                Product?.Categories.Select(x => x.Id.ToString()).ToArray()
             );
     }
 
@@ -129,7 +132,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public IVariantGroup VariantGroup
+    public IVariantGroup? VariantGroup
     {
         get
         {
@@ -196,14 +199,14 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                     Store.Currency,
                     Store.Alias,
                     Path,
-                    Product.Categories.Select(x => x.Id.ToString()).ToArray()
+                    Product?.Categories.Select(x => x.Id.ToString()).ToArray()
                     );
 
             foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
             {
                 int index = prices.IndexOf(p);
 
-                prices[index] = Product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
+                prices[index] = Product?.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
 
             }
             return prices;
@@ -219,7 +222,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                 return Convert.ToDecimal(GetValue("vat", Store.Alias)) / 100;
             }
 
-            return Product.Vat;
+            return Product?.Vat ?? 0;
         }
     }
 
@@ -252,7 +255,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         string categoryField = Properties.Any(x => x.Key == "categories") ?
                             GetValue("categories") : "";
 
-        List<ICategory> categories = new List<ICategory>();
+        var categories = new List<ICategory>();
 
         ICategory? primaryCategory = API.Catalog.Instance.GetCategory(categoryId, Store.Alias);
 
@@ -295,7 +298,11 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <param name="store"></param>
     public Variant(UmbracoContent item, IStore store) : base(item, store)
     {
-        Product.InvalidateCache();
+        if (Product != null)
+        {
+            Product.InvalidateCache();
+        }
+
         InvalidateCache();
     }
 

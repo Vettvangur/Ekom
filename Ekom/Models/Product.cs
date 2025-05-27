@@ -27,7 +27,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
-    public virtual IDiscount ProductDiscount(string price = null)
+    public virtual IDiscount ProductDiscount(string? price = null)
     {
         price = string.IsNullOrEmpty(price) ? Price.OriginalValue.ToString() : price;
 
@@ -185,19 +185,19 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
+            var primaryVariantGroup = PrimaryVariantGroup;
+
             var lazy = _cache.GetOrAdd("PrimaryVariant", _ =>
                 new Lazy<object?>(() =>
                 {
-                    IVariantGroup? primaryVariantGroup = PrimaryVariantGroup;
-
                     if (primaryVariantGroup == null)
-                    {
                         return null;
-                    }
 
-                    // Try to find the first available variant, or fall back to any variant
-                    IVariant? primaryVariant = primaryVariantGroup.Variants.FirstOrDefault(v => v.Available)
-                                            ?? primaryVariantGroup.Variants.FirstOrDefault();
+                    // safe access — don't use primaryVariantGroup again in here
+                    var variants = primaryVariantGroup.Variants.ToList(); // force evaluate once
+
+                    var primaryVariant = variants.FirstOrDefault(v => v.Available)
+                                        ?? variants.FirstOrDefault();
 
                     return primaryVariant;
                 }, LazyThreadSafetyMode.ExecutionAndPublication)
@@ -206,7 +206,6 @@ public class Product : PerStoreNodeEntity, IProduct
             return (IVariant?)((Lazy<object?>)lazy).Value;
         }
     }
-
 
     /// <summary>
     /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
@@ -325,7 +324,6 @@ public class Product : PerStoreNodeEntity, IProduct
         }
     }
 
-
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
@@ -333,17 +331,26 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
+            IPrice? primaryOriginalPrice = null;
+
+            if (PrimaryVariant != null)
+            {
+                try
+                {
+                    primaryOriginalPrice = PrimaryVariant.OriginalPrice;
+                }
+                catch
+                {
+                    primaryOriginalPrice = null;
+                }
+            }
+
             var lazy = _cache.GetOrAdd("OriginalPrice", _ =>
                 new Lazy<object>(() =>
                 {
-                    if (PrimaryVariant != null)
+                    if (primaryOriginalPrice?.Value > 0)
                     {
-                        var primaryVariantOriginalPrice = PrimaryVariant.OriginalPrice;
-
-                        if (primaryVariantOriginalPrice.Value > 0)
-                        {
-                            return primaryVariantOriginalPrice;
-                        }
+                        return primaryOriginalPrice;
                     }
 
                     // Store frequently accessed values to avoid redundant access
@@ -374,7 +381,6 @@ public class Product : PerStoreNodeEntity, IProduct
                         }
                     }
 
-                    // If no price is found, return a price of 0 with store settings
                     return new Price(0, storeCurrency, storeVat, storeVatIncluded);
                 }, LazyThreadSafetyMode.ExecutionAndPublication)
             );
@@ -388,19 +394,22 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var lazy = _cache.GetOrAdd("Vat", _ =>
+            var storeAlias = Store.Alias;
+            var storeVat = Store.Vat;
+
+            var lazy = _cache.GetOrAdd($"Vat", _ =>
                 new Lazy<object>(() =>
                 {
-                    if (Properties.HasPropertyValue("vat", Store.Alias))
+                    if (Properties.HasPropertyValue("vat", storeAlias))
                     {
-                        string value = GetValue("vat", Store.Alias);
+                        string value = GetValue("vat", storeAlias);
                         if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
                         {
                             return _val / 100;
                         }
                     }
 
-                    return Store.Vat;
+                    return storeVat;
                 }, LazyThreadSafetyMode.ExecutionAndPublication)
             );
 
@@ -431,17 +440,25 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var lazy = _cache.GetOrAdd("VariantGroups", _ =>
+            var storeAlias = Store.Alias;
+            var productId = Id;
+
+            var lazy = _cache.GetOrAdd($"VariantGroups_{productId}", _ =>
                 new Lazy<object>(() =>
-                    (from pair in _variantGroupCache.Cache[Store.Alias]
-                     let variantGroup = pair.Value
-                     where variantGroup.ProductId == Id
-                     orderby variantGroup.SortOrder
-                     select variantGroup).ToList(),
-                LazyThreadSafetyMode.ExecutionAndPublication)
+                {
+                    if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var groupDict))
+                    {
+                        return groupDict.Values
+                            .Where(g => g.ProductId == productId) // ← this line likely triggers the loop
+                            .OrderBy(g => g.SortOrder)
+                            .ToList();
+                    }
+
+                    return Enumerable.Empty<IVariantGroup>();
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
             );
 
-            return (IEnumerable<IVariantGroup>)lazy.Value;
+            return (IEnumerable<IVariantGroup>)((Lazy<object>)lazy).Value;
         }
     }
 
@@ -455,18 +472,27 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var lazy = _cache.GetOrAdd("AllVariants", _ =>
+            var storeAlias = Store.Alias;
+            var productId = Id;
+
+            var lazy = _cache.GetOrAdd($"AllVariants_{productId}", _ =>
                 new Lazy<object>(() =>
                 {
-                    return (from pair in _variantCache.Cache[Store.Alias]
-                            let variant = pair.Value
-                            where variant.ProductId == Id
-                            select variant).ToList(); // Evaluate immediately to avoid re-enumeration
+                    if (_variantCache.Cache.TryGetValue(storeAlias, out var variantDict))
+                    {
+                        return (from pair in variantDict
+                                let variant = pair.Value
+                                where variant.ProductId == productId
+                                select variant).ToList();
+                    }
+
+                    return Enumerable.Empty<IVariant>();
                 }, LazyThreadSafetyMode.ExecutionAndPublication)
             );
 
             return (IEnumerable<IVariant>)((Lazy<object>)lazy).Value;
         }
+
     }
 
 

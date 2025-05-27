@@ -42,7 +42,7 @@ public interface IVariant : IPerStoreNodeEntity
     /// <summary>
     /// Parent product
     /// </summary>
-    IProduct Product { get; }
+    IProduct? Product { get; }
     /// <summary>
     /// Parent product Id
     /// </summary>

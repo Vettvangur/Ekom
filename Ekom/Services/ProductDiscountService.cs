@@ -12,7 +12,7 @@ class ProductDiscountService
         _productDiscountCache = productDiscountCache;
     }
 
-    public virtual IProductDiscount? GetProductDiscount(string path, string storeAlias, string inputPrice, string[] categories = null)
+    public virtual IProductDiscount? GetProductDiscount(string path, string storeAlias, string inputPrice, string[]? categories = null)
     {
         inputPrice = string.IsNullOrEmpty(inputPrice)
             ? "0"

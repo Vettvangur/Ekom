@@ -20,17 +20,17 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public IProduct Product => Catalog.Instance.GetProduct(ParentKey, storeAlias);
+    public IProduct? Product => Catalog.Instance.GetProduct(ParentKey, storeAlias);
 
     /// <summary>
     /// 
     /// </summary>
-    public int ProductId => Product?.Id ?? 0;
+    public int ProductId => ParentId;
 
     /// <summary>
     /// Get the Product Key
     /// </summary>
-    public Guid ProductKey => Product?.Key ?? Guid.Empty;
+    public Guid ProductKey => ParentKey;
 
     /// <summary>
     /// Get the Primary variant price, if no variants then fallback to product price
@@ -122,6 +122,11 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     public VariantGroup(UmbracoContent node, IStore store) : base(node, store)
     {
         storeAlias = store.Alias;
-        Product.InvalidateCache();
+        
+        if (Product != null)
+        {
+            Product.InvalidateCache();
+        }
+       
     }
 }

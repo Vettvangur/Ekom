@@ -97,6 +97,10 @@ public static class StringExtension
     }
     public static bool IsJson(this string input)
     {
+        if (string.IsNullOrEmpty(input)) {
+            return false;
+        }
+
         input = input.Trim();
         return input.StartsWith("{") && input.EndsWith("}")
                || input.StartsWith("[") && input.EndsWith("]");
@@ -259,17 +263,17 @@ public static class StringExtension
         List<CurrencyModel> storeCurrencies,
         decimal vat,
         bool vatIncludedInPrice,
-        CurrencyModel fallbackCurrency = null,
-        string storeAlias = null,
-        string path = null,
-        string[] categories = null
+        CurrencyModel? fallbackCurrency = null,
+        string? storeAlias = null,
+        string? path = null,
+        string[]? categories = null
         )
     {
         List<IPrice> prices = new List<IPrice>();
 
         if (priceJson.IsJson())
         {
-            JArray _prices = JArray.Parse(priceJson);
+            var _prices = JArray.Parse(priceJson);
 
             foreach (JToken price in _prices)
             {
