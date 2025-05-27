@@ -68,7 +68,7 @@ public partial class Order
 
         if (store == null)
         {
-            return Task.FromResult<IOrderInfo>(null);
+            return Task.FromResult<IOrderInfo?>(null);
         }
 
         return GetOrderAsync(store.Alias);
@@ -86,11 +86,6 @@ public partial class Order
         if (string.IsNullOrEmpty(storeAlias))
         {
             return await GetOrderAsync();
-        }
-
-        if (string.IsNullOrEmpty(storeAlias))
-        {
-            throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
         return await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);

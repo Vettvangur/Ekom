@@ -157,7 +157,10 @@ public class Product : PerStoreNodeEntity, IProduct
 
                             if (node != null && node.ContentTypeAlias == "ekmProductVariantGroup")
                             {
-                                return __variantGroupCache.Cache[Store.Alias][node.Key];
+                                if (__variantGroupCache.Cache.TryGetValue(Store.Alias, out var storeDict) && storeDict.TryGetValue(node.Key, out var variantGroup))
+                                {
+                                    return variantGroup;
+                                }
                             }
                         }
                     }
