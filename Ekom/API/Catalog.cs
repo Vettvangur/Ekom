@@ -142,41 +142,6 @@ public class Catalog
         {
             return null;
         }
-        // Try match by integer ID
-        if (int.TryParse(id, out int intId))
-        {
-
-            IProduct? product = productDict.FirstOrDefault(x => x.Value.Id == intId).Value;
-
-            if (product != null)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
-            }
-
-            if (Configuration.Instance.GlobalCatalog)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
-            }
-        }
-
-        // Try match by GUID key
-        if (UtilityService.ConvertUdiToGuid(id, out var parsedGuid))
-        {
-            id = parsedGuid.ToString();
-        }
-
-        if (Guid.TryParse(id, out var guid))
-        {
-            if (productDict.TryGetValue(guid, out var product) && product != null)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
-            }
-
-            if (Configuration.Instance.GlobalCatalog)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
-            }
-        }
 
         // Try match by route (URL)
         if (route)
@@ -200,6 +165,44 @@ public class Catalog
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, null, sku: id));
             }
         }
+
+        // Try match by integer ID
+        if (int.TryParse(id, out int intId) && !sku && !route)
+        {
+
+            IProduct? product = productDict.FirstOrDefault(x => x.Value.Id == intId).Value;
+
+            if (product != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+            }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
+            }
+        }
+
+        // Try match by GUID key
+        if (UtilityService.ConvertUdiToGuid(id, out var parsedGuid))
+        {
+            id = parsedGuid.ToString();
+        }
+
+        if (Guid.TryParse(id, out var guid) && !sku && !route)
+        {
+            if (productDict.TryGetValue(guid, out var product) && product != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+            }
+
+            if (Configuration.Instance.GlobalCatalog)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
+            }
+        }
+
+
 
         return null;
     }
