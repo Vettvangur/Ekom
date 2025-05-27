@@ -157,13 +157,15 @@ public class Catalog
 
             if (product != null)
             {
-                return null;
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
 
             if (Configuration.Instance.GlobalCatalog)
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, null, sku: id));
             }
+
+            return null;
         }
 
         // Try match by integer ID
@@ -181,6 +183,8 @@ public class Catalog
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
             }
+
+            return null;
         }
 
         // Try match by GUID key
@@ -200,9 +204,9 @@ public class Catalog
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
             }
+
+            return null;
         }
-
-
 
         return null;
     }
@@ -473,10 +477,18 @@ public class Catalog
             return null;
         }
 
+        // Try match by route (URL)
+        if (route)
+        {
+            return CatalogEvents.RaiseOnBeforeReturnCategory(categoryDict.Values
+                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
+        }
+
         // Try match by integer ID
-        if (int.TryParse(id, out int intId))
+        if (int.TryParse(id, out int intId) && !route)
         {
             var category = categoryDict.Values.FirstOrDefault(c => c.Id == intId);
+            
             if (category != null)
             {
                 return CatalogEvents.RaiseOnBeforeReturnCategory(category);
@@ -486,6 +498,8 @@ public class Catalog
             {
                 return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, intId, null));
             }
+
+            return null;
         }
 
         // Try match by GUID key
@@ -494,7 +508,7 @@ public class Catalog
             id = parsedGuid.ToString();
         }
 
-        if (Guid.TryParse(id, out var guid))
+        if (Guid.TryParse(id, out var guid) && !route)
         {
             if (categoryDict.TryGetValue(guid, out var cat) && cat != null)
             {
@@ -505,13 +519,8 @@ public class Catalog
             {
                 return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, null, guid));
             }
-        }
 
-        // Try match by route (URL)
-        if (route)
-        {
-            return CatalogEvents.RaiseOnBeforeReturnCategory(categoryDict.Values
-                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
+            return null;
         }
 
         return null;
