@@ -764,7 +764,7 @@ public class Catalog
         return GetVariantsByGroup(Id, storeAlias);
     }
 
-    public IVariantGroup? GetVariantGroup(Guid key, string storeAlias = null)
+    public IVariantGroup? GetVariantGroup(Guid key, string? storeAlias = null)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -785,7 +785,7 @@ public class Catalog
         return GetVariantGroup(key, storeAlias);
     }
 
-    public IVariantGroup? GetVariantGroup(int id, string storeAlias = null)
+    public IVariantGroup? GetVariantGroup(int id, string? storeAlias = null)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 

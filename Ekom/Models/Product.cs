@@ -331,61 +331,43 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            IPrice? primaryOriginalPrice = null;
+            IPrice? primaryOriginalPrice = PrimaryVariant?.OriginalPrice;
 
-            if (PrimaryVariant != null)
+            if (primaryOriginalPrice?.Value > 0)
             {
-                try
+                return primaryOriginalPrice;
+            }
+
+            // Store frequently accessed values to avoid redundant access
+            CurrencyModel storeCurrency = Store.Currency;
+            decimal storeVat = Store.Vat;
+            bool storeVatIncluded = Store.VatIncludedInPrice;
+
+            string originalPrice = GetValue("price", Store.Alias);
+
+            if (string.IsNullOrEmpty(originalPrice))
+            {
+                return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+            }
+
+            if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+            {
+                return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
+            }
+
+            if (originalPrice.IsJson())
+            {
+                var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                decimal? val = orgPrice?.FirstOrDefault()?.Price;
+
+                if (val.HasValue)
                 {
-                    primaryOriginalPrice = PrimaryVariant.OriginalPrice;
-                }
-                catch
-                {
-                    primaryOriginalPrice = null;
+                    return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
                 }
             }
 
-            var lazy = _cache.GetOrAdd("OriginalPrice", _ =>
-                new Lazy<object>(() =>
-                {
-                    if (primaryOriginalPrice?.Value > 0)
-                    {
-                        return primaryOriginalPrice;
-                    }
+            return new Price(0, storeCurrency, storeVat, storeVatIncluded);
 
-                    // Store frequently accessed values to avoid redundant access
-                    CurrencyModel storeCurrency = Store.Currency;
-                    decimal storeVat = Store.Vat;
-                    bool storeVatIncluded = Store.VatIncludedInPrice;
-
-                    string originalPrice = GetValue("price", Store.Alias);
-
-                    if (string.IsNullOrEmpty(originalPrice))
-                    {
-                        return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-                    }
-
-                    if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-                    {
-                        return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
-                    }
-
-                    if (originalPrice.IsJson())
-                    {
-                        var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                        decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                        if (val.HasValue)
-                        {
-                            return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
-                        }
-                    }
-
-                    return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-                }, LazyThreadSafetyMode.ExecutionAndPublication)
-            );
-
-            return (IPrice)((Lazy<object>)lazy).Value;
         }
     }
 
@@ -443,22 +425,15 @@ public class Product : PerStoreNodeEntity, IProduct
             var storeAlias = Store.Alias;
             var productId = Id;
 
-            var lazy = _cache.GetOrAdd($"VariantGroups_{productId}", _ =>
-                new Lazy<object>(() =>
-                {
-                    if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var groupDict))
-                    {
-                        return groupDict.Values
-                            .Where(g => g.ProductId == productId) // ← this line likely triggers the loop
-                            .OrderBy(g => g.SortOrder)
-                            .ToList();
-                    }
+            if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var groupDict))
+            {
+                return groupDict.Values
+                    .Where(g => g.ProductId == productId) // ← this line likely triggers the loop
+                    .OrderBy(g => g.SortOrder)
+                    .ToList();
+            }
 
-                    return Enumerable.Empty<IVariantGroup>();
-                }, LazyThreadSafetyMode.ExecutionAndPublication)
-            );
-
-            return (IEnumerable<IVariantGroup>)((Lazy<object>)lazy).Value;
+            return Enumerable.Empty<IVariantGroup>();
         }
     }
 

@@ -206,8 +206,6 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
                     ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
 
                 if (item != null) Cache[store.Value.Alias][node.Key] = item;
-
-
             }
             catch (Exception ex) // Skip on fail
             {

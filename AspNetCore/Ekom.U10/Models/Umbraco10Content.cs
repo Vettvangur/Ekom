@@ -42,31 +42,22 @@ class Umbraco10Content : UmbracoContent
                 {
                     try
                     {
-
-                        var value = prop.PropertyType.VariesByCulture()
-                            ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
-                            : prop.GetSourceValue()?.ToString() ?? string.Empty;
-
                         if (prop.PropertyType.EditorAlias == "Umbraco.TinyMCE")
                         {
-                            if (value.InvariantStartsWith("{"))
-                            {
-                                using JsonDocument doc = JsonDocument.Parse(value);
+                            var rtevalue = prop.PropertyType.VariesByCulture()
+                                ? content.Value<string>(prop.Alias, firstCulture) ?? string.Empty
+                                : content.Value<string>(prop.Alias) ?? string.Empty;
 
-                                // Extract the "markup" value
-                                string markup = doc.RootElement.GetProperty("markup").GetString() ?? "";
+                            return rtevalue;
 
-                                return markup;
-                            }
-                            else
-                            {
-                                return value;
-                            }
-
+                        } else
+                        {
+                            var value = prop.PropertyType.VariesByCulture()
+                                ? prop.GetSourceValue(firstCulture)?.ToString() ?? string.Empty
+                                : prop.GetSourceValue()?.ToString() ?? string.Empty;
+                            
+                            return value;
                         }
-
-                        return value;
-
                     }
                     catch (Exception ex)
                     {
