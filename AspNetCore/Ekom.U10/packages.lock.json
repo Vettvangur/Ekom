@@ -4,11 +4,11 @@
     "net8.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.2.6, )",
-        "resolved": "0.2.6",
-        "contentHash": "KrMUMgKmcHqvC3Aycj3/80rDdZPTiPULJinMc96+UySgwz9lHJfikjibBU7Yik5fBHaQYRkZ5iiIQCwwBMsOfQ==",
+        "requested": "[0.2.8, )",
+        "resolved": "0.2.8",
+        "contentHash": "vNyNzMDRNhW5wOt1Cp6sbwklZGMcyZa7PKWQmoSnEpkolNu1VphGr+ICeVbCKL/q78ZKCSceb97vFVVzD7F6xA==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.2.6",
+          "Ekom.Payments.AspNetCore": "0.2.8",
           "Umbraco.Cms.Core": "13.8.0",
           "Umbraco.Cms.Web.BackOffice": "13.8.0",
           "Umbraco.Cms.Web.Website": "13.8.0"
@@ -163,16 +163,16 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.6",
-        "contentHash": "hSbWDdptGXNBy/G6zIv54UyMuYXXxYd6A0XG0fkdFUyLQDQcvHdm17s/cEmm0twB9bGXMaxLgXLEtx6PmFqdmA==",
+        "resolved": "0.2.8",
+        "contentHash": "greFIUoAlygMjBd6OnViZoTXML9SQnTyMBpv5qtwiR5cYxuu3jTVy7ba8g1CmsuepTeo7Z+SN2B3F0LL/eiIWg==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.2.6"
+          "Ekom.Payments.Core": "0.2.8"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.6",
-        "contentHash": "VojPG7hbgAifexWJDXpff66F409RfYoyuKA+DHMOHmNrFdjMqYuNV+lx9+fbQarWJOBk3gknI4XCwT2BmcXPlA==",
+        "resolved": "0.2.8",
+        "contentHash": "MSvueyhZUEKpd8KTquNTag7URHmVhGf5VA5ZcHQh6/Jwc3b9hwwQ9Rk8nT6tP8ezX/13r+5DoiCTSER8EloFtg==",
         "dependencies": {
           "Azure.Core": "1.45.0",
           "Azure.Identity": "1.13.1",
@@ -2620,7 +2620,7 @@
         "dependencies": {
           "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
-          "Ekom.Payments.Core": "[0.2.6, )",
+          "Ekom.Payments.Core": "[0.2.8, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
