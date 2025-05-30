@@ -81,7 +81,7 @@ public class Providers
             orderAmount
         ).Cast<IShippingProvider>().OrderBy(x => x.SortOrder);
 
-        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnShippingProviders(providers))
+        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnShippingProviders(providers, store ?? ""))
         {
             yield return provider;
         }
@@ -112,7 +112,7 @@ public class Providers
             orderAmount
         ).Cast<IPaymentProvider>().OrderBy(x => x.SortOrder);
 
-        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnPaymentProviders(providers))
+        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnPaymentProviders(providers, store ?? ""))
         {
             yield return provider;
         }

@@ -42,7 +42,7 @@ public class EkomProviderController : ControllerBase
     {
         try
         {
-            IStore? store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore(storeAlias);
 
             ArgumentNullException.ThrowIfNull(store);
 
@@ -90,7 +90,7 @@ public class EkomProviderController : ControllerBase
     {
         try
         {
-            IStore? store = API.Store.Instance.GetStore();
+            IStore? store = API.Store.Instance.GetStore(storeAlias);
 
             ArgumentNullException.ThrowIfNull(store);
 

@@ -44,7 +44,7 @@ public class Store
     /// </summary>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
-    public IStore? GetStore(string storeAlias)
+    public IStore? GetStore(string? storeAlias)
     {
         return _storeSvc.GetStoreByAlias(storeAlias);
     }

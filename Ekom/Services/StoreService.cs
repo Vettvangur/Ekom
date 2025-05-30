@@ -53,7 +53,7 @@ class StoreService : IStoreService
         return store ?? throw new Exception("No store found in cache.");
     }
 
-    public IStore? GetStoreByAlias(string alias)
+    public IStore? GetStoreByAlias(string? alias)
     {
         if (!_storeCache.Cache.Any())
         {
