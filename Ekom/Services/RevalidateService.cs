@@ -26,7 +26,7 @@ public class RevalidateService
             {
                 if (contentType == "ekmProduct")
                 {
-                    IProduct? product = _catalog.GetProduct(nodeKey, apis.Store);
+                    IProduct? product = _catalog.GetProduct(nodeKey, apis.Store, false);
 
                     if (product != null)
                     {
@@ -36,7 +36,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmCategory")
                 {
-                    ICategory? category = _catalog.GetCategory(nodeKey, apis.Store);
+                    ICategory? category = _catalog.GetCategory(nodeKey, apis.Store, false);
 
                     if (category != null)
                     {
@@ -54,7 +54,7 @@ public class RevalidateService
                 }
                 else if (contentType == "ekmProductVariantGroup")
                 {
-                    IVariantGroup variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
+                    IVariantGroup? variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
 
                     if (variantGroup != null)
                     {
@@ -86,6 +86,10 @@ public class RevalidateService
 
     private async Task Deliver(RevalidateApi revalidateConfig, IEnumerable<string> urls)
     {
+        if (!urls.Any())
+        {
+            return;
+        }
 
         using HttpClient client = new HttpClient();
 
@@ -104,7 +108,8 @@ public class RevalidateService
         if (!response.IsSuccessStatusCode)
         {
             string errorMessage = $"Failed to post to revalidate API. URL: {url}, Status Code: {response.StatusCode} ReasonPhrase: {response.ReasonPhrase}";
-            throw new HttpRequestException(errorMessage);
+
+            _logger.LogError(errorMessage, response.ReasonPhrase);
         }
     }
 

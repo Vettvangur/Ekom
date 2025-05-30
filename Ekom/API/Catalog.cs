@@ -83,26 +83,26 @@ public class Catalog
     /// Get product by SKU
     /// </summary>
     /// <returns></returns>
-    public IProduct? GetProduct(string sku, string? storeAlias = null)
+    public IProduct? GetProduct(string sku, string? storeAlias = null, bool? global = null)
     {
-        return GetSingleProduct(sku, storeAlias, sku: true);
+        return GetSingleProduct(sku, storeAlias, sku: true, global: global);
     }
 
     /// <summary>
     /// Get product by Guid
     /// </summary>
     /// <returns></returns>
-    public IProduct? GetProduct(Guid key, string? storeAlias = null)
+    public IProduct? GetProduct(Guid key, string? storeAlias = null, bool? global = null)
     {
-        return GetSingleProduct(key.ToString(), storeAlias);
+        return GetSingleProduct(key.ToString(), storeAlias, global: global);
     }
 
     /// <summary>
     /// Get product by id using store from ekmRequest
     /// </summary>
-    public IProduct? GetProduct(int Id, string? storeAlias = null)
+    public IProduct? GetProduct(int Id, string? storeAlias = null, bool ? global = null)
     {
-        return GetSingleProduct(Id.ToString(), storeAlias);
+        return GetSingleProduct(Id.ToString(), storeAlias, global: global);
     }
 
     [Obsolete]
@@ -117,8 +117,10 @@ public class Catalog
         return GetProduct(id, storeAlias);
     }
 
-    private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false)
+    private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false, bool? global = null)
     {
+
+        var enableGlobal = global.HasValue ? global.Value : Configuration.Instance.GlobalCatalog;
 
         if (_httpContext != null &&
             _httpContext.Items != null &&
@@ -160,7 +162,7 @@ public class Catalog
                 return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
 
-            if (Configuration.Instance.GlobalCatalog)
+            if (enableGlobal)
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, null, sku: id));
             }
@@ -179,7 +181,7 @@ public class Catalog
                 return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
 
-            if (Configuration.Instance.GlobalCatalog)
+            if (enableGlobal)
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
             }
@@ -200,7 +202,7 @@ public class Catalog
                 return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
 
-            if (Configuration.Instance.GlobalCatalog)
+            if (enableGlobal)
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
             }
