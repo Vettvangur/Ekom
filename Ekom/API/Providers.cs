@@ -1,4 +1,5 @@
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Models;
 using Ekom.Repositories;
 using Ekom.Services;
@@ -73,12 +74,17 @@ public class Providers
         decimal orderAmount = 0
     )
     {
-        return GetProviders(
+        var providers = GetProviders(
             storeAlias => _shippingProviderCache[storeAlias].Select(x => x.Value).ToList(),
             store,
             countryCode,
             orderAmount
-        ).Cast<IShippingProvider>();
+        ).Cast<IShippingProvider>().OrderBy(x => x.SortOrder);
+
+        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnShippingProviders(providers))
+        {
+            yield return provider;
+        }
     }
 
 
@@ -99,12 +105,17 @@ public class Providers
         decimal orderAmount = 0
     )
     {
-        return GetProviders(
+        var providers = GetProviders(
             storeAlias => _paymentProviderCache[storeAlias].Select(x => x.Value).ToList(),
             store,
             countryCode,
             orderAmount
         ).Cast<IPaymentProvider>().OrderBy(x => x.SortOrder);
+
+        foreach (var provider in ProviderEvents.RaiseOnBeforeReturnPaymentProviders(providers))
+        {
+            yield return provider;
+        }
     }
 
     /// <summary>
@@ -139,7 +150,6 @@ public class Providers
 
         if (orderAmount > 0)
         {
-
             foreach (IConstrained p in providers)
             {
                 decimal start = p.Constraints.StartRange;
