@@ -57,4 +57,5 @@ public class AddingOrderlineEventArgs : EventArgs
     public IVariant Variant { get; set; }
     public decimal Quantity { get; set; }
     public OrderAction Action { get; set; }
+    public IOrderInfo OrderInfo { get; set; }
 }

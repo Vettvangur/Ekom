@@ -985,13 +985,14 @@ partial class OrderService
         OrderSettings settings
     )
     {
-        AddingOrderlineEventArgs eventModel = new AddingOrderlineEventArgs()
+        var eventModel = new AddingOrderlineEventArgs()
         {
             Product = product,
             Variant = variant,
             Quantity = quantity,
             Settings = settings,
-            Action = action
+            Action = action,
+            OrderInfo = orderInfo
         };
 
         OrderEvents.OnAddingOrderline(this, eventModel);
