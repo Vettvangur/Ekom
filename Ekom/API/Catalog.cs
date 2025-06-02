@@ -67,7 +67,21 @@ public class Catalog
     /// <returns></returns>
     public IProduct? GetProduct()
     {
-        return GetSingleProduct("");
+        if (_httpContext != null &&
+            _httpContext.Items != null &&
+            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
+            item is Lazy<object> lazy &&
+            lazy.Value is ContentRequest contentRequest)
+        {
+            var product = contentRequest.Product;
+
+            if (product != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -119,22 +133,7 @@ public class Catalog
 
     private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false, bool? global = null)
     {
-
         var enableGlobal = global.HasValue ? global.Value : Configuration.Instance.GlobalCatalog;
-
-        if (_httpContext != null &&
-            _httpContext.Items != null &&
-            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
-            item is Lazy<object> lazy &&
-            lazy.Value is ContentRequest contentRequest)
-        {
-            var product = contentRequest.Product;
-
-            if (product != null)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
-            }
-        }
 
         var store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
