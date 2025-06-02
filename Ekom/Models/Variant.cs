@@ -182,10 +182,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// Get Price by current store currency
     /// </summary>
-    public IPrice Price
-    {
-        get => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
-    }
+    public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
 
     public virtual List<IPrice> Prices
     {
@@ -206,9 +203,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             {
                 int index = prices.IndexOf(p);
 
-                prices[index] = Product?.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
-
+                prices[index] = Product?.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue) ?? p;
             }
+
             return prices;
         }
     }

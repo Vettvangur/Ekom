@@ -262,37 +262,7 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Get Price by current store currency
     /// </summary>
-    public IPrice Price => GetPrice();
-
-    private IPrice GetPrice()
-    {
-        HttpContext? httpCtx = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
-        string? cookie = httpCtx?.Request.Cookies["EkomCurrency-" + Store.Alias];
-
-        if (cookie != null && !string.IsNullOrEmpty(cookie))
-        {
-            IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == cookie);
-
-            if (price != null)
-            {
-                return price;
-            }
-        }
-
-        System.Globalization.CultureInfo? culture = httpCtx?.Request.HttpContext.Features.Get<IRequestCultureFeature>()?.RequestCulture.Culture;
-
-        if (culture != null)
-        {
-            IPrice? price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == culture.Name);
-
-            if (price != null)
-            {
-                return price;
-            }
-        }
-
-        return Prices.FirstOrDefault();
-    }
+    public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
 
     /// <summary>
     /// 

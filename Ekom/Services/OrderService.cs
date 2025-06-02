@@ -996,6 +996,7 @@ partial class OrderService
         };
 
         OrderEvents.OnAddingOrderline(this, eventModel);
+        await OrderEvents.OnAddingOrderlineAsync(this, eventModel);
 
         quantity = eventModel.Quantity;
         product = eventModel.Product;

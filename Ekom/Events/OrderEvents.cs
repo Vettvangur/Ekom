@@ -27,6 +27,17 @@ public static class OrderEvents
     public static event EventHandler<AddingOrderlineEventArgs> AddingOrderline;
     internal static void OnAddingOrderline(object sender, AddingOrderlineEventArgs args)
         => AddingOrderline?.Invoke(sender, args);
+    public static event Func<object, AddingOrderlineEventArgs, Task>? AddingOrderlineAsync;
+    public static async Task OnAddingOrderlineAsync(object sender, AddingOrderlineEventArgs args)
+    {
+        if (AddingOrderlineAsync is null) return;
+
+        foreach (var handler in AddingOrderlineAsync.GetInvocationList()
+                 .Cast<Func<object, AddingOrderlineEventArgs, Task>>())
+        {
+            await handler(sender, args); // or Task.WhenAll(...) if parallel safe
+        }
+    }
 }
 
 /// <summary>
