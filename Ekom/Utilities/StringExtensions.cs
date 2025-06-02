@@ -142,9 +142,17 @@ public static class StringExtension
                 }
 
                 // 2. Try getting from "values" dictionary inside the JSON
-                if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken) && valuesToken is JObject valuesObj)
+                if (obj.TryGetValue("values", StringComparison.OrdinalIgnoreCase, out var valuesToken))
                 {
-                    return GetValueFromValuesObject(valuesObj, alias, fallback);
+                    if (valuesToken.Type == JTokenType.Null)
+                    {
+                        return string.Empty;
+                    }
+
+                    if (valuesToken is JObject valuesObj)
+                    {
+                        return GetValueFromValuesObject(valuesObj, alias, fallback);
+                    }
                 }
             }
             else if (token.Type == JTokenType.Array)

@@ -234,7 +234,7 @@ public class Configuration
             if (!Enum.TryParse(configVal, out Rounding preferredRounding))
             {
                 // Default
-                preferredRounding = Rounding.RoundUp;
+                preferredRounding = Rounding.RoundToEven;
             }
 
             return preferredRounding;

@@ -22,47 +22,49 @@ public class RevalidateService
 
         try
         {
-            foreach (RevalidateApi apis in headlessConfig.ReValidateApis)
+            if (contentType == "ekmProduct" || contentType == "ekmCategory" || contentType == "ekmProductVariant" || contentType == "ekmProductVariantGroup")
             {
-                if (contentType == "ekmProduct")
+                foreach (RevalidateApi apis in headlessConfig.ReValidateApis)
                 {
-                    IProduct? product = _catalog.GetProduct(nodeKey, apis.Store, false);
-
-                    if (product != null)
+                    if (contentType == "ekmProduct")
                     {
-                        await RevalidateProduct(apis, product);
+                        IProduct? product = _catalog.GetProduct(nodeKey, apis.Store, false);
+
+                        if (product != null)
+                        {
+                            await RevalidateProduct(apis, product);
+                        }
+
                     }
-
-                }
-                else if (contentType == "ekmCategory")
-                {
-                    ICategory? category = _catalog.GetCategory(nodeKey, apis.Store, false);
-
-                    if (category != null)
+                    else if (contentType == "ekmCategory")
                     {
-                        await RevalidateCategory(apis, category);
+                        ICategory? category = _catalog.GetCategory(nodeKey, apis.Store, false);
+
+                        if (category != null)
+                        {
+                            await RevalidateCategory(apis, category);
+                        }
                     }
-                }
-                else if (contentType == "ekmProductVariant")
-                {
-                    IVariant? variant = _catalog.GetVariant(nodeKey, apis.Store);
-
-                    if (variant != null && variant.Product != null)
+                    else if (contentType == "ekmProductVariant")
                     {
-                        await RevalidateProduct(apis, variant.Product);
+                        IVariant? variant = _catalog.GetVariant(nodeKey, apis.Store);
+
+                        if (variant != null && variant.Product != null)
+                        {
+                            await RevalidateProduct(apis, variant.Product);
+                        }
                     }
-                }
-                else if (contentType == "ekmProductVariantGroup")
-                {
-                    IVariantGroup? variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
-
-                    if (variantGroup != null)
+                    else if (contentType == "ekmProductVariantGroup")
                     {
-                        await RevalidateProduct(apis, variantGroup.Product);
+                        IVariantGroup? variantGroup = _catalog.GetVariantGroup(nodeKey, apis.Store);
+
+                        if (variantGroup != null)
+                        {
+                            await RevalidateProduct(apis, variantGroup.Product);
+                        }
                     }
                 }
             }
-
         }
         catch (Exception ex)
         {

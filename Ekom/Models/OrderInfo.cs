@@ -193,10 +193,16 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            // This ensures correctness even with per order rounding
-            decimal amount = SubTotal.Value - OrderLines.Sum(line => line.Amount.WithoutVat.Value);
+            var subTotal = SubTotal.Value;
 
-            return new CalculatedPrice(amount, StoreInfo.Currency);
+            var orderLinesTotal = OrderLines.Sum(line => line.Amount.WithoutVat.Value);
+
+            // This ensures correctness even with per order rounding
+            decimal amount = subTotal - orderLinesTotal;
+
+            var vat = new CalculatedPrice(amount, StoreInfo.Currency);
+
+            return vat;
         }
     }
 

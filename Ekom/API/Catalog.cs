@@ -402,7 +402,22 @@ public class Catalog
     /// <returns></returns>
     public ICategory? GetCategory()
     {
-        return GetSingleCategory("");
+        // Try match to ContentRequest in ekmRequest
+        if (_httpContext != null &&
+            _httpContext.Items != null &&
+            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
+            item is Lazy<object> lazy &&
+            lazy.Value is ContentRequest contentRequest)
+        {
+            var category = contentRequest.Category;
+
+            if (category != null)
+            {
+                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -454,21 +469,6 @@ public class Catalog
 
     private ICategory? GetSingleCategory(string id, string? storeAlias = null, bool global = false, bool route = false)
     {
-        // Try match to ContentRequest in ekmRequest
-        if (_httpContext != null &&
-            _httpContext.Items != null &&
-            _httpContext.Items.TryGetValue(Configuration.EkmRequestKey, out var item) &&
-            item is Lazy<object> lazy &&
-            lazy.Value is ContentRequest contentRequest)
-        {
-            var category = contentRequest.Category;
-
-            if (category != null)
-            {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
-            }
-        }
-
         var store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
             : _storeSvc.GetStoreFromCache();
