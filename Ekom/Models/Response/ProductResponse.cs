@@ -1,3 +1,4 @@
+using Ekom.Events;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,8 +91,9 @@ public class ProductResponse
             if (filterService != null)
             {
                 products = filterService.ApplyFilters(products, query, category);
-                products = filterService.ApplyFiltersAsync(products, query, category).Result;
             }
+
+            products = CatalogEvents.RaiseOnBeforeReturnProducts(products);
 
             // Apply Query Filter
             if (query?.Filter != null)
@@ -122,8 +124,9 @@ public class ProductResponse
             if (filterService != null)
             {
                 products = filterService.ApplyFilters(products, query, category);
-                products = filterService.ApplyFiltersAsync(products, query, category).Result;
             }
+
+            products = CatalogEvents.RaiseOnBeforeReturnProducts(products);
 
             Products = products;
             ProductCount = products.Count();

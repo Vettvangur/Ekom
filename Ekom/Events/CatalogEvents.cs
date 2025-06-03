@@ -70,6 +70,25 @@ public static class CatalogEvents
         return args.Product;
     }
 
+    public static event EventHandler<ProductsEventArgs>? BeforeReturnProducts;
+
+    /// <summary>
+    /// Triggers the BeforeReturnProducts event and allows the products to be modified or replaced.
+    /// </summary>
+    /// <param name="products">The original products.</param>
+    /// <returns>The modified or original products, or null if the event handler set it to null.</returns>
+    public static IEnumerable<IProduct> RaiseOnBeforeReturnProducts(IEnumerable<IProduct> products)
+    {
+        if (BeforeReturnProducts == null)
+        {
+            return products;
+        }
+
+        var args = new ProductsEventArgs(products);
+        BeforeReturnProducts.Invoke(null, args);
+        return args.Products;
+    }
+
 }
 public class CurrencyStringEventArgs : EventArgs
 {
@@ -116,4 +135,16 @@ public class ProductEventArgs : EventArgs
     public IProduct? Product { get; set; }
 }
 
+public class ProductsEventArgs : EventArgs
+{
+    public ProductsEventArgs(IEnumerable<IProduct> products)
+    {
+        Products = products;
+    }
+
+    /// <summary>
+    /// Can be replaced or filtered by event handlers.
+    /// </summary>
+    public IEnumerable<IProduct> Products { get; set; }
+}
 
