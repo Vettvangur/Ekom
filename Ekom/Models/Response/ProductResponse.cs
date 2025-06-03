@@ -90,6 +90,7 @@ public class ProductResponse
             if (filterService != null)
             {
                 products = filterService.ApplyFilters(products, query, category);
+                products = filterService.ApplyFiltersAsync(products, query, category).Result;
             }
 
             // Apply Query Filter
@@ -121,6 +122,7 @@ public class ProductResponse
             if (filterService != null)
             {
                 products = filterService.ApplyFilters(products, query, category);
+                products = filterService.ApplyFiltersAsync(products, query, category).Result;
             }
 
             Products = products;
