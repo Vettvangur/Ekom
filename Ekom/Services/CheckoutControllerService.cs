@@ -89,7 +89,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order).ConfigureAwait(false);
 
         var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -189,7 +189,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order, _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null).ConfigureAwait(false);
+        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order).ConfigureAwait(false);
 
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -237,65 +237,65 @@ public class CheckoutControllerService
         return Task.FromResult<CheckoutResponse?>(null);
     }
 
-    protected virtual async Task<IOrderInfo> UpdateOrderBasedOnRequestAsync(PaymentRequest paymentRequest, IOrderInfo order, IFormCollection? form)
+    protected virtual async Task<IOrderInfo> UpdateOrderBasedOnRequestAsync(PaymentRequest paymentRequest, IOrderInfo order)
     {
-        if (form != null)
+
+        Dictionary<string, string> formCollection = paymentRequest.AdditionalData;
+
+        if (formCollection.Keys.Contains("ekomUpdateInformation"))
         {
-            ICollection<string> keys = form.Keys;
+            bool saveCustomerData = false;
 
-            Dictionary<string, string> formCollection = keys.ToDictionary(
-                k => k,
-                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-            );
-
-            if (keys.Contains("ekomUpdateInformation"))
+            if (!formCollection.ContainsKey("storeAlias"))
             {
-                bool saveCustomerData = false;
+                formCollection.Add("storeAlias", order.StoreInfo.Alias);
+                saveCustomerData = true;
+            }
 
-                if (!formCollection.ContainsKey("storeAlias"))
+            if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
+            {
+                UmbracoMember member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+
+                if (member != null)
                 {
-                    formCollection.Add("storeAlias", order.StoreInfo.Alias);
-                    saveCustomerData = true;
-                }
-
-                if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
-                {
-                    UmbracoMember member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
-
-                    if (member != null)
+                    if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
                     {
-                        if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
-                        {
-                            formCollection.Add("customerName", member.Name);
-                        }
-                        if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
-                        {
-                            formCollection.Add("customerEmail", member.Email);
-                        }
-
+                        formCollection.Add("customerName", member.Name);
                     }
-                }
+                    if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+                    {
+                        formCollection.Add("customerEmail", member.Email);
+                    }
 
-                if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
-                {
-                    saveCustomerData = true;
-                }
-
-                if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
-                {
-                    order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
                 }
             }
+
+            if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
+            {
+                saveCustomerData = true;
+            }
+
+            if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
+            {
+                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
+            }
+        }
+        if (paymentRequest.PaymentProvider.HasValue)
+        {
             if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
             {
                 order = await Order.Instance.UpdatePaymentInformationAsync(
-                paymentRequest.PaymentProvider,
+                paymentRequest.PaymentProvider.Value,
                 order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
+        }
+
+        if (paymentRequest.ShippingProvider.HasValue)
+        {
             if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
             {
                 order = await Order.Instance.UpdateShippingInformationAsync(
-                paymentRequest.ShippingProvider,
+                paymentRequest.ShippingProvider.Value,
                 order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
         }

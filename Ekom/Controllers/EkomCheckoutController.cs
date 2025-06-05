@@ -3,6 +3,7 @@ using Ekom.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Ekom.Controllers;
 
@@ -29,12 +30,26 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
-    public async Task<IActionResult> Pay(PaymentRequest paymentRequest, string culture)
-    {
+    public async Task<IActionResult> Pay([FromBody] JObject data, [FromQuery] string culture)
+    {   
+
         culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
 
         try
         {
+            var paymentRequest = data.ToObject<PaymentRequest>();
+
+            if (paymentRequest == null)
+            {
+                return BadRequest("Invalid payment request data.");
+            }
+
+            var additionalData = data.Properties()
+            .DistinctBy(p => p.Name)
+            .ToDictionary(p => p.Name, p => p.Value.ToString());
+
+            paymentRequest.AdditionalData = additionalData;
+
             return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
         }
         catch (ArgumentNullException ex)
@@ -104,7 +119,16 @@ public class CheckoutController : ControllerBase
                 return Redirect(paymentRequest.ReturnUrl + "?errorStatus=badReturnUrl");
             }
 
+            var form = Request.Form;
+
+            Dictionary<string, string> additionalData = form
+                .GroupBy(kvp => kvp.Key)
+                .ToDictionary(g => g.Key, g => g.First().Value.ToString());
+
+            paymentRequest.AdditionalData = additionalData;
+
             string culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;
+
             return await _checkoutControllerService.PayAsync(
                 ResponseHandler,
                 paymentRequest,
