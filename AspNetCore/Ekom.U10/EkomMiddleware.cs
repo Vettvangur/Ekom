@@ -268,6 +268,18 @@ class EkomMiddleware
                 return;
             }
 
+            if (_context?.User?.Identity?.IsAuthenticated == false)
+            {
+                return;
+            }
+
+            var username = _context?.User?.Identity?.Name ?? "";
+
+            if (string.IsNullOrEmpty(username))
+            {
+                return;
+            }
+
             var requestPath = "";
 
             try
@@ -289,23 +301,6 @@ class EkomMiddleware
             }
 
             if (!AllowPath(requestPath))
-            {
-                return;
-            }
-
-            if (_context.User?.Identity == null)
-            {
-                return;
-            }
-
-            if (_context.User.Identity.IsAuthenticated == false)
-            {
-                return;
-            }
-
-            var username = _context.User.Identity.Name;
-
-            if (string.IsNullOrEmpty(username))
             {
                 return;
             }

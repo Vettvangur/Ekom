@@ -31,6 +31,7 @@ class StartupFilter : IStartupFilter
         });
 
         app.UseAuthentication();
+        app.UseAuthorization();
         app.UseEkomMiddleware();
         next(app);
     };

@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Ekom.Umb;
 
-static class ApplicationBuilderExtensions
+public static class ApplicationBuilderExtensions
 {
     public static IServiceCollection AddEkom(this IServiceCollection services, IConfiguration config)
     {
@@ -36,7 +36,6 @@ static class ApplicationBuilderExtensions
 
     public static IApplicationBuilder UseEkomMiddleware(this IApplicationBuilder builder)
     {
-
         return builder.UseMiddleware<EkomMiddleware>();
     }
 }
