@@ -17,6 +17,7 @@ namespace Ekom.Controllers;
     "VSTHRD200:Use \"Async\" suffix for async methods",
     Justification = "Async controller action")]
 [Route("ekom/provider")]
+[ServiceFilter(typeof(ApiExceptionFilter))]
 public class EkomProviderController : ControllerBase
 {
     private readonly ControllerRequestHelper _reqHelper;
@@ -38,20 +39,18 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsproviders/{storeAlias?}")]
-    public IEnumerable<IPaymentProvider> GetPaymentProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
+    public IActionResult GetPaymentProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
     {
-        try
-        {
-            IStore? store = API.Store.Instance.GetStore(storeAlias);
 
-            ArgumentNullException.ThrowIfNull(store);
+        IStore? store = API.Store.Instance.GetStore(storeAlias);
 
-            return API.Providers.Instance.GetPaymentProviders(store.Alias, countryCode, orderAmount);
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
+        if (store == null)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            return NotFound($"Store {storeAlias} not found");
         }
+
+        return Ok(API.Providers.Instance.GetPaymentProviders(store.Alias, countryCode, orderAmount));
+
     }
 
     /// <summary>
@@ -61,20 +60,16 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsprovider/{id:Guid}")]
-    public IPaymentProvider? GetPaymentProvider([FromRoute] Guid id)
+    public IActionResult GetPaymentProvider([FromRoute] Guid id)
     {
-        try
-        {
-            IStore? store = API.Store.Instance.GetStore();
+        IStore? store = API.Store.Instance.GetStore();
 
-            ArgumentNullException.ThrowIfNull(store);
-
-            return API.Providers.Instance.GetPaymentProvider(id, store);
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
+        if (store == null)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            return NotFound($"Store not found");
         }
+
+        return Ok(API.Providers.Instance.GetPaymentProvider(id, store));
     }
 
     /// <summary>
@@ -86,20 +81,18 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("shippingproviders/{storeAlias?}")]
-    public IEnumerable<IShippingProvider> GetShippingProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
+    public IActionResult GetShippingProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
     {
-        try
-        {
-            IStore? store = API.Store.Instance.GetStore(storeAlias);
 
-            ArgumentNullException.ThrowIfNull(store);
+        IStore? store = API.Store.Instance.GetStore(storeAlias);
 
-            return API.Providers.Instance.GetShippingProviders(store.Alias, countryCode, orderAmount);
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
+        if (store == null)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            return NotFound($"Store {storeAlias} not found");
         }
+
+        return Ok(API.Providers.Instance.GetShippingProviders(store.Alias, countryCode, orderAmount));
+
     }
 
     /// <summary>
@@ -110,20 +103,16 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("shippingprovider/{id:Guid}")]
-    public IShippingProvider? GetShippingProvider([FromRoute] Guid id)
+    public IActionResult GetShippingProvider([FromRoute] Guid id)
     {
-        try
-        {
-            IStore? store = API.Store.Instance.GetStore();
+        IStore? store = API.Store.Instance.GetStore();
 
-            ArgumentNullException.ThrowIfNull(store);
-
-            return API.Providers.Instance.GetShippingProvider(id, store);
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
+        if (store == null)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            return NotFound($"Store not found");
         }
+
+        return Ok(API.Providers.Instance.GetShippingProvider(id, store));
     }
 
     /// <summary>
@@ -132,16 +121,9 @@ public class EkomProviderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("zones")]
-    public IEnumerable<IZone> GetAllZones()
+    public IActionResult GetAllZones()
     {
-        try
-        {
-            return API.Providers.Instance.GetAllZones();
-        }
-        catch (Exception ex) when (!(ex is HttpResponseException))
-        {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
-        }
+        return Ok(API.Providers.Instance.GetAllZones());
     }
 
 }

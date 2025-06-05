@@ -56,6 +56,7 @@ static class Registrations
         services.AddSingleton<DiscountCache>();
         services.AddSingleton<IPerStoreCache<IDiscount>>(f => f.GetService<DiscountCache>()); // Lifetime based on preceding line
 
+        services.AddScoped<ApiExceptionFilter>();
 
         services.AddTransient<IStoreService, StoreService>();
 
