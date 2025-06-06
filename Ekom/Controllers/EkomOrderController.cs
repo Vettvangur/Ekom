@@ -203,15 +203,40 @@ public partial class EkomOrderController : ControllerBase
     [Route("updatecustomer")]
     public async Task<IActionResult> UpdateCustomerInformation()
     {
-        Microsoft.AspNetCore.Http.IFormCollection form = Request.Form;
-        ICollection<string> keys = form.Keys;
+        Dictionary<string, string> customerData = new(StringComparer.OrdinalIgnoreCase);
 
-        IOrderInfo orderInfo = await Order.Instance.UpdateCustomerInformationAsync(
-            keys.ToDictionary(
-                k => k,
-                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v])
-        ));
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync();
+            customerData = form.ToDictionary(
+                k => k.Key,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(v.Value.ToString()),
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+        else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            using var reader = new StreamReader(Request.Body);
+            var body = await reader.ReadToEndAsync();
 
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                var json = JObject.Parse(body);
+
+                customerData = json.Properties()
+                    .ToDictionary(
+                        p => p.Name,
+                        p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+            }
+        }
+        else
+        {
+            return BadRequest("Unsupported content type. Only application/json or form data is supported.");
+        }
+
+        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData);
         return Ok(orderInfo);
     }
 
