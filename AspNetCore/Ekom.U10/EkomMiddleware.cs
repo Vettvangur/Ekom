@@ -1,8 +1,11 @@
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using OpenIddict.Validation.AspNetCore;
+using System.Runtime.Intrinsics.X86;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -263,19 +266,16 @@ class EkomMiddleware
 
         try
         {
+
+
             if (_context?.Request == null)
             {
                 return;
             }
 
-            if (_context?.User?.Identity?.IsAuthenticated == false)
-            {
-                return;
-            }
+            var isAuthenticated = await IsAuthenticated();
 
-            var username = _context?.User?.Identity?.Name ?? "";
-
-            if (string.IsNullOrEmpty(username))
+            if (!isAuthenticated.IsAuthenticated)
             {
                 return;
             }
@@ -307,7 +307,7 @@ class EkomMiddleware
 
             if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest()) is ContentRequest ekmRequest)
             {
-                var memberContent = memberService.GetByUsername(username);
+                var memberContent = memberService.GetByUsername(isAuthenticated.Username);
 
                 if (memberContent != null)
                 {
@@ -333,4 +333,27 @@ class EkomMiddleware
             //_logger.LogError(ex, "AuthenticateRequest Failed");
         }
     }
+
+
+    public async Task<(bool IsAuthenticated, string Username)> IsAuthenticated()
+    {
+        string? username = _context.User.Identity?.IsAuthenticated == true
+            ? _context.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                ?? _context.User.Identity?.Name
+            : null;
+
+        if (string.IsNullOrEmpty(username))
+        {
+            var authResult = await _context.AuthenticateAsync("OpenIddict.Validation.AspNetCore");
+
+            if (authResult.Succeeded && authResult.Principal != null)
+            {
+                username = authResult.Principal.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                    ?? authResult.Principal.Identity?.Name;
+            }
+        }
+
+        return (!string.IsNullOrEmpty(username), username ?? string.Empty);
+    }
+
 }

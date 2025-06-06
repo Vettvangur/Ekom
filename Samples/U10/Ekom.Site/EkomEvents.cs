@@ -17,7 +17,7 @@ public class EkomEvents : IComponent
     private void OnAddingOrderline(object? sender, AddingOrderlineEventArgs e)
     {
         
-        //throw new EkomProblemDetailsException("Title", "Description", System.Net.HttpStatusCode.BadGateway);
+        throw new EkomProblemDetailsException("Title", "Description", System.Net.HttpStatusCode.BadGateway);
     }
 
     private void OnBeforeReturnProduct(object? sender, ProductEventArgs e)
