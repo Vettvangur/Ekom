@@ -64,8 +64,9 @@ public class Catalog
     /// <summary>
     /// Get current product using data from the ekmRequest <see cref="ContentRequest"/> object
     /// </summary>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
-    public IProduct? GetProduct()
+    public IProduct? GetProduct(bool raiseEvent = true)
     {
         if (_httpContext != null &&
             _httpContext.Items != null &&
@@ -87,36 +88,51 @@ public class Catalog
     /// <summary>
     /// Get product by Route
     /// </summary>
+    /// <param name="route">The route.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
-    public IProduct? GetProductByRoute(string route, string? storeAlias = null)
+    public IProduct? GetProductByRoute(string route, string? storeAlias = null, bool raiseEvent = true)
     {
-        return GetSingleProduct(route, storeAlias, route: true);
+        return GetSingleProduct(route, storeAlias, route: true, raiseEvent: raiseEvent);
     }
 
     /// <summary>
     /// Get product by SKU
     /// </summary>
+    /// <param name="sku">The SKU.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
-    public IProduct? GetProduct(string sku, string? storeAlias = null, bool? global = null)
+    public IProduct? GetProduct(string sku, string? storeAlias = null, bool? global = null, bool raiseEvent = true)
     {
-        return GetSingleProduct(sku, storeAlias, sku: true, global: global);
+        return GetSingleProduct(sku, storeAlias, sku: true, global: global, raiseEvent: raiseEvent);
     }
 
     /// <summary>
     /// Get product by Guid
     /// </summary>
+    /// <param name="key">The product key.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
-    public IProduct? GetProduct(Guid key, string? storeAlias = null, bool? global = null)
+    public IProduct? GetProduct(Guid key, string? storeAlias = null, bool? global = null, bool raiseEvent = true)
     {
-        return GetSingleProduct(key.ToString(), storeAlias, global: global);
+        return GetSingleProduct(key.ToString(), storeAlias, global: global, raiseEvent: raiseEvent);
     }
 
     /// <summary>
     /// Get product by id using store from ekmRequest
     /// </summary>
-    public IProduct? GetProduct(int Id, string? storeAlias = null, bool ? global = null)
+    /// <param name="Id">The identifier.</param>
+    /// <param name="storeAlias">The store alias.</param>
+    /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
+    public IProduct? GetProduct(int Id, string? storeAlias = null, bool ? global = null, bool raiseEvent = true)
     {
-        return GetSingleProduct(Id.ToString(), storeAlias, global: global);
+        return GetSingleProduct(Id.ToString(), storeAlias, global: global, raiseEvent: raiseEvent);
     }
 
     [Obsolete]
@@ -131,7 +147,7 @@ public class Catalog
         return GetProduct(id, storeAlias);
     }
 
-    private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false, bool? global = null)
+    private IProduct? GetSingleProduct(string id, string? storeAlias = null, bool route = false, bool sku = false, bool? global = null, bool raiseEvent = true)
     {
         var enableGlobal = global.HasValue ? global.Value : Configuration.Instance.GlobalCatalog;
 
@@ -147,8 +163,10 @@ public class Catalog
         // Try match by route (URL)
         if (route)
         {
-            return CatalogEvents.RaiseOnBeforeReturnProduct(productDict.Values
-                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
+            var product = productDict.Values
+                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase)));
+
+            return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
         }
 
         // Try match by SKU
@@ -158,12 +176,14 @@ public class Catalog
 
             if (product != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
             }
 
             if (enableGlobal)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, null, sku: id));
+                var globalProduct = FindProductInAnyStore(store, null, null, sku: id);
+
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(globalProduct) : globalProduct;
             }
 
             return null;
@@ -177,12 +197,14 @@ public class Catalog
 
             if (product != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
             }
 
             if (enableGlobal)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, intId, null));
+                var globalProduct = FindProductInAnyStore(store, intId, null);
+
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(globalProduct) : globalProduct;
             }
 
             return null;
@@ -198,12 +220,13 @@ public class Catalog
         {
             if (productDict.TryGetValue(guid, out var product) && product != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(product);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
             }
 
             if (enableGlobal)
             {
-                return CatalogEvents.RaiseOnBeforeReturnProduct(FindProductInAnyStore(store, null, guid));
+                var globalProduct = FindProductInAnyStore(store, null, guid);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(globalProduct) : globalProduct; 
             }
 
             return null;
@@ -400,7 +423,7 @@ public class Catalog
     /// Get category from ekmRequest
     /// </summary>
     /// <returns></returns>
-    public ICategory? GetCategory()
+    public ICategory? GetCategory(bool raiseEvent = true)
     {
         // Try match to ContentRequest in ekmRequest
         if (_httpContext != null &&
@@ -413,7 +436,7 @@ public class Catalog
 
             if (category != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(category) : null;
             }
         }
 
@@ -425,10 +448,11 @@ public class Catalog
     /// <param name="Id">The identifier.</param>
     /// <param name="storeAlias">The store alias.</param>
     /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// </summary>
-    public ICategory? GetCategory(string Id, string? storeAlias = null, bool global = false)
+    public ICategory? GetCategory(string Id, string? storeAlias = null, bool global = false, bool raiseEvent = true)
     {
-        return GetSingleCategory(Id, storeAlias, global);
+        return GetSingleCategory(Id, storeAlias, global, raiseEvent: raiseEvent);
     }
 
     /// <summary>
@@ -437,11 +461,12 @@ public class Catalog
     /// <param name="Id">The identifier.</param>
     /// <param name="storeAlias">The store alias.</param>
     /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
-    public ICategory? GetCategory(int Id, string? storeAlias = null, bool global = false)
+    public ICategory? GetCategory(int Id, string? storeAlias = null, bool global = false, bool raiseEvent = true)
     {
-        return GetSingleCategory(Id.ToString(), storeAlias, global);
+        return GetSingleCategory(Id.ToString(), storeAlias, global, raiseEvent: raiseEvent);
     }
 
     /// <summary>
@@ -450,24 +475,24 @@ public class Catalog
     /// <param name="Id">The identifier.</param>
     /// <param name="storeAlias">The store alias.</param>
     /// <param name="global">Looks for the category in all store caches as fallback</param>
+    /// <param name="raiseEvent">Control if event should be triggered</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
-    public ICategory? GetCategory(Guid Id, string? storeAlias = null, bool global = false)
+    public ICategory? GetCategory(Guid Id, string? storeAlias = null, bool global = false, bool raiseEvent = true)
     {
-        return GetSingleCategory(Id.ToString(), storeAlias, global);
-
+        return GetSingleCategory(Id.ToString(), storeAlias, global: global, route: false, raiseEvent: raiseEvent);
     }
 
     /// <summary>
     /// Get category by Route
     /// </summary>
     /// <returns></returns>
-    public ICategory? GetCategoryByRoute(string route, string? storeAlias = null)
+    public ICategory? GetCategoryByRoute(string route, string? storeAlias = null, bool raiseEvent = true)
     {
-        return GetSingleCategory(route, storeAlias, global: false, route: true);
+        return GetSingleCategory(route, storeAlias, global: false, route: true, raiseEvent : raiseEvent);
     }
 
-    private ICategory? GetSingleCategory(string id, string? storeAlias = null, bool global = false, bool route = false)
+    private ICategory? GetSingleCategory(string id, string? storeAlias = null, bool global = false, bool route = false, bool raiseEvent = true)
     {
         var store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
@@ -481,8 +506,11 @@ public class Catalog
         // Try match by route (URL)
         if (route)
         {
-            return CatalogEvents.RaiseOnBeforeReturnCategory(categoryDict.Values
-                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase))));
+            var category = categoryDict.Values
+                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase)));
+
+            return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(category)
+                : category;
         }
 
         // Try match by integer ID
@@ -492,12 +520,13 @@ public class Catalog
             
             if (category != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(category);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(category) : category;
             }
 
             if (Configuration.Instance.GlobalCatalog || global)
             {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, intId, null));
+                var globalCategory = FindCategoryInAnyStore(store.Alias, intId, null);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(globalCategory) : globalCategory;
             }
 
             return null;
@@ -513,12 +542,13 @@ public class Catalog
         {
             if (categoryDict.TryGetValue(guid, out var cat) && cat != null)
             {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(cat);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(cat) : cat;
             }
 
             if (Configuration.Instance.GlobalCatalog || global)
             {
-                return CatalogEvents.RaiseOnBeforeReturnCategory(FindCategoryInAnyStore(store.Alias, null, guid));
+                var globalCategory = FindCategoryInAnyStore(store.Alias, null, guid);
+                return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(globalCategory) : globalCategory;
             }
 
             return null;

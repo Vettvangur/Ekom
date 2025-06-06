@@ -50,10 +50,9 @@ public static class ContentExtensions
     /// Determine if an node is disabled/unpublished <para />
     /// Traverses up content tree, checking all parents, looks for Umbraco properties matching stores country code
     /// </summary>
-    /// <param name="searchResult"></param>
-    /// <param name="store">Used to look for umbraco properties matching stores country code </param>
-    /// <param name="path"></param>
-    /// <param name="allCatalogItems"></param>
+    /// <param name="item"></param>
+    /// <param name="store"></param>
+    /// <param name="ancestors"></param>
     /// <returns>True if disabled</returns>
     public static bool IsItemDisabled(
         this UmbracoContent item,
@@ -146,7 +145,8 @@ public static class ContentExtensions
                 {
                     if (!int.TryParse(pathId, out int id)) continue;
 
-                    var category = API.Catalog.Instance.GetCategory(id, store.Alias);
+                    var category = API.Catalog.Instance.GetCategory(id, store.Alias, raiseEvent: false);
+
                     if (category == null)
                     {
                         return true;

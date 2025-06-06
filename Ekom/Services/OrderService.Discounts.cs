@@ -165,7 +165,7 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        IProduct product = Catalog.Instance.GetProduct(productKey);
+        var product = Catalog.Instance.GetProduct(productKey, storeAlias);
 
         if (product == null)
         {

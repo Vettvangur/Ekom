@@ -6,7 +6,7 @@ namespace Ekom.Utilities
 {
     internal static class ProductHelper
     {
-        internal static IEnumerable<IProduct> GetProducts(string udis, string storeAlias = null)
+        internal static IEnumerable<IProduct> GetProducts(string udis, string? storeAlias = null)
         {
             if (!string.IsNullOrEmpty(udis) && udis.StartsWith("umb"))
             {
@@ -17,7 +17,7 @@ namespace Ekom.Utilities
                 {
                     foreach (Guid guid in guids)
                     {
-                        IProduct? product = Catalog.Instance.GetProduct(guid, storeAlias);
+                        var product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                         if (product != null)
                         {
@@ -32,13 +32,13 @@ namespace Ekom.Utilities
             return Enumerable.Empty<IProduct>();
 
         }
-        internal static IProduct GetProduct(string udi, string storeAlias = null)
+        internal static IProduct? GetProduct(string udi, string? storeAlias = null)
         {
             if (!string.IsNullOrEmpty(udi) && udi.StartsWith("umb"))
             {
                 if (UtilityService.ConvertUdiToGuid(udi, out Guid guid))
                 {
-                    IProduct? product = Catalog.Instance.GetProduct(guid, storeAlias);
+                    var product = Catalog.Instance.GetProduct(guid, storeAlias);
 
                     if (product != null)
                     {

@@ -428,7 +428,7 @@ partial class OrderService
         Guid orderLineId,
         decimal quantity,
         string storeAlias,
-        OrderSettings settings = null
+        OrderSettings? settings = null
     )
     {
         if (quantity <= 0)
@@ -448,7 +448,7 @@ partial class OrderService
             settings = new OrderSettings();
         }
 
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
@@ -597,7 +597,7 @@ partial class OrderService
         Guid productKey,
         decimal quantity,
         string storeAlias,
-        AddOrderSettings settings = null
+        AddOrderSettings? settings = null
     )
     {
         if (productKey == Guid.Empty)
@@ -1788,8 +1788,6 @@ partial class OrderService
             {
                 saveCustomerData = true;
             }
-
-
 
             if (saveCustomerData)
             {

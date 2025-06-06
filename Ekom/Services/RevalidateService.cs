@@ -28,7 +28,7 @@ public class RevalidateService
                 {
                     if (contentType == "ekmProduct")
                     {
-                        IProduct? product = _catalog.GetProduct(nodeKey, apis.Store, false);
+                        IProduct? product = _catalog.GetProduct(nodeKey, apis.Store, false, raiseEvent: false);
 
                         if (product != null)
                         {
@@ -38,7 +38,7 @@ public class RevalidateService
                     }
                     else if (contentType == "ekmCategory")
                     {
-                        ICategory? category = _catalog.GetCategory(nodeKey, apis.Store, false);
+                        ICategory? category = _catalog.GetCategory(nodeKey, apis.Store, false, raiseEvent: false);
 
                         if (category != null)
                         {

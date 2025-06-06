@@ -292,7 +292,7 @@ class UmbracoEventListeners :
         var propertyTypes = GetPropertyTypes(propertyType);
 
         var slugItems = new Dictionary<string, object>();
-        var parentCategory = alias == "ekmProduct" ? Catalog.Instance.GetCategory(content.ParentId, global: true) : null;
+        var parentCategory = alias == "ekmProduct" ? Catalog.Instance.GetCategory(content.ParentId, global: true, raiseEvent: false) : null;
         var siblingProducts = parentCategory?.Products().Products
             .Where(p => p.Id != content.Id).ToList() ?? new List<IProduct>();
 
