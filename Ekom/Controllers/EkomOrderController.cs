@@ -197,7 +197,6 @@ public partial class EkomOrderController : ControllerBase
     /// <summary>
     /// Update Customer Information to Order
     /// </summary>
-    /// <param name="form">FormData</param>
     /// <returns></returns>
     [HttpPost]
     [Route("updatecustomer")]
@@ -249,88 +248,12 @@ public partial class EkomOrderController : ControllerBase
     [Route("updateshippingprovider")]
     public async Task<IActionResult> UpdateShippingProvider()
     {
-        Guid shippingProvider = Guid.Empty;
-        string? storeAlias = null;
-        Dictionary<string, string> customData = new();
-        JObject? json = null;
-        IFormCollection? form = null;
-
-        // Read and parse form
-        if (Request.HasFormContentType)
-        {
-            form = await Request.ReadFormAsync();
-
-            // Get all form keys case-insensitively
-            var formDict = form
-                .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-            if (formDict.TryGetValue("ShippingProvider", out var formProviderStr) &&
-                Guid.TryParse(formProviderStr, out var parsedFormGuid))
-            {
-                shippingProvider = parsedFormGuid;
-            }
-
-            formDict.TryGetValue("storeAlias", out storeAlias);
-
-            customData = formDict
-                .Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase) &&
-                            !x.Key.Equals("ShippingProvider", StringComparison.OrdinalIgnoreCase))
-                .ToDictionary(
-                    x => x.Key,
-                    x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                );
-        }
-
-        // Read and parse JSON
-        else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            using var reader = new StreamReader(Request.Body);
-            var body = await reader.ReadToEndAsync();
-
-            if (!string.IsNullOrWhiteSpace(body))
-            {
-                json = JObject.Parse(body);
-
-                var jsonDict = json.Properties()
-                    .ToDictionary(p => p.Name, p => p.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-                if (jsonDict.TryGetValue("ShippingProvider", out var jsonProviderStr) &&
-                    Guid.TryParse(jsonProviderStr, out var parsedJsonGuid))
-                {
-                    shippingProvider = parsedJsonGuid;
-                }
-
-                jsonDict.TryGetValue("storeAlias", out storeAlias);
-
-                customData = jsonDict
-                    .Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase) &&
-                                !x.Key.Equals("ShippingProvider", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        x => x.Key,
-                        x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                    );
-            }
-        }
-
-        // Fallback: Query string (case-insensitive)
-        var query = Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-        if (shippingProvider == Guid.Empty &&
-            query.TryGetValue("ShippingProvider", out var queryProviderStr) &&
-            Guid.TryParse(queryProviderStr, out var parsedQueryGuid))
-        {
-            shippingProvider = parsedQueryGuid;
-        }
-
-        if (string.IsNullOrWhiteSpace(storeAlias))
-        {
-            query.TryGetValue("storeAlias", out storeAlias);
-        }
+        var (shippingProvider, storeAlias, allData) = await ParseRequestAsync("ShippingProvider");
 
         if (shippingProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required ShippingProvider or storeAlias.");
 
-        var orderInfo = await Order.Instance.UpdateShippingInformationAsync(shippingProvider, storeAlias, customData);
+        var orderInfo = await Order.Instance.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData);
         return Ok(orderInfo);
     }
 
@@ -343,34 +266,39 @@ public partial class EkomOrderController : ControllerBase
     [Route("updatepaymentprovider")]
     public async Task<IActionResult> UpdatePaymentProvider()
     {
-        Guid paymentProvider = Guid.Empty;
+        var (paymentProvider, storeAlias, allData) = await ParseRequestAsync("PaymentProvider");
+
+        if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
+            return BadRequest("Missing required PaymentProvider or storeAlias.");
+
+        var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData);
+        return Ok(orderInfo);
+    }
+
+    private async Task<(Guid providerId, string? storeAlias, Dictionary<string, string> allData)> ParseRequestAsync(string providerKey)
+    {
+        Guid providerId = Guid.Empty;
         string? storeAlias = null;
-        Dictionary<string, string> customData = new();
-        JObject? json = null;
-        IFormCollection? form = null;
+        Dictionary<string, string> allData = new(StringComparer.OrdinalIgnoreCase);
 
         if (Request.HasFormContentType)
         {
-            form = await Request.ReadFormAsync();
+            var form = await Request.ReadFormAsync();
+            var formDict = form.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
-            var formDict = form
-                .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-            if (formDict.TryGetValue("PaymentProvider", out var formProviderStr) &&
+            if (formDict.TryGetValue(providerKey, out var formProviderStr) &&
                 Guid.TryParse(formProviderStr, out var parsedFormGuid))
             {
-                paymentProvider = parsedFormGuid;
+                providerId = parsedFormGuid;
             }
 
             formDict.TryGetValue("storeAlias", out storeAlias);
 
-            customData = formDict
-                .Where(x => x.Key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase) &&
-                            !x.Key.Equals("PaymentProvider", StringComparison.OrdinalIgnoreCase))
-                .ToDictionary(
-                    x => x.Key,
-                    x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                );
+            allData = formDict.ToDictionary(
+                x => x.Key,
+                x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value),
+                StringComparer.OrdinalIgnoreCase
+            );
         }
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
@@ -379,37 +307,34 @@ public partial class EkomOrderController : ControllerBase
 
             if (!string.IsNullOrWhiteSpace(body))
             {
-                json = JObject.Parse(body);
+                var json = JObject.Parse(body);
 
                 var jsonDict = json.Properties()
                     .ToDictionary(p => p.Name, p => p.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
-                if (jsonDict.TryGetValue("PaymentProvider", out var jsonProviderStr) &&
+                if (jsonDict.TryGetValue(providerKey, out var jsonProviderStr) &&
                     Guid.TryParse(jsonProviderStr, out var parsedJsonGuid))
                 {
-                    paymentProvider = parsedJsonGuid;
+                    providerId = parsedJsonGuid;
                 }
 
                 jsonDict.TryGetValue("storeAlias", out storeAlias);
 
-                customData = jsonDict
-                    .Where(x => x.Key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase) &&
-                                !x.Key.Equals("PaymentProvider", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        x => x.Key,
-                        x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                    );
+                allData = jsonDict.ToDictionary(
+                    x => x.Key,
+                    x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value),
+                    StringComparer.OrdinalIgnoreCase
+                );
             }
         }
 
-        // Fallback to query string (case-insensitive)
         var query = Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
-        if (paymentProvider == Guid.Empty &&
-            query.TryGetValue("PaymentProvider", out var queryProviderStr) &&
+        if (providerId == Guid.Empty &&
+            query.TryGetValue(providerKey, out var queryProviderStr) &&
             Guid.TryParse(queryProviderStr, out var parsedQueryGuid))
         {
-            paymentProvider = parsedQueryGuid;
+            providerId = parsedQueryGuid;
         }
 
         if (string.IsNullOrWhiteSpace(storeAlias))
@@ -417,11 +342,7 @@ public partial class EkomOrderController : ControllerBase
             query.TryGetValue("storeAlias", out storeAlias);
         }
 
-        if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
-            return BadRequest("Missing required PaymentProvider or storeAlias.");
-
-        var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(paymentProvider, storeAlias, customData);
-        return Ok(orderInfo);
+        return (providerId, storeAlias, allData);
     }
 
     /// <summary>

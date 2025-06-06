@@ -33,6 +33,7 @@ public class CheckoutControllerService
     protected readonly ILogger Logger;
     protected readonly Configuration Config;
     protected readonly EkomPayments ekomPayments;
+
     readonly HttpContext _httpCtx;
     protected string Culture;
     readonly IServiceProvider _factory;
@@ -45,6 +46,7 @@ public class CheckoutControllerService
         IMemberService memberService,
         IHttpContextAccessor httpContextAccessor,
         EkomPayments ekomPayments,
+
         IServiceProvider factory)
     {
         _httpCtx = httpContextAccessor.HttpContext;
@@ -89,7 +91,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order).ConfigureAwait(false);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order).ConfigureAwait(false);
 
         var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -106,8 +108,7 @@ public class CheckoutControllerService
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
-            order,
-            _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null)
+            order)
             .ConfigureAwait(false);
 
         if (res != null)
@@ -189,7 +190,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderBasedOnRequestAsync(paymentRequest, order).ConfigureAwait(false);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order).ConfigureAwait(false);
 
         CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
@@ -201,8 +202,7 @@ public class CheckoutControllerService
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
-            order,
-            _httpCtx.Request.HasFormContentType ? _httpCtx.Request.Form : null)
+            order)
             .ConfigureAwait(false);
 
         if (order.HangfireJobs.Any())
@@ -237,75 +237,84 @@ public class CheckoutControllerService
         return Task.FromResult<CheckoutResponse?>(null);
     }
 
-    protected virtual async Task<IOrderInfo> UpdateOrderBasedOnRequestAsync(PaymentRequest paymentRequest, IOrderInfo order)
+    protected virtual async Task<IOrderInfo> UpdateOrderDateAsync(Dictionary<string, string> collection, IOrderInfo order, Guid? paymentProviderKey = null, Guid? shippingProviderKey = null)
     {
+        Dictionary<string, string> formCollection = collection;
 
-        Dictionary<string, string> formCollection = paymentRequest.AdditionalData;
-
-        if (formCollection.Keys.Contains("ekomUpdateInformation"))
+        if (formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
         {
             bool saveCustomerData = false;
 
+            // Ensure storeAlias is present
             if (!formCollection.ContainsKey("storeAlias"))
             {
                 formCollection.Add("storeAlias", order.StoreInfo.Alias);
                 saveCustomerData = true;
             }
 
-            if (((!formCollection.ContainsKey("customerName") || !formCollection.ContainsKey("customerEmail"))) && order.CustomerInformation.Customer.UserId != 0)
+            // Try to prefill customerName and customerEmail from member if missing
+            bool needsCustomerName = !formCollection.ContainsKey("customerName") && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name);
+            bool needsCustomerEmail = !formCollection.ContainsKey("customerEmail") && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email);
+
+            if ((needsCustomerName || needsCustomerEmail) && order.CustomerInformation.Customer.UserId != 0)
             {
-                UmbracoMember member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+                var member = MemberService.GetByUsername(order.CustomerInformation.Customer.UserName);
 
                 if (member != null)
                 {
-                    if (!formCollection.ContainsKey("customerName") && !string.IsNullOrEmpty(member.Name) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name))
+                    if (needsCustomerName && !string.IsNullOrEmpty(member.Name))
                     {
                         formCollection.Add("customerName", member.Name);
                     }
-                    if (!formCollection.ContainsKey("customerEmail") && !string.IsNullOrEmpty(member.Email) && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email))
+
+                    if (needsCustomerEmail && !string.IsNullOrEmpty(member.Email))
                     {
                         formCollection.Add("customerEmail", member.Email);
                     }
-
                 }
             }
 
-            if (formCollection.Any(x => x.Key.StartsWith("customer") || x.Key.StartsWith("shipping")))
+            // Check if any customer or shipping fields were submitted
+            if (formCollection.Keys.Any(k =>
+                    k.StartsWith("customer", StringComparison.OrdinalIgnoreCase) ||
+                    k.StartsWith("shipping", StringComparison.OrdinalIgnoreCase)))
             {
                 saveCustomerData = true;
             }
 
-            if (saveCustomerData || formCollection.ContainsKey("ekomUpdateInformation"))
+            if (saveCustomerData)
             {
                 order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
             }
         }
-        if (paymentRequest.PaymentProvider.HasValue)
+
+        if (paymentProviderKey.HasValue)
         {
-            if (paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider == null || (order.PaymentProvider != null && paymentRequest.PaymentProvider != Guid.Empty && order.PaymentProvider.Key != paymentRequest.PaymentProvider))
+
+            if (order.PaymentProvider == null || (order.PaymentProvider != null && order.PaymentProvider.Key != paymentProviderKey.Value))
             {
                 order = await Order.Instance.UpdatePaymentInformationAsync(
-                paymentRequest.PaymentProvider.Value,
+                paymentProviderKey.Value,
                 order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
         }
 
-        if (paymentRequest.ShippingProvider.HasValue)
+        if (shippingProviderKey.HasValue)
         {
-            if (paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider == null || (order.ShippingProvider != null && paymentRequest.ShippingProvider != Guid.Empty && order.ShippingProvider.Key != paymentRequest.ShippingProvider))
+            if (order.ShippingProvider == null || (order.ShippingProvider != null && order.ShippingProvider.Key != shippingProviderKey.Value))
             {
                 order = await Order.Instance.UpdateShippingInformationAsync(
-                paymentRequest.ShippingProvider.Value,
+                shippingProviderKey.Value,
                 order.StoreInfo.Alias, formCollection).ConfigureAwait(false);
             }
         }
 
         return order;
     }
+
     protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
     PaymentRequest paymentRequest,
-    IOrderInfo order,
-        IFormCollection? form)
+    IOrderInfo order)
     {
         if (paymentRequest == null)
         {

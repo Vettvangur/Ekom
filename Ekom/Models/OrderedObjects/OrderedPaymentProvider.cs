@@ -11,7 +11,7 @@ public class OrderedPaymentProvider
 {
     private readonly IPaymentProvider _provider;
 
-    public OrderedPaymentProvider(IPaymentProvider provider, StoreInfo storeInfo, Dictionary<string, string> customData)
+    public OrderedPaymentProvider(IPaymentProvider provider, StoreInfo storeInfo, Dictionary<string, string> allData)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
@@ -25,7 +25,11 @@ public class OrderedPaymentProvider
         Key = _provider.Key;
         Title = _provider.Title;
         Prices = _provider.Prices;
-        CustomData = customData;
+        CustomData = allData.Where(x => x.Key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(
+                    x => x.Key,
+                    x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
+                );
     }
 
     public OrderedPaymentProvider(JObject paymentProviderObject, StoreInfo storeInfo)

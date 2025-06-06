@@ -1196,7 +1196,7 @@ partial class OrderService
             //Backwards compatability for old currency storeinfo 
             try
             {
-                CultureInfo culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
+                var culture = new CultureInfo(orderInfo.StoreInfo.Currency.CurrencyValue);
 
                 if (culture.TwoLetterISOLanguageName == "is")
                 {
@@ -1444,7 +1444,7 @@ partial class OrderService
     public async Task<OrderInfo> UpdateShippingInformationAsync(
         Guid shippingProviderId,
         string storeAlias,
-        Dictionary<string, string> customData,
+        Dictionary<string, string> allData,
         OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdateShippingInformation...");
@@ -1482,9 +1482,11 @@ partial class OrderService
 
             if (provider == null) return orderInfo;
 
-            OrderedShippingProvider orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, customData);
+            var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData);
 
             orderInfo.ShippingProvider = orderedShippingProvider;
+
+            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo);
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
@@ -1502,7 +1504,7 @@ partial class OrderService
     public async Task<OrderInfo> UpdatePaymentInformationAsync(
         Guid paymentProviderId,
         string storeAlias,
-        Dictionary<string, string> customData,
+        Dictionary<string, string> allData,
         OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdatePaymentInformation...");
@@ -1540,9 +1542,11 @@ partial class OrderService
 
             if (provider == null) return orderInfo;
 
-            OrderedPaymentProvider orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, customData);
+            OrderedPaymentProvider orderedPaymentProvider = new OrderedPaymentProvider(provider, orderInfo.StoreInfo, allData);
 
             orderInfo.PaymentProvider = orderedPaymentProvider;
+
+            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo);
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
@@ -1739,6 +1743,73 @@ partial class OrderService
             orderInfo.UniqueId);
         orderInfo.ShippingProvider = null;
     }
+
+    protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string> collection, IOrderInfo order)
+    {
+        Dictionary<string, string> formCollection = collection;
+
+        if (formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
+        {
+            bool saveCustomerData = false;
+
+            // Ensure storeAlias is present
+            if (!formCollection.ContainsKey("storeAlias"))
+            {
+                formCollection.Add("storeAlias", order.StoreInfo.Alias);
+                saveCustomerData = true;
+            }
+
+            // Try to prefill customerName and customerEmail from member if missing
+            bool needsCustomerName = !formCollection.ContainsKey("customerName") && string.IsNullOrEmpty(order.CustomerInformation.Customer.Name);
+            bool needsCustomerEmail = !formCollection.ContainsKey("customerEmail") && string.IsNullOrEmpty(order.CustomerInformation.Customer.Email);
+
+            if ((needsCustomerName || needsCustomerEmail) && order.CustomerInformation.Customer.UserId != 0)
+            {
+                var member = _memberService.GetByUsername(order.CustomerInformation.Customer.UserName);
+
+                if (member != null)
+                {
+                    if (needsCustomerName && !string.IsNullOrEmpty(member.Name))
+                    {
+                        formCollection.Add("customerName", member.Name);
+                    }
+
+                    if (needsCustomerEmail && !string.IsNullOrEmpty(member.Email))
+                    {
+                        formCollection.Add("customerEmail", member.Email);
+                    }
+                }
+            }
+
+            // Check if any customer or shipping fields were submitted
+            if (formCollection.Keys.Any(k =>
+                    k.StartsWith("customer", StringComparison.OrdinalIgnoreCase) ||
+                    k.StartsWith("shipping", StringComparison.OrdinalIgnoreCase)))
+            {
+                saveCustomerData = true;
+            }
+
+
+
+            if (saveCustomerData)
+            {
+                var filteredFormCollection = formCollection
+                    .Where(kvp =>
+                        !kvp.Key.Equals("shippingProvider", StringComparison.OrdinalIgnoreCase) &&
+                        !kvp.Key.Equals("paymentProvider", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value,
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                order = await Order.Instance.UpdateCustomerInformationAsync(filteredFormCollection).ConfigureAwait(false);
+            }
+        }
+
+        return order;
+    }
+
 
     private Guid GetOrderIdFromCookie(string key)
     {

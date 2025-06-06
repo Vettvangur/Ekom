@@ -364,7 +364,7 @@ public partial class Order
     public async Task<IOrderInfo> UpdateShippingInformationAsync(
         Guid shippingProvider,
         string storeAlias,
-        Dictionary<string, string> customData,
+        Dictionary<string, string> allData,
         OrderSettings? settings = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
@@ -372,7 +372,7 @@ public partial class Order
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, customData, settings)
+        return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, settings)
             .ConfigureAwait(false);
     }
 
@@ -382,15 +382,15 @@ public partial class Order
     public async Task<IOrderInfo> UpdatePaymentInformationAsync(
         Guid paymentProvider,
         string storeAlias,
-        Dictionary<string, string> customData,
-        OrderSettings settings = null)
+        Dictionary<string, string> allData,
+        OrderSettings? settings = null)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, customData, settings)
+        return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, settings)
             .ConfigureAwait(false);
     }
 
