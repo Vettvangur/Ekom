@@ -202,6 +202,8 @@ public partial class EkomOrderController : ControllerBase
     [Route("updatecustomer")]
     public async Task<IActionResult> UpdateCustomerInformation()
     {
+        Request.EnableBuffering();
+
         Dictionary<string, string> customerData = new(StringComparer.OrdinalIgnoreCase);
 
         if (Request.HasFormContentType)
@@ -248,6 +250,8 @@ public partial class EkomOrderController : ControllerBase
     [Route("updateshippingprovider")]
     public async Task<IActionResult> UpdateShippingProvider()
     {
+        Request.EnableBuffering();
+
         var (shippingProvider, storeAlias, allData) = await ParseRequestAsync("ShippingProvider");
 
         if (shippingProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
@@ -266,6 +270,8 @@ public partial class EkomOrderController : ControllerBase
     [Route("updatepaymentprovider")]
     public async Task<IActionResult> UpdatePaymentProvider()
     {
+        Request.EnableBuffering();
+
         var (paymentProvider, storeAlias, allData) = await ParseRequestAsync("PaymentProvider");
 
         if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))

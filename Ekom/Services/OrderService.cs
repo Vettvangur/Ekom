@@ -1369,7 +1369,6 @@ partial class OrderService
             settings = new OrderSettings();
         }
 
-
         if (!form.TryGetValue("storeAlias", out string? storeAlias))
             throw new ArgumentException("storeAlias parameter missing from form", nameof(form));
 
@@ -1386,7 +1385,7 @@ partial class OrderService
 
         if (orderInfo == null)
         {
-            throw new ArgumentException("orderinfo is missing", nameof(orderInfo));
+            throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
         if (form.TryGetValue("ShippingProvider", out string? shippingProvider))
