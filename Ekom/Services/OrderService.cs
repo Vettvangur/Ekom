@@ -356,6 +356,7 @@ partial class OrderService
         if (settings.FireOnOrderStatusChangingEvent)
         {
             OrderEvents.OnOrderStatusChanging(this, OrderStatusEventModel);
+            await OrderEvents.OnOrderStatusChangingAsync(this, OrderStatusEventModel);
         }
 
         order.OrderStatus = status;
@@ -381,6 +382,14 @@ partial class OrderService
                 PreviousStatus = oldStatus,
                 Status = status,
             });
+
+            await OrderEvents.OnOrderStatusChangedAsync(this, new OrderStatusEventArgs
+            {
+                OrderUniqueId = uniqueId,
+                PreviousStatus = oldStatus,
+                Status = status,
+            });
+
         }
 
         await _activityLogRepository.InsertAsync(
@@ -1187,6 +1196,11 @@ partial class OrderService
                 {
                     OrderInfo = orderInfo,
                 });
+
+                await OrderEvents.OnOrderUpdateingAsync(this, new OrderUpdatingEventArgs
+                {
+                    OrderInfo = orderInfo,
+                });
             }
 
             orderData.OrderInfo = serializedOrderInfo;
@@ -1218,6 +1232,11 @@ partial class OrderService
             if (fireOnOrderUpdatedEvents)
             {
                 OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
+                {
+                    OrderInfo = orderInfo,
+                });
+
+                await OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs
                 {
                     OrderInfo = orderInfo,
                 });

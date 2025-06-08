@@ -9,9 +9,33 @@ public static class CheckoutEvents
     internal static void OnPay(object sender, PayEventArgs args)
         => Pay?.Invoke(sender, args);
 
+    public static event Func<object, PayEventArgs, Task>? PayAsync;
+    public static async Task OnPayAsync(object sender, PayEventArgs args)
+    {
+        if (PayAsync is null) return;
+
+        foreach (var handler in PayAsync.GetInvocationList()
+                 .Cast<Func<object, PayEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
+
     public static event EventHandler<ProcessingEventArgs> Processing;
     internal static void OnProcessing(object sender, ProcessingEventArgs args)
         => Processing?.Invoke(sender, args);
+
+    public static event Func<object, ProcessingEventArgs, Task>? ProcessingAsync;
+    public static async Task OnProcessingAsync(object sender, ProcessingEventArgs args)
+    {
+        if (ProcessingAsync is null) return;
+
+        foreach (var handler in ProcessingAsync.GetInvocationList()
+                 .Cast<Func<object, ProcessingEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
 
     public static event EventHandler<CompleteCheckoutEventArgs> CompleteCheckout;
 

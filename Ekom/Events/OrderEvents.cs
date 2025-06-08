@@ -13,17 +13,65 @@ public static class OrderEvents
     internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args)
         => OrderUpdated?.Invoke(sender, args);
 
+    public static event Func<object, OrderUpdatedEventArgs, Task>? OrderUpdatedAsync;
+    public static async Task OnOrderUpdatedAsync(object sender, OrderUpdatedEventArgs args)
+    {
+        if (OrderUpdatedAsync is null) return;
+
+        foreach (var handler in OrderUpdatedAsync.GetInvocationList()
+                 .Cast<Func<object, OrderUpdatedEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
+
     public static event EventHandler<OrderUpdatingEventArgs> OrderUpdateing;
     internal static void OnOrderUpdateing(object sender, OrderUpdatingEventArgs args)
         => OrderUpdateing?.Invoke(sender, args);
 
+    public static event Func<object, OrderUpdatingEventArgs, Task>? OrderUpdateingAsync;
+    public static async Task OnOrderUpdateingAsync(object sender, OrderUpdatingEventArgs args)
+    {
+        if (OrderUpdateingAsync is null) return;
+
+        foreach (var handler in OrderUpdateingAsync.GetInvocationList()
+                 .Cast<Func<object, OrderUpdatingEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
+
     public static event EventHandler<OrderStatusEventArgs> OrderStatusChanging;
     internal static void OnOrderStatusChanging(object sender, OrderStatusEventArgs args)
         => OrderStatusChanging?.Invoke(sender, args);
+
+    public static event Func<object, OrderStatusEventArgs, Task>? OrderStatusChangingAsync;
+    public static async Task OnOrderStatusChangingAsync(object sender, OrderStatusEventArgs args)
+    {
+        if (OrderStatusChangingAsync is null) return;
+
+        foreach (var handler in OrderStatusChangingAsync.GetInvocationList()
+                 .Cast<Func<object, OrderStatusEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
+
     public static event EventHandler<OrderStatusEventArgs> OrderStatusChanged;
     internal static void OnOrderStatusChanged(object sender, OrderStatusEventArgs args)
         => OrderStatusChanged?.Invoke(sender, args);
-    /// </summary>
+
+    public static event Func<object, OrderStatusEventArgs, Task>? OrderStatusChangedAsync;
+    public static async Task OnOrderStatusChangedAsync(object sender, OrderStatusEventArgs args)
+    {
+        if (OrderStatusChangedAsync is null) return;
+
+        foreach (var handler in OrderStatusChangedAsync.GetInvocationList()
+                 .Cast<Func<object, OrderStatusEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
     public static event EventHandler<AddingOrderlineEventArgs> AddingOrderline;
     internal static void OnAddingOrderline(object sender, AddingOrderlineEventArgs args)
         => AddingOrderline?.Invoke(sender, args);
@@ -35,7 +83,7 @@ public static class OrderEvents
         foreach (var handler in AddingOrderlineAsync.GetInvocationList()
                  .Cast<Func<object, AddingOrderlineEventArgs, Task>>())
         {
-            await handler(sender, args); // or Task.WhenAll(...) if parallel safe
+            await handler(sender, args);
         }
     }
 }

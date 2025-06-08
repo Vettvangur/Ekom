@@ -368,6 +368,11 @@ public class CheckoutControllerService
             OrderInfo = order
         });
 
+        await CheckoutEvents.OnProcessingAsync(this, new ProcessingEventArgs
+        {
+            OrderInfo = order
+        });
+
         try
         {
             // Only validate, remove stock in CheckoutService
@@ -604,7 +609,7 @@ public class CheckoutControllerService
                 };
 
                 CheckoutEvents.OnPay(this, eventsArgs);
-
+                await CheckoutEvents.OnPayAsync(this, eventsArgs);
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
@@ -701,6 +706,12 @@ public class CheckoutControllerService
             paymentSettings.OrderCustomData.Add("ekomOrderReferenceId", order.ReferenceId.ToString());
 
             CheckoutEvents.OnPay(this, new PayEventArgs
+            {
+                OrderInfo = order,
+                PaymentSettings = paymentSettings,
+            });
+
+            await CheckoutEvents.OnPayAsync(this, new PayEventArgs
             {
                 OrderInfo = order,
                 PaymentSettings = paymentSettings,
