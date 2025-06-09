@@ -532,14 +532,13 @@ public class CheckoutControllerService
 
         if (_httpCtx == null)
         {
-            throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId);
+            throw new ArgumentNullException("Httpcontext is missing from ProcessPaymentAsync. " + order.UniqueId + " Store: " + order.StoreInfo.Alias);
         }
 
         if (order.PaymentProvider == null)
         {
-            throw new ArgumentNullException("PaymentProvider is missing from Order. " + order.UniqueId);
+            throw new ArgumentNullException("PaymentProvider is missing from Order. " + order.UniqueId + " Store: " + order.StoreInfo.Alias);
         }
-
 
         string storeAlias = order.StoreInfo.Alias;
 
@@ -547,7 +546,7 @@ public class CheckoutControllerService
 
         if (ekomPP == null)
         {
-            throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider);
+            throw new ArgumentNullException("Payment provider is missing from ProcessPaymentAsync. " + order.UniqueId + " Provider: " + paymentRequest.PaymentProvider + " Store: " + order.StoreInfo.Alias);
         }
 
         bool isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
@@ -628,8 +627,8 @@ public class CheckoutControllerService
             {
                 Logger.LogError(
                     ex,
-                    "Offline Payment Failed. Order: {UniqueId}",
-                    order.UniqueId);
+                    "Offline Payment Failed. Order: {UniqueId} Store: {Alias}",
+                    order.UniqueId, order.StoreInfo.Alias);
 
                 await Order.Instance.UpdateStatusAsync(
                     OrderStatus.PaymentFailed,
