@@ -33,50 +33,59 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("Order/{orderId}")]
     [UmbracoUserAuthorize]
-    public async Task<OrderData> GetOrderAsync(Guid orderId)
+    public async Task<IActionResult> GetOrderAsync(Guid orderId)
     {
-        return await _repo.GetOrderAsync(orderId);
+        return Ok(await _repo.GetOrderAsync(orderId));
     }
 
     [HttpGet]
     [Route("OrderInfo/{orderId}")]
     [UmbracoUserAuthorize]
-    public async Task<IOrderInfo> GetOrderInfoAsync(Guid orderId)
+    public async Task<IActionResult> GetOrderInfoAsync(Guid orderId)
     {
-        return await _repo.GetOrderInfoAsync(orderId);
+        try
+        {
+            return Ok(await _repo.GetOrderInfoAsync(orderId));
+        }
+        catch(Exception ex)
+        {
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
+        }
+
     }
 
     [HttpGet]
     [Route("SearchOrders")]
     [UmbracoUserAuthorize]
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
+    public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
     {
-        return await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, page, pageSize);
+        return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, page, pageSize));
     }
 
     [HttpGet]
     [Route("MostSoldProducts")]
     [UmbracoUserAuthorize]
     [ResponseCache(Duration = 60 * 60 * 24)]
-    public async Task<List<MostSoldProduct>> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
+    public async Task<IActionResult> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
     {
-        return await _repo.MostSoldProducts(start, end, store, orderStatus);
+        return Ok(await _repo.MostSoldProducts(start, end, store, orderStatus));
     }
 
     [HttpGet]
     [Route("StatusList")]
     [UmbracoUserAuthorize]
-    public object GetStatusList()
+    public IActionResult GetStatusList()
     {
-        return _repo.GetStatusList();
+        return Ok(_repo.GetStatusList());
     }
 
     [HttpGet]
     [Route("stores")]
     [UmbracoUserAuthorize]
-    public IEnumerable<IStore> GetStores()
+    public IActionResult GetStores()
     {
-        return API.Store.Instance.GetAllStores();
+        return Ok(API.Store.Instance.GetAllStores());
     }
 
     [HttpPost]
@@ -103,9 +112,9 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("charts")]
     [UmbracoUserAuthorize]
-    public async Task<ChartData> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
+    public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
     {
-        ChartData chartData = new ChartData();
+        var chartData = new ChartData();
 
         OrderListData orders = await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999", "");
 
@@ -155,7 +164,7 @@ public class EkomManagerController : ControllerBase
         chartData.AvarageChart.Points = avarageChartDataPoints;
         chartData.AvarageChart.Labels = labels;
 
-        return chartData;
+        return Ok(chartData);
     }
 
     public class ChartData

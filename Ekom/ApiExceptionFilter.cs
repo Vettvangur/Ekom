@@ -27,7 +27,7 @@ public class ApiExceptionFilter : IAsyncExceptionFilter
             return;
         }
 
-        var result = ExceptionHandler.Handle<IActionResult>(context.Exception);
+        var result = ExceptionHandler.Handle(context.Exception);
 
         if (result != null)
         {

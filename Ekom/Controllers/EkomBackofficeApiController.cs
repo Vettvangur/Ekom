@@ -231,22 +231,21 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPatch]
     [Route("stock/{id:Guid}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task<HttpResponseException> IncrementStock(Guid id, int stock)
+    public async Task<IActionResult> IncrementStock(Guid id, int stock)
     {
         try
         {
             await API.Stock.Instance.IncrementStockAsync(id, stock);
 
-            // ToDo: Log Umbraco user performing the action
-            //Logger.Info<ApiController>("")
-
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
-        catch (Exception ex) when (!(ex is HttpResponseException))
+        catch (Exception ex)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
+
 
     /// <summary>
     /// Increment stock count of store item. 
@@ -255,19 +254,18 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPatch]
     [Route("stock/{id:Guid}/StoreAlias/{storeAlias}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task IncrementStock(Guid id, string storeAlias, int stock)
+    public async Task<IActionResult> IncrementStock(Guid id, string storeAlias, int stock)
     {
         try
         {
             await API.Stock.Instance.IncrementStockAsync(id, storeAlias, stock);
 
-            // ToDo: Log Umbraco user performing the action
-
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -279,19 +277,18 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPut]
     [Route("stock/{id:Guid}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task SetStock(Guid id, int stock)
+    public async Task<IActionResult> SetStock(Guid id, int stock)
     {
         try
         {
             await API.Stock.Instance.SetStockAsync(id, stock);
 
-            // ToDo: Log Umbraco user performing the action
-
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -302,19 +299,18 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPut]
     [Route("stock/{id:Guid}/StoreAlias/{storeAlias}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task SetStock(Guid id, string storeAlias, int stock)
+    public async Task<IActionResult> SetStock(Guid id, string storeAlias, int stock)
     {
         try
         {
             await API.Stock.Instance.SetStockAsync(id, storeAlias, stock);
 
-            // ToDo: Log Umbraco user performing the action
-
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -324,22 +320,23 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPost]
     [Route("coupon/{couponCode}/NumberAvailable/{numberAvailable}/discountId/{id:Guid}")]
     [UmbracoUserAuthorize]
-    public async Task InsertCoupon(string couponCode, int numberAvailable, Guid id)
+    public async Task<IActionResult> InsertCoupon(string couponCode, int numberAvailable, Guid id)
     {
         try
         {
             await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, id);
 
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
             if (ex.Message == "Duplicate coupon")
             {
-                throw new HttpResponseException(HttpStatusCode.Conflict);
+                return Conflict("A coupon with this code already exists.");
             }
 
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -349,17 +346,18 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpDelete]
     [Route("coupon/{couponCode}/discountId/{id:Guid}")]
     [UmbracoUserAuthorize]
-    public async Task RemoveCoupon(string couponCode, Guid id)
+    public async Task<IActionResult> RemoveCoupon(string couponCode, Guid id)
     {
         try
         {
             await API.Order.Instance.RemoveCouponCodeAsync(couponCode, id);
 
-            throw new HttpResponseException(HttpStatusCode.OK);
+            return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 
@@ -370,17 +368,18 @@ public class EkomBackofficeApiController : ControllerBase
     [Route("coupon/discountId/{id:Guid}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-    public async Task<object> GetCouponsForDiscount(Guid id, string query = "", int page = 1, int pageSize = 20)
+    public async Task<IActionResult> GetCouponsForDiscount(Guid id, string query = "", int page = 1, int pageSize = 20)
     {
         try
         {
             (List<CouponData> Data, int TotalPages) items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize);
 
-            return items;
+            return Ok(items);
         }
         catch (Exception ex)
         {
-            throw ExceptionHandler.Handle<HttpResponseException>(ex);
+            var result = ExceptionHandler.Handle(ex);
+            return result ?? StatusCode(500, "An unexpected error occurred.");
         }
     }
 }

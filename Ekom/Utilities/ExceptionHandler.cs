@@ -11,197 +11,41 @@ static class ExceptionHandler
     /// </summary>
     /// <typeparam name="T">Only ActionResult and HttpResponseMessage are likely to make sense here</typeparam>
     /// <returns></returns>
-    public static T Handle<T>(
+    public static IActionResult? Handle(
         Exception exception,
-        Func<T> defaultHandler = null,
-        Func<T> preHandler = null) where T : class
+        Func<IActionResult>? defaultHandler = null,
+        Func<IActionResult>? preHandler = null)
     {
-        //if (!typeof(ActionResult).IsAssignableFrom(typeof(T)) && typeof(T) != typeof(HttpResponseMessage))
-        //{
-        //    throw new ArgumentException("Only ActionResult or HttpResponseMessage are supported as the generic return type");
-        //}
-
         if (preHandler != null)
         {
-            T actionResult = preHandler();
-            if (actionResult != null)
-            {
-                return actionResult;
-            }
+            var pre = preHandler();
+            if (pre != null) return pre;
         }
 
-        if (exception is OrderLineNegativeException)
+        return exception switch
         {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-        }
-        // Missing parameters should be handled by the controller, these exceptions are therefore likely
-        // InternalServerError's
-        //else if (exception is ArgumentException)
-        //{
-        //    return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-        //}
-        //else if (exception is ArgumentNullException)
-        //{
-        //    return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-        //}
-        else if (exception is OrderLineNotFoundException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is ProductNotFoundException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is VariantNotFoundException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is NotEnoughStockException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.Conflict);
-        }
-        else if (exception is DiscountNotFoundException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is DiscountHasNoUsageException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotAcceptable);
-        }
-        else if (exception is DiscountUnableToFindCouponException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is StoreNotFoundException)
-        {
-            return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-        }
-        else if (exception is EkomHttpException custom)
-        {
-            var result = new ObjectResult(new { message = custom.Message })
-            {
-                StatusCode = (int)custom.StatusCode
-            };
-            return result as T;
-        }
-        else if (exception is EkomProblemDetailsException problem)
-        {
-            var problemDetails = problem.ProblemDetails;
+            OrderLineNegativeException => new StatusCodeResult((int)HttpStatusCode.BadRequest),
+            OrderLineNotFoundException => new NotFoundResult(),
+            ProductNotFoundException => new NotFoundResult(),
+            VariantNotFoundException => new NotFoundResult(),
+            NotEnoughStockException => new StatusCodeResult((int)HttpStatusCode.Conflict),
+            DiscountNotFoundException => new NotFoundResult(),
+            DiscountHasNoUsageException => new StatusCodeResult((int)HttpStatusCode.NotAcceptable),
+            DiscountUnableToFindCouponException => new NotFoundResult(),
+            StoreNotFoundException => new NotFoundResult(),
 
-            var result = new ObjectResult(problemDetails)
+            EkomHttpException httpEx => new ObjectResult(new { message = httpEx.Message })
             {
-                StatusCode = problemDetails.Status
-            };
+                StatusCode = (int)httpEx.StatusCode
+            },
 
-            return result as T;
-        }
-        if (defaultHandler != null)
-        {
-            T actionResult = defaultHandler();
-            if (actionResult != null)
+            EkomProblemDetailsException pdEx => new ObjectResult(pdEx.ProblemDetails)
             {
-                return actionResult;
-            }
-        }
-        return null;
+                StatusCode = pdEx.ProblemDetails.Status
+            },
+
+            _ when defaultHandler != null => defaultHandler(),
+            _ => null
+        };
     }
-
-    /// <summary>
-    /// Standardizes exception handling in Ekom Controllers for the most common exception types.
-    /// </summary>
-    /// <typeparam name="T">Only ActionResult, HttpResponseException and HttpResponseMessage are likely to make sense here</typeparam>
-    /// <returns></returns>
-    //public static T TryCatch<T>(
-    //    Exception exception,
-    //    Func<T> defaultHandler = null,
-    //    Func<T> preHandler = null) where T : class
-    //{
-    //    //if (!typeof(ActionResult).IsAssignableFrom(typeof(T)) && typeof(T) != typeof(HttpResponseMessage))
-    //    //{
-    //    //    throw new ArgumentException("Only ActionResult or HttpResponseMessage are supported as the generic return type");
-    //    //}
-
-    //    if (preHandler != null)
-    //    {
-    //        var actionResult = preHandler();
-    //        if (actionResult != null)
-    //        {
-    //            return actionResult;
-    //        }
-    //    }
-
-    //    if (exception is OrderLineNegativeException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.BadRequest);
-    //        }
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-    //    }
-    //    // Missing parameters should be handled by the controller, these exceptions are therefore likely
-    //    // InternalServerError's
-    //    //else if (exception is ArgumentException)
-    //    //{
-    //    //    return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-    //    //}
-    //    //else if (exception is ArgumentNullException)
-    //    //{
-    //    //    return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.BadRequest);
-    //    //}
-    //    else if (exception is OrderLineNotFoundException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.NotFound);
-    //        }
-
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-    //    }
-    //    else if (exception is ProductNotFoundException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.NotFound);
-    //        }
-
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-    //    }
-    //    else if (exception is DiscountNotFoundException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.NotFound);
-    //        }
-
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-    //    }
-    //    else if (exception is VariantNotFoundException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.NotFound);
-    //        }
-
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.NotFound);
-    //    }
-    //    else if (exception is NotEnoughStockException)
-    //    {
-    //        if (typeof(T) == typeof(IActionResult))
-    //        {
-    //            throw new HttpResponseException(HttpStatusCode.Conflict);
-    //        }
-
-    //        return (T)Activator.CreateInstance(typeof(T), HttpStatusCode.Conflict);
-    //    }
-
-    //    if (defaultHandler != null)
-    //    {
-    //        var actionResult = defaultHandler();
-    //        if (actionResult != null)
-    //        {
-    //            return actionResult;
-    //        }
-    //    }
-    //    return null;
-    //}
 }

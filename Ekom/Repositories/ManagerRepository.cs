@@ -48,17 +48,9 @@ public class ManagerRepository
 
     public async Task<IOrderInfo> GetOrderInfoAsync(Guid orderId)
     {
-        try
-        {
-            var culture = Thread.CurrentThread.CurrentCulture.Name;
+        var culture = Thread.CurrentThread.CurrentCulture.Name;
 
-            return await API.Order.Instance.GetOrderAsync(orderId);
-        }
-        catch (Exception ex)
-        {
-            ExceptionHandler.Handle<HttpResponseException>(ex);
-            throw;
-        }
+        return await API.Order.Instance.GetOrderAsync(orderId);
     }
 
     public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
