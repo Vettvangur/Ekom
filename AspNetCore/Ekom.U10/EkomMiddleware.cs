@@ -344,12 +344,16 @@ class EkomMiddleware
 
         if (string.IsNullOrEmpty(username))
         {
-            var authResult = await _context.AuthenticateAsync("OpenIddict.Validation.AspNetCore");
-
-            if (authResult.Succeeded && authResult.Principal != null)
+            var authorizationHeaderValue = _context.Request.Headers.Authorization;
+            if (!string.IsNullOrEmpty(authorizationHeaderValue))
             {
-                username = authResult.Principal.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
-                    ?? authResult.Principal.Identity?.Name;
+                var authResult = await _context.AuthenticateAsync("OpenIddict.Validation.AspNetCore");
+
+                if (authResult.Succeeded && authResult.Principal != null)
+                {
+                    username = authResult.Principal.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                        ?? authResult.Principal.Identity?.Name;
+                }
             }
         }
 
