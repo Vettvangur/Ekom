@@ -635,7 +635,7 @@ public class ImportService : IImportService
                 var importProductsById = importProducts.ToDictionary(x => x.Identifier);
                 var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
                 var umbracoCategoriesByIdentifier = allUmbracoCategories
-                    .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier))
+                    .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier) && !string.IsNullOrEmpty(x.GetValue<string>(Configuration.ImportAliasIdentifier)))
                     .ToDictionary(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "", x => x);
 
                 for (int i = targetedUmbracoProducts.Count - 1; i >= 0; i--)
