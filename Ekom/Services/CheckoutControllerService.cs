@@ -91,7 +91,7 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order).ConfigureAwait(false);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider).ConfigureAwait(false);
 
         var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
 
