@@ -1,5 +1,6 @@
 using Ekom.Models;
 using Ekom.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -30,25 +31,67 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
-    public async Task<IActionResult> Pay([FromBody] JObject data, [FromQuery] string culture)
-    {   
+    public async Task<IActionResult> Pay([FromQuery] string culture)
+    {
+        Request.EnableBuffering();
 
         culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
 
         try
         {
-            var paymentRequest = data.ToObject<PaymentRequest>();
+            PaymentRequest? paymentRequest = null;
+            Dictionary<string, string> additionalData = new(StringComparer.OrdinalIgnoreCase);
 
-            if (paymentRequest == null)
+            if (Request.HasFormContentType)
             {
-                return BadRequest("Invalid payment request data.");
+                var form = await Request.ReadFormAsync();
+
+                paymentRequest = new PaymentRequest
+                {
+                    PaymentProvider = form.TryGetValue("PaymentProvider", out var pp) && Guid.TryParse(pp, out var ppGuid) ? ppGuid : null,
+                    ShippingProvider = form.TryGetValue("ShippingProvider", out var sp) && Guid.TryParse(sp, out var spGuid) ? spGuid : null,
+                    CardNumber = form.TryGetValue("CardNumber", out var card) ? card.ToString() : "",
+                    CVV = form.TryGetValue("CVV", out var cvv) ? cvv.ToString() : "",
+                    Year = form.TryGetValue("Year", out var yearStr) && int.TryParse(yearStr, out var year) ? year : null,
+                    Month = form.TryGetValue("Month", out var monthStr) && int.TryParse(monthStr, out var month) ? month : null,
+                    StoreAlias = form.TryGetValue("StoreAlias", out var storeAlias) ? storeAlias.ToString() : "",
+                    ReturnUrl = form.TryGetValue("ReturnUrl", out var returnUrl) ? returnUrl.ToString() : "",
+                    Culture = form.TryGetValue("Culture", out var cultureVal) ? cultureVal.ToString() : culture
+                };
+
+                var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "PaymentProvider", "ShippingProvider", "CardNumber", "CVV", "Year", "Month", "StoreAlias", "ReturnUrl", "Culture"
+                };
+
+                paymentRequest.AdditionalData = form
+                    .Where(kvp => !knownKeys.Contains(kvp.Key))
+                    .ToDictionary(
+                        kvp => kvp.Key.Trim(),
+                        kvp => kvp.Value.ToString().Trim()
+                    );
+
+            }
+            else
+            {
+                // Expect JSON
+                using var reader = new StreamReader(Request.Body);
+                var jsonString = await reader.ReadToEndAsync();
+                var jObject = JObject.Parse(jsonString);
+
+                paymentRequest = jObject.ToObject<PaymentRequest>();
+
+                if (paymentRequest == null)
+                {
+                    return BadRequest("Invalid payment request data.");
+                }
+
+                additionalData = jObject.Properties()
+                    .DistinctBy(p => p.Name)
+                    .ToDictionary(p => p.Name.Trim(), p => p.Value.ToString().Trim());
             }
 
-            var additionalData = data.Properties()
-            .DistinctBy(p => p.Name)
-            .ToDictionary(p => p.Name, p => p.Value.ToString());
-
-            paymentRequest.AdditionalData = additionalData;
+            paymentRequest!.AdditionalData = additionalData;
 
             return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
         }
