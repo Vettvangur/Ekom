@@ -596,7 +596,7 @@ partial class OrderService
         string storeAlias = orderInfo.StoreInfo.Alias;
 
         // Verify order discount constraints
-        if (orderInfo.Discount != null
+        if (orderInfo.Discount?.Constraints != null
         && !orderInfo.Discount.Constraints.IsValid(
             storeAlias,
             total))
@@ -620,7 +620,7 @@ partial class OrderService
         // Verify order line discount constraints
         foreach (OrderLine line in orderInfo.orderLines)
         {
-            if (line.Discount != null)
+            if (line.Discount?.Constraints != null)
             {
                 if (line.Discount?.Constraints.IsValid(storeAlias, total) == false
                 || !IsDiscountApplicable(orderInfo, line, line.Discount))
@@ -639,6 +639,11 @@ partial class OrderService
     /// <returns></returns>
     private bool IsDiscountApplicable(IOrderInfo orderInfo, IDiscount discount)
     {
+        // Constraints is set to null if there are no constraints
+        if (discount.Constraints == null)
+        {
+            return true;
+        }
         if (!discount.GlobalDiscount && !discount.DiscountItems.Any())
         {
             return false;
@@ -657,6 +662,11 @@ partial class OrderService
     /// <returns></returns>
     public static bool IsDiscountApplicable(IOrderInfo orderInfo, IOrderLine orderLine, IDiscount discount)
     {
+        // Constraints is set to null if there are no constraints
+        if (discount.Constraints == null)
+        {
+            return true;
+        }
         if (!discount.Stackable && orderLine.Product.ProductDiscount != null)
         {
             return false;
