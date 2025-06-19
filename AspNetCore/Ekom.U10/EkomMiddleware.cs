@@ -146,7 +146,6 @@ class EkomMiddleware
     {
         try
         {
-
             if (request.Query != null && request.Query.TryGetValue("storeAlias", out var storeAliasValue) && !string.IsNullOrEmpty(storeAliasValue))
             {
                 return storeAliasValue;
@@ -273,13 +272,6 @@ class EkomMiddleware
                 return;
             }
 
-            var isAuthenticated = await IsAuthenticated();
-
-            if (!isAuthenticated.IsAuthenticated)
-            {
-                return;
-            }
-
             var requestPath = "";
 
             try
@@ -295,7 +287,8 @@ class EkomMiddleware
                 {
                     requestPath = string.Empty; // Or log the issue for debugging
                 }
-            } catch
+            }
+            catch
             {
                 return;
             }
@@ -304,6 +297,15 @@ class EkomMiddleware
             {
                 return;
             }
+
+            var isAuthenticated = await IsAuthenticated();
+
+            if (!isAuthenticated.IsAuthenticated)
+            {
+                return;
+            }
+
+
 
             if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest()) is ContentRequest ekmRequest)
             {

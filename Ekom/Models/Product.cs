@@ -308,7 +308,6 @@ public class Product : PerStoreNodeEntity, IProduct
                 return primaryOriginalPrice;
             }
 
-            // Store frequently accessed values to avoid redundant access
             CurrencyModel storeCurrency = Store.Currency;
             decimal storeVat = Store.Vat;
             bool storeVatIncluded = Store.VatIncludedInPrice;
