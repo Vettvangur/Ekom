@@ -276,7 +276,7 @@ public class ImportService : IImportService
             (stopwatch.ElapsedMilliseconds / 1000.0).ToString("F2"), parentKey, categoriesSaved.Count, productsSaved.Where(x => x.Exception == null).Count(), productsSaved.Where(x => x.Exception != null).Count(), variantsSaved.Count, variantGroupsSaved.Count, categoriesDeleted, productDeleted, variantDeleted, variantGroupDeleted);
     }
 
-    public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
+    public void ProductSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, bool forceUpdate = false)
     {
         _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
@@ -295,7 +295,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, false);
+        IterateProductTree(new List<ImportProduct> { importProduct }, allEkomNodes, allUmbracoProducts, allUmbracoCategories, allUmbracoMedia, syncUser, false, forceUpdate: forceUpdate);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductSync)).GetAwaiter().GetResult();
 
@@ -349,7 +349,7 @@ public class ImportService : IImportService
 
         _logger.LogInformation("Product Variant finished: {SKU}", importVariant.SKU);
     }
-    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1)
+    public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, bool forceUpdate = false)
     {
         _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
@@ -375,7 +375,7 @@ public class ImportService : IImportService
             throw new ArgumentNullException(nameof(product), $"Product is null. Identifier: {importProduct.Identifier} SKU: {importProduct.SKU} ParentKey: {parentKey}");
         }
 
-        SaveProduct(product, importProduct, allUmbracoCategories, null, false, syncUser);
+        SaveProduct(product, importProduct, allUmbracoCategories, null, false, syncUser, forceUpdate: forceUpdate);
 
         OnSyncFinished(this, new ImportSyncFinishedEventArgs(categoriesSaved, productsSaved, variantsSaved, variantGroupsSaved, ImportSyncType.ProductUpdateSync)).GetAwaiter().GetResult();
 
@@ -610,7 +610,7 @@ public class ImportService : IImportService
         }
     }
 
-    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null)
+    private void IterateProductTree(List<ImportProduct> importProducts, List<IContent> allEkomNodes, List<IContent> allUmbracoProducts, List<IContent> allUmbracoCategories, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
     {
         ArgumentNullException.ThrowIfNull(categoryContentType);
         ArgumentNullException.ThrowIfNull(productContentType);
@@ -754,9 +754,9 @@ public class ImportService : IImportService
 
                         var save = create;
 
-                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser, recycleBinNode, productProcessNode);
+                        SaveProduct(productContent, importProduct, allUmbracoCategories, allUmbracoMedia, create, syncUser, recycleBinNode, productProcessNode, forceUpdate);
 
-                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, syncUser);
+                        IterateVariantGroups(importProduct.VariantGroups, productContent, allEkomNodes, allUmbracoMedia, syncUser, forceUpdate: forceUpdate);
                     }
                     else
                     {
@@ -773,7 +773,7 @@ public class ImportService : IImportService
 
     }
 
-    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser)
+    private void IterateVariantGroups(List<ImportVariantGroup> importVariantGroups, IContent productContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool forceUpdate = false)
     {
         var umbracoVariantGroupChildrenContent = allEkomNodes.Where(x => x.ParentId == productContent.Id).ToList();
 
@@ -815,13 +815,13 @@ public class ImportService : IImportService
 
             var save = create;
 
-            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser);
+            SaveVariantGroup(variantGroupContent, importVariantGroup, allUmbracoMedia, create, syncUser, forceUpdate: forceUpdate);
 
-            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser);
+            IterateVariants(importVariantGroup.Variants, variantGroupContent, allEkomNodes, allUmbracoMedia, syncUser, forceUpdate: forceUpdate);
         }
     }
 
-    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true)
+    private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, bool forceUpdate = false)
     {
         var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
 
@@ -867,7 +867,7 @@ public class ImportService : IImportService
 
             var save = create;
 
-            SaveVariant(variantContent, importVariant, allUmbracoMedia, create, syncUser);
+            SaveVariant(variantContent, importVariant, allUmbracoMedia, create, syncUser, forceUpdate: forceUpdate);
         }
     }
 
@@ -940,7 +940,7 @@ public class ImportService : IImportService
         }
 
     }
-    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser, IContent? recycleBinNode = null, IContent? productProcessNode = null)
+    private void SaveProduct(IContent productContent, ImportProduct importProduct, List<IContent>? allUmbracoCategories, List<IMedia>? allUmbracoMedia, bool create, int syncUser, IContent? recycleBinNode = null, IContent? productProcessNode = null, bool forceUpdate = false)
     {
         try
         {
@@ -984,7 +984,7 @@ public class ImportService : IImportService
             var compareValue = importProduct.Comparer ?? ComputeSha256Hash(importProduct, new string[] { "VariantGroups", "Images", "EventProperties", "Files", "Stock", "UpdateSlug" });
 
             // If no changes are found and not creating then return,
-            if (!HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
+            if (!forceUpdate && !HasContentChanges(productContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
             {
                 return;
             }
@@ -1075,14 +1075,14 @@ public class ImportService : IImportService
             productsSaved.Add(importProduct);
         }
     }
-    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser)
+    private void SaveVariantGroup(IContent variantGroupContent, ImportVariantGroup importVariantGroup, List<IMedia> allUmbracoMedia, bool create, int syncUser, bool forceUpdate = false)
     {
         var saveImages = ImportMedia(variantGroupContent, importVariantGroup.Images, allUmbracoMedia, preserveExistingValues: importVariantGroup.PreserveExistingValues);
 
         var compareValue = importVariantGroup.Comparer ?? ComputeSha256Hash(importVariantGroup, new string[] { "Variants", "Images", "EventProperties" });
 
         // If no changes are found and not creating then return,
-        if (!HasContentChanges(variantGroupContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
+        if (!forceUpdate && !HasContentChanges(variantGroupContent.GetValue<string>("comparer"), compareValue) && !create && !saveImages)
         {
             return;
         }
@@ -1112,7 +1112,7 @@ public class ImportService : IImportService
 
         variantGroupsSaved.Add(importVariantGroup);
     }
-    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser)
+    private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser, bool forceUpdate = false)
     {
         var args = new ImportVariantEventArgs(variantContent, importVariant, create, false,false);
 
@@ -1147,7 +1147,7 @@ public class ImportService : IImportService
         var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
 
         // If no changes are found and not creating then return,
-        if (!HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
+        if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
         {
             return;
         }
