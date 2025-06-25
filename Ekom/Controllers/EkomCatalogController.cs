@@ -254,6 +254,19 @@ public class EkomCatalogController : ControllerBase
     }
 
     /// <summary>
+    /// Get All Products
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost, HttpGet]
+    [Route("allproducts")]
+    public IActionResult GetAllProducts([FromBody] ProductQuery? query = null)
+    {
+        ProductResponse productsResponse = API.Catalog.Instance.GetAllProducts(query);
+
+        return Ok(productsResponse);
+    }
+
+    /// <summary>
     /// Get Category By Id
     /// </summary>
     /// <param name="Id">Int Id of category</param>
