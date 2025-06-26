@@ -867,7 +867,7 @@ public class Catalog
 
         if (product == null)
         {
-            throw new ArgumentNullException(nameof(product));
+            return Enumerable.Empty<IProduct>();
         }
 
         return product.RelatedProducts(count);
