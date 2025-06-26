@@ -606,7 +606,7 @@ public class ImportService : IImportService
             SaveCategory(content, importCategory, allUmbracoMedia, create, syncUser);
 
 
-            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser);
+            IterateCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, allUmbracoMedia, content, syncUser, delete: delete);
         }
     }
 
