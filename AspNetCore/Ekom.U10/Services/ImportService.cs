@@ -632,7 +632,16 @@ public class ImportService : IImportService
                     .ToList();
 
                 var importProductIdentifiers = importProducts.Select(x => x.Identifier).ToHashSet();
-                var importProductsById = importProducts.ToDictionary(x => x.Identifier);
+
+                var importProductsById = new Dictionary<string, ImportProduct>();
+                foreach (var product in importProducts)
+                {
+                    if (!importProductsById.TryAdd(product.Identifier, product))
+                    {
+                        _logger.LogWarning("Duplicate identifier '{Identifier}' found in importProducts, skipping duplicate", product.Identifier);
+                    }
+                }
+
                 var umbracoCategoriesById = allUmbracoCategories.ToDictionary(x => x.Id);
                 var umbracoCategoriesByIdentifier = allUmbracoCategories
                     .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier) && !string.IsNullOrEmpty(x.GetValue<string>(Configuration.ImportAliasIdentifier)))
