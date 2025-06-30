@@ -4,8 +4,6 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using OpenIddict.Validation.AspNetCore;
-using System.Runtime.Intrinsics.X86;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -26,7 +24,6 @@ class EkomMiddleware
     private readonly IUmbracoContextFactory _umbracoContextFac;
     private readonly AppCaches _appCaches;
     private readonly IMemberService _memberService;
-    private HttpContext _context;
 
     public EkomMiddleware(
         RequestDelegate next,
@@ -49,14 +46,12 @@ class EkomMiddleware
         HttpContext context
     )
     {
-        _context = context;
-
-        OnBeginRequest(_umbracoContextFac, _appCaches);
-        await OnAuthenticateRequest(_appCaches, _memberService);
+        OnBeginRequest(_umbracoContextFac, _appCaches, context);
+        await OnAuthenticateRequest(_appCaches, _memberService, context);
 
         await _next.Invoke(context);
 
-        OnPostRequestHandlerExecute(_umbracoContextFac);
+        OnPostRequestHandlerExecute(_umbracoContextFac, context);
     }
 
     /// <summary>
@@ -68,7 +63,7 @@ class EkomMiddleware
     /// Another option would have been to always return the list of urls for a product/category,
     /// leaving it to the frontend to match, sub-par solution but simpler?
     /// </summary>
-    private void OnPostRequestHandlerExecute(IUmbracoContextFactory umbracoContextFac)
+    private void OnPostRequestHandlerExecute(IUmbracoContextFactory umbracoContextFac, HttpContext context)
     {
         try
         {
@@ -76,7 +71,7 @@ class EkomMiddleware
             if (umbCtx?.UmbracoContext.PublishedRequest?.Domain?.Uri != null)
             {
                 CookieHelper.SetUmbracoDomain(
-                    _context.Response.Cookies,
+                    context.Response.Cookies,
                     umbCtx.UmbracoContext.PublishedRequest.Domain.Uri);
             }
         }
@@ -86,23 +81,23 @@ class EkomMiddleware
         }
     }
 
-    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches)
+    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches, HttpContext context)
     {
         try
         {
-            if (_context?.Request == null)
+            if (context?.Request == null)
             {
                 return;
             }
 
-            var requestPath = _context.Request?.Path.ToString();
+            var requestPath = context.Request?.Path.ToString();
 
             if (!AllowPath(requestPath))
             {
                 return;
             }
 
-            if (_context.RequestServices == null)
+            if (context.RequestServices == null)
             {
                 return;
             }
@@ -118,10 +113,10 @@ class EkomMiddleware
             {
                 IStore? store = null;
 
-                if (_context?.Request != null)
+                if (context?.Request != null)
                 {
                     // Check for 'storeAlias' in the query string
-                    var storeAlias = GetStoreAliasFromRequest(_context.Request);
+                    var storeAlias = GetStoreAliasFromRequest(context.Request);
                     if (!string.IsNullOrEmpty(storeAlias))
                     {
                         store = API.Store.Instance.GetStore(storeAlias);
@@ -260,14 +255,15 @@ class EkomMiddleware
 
     private async Task OnAuthenticateRequest(
         AppCaches appCaches,
-        IMemberService memberService)
+        IMemberService memberService,
+        HttpContext context)
     {
 
         try
         {
 
 
-            if (_context?.Request == null)
+            if (context?.Request == null)
             {
                 return;
             }
@@ -276,11 +272,11 @@ class EkomMiddleware
 
             try
             {
-                if (_context.Request != null && _context.Request.Path != null)
+                if (context.Request != null && context.Request.Path != null)
                 {
-                    requestPath = _context.Request.Path.HasValue
-                                  && _context.Request.Path.Value != "/null"
-                        ? _context.Request.Path.Value
+                    requestPath = context.Request.Path.HasValue
+                                  && context.Request.Path.Value != "/null"
+                        ? context.Request.Path.Value
                         : string.Empty;
                 }
                 else
@@ -298,7 +294,7 @@ class EkomMiddleware
                 return;
             }
 
-            var isAuthenticated = await IsAuthenticated();
+            var isAuthenticated = await IsAuthenticated(context);
 
             if (!isAuthenticated.IsAuthenticated)
             {
@@ -337,19 +333,19 @@ class EkomMiddleware
     }
 
 
-    public async Task<(bool IsAuthenticated, string Username)> IsAuthenticated()
+    public async Task<(bool IsAuthenticated, string Username)> IsAuthenticated(HttpContext context)
     {
-        string? username = _context.User.Identity?.IsAuthenticated == true
-            ? _context.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
-                ?? _context.User.Identity?.Name
+        string? username = context.User.Identity?.IsAuthenticated == true
+            ? context.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                ?? context.User.Identity?.Name
             : null;
 
         if (string.IsNullOrEmpty(username))
         {
-            var authorizationHeaderValue = _context.Request.Headers.Authorization;
+            var authorizationHeaderValue = context.Request.Headers.Authorization;
             if (!string.IsNullOrEmpty(authorizationHeaderValue))
             {
-                var authResult = await _context.AuthenticateAsync("OpenIddict.Validation.AspNetCore");
+                var authResult = await context.AuthenticateAsync("OpenIddict.Validation.AspNetCore");
 
                 if (authResult.Succeeded && authResult.Principal != null)
                 {
