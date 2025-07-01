@@ -34,16 +34,23 @@ public class OrderedPaymentProvider
 
     public OrderedPaymentProvider(JObject paymentProviderObject, StoreInfo storeInfo)
     {
-        if (paymentProviderObject.ContainsKey(nameof(Properties)))
+        if (paymentProviderObject.TryGetValue(nameof(Properties), out var propertiesToken))
         {
-            Properties = new ReadOnlyDictionary<string, string>(
-            paymentProviderObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
+            var props = propertiesToken.ToObject<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+            Properties = new ReadOnlyDictionary<string, string>(props);
+        }
+        else
+        {
+            Properties = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
         }
 
-        if (paymentProviderObject.ContainsKey(nameof(CustomData)))
+        if (paymentProviderObject.TryGetValue(nameof(CustomData), out var customDataToken))
         {
-            CustomData = new Dictionary<string, string>(
-            paymentProviderObject[nameof(CustomData)].ToObject<Dictionary<string, string>>());
+            CustomData = customDataToken.ToObject<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+        }
+        else
+        {
+            CustomData = new Dictionary<string, string>();
         }
 
         StoreInfo = storeInfo;
