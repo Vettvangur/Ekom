@@ -210,5 +210,6 @@ class EkomStartup : IComponent
 
     public void Terminate()
     {
+        Payments.Events.SuccessAsync -= CompleteCheckoutAsync;
     }
 }
