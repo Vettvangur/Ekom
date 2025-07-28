@@ -285,52 +285,50 @@ internal class MetafieldService : IMetafieldService
 
         if (query?.MetaFilters?.Any() == true)
         {
-            Dictionary<string, List<string>> filterCriteria = query.MetaFilters;
+            var filterCriteria = query.MetaFilters;
 
             products = products.Where(product =>
             {
-                // Check if all filter criteria are met for this product
-                return filterCriteria.All(criteria =>
+                foreach (var (key, expectedValues) in filterCriteria)
                 {
-                    // Find the matching metafields for the current criteria
-                    var matchingMetafields = product.Metafields.Where(metaField =>
-                        metaField.Field.Id.ToString() == criteria.Key
-                    );
+                    var matchingMetafields = product.Metafields
+                        .Where(metaField =>
+                            metaField.Field.Id.ToString() == key ||
+                            metaField.Field.Alias.Equals(key, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
 
-                    // Get the AllConditionsMustMatch flag from the metafield
-                    bool allConditionsMustMatch = matchingMetafields.Any(metaField => metaField.Field.AllConditionsMustMatch);
+                    if (!matchingMetafields.Any())
+                        return false;
+
+                    bool allConditionsMustMatch = matchingMetafields.Any(mf => mf.Field.AllConditionsMustMatch);
 
                     if (allConditionsMustMatch)
                     {
-                        // Use AND logic: all values must match
-                        return matchingMetafields.All(metaField =>
-                            criteria.Value.All(value =>
-                                metaField.Values.SelectMany(v => v.Values).Contains(value)
-                            )
-                        );
+                        // AND logic: all values must match across all matching metafields
+                        foreach (var value in expectedValues)
+                        {
+                            bool valueMatched = matchingMetafields.Any(metaField =>
+                                metaField.Values.Any(dict =>
+                                    dict.Values.Contains(value)));
+
+                            if (!valueMatched)
+                                return false;
+                        }
                     }
                     else
                     {
-                        // Use OR logic: any value can match
-                        return matchingMetafields.Any(metaField =>
-                            criteria.Value.Intersect(
-                                metaField.Values.SelectMany(v => v.Values)
-                            ).Any()
-                        );
-                    }
-                });
-            });
+                        // OR logic: any value must match
+                        bool matched = matchingMetafields.Any(metaField =>
+                            metaField.Values.Any(dict =>
+                                dict.Values.Any(val => expectedValues.Contains(val))));
 
-            //products = products
-            //    .Where(x =>
-            //        x.Metafields.Any(metaField =>
-            //            query.MetaFilters.Where(filter => filter.Value != null && filter.Value.Any())
-            //            .All(filter =>
-            //                filter.Key == metaField.Field.Id.ToString() &&
-            //                filter.Value.Intersect(metaField.Values.SelectMany(v => v.Values.Select(c => c).ToList())).Any()
-            //            )
-            //        )
-            //);
+                        if (!matched)
+                            return false;
+                    }
+                }
+
+                return true;
+            });
         }
 
         if (query?.PropertyFilters?.Any() == true)
