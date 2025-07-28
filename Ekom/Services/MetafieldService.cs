@@ -227,14 +227,14 @@ internal class MetafieldService : IMetafieldService
 
     public string GetMetaFieldValue(IProduct product, string metafieldAlias, string culture = "")
     {
-        List<Metavalue> nodeMetaFields = product.Metafields;
+        var nodeMetaFields = product.Metafields;
 
         if (nodeMetaFields == null || !nodeMetaFields.Any())
         {
             return string.Empty;
         }
 
-        Metavalue? metaField = nodeMetaFields.FirstOrDefault(x => x.Field.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
+        var metaField = nodeMetaFields.FirstOrDefault(x => x.Field.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
 
         if (metaField == null)
         {
@@ -243,7 +243,7 @@ internal class MetafieldService : IMetafieldService
 
         if (metaField.Values.Any(x => x.ContainsKey("")))
         {
-            return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault();
+            return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault() ?? "";
         }
 
         if (metaField.Values.Any(x => x.ContainsKey(culture)))
@@ -251,19 +251,19 @@ internal class MetafieldService : IMetafieldService
             return string.Join(",", metaField.Values.Where(x => x.ContainsKey(culture)).Select(d => d.GetValue(culture)));
         }
 
-        return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault();
+        return metaField.Values.FirstOrDefault()?.Values.FirstOrDefault() ?? "";
     }
 
     public IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true)
     {
-        List<Metavalue> metafields = products
+        var metafields = products
          .SelectMany(x => x.Metafields)
          .Where(x => x.Field.Filterable == filterable)
          .ToList();
 
-        IEnumerable<IGrouping<Metafield, Metavalue>> grouped = metafields.GroupBy(x => x.Field, new MetafieldComparer());
+        var grouped = metafields.GroupBy(x => x.Field, new MetafieldComparer());
 
-        foreach (IGrouping<Metafield, Metavalue> group in grouped)
+        foreach (var group in grouped)
         {
             List<Dictionary<string, string>> distinctValues = group
                 .SelectMany(x => x.Values)
@@ -293,7 +293,7 @@ internal class MetafieldService : IMetafieldService
                 return filterCriteria.All(criteria =>
                 {
                     // Find the matching metafields for the current criteria
-                    IEnumerable<Metavalue> matchingMetafields = product.Metafields.Where(metaField =>
+                    var matchingMetafields = product.Metafields.Where(metaField =>
                         metaField.Field.Id.ToString() == criteria.Key
                     );
 

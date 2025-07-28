@@ -369,18 +369,44 @@ public class Product : PerStoreNodeEntity, IProduct
     }
 
 
-    public virtual List<Metavalue> Metafields
+    public virtual List<MetavalueSlim> Metafields
     {
         get
         {
-            if (Properties.HasPropertyValue("metafields"))
+            if (!Properties.HasPropertyValue("metafields"))
             {
-                string value = GetValue("metafields");
-
-                return Configuration.Resolver.GetService<IMetafieldService>()?.SerializeMetafields(value, Id) ?? new List<Metavalue>();
+                return [];
             }
+                
+            var value = GetValue("metafields");
+            var metafieldService = Configuration.Resolver.GetService<IMetafieldService>();
 
-            return new List<Metavalue>();
+            if (metafieldService == null)
+            {
+                return [];
+            }
+ 
+            var metafields = metafieldService.SerializeMetafields(value, Id);
+
+            return metafields.Select(m => new MetavalueSlim
+            {
+                Field = new MetafieldSlim
+                {
+                    Id = m.Field.Id,
+                    Key = m.Field.Key,
+                    Name = m.Field.Name,
+                    Alias = m.Field.Alias,
+                    Title = m.Field.Title,
+                    Description = m.Field.Description,
+                    Filterable = m.Field.Filterable,
+                    EnableMultipleChoice = m.Field.EnableMultipleChoice,
+                    Required = m.Field.Required,
+                    ReadOnly = m.Field.ReadOnly,
+                    AllConditionsMustMatch = m.Field.AllConditionsMustMatch,
+                    Values = m.Field.Values
+                },
+                Values = m.Values
+            }).ToList();
         }
     }
 

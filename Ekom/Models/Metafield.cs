@@ -66,6 +66,26 @@ public class MetafieldValues
 
 public class MetafieldGrouped
 {
-    public Metafield Field { get; set; }
+    public MetafieldSlim Field { get; set; }
     public List<Dictionary<string, string>> Values { get; set; } = new List<Dictionary<string, string>>();
+}
+
+public class MetafieldSlim
+{
+    public int Id { get; set; }
+    public Guid Key { get; set; }
+    public string Name { get; set; }
+    public string Alias { get; set; }
+    public Dictionary<string, string> Title { get; set; } = new();
+    public string Description { get; set; }
+    public bool Filterable { get; set; }
+    public bool EnableMultipleChoice { get; set; }
+    public bool Required { get; set; }
+    public bool ReadOnly { get; set; }
+    public bool AllConditionsMustMatch { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
+    public List<MetafieldValues> Values { get; set; } = new();
 }
