@@ -37,7 +37,7 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// </value>
     decimal Vat { get; }
 
-    List<Metavalue> Metafields { get; }
+    List<MetavalueSlim> Metafields { get; }
 
     /// <summary>
     /// Gets the stock.
