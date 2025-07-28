@@ -4,8 +4,36 @@ meta {
   seq: 12
 }
 
-get {
+post {
   url: {{baseUrl}}/ekom/catalog/allproducts
-  body: none
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "propertyFilters": {},
+    "metaFilters": {
+      "sleeveLength": ["Short Sleeve"]
+    },
+    "page": 1,
+    "pageSize": 10,
+    "orderBy": "DateDesc"
+  }
+  
+  // Order By Options:
+  
+  // UmbracoSortOrderAsc,
+  // UmbracoSortOrderDesc,
+  // TitleAsc,
+  // TitleDesc,
+  // PriceAsc,
+  // PriceDesc,
+  // DateAsc,
+  // DateDesc,
+  // SkuAsc,
+  // SkuDesc,
+  // Score,
+  // NoOrder,
+  
 }
