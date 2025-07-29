@@ -1435,7 +1435,7 @@ partial class OrderService
             {
                 Dictionary<string, string> customData = form.Keys
                     .Where(x => !string.Equals(x, paymentProviderKey, StringComparison.OrdinalIgnoreCase) &&
-                                x.StartsWith("custompayment", StringComparison.InvariantCultureIgnoreCase))
+                                x.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
                     .ToDictionary(
                         k => k,
                         v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
