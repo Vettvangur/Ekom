@@ -246,7 +246,7 @@ public class CheckoutControllerService
             bool saveCustomerData = false;
 
             // Ensure storeAlias is present
-            if (!formCollection.ContainsKey("storeAlias"))
+            if (!formCollection.Keys.Any(k => string.Equals(k, "storeAlias", StringComparison.OrdinalIgnoreCase)))
             {
                 formCollection.Add("storeAlias", order.StoreInfo.Alias);
                 saveCustomerData = true;

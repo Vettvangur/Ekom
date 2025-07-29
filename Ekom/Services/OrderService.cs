@@ -1407,26 +1407,38 @@ partial class OrderService
             throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
-        if (form.TryGetValue("ShippingProvider", out string? shippingProvider))
+        var shippingProviderKey = form.Keys
+            .FirstOrDefault(k => string.Equals(k, "ShippingProvider", StringComparison.OrdinalIgnoreCase));
+
+        if (shippingProviderKey != null && form.TryGetValue(shippingProviderKey, out string? shippingProvider))
         {
-            if (Guid.TryParse(shippingProvider, out Guid _providerKey))
+            if (Guid.TryParse(shippingProvider, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
             {
-                Dictionary<string, string> customData = form.Keys.Where(x => x != "ShippingProvider" && x.StartsWith("customshipping", StringComparison.InvariantCulture)).ToDictionary(
-                    k => k,
-                    v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+                Dictionary<string, string> customData = form.Keys
+                    .Where(x => !string.Equals(x, shippingProviderKey, StringComparison.OrdinalIgnoreCase) &&
+                                x.StartsWith("customshipping", StringComparison.InvariantCultureIgnoreCase))
+                    .ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
                 orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
-
             }
         }
 
-        if (form.TryGetValue("PaymentProvider", out string? paymentProvider))
+
+        var paymentProviderKey = form.Keys
+            .FirstOrDefault(k => string.Equals(k, "PaymentProvider", StringComparison.OrdinalIgnoreCase));
+
+        if (paymentProviderKey != null && form.TryGetValue(paymentProviderKey, out string? paymentProvider))
         {
-            if (Guid.TryParse(paymentProvider, out Guid _providerKey))
+            if (Guid.TryParse(paymentProvider, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
             {
-                Dictionary<string, string> customData = form.Keys.Where(x => x != "PaymentProvider" && x.StartsWith("custompayment", StringComparison.InvariantCulture)).ToDictionary(
-                    k => k,
-                    v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+                Dictionary<string, string> customData = form.Keys
+                    .Where(x => !string.Equals(x, paymentProviderKey, StringComparison.OrdinalIgnoreCase) &&
+                                x.StartsWith("custompayment", StringComparison.InvariantCultureIgnoreCase))
+                    .ToDictionary(
+                        k => k,
+                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
 
                 orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
             }
@@ -1436,7 +1448,7 @@ partial class OrderService
         {
             string value = form[key];
 
-            if (key == "customerEmail")
+            if (key == "customerEmail" && !string.IsNullOrEmpty(value))
             {
                 if (!value.IsValidEmail())
                 {
