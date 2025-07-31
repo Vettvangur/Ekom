@@ -112,8 +112,22 @@ namespace Ekom.Utilities
             className = className ?? defaultClassName;
 
             MvcForm form = htmlHelper.BeginForm(actionName, "Checkout", new { }, FormMethod.Post, true, htmlAttributes: htmlAttributes != null ? htmlAttributes : new { @class = className, @id = Id });
+           
+            var request = htmlHelper.ViewContext.HttpContext.Request;
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value ?? "");
 
-            htmlHelper.ViewContext.Writer.WriteLine($"<input type='hidden' name='returnUrl' value='{htmlHelper.ViewContext.HttpContext.Request.GetDisplayUrl()}' />");
+            var filteredQuery = query
+                .Where(kvp =>
+                    !string.Equals(kvp.Key, "errorStatus", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(kvp.Key, "errorMessage", StringComparison.OrdinalIgnoreCase))
+                .SelectMany(kvp => kvp.Value, (kvp, value) => $"{kvp.Key}={value}");
+
+            var baseUrl = request.Path;
+            var queryString = string.Join("&", filteredQuery);
+            var returnUrl = $"{request.Scheme}://{request.Host}{baseUrl}{(string.IsNullOrEmpty(queryString) ? "" : "?" + queryString)}";
+
+
+            htmlHelper.ViewContext.Writer.WriteLine($"<input type='hidden' name='returnUrl' value='{returnUrl}' />");
 
             return form;
         }

@@ -1,7 +1,9 @@
+using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,6 +15,7 @@ namespace Ekom.Controllers;
 /// Handles order/cart creation, updates and removals
 /// </summary>
 [Route("ekom/checkout")]
+[ServiceFilter(typeof(ApiExceptionFilter))]
 public class EkomCheckoutApiController : ControllerBase
 {
     /// <summary>
@@ -33,12 +36,12 @@ public class EkomCheckoutApiController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Pay([FromQuery] string culture)
     {
-        Request.EnableBuffering();
-
-        culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
-
         try
         {
+            Request.EnableBuffering();
+
+            culture = string.IsNullOrEmpty(culture) ? Thread.CurrentThread.CurrentCulture.Name : culture;
+
             PaymentRequest? paymentRequest = null;
             Dictionary<string, string> additionalData = new(StringComparer.OrdinalIgnoreCase);
 
@@ -95,15 +98,12 @@ public class EkomCheckoutApiController : ControllerBase
 
             return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
         }
-        catch (ArgumentNullException ex)
-        {
-            return NotFound(ex.Message);
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Checkout payment failed!");
-            return StatusCode(500);
+            throw;
         }
+      
     }
 
     private IActionResult ResponseHandler(CheckoutResponse checkoutResponse)
@@ -178,57 +178,87 @@ public class CheckoutController : ControllerBase
                 culture);
         }
         catch (Exception ex)
-
         {
             _logger.LogError(ex, "Checkout payment failed!");
-            return Redirect(paymentRequest.ReturnUrl + "?errorStatus=serverError");
+
+            var returnUrl = paymentRequest.ReturnUrl ?? "/";
+            var finalUrl = QueryHelpers.AddQueryString(returnUrl, "errorStatus", "serverError");
+            
+            if (ex is EkomProblemDetailsException)
+            {
+                var problemException = ex as EkomProblemDetailsException;
+
+                var title = problemException.ProblemDetails.Title;
+                var detail = problemException.ProblemDetails.Detail;
+
+                string problemMessage = !string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(detail)
+                    ? $"{title} - {detail}"
+                    : title ?? detail ?? string.Empty;
+
+                var url = QueryHelpers.AddQueryString(returnUrl, "errorMessage", problemMessage);
+
+                return ResponseHandler(new CheckoutResponse()
+                {
+                    HttpStatusCode = problemException.ProblemDetails.Status.HasValue ? problemException.ProblemDetails.Status.Value : 500,
+                    ReturnUrl = url
+                });
+            }
+
+            return Redirect(finalUrl);
         }
     }
 
     private ActionResult ResponseHandler(CheckoutResponse checkoutResponse)
     {
-        if (checkoutResponse != null)
+        if (checkoutResponse == null)
         {
-            if (checkoutResponse.HttpStatusCode != 530 ||
-                checkoutResponse.ResponseBody is not StockError stockError)
+            return StatusCode(500);
+        }
+
+        var returnUrl = checkoutResponse.ReturnUrl ?? "/";
+
+        if (checkoutResponse.HttpStatusCode != 530 ||
+            checkoutResponse.ResponseBody is not StockError stockError)
+        {
+            if (checkoutResponse.HttpStatusCode == 230)
             {
-                if (checkoutResponse.HttpStatusCode == 230)
-                {
-                    return Content(checkoutResponse.ResponseBody as string, "text/html");
-                }
-
-                if (checkoutResponse.HttpStatusCode == 400)
-                {
-                    return Redirect(checkoutResponse.ReturnUrl + "?errorStatus=invalidData");
-                }
-
-                if (checkoutResponse.HttpStatusCode == 300)
-                {
-                    return Redirect(checkoutResponse.ResponseBody as string);
-                }
-
-                return Redirect(
-                    checkoutResponse.ReturnUrl + "?errorStatus=" + checkoutResponse.ResponseBody as string);
+                return Content(checkoutResponse.ResponseBody as string, "text/html");
             }
 
-            if (stockError.OrderLineKey == Guid.Empty)
+            if (checkoutResponse.HttpStatusCode == 400)
             {
-                return Redirect(
-                    checkoutResponse.ReturnUrl +
-                    "?errorStatus=stockError&errorType=" +
-                    stockError.Exception.Message);
+                var url = QueryHelpers.AddQueryString(returnUrl, "errorStatus", "invalidData");
+                return Redirect(url);
             }
-            else
+
+            if (checkoutResponse.HttpStatusCode == 300)
             {
-                string type = stockError.IsVariant ? "variant" : "product";
-                return Redirect(checkoutResponse.ReturnUrl +
-                                $"?errorStatus=stockError&errorType={type}&orderline=" +
-                                stockError.OrderLineKey);
+                return Redirect(checkoutResponse.ResponseBody as string);
             }
+
+            var error = checkoutResponse.ResponseBody?.ToString() ?? "unknown";
+            var urlWithError = QueryHelpers.AddQueryString(returnUrl, "errorStatus", error);
+            return Redirect(urlWithError);
+        }
+
+        if (stockError.OrderLineKey == Guid.Empty)
+        {
+            var url = QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            { "errorStatus", "stockError" },
+            { "errorType", stockError.Exception?.Message ?? "unknown" }
+        });
+            return Redirect(url);
         }
         else
         {
-            return StatusCode(500);
+            var url = QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
+        {
+            { "errorStatus", "stockError" },
+            { "errorType", stockError.IsVariant ? "variant" : "product" },
+            { "orderline", stockError.OrderLineKey.ToString() }
+        });
+            return Redirect(url);
         }
     }
 }
