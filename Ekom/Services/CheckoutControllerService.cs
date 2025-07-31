@@ -323,6 +323,7 @@ public class CheckoutControllerService
 
             return new CheckoutResponse
             {
+                ResponseBody = "PaymentRequest is Null",
                 HttpStatusCode = 400,
             };
         }

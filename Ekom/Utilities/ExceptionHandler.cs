@@ -24,6 +24,8 @@ static class ExceptionHandler
 
         return exception switch
         {
+            ArgumentNullException => new StatusCodeResult((int)HttpStatusCode.NotFound),
+            CheckoutPayException => new StatusCodeResult((int)HttpStatusCode.InternalServerError),
             OrderLineNegativeException => new StatusCodeResult((int)HttpStatusCode.BadRequest),
             OrderLineNotFoundException => new NotFoundResult(),
             ProductNotFoundException => new NotFoundResult(),
