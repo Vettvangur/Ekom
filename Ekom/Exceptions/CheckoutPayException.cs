@@ -1,7 +1,7 @@
 namespace Ekom.Exceptions;
 
 /// <summary>
-/// Common base type for all exceptions thrown by Ekom
+/// Represents an exception that occurs during the checkout payment process in the Ekom system.
 /// </summary>
 public class CheckoutPayException : Exception
 {
