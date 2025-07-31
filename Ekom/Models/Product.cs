@@ -529,7 +529,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
             foreach (string catId in categoryIds)
             {
-                ICategory categoryItem
+                ICategory? categoryItem
                     = Catalog.Instance.GetCategory(catId, Store.Alias);
 
                 if (categoryItem != null && !categories.Contains(categoryItem))

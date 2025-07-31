@@ -1,5 +1,5 @@
-using Ekom.Exceptions;
 using Ekom.Models;
+using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,13 +21,14 @@ namespace Ekom.Controllers;
 public class EkomCatalogController : ControllerBase
 {
     private readonly ControllerRequestHelper _reqHelper;
-
+    private readonly IMetafieldService _metafieldService;
     /// <summary>
     /// ctor
     /// </summary>
-    public EkomCatalogController(ControllerRequestHelper reqHelper)
+    public EkomCatalogController(ControllerRequestHelper reqHelper, IMetafieldService metafieldService)
     {
         _reqHelper = reqHelper;
+        _metafieldService = metafieldService;
     }
 
     /// <summary>
@@ -574,5 +575,14 @@ public class EkomCatalogController : ControllerBase
 
         return Ok(products);
     }
+
+    /// <summary>
+    /// Metafields
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet,HttpPost]
+    [Route("metafields")]
+    public IEnumerable<Metafield> GetMetafields()
+        => _metafieldService.GetMetafields();
 
 }
