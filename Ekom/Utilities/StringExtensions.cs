@@ -359,13 +359,13 @@ public static class StringExtension
 
                     decimal val;
 
-                    if (value["Price"] != null && value["Price"].Any())
+                    if (value["Price"] != null && value["Price"].HasValues)
                     {
                         val = value["Price"].Value<decimal>();
                     }
                     else
                     {
-                        if (value["Value"] != null && value["Value"].Any())
+                        if (value["Value"] != null && value["Value"].HasValues)
                         {
                             val = value["Value"].Value<decimal>();
                         }
