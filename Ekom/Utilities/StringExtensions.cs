@@ -356,7 +356,24 @@ public static class StringExtension
                 if (KeyExists(value, "Currency"))
                 {
                     string? currencyValue = value["Currency"].Value<string>();
-                    decimal val = value["Price"] != null ? value["Price"].Value<decimal>() : (value["Value"] != null ? value["Value"].Value<decimal>() : 0);
+
+                    decimal val;
+
+                    if (value["Price"] != null && value["Price"].HasValues)
+                    {
+                        val = value["Price"].Value<decimal>();
+                    }
+                    else
+                    {
+                        if (value["Value"] != null && value["Value"].HasValues)
+                        {
+                            val = value["Value"].Value<decimal>();
+                        }
+                        else
+                        {
+                            val = 0;
+                        }
+                    }
 
                     values.Add(new CurrencyValue(val, currencyValue));
                 }
