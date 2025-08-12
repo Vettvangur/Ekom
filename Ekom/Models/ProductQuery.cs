@@ -1,5 +1,7 @@
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using System.ComponentModel;
 
 namespace Ekom.Models;
 
@@ -49,25 +51,10 @@ public class ProductQuery : ProductQueryBase
     public Dictionary<string, List<string>> PropertyFilters { get; set; }
     public string PropertySelectorsSeparator { get; set; } = string.Empty;
     public Dictionary<string, string> PropertySelectors { get; set; }
-    private OrderBy _orderBy = OrderBy.DateDesc;
-    public OrderBy OrderBy
-    {
-        get => _orderBy;
-        set
-        {
-            // Check the query string for 'orderby', otherwise use the passed value
-            if (_query != null && _query.TryGetValue("orderby", out Microsoft.Extensions.Primitives.StringValues orderByValue) &&
-                !string.IsNullOrEmpty(orderByValue) &&
-                Enum.TryParse(orderByValue, true, out OrderBy parsedOrderBy))
-            {
-                _orderBy = parsedOrderBy; // Use parsed value from query
-            }
-            else
-            {
-                _orderBy = value; // Use the explicitly passed value
-            }
-        }
-    }
+
+    [JsonConverter(typeof(OrderByJsonConverter))]
+    [TypeConverter(typeof(OrderByTypeConverter))]
+    public OrderBy? OrderBy { get; set; } = Configuration.Instance.DefaultProductOrderBy;
     public bool FilterOutZeroPriceProducts { get; set; } = false;
     public Func<IProduct, bool>? Filter { get; set; }
 }
