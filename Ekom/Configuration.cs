@@ -132,6 +132,23 @@ public class Configuration
         }
     }
 
+    public virtual OrderBy DefaultProductOrderBy
+    {
+        get
+        {
+            string? value = _configuration["Ekom:DefaultProductOrderBy"];
+            if (string.IsNullOrEmpty(value))
+            {
+                return OrderBy.DateDesc;
+            }
+            if (Enum.TryParse<OrderBy>(value, out OrderBy orderBy))
+            {
+                return orderBy;
+            }
+            return OrderBy.DateDesc;
+        }
+    }
+
     /// <summary>
     /// Ekom:BasketCookieLifetime
     /// Set how many days the order cookie should live, Default 1 day

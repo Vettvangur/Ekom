@@ -84,7 +84,7 @@ public class ProductResponse
             // Apply Sorting
             if (query.OrderBy != Utilities.OrderBy.NoOrder)
             {
-                products = OrderBy(products, query?.OrderBy ?? Utilities.OrderBy.TitleAsc);
+                products = OrderBy(products, query?.OrderBy ?? Configuration.Instance.DefaultProductOrderBy);
             }
 
             // Apply Additional Filtering via filterService
