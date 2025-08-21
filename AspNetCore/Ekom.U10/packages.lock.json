@@ -4,11 +4,11 @@
     "net8.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.2.12, )",
-        "resolved": "0.2.12",
-        "contentHash": "6NQFCs4uSviBzmXzFDQVqaHVg5qji6bw05y8lnG19pOLCxTAtYdvP75xvIBxN5l9KbroJKy9NskYFmAB5WYhVA==",
+        "requested": "[0.2.17, )",
+        "resolved": "0.2.17",
+        "contentHash": "G75GZnrnlEvKnp0XLCDV0hOz5zlChNgDkY+WUwntukDVwzmH0VW+AtwsTmDdGZiM+9BJjS9C6Mv0+Eq+mNk46Q==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.2.12",
+          "Ekom.Payments.AspNetCore": "0.2.17",
           "Umbraco.Cms.Core": "13.8.0",
           "Umbraco.Cms.Web.BackOffice": "13.8.0",
           "Umbraco.Cms.Web.Website": "13.8.0"
@@ -26,24 +26,24 @@
       },
       "Umbraco.Cms.Api.Common": {
         "type": "Direct",
-        "requested": "[13.9.3, )",
-        "resolved": "13.9.3",
-        "contentHash": "P8KjDsyimhtxlJ9K53uB93zMxF5V2SvvgaBl43NEcKpVAwSUN+WKG2xipYVHwKRtvvgbJRPwTZ0kTB1D0NvRUA==",
+        "requested": "[13.10.0, )",
+        "resolved": "13.10.0",
+        "contentHash": "t5xw+K/n9r1Tvrs1x24LFgFTsBU9jPBi0m94l0p51S63fkwTkW7jjAkB7D38Oc8gURfBnJ7YbEnPlH7CEegzdw==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "8.0.1",
           "Microsoft.IdentityModel.JsonWebTokens": "7.7.1",
           "OpenIddict.Abstractions": "4.10.1",
           "OpenIddict.AspNetCore": "4.10.1",
           "Swashbuckle.AspNetCore": "6.9.0",
-          "Umbraco.Cms.Core": "[13.9.3, 14.0.0)",
-          "Umbraco.Cms.Web.Common": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Core": "[13.10.0, 14.0.0)",
+          "Umbraco.Cms.Web.Common": "[13.10.0, 14.0.0)"
         }
       },
       "Umbraco.Cms.Core": {
         "type": "Direct",
-        "requested": "[13.9.3, )",
-        "resolved": "13.9.3",
-        "contentHash": "L42yKn8oopqpOnHFRbA31m0V4DZoWMJeseiVx5fyNNa14axneGhsVrk3Unq7GSHY5OJtNQnLVFZuVZ7t2WWtKA==",
+        "requested": "[13.10.0, )",
+        "resolved": "13.10.0",
+        "contentHash": "CxLKDfGA2nGDClmpzWEyepgzAv0kV1CKoFKF2X1gk+HvefJjpGVX7jatdWIcjfo0Uf4TeXr/8iXyBMpk8B26kw==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Abstractions": "8.0.0",
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
@@ -60,22 +60,22 @@
       },
       "Umbraco.Cms.Web.BackOffice": {
         "type": "Direct",
-        "requested": "[13.9.3, )",
-        "resolved": "13.9.3",
-        "contentHash": "QJA29Y2GVwkfO4aPg03QZ6Nv3ttgZchzq0MgsEuK67f65wpoV/bGxxXOL83viJqz/ORuu7C3gR/rzs5S/6jAmA==",
+        "requested": "[13.10.0, )",
+        "resolved": "13.10.0",
+        "contentHash": "srYHFzAUJ4/lDX/l0Cre+FYSwxAQR6tajkg2JZcM2nVRV/N1wqv7xM6OSCelZwIuI3hUPNgFBbe6n+06RYjpbg==",
         "dependencies": {
           "Newtonsoft.Json": "13.0.3",
           "Serilog.AspNetCore": "8.0.3",
-          "Umbraco.Cms.Web.Common": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Web.Common": "[13.10.0, 14.0.0)"
         }
       },
       "Umbraco.Cms.Web.Website": {
         "type": "Direct",
-        "requested": "[13.9.3, )",
-        "resolved": "13.9.3",
-        "contentHash": "/mut76HMQ5fIM7YQ6As6AHOqBs2Nomz7FFuo+aRJJa16uD/GRH9FBQz2CQ+QG4Tk/Klh/zj8epUqsgUskyiXAg==",
+        "requested": "[13.10.0, )",
+        "resolved": "13.10.0",
+        "contentHash": "Ql+C5+OWtnCu4UPlkJqY5DsEzXP0QE3PW9PBWxNltHz5hDP9Cm6XOeK+xOalVknVWPhvuFbbUv/spkaIRHW38w==",
         "dependencies": {
-          "Umbraco.Cms.Web.Common": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Web.Common": "[13.10.0, 14.0.0)"
         }
       },
       "Asp.Versioning.Abstractions": {
@@ -163,16 +163,16 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.12",
-        "contentHash": "IKdO9jXnm3yvcIj8VDh2pACPrDG1FcbYk3P8sdnkxsMeBAfnCxhZm4jbaiHbcudBrSlus6OIc4WZaIDrVqpwuA==",
+        "resolved": "0.2.17",
+        "contentHash": "WNjlr7LAowb+f2uajSwSIzmNUlyWpbUEkW/J7B0qVOZrdnVdTVMHhP3C9XKMuaOSyPNrpzfMIAOtHXOUd9/Qzw==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.2.12"
+          "Ekom.Payments.Core": "0.2.17"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.12",
-        "contentHash": "1B/gNf5VIEzVHytUDw/uF7hKW2vnDoEaIy/wX3iPy4pwb4WdhpUo4kXSlGXSiUCPmQ83sven6vIwVh3HkY3deA==",
+        "resolved": "0.2.17",
+        "contentHash": "FeUXcxwo5nVkiIQ+z/HDrf5eXxr3IjQBD7gZWfasmaHFuzaVyMprET9xnwnlUjm55/u0hV7O+eKwVGHrjXe2TA==",
         "dependencies": {
           "Azure.Core": "1.45.0",
           "Azure.Identity": "1.13.1",
@@ -2519,19 +2519,19 @@
       },
       "Umbraco.Cms.Examine.Lucene": {
         "type": "Transitive",
-        "resolved": "13.9.3",
-        "contentHash": "Wwv7bNsz3032fKuo3duMFfUQzkHD/1ajJS4WCXXRloLgrciAOGsP+4ajw9gZxTfXaZMyW0zTJTephSeqk9RD2Q==",
+        "resolved": "13.10.0",
+        "contentHash": "9yfnAP9zHxkYg2GpYW5BJUbBy4i1e9SUA3UOTxvSjK3hbRAbl/YH64uq/EmS42UOB7OflHyUS8QGThwUZG8a+g==",
         "dependencies": {
           "Examine": "3.7.1",
           "Lucene.Net.Replicator": "4.8.0-beta00017",
           "System.Security.Cryptography.Xml": "8.0.2",
-          "Umbraco.Cms.Infrastructure": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Infrastructure": "[13.10.0, 14.0.0)"
         }
       },
       "Umbraco.Cms.Infrastructure": {
         "type": "Transitive",
-        "resolved": "13.9.3",
-        "contentHash": "+Jg5h7dNvyYHe4MlDXv0JjPbQSO5rsbpVDw5PJJBOFdDDi3ARnMzYsExzM6Ox8gshS54XGqt2829HOM9Uc0txg==",
+        "resolved": "13.10.0",
+        "contentHash": "ecbCTzxf+/ggIo++tMPLUeqVKG/1f5RwSsGdcLnsMO2DrtF1R0Glbw0C7/NHg4Vsn4WDRBcuSJxawMeiFIYSlw==",
         "dependencies": {
           "Examine.Core": "3.7.1",
           "HtmlAgilityPack": "1.11.71",
@@ -2560,26 +2560,26 @@
           "Serilog.Sinks.Map": "1.0.2",
           "System.Text.Json": "8.0.5",
           "System.Text.RegularExpressions": "4.3.1",
-          "Umbraco.Cms.Core": "[13.9.3, 14.0.0)",
+          "Umbraco.Cms.Core": "[13.10.0, 14.0.0)",
           "ncrontab": "3.3.3"
         }
       },
       "Umbraco.Cms.PublishedCache.NuCache": {
         "type": "Transitive",
-        "resolved": "13.9.3",
-        "contentHash": "etjoZpTX2AzU8P98uqySiZolN0uBLK9a5QhopYJlaoH6P8+29Rdvn1hDC20lvDqm16WMaoEz2V5zBEfxOravgg==",
+        "resolved": "13.10.0",
+        "contentHash": "AB6y4zKN9pQEG3DyjpBXUe+srwDra0bmZX2g5BjmucDTPvF7HPKbAjtPAf/TXX8T+sDBFRnGu65+C9JF7zGbWA==",
         "dependencies": {
           "K4os.Compression.LZ4": "1.3.8",
           "MessagePack": "2.5.192",
           "Newtonsoft.Json": "13.0.3",
           "Umbraco.CSharpTest.Net.Collections": "15.0.0",
-          "Umbraco.Cms.Infrastructure": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Infrastructure": "[13.10.0, 14.0.0)"
         }
       },
       "Umbraco.Cms.Web.Common": {
         "type": "Transitive",
-        "resolved": "13.9.3",
-        "contentHash": "q28DvWfXdQ4tc1V7WXMbroVsy3njOQMeKp0E5FqNb8PipP5rH0/V81s+5HuALRt3GWemQ8DYsqRqqR6NPhdyyA==",
+        "resolved": "13.10.0",
+        "contentHash": "WId9mZPuXLGm82vhx2jznwsZ1YMLw7dcDU7IAh14iE3p36vszX5jDbuhRMWVCBnrcrOZb0hJoFWGxhTtKS/WHQ==",
         "dependencies": {
           "Asp.Versioning.Mvc": "7.1.1",
           "Asp.Versioning.Mvc.ApiExplorer": "7.1.0",
@@ -2594,8 +2594,8 @@
           "System.Net.Http": "4.3.4",
           "System.Text.Json": "8.0.5",
           "System.Text.RegularExpressions": "4.3.1",
-          "Umbraco.Cms.Examine.Lucene": "[13.9.3, 14.0.0)",
-          "Umbraco.Cms.PublishedCache.NuCache": "[13.9.3, 14.0.0)"
+          "Umbraco.Cms.Examine.Lucene": "[13.10.0, 14.0.0)",
+          "Umbraco.Cms.PublishedCache.NuCache": "[13.10.0, 14.0.0)"
         }
       },
       "Umbraco.CSharpTest.Net.Collections": {
@@ -2620,7 +2620,7 @@
         "dependencies": {
           "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
-          "Ekom.Payments.Core": "[0.2.12, )",
+          "Ekom.Payments.Core": "[0.2.17, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",

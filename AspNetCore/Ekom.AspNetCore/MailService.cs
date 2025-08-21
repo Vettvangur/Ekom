@@ -13,13 +13,13 @@ namespace Ekom.AspNetCore.Services;
 class MailService : IMailService
 {
     private const int Timeout = 180000;
-    private readonly string _host;
+    private readonly string? _host;
     private readonly int _port;
-    private readonly string _user;
-    private readonly string _pass;
+    private readonly string? _user;
+    private readonly string? _pass;
 
-    private string _sender;
-    private string _recipient;
+    private string? _sender;
+    private string? _recipient;
 
     /// <summary>
     /// ctor
@@ -54,8 +54,8 @@ class MailService : IMailService
     public async virtual Task SendAsync(
         string subject,
         string body,
-        string recipient = null,
-        string sender = null)
+        string? recipient = null,
+        string? sender = null)
     {
         if (string.IsNullOrEmpty(_host))
         {
@@ -63,9 +63,11 @@ class MailService : IMailService
         }
 
         string recipientsString = recipient ?? _recipient;
+
         if (string.IsNullOrEmpty(recipientsString))
         {
-            throw new Exception("Ekom:Ekom:EmailNotifications is not set.");
+            //throw new Exception("Ekom:EmailNotifications is not set.");
+            return; // No recipient configured
         }
 
         var recipients = recipientsString
