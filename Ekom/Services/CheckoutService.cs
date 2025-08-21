@@ -82,7 +82,7 @@ class CheckoutService
             {
                 try
                 {
-                    //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
+                    //discount eventar virka ekki (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
                     //oi.Discount?.OnCouponApply();
 
                     if (!string.IsNullOrEmpty(oi.Coupon))
@@ -116,7 +116,7 @@ class CheckoutService
 
                 try
                 {
-                    //discount eventar virka ekki baun (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
+                    //discount eventar virka ekki (vilt líklega hlusta frekar eftir coupon, þurfum þá coupon klasa og henda honum á orderinfo og orderline og breyta "öllu")
                     //line.Discount?.OnCouponApply();
                 }
 #pragma warning disable CA1031 // Do not catch general exception types
@@ -168,6 +168,7 @@ class CheckoutService
                 + $"Order id: {oi?.UniqueId}\r\n\r\n" + ex.ToString();
 
             await _mailService.SendAsync(subject, body).ConfigureAwait(false);
+
             throw;
         }
     }

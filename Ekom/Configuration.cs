@@ -294,13 +294,13 @@ public class Configuration
     /// <summary>
     /// Used by MailService, defaults to umbracoSettings.config configured email
     /// </summary>
-    public virtual string EmailNotifications
+    public virtual string? EmailNotifications
         => _configuration["Ekom:EmailNotifications"];
 
     /// <summary>
     /// </summary>
     public virtual bool DisableStock
-        => _configuration["Ekom:DisableStock"].ConvertToBool();
+        => _configuration["Ekom:DisableStock"]?.ConvertToBool() ?? false;
 
     /// <summary>
     /// Lists in initialization order all caches and the document type alias of
