@@ -28,7 +28,7 @@ public sealed class ConfigurationScope : IDisposable
             ["Ekom:ReservationTimeout"] = "30",
             ["Ekom:CustomerData"] = "false",
             ["Ekom:DisableStock"] = "false",
-            ["Ekom:VatRoundingScope"] = "PerTotal",
+            ["Ekom:VatRoundingScope"] = "PerUnit",
         };
 
         if (defaults != null)
