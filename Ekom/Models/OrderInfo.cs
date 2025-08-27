@@ -211,19 +211,9 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = ChargedAmount.Value;
+            decimal amount = 0;
 
-            amount -= OrderLines.Sum(line => line.Amount.WithoutVat.Value);
-
-            if (ShippingProvider != null)
-            {
-                amount -= ShippingProvider.Price.WithoutVat.Value;
-            }
-
-            if (PaymentProvider != null)
-            {
-                amount -= PaymentProvider.Price.WithoutVat.Value;
-            }
+            amount += OrderLines.Sum(line => line.Amount.Vat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }

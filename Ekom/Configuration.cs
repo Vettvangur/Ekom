@@ -18,7 +18,7 @@ public class Configuration
         _configuration = configuration;
     }
 
-    public static IServiceProvider Resolver { get; internal set; }
+    public static IServiceProvider Resolver { get; set; }
 
     /// <summary>
     /// This IServiceProvider is a root scope provider,
@@ -257,6 +257,23 @@ public class Configuration
             return preferredRounding;
         }
     }
+
+    public virtual VatRoundingScope VatRoundingScope
+    {
+        get
+        {
+            string? configVal = _configuration["Ekom:VatRoundingScope"];
+
+            if (!Enum.TryParse(configVal, out VatRoundingScope preferredRoundingScope))
+            {
+                // Default
+                preferredRoundingScope = VatRoundingScope.PerUnit;
+            }
+
+            return preferredRoundingScope;
+        }
+    }
+    
 
     /// <summary>
     /// Perform rounding on <see cref="IOrderInfo"/> totals. A common configuration with Navision.

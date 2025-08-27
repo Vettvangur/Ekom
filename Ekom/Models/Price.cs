@@ -1,302 +1,314 @@
-using Ekom.API;
 using Ekom.Events;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// Price of item including all data to fully calculate 
+/// before and after VAT/Discount.
+/// </summary>
+public class Price : IPrice
 {
+    public OrderedDiscount Discount { get; }
+
+    private decimal _storeVAT { get; }
+    private bool _storeVatIncludedInPrices { get; }
+    public CurrencyModel Currency { get; }
+
     /// <summary>
-    /// Price of item including all data to fully calculate 
-    /// before and after VAT/Discount.
+    /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
     /// </summary>
-    public class Price : IPrice
+    public bool DiscountAlwaysBeforeVAT { get; }
+
+    /// <summary>
+    /// ctor from JObject
+    /// </summary>
+    public Price(
+        JToken jObject,
+        CurrencyModel currency,
+        decimal vat,
+        bool vatIncludedInPrice
+    )
     {
-        public OrderedDiscount Discount { get; }
+        Currency = currency;
+        _storeVAT = vat;
+        _storeVatIncludedInPrices = vatIncludedInPrice;
+        OriginalValue = jObject[nameof(OriginalValue)].Value<decimal>();
+        Discount = jObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
+        Quantity = jObject[nameof(Quantity)]?.Value<int>() ?? 1;
+        DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)]?.Value<bool>() ?? false;
+        HasDiscount = Discount != null;
+    }
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public Price(
+        string price,
+        CurrencyModel currency,
+        decimal vat,
+        bool vatIncludedInPrice,
+        OrderedDiscount? discount = null,
+        decimal quantity = 1,
+        bool discountAlwaysBeforeVat = false
 
-        private decimal _storeVAT { get; }
-        private bool _storeVatIncludedInPrices { get; }
-        public CurrencyModel Currency { get; }
+    )
+        : this(
+            decimal.Parse(
+                string.IsNullOrEmpty(price)
+                    ? "0"
+                    : price?.Replace(',', '.') ?? "0",
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture),
+            currency,
+            vat,
+            vatIncludedInPrice,
+            discount,
+            quantity,
+            discountAlwaysBeforeVat)
+    {
+    }
 
-        /// <summary>
-        /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
-        /// </summary>
-        public bool DiscountAlwaysBeforeVAT { get; }
 
-        /// <summary>
-        /// ctor from JObject
-        /// </summary>
-        public Price(
-            JToken jObject,
-            CurrencyModel currency,
-            decimal vat,
-            bool vatIncludedInPrice
-        )
+    /// <summary>
+    /// ctor
+    /// </summary>
+    public Price(
+        decimal price,
+        CurrencyModel currency,
+        decimal vat,
+        bool vatIncludedInPrice,
+        OrderedDiscount? discount = null,
+        decimal quantity = 1,
+        bool discountAlwaysBeforeVat = false
+    )
+    {
+        OriginalValue = price;
+        Currency = currency;
+        _storeVAT = vat;
+        _storeVatIncludedInPrices = vatIncludedInPrice;
+        Discount = discount;
+        Quantity = quantity;
+        DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
+        HasDiscount = discount != null;
+    }
+
+    private CalculatedPrice CreateSimplePrice(decimal price)
+        => new CalculatedPrice(price, Currency);
+
+    /// <summary>
+    /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
+    /// </summary>
+    /// <returns></returns>
+    public object Clone() => MemberwiseClone();
+
+    /// <summary>
+    /// Original value with Vat as-is
+    /// </summary>
+    public decimal OriginalValue { get; }
+    /// <summary>
+    /// Multiplier
+    /// </summary>
+    public decimal Quantity { get; }
+
+    public bool HasDiscount { get;  }
+
+    /// <summary>
+    /// Price before discount with VAT left as-is
+    /// </summary>
+    public ICalculatedPrice BeforeDiscount
+        => CreateSimplePrice(OriginalValue * Quantity);
+
+    /// <summary>
+    /// Price after discount with VAT left as-is
+    /// </summary>
+    public ICalculatedPrice AfterDiscount
+        => CreateSimplePrice(DiscountedValue * Quantity);
+
+    bool perUnit = Configuration.Instance.VatRoundingScope == VatRoundingScope.PerUnit;
+
+    /// <summary>
+    /// Price with discount but without VAT
+    /// We cannot depend on AfterDiscount since if rounding is to be applied, 
+    /// it should be applied before multiplying by quantity.
+    /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
+    /// </summary>
+    public ICalculatedPrice WithoutVat
+    {
+        get
         {
-            Currency = currency;
-            _storeVAT = vat;
-            _storeVatIncludedInPrices = vatIncludedInPrice;
-            OriginalValue = jObject[nameof(OriginalValue)].Value<decimal>();
-            Discount = jObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
-            Quantity = jObject[nameof(Quantity)]?.Value<int>() ?? 1;
-            DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)]?.Value<bool>() ?? false;
-            HasDiscount = Discount != null;
-        }
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public Price(
-            string price,
-            CurrencyModel currency,
-            decimal vat,
-            bool vatIncludedInPrice,
-            OrderedDiscount? discount = null,
-            decimal quantity = 1,
-            bool discountAlwaysBeforeVat = false
+            if (!(_storeVatIncludedInPrices))
+                return CreateSimplePrice(DiscountedValue * Quantity);
 
-        )
-            : this(
-                decimal.Parse(
-                    string.IsNullOrEmpty(price)
-                        ? "0"
-                        : price?.Replace(',', '.') ?? "0",
-                    NumberStyles.Any,
-                    CultureInfo.InvariantCulture),
-                currency,
-                vat,
-                vatIncludedInPrice,
-                discount,
-                quantity,
-                discountAlwaysBeforeVat)
-        {
-        }
-
-
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public Price(
-            decimal price,
-            CurrencyModel currency,
-            decimal vat,
-            bool vatIncludedInPrice,
-            OrderedDiscount? discount = null,
-            decimal quantity = 1,
-            bool discountAlwaysBeforeVat = false
-        )
-        {
-            OriginalValue = price;
-            Currency = currency;
-            _storeVAT = vat;
-            _storeVatIncludedInPrices = vatIncludedInPrice;
-            Discount = discount;
-            Quantity = quantity;
-            DiscountAlwaysBeforeVAT = discountAlwaysBeforeVat;
-            HasDiscount = discount != null;
-        }
-
-        private CalculatedPrice CreateSimplePrice(decimal price)
-            => new CalculatedPrice(price, Currency);
-
-        /// <summary>
-        /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
-        /// </summary>
-        /// <returns></returns>
-        public object Clone() => MemberwiseClone();
-
-        /// <summary>
-        /// Original value with Vat as-is
-        /// </summary>
-        public decimal OriginalValue { get; }
-        /// <summary>
-        /// Multiplier
-        /// </summary>
-        public decimal Quantity { get; }
-
-        public bool HasDiscount { get;  }
-
-        /// <summary>
-        /// Price before discount with VAT left as-is
-        /// </summary>
-        public ICalculatedPrice BeforeDiscount
-            => CreateSimplePrice(OriginalValue * Quantity);
-
-        /// <summary>
-        /// Price after discount with VAT left as-is
-        /// </summary>
-        public ICalculatedPrice AfterDiscount
-            => CreateSimplePrice(DiscountedValue * Quantity);
-
-        /// <summary>
-        /// Price with discount but without VAT
-        /// We cannot depend on AfterDiscount since if rounding is to be applied, 
-        /// it should be applied before multiplying by quantity.
-        /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
-        /// </summary>
-        public ICalculatedPrice WithoutVat
-        {
-            get
+            if (perUnit)
             {
-                decimal price = DiscountedValue;
-
-                if (_storeVatIncludedInPrices)
-                {
-                    price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
-                }
-
-                return CreateSimplePrice(price * Quantity);
+                var unit = Calculator.WithoutVat(DiscountedValue, _storeVAT, Currency.ISOCurrencySymbol);
+                return CreateSimplePrice(unit * Quantity);
             }
-        }
-
-        /// <summary>
-        /// Value with discount and VAT
-        /// </summary>
-        public decimal Value => WithVat.Value;
-
-        /// <summary>
-        /// Price with discount and VAT.
-        /// We cannot depend on AfterDiscount since if rounding is to be applied, 
-        /// it should be applied before multiplying by quantity.
-        /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
-        /// </summary>
-        public ICalculatedPrice WithVat
-        {
-            get
+            else
             {
-                decimal price = DiscountedValue;
-
-                if (!_storeVatIncludedInPrices)
-                {
-                    price = Calculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
-                }
-
-                return CreateSimplePrice(price * Quantity);
-            }
-        }
-
-        /// <summary>
-        /// VAT included or to be included in price with discount
-        /// </summary>
-        public ICalculatedPrice Vat
-            => CreateSimplePrice(WithVat.Value - WithoutVat.Value);
-
-        /// <summary>
-        /// Total monetary value of discount in price
-        /// </summary>
-        public ICalculatedPrice DiscountAmount
-            => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
-
-        private decimal DiscountedValue
-        {
-            get
-            {
-                decimal price = OriginalValue;
-
-                if (Discount != null)
-                {
-                    switch (Discount.Type)
-                    {
-                        case DiscountType.Fixed:
-
-                            if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
-                            {
-                                price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
-                            }
-                            price -= Discount.Amount;
-                            if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
-                            {
-                                price = Calculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
-                            }
-                            break;
-
-                        case DiscountType.Percentage:
-
-                            price -= price * Discount.Amount;
-                            break;
-                    }
-                }
-
-                // Check if the OriginalValue has decimals
-                bool originalHasDecimals = OriginalValue != Math.Floor(OriginalValue);
-
-                // Check if the DiscountedValue should have decimals based on the OriginalValue
-                bool shouldHaveDecimals = originalHasDecimals;
-
-                // If the DiscountedValue should not have decimals, round it to the nearest integer
-                if (!shouldHaveDecimals)
-                {
-                    price = Math.Round(price);
-                }
-
-                return price;
+                var total = DiscountedValue * Quantity;
+                total = Calculator.WithoutVat(total, _storeVAT, Currency.ISOCurrencySymbol);
+                return CreateSimplePrice(total);
             }
         }
     }
 
     /// <summary>
-    /// An object that contains the calculated price given the provided parameters
-    /// Also offers a way of printing the value using the provided culture.
+    /// Value with discount and VAT
     /// </summary>
-    class CalculatedPrice : ICalculatedPrice
+    public decimal Value => WithVat.Value;
+
+    /// <summary>
+    /// Price with discount and VAT.
+    /// We cannot depend on AfterDiscount since if rounding is to be applied, 
+    /// it should be applied before multiplying by quantity.
+    /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
+    /// </summary>
+    public ICalculatedPrice WithVat
     {
-        //[JsonConstructor]
-        //public CalculatedPrice(
-        //    string currencyString,
-        //    decimal value
-        //)
-        //{
-        //    Value = value;
-        //    //CurrencyString = currencyString;
-        //}
+        get
+        {
+            if (_storeVatIncludedInPrices)
+                return CreateSimplePrice(DiscountedValue * Quantity);
 
-        private CurrencyModel _currencyCulture;
+            if (perUnit)
+            {
+                var unit = Calculator.WithVat(DiscountedValue, _storeVAT, Currency.ISOCurrencySymbol);
+                return CreateSimplePrice(unit * Quantity);
+            }
+            else
+            {
+                var total = DiscountedValue * Quantity;
+                total = Calculator.WithVat(total, _storeVAT, Currency.ISOCurrencySymbol);
+                return CreateSimplePrice(total);
+            }
+        }
+    }
 
-        public CalculatedPrice(
-            decimal price,
-            CurrencyModel currencyCulture
+    /// <summary>
+    /// VAT included or to be included in price with discount
+    /// </summary>
+    public ICalculatedPrice Vat
+        => CreateSimplePrice(WithVat.Value - WithoutVat.Value);
+
+    /// <summary>
+    /// Total monetary value of discount in price
+    /// </summary>
+    public ICalculatedPrice DiscountAmount
+        => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
+
+    private decimal DiscountedValue
+    {
+        get
+        {
+            decimal price = OriginalValue;
+
+            if (Discount != null)
+            {
+                switch (Discount.Type)
+                {
+                    case DiscountType.Fixed:
+
+                        if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
+                        {
+                            price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                        }
+                        price -= Discount.Amount;
+                        if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
+                        {
+                            price = Calculator.WithVat(price, _storeVAT, Currency.ISOCurrencySymbol);
+                        }
+                        break;
+
+                    case DiscountType.Percentage:
+
+                        price -= price * Discount.Amount;
+                        break;
+                }
+            }
+
+            // Check if the OriginalValue has decimals
+            bool originalHasDecimals = OriginalValue != Math.Floor(OriginalValue);
+
+            // Check if the DiscountedValue should have decimals based on the OriginalValue
+            bool shouldHaveDecimals = originalHasDecimals;
+
+            // If the DiscountedValue should not have decimals, round it to the nearest integer
+            if (!shouldHaveDecimals)
+            {
+                price = Math.Round(price);
+            }
+
+            return price;
+        }
+    }
+}
+
+/// <summary>
+/// An object that contains the calculated price given the provided parameters
+/// Also offers a way of printing the value using the provided culture.
+/// </summary>
+class CalculatedPrice : ICalculatedPrice
+{
+    //[JsonConstructor]
+    //public CalculatedPrice(
+    //    string currencyString,
+    //    decimal value
+    //)
+    //{
+    //    Value = value;
+    //    //CurrencyString = currencyString;
+    //}
+
+    private CurrencyModel _currencyCulture;
+
+    public CalculatedPrice(
+        decimal price,
+        CurrencyModel currencyCulture
 )
-        {
-            Value = price;
-            _currencyCulture = currencyCulture;
-        }
-
-        /// <summary>
-        /// Value with vat if applicable
-        /// </summary>
-        public decimal Value { get; }
-
-        public virtual string CurrencyString
-        {
-            get
-            {
-                CultureInfo ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
-                string value = FormatCurrencyValue(ci);
-
-                CurrencyStringEventArgs model = new CurrencyStringEventArgs()
-                {
-                    CultureInfo = ci,
-                    Value = Value,
-                    ValueString = value
-                };
-
-                CatalogEvents.OnCurrencyStringFormat(this, model);
-
-                return model.ValueString;
-            }
-        }
-
-        private CultureInfo CreateCultureInfo(string cultureValue)
-        {
-            CultureInfo ci = new CultureInfo(cultureValue);
-            return ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
-                ? Configuration.IsCultureInfo
-                : ci;
-        }
-
-        private string FormatCurrencyValue(CultureInfo cultureInfo)
-        {
-            return Value.ToString(_currencyCulture.CurrencyFormat, cultureInfo);
-        }
-
+    {
+        Value = price;
+        _currencyCulture = currencyCulture;
     }
+
+    /// <summary>
+    /// Value with vat if applicable
+    /// </summary>
+    public decimal Value { get; }
+
+    public virtual string CurrencyString
+    {
+        get
+        {
+            CultureInfo ci = CreateCultureInfo(_currencyCulture.CurrencyValue);
+            string value = FormatCurrencyValue(ci);
+
+            CurrencyStringEventArgs model = new CurrencyStringEventArgs()
+            {
+                CultureInfo = ci,
+                Value = Value,
+                ValueString = value
+            };
+
+            CatalogEvents.OnCurrencyStringFormat(this, model);
+
+            return model.ValueString;
+        }
+    }
+
+    private CultureInfo CreateCultureInfo(string cultureValue)
+    {
+        CultureInfo ci = new CultureInfo(cultureValue);
+        return ci.TwoLetterISOLanguageName.ToUpperInvariant() == "IS"
+            ? Configuration.IsCultureInfo
+            : ci;
+    }
+
+    private string FormatCurrencyValue(CultureInfo cultureInfo)
+    {
+        return Value.ToString(_currencyCulture.CurrencyFormat, cultureInfo);
+    }
+
 }
