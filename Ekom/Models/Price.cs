@@ -201,7 +201,7 @@ public class Price : IPrice
         {
             if (perUnit)
             {
-                // ✅ New logic: split net+vat per unit, then multiply, preserving sticker gross
+                // VAT included + PerUnit: split per unit, preserve sticker gross
                 var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
                 var net = unitNet * Quantity;
                 var vat = unitVat * Quantity;
@@ -220,16 +220,21 @@ public class Price : IPrice
         else
         {
             // VAT-exclusive pricing
-            var net = unit * Quantity;
-
             if (perUnit)
             {
-                var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
-                var gross = net + vat;
+                // ✅ VAT excluded + PerUnit:
+                // round each unit's gross, then multiply
+                var unitGross = Calculator.WithVat(unit, _storeVAT, iso); // applies ISK rounding policy
+                var unitVat = unitGross - unit;
+
+                var net = unit * Quantity;            // net per unit × qty
+                var vat = unitVat * Quantity;         // VAT per unit × qty
+                var gross = unitGross * Quantity;       // gross per unit × qty
                 return (net, vat, gross);
             }
             else // PerTotal
             {
+                var net = unit * Quantity;
                 var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
                 var gross = net + vat;
                 return (net, vat, gross);

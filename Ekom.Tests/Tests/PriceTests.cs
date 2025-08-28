@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Ekom.Tests.Tests;
 
-public class PriceRoundingMatrixTests
+public class PriceTests
 {
     // --- test data: stores × rounding × quantity ---
     public static IEnumerable<object[]> Matrix()
@@ -89,27 +89,38 @@ public class PriceRoundingMatrixTests
 
         if (store.VatIncludedInPrice)
         {
-            // WithVat unchanged (gross per unit * qty) regardless of scope
-            Assert.Equal(unitPrice * qty, withVat);
-
             if (scope == VatRoundingScope.PerUnit)
             {
+                // PerUnit policy: preserve sticker gross per unit
+                Assert.Equal(unitPrice * qty, withVat);
+
                 var unitNetRaw = unitPrice / (1m + store.Vat);
                 var unitNetRounded = EkomExpected(unitNetRaw, iso, mode, 0);
-                var expected = unitNetRounded * qty;
-                Assert.Equal(expected, withoutVat);
+                var expectedNet = unitNetRounded * qty;
+                Assert.Equal(expectedNet, withoutVat);
             }
             else // PerTotal
             {
+                // PerTotal policy: round on the total, gross may drift from sticker * qty
                 var totalGross = unitPrice * qty;
+
+                // 1) net = round(totalGross / (1+rate))
                 var netTotalRaw = totalGross / (1m + store.Vat);
-                var expected = EkomExpected(netTotalRaw, iso, mode, 0);
-                Assert.Equal(expected, withoutVat);
+                var expectedNet = EkomExpected(netTotalRaw, iso, mode, 0);
+                Assert.Equal(expectedNet, withoutVat);
+
+                // 2) vat = round(net * rate)
+                var vatTotalRaw = expectedNet * store.Vat;
+                var expectedVat = EkomExpected(vatTotalRaw, iso, mode, 0);
+
+                // 3) gross = net + vat (NOT necessarily equal to unitPrice*qty)
+                var expectedWithVat = expectedNet + expectedVat;
+                Assert.Equal(expectedWithVat, withVat);
             }
         }
         else
         {
-            // WithoutVat unchanged (net per unit * qty)
+            // Without VAT in price: your existing expectations are still correct
             Assert.Equal(unitPrice * qty, withoutVat);
 
             if (scope == VatRoundingScope.PerUnit)
@@ -127,6 +138,7 @@ public class PriceRoundingMatrixTests
                 Assert.Equal(expected, withVat);
             }
         }
+
 
         // Invariants (useful guardrails)
         var diff = withVat - withoutVat;
@@ -192,13 +204,23 @@ public class PriceRoundingMatrixTests
 
         if (vatIncluded)
         {
-            var unitNet = RoundISK(p / (1 + vat), Rounding.RoundToEven);
+            // Per-unit VAT-INCLUDED:
+            // 1) unit net = round(p / (1+vat))
+            // 2) WithoutVat = unitNet * qty
+            // 3) WithVat preserves sticker gross = p * qty
+            var unitNet = EkomExpected(p / (1m + vat), iso, Rounding.RoundToEven, 0);
             Assert.Equal(unitNet * qty, sut.WithoutVat.Value);
+            Assert.Equal(p * qty, sut.WithVat.Value);
         }
         else
         {
-            var unitGross = RoundISK(p * (1 + vat), Rounding.RoundToEven);
+            // Per-unit VAT-EXCLUDED:
+            // 1) unit gross = round(p * (1+vat))
+            // 2) WithVat = unitGross * qty
+            // 3) WithoutVat preserves net = p * qty
+            var unitGross = EkomExpected(p * (1m + vat), iso, Rounding.RoundToEven, 0);
             Assert.Equal(unitGross * qty, sut.WithVat.Value);
+            Assert.Equal(p * qty, sut.WithoutVat.Value);
         }
     }
 
@@ -303,4 +325,104 @@ public class PriceRoundingMatrixTests
         Assert.Equal(lineGross - lineNet, lineVat);
     }
 
+    [Fact]
+    public void ISK_ZeroVat_PreservesGross()
+    {
+        using var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerUnit")
+        );
+
+        const decimal unitPrice = 100m;
+        const decimal vat = 0m;
+        const int qty = 3;
+
+        var currency = new CurrencyModel { CurrencyValue = "is-IS", CurrencyFormat = "C" };
+        var price = new Price(
+            price: unitPrice,
+            currency: currency,
+            vat: vat,
+            vatIncludedInPrice: true,
+            discount: null,
+            quantity: qty
+        );
+
+        Assert.Equal(300m, price.WithVat.Value);
+        Assert.Equal(300m, price.WithoutVat.Value);
+        Assert.Equal(0m, price.Vat.Value);
+    }
+
+    [Fact]
+    public void USD_PerUnit_VatExcluded_NoExtraRounding()
+    {
+        using var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerUnit")
+        );
+
+        const decimal unitNet = 19.99m;
+        const decimal vat = 0.10m; // 10% VAT
+        const int qty = 2;
+
+        var currency = new CurrencyModel { CurrencyValue = "en-US", CurrencyFormat = "C" };
+        var price = new Price(
+            price: unitNet,
+            currency: currency,
+            vat: vat,
+            vatIncludedInPrice: false,
+            discount: null,
+            quantity: qty
+        );
+
+        // Gross per unit = 19.99 * 1.1 = 21.989
+        var expectedUnitGross = 21.989m;
+        var expectedGross = expectedUnitGross * qty;
+
+        Assert.Equal(unitNet * qty, price.WithoutVat.Value);
+        Assert.Equal(expectedGross, price.WithVat.Value, 3); // allow 3 decimal places
+        Assert.Equal(expectedGross - unitNet * qty, price.Vat.Value, 3);
+    }
+
+    [Fact]
+    public void ISK_PerUnit_vs_PerTotal_ShouldDiffer()
+    {
+        const decimal unitGross = 1538.42m;
+        const decimal vat = 0.24m;
+        const int qty = 4;
+        var currency = new CurrencyModel { CurrencyValue = "is-IS", CurrencyFormat = "C" };
+        var iso = currency.ISOCurrencySymbol;
+
+        // PerUnit
+        using (var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerUnit")))
+        {
+            var price = new Price(unitGross, currency, vat, vatIncludedInPrice: true, quantity: qty);
+
+            // expected: unitNetRounded * qty, where unitNetRounded = round(unitGross / (1+vat))
+            var unitNetRaw = unitGross / (1m + vat);
+            var unitNetRounded = EkomExpected(unitNetRaw, iso, Rounding.RoundToEven, 0);
+            var expectedPerUnitNet = unitNetRounded * qty;
+
+            Assert.Equal(expectedPerUnitNet, price.WithoutVat.Value);   // = 1241 * 4 = 4964
+        }
+
+        // PerTotal
+        using (var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerTotal")))
+        {
+            var price = new Price(unitGross, currency, vat, vatIncludedInPrice: true, quantity: qty);
+
+            // expected: round( (unitGross*qty) / (1+vat) )
+            var netTotalRaw = (unitGross * qty) / (1m + vat);
+            var expectedPerTotalNet = EkomExpected(netTotalRaw, iso, Rounding.RoundToEven, 0);
+
+            Assert.Equal(expectedPerTotalNet, price.WithoutVat.Value);  // different from 4964
+
+            // sanity: policies differ
+            Assert.NotEqual(expectedPerTotalNet,
+                            EkomExpected(unitGross / (1m + vat), iso, Rounding.RoundToEven, 0) * qty);
+        }
+    }
 }
