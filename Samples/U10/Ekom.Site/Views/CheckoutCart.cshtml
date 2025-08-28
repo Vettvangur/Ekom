@@ -166,8 +166,12 @@
 
                 <dl class="mt-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Total product cost (Including tax)</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotal.CurrencyString</dd>
+                        <dt class="text-sm text-gray-600">Total product cost (Excluding tax)</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotalWithOutVat.CurrencyString</dd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="text-sm text-gray-600">VAT</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.Vat.CurrencyString</dd>
                     </div>
                     @if (order.Discount != null)
                     {

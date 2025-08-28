@@ -217,4 +217,90 @@ public class PriceRoundingMatrixTests
         var price2 = new Price(p, currency, vat, vatIncluded, null, qty + 1);
         Assert.True(price2.WithVat.Value >= price.WithVat.Value);
     }
+
+    [Fact]
+    public void ISK_PerUnit_AwayFromZero_Gross1538_Qty4_Vat24()
+    {
+        using var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "AwayFromZero"),
+            ("Ekom:VatRoundingScope", "PerUnit")
+        );
+
+        const decimal unitGross = 1538m; // VAT-inclusive price per unit
+        const decimal vat = 0.24m;
+        const int qty = 4;
+
+        var currency = new CurrencyModel { CurrencyValue = "is-IS", CurrencyFormat = "C" };
+        var price = new Price(
+            price: unitGross,
+            currency: currency,
+            vat: vat,
+            vatIncludedInPrice: true,
+            discount: null,
+            quantity: qty,
+            discountAlwaysBeforeVat: false
+        );
+
+        // 1) Derive unit NET (rounded, ISK 0 decimals) from unit GROSS
+        // 2) Line NET = unit NET * qty
+        // 3) Line VAT = round(line NET * 24%)
+        // 4) Line GROSS = line NET + line VAT
+        var lineNet = price.WithoutVat.Value; // should be 1240 * 4 = 4960
+        Assert.Equal(4960m, lineNet);
+
+        // Use Calculator to compute VAT from NET (ISK rounding inside)
+        var lineVat = Calculator.VatAmountFromWithoutVat(lineNet, vat, currency.ISOCurrencySymbol);
+        Assert.Equal(1190m, lineVat);
+
+        var lineGross = lineNet + lineVat;
+        Assert.Equal(6150m, lineGross);
+
+        // Guardrail: self-consistency of VAT decomposition
+        Assert.Equal(lineGross - lineNet, lineVat);
+    }
+
+    [Fact]
+    public void ISK_PerUnit_RoundToEven_Gross10_Qty1_Vat24_VatIncluded()
+    {
+        using var scope = new ConfigurationScope(
+            ("Ekom:VatCalcRounding", "RoundToEven"),
+            ("Ekom:VatRoundingScope", "PerUnit")
+        );
+
+        const decimal unitGross = 10m;   // VAT-inclusive price per unit
+        const decimal vat = 0.24m;
+        const int qty = 1;
+
+        var currency = new CurrencyModel { CurrencyValue = "is-IS", CurrencyFormat = "C" };
+        var price = new Price(
+            price: unitGross,
+            currency: currency,
+            vat: vat,
+            vatIncludedInPrice: true,
+            discount: null,
+            quantity: qty,
+            discountAlwaysBeforeVat: false
+        );
+
+        // Expectations with PerUnit + RoundToEven:
+        // unitNet = round(10 / 1.24) = 8
+        // unitVat = 10 - 8 = 2
+        // lineNet = 8, lineVat = 2, lineGross = 10
+
+        var lineNet = price.WithoutVat.Value;
+        var lineVat = price.Vat.Value;
+        var lineGross = price.WithVat.Value;
+
+        Assert.Equal(8m, lineNet);
+        Assert.Equal(2m, lineVat);
+        Assert.Equal(10m, lineGross);
+
+        // Guardrail: recompute VAT from NET using Calculator (ISK rounding inside)
+        var vatFromNet = Calculator.VatAmountFromWithoutVat(lineNet, vat, currency.ISOCurrencySymbol);
+        Assert.Equal(2m, vatFromNet);
+
+        // Self-consistency
+        Assert.Equal(lineGross - lineNet, lineVat);
+    }
+
 }

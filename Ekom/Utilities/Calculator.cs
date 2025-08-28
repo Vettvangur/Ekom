@@ -1,6 +1,6 @@
 namespace Ekom.Utilities;
 
-static class Calculator
+public static class Calculator
 {
     /// <summary>
     /// Removes VAT from amount.
@@ -75,5 +75,21 @@ static class Calculator
             default:
                 throw new ArgumentOutOfRangeException(nameof(rounding), rounding, "Unknown rounding specified");
         }
+    }
+
+    public static (decimal UnitNet, decimal UnitVat) SplitVatFromGrossPerUnit(
+        decimal unitGross, decimal vatRate, string currency)
+    {
+        // derive net with your rounding policy
+        var unitNet = WithoutVat(unitGross, vatRate, currency); // <-- this is Calculator.WithoutVat(...)
+                                                                // preserve gross by back-calculating VAT
+        var unitVat = unitGross - unitNet;
+        return (unitNet, unitVat);
+    }
+
+    public static decimal VatFromNet(decimal withoutVatVal, decimal vatVal, string currency)
+    {
+        var vat = withoutVatVal * vatVal; // vatVal = 0.24m for 24%
+        return PerformVatRounding(vat, currency); // ISK → round to 0 with configured mode
     }
 }
