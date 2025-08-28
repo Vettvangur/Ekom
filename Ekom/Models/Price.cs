@@ -205,7 +205,7 @@ public class Price : IPrice
                 var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
                 var net = unitNet * Quantity;
                 var vat = unitVat * Quantity;
-                var gross = unit * Quantity; // preserve gross exactly
+                var gross = (unitNet + unitVat) * Quantity;
                 return (net, vat, gross);
             }
             else // PerTotal

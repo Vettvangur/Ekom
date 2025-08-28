@@ -58,12 +58,12 @@ public class PriceTests
     [Theory]
     [MemberData(nameof(Matrix))]
     public void Price_Rounding_Matrix(
-        string caseName,
-        IStore store,
-        string culture,
-        VatRoundingScope scope,
-        Rounding mode,
-        decimal qty)
+     string caseName,
+     IStore store,
+     string culture,
+     VatRoundingScope scope,
+     Rounding mode,
+     decimal qty)
     {
         using var config = new ConfigurationScope(
             ("Ekom:VatCalcRounding", mode.ToString()),
@@ -86,6 +86,58 @@ public class PriceTests
 
         var withVat = price.WithVat.Value;
         var withoutVat = price.WithoutVat.Value;
+
+        // ===== Special handling for 0% VAT =====
+        // Policy: no tax; apply currency rounding policy (ISK) to amounts, but VAT must be exactly 0.
+        if (store.Vat == 0m)
+        {
+            bool isISK = iso.Equals("ISK", StringComparison.OrdinalIgnoreCase);
+
+            if (store.VatIncludedInPrice)
+            {
+                if (scope == VatRoundingScope.PerUnit)
+                {
+                    var expectedUnit = isISK ? EkomExpected(unitPrice, iso, mode, 0) : unitPrice;
+                    var expected = expectedUnit * qty;
+
+                    Assert.Equal(expected, withVat);
+                    Assert.Equal(expected, withoutVat);
+                }
+                else // PerTotal
+                {
+                    var total = unitPrice * qty;
+                    var expected = isISK ? EkomExpected(total, iso, mode, 0) : total;
+
+                    Assert.Equal(expected, withVat);
+                    Assert.Equal(expected, withoutVat);
+                }
+            }
+            else
+            {
+                // VAT excluded: same numbers since VAT=0
+                if (scope == VatRoundingScope.PerUnit)
+                {
+                    var expectedUnit = isISK ? EkomExpected(unitPrice, iso, mode, 0) : unitPrice;
+                    var expected = expectedUnit * qty;
+
+                    Assert.Equal(expected, withoutVat);
+                    Assert.Equal(expected, withVat);
+                }
+                else // PerTotal
+                {
+                    var total = unitPrice * qty;
+                    var expected = isISK ? EkomExpected(total, iso, mode, 0) : total;
+
+                    Assert.Equal(expected, withoutVat);
+                    Assert.Equal(expected, withVat);
+                }
+            }
+
+            // No VAT at 0%
+            Assert.Equal(0m, price.Vat.Value);
+            return; // Skip the non-zero VAT assertions below
+        }
+        // ===== End 0% VAT handling =====
 
         if (store.VatIncludedInPrice)
         {
@@ -120,7 +172,7 @@ public class PriceTests
         }
         else
         {
-            // Without VAT in price: your existing expectations are still correct
+            // VAT excluded: net per unit * qty (no rounding of net)
             Assert.Equal(unitPrice * qty, withoutVat);
 
             if (scope == VatRoundingScope.PerUnit)
@@ -139,13 +191,12 @@ public class PriceTests
             }
         }
 
-
         // Invariants (useful guardrails)
         var diff = withVat - withoutVat;
-        Assert.Equal(diff, price.Vat.Value, 0); // VAT calc self-consistency at whole-króna resolution
-        if (store.Vat == 0m && !iso.Equals("ISK", StringComparison.OrdinalIgnoreCase))
-            Assert.Equal(withVat, withoutVat, 5);
+        Assert.Equal(diff, price.Vat.Value, 0);         // VAT calc self-consistency at whole-króna resolution
+        Assert.InRange(price.Vat.Value, 0m, withVat);   // VAT non-negative and cannot exceed gross
     }
+
 
 
     [Fact]

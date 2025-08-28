@@ -10,6 +10,11 @@ public static class Calculator
     /// <returns></returns>
     public static decimal WithoutVat(decimal withVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m)
+        {
+            // Still apply ISK rounding policy to the input amount.
+            return PerformVatRounding(withVatVal, currency);
+        }
         return PerformVatRounding(withVatVal / (1 + vatVal), currency);
     }
 
@@ -19,6 +24,11 @@ public static class Calculator
     /// <returns></returns>
     public static decimal WithVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m)
+        {
+            // Still apply ISK rounding policy to the input amount.
+            return PerformVatRounding(withoutVatVal, currency);
+        }
         return PerformVatRounding(withoutVatVal * (1 + vatVal), currency);
     }
 
@@ -28,6 +38,7 @@ public static class Calculator
     /// <returns></returns>
     public static decimal VatAmountFromWithoutVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m) return 0m;
         return WithVat(withoutVatVal, vatVal, currency) - withoutVatVal;
     }
 
@@ -37,6 +48,7 @@ public static class Calculator
     /// <returns></returns>
     public static decimal VatAmountFromWithVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m) return 0m;
         return withoutVatVal - WithoutVat(withoutVatVal, vatVal, currency);
     }
 
@@ -80,9 +92,14 @@ public static class Calculator
     public static (decimal UnitNet, decimal UnitVat) SplitVatFromGrossPerUnit(
         decimal unitGross, decimal vatRate, string currency)
     {
-        // derive net with your rounding policy
-        var unitNet = WithoutVat(unitGross, vatRate, currency); // <-- this is Calculator.WithoutVat(...)
-                                                                // preserve gross by back-calculating VAT
+        if (vatRate == 0m)
+        {
+            // Round per ISK policy; VAT is zero; net == gross after rounding.
+            var rounded = PerformVatRounding(unitGross, currency);
+            return (rounded, 0m);
+        }
+
+        var unitNet = WithoutVat(unitGross, vatRate, currency);
         var unitVat = unitGross - unitNet;
         return (unitNet, unitVat);
     }
