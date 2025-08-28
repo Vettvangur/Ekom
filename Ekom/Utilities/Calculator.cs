@@ -1,6 +1,6 @@
 namespace Ekom.Utilities;
 
-static class Calculator
+public static class Calculator
 {
     /// <summary>
     /// Removes VAT from amount.
@@ -10,6 +10,11 @@ static class Calculator
     /// <returns></returns>
     public static decimal WithoutVat(decimal withVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m)
+        {
+            // Still apply ISK rounding policy to the input amount.
+            return PerformVatRounding(withVatVal, currency);
+        }
         return PerformVatRounding(withVatVal / (1 + vatVal), currency);
     }
 
@@ -19,6 +24,11 @@ static class Calculator
     /// <returns></returns>
     public static decimal WithVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m)
+        {
+            // Still apply ISK rounding policy to the input amount.
+            return PerformVatRounding(withoutVatVal, currency);
+        }
         return PerformVatRounding(withoutVatVal * (1 + vatVal), currency);
     }
 
@@ -28,6 +38,7 @@ static class Calculator
     /// <returns></returns>
     public static decimal VatAmountFromWithoutVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m) return 0m;
         return WithVat(withoutVatVal, vatVal, currency) - withoutVatVal;
     }
 
@@ -37,6 +48,7 @@ static class Calculator
     /// <returns></returns>
     public static decimal VatAmountFromWithVat(decimal withoutVatVal, decimal vatVal, string currency)
     {
+        if (vatVal == 0m) return 0m;
         return withoutVatVal - WithoutVat(withoutVatVal, vatVal, currency);
     }
 
@@ -75,5 +87,26 @@ static class Calculator
             default:
                 throw new ArgumentOutOfRangeException(nameof(rounding), rounding, "Unknown rounding specified");
         }
+    }
+
+    public static (decimal UnitNet, decimal UnitVat) SplitVatFromGrossPerUnit(
+        decimal unitGross, decimal vatRate, string currency)
+    {
+        if (vatRate == 0m)
+        {
+            // Round per ISK policy; VAT is zero; net == gross after rounding.
+            var rounded = PerformVatRounding(unitGross, currency);
+            return (rounded, 0m);
+        }
+
+        var unitNet = WithoutVat(unitGross, vatRate, currency);
+        var unitVat = unitGross - unitNet;
+        return (unitNet, unitVat);
+    }
+
+    public static decimal VatFromNet(decimal withoutVatVal, decimal vatVal, string currency)
+    {
+        var vat = withoutVatVal * vatVal; // vatVal = 0.24m for 24%
+        return PerformVatRounding(vat, currency); // ISK → round to 0 with configured mode
     }
 }

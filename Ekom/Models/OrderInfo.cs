@@ -122,9 +122,7 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
-
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
+            decimal amount = OrderLines.Sum(line => line.Amount.WithVat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -134,11 +132,9 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line => line.Amount.BeforeDiscount.Value);
+            decimal amount = OrderLines.Sum(line => line.Amount.WithoutVat.Value);
 
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
-
-            return new CalculatedPrice(amount - ChargedVat.Value, StoreInfo.Currency);
+            return new CalculatedPrice(amount, StoreInfo.Currency);
         }
     }
 
@@ -182,8 +178,6 @@ class OrderInfo : IOrderInfo
                 return line.Amount.AfterDiscount.Value;
             });
 
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
-
             return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
         }
     }
@@ -193,31 +187,18 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            var subTotal = SubTotal.Value;
-
-            var orderLinesTotal = OrderLines.Sum(line => line.Amount.WithoutVat.Value);
-
-            // This ensures correctness even with per order rounding
-            decimal amount = subTotal - orderLinesTotal;
-
-            var vat = new CalculatedPrice(amount, StoreInfo.Currency);
-
-            return vat;
-        }
-    }
-
-    /// <inheritdoc />
-    public ICalculatedPrice ChargedVat
-    {
-        get
-        {
             decimal amount = 0;
 
             amount += OrderLines.Sum(line => line.Amount.Vat.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
+
     }
+
+    /// <inheritdoc />
+    public ICalculatedPrice ChargedVat => Vat;
+
 
     /// <inheritdoc />
     public ICalculatedPrice GrandTotal
@@ -228,15 +209,14 @@ class OrderInfo : IOrderInfo
             {
                 if (line.Discount == null)
                 {
-                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
-
-                    return lineWithOrderDiscount.Value;
+                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    return lineWithOrderDiscount.Value;            // line gross (already rounded per-line)
                 }
-
                 return line.Amount.Value;
             });
 
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
+            if (ShippingProvider != null) amount += ShippingProvider.Price.Value;
+            if (PaymentProvider != null) amount += PaymentProvider.Price.Value;
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -250,15 +230,14 @@ class OrderInfo : IOrderInfo
             {
                 if (line.Discount == null)
                 {
-                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
-
-                    return lineWithOrderDiscount.WithoutVat.Value;
+                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
+                    return lineWithOrderDiscount.WithoutVat.Value;  // line net (already rounded per-line)
                 }
-
                 return line.Amount.WithoutVat.Value;
             });
 
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
+            if (ShippingProvider != null) amount += ShippingProvider.Price.WithoutVat.Value;
+            if (PaymentProvider != null) amount += PaymentProvider.Price.WithoutVat.Value;
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -302,8 +281,6 @@ class OrderInfo : IOrderInfo
             {
                 amount += PaymentProvider.Price.Value;
             }
-
-            amount = Calculator.EkomRounding(amount, Configuration.Instance.OrderVatCalculationRounding);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }

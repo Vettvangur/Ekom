@@ -12,7 +12,6 @@ public class ConfigurationTests
         using var configScope = new ConfigurationScope(
             ("Ekom:PerStoreStock", "true"),
             ("Ekom:VatCalcRounding", "RoundUp")
-
         );
 
         Assert.True(Configuration.Instance.PerStoreStock);

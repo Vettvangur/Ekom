@@ -251,21 +251,6 @@ public static class StringExtension
         return prices;
     }
 
-    internal static string Hash(this string input)
-    {
-        Murmur128 murmur = MurmurHash.Create128();
-        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-        byte[] hashBytes = murmur.ComputeHash(inputBytes);
-
-        // Convert to hexadecimal string
-        StringBuilder builder = new StringBuilder();
-        foreach (byte b in hashBytes)
-        {
-            builder.Append(b.ToString("x2"));
-        }
-        return builder.ToString();
-    }
-
     public static List<IPrice> GetPriceValues(
         this string priceJson,
         List<CurrencyModel> storeCurrencies,
@@ -277,7 +262,7 @@ public static class StringExtension
         string[]? categories = null
         )
     {
-        List<IPrice> prices = new List<IPrice>();
+        var prices = new List<IPrice>();
 
         if (priceJson.IsJson())
         {
@@ -319,7 +304,7 @@ public static class StringExtension
             }
 
             IDiscount? productDiscount = !string.IsNullOrEmpty(path)
-                ? Configuration.Resolver.GetService<ProductDiscountService>()
+                ? Configuration.Resolver.GetService<ProductDiscountService>()?
                     .GetProductDiscount(
                         path,
                         storeAlias,

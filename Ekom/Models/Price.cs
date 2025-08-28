@@ -20,7 +20,7 @@ public class Price : IPrice
     /// <summary>
     /// Use to ensure that flat discounts are applied before VAT when VAT is included in price.
     /// </summary>
-    public bool DiscountAlwaysBeforeVAT { get; }
+    public bool DiscountAlwaysBeforeVAT { get; set; }
 
     /// <summary>
     /// ctor from JObject
@@ -41,6 +41,7 @@ public class Price : IPrice
         DiscountAlwaysBeforeVAT = jObject[nameof(DiscountAlwaysBeforeVAT)]?.Value<bool>() ?? false;
         HasDiscount = Discount != null;
     }
+
     /// <summary>
     /// ctor
     /// </summary>
@@ -52,7 +53,6 @@ public class Price : IPrice
         OrderedDiscount? discount = null,
         decimal quantity = 1,
         bool discountAlwaysBeforeVat = false
-
     )
         : this(
             decimal.Parse(
@@ -69,7 +69,6 @@ public class Price : IPrice
             discountAlwaysBeforeVat)
     {
     }
-
 
     /// <summary>
     /// ctor
@@ -94,108 +93,64 @@ public class Price : IPrice
         HasDiscount = discount != null;
     }
 
+    bool perUnit => Configuration.Instance.VatRoundingScope == VatRoundingScope.PerUnit;
+
     private CalculatedPrice CreateSimplePrice(decimal price)
         => new CalculatedPrice(price, Currency);
 
-    /// <summary>
-    /// Simple <see cref="ICloneable"/> implementation using object.MemberwiseClone
-    /// </summary>
-    /// <returns></returns>
     public object Clone() => MemberwiseClone();
 
-    /// <summary>
-    /// Original value with Vat as-is
-    /// </summary>
     public decimal OriginalValue { get; }
-    /// <summary>
-    /// Multiplier
-    /// </summary>
     public decimal Quantity { get; }
+    public bool HasDiscount { get; }
 
-    public bool HasDiscount { get;  }
-
-    /// <summary>
-    /// Price before discount with VAT left as-is
-    /// </summary>
     public ICalculatedPrice BeforeDiscount
-        => CreateSimplePrice(OriginalValue * Quantity);
+    {
+        get
+        {
+            var (net, vat, gross) = ComputeLineTotals(applyDiscount: false);
+            return CreateSimplePrice(_storeVatIncludedInPrices ? gross : net);
+        }
+    }
 
-    /// <summary>
-    /// Price after discount with VAT left as-is
-    /// </summary>
     public ICalculatedPrice AfterDiscount
-        => CreateSimplePrice(DiscountedValue * Quantity);
+    {
+        get
+        {
+            var (net, vat, gross) = ComputeLineTotals(applyDiscount: true);
+            return CreateSimplePrice(_storeVatIncludedInPrices ? gross : net);
+        }
+    }
 
-    bool perUnit = Configuration.Instance.VatRoundingScope == VatRoundingScope.PerUnit;
-
-    /// <summary>
-    /// Price with discount but without VAT
-    /// We cannot depend on AfterDiscount since if rounding is to be applied, 
-    /// it should be applied before multiplying by quantity.
-    /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
-    /// </summary>
     public ICalculatedPrice WithoutVat
     {
         get
         {
-            if (!(_storeVatIncludedInPrices))
-                return CreateSimplePrice(DiscountedValue * Quantity);
-
-            if (perUnit)
-            {
-                var unit = Calculator.WithoutVat(DiscountedValue, _storeVAT, Currency.ISOCurrencySymbol);
-                return CreateSimplePrice(unit * Quantity);
-            }
-            else
-            {
-                var total = DiscountedValue * Quantity;
-                total = Calculator.WithoutVat(total, _storeVAT, Currency.ISOCurrencySymbol);
-                return CreateSimplePrice(total);
-            }
+            var (net, _, _) = ComputeLineTotals(applyDiscount: true);
+            return CreateSimplePrice(net);
         }
     }
 
-    /// <summary>
-    /// Value with discount and VAT
-    /// </summary>
-    public decimal Value => WithVat.Value;
-
-    /// <summary>
-    /// Price with discount and VAT.
-    /// We cannot depend on AfterDiscount since if rounding is to be applied, 
-    /// it should be applied before multiplying by quantity.
-    /// Otherwise we would end up with inconsistencies between orderlines of same product but differing quantities.
-    /// </summary>
     public ICalculatedPrice WithVat
     {
         get
         {
-            if (_storeVatIncludedInPrices)
-                return CreateSimplePrice(DiscountedValue * Quantity);
-
-            if (perUnit)
-            {
-                var unit = Calculator.WithVat(DiscountedValue, _storeVAT, Currency.ISOCurrencySymbol);
-                return CreateSimplePrice(unit * Quantity);
-            }
-            else
-            {
-                var total = DiscountedValue * Quantity;
-                total = Calculator.WithVat(total, _storeVAT, Currency.ISOCurrencySymbol);
-                return CreateSimplePrice(total);
-            }
+            var (_, _, gross) = ComputeLineTotals(applyDiscount: true);
+            return CreateSimplePrice(gross);
         }
     }
 
-    /// <summary>
-    /// VAT included or to be included in price with discount
-    /// </summary>
-    public ICalculatedPrice Vat
-        => CreateSimplePrice(WithVat.Value - WithoutVat.Value);
+    public decimal Value => WithVat.Value;
 
-    /// <summary>
-    /// Total monetary value of discount in price
-    /// </summary>
+    public ICalculatedPrice Vat
+    {
+        get
+        {
+            var (_, vat, _) = ComputeLineTotals(applyDiscount: true);
+            return CreateSimplePrice(vat);
+        }
+    }
+
     public ICalculatedPrice DiscountAmount
         => CreateSimplePrice(BeforeDiscount.Value - AfterDiscount.Value);
 
@@ -210,7 +165,6 @@ public class Price : IPrice
                 switch (Discount.Type)
                 {
                     case DiscountType.Fixed:
-
                         if (DiscountAlwaysBeforeVAT && _storeVatIncludedInPrices)
                         {
                             price = Calculator.WithoutVat(price, _storeVAT, Currency.ISOCurrencySymbol);
@@ -223,25 +177,68 @@ public class Price : IPrice
                         break;
 
                     case DiscountType.Percentage:
-
                         price -= price * Discount.Amount;
                         break;
                 }
             }
 
-            // Check if the OriginalValue has decimals
-            bool originalHasDecimals = OriginalValue != Math.Floor(OriginalValue);
-
-            // Check if the DiscountedValue should have decimals based on the OriginalValue
-            bool shouldHaveDecimals = originalHasDecimals;
-
-            // If the DiscountedValue should not have decimals, round it to the nearest integer
-            if (!shouldHaveDecimals)
+            // If the OriginalValue has no decimals, round DiscountedValue to integer
+            if (OriginalValue == Math.Floor(OriginalValue))
             {
                 price = Math.Round(price);
             }
 
             return price;
+        }
+    }
+
+    private (decimal Net, decimal Vat, decimal Gross) ComputeLineTotals(bool applyDiscount)
+    {
+        decimal unit = applyDiscount ? DiscountedValue : OriginalValue;
+        string iso = Currency.ISOCurrencySymbol;
+
+        if (_storeVatIncludedInPrices)
+        {
+            if (perUnit)
+            {
+                // VAT included + PerUnit: split per unit, preserve sticker gross
+                var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
+                var net = unitNet * Quantity;
+                var vat = unitVat * Quantity;
+                var gross = (unitNet + unitVat) * Quantity;
+                return (net, vat, gross);
+            }
+            else // PerTotal
+            {
+                var grossRaw = unit * Quantity;
+                var net = Calculator.WithoutVat(grossRaw, _storeVAT, iso);
+                var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
+                var gross = net + vat;
+                return (net, vat, gross);
+            }
+        }
+        else
+        {
+            // VAT-exclusive pricing
+            if (perUnit)
+            {
+                // ✅ VAT excluded + PerUnit:
+                // round each unit's gross, then multiply
+                var unitGross = Calculator.WithVat(unit, _storeVAT, iso); // applies ISK rounding policy
+                var unitVat = unitGross - unit;
+
+                var net = unit * Quantity;            // net per unit × qty
+                var vat = unitVat * Quantity;         // VAT per unit × qty
+                var gross = unitGross * Quantity;       // gross per unit × qty
+                return (net, vat, gross);
+            }
+            else // PerTotal
+            {
+                var net = unit * Quantity;
+                var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
+                var gross = net + vat;
+                return (net, vat, gross);
+            }
         }
     }
 }

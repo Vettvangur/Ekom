@@ -251,7 +251,7 @@ public class Configuration
             if (!Enum.TryParse(configVal, out Rounding preferredRounding))
             {
                 // Default
-                preferredRounding = Rounding.RoundToEven;
+                preferredRounding = Rounding.AwayFromZero;
             }
 
             return preferredRounding;
@@ -271,26 +271,6 @@ public class Configuration
             }
 
             return preferredRoundingScope;
-        }
-    }
-    
-
-    /// <summary>
-    /// Perform rounding on <see cref="IOrderInfo"/> totals. A common configuration with Navision.
-    /// </summary>
-    public virtual Rounding OrderVatCalculationRounding
-    {
-        get
-        {
-            string? configVal = _configuration["Ekom:OrderVatCalcRounding"];
-
-            if (!Enum.TryParse(configVal, out Rounding preferredRounding))
-            {
-                // Default
-                preferredRounding = Rounding.None;
-            }
-
-            return preferredRounding;
         }
     }
 
