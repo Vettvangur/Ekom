@@ -21,7 +21,7 @@ public sealed class ConfigurationScope : IDisposable
             ["Ekom:PerStoreStock"] = "false",
             ["Ekom:ShareBasket"] = "false",
             ["Ekom:VatCalcRounding"] = "RoundToEven",
-            ["Ekom:OrderVatCalcRounding"] = "None",
+            ["Ekom:VatIncludedPerUnitPolicy"] = "PreserveStickerGross",
             ["Ekom:ExamineSearchIndex"] = "ExternalIndex",
             ["Ekom:BasketCookieLifetime"] = "360",
             ["Ekom:CategoryRootLevel"] = "3",

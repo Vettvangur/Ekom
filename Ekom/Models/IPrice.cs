@@ -36,9 +36,24 @@ public interface IPrice : IVatPrice, ICloneable
     /// </value>
     ICalculatedPrice BeforeDiscount { get; }
     /// <summary>
+    /// Gets the original price before the discount without Vat.
+    /// Same as OriginalValue without vat
+    /// </summary>
+    /// <value>
+    /// The original price before the discount without vat.
+    /// Same as OriginalValue without vat
+    /// </value>
+    ICalculatedPrice BeforeDiscountWithOutVat { get; }
+    /// <summary>
     /// Price after discount with VAT left as-is
     /// </summary>
     ICalculatedPrice AfterDiscount { get; }
+
+    /// <summary>
+    /// Price after discount without VAT
+    /// </summary>
+    ICalculatedPrice AfterDiscountWithOutVat { get; }
+
     /// <summary>
     /// VAT included or to be included in price
     /// </summary>

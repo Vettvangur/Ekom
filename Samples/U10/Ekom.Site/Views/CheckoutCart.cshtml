@@ -73,10 +73,9 @@
                                             </div>
                                         }
                                         <p class="mt-1 text-sm font-medium text-gray-900">
-                                            Unit price<br />
+                                            Unit price with VAT<br />
                                             @if (orderline.Product?.Price.HasDiscount == true)
                                             {
-
                                                 <span class="line-through">
                                                     @orderline.Product.Price.BeforeDiscount.CurrencyString
                                                 </span>
@@ -84,9 +83,35 @@
 
                                             @orderline.Product.Price.WithVat.CurrencyString
                                         </p>
-
                                         <p class="mt-1 text-sm font-medium text-gray-900">
-                                            Total price<br />
+                                            Unit price without VAT<br />
+                                            @if (orderline.Product?.Price.HasDiscount == true)
+                                            {
+                                                <span class="line-through">
+                                                    @orderline.Product.Price.BeforeDiscountWithOutVat.CurrencyString
+                                                </span>
+                                            }
+
+                                            @orderline.Product.Price.AfterDiscountWithOutVat.CurrencyString
+                                        </p>
+                                        <p class="mt-1 text-sm font-medium text-gray-900">
+                                            Unit VAT<br />
+
+                                            @orderline.Product.Price.Vat.CurrencyString
+                                        </p>
+                                        <p class="mt-1 text-sm font-medium text-gray-900">
+                                            Total price without VAT<br />
+                                            @if (orderline.Amount.HasDiscount)
+                                            {
+                                                <span class="line-through">
+                                                    @orderline.Amount.BeforeDiscountWithOutVat.CurrencyString
+                                                </span>
+                                            }
+
+                                            @orderline.Amount.WithoutVat.CurrencyString
+                                        </p>
+                                        <p class="mt-1 text-sm font-medium text-gray-900">
+                                            Total price with VAT<br />
                                             @if (orderline.Amount.HasDiscount) {
                                                 
                                                 <span class="line-through">
@@ -165,30 +190,40 @@
                 <h2 id="summary-heading" class="text-lg font-medium text-gray-900">Order summary</h2>
 
                 <dl class="mt-6 space-y-4">
+
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Total product cost (Excluding tax)</dt>
+                        <dt class="text-sm text-gray-600">Items total incl. VAT (before discount)</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotal.CurrencyString</dd>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <dt class="text-sm text-gray-600">Subtotal (without VAT, before discounts)</dt>
                         <dd class="text-sm font-medium text-gray-900">@order.OrderLineTotalWithOutVat.CurrencyString</dd>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">VAT</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.Vat.CurrencyString</dd>
-                    </div>
+
                     @if (order.Discount != null)
                     {
                         <div class="flex items-center justify-between">
-                            <dt class="text-sm text-gray-600">Discount
+                            <dt class="text-sm text-gray-600">
+                                Discount
                                 @if (!string.IsNullOrEmpty(order.Coupon))
                                 {
                                     <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs tracking-wide text-gray-600">@order.Coupon</span>
                                 }
                             </dt>
-                            <dd class="text-sm font-medium text-gray-900">-@order.DiscountAmount.CurrencyString</dd>
+                            <dd class="text-sm font-medium text-gray-900">-@order.DiscountAmountWithOutVat.CurrencyString</dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt class="text-sm text-gray-600">Subtotal (after discounts, without VAT)</dt>
+                            <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithoutVat.CurrencyString</dd>
                         </div>
                     }
+
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Subtotal (Including tax)</dt>
-                        <dd class="text-sm font-medium text-gray-900">@order.SubTotal.WithVat.CurrencyString</dd>
+                        <dt class="text-sm text-gray-600">VAT</dt>
+                        <dd class="text-sm font-medium text-gray-900">@order.Vat.CurrencyString</dd>
                     </div>
+
                     @if (order.ShippingProvider != null)
                     {
                         <div class="flex items-center justify-between">
@@ -199,7 +234,7 @@
                         </div>
                     }
                     <div class="flex items-center justify-between border-t border-gray-200 pt-4">
-                        <dt class="text-base font-medium text-gray-900">Order total</dt>
+                        <dt class="text-base font-medium text-gray-900">Grand Total (incl. VAT)</dt>
                         <dd class="text-base font-medium text-gray-900">@order.ChargedAmount.CurrencyString</dd>
                     </div>
                 </dl>

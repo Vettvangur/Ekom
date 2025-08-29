@@ -88,9 +88,13 @@ public interface IOrderInfo
     /// </summary>
     ICalculatedPrice ChargedVat { get; }
     /// <summary>
-    /// Total monetary value of discount in order
+    /// Total monetary value of discount with vat in order
     /// </summary>
     ICalculatedPrice DiscountAmount { get; }
+    /// <summary>
+    /// Total monetary value of discount without vat in order
+    /// </summary>
+    ICalculatedPrice DiscountAmountWithOutVat { get; }
 
     /// <summary>
     /// A collection of hangfire job ids linked to this order,

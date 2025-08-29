@@ -108,7 +108,7 @@ public class Configuration
             return null;
         }
 
-        HeadlessConfig? headlessConfig = headlessSection.Get<HeadlessConfig>();
+        var headlessConfig = headlessSection.Get<HeadlessConfig>();
 
         if (headlessConfig == null || !headlessConfig.ReValidateApis.Any())
         {
@@ -177,7 +177,7 @@ public class Configuration
     {
         get
         {
-            return _configuration["Ekom:GlobalCatalog"].ConvertToBool();
+            return _configuration["Ekom:GlobalCatalog"]?.ConvertToBool() ?? false;
         }
     }
 
@@ -210,7 +210,7 @@ public class Configuration
                 return value.Split(',');
             }
 
-            return new string[] { };
+            return [];
         }
     }
 
@@ -238,7 +238,7 @@ public class Configuration
     /// submitted to the checkout controller?
     /// </summary>
     public virtual bool StoreCustomerData
-        => _configuration["Ekom:CustomerData"].ConvertToBool();
+        => _configuration["Ekom:CustomerData"]?.ConvertToBool() ?? false;
 
     /// <summary>
     /// </summary>
@@ -252,6 +252,22 @@ public class Configuration
             {
                 // Default
                 preferredRounding = Rounding.AwayFromZero;
+            }
+
+            return preferredRounding;
+        }
+    }
+
+    public virtual VatIncludedPerUnitPolicy VatIncludedPerUnitPolicy
+    {
+        get
+        {
+            string? configVal = _configuration["Ekom:VatIncludedPerUnitPolicy"];
+
+            if (!Enum.TryParse(configVal, out VatIncludedPerUnitPolicy preferredRounding))
+            {
+                // Default
+                preferredRounding = VatIncludedPerUnitPolicy.PreserveStickerGross;
             }
 
             return preferredRounding;

@@ -187,13 +187,13 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = 0;
+            var subTotalWithOutVat = SubTotal.WithoutVat.Value;
+            var subTotalWithVat = SubTotal.WithVat.Value;
 
-            amount += OrderLines.Sum(line => line.Amount.Vat.Value);
+            var vat = new CalculatedPrice((subTotalWithVat - subTotalWithOutVat), StoreInfo.Currency);
 
-            return new CalculatedPrice(amount, StoreInfo.Currency);
+            return vat;
         }
-
     }
 
     /// <inheritdoc />
@@ -249,6 +249,10 @@ class OrderInfo : IOrderInfo
             OrderLineTotal.Value - GrandTotal.Value,
             StoreInfo.Currency);
 
+    public ICalculatedPrice DiscountAmountWithOutVat
+    => new CalculatedPrice(
+        OrderLineTotalWithOutVat.Value - GrandTotalWithOutVat.Value,
+        StoreInfo.Currency);
     /// <inheritdoc />
     public ICalculatedPrice ChargedAmount
     {
@@ -349,7 +353,7 @@ class OrderInfo : IOrderInfo
         foreach (JToken line in orderLinesArray)
         {
             Guid lineId = (Guid)line[nameof(OrderLine.Key)];
-            int quantity = (int)line[nameof(OrderLine.Quantity)];
+            var quantity = (decimal)line[nameof(OrderLine.Quantity)];
             OrderLineSettings? settings = line[nameof(OrderLine.Settings)]?.ToObject<OrderLineSettings>();
             string productJson = line[nameof(OrderLine.Product)].ToString();
             OrderedDiscount? discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
