@@ -113,6 +113,15 @@ public class Price : IPrice
         }
     }
 
+    public ICalculatedPrice BeforeDiscountWithOutVat
+    {
+        get
+        {
+            var (net, _, _) = ComputeLineTotals(applyDiscount: false);
+            return CreateSimplePrice(net);
+        }
+    }
+
     public ICalculatedPrice AfterDiscount
     {
         get
@@ -121,7 +130,14 @@ public class Price : IPrice
             return CreateSimplePrice(_storeVatIncludedInPrices ? gross : net);
         }
     }
-
+    public ICalculatedPrice AfterDiscountWithOutVat
+    {
+        get
+        {
+            var (net, _, _) = ComputeLineTotals(applyDiscount: true);
+            return CreateSimplePrice(net);
+        }
+    }
     public ICalculatedPrice WithoutVat
     {
         get
@@ -201,12 +217,43 @@ public class Price : IPrice
         {
             if (perUnit)
             {
-                // VAT included + PerUnit: split per unit, preserve sticker gross
-                var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
-                var net = unitNet * Quantity;
-                var vat = unitVat * Quantity;
-                var gross = (unitNet + unitVat) * Quantity;
-                return (net, vat, gross);
+                switch (Configuration.Instance.VatIncludedPerUnitPolicy)
+                {
+                    case VatIncludedPerUnitPolicy.LineLevelVat:
+                        {
+                            // 1) derive UNIT net (with currency policy rounding)
+                            var unitNet = Calculator.WithoutVat(unit, _storeVAT, iso);
+                            // 2) line net
+                            var net = unitNet * Quantity;
+                            // 3) line VAT (recomputed & rounded at line level)
+                            var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);
+                            // 4) line gross (may differ from sticker × qty)
+                            var gross = net + vat;
+                            return (net, vat, gross);
+                        }
+
+                    case VatIncludedPerUnitPolicy.PreserveStickerGross:
+                    default:
+                        {   
+                            //if VAT rate is 0%, still apply currency rounding to the sticker gross per unit
+                            if (_storeVAT == 0m)
+                            {
+                                // WithVat(x, 0) returns currency-rounded amount (e.g., whole krónur for ISK)
+                                var roundedUnitGross = Calculator.WithVat(unit, 0m, iso);
+                                var grossValue = roundedUnitGross * Quantity;
+
+                                // No tax at 0%: net == gross, vat == 0
+                                return (grossValue, 0m, grossValue);
+                            }
+
+                            // Per-unit residuals; keep sticker gross = unit × qty
+                            var (unitNet, unitVat) = Calculator.SplitVatFromGrossPerUnit(unit, _storeVAT, iso);
+                            var net = unitNet * Quantity;
+                            var vat = unitVat * Quantity;
+                            var gross = unit * Quantity; // preserve sticker exactly
+                            return (net, vat, gross);
+                        }
+                }
             }
             else // PerTotal
             {
@@ -219,20 +266,18 @@ public class Price : IPrice
         }
         else
         {
-            // VAT-exclusive pricing
+            // VAT-exclusive pricing (unchanged)
             if (perUnit)
             {
-                // ✅ VAT excluded + PerUnit:
-                // round each unit's gross, then multiply
-                var unitGross = Calculator.WithVat(unit, _storeVAT, iso); // applies ISK rounding policy
+                var unitGross = Calculator.WithVat(unit, _storeVAT, iso);
                 var unitVat = unitGross - unit;
 
-                var net = unit * Quantity;            // net per unit × qty
-                var vat = unitVat * Quantity;         // VAT per unit × qty
-                var gross = unitGross * Quantity;       // gross per unit × qty
+                var net = unit * Quantity;
+                var vat = unitVat * Quantity;
+                var gross = unitGross * Quantity;
                 return (net, vat, gross);
             }
-            else // PerTotal
+            else
             {
                 var net = unit * Quantity;
                 var vat = Calculator.VatAmountFromWithoutVat(net, _storeVAT, iso);

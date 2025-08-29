@@ -187,13 +187,13 @@ class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = 0;
+            var subTotalWithOutVat = SubTotal.WithoutVat.Value;
+            var subTotalWithVat = SubTotal.WithVat.Value;
 
-            amount += OrderLines.Sum(line => line.Amount.Vat.Value);
+            var vat = new CalculatedPrice((subTotalWithVat - subTotalWithOutVat), StoreInfo.Currency);
 
-            return new CalculatedPrice(amount, StoreInfo.Currency);
+            return vat;
         }
-
     }
 
     /// <inheritdoc />
@@ -249,6 +249,10 @@ class OrderInfo : IOrderInfo
             OrderLineTotal.Value - GrandTotal.Value,
             StoreInfo.Currency);
 
+    public ICalculatedPrice DiscountAmountWithOutVat
+    => new CalculatedPrice(
+        OrderLineTotalWithOutVat.Value - GrandTotalWithOutVat.Value,
+        StoreInfo.Currency);
     /// <inheritdoc />
     public ICalculatedPrice ChargedAmount
     {
