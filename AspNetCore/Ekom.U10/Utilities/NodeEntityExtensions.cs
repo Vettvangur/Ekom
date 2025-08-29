@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Text.Json;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Extensions;
@@ -13,31 +14,31 @@ namespace Ekom.Utilities;
 public static class NodeEntityExtensions
 {
 
-    public static T GetValue<T>(this IProduct node, string propAlias, string alias = null)
+    public static T GetValue<T>(this IProduct node, string propAlias, string? alias = null)
     {
         string val = node.GetValue(propAlias, alias);
 
-        return GetValue<T>(val);
+        return GetValue<T>(val, propAlias, node.Key);
     }
-    public static T GetValue<T>(this ICategory node, string propAlias, string alias = null)
+    public static T GetValue<T>(this ICategory node, string propAlias, string? alias = null)
     {
         string val = node.GetValue(propAlias, alias);
 
-        return GetValue<T>(val);
+        return GetValue<T>(val, propAlias, node.Key);
     }
-    public static T GetValue<T>(this INodeEntity node, string propAlias, string alias = null)
+    public static T GetValue<T>(this INodeEntity node, string propAlias, string? alias = null)
     {
         string val = node.GetValue(propAlias, alias);
 
-        return GetValue<T>(val);
+        return GetValue<T>(val, propAlias, node.Key);
     }
-    public static T GetValue<T>(this IPerStoreNodeEntity node, string propAlias, string alias = null)
+    public static T GetValue<T>(this IPerStoreNodeEntity node, string propAlias, string? alias = null)
     {
         string val = node.GetValue(propAlias, alias);
 
-        return GetValue<T>(val);
+        return GetValue<T>(val, propAlias,node.Key);
     }
-    private static T? GetValue<T>(string val)
+    private static T? GetValue<T>(string val, string propAlias, Guid nodeId)
     {
         if (typeof(T) == typeof(string))
         {
@@ -70,6 +71,10 @@ public static class NodeEntityExtensions
         if (typeof(T) == typeof(Link))
         {
             return (T?)(object)GetLink(val);
+        }
+        if (typeof(T) == typeof(IEnumerable<BlockListItem>))
+        {
+            return (T?)(object)GetBlockListItems(propAlias, nodeId);
         }
         if (typeof(T) == typeof(IEnumerable<IProduct>))
         {
@@ -280,6 +285,24 @@ public static class NodeEntityExtensions
         }
 
         return JsonConvert.DeserializeObject<Link>(value);
+    }
+
+    internal static IEnumerable<BlockListItem>? GetBlockListItems(string propAlias, Guid nodeId)
+    {
+        if (string.IsNullOrEmpty(propAlias))
+        {
+            return null;
+        }
+
+        var nodeService = Configuration.Resolver.GetService<NodeService>();
+
+        var node = nodeService?.GetNodeById(nodeId.ToString(), false);
+
+        if (node != null)
+        {
+            return node.Value<IEnumerable<BlockListItem>>(propAlias);
+        }
+        return Enumerable.Empty<BlockListItem>();
     }
 
     internal class MediaItem
