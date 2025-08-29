@@ -349,7 +349,7 @@ class OrderInfo : IOrderInfo
         foreach (JToken line in orderLinesArray)
         {
             Guid lineId = (Guid)line[nameof(OrderLine.Key)];
-            int quantity = (int)line[nameof(OrderLine.Quantity)];
+            var quantity = (decimal)line[nameof(OrderLine.Quantity)];
             OrderLineSettings? settings = line[nameof(OrderLine.Settings)]?.ToObject<OrderLineSettings>();
             string productJson = line[nameof(OrderLine.Product)].ToString();
             OrderedDiscount? discount = line[nameof(OrderLine.Discount)]?.ToObject<OrderedDiscount>();
