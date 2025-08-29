@@ -74,7 +74,7 @@ public static class NodeEntityExtensions
         }
         if (typeof(T) == typeof(IEnumerable<BlockListItem>))
         {
-            return (T?)(object)GetBlockListItems(propAlias, nodeId);
+            return (T?)(object)GetBlockListItems(val, propAlias, nodeId);
         }
         if (typeof(T) == typeof(IEnumerable<IProduct>))
         {
@@ -287,9 +287,9 @@ public static class NodeEntityExtensions
         return JsonConvert.DeserializeObject<Link>(value);
     }
 
-    internal static IEnumerable<BlockListItem>? GetBlockListItems(string propAlias, Guid nodeId)
+    internal static IEnumerable<BlockListItem>? GetBlockListItems(string value, string propAlias, Guid nodeId)
     {
-        if (string.IsNullOrEmpty(propAlias))
+        if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(propAlias))
         {
             return null;
         }
