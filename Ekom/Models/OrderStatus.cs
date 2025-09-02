@@ -1,12 +1,11 @@
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class CheckoutStatus
 {
-    public class CheckoutStatus
-    {
-        public string MemberKey { get; set; }
-        public Guid PaymentProviderKey { get; set; }
-        public string PaymentProvider { get; set; }
-        public Guid OrderId { get; set; }
-        public string SuccessUrl { get; set; }
-        public string ErrorUrl { get; set; }
-    }
+    public string MemberKey { get; set; }
+    public Guid PaymentProviderKey { get; set; }
+    public string PaymentProvider { get; set; }
+    public Guid OrderId { get; set; }
+    public string SuccessUrl { get; set; }
+    public string ErrorUrl { get; set; }
 }

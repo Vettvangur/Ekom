@@ -116,7 +116,7 @@ public class EkomManagerController : ControllerBase
     {
         var chartData = new ChartData();
 
-        OrderListData orders = await _repo.SearchOrdersAsync(start, end, "", store, orderStatus, "1", "99999", "");
+        OrderListData orders = await _repo.SearchOrdersAsync(start, end, "", store, orderStatus,"", page: "1", pageSize: "99999");
 
         IEnumerable<ChartDataPoint> chartDataPoints = orders.Orders.Where(x => x.PaidDate.HasValue).Select(x => new ChartDataPoint(x));
 

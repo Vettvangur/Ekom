@@ -1,4 +1,3 @@
-using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Models.Manager;
 using Ekom.Services;
@@ -57,8 +56,8 @@ public class ManagerRepository
     {
         string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider);
 
-        StringBuilder sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
-        StringBuilder sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
+        var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
+        var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
 
         int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
         int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
@@ -79,11 +78,11 @@ public class ManagerRepository
 
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        List<OrderData> orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
+        var orders = await db.QueryToListAsync<OrderData>(sqlQuery, param);
 
-        OrderListDataTotals totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
+        var totals = db.Execute<OrderListDataTotals>(sqlTotalQuery, param);
 
-        OrderListData orderListData = new OrderListData(orders, totals)
+        var orderListData = new OrderListData(orders, totals)
         {
             Page = _page,
             PageSize = _pageSize
@@ -94,7 +93,7 @@ public class ManagerRepository
 
     private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider)
     {
-        StringBuilder whereClause = new StringBuilder();
+        var whereClause = new StringBuilder();
 
         if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
         {
@@ -167,7 +166,7 @@ public class ManagerRepository
             store
         };
 
-        StringBuilder sqlBuilder = new StringBuilder(@"SELECT 
+        var sqlBuilder = new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,
@@ -180,7 +179,7 @@ public class ManagerRepository
                     SKU nvarchar(200) '$.Product.SKU',
                     Title nvarchar(200) '$.Product.Title',
                     Id int '$.Product.Id',
-                    Quantity int '$.Quantity'
+                    Quantity decimal '$.Quantity'
                 ) AS OL
             WHERE ");
 
@@ -193,15 +192,17 @@ public class ManagerRepository
             ORDER BY 
                 ProductCount DESC");
 
+        var asd = sqlBuilder.ToString();
+
         await using DbContext db = _databaseFactory.GetDatabase();
-        List<MostSoldProduct> products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
+        var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
 
         return products;
     }
 
     public object GetStatusList()
     {
-        IEnumerable<OrderStatus> items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
+        var items = Enum.GetValues(typeof(OrderStatus)).Cast<OrderStatus>();
 
         return items.Select(x => new
         {
