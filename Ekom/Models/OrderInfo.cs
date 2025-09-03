@@ -245,13 +245,14 @@ class OrderInfo : IOrderInfo
 
     /// <inheritdoc />
     public ICalculatedPrice DiscountAmount
-        => new CalculatedPrice(
-            OrderLineTotal.Value - GrandTotal.Value,
-            StoreInfo.Currency);
+    => new CalculatedPrice(
+        OrderLineTotal.Value - SubTotal.AfterDiscount.Value,
+        StoreInfo.Currency);
+
 
     public ICalculatedPrice DiscountAmountWithOutVat
     => new CalculatedPrice(
-        OrderLineTotalWithOutVat.Value - GrandTotalWithOutVat.Value,
+        OrderLineTotalWithOutVat.Value - SubTotal.AfterDiscountWithOutVat.Value,
         StoreInfo.Currency);
     /// <inheritdoc />
     public ICalculatedPrice ChargedAmount
