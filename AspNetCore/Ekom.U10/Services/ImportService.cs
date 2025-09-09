@@ -1613,6 +1613,13 @@ public class ImportService : IImportService
         {
             if (saveEvent == ImportSaveEntEnum.SavePublish || create)
             {
+
+                if (productProcessNode != null && content.ParentId == productProcessNode.Id)
+                {
+                    _contentService.Save(content, userId: syncUser);
+                    return;
+                }
+
                 if (preservePublishStatus)
                 {
                     if (content.Published)
