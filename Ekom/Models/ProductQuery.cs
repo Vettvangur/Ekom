@@ -57,4 +57,5 @@ public class ProductQuery : ProductQueryBase
     public OrderBy? OrderBy { get; set; } = Configuration.Instance.DefaultProductOrderBy;
     public bool FilterOutZeroPriceProducts { get; set; } = false;
     public Func<IProduct, bool>? Filter { get; set; }
+    public bool RaiseEvents { get; set; } = true;
 }

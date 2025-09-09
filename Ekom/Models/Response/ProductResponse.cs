@@ -88,12 +88,12 @@ public class ProductResponse
             }
 
             // Apply Additional Filtering via filterService
-            if (filterService != null)
+            if (filterService != null && query.RaiseEvents)
             {
                 products = filterService.ApplyFilters(products, query, category);
             }
 
-            products = CatalogEvents.RaiseOnBeforeReturnProducts(products);
+            products = query.RaiseEvents ? CatalogEvents.RaiseOnBeforeReturnProducts(products) : products;
 
             // Apply Query Filter
             if (query?.Filter != null)
