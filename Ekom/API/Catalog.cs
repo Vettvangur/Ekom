@@ -76,7 +76,7 @@ public class Catalog
         {
             var product = contentRequest.Product;
 
-            if (product != null)
+            if (product != null && raiseEvent)
             {
                 return CatalogEvents.RaiseOnBeforeReturnProduct(product);
             }
