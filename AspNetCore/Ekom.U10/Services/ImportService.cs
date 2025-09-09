@@ -937,7 +937,7 @@ public class ImportService : IImportService
                 categoryContent.TemplateId = importCategory.TemplateId.Value;
             }
 
-            SaveEvent(categoryContent, importCategory.SaveEvent, syncUser, args.IsCreateOperation);
+            SaveEvent(categoryContent, importCategory.SaveEvent, importCategory.PreservePublishStatus, syncUser, args.IsCreateOperation);
 
             categoriesSaved.Add(importCategory);
 
@@ -1072,7 +1072,7 @@ public class ImportService : IImportService
                 productContent.TemplateId = importProduct.TemplateId.Value;
             }
 
-            SaveEvent(productContent, importProduct.SaveEvent, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
+            SaveEvent(productContent, importProduct.SaveEvent, importProduct.PreservePublishStatus, syncUser, args.IsCreateOperation, recycleBinNode, productProcessNode);
 
             productsSaved.Add(importProduct);
 
@@ -1117,7 +1117,7 @@ public class ImportService : IImportService
 
         variantGroupContent.Name = importVariantGroup.NodeName;
 
-        SaveEvent(variantGroupContent, importVariantGroup.SaveEvent, syncUser, create);
+        SaveEvent(variantGroupContent, importVariantGroup.SaveEvent, importVariantGroup.PreservePublishStatus, syncUser, create);
 
         variantGroupsSaved.Add(importVariantGroup);
     }
@@ -1204,7 +1204,7 @@ public class ImportService : IImportService
 
         variantContent.Name = importVariant.NodeName;
 
-        SaveEvent(variantContent, importVariant.SaveEvent, syncUser, args.IsCreateOperation);
+        SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
 
         variantsSaved.Add(importVariant);
     }
@@ -1607,26 +1607,40 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null)
+    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, bool preservePublishStatus, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
         using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
         {
             if (saveEvent == ImportSaveEntEnum.SavePublish || create)
             {
-                _contentService.SaveAndPublish(content, userId: syncUser);
+                if (preservePublishStatus)
+                {
+                    if (content.Published)
+                    {
+                        _contentService.SaveAndPublish(content, userId: syncUser);
+                        return;
+                    } else
+                    {
+                        _contentService.Save(content, userId: syncUser);
+                        return;
+                    }
+                }
             }
             else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
             {
                 _contentService.Save(content, userId: syncUser);
+                return;
             }
             else if (saveEvent == ImportSaveEntEnum.Unpublish)
             {
                 _contentService.Save(content, userId: syncUser);
                 _contentService.Unpublish(content, userId: syncUser);
+                return;
             }
             else
             {
                 _contentService.Save(content, userId: syncUser);
+                return;
             }
 
             if (recycleBinNode != null && productProcessNode != null && content.ContentType.Alias == "ekmProduct")
@@ -1634,6 +1648,7 @@ public class ImportService : IImportService
                 if (content.ParentId == recycleBinNode.Id)
                 {
                     _contentService.Move(content, productProcessNode.Id, syncUser);
+                    return;
                 }
             }
 

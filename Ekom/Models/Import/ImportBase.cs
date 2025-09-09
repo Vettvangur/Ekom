@@ -63,4 +63,9 @@ public class ImportBase
     /// no new data, preventing accidental overwriting of manually entered information.
     /// </summary>
     public bool PreserveExistingValues { get; set; } = false;
+
+    /// <summary>
+    /// Indicates whether the publish status of existing entities should be preserved during the import process.
+    /// </summary>
+    public bool PreservePublishStatus { get; set; } = false;
 }
