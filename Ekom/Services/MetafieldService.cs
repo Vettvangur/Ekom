@@ -336,14 +336,69 @@ internal class MetafieldService : IMetafieldService
 
             products = FilterByPrice(products, query);
 
+            var filters = query.PropertyFilters
+                .Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value is { } vs && vs.Any())
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => new HashSet<string>(kv.Value.Select(v => v?.Trim() ?? ""), StringComparer.OrdinalIgnoreCase),
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            static IEnumerable<string> Tokenize(string? raw, string sep)
+            {
+                if (string.IsNullOrWhiteSpace(raw))
+                    return Enumerable.Empty<string>();
+
+                var s = raw.Trim();
+
+                // 1) JSON array like ["Ristretto","Espresso"]
+                if (s.StartsWith("[") && s.EndsWith("]"))
+                {
+                    try
+                    {
+                        return JArray.Parse(s)
+                                    .Values<string>()
+                                    .Where(v => !string.IsNullOrWhiteSpace(v))!;
+                    }
+                    catch
+                    {
+                        // fall through
+                    }
+                }
+
+                // 2) Quoted CSV like "Ristretto","Espresso"
+                if (s.StartsWith("\"") && s.EndsWith("\"") && s.Contains("\",\""))
+                {
+                    s = s.Trim('"'); // remove outer quotes
+                    return s.Split(new[] { "\",\"" }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Replace("\\\"", "\"").Trim())
+                            .Where(x => x.Length > 0);
+                }
+
+                // 3) Plain separator
+                return s.Split(new[] { sep }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim().Trim('"').Replace("\\\"", "\""))
+                        .Where(x => x.Length > 0);
+            }
+
             products = products.Where(product =>
-                query.PropertyFilters
-                    .Where(f => !string.IsNullOrEmpty(f.Key) && f.Value != null && f.Value.Any())
-                    .All(f => product.Properties.Any(p => p.Key == f.Key &&
-                        p.Value != null &&
-                        p.Value.Split(new[] { query.PropertySelectorsSeparator }, StringSplitOptions.RemoveEmptyEntries)
-                               .Select(value => value.Trim()) // Trim each split value
-                               .Any(splitValue => f.Value.Any(d => splitValue.Equals(d, StringComparison.InvariantCultureIgnoreCase))))));
+            {
+                foreach (var (key, wantedSet) in filters.Where(x => !string.IsNullOrEmpty(x.Key)))
+                {
+                    var propValue = product.Properties.GetValue(key);
+
+
+                    if (string.IsNullOrEmpty(propValue))
+                        return false;
+
+                    var tokens = Tokenize(propValue, query.PropertySelectorsSeparator);
+
+                    // must match ANY of the desired values for this key
+                    if (!tokens.Any(t => wantedSet.Contains(t)))
+                        return false;
+                }
+                return true;
+            });
         }
 
         return products;
