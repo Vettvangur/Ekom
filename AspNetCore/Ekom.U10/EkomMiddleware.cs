@@ -3,7 +3,9 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -24,19 +26,21 @@ class EkomMiddleware
     private readonly IUmbracoContextFactory _umbracoContextFac;
     private readonly AppCaches _appCaches;
     private readonly IMemberService _memberService;
-
+    private readonly IServiceProvider _serviceProvider;
     public EkomMiddleware(
         RequestDelegate next,
         ILogger<EkomMiddleware> logger,
         IUmbracoContextFactory umbracoContextFac,
         AppCaches appCaches,
-        IMemberService memberService)
+        IMemberService memberService,
+        IServiceProvider serviceProvider)
     {
         _next = next;
         _logger = logger;
         _umbracoContextFac = umbracoContextFac;
         _appCaches = appCaches;
         _memberService = memberService;
+        _serviceProvider = serviceProvider;
     }
 
     /// <summary>
@@ -109,10 +113,24 @@ class EkomMiddleware
 
             using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
 
+
+            using var scope = _serviceProvider.CreateScope();
+            var storeService = scope.ServiceProvider.GetRequiredService<IStoreService>();
+
+            var basePath = context?.Request?.Host + FirstPathSegment(requestPath);
+
+            var store = storeService.GetStoreByDomain(basePath, CultureInfo.CurrentCulture.Name);
+
+            var requestCache = _appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest());
+            if (requestCache != null && requestCache is ContentRequest ekmRequest)
+            {
+                ekmRequest.Store = store;
+
+                ekmRequest.SetStoreCookie(store.Alias, context);
+            }
+
             if (umbCtx?.UmbracoContext != null)
             {
-                IStore? store = null;
-
                 if (context?.Request != null)
                 {
                     // Check for 'storeAlias' in the query string
@@ -135,6 +153,25 @@ class EkomMiddleware
         {
             _logger.LogWarning(ex, "Http module Begin Request failed");
         }
+    }
+    private static string FirstPathSegment(string path)
+    {
+        if (string.IsNullOrEmpty(path) || path == "/") return "/";
+
+        // Ensure leading slash; trim trailing slashes for processing
+        if (!path.StartsWith("/")) path = "/" + path;
+        var trimmed = path.TrimEnd('/');
+
+        // Find the next slash after the first character
+        var nextSlash = trimmed.IndexOf('/', 1);
+        if (nextSlash < 0)
+        {
+            // Single segment like "/qwe" -> ensure trailing slash
+            return trimmed + "/";
+        }
+
+        // Multiple segments: keep "/first/" only
+        return trimmed.Substring(0, nextSlash + 1);
     }
 
     private string? GetStoreAliasFromRequest(HttpRequest request)
@@ -233,23 +270,32 @@ class EkomMiddleware
         {
             return false;
         }
+
         if (
             path.StartsWith("/umbraco/surface", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/umbraco/api", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/umbraco/backoffice/api", StringComparison.InvariantCultureIgnoreCase)
-            )
+        )
         {
             return true;
         }
+
         if (
             path.StartsWith("/umbraco/", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/media/", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/app_plugins/", StringComparison.InvariantCultureIgnoreCase) ||
             path.StartsWith("/build/", StringComparison.InvariantCultureIgnoreCase)
-            )
+        )
         {
             return false;
         }
+
+        // Reject any path that ends with a file extension
+        if (Path.HasExtension(path))
+        {
+            return false;
+        }
+
         return true;
     }
 
