@@ -26,21 +26,21 @@ class EkomMiddleware
     private readonly IUmbracoContextFactory _umbracoContextFac;
     private readonly AppCaches _appCaches;
     private readonly IMemberService _memberService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IStoreService _storeService;
     public EkomMiddleware(
         RequestDelegate next,
         ILogger<EkomMiddleware> logger,
         IUmbracoContextFactory umbracoContextFac,
         AppCaches appCaches,
         IMemberService memberService,
-        IServiceProvider serviceProvider)
+        IStoreService storeService)
     {
         _next = next;
         _logger = logger;
         _umbracoContextFac = umbracoContextFac;
         _appCaches = appCaches;
         _memberService = memberService;
-        _serviceProvider = serviceProvider;
+        _storeService = storeService;
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ class EkomMiddleware
                 return;
             }
 
-            var requestPath = context.Request?.Path.ToString();
+            var requestPath = context.Request?.Path.ToString() ?? "";
 
             if (!AllowPath(requestPath))
             {
@@ -111,18 +111,17 @@ class EkomMiddleware
                 return;
             }
 
+            var host = context.Request?.Host.ToString() ?? "";
+
             using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
 
+            var basePath = host + FirstPathSegment(requestPath);
 
-            using var scope = _serviceProvider.CreateScope();
-            var storeService = scope.ServiceProvider.GetRequiredService<IStoreService>();
-
-            var basePath = context?.Request?.Host + FirstPathSegment(requestPath);
-
-            var store = storeService.GetStoreByDomain(basePath, CultureInfo.CurrentCulture.Name);
+            var store = _storeService.GetStoreByDomain(basePath, CultureInfo.CurrentCulture.Name);
 
             var requestCache = _appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest());
-            if (requestCache != null && requestCache is ContentRequest ekmRequest)
+            
+            if (store != null && requestCache != null && requestCache is ContentRequest ekmRequest)
             {
                 ekmRequest.Store = store;
 
@@ -166,11 +165,11 @@ class EkomMiddleware
         var nextSlash = trimmed.IndexOf('/', 1);
         if (nextSlash < 0)
         {
-            // Single segment like "/qwe" -> ensure trailing slash
+            // Single segment like "/page" -> ensure trailing slash
             return trimmed + "/";
         }
 
-        // Multiple segments: keep "/first/" only
+        // Multiple segments: keep "/page/" only
         return trimmed.Substring(0, nextSlash + 1);
     }
 
@@ -346,8 +345,6 @@ class EkomMiddleware
             {
                 return;
             }
-
-
 
             if (appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest()) is ContentRequest ekmRequest)
             {
