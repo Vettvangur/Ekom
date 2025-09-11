@@ -2,6 +2,7 @@ using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Microsoft.AspNetCore.Http;
+using System.Globalization;
 
 namespace Ekom.Services;
 
@@ -26,32 +27,99 @@ class StoreService : IStoreService
 
     public IStore? GetStoreByDomain(string domain = "", string culture = "")
     {
-        IStore? store = null;
+        static string TrimEndSlash(string s) => (s ?? string.Empty).Trim().TrimEnd('/');
 
-        if (!string.IsNullOrEmpty(domain))
+        // Parse into host / port / first segment
+        static (string host, int? port, string firstSeg) ParseHostPortFirstSeg(string input)
         {
-            domain = domain.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(input)) return (string.Empty, null, string.Empty);
 
-            UmbracoDomain storeDomain
-                = _domainCache.Cache
-                                  .FirstOrDefault
-                                      (x => domain.Equals(x.Value.DomainName, StringComparison.InvariantCultureIgnoreCase))
-                                  .Value;
-
-            if (storeDomain != null)
+            if (!input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !input.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                store = _storeCache.Cache
-                                  .FirstOrDefault
-                                    (x => x.Value.StoreRootNodeId == storeDomain.RootContentId && x.Value.Culture.Name == culture)
-                                  .Value;
+                input = "http://" + input; // allow bare "host/seg"
+            }
+
+            if (Uri.TryCreate(input, UriKind.Absolute, out var uri))
+            {
+                var host = uri.Host;
+                int? port = uri.IsDefaultPort ? null : uri.Port;
+
+                var firstSeg = uri.AbsolutePath
+                    .Split('/', StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault() ?? string.Empty;
+
+                return (host, port, firstSeg);
+            }
+
+            return (string.Empty, null, string.Empty);
+        }
+
+        UmbracoDomain? FindDomain(string key)
+        {
+            var norm = TrimEndSlash(key);
+            return _domainCache.Cache
+                .Select(kv => kv.Value)
+                .FirstOrDefault(d => string.Equals(
+                    TrimEndSlash(d.DomainName),
+                    norm,
+                    StringComparison.InvariantCultureIgnoreCase));
+        }
+
+        IStore? FindStoreForDomain(UmbracoDomain storeDomain, string requestedCulture)
+        {
+            // exact culture
+            var store = _storeCache.Cache
+                .Select(kv => kv.Value)
+                .FirstOrDefault(s => s.StoreRootNodeId == storeDomain.RootContentId
+                                     && s.Culture != null
+                                     && s.Culture.Name.Equals(requestedCulture, StringComparison.OrdinalIgnoreCase));
+
+            // any culture for that root
+            store ??= _storeCache.Cache
+                .Select(kv => kv.Value)
+                .FirstOrDefault(s => s.StoreRootNodeId == storeDomain.RootContentId);
+
+            return store;
+        }
+
+        // -------- main --------
+        var requestedCulture = string.IsNullOrWhiteSpace(culture) ? CultureInfo.CurrentCulture.Name : culture;
+        var (host, port, firstSeg) = ParseHostPortFirstSeg(domain);
+
+        var candidates = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(host))
+        {
+            if (port.HasValue)
+            {
+                var withPort = $"{host}:{port.Value}";
+                if (!string.IsNullOrWhiteSpace(firstSeg))
+                    candidates.Add($"{withPort}/{firstSeg}");
+                candidates.Add(withPort);
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(firstSeg))
+                    candidates.Add($"{host}/{firstSeg}");
+                candidates.Add(host);
             }
         }
 
-        // If no store found by domain or domain is empty, return the first store.
-        store ??= GetAllStores().FirstOrDefault();
+        IStore? store = null;
+        foreach (var c in candidates)
+        {
+            var dom = FindDomain(c);
+            if (dom == null) continue;
 
+            store = FindStoreForDomain(dom, requestedCulture);
+            if (store != null) break;
+        }
+
+        store ??= GetAllStores().FirstOrDefault();
         return store ?? throw new Exception("No store found in cache.");
     }
+
 
     public IStore? GetStoreByAlias(string? alias)
     {
