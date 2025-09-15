@@ -3,39 +3,42 @@
     <PropertyGroup>
         <TargetFrameworks>net8.0</TargetFrameworks>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-        
+
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
         <!-- Package properties -->
-      <PackageId>Ekom.Core</PackageId>
-      <Version>0.0.1</Version>
-      <Title>Ekom Core Library</Title>
-      <Authors>Vettvangur</Authors>
-      <PackageLicenseExpression>MIT</PackageLicenseExpression>
-      <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-      <PackageIcon>images\VV_Logo.png</PackageIcon>
-      <Description>Ekom - E-Commerce solution for Umbraco</Description>
-      <PackageReleaseNotes></PackageReleaseNotes>
-      <Copyright>Copyright 2022</Copyright>
-      <PackageTags></PackageTags>
+        <PackageId>Ekom.Core</PackageId>
+        <Version>0.0.1</Version>
+        <Title>Ekom Core Library</Title>
+        <Authors>Vettvangur</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>Ekom - E-Commerce solution for Umbraco</Description>
+        <PackageReleaseNotes></PackageReleaseNotes>
+        <Copyright>Copyright 2022</Copyright>
+        <PackageTags></PackageTags>
 
-      <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-      <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
-      <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
-      <EmbedUntrackedSources>true</EmbedUntrackedSources>
 
-      <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
-      <IncludeSymbols>true</IncludeSymbols>
-      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
-      <!-- Enable NuGet package caching -->
-      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
 
-      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-      <RootNamespace>Ekom</RootNamespace>
+        <!-- Enable NuGet package caching -->
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <RootNamespace>Ekom</RootNamespace>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
@@ -48,6 +51,7 @@
     <ItemGroup>
         <!-- Package icon -->
         <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -94,9 +98,9 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
-    </ItemGroup>    
+    </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Ekom.Common\Ekom.Common.csproj" />
+        <ProjectReference Include="..\Ekom.Common\Ekom.Common.csproj" />
     </ItemGroup>
 </Project>
