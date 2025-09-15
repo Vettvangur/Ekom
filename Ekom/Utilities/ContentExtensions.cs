@@ -30,13 +30,13 @@ public static class ContentExtensions
     /// <param name="storeAlias"></param>
     /// <param name="currency"></param>
     /// <returns>Property Value</returns>
-    public static decimal GetPrice(this UmbracoContent item, string storeAlias, string currency = null)
+    public static decimal GetPrice(this UmbracoContent item, string storeAlias, string? currency = null)
     {
         string fieldValue = item.GetValue("price", storeAlias);
 
         if (!string.IsNullOrEmpty(fieldValue))
         {
-            List<CurrencyValue> currencyValues = fieldValue.GetCurrencyValues();
+            List<CurrencyValue> currencyValues = fieldValue.GetCurrencyValues(storeAlias);
 
             CurrencyValue? value = string.IsNullOrEmpty(currency) ? currencyValues.FirstOrDefault() : currencyValues.FirstOrDefault(x => x.Currency == currency);
 

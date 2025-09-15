@@ -69,7 +69,7 @@ public class ProductDiscount : Discount, IProductDiscount
         get
         {
 
-            List<CurrencyValue> ranges = Properties.GetPropertyValue("startOfRange", Store.Alias).GetCurrencyValues();
+            List<CurrencyValue> ranges = Properties.GetPropertyValue("startOfRange", Store.Alias).GetCurrencyValues(Store.Alias);
 
             if (ranges != null && ranges.Any())
             {
@@ -94,7 +94,7 @@ public class ProductDiscount : Discount, IProductDiscount
         get
         {
 
-            List<CurrencyValue> ranges = Properties.GetPropertyValue("endOfRange", Store.Alias).GetCurrencyValues();
+            List<CurrencyValue> ranges = Properties.GetPropertyValue("endOfRange", Store.Alias).GetCurrencyValues(Store.Alias);
 
             if (ranges != null && ranges.Any())
             {

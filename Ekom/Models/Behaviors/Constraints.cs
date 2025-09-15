@@ -77,7 +77,7 @@ public class Constraints : IConstraints
             {
                 string? propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
                 string value = _node.Properties.GetPropertyValue("startOfRange", propertyAlias);
-                _startRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
+                _startRanges = value.GetCurrencyValues(propertyAlias) ?? new List<CurrencyValue>();
             }
             return _startRanges;
         }
@@ -126,7 +126,7 @@ public class Constraints : IConstraints
             {
                 string? propertyAlias = (_node as PerStoreNodeEntity)?.Store.Alias;
                 string value = _node.Properties.GetPropertyValue("endOfRange", propertyAlias);
-                _endRanges = value.GetCurrencyValues() ?? new List<CurrencyValue>();
+                _endRanges = value.GetCurrencyValues(propertyAlias) ?? new List<CurrencyValue>();
             }
             return _endRanges;
         }
