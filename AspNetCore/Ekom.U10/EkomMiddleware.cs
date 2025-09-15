@@ -3,7 +3,6 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using Umbraco.Cms.Core.Cache;

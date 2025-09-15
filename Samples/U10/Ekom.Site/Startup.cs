@@ -1,5 +1,6 @@
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
+using Vettvangur.Algolia;
 
 namespace Ekom.Site;
 
@@ -64,8 +65,6 @@ public class Startup
         {
             options.MaxAge = TimeSpan.FromDays(365);
         });
-
-        //services.AddVettvangurAlgolia();
 
         //services.AddEkomValitorPay(_config);
     }

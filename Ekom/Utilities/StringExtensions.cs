@@ -328,7 +328,7 @@ public static class StringExtension
 
         return prices;
     }
-    internal static List<CurrencyValue> GetCurrencyValues(this string priceJson)
+    public static List<CurrencyValue> GetCurrencyValues(this string priceJson)
     {
         List<CurrencyValue> values = new List<CurrencyValue>();
 
