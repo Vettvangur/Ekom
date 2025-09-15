@@ -66,8 +66,6 @@ public class Startup
             options.MaxAge = TimeSpan.FromDays(365);
         });
 
-        services.AddVettvangurAlgolia();
-
         //services.AddEkomValitorPay(_config);
     }
 
