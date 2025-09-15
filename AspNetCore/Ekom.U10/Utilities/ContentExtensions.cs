@@ -441,7 +441,7 @@ public static class ContentExtensions
 
         if (!string.IsNullOrEmpty(fieldValue))
         {
-            var currencyValues = fieldValue.GetCurrencyValues();
+            var currencyValues = fieldValue.GetCurrencyValues(storeAlias);
 
             var value = string.IsNullOrEmpty(currency) ? currencyValues.FirstOrDefault() : currencyValues.FirstOrDefault(x => x.Currency == currency);
 

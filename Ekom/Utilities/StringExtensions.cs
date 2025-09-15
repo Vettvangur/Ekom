@@ -328,63 +328,95 @@ public static class StringExtension
 
         return prices;
     }
-    public static List<CurrencyValue> GetCurrencyValues(this string priceJson)
+    public static List<CurrencyValue> GetCurrencyValues(this string priceJson, string? storeAlias = null)
     {
-        List<CurrencyValue> values = new List<CurrencyValue>();
-
-        if (priceJson.IsJson())
+        if (!LooksLikeJson(priceJson))
         {
-            JArray _values = JArray.Parse(priceJson);
-
-            foreach (JToken value in _values)
+            if (decimal.TryParse(priceJson, NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
             {
-                if (KeyExists(value, "Currency"))
+                var store = string.IsNullOrEmpty(storeAlias)
+                    ? API.Store.Instance.GetStore()
+                    : API.Store.Instance.GetStore(storeAlias);
+
+                return new List<CurrencyValue>(1)
                 {
-                    string? currencyValue = value["Currency"].Value<string>();
-
-                    decimal val;
-
-                    if (value["Price"] != null && value["Price"].HasValues)
-                    {
-                        val = value["Price"].Value<decimal>();
-                    }
-                    else
-                    {
-                        if (value["Value"] != null && value["Value"].HasValues)
-                        {
-                            val = value["Value"].Value<decimal>();
-                        }
-                        else
-                        {
-                            val = 0;
-                        }
-                    }
-
-                    values.Add(new CurrencyValue(val, currencyValue));
-                }
-                else
-                {
-                    string? currencyValue = value["currency"].Value<string>();
-                    decimal val = value["price"] != null ? value["price"].Value<decimal>() : (value["value"] != null ? value["value"].Value<decimal>() : 0);
-
-                    values.Add(new CurrencyValue(val, currencyValue));
-                }
-            }
-        }
-        else
-        {
-            if (decimal.TryParse(priceJson, out decimal value))
-            {
-                IStore? store = API.Store.Instance.GetStore();
-
-                values = new List<CurrencyValue>
-                {
-                    new CurrencyValue(value, store.Currency.CurrencyValue)
+                    new CurrencyValue(v, store?.Currency.CurrencyValue
+                                         ?? API.Store.Instance.GetAllStores().FirstOrDefault()?.Currency.CurrencyValue
+                                         ?? string.Empty)
                 };
             }
+            return new List<CurrencyValue>(0);
         }
 
-        return values;
+        var token = JToken.Parse(priceJson);
+
+        if (token is JArray arr)
+        {
+            var list = new List<CurrencyValue>(arr.Count);
+            foreach (var t in arr)
+            {
+                if (TryReadCurrencyValue(t, out var cv))
+                    list.Add(cv);
+            }
+            return list;
+        }
+        else // single object
+        {
+            return TryReadCurrencyValue(token, out var single)
+                ? new List<CurrencyValue>(1) { single }
+                : new List<CurrencyValue>(0);
+        }
+    }
+
+    private static bool LooksLikeJson(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        ReadOnlySpan<char> span = s.AsSpan().TrimStart();
+        if (span.IsEmpty)
+            return false;
+
+        char c = span[0];
+        return c == '{' || c == '[' || c == '"';
+    }
+
+    private static bool TryReadCurrencyValue(JToken t, out CurrencyValue cv)
+    {
+        cv = default;
+
+        // Currency: support both "Currency" and "currency"
+        var currencyTok = t["Currency"] ?? t["currency"];
+        var currency = currencyTok?.Value<string>();
+        if (string.IsNullOrWhiteSpace(currency))
+            return false; // required
+
+        // Price/Value: support both casings; accept number or string numbers
+        decimal price = 0m;
+        var pTok = t["Price"] ?? t["price"] ?? t["Value"] ?? t["value"];
+        if (pTok != null && TryGetDecimalInvariant(pTok, out var p))
+            price = p; // else keep 0
+
+        cv = new CurrencyValue(price, currency);
+        return true;
+    }
+
+    private static bool TryGetDecimalInvariant(JToken tok, out decimal value)
+    {
+        value = 0m;
+        switch (tok.Type)
+        {
+            case JTokenType.Integer:
+            case JTokenType.Float:
+                // direct conversion is fine
+                value = tok.Value<decimal>();
+                return true;
+            case JTokenType.String:
+                var s = tok.Value<string>();
+                return decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+            default:
+                return false;
+        }
     }
 
     internal static bool KeyExists(JToken token, string key)

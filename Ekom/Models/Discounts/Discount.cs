@@ -136,7 +136,7 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
         {
             return Properties
                 .GetPropertyValue("discount", Store.Alias)
-                .GetCurrencyValues()
+                .GetCurrencyValues(Store.Alias)
                 .AsReadOnly();
         }
     }
