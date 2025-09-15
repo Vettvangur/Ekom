@@ -370,14 +370,15 @@ public static class StringExtension
 
     private static bool LooksLikeJson(string s)
     {
-        if (string.IsNullOrWhiteSpace(s)) return false;
-        for (int i = 0; i < s.Length; i++)
-        {
-            var c = s[i];
-            if (!char.IsWhiteSpace(c))
-                return c == '{' || c == '[' || c == '"';
-        }
-        return false;
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        ReadOnlySpan<char> span = s.AsSpan().TrimStart();
+        if (span.IsEmpty)
+            return false;
+
+        char c = span[0];
+        return c == '{' || c == '[' || c == '"';
     }
 
     private static bool TryReadCurrencyValue(JToken t, out CurrencyValue cv)
