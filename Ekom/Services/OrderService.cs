@@ -1008,7 +1008,7 @@ partial class OrderService
 
         if (settings != null && settings.CustomData != null)
         {
-            await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo);
+            orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo));
         }
 
         quantity = eventModel.Quantity;
