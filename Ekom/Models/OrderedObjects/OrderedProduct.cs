@@ -233,7 +233,7 @@ public class OrderedProduct
     /// <summary>
     /// ctor
     /// </summary>
-    public OrderedProduct(IProduct product, IVariant variant, StoreInfo storeInfo, OrderDynamicRequest? orderDynamic = null)
+    public OrderedProduct(IProduct product, IVariant? variant, StoreInfo storeInfo, OrderDynamicRequest? orderDynamic = null)
     {
         product = product ?? throw new ArgumentNullException(nameof(product));
         StoreInfo = storeInfo ?? throw new ArgumentNullException(nameof(storeInfo));
@@ -271,7 +271,7 @@ public class OrderedProduct
 
         if (variant != null)
         {
-            List<OrderedVariantGroup> variantGroups = new List<OrderedVariantGroup>();
+            var variantGroups = new List<OrderedVariantGroup>();
 
             IVariantGroup variantGroup = variant.VariantGroup;
 
