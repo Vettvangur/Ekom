@@ -657,10 +657,10 @@ partial class OrderService
     public async Task<OrderInfo> AddOrderLineAsync(
         IProduct product,
         decimal quantity,
-        IStore store,
+        IStore? store,
         OrderAction? action = null,
-        IVariant variant = null,
-        OrderSettings settings = null
+        IVariant? variant = null,
+        OrderSettings? settings = null
     )
     {
         if (settings == null)
@@ -716,9 +716,9 @@ partial class OrderService
     public async Task<OrderInfo> RemoveOrderLineProductAsync(
         Guid productKey,
         string storeAlias,
-        RemoveOrderSettings settings = null)
+        RemoveOrderSettings? settings = null)
     {
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -782,7 +782,7 @@ partial class OrderService
     public async Task<OrderInfo> RemoveOrderLineAsync(
         Guid lineId,
         string storeAlias,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         _logger.LogDebug("Remove OrderLine... LineId: " + lineId);
 
@@ -790,7 +790,7 @@ partial class OrderService
         {
             settings = new OrderSettings();
         }
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -838,7 +838,7 @@ partial class OrderService
     public async Task<OrderInfo> RemoveOrderLinesAsync(
         Guid[] lineIds,
         string storeAlias,
-        OrderSettings settings = null)
+        OrderSettings? settings = null)
     {
         _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
 
@@ -846,7 +846,7 @@ partial class OrderService
         {
             settings = new OrderSettings();
         }
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -924,7 +924,7 @@ partial class OrderService
         {
             settings = new OrderSettings();
         }
-        OrderInfo orderInfo;
+        OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
             orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
@@ -989,7 +989,7 @@ partial class OrderService
         IProduct product,
         decimal quantity,
         OrderAction action,
-        IVariant variant,
+        IVariant? variant,
         OrderSettings settings
     )
     {
@@ -1301,7 +1301,8 @@ partial class OrderService
 
     public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
     {
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+
         if (orderInfo == null)
         {
             throw new OrderInfoNotFoundException();
@@ -1702,7 +1703,7 @@ partial class OrderService
         return true;
     }
 
-    private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant variant = null)
+    private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
     {
         if (!_config.DisableStock
         && !product.Backorder
@@ -1911,11 +1912,11 @@ partial class OrderService
             .Replace("#year#", _date.Year.ToString(), StringComparison.InvariantCultureIgnoreCase);
     }
 
-    private string CreateKey(IStore store)
+    private string CreateKey(IStore? store)
     {
         string key = "ekmOrder";
 
-        if (!store.ShareBasketBetweenStores)
+        if (store != null && !store.ShareBasketBetweenStores)
         {
             key += "-" + store.Alias;
         }

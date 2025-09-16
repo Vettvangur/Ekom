@@ -8,19 +8,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Ekom.Controllers;
 
-
 /// <summary>
 /// Handles order/cart creation, updates and removals
 /// </summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Reliability",
-    "CA2007:Consider calling ConfigureAwait on the awaited task",
-    Justification = "Async controller actions don't need ConfigureAwait")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Style",
-    "VSTHRD200:Use \"Async\" suffix for async methods",
-    Justification = "Async controller action")]
-
 [Route("ekom/order")]
 [ServiceFilter(typeof(ApiExceptionFilter))]
 public partial class EkomOrderController : ControllerBase
@@ -64,6 +54,7 @@ public partial class EkomOrderController : ControllerBase
         }
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
+            Request.Body.Position = 0;
             using var reader = new StreamReader(Request.Body);
             var body = await reader.ReadToEndAsync();
 

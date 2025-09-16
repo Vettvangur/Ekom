@@ -237,7 +237,7 @@ class OrderRepository
     /// <param name="orderStatuses"></param>
     /// <returns></returns>
     public async Task<List<OrderData>> GetStatusOrdersAsync(
-        Expression<Func<OrderData, bool>> filter = null,
+        Expression<Func<OrderData, bool>>? filter = null,
         params OrderStatus[] orderStatuses
     )
     {

@@ -105,7 +105,7 @@ public partial class Order
     /// Do not use for cart or checkout display.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo> GetOrderAsync(Guid uniqueId) => await _orderService.GetOrderAsync(uniqueId);
+    public async Task<IOrderInfo?> GetOrderAsync(Guid uniqueId) => await _orderService.GetOrderAsync(uniqueId);
 
     /// <summary>
     /// Get completed order using cookie data and provided store.

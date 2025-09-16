@@ -1,6 +1,4 @@
-using Ekom.Utilities;
-
-namespace Ekom.Models;
+using Ekom.Utilities;namespace Ekom.Models;
 
 public class OrderRequest
 {
