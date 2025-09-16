@@ -668,7 +668,6 @@ partial class OrderService
             settings = new OrderSettings();
         }
 
-
         // If cart action is null then AddOrUpdate is the default state
         OrderAction cartAction = action != null ? action.Value : OrderAction.AddOrUpdate;
 
@@ -1006,6 +1005,11 @@ partial class OrderService
 
         OrderEvents.OnAddingOrderline(this, eventModel);
         await OrderEvents.OnAddingOrderlineAsync(this, eventModel);
+
+        if (settings != null && settings.CustomData != null)
+        {
+            await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo);
+        }
 
         quantity = eventModel.Quantity;
         product = eventModel.Product;
