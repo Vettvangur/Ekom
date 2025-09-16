@@ -4,11 +4,11 @@ namespace Ekom.Models;
 
 public class OrderRequest
 {
-    public required Guid productId { get; set; }
-    public Guid? variantId { get; set; }
-    public string storeAlias { get; set; } = string.Empty;
-    public decimal quantity { get; set; } = 1;
-    public OrderAction? action { get; set; } = OrderAction.AddOrUpdate;
+    public required Guid ProductId { get; set; }
+    public Guid? VariantId { get; set; }
+    public string StoreAlias { get; set; } = string.Empty;
+    public decimal Quantity { get; set; } = 1;
+    public OrderAction? Action { get; set; } = OrderAction.AddOrUpdate;
 }
 
 public class OrderlineRequest

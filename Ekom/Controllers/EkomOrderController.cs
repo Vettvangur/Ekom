@@ -1,12 +1,10 @@
 using Ekom.API;
-using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.Net;
 
 namespace Ekom.Controllers;
 
@@ -51,14 +49,50 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest();
         }
 
+        Request.EnableBuffering();
+
+        Dictionary<string, string> customData = new(StringComparer.OrdinalIgnoreCase);
+
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync();
+            customData = form.ToDictionary(
+                k => k.Key,
+                v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(v.Value.ToString()),
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+        else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            using var reader = new StreamReader(Request.Body);
+            var body = await reader.ReadToEndAsync();
+
+            if (!string.IsNullOrWhiteSpace(body))
+            {
+                var json = JObject.Parse(body);
+
+                customData = json.Properties()
+                    .ToDictionary(
+                        p => p.Name,
+                        p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+            }
+        }
+        else
+        {
+            return BadRequest("Unsupported content type. Only application/json or form data is supported.");
+        }
+
         IOrderInfo orderInfo = await Order.Instance.AddOrderLineAsync(
-            request.productId,
-            request.quantity,
-            request.storeAlias,
+            request.ProductId,
+            request.Quantity,
+            request.StoreAlias,
             new AddOrderSettings
             {
-                OrderAction = request.action ?? OrderAction.AddOrUpdate,
-                VariantKey = request.variantId
+                OrderAction = request.Action ?? OrderAction.AddOrUpdate,
+                VariantKey = request.VariantId,
+                CustomData = customData
             });
 
         return Ok(orderInfo);

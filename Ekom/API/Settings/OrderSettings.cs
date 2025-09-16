@@ -1,112 +1,113 @@
 using Ekom.Models;
 using Ekom.Utilities;
+using System.Text.Json;
 
-namespace Ekom.API
+namespace Ekom.API;
+
+/// <summary>
+/// Ekom Order Api optional configuration
+/// </summary>
+public class OrderSettings
 {
     /// <summary>
-    /// Ekom Order Api optional configuration
+    /// Master switch for all order events
     /// </summary>
-    public class OrderSettings
+    public bool FireEvents { get; set; } = true;
+
+    private bool _fireOnOrderUpdatedEvent = true;
+    /// <summary>
+    /// Disable Ekom OnOrderUpdated event, 
+    /// useful for event listeners not interested in creating a cascade of events.
+    /// </summary>
+    public bool FireOnOrderUpdatedEvent
     {
-        /// <summary>
-        /// Master switch for all order events
-        /// </summary>
-        public bool FireEvents { get; set; } = true;
-
-        private bool _fireOnOrderUpdatedEvent = true;
-        /// <summary>
-        /// Disable Ekom OnOrderUpdated event, 
-        /// useful for event listeners not interested in creating a cascade of events.
-        /// </summary>
-        public bool FireOnOrderUpdatedEvent
-        {
-            get => _fireOnOrderUpdatedEvent && FireEvents;
-            set => _fireOnOrderUpdatedEvent = value;
-        }
-
-        // Event handlers are called from inside the lock, 
-        // at the end of a call to the OrderService, immediately after writing to db.
-        // There is one common method which offered that spot and since it's inside the lock,
-        // we have a special flag for event handlers to allow them to enter.
-        //
-        // We could make OrderInfo public, OrderLines public and provide OrderInfo to event handlers
-        // But then all their modifications would bypass any checks in place in Ekom 
-        // and all hell would break loose?
-        /// <summary>
-        /// This flag currently enables special provisions for event handler entry into
-        /// locked sections of Order manipulation code.
-        /// </summary>
-        public bool IsEventHandler { get; set; }
-
-        /// <summary>
-        /// This allows callers to supporting methods to provide a completed order, 
-        /// circumventing our IsOrderFinal logic
-        /// </summary>
-        public IOrderInfo OrderInfo { get; set; }
-
-        public OrderDynamicRequest OrderDynamicRequest { get; set; }
+        get => _fireOnOrderUpdatedEvent && FireEvents;
+        set => _fireOnOrderUpdatedEvent = value;
     }
+
+    // Event handlers are called from inside the lock, 
+    // at the end of a call to the OrderService, immediately after writing to db.
+    // There is one common method which offered that spot and since it's inside the lock,
+    // we have a special flag for event handlers to allow them to enter.
+    //
+    // We could make OrderInfo public, OrderLines public and provide OrderInfo to event handlers
+    // But then all their modifications would bypass any checks in place in Ekom 
+    // and all hell would break loose?
+    /// <summary>
+    /// This flag currently enables special provisions for event handler entry into
+    /// locked sections of Order manipulation code.
+    /// </summary>
+    public bool IsEventHandler { get; set; }
 
     /// <summary>
-    /// Ekom Order Api AddOrderLine optional configuration
+    /// This allows callers to supporting methods to provide a completed order, 
+    /// circumventing our IsOrderFinal logic
     /// </summary>
-    public class AddOrderSettings : OrderSettings
-    {
-        /// <summary>
-        /// Default is AddOrUpdate, we also allow to set quantity to fixed amount.
-        /// </summary>
-        public OrderAction OrderAction { get; set; } = OrderAction.AddOrUpdate;
+    public IOrderInfo OrderInfo { get; set; }
 
-        /// <summary>
-        /// Target a specific Variant under the given product
-        /// </summary>
-        public Guid? VariantKey { get; set; }
-    }
+    public OrderDynamicRequest OrderDynamicRequest { get; set; }
+    public Dictionary<string, string>? CustomData { get; set; }
+}
+
+/// <summary>
+/// Ekom Order Api AddOrderLine optional configuration
+/// </summary>
+public class AddOrderSettings : OrderSettings
+{
+    /// <summary>
+    /// Default is AddOrUpdate, we also allow to set quantity to fixed amount.
+    /// </summary>
+    public OrderAction OrderAction { get; set; } = OrderAction.AddOrUpdate;
 
     /// <summary>
-    /// Ekom Order Api RemoveOrderLine optional configuration
+    /// Target a specific Variant under the given product
     /// </summary>
-    public class RemoveOrderSettings : OrderSettings
-    {
-        /// <summary>
-        /// Target a specific Variant under the given product
-        /// </summary>
-        public Guid? VariantKey { get; set; }
-    }
+    public Guid? VariantKey { get; set; }
+}
 
+/// <summary>
+/// Ekom Order Api RemoveOrderLine optional configuration
+/// </summary>
+public class RemoveOrderSettings : OrderSettings
+{
     /// <summary>
-    /// Ekom Order Api ChangeOrderStatus optional configuration
+    /// Target a specific Variant under the given product
     /// </summary>
-    public class ChangeOrderSettings : OrderSettings
-    {
-        private bool _fireOnOrderStatusChangingEvent = true;
-        /// <summary>
-        /// Disable Ekom OnOrderStatusChanging event
-        /// </summary>
-        public bool FireOnOrderStatusChangingEvent
-        {
-            get => _fireOnOrderStatusChangingEvent && FireEvents;
-            set => _fireOnOrderStatusChangingEvent = value;
-        }
-    }
+    public Guid? VariantKey { get; set; }
+}
 
+/// <summary>
+/// Ekom Order Api ChangeOrderStatus optional configuration
+/// </summary>
+public class ChangeOrderSettings : OrderSettings
+{
+    private bool _fireOnOrderStatusChangingEvent = true;
     /// <summary>
-    /// Ekom Order Api RemoveOrderLine optional configuration
+    /// Disable Ekom OnOrderStatusChanging event
     /// </summary>
-    public class DiscountOrderSettings : OrderSettings
+    public bool FireOnOrderStatusChangingEvent
     {
-        /// <summary>
-        /// Target a specific Variant under the given product
-        /// </summary>
-        public string Coupon { get; set; }
-
-        // Ended up not using this
-        /// <summary>
-        /// Disables calls to UpdateOrderAndOrderInfoAsync from discount code. <br />
-        /// Allows OrderService methods to skip updating order twice. <br />
-        /// When disabled, order update events will of course not fire from these discount changes.
-        /// </summary>
-        [Obsolete("Is this useful? You should have access to private methods that don't update order. If it is, remove this attribute.")]
-        internal bool UpdateOrder { get; set; } = true;
+        get => _fireOnOrderStatusChangingEvent && FireEvents;
+        set => _fireOnOrderStatusChangingEvent = value;
     }
+}
+
+/// <summary>
+/// Ekom Order Api RemoveOrderLine optional configuration
+/// </summary>
+public class DiscountOrderSettings : OrderSettings
+{
+    /// <summary>
+    /// Target a specific Variant under the given product
+    /// </summary>
+    public string Coupon { get; set; }
+
+    // Ended up not using this
+    /// <summary>
+    /// Disables calls to UpdateOrderAndOrderInfoAsync from discount code. <br />
+    /// Allows OrderService methods to skip updating order twice. <br />
+    /// When disabled, order update events will of course not fire from these discount changes.
+    /// </summary>
+    [Obsolete("Is this useful? You should have access to private methods that don't update order. If it is, remove this attribute.")]
+    internal bool UpdateOrder { get; set; } = true;
 }
