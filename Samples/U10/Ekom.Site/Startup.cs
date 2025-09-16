@@ -1,6 +1,5 @@
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
-using Vettvangur.Algolia;
 
 namespace Ekom.Site;
 
