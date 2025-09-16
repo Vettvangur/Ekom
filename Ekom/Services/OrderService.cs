@@ -1011,6 +1011,13 @@ partial class OrderService
             orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo));
         }
 
+        var filteredOrderlineData = settings.CustomData.Where(kvp =>
+            kvp.Key.StartsWith("orderline", StringComparison.OrdinalIgnoreCase)).ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value,
+                StringComparer.OrdinalIgnoreCase
+            );
+
         quantity = eventModel.Quantity;
         product = eventModel.Product;
         variant = eventModel.Variant;
@@ -1033,6 +1040,7 @@ partial class OrderService
         {
             await semaphore.WaitAsync().ConfigureAwait(false);
         }
+
         try
         {
             Guid lineId = Guid.NewGuid();
@@ -1094,6 +1102,11 @@ partial class OrderService
                         RemoveOrderLine(orderInfo, orderLine);
                     }
                 }
+
+                foreach (var kvp in filteredOrderlineData)
+                {
+                    orderLine.OrderLineInfo.Properties[kvp.Key] = kvp.Value;
+                }
             }
             else
             {
@@ -1113,6 +1126,7 @@ partial class OrderService
                     quantity,
                     lineId,
                     orderInfo,
+                    filteredOrderlineData,
                     variant,
                     settings.OrderDynamicRequest
                 );

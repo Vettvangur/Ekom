@@ -45,7 +45,7 @@ public class OrderSettings
     public IOrderInfo OrderInfo { get; set; }
 
     public OrderDynamicRequest OrderDynamicRequest { get; set; }
-    public Dictionary<string, string>? CustomData { get; set; } = [];
+    public Dictionary<string, string> CustomData { get; set; } = [];
 }
 
 /// <summary>

@@ -143,15 +143,19 @@ class OrderLine : IOrderLine
         decimal quantity,
         Guid lineId,
         OrderInfo orderInfo,
-        IVariant variant = null,
-        OrderDynamicRequest orderDynamic = null)
+        Dictionary<string, string> orderLineData,
+        IVariant? variant = null,
+        OrderDynamicRequest? orderDynamic = null)
     {
         OrderInfo = orderInfo;
         Quantity = quantity;
         Key = lineId;
         Product = new OrderedProduct(product, variant, orderInfo.StoreInfo, orderDynamic);
         Discount = product.Price.Discount;
-
+        OrderLineInfo = new OrderLineInfo()
+        {
+            Properties = orderLineData
+        };
         if (orderDynamic != null)
         {
             Settings = new OrderLineSettings()

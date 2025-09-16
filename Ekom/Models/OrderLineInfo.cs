@@ -1,7 +1,6 @@
-namespace Ekom.Models
+namespace Ekom.Models;
+
+public class OrderLineInfo
 {
-    public class OrderLineInfo
-    {
-        public Dictionary<string, string> Properties = new Dictionary<string, string>();
-    }
+    public Dictionary<string, string> Properties = new Dictionary<string, string>();
 }

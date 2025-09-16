@@ -374,7 +374,7 @@ class OrderInfo : IOrderInfo
         return orderLines;
     }
 
-    private OrderedShippingProvider CreateShippingProviderFromJson(JObject orderInfoJObject)
+    private OrderedShippingProvider? CreateShippingProviderFromJson(JObject orderInfoJObject)
     {
         if (orderInfoJObject[nameof(ShippingProvider)] != null)
         {
@@ -396,7 +396,7 @@ class OrderInfo : IOrderInfo
         return null;
     }
 
-    private OrderedPaymentProvider CreatePaymentProviderFromJson(JObject orderInfoJObject)
+    private OrderedPaymentProvider? CreatePaymentProviderFromJson(JObject orderInfoJObject)
     {
         if (orderInfoJObject[nameof(PaymentProvider)] != null)
         {
@@ -418,7 +418,7 @@ class OrderInfo : IOrderInfo
         return null;
     }
 
-    private StoreInfo CreateStoreInfoFromJson(JObject orderInfoJObject)
+    private StoreInfo? CreateStoreInfoFromJson(JObject orderInfoJObject)
     {
         if (orderInfoJObject[nameof(StoreInfo)] != null)
         {
@@ -440,7 +440,7 @@ class OrderInfo : IOrderInfo
         return null;
     }
 
-    private CustomerInfo CreateCustomerInformationFromJson(JObject orderInfoJObject)
+    private CustomerInfo? CreateCustomerInformationFromJson(JObject orderInfoJObject)
     {
         if (orderInfoJObject[nameof(CustomerInformation)] != null)
         {
