@@ -14,6 +14,6 @@ public class ImportStock
     /// <summary>
     /// Gets or sets the stock level of the item.
     /// </summary>
-    /// <value>The stock level as an integer.</value>
-    public required int Stock { get; set; }
+    /// <value>The stock level as an decimal.</value>
+    public required decimal Stock { get; set; }
 }
