@@ -959,19 +959,26 @@ public class ImportService : IImportService
 
             OnProductSaveStarting(this, args).GetAwaiter().GetResult();
 
+            var perStoreStock = Configuration.Instance.PerStoreStock;
+
             // Always do stock update
             if (importProduct.Stock.Any())
             {
                 foreach (var stock in importProduct.Stock)
                 {
-                    var currentStock = _stock.GetStock(productContent.Key, stock.StoreAlias);
+                    var currentStock = perStoreStock ? _stock.GetStock(productContent.Key, stock.StoreAlias) : _stock.GetStock(productContent.Key);
                     var newStock = stock.Stock >= 0 ? stock.Stock : 0;
 
-                    // Only update if we find change 
                     if (newStock != currentStock)
                     {
-                        // this can be done in the background because we will not use stock in the comparison below
-                        _ = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, stock.Stock); 
+                        if (perStoreStock) 
+                        {
+                            _ = _stock.SetStockAsync(productContent.Key, stock.StoreAlias, newStock); 
+                        }
+                        else
+                        {
+                            _ = _stock.SetStockAsync(productContent.Key, newStock);
+                        }
                     }
                 }
             }
@@ -1129,18 +1136,26 @@ public class ImportService : IImportService
 
         OnVariantSaveStarting(this, args).GetAwaiter().GetResult();
 
+        var perStoreStock = Configuration.Instance.PerStoreStock;
+
         // Always do stock update
         if (importVariant.Stock.Any())
         {
             foreach (var stock in importVariant.Stock)
             {
-                var currentStock = _stock.GetStock(variantContent.Key, stock.StoreAlias);
+                var currentStock = perStoreStock ? _stock.GetStock(variantContent.Key, stock.StoreAlias) : _stock.GetStock(variantContent.Key);
                 var newStock = stock.Stock >= 0 ? stock.Stock : 0;
 
                 // Only update if we find change 
                 if (newStock != currentStock)
                 {
-                    var stockUpdated = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, stock.Stock).Result;
+                    if (perStoreStock)
+                    {
+                        _ = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, stock.Stock);
+                    }
+                    else
+                    {
+                        _ = _stock.SetStockAsync(variantContent.Key, stock.Stock);
                 }
             }
         }

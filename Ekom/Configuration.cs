@@ -42,7 +42,7 @@ public class Configuration
         {
             string? value = _configuration["Ekom:PerStoreStock"];
 
-            return value.ConvertToBool();
+            return value?.ConvertToBool() ?? false;
         }
     }
 
