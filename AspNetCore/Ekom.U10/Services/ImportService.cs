@@ -964,7 +964,7 @@ public class ImportService : IImportService
             {
                 foreach (var stock in importProduct.Stock)
                 {
-                    var currentStock = _stock.GetStock(productContent.Key);
+                    var currentStock = _stock.GetStock(productContent.Key, stock.StoreAlias);
                     var newStock = stock.Stock >= 0 ? stock.Stock : 0;
 
                     // Only update if we find change 
@@ -1134,7 +1134,7 @@ public class ImportService : IImportService
         {
             foreach (var stock in importVariant.Stock)
             {
-                var currentStock = _stock.GetStock(variantContent.Key);
+                var currentStock = _stock.GetStock(variantContent.Key, stock.StoreAlias);
                 var newStock = stock.Stock >= 0 ? stock.Stock : 0;
 
                 // Only update if we find change 
