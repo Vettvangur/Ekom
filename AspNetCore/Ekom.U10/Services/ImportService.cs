@@ -1151,11 +1151,11 @@ public class ImportService : IImportService
                 {
                     if (perStoreStock)
                     {
-                        _ = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, stock.Stock);
+                        _ = _stock.SetStockAsync(variantContent.Key, stock.StoreAlias, newStock);
                     }
                     else
                     {
-                        _ = _stock.SetStockAsync(variantContent.Key, stock.Stock);
+                        _ = _stock.SetStockAsync(variantContent.Key, newStock);
                 }
             }
         }
