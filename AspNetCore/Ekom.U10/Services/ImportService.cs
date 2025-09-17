@@ -1132,7 +1132,7 @@ public class ImportService : IImportService
     }
     private void SaveVariant(IContent variantContent, ImportVariant importVariant, List<IMedia>? allUmbracoMedia, bool create, int syncUser, bool forceUpdate = false)
     {
-        var args = new ImportVariantEventArgs(variantContent, importVariant, create, false,false);
+        var args = new ImportVariantEventArgs(variantContent, importVariant, create, false, false);
 
         OnVariantSaveStarting(this, args).GetAwaiter().GetResult();
 
@@ -1156,75 +1156,77 @@ public class ImportService : IImportService
                     else
                     {
                         _ = _stock.SetStockAsync(variantContent.Key, newStock);
+                    }
                 }
             }
-        }
 
-        var saveImages = false;
-        var saveFiles = false;
+            var saveImages = false;
+            var saveFiles = false;
 
-        if (allUmbracoMedia != null)
-        {
-            saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, preserveExistingValues: importVariant.PreserveExistingValues);
-
-            saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
-        }
-
-        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
-
-        // If no changes are found and not creating then return,
-        if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
-        {
-            return;
-        }
-
-        variantContent.SetProperty("title", importVariant.Title);
-
-        if (!string.IsNullOrEmpty(importVariant.SKU))
-        {
-            variantContent.SetValue("sku", importVariant.SKU);
-        }
-
-        if (variantContent.HasProperty("description") && !importVariant.PreserveExistingValues)
-        {
-            variantContent.SetProperty("description", importVariant.Description);
-        }
-
-        if (importVariant.SortOrder.HasValue)
-        {
-            variantContent.SortOrder = importVariant.SortOrder.Value;
-        }
-
-        variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
-
-        if (importVariant.Price.Any())
-        {
-            foreach (var price in importVariant.Price)
+            if (allUmbracoMedia != null)
             {
-                variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
-            }
-        }
-        if (importVariant.Vat.HasValue)
-        {
-            variantContent.SetValue("vat", importVariant.Vat);
-        }
+                saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, preserveExistingValues: importVariant.PreserveExistingValues);
 
-        if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
-        {
-            foreach (var property in importVariant.AdditionalProperties)
+                saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
+            }
+
+            var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
+
+            // If no changes are found and not creating then return,
+            if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
             {
-                variantContent.SetValue(property.Key, property.Value);
+                return;
             }
+
+            variantContent.SetProperty("title", importVariant.Title);
+
+            if (!string.IsNullOrEmpty(importVariant.SKU))
+            {
+                variantContent.SetValue("sku", importVariant.SKU);
+            }
+
+            if (variantContent.HasProperty("description") && !importVariant.PreserveExistingValues)
+            {
+                variantContent.SetProperty("description", importVariant.Description);
+            }
+
+            if (importVariant.SortOrder.HasValue)
+            {
+                variantContent.SortOrder = importVariant.SortOrder.Value;
+            }
+
+            variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
+
+            if (importVariant.Price.Any())
+            {
+                foreach (var price in importVariant.Price)
+                {
+                    variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
+                }
+            }
+            if (importVariant.Vat.HasValue)
+            {
+                variantContent.SetValue("vat", importVariant.Vat);
+            }
+
+            if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
+            {
+                foreach (var property in importVariant.AdditionalProperties)
+                {
+                    variantContent.SetValue(property.Key, property.Value);
+                }
+            }
+
+            variantContent.SetValue("comparer", compareValue);
+
+            variantContent.Name = importVariant.NodeName;
+
+            SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
+
+            variantsSaved.Add(importVariant);
         }
-
-        variantContent.SetValue("comparer", compareValue);
-
-        variantContent.Name = importVariant.NodeName;
-
-        SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
-
-        variantsSaved.Add(importVariant);
     }
+
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool preserveExistingValues = false)
     {
         if (allUmbracoMedia == null)
