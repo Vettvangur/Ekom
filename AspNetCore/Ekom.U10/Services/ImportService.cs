@@ -97,6 +97,7 @@ public class ImportService : IImportService
             var stopwatchTotal = Stopwatch.StartNew();
 
             using var backgroundScope = new BackgroundScope(_serverMessenger);
+            using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
             GetInitialData(parentKey);
 
@@ -192,6 +193,7 @@ public class ImportService : IImportService
             var stopwatchTotal = Stopwatch.StartNew();
 
             using var backgroundScope = new BackgroundScope(_serverMessenger);
+            using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
             GetInitialData(parentKey);
 
@@ -243,6 +245,7 @@ public class ImportService : IImportService
         var stopwatch = Stopwatch.StartNew();
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         GetInitialData(parentKey);
 
@@ -281,6 +284,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Product Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         GetInitialData(parentKey);
 
@@ -306,6 +310,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Variant Group Sync running. SKU: {importVariantGroup.Identifier}, SyncUser: {syncUser}");
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         GetInitialData(parentKey);
 
@@ -330,6 +335,7 @@ public class ImportService : IImportService
         _logger.LogInformation($"Variant Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
 
         using var backgroundScope = new BackgroundScope(_serverMessenger);
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         GetInitialData(parentKey);
 
@@ -352,6 +358,8 @@ public class ImportService : IImportService
     public void ProductUpdateSync(ImportProduct importProduct, Guid? parentKey, Guid mediaRootKey, int syncUser = -1, bool forceUpdate = false)
     {
         _logger.LogInformation($"Product Update Sync running. SKU: {importProduct.SKU}, SyncUser: {syncUser}");
+
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         GetInitialData(parentKey);
 
@@ -387,6 +395,8 @@ public class ImportService : IImportService
 
         _logger.LogInformation($"Variant Update Sync running. SKU: {importVariant.SKU}, SyncUser: {syncUser}");
 
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+
         GetInitialData(parentKey);
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
@@ -415,6 +425,8 @@ public class ImportService : IImportService
 
         _logger.LogInformation($"Category Update Sync running. SKU: {importCategory.SKU}, SyncUser: {syncUser}");
 
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+
         GetInitialData(parentKey);
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
@@ -441,6 +453,8 @@ public class ImportService : IImportService
     {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
 
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
+
         productContentType = _contentTypeService.Get("ekmProduct");
 
         var rootUmbracoMediafolder = _importMediaService.GetRootMedia(mediaRootKey);
@@ -458,6 +472,8 @@ public class ImportService : IImportService
     public void SyncVariantMedia(string identifier, List<IImportMedia> medias, Guid mediaRootKey, ImportMediaTypes mediaType, ImportMediaContentTypes mediaContentType, int syncUser = -1)
     {
         ArgumentException.ThrowIfNullOrEmpty(identifier);
+
+        using var contextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         productVariantContentType = _contentTypeService.Get("ekmProductVariant");
 
@@ -502,18 +518,17 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
-                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+
+                try
                 {
-                    try
-                    {
-                        _contentService.Move(content, newParent.Id, syncUser);
+                    _contentService.Move(content, newParent.Id, syncUser);
 
-                    } catch(Exception ex)
-                    {
-                        _logger.LogWarning($"Could not move Category  {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
-                    }
-
+                } catch(Exception ex)
+                {
+                    _logger.LogWarning($"Could not move Category  {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id}");
                 }
+
+                
             }
 
             MoveCategoryTree(importCategory.SubCategories, allImportCategories, allUmbracoCategories, content, syncUser);
@@ -563,10 +578,8 @@ public class ImportService : IImportService
                     // Category not found in import, so it should be deleted
                     _logger.LogInformation($"Delete category Id: {umbracoCategory.Id} Name: {umbracoCategory.Name} Identifier: {categoryIdentifier}");
 
-                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-                    {
-                        _contentService.Delete(umbracoCategory);
-                    }
+                    _contentService.Delete(umbracoCategory, syncUser);
+                    
                     allUmbracoCategories.Remove(umbracoCategory);
                     categoriesDeleted++;
                 }
@@ -595,10 +608,8 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Category moved. Id: {content.Id} Name: {content.Name} Old Parent: {content.ParentId} New Parent: {newParent.Id} ParentIdentifier: {importCategory.ParentIdentifier}");
 
-                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-                {
-                    _contentService.Move(content, newParent.Id, syncUser);
-                }
+                _contentService.Move(content, newParent.Id, syncUser);
+                
             }
 
             var save = create;
@@ -660,19 +671,16 @@ public class ImportService : IImportService
                     {
                         _logger.LogInformation($"Product deleted Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier}");
 
-                        using (_umbracoContextFactory.EnsureUmbracoContext())
+                        if (recycleBinNode != null)
                         {
-                            if (recycleBinNode != null)
-                            {
-                                _contentService.Unpublish(umbracoProduct, userId: syncUser);
-                                _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
-                            }
-                            else
-                            {
-                                _contentService.Delete(umbracoProduct, syncUser);
-                            }
+                            _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                            _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
                         }
-
+                        else
+                        {
+                            _contentService.Delete(umbracoProduct, syncUser);
+                        }
+     
                         productDeleted++;
                         continue;
                     }
@@ -697,27 +705,25 @@ public class ImportService : IImportService
                                 {
                                     _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
 
-                                    using (_umbracoContextFactory.EnsureUmbracoContext())
-                                    {
-                                        _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
-                                    }
+
+                                    _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+                                    
                                 }
                                 else
                                 {
                                     _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
 
-                                    using (_umbracoContextFactory.EnsureUmbracoContext())
+                  
+                                    if (recycleBinNode != null)
                                     {
-                                        if (recycleBinNode != null)
-                                        {
-                                            _contentService.Unpublish(umbracoProduct, userId: syncUser);
-                                            _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
-                                        }
-                                        else
-                                        {
-                                            _contentService.Delete(umbracoProduct, syncUser);
-                                        }
+                                        _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                                        _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
                                     }
+                                    else
+                                    {
+                                        _contentService.Delete(umbracoProduct, syncUser);
+                                    }
+                                    
 
                                     productDeleted++;
                                 }
@@ -801,10 +807,9 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier} Product Id: {productContent.Id} Product SKU: {productContent.GetValue<string>("sku")}");
 
-                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-                {
+
                     _contentService.Delete(umbracoVariantGroup);
-                }
+                
                    
                 allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
@@ -851,11 +856,8 @@ public class ImportService : IImportService
                 {
                     _logger.LogInformation($"Delete variant Id: {umbracoVariant.Id} Name: {umbracoVariant.Name} Identifier: {variantIdentifier}");
 
-                    using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-                    {
-                        _contentService.Delete(umbracoVariant);
-                    }
-                      
+                    _contentService.Delete(umbracoVariant);
+  
                     allEkomNodes.RemoveAt(i);
                     umbracoVariantsChildrenContent.RemoveAt(i);
                     variantDeleted++;
@@ -1364,16 +1366,15 @@ public class ImportService : IImportService
 
             if (saveContent)
             {
-                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+
+                if (content.Published)
                 {
-                    if (content.Published)
-                    {
-                        _contentService.SaveAndPublish(content, userId: syncUser);
-                    } else
-                    {
-                        _contentService.Save(content, userId: syncUser);
-                    }
+                    _contentService.SaveAndPublish(content, userId: syncUser);
+                } else
+                {
+                    _contentService.Save(content, userId: syncUser);
                 }
+                
             }
 
             return true;
@@ -1544,17 +1545,16 @@ public class ImportService : IImportService
 
             if (saveContent)
             {
-                using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
+
+                if (content.Published)
                 {
-                    if (content.Published)
-                    {
-                        _contentService.SaveAndPublish(content, userId: syncUser);
-                    }
-                    else
-                    {
-                        _contentService.Save(content, userId: syncUser);
-                    }
+                    _contentService.SaveAndPublish(content, userId: syncUser);
                 }
+                else
+                {
+                    _contentService.Save(content, userId: syncUser);
+                }
+                
             }
 
             return true;
@@ -1609,57 +1609,56 @@ public class ImportService : IImportService
 
     private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, bool preservePublishStatus, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null)
     {
-        using (var contextReference = _umbracoContextFactory.EnsureUmbracoContext())
-        {
-            if (saveEvent == ImportSaveEntEnum.SavePublish || create)
-            {
 
-                if (productProcessNode != null && content.ParentId == productProcessNode.Id)
+        if (saveEvent == ImportSaveEntEnum.SavePublish || create)
+        {
+
+            if (productProcessNode != null && content.ParentId == productProcessNode.Id)
+            {
+                _contentService.Save(content, userId: syncUser);
+                return;
+            }
+
+            if (preservePublishStatus)
+            {
+                if (content.Published)
+                {
+                    _contentService.SaveAndPublish(content, userId: syncUser);
+                    return;
+                } else
                 {
                     _contentService.Save(content, userId: syncUser);
                     return;
                 }
-
-                if (preservePublishStatus)
-                {
-                    if (content.Published)
-                    {
-                        _contentService.SaveAndPublish(content, userId: syncUser);
-                        return;
-                    } else
-                    {
-                        _contentService.Save(content, userId: syncUser);
-                        return;
-                    }
-                }
             }
-            else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
-            {
-                _contentService.Save(content, userId: syncUser);
-                return;
-            }
-            else if (saveEvent == ImportSaveEntEnum.Unpublish)
-            {
-                _contentService.Save(content, userId: syncUser);
-                _contentService.Unpublish(content, userId: syncUser);
-                return;
-            }
-            else
-            {
-                _contentService.Save(content, userId: syncUser);
-                return;
-            }
-
-            if (recycleBinNode != null && productProcessNode != null && content.ContentType.Alias == "ekmProduct")
-            {
-                if (content.ParentId == recycleBinNode.Id)
-                {
-                    _contentService.Move(content, productProcessNode.Id, syncUser);
-                    return;
-                }
-            }
-
         }
+        else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
+        {
+            _contentService.Save(content, userId: syncUser);
+            return;
+        }
+        else if (saveEvent == ImportSaveEntEnum.Unpublish)
+        {
+            _contentService.Save(content, userId: syncUser);
+            _contentService.Unpublish(content, userId: syncUser);
+            return;
+        }
+        else
+        {
+            _contentService.Save(content, userId: syncUser);
+            return;
+        }
+
+        if (recycleBinNode != null && productProcessNode != null && content.ContentType.Alias == "ekmProduct")
+        {
+            if (content.ParentId == recycleBinNode.Id)
+            {
+                _contentService.Move(content, productProcessNode.Id, syncUser);
+                return;
+            }
+        }
+
+        
     }
 
     /// <summary>
