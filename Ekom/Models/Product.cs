@@ -274,23 +274,29 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
+            var lazy = _cache.GetOrAdd($"Prices", _ =>
+                new Lazy<object>(() =>
+                {
+                    string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
 
-            bool vatIncludedInPrice = Store.VatIncludedInPrice;
-            CurrencyModel storeCurrency = Store.Currency;
+                    bool vatIncludedInPrice = Store.VatIncludedInPrice;
+                    CurrencyModel storeCurrency = Store.Currency;
 
-            List<IPrice> prices = GetValue("price", Store.Alias)
-                .GetPriceValues(
-                    Store.Currencies,
-                    Vat,
-                    vatIncludedInPrice,
-                    storeCurrency,
-                    Store.Alias,
-                    Path,
-                    categories
-                );
+                    List<IPrice> prices = GetValue("price", Store.Alias)
+                        .GetPriceValues(
+                            Store.Currencies,
+                            Vat,
+                            vatIncludedInPrice,
+                            storeCurrency,
+                            Store.Alias,
+                            Path,
+                            categories
+                        );
+                    return prices;
+                }, LazyThreadSafetyMode.ExecutionAndPublication)
+            );
 
-            return prices;
+            return (List<IPrice>)((Lazy<object>)lazy).Value;
         }
     }
 
@@ -369,26 +375,25 @@ public class Product : PerStoreNodeEntity, IProduct
     }
 
 
+    private List<MetavalueSlim>? _metafieldsCache;
+
     public virtual List<MetavalueSlim> Metafields
     {
         get
         {
+            if (_metafieldsCache is not null) return _metafieldsCache;
+
             if (!Properties.HasPropertyValue("metafields"))
-            {
-                return [];
-            }
-                
+                return _metafieldsCache = [];
+
             var value = GetValue("metafields");
             var metafieldService = Configuration.Resolver.GetService<IMetafieldService>();
+            if (metafieldService is null)
+                return _metafieldsCache = [];
 
-            if (metafieldService == null)
-            {
-                return [];
-            }
- 
             var metafields = metafieldService.SerializeMetafields(value, Id);
 
-            return metafields.Select(m => new MetavalueSlim
+            _metafieldsCache = metafields.Select(m => new MetavalueSlim
             {
                 Field = new MetafieldSlim
                 {
@@ -407,6 +412,8 @@ public class Product : PerStoreNodeEntity, IProduct
                 },
                 Values = m.Values
             }).ToList();
+
+            return _metafieldsCache;
         }
     }
 
