@@ -499,7 +499,7 @@ public class ImportService : IImportService
 
         foreach (var importCategory in importCategories)
         {
-            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, syncUser, out bool create);
 
             if (content == null)
             {
@@ -590,7 +590,7 @@ public class ImportService : IImportService
 
         foreach (var importCategory in importCategories)
         {
-            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, out bool create);
+            var content = GetOrCreateContent(categoryContentType, allUmbracoCategories, importCategory.NodeName, importCategory.Identifier, parentContent, syncUser, out bool create);
 
             if (content == null)
             {
@@ -755,7 +755,7 @@ public class ImportService : IImportService
                     {
                         var umbracoChildrenContent = allUmbracoProducts.Where(x => x.ParentId == primaryCategoryContent.Id).ToList();
 
-                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, out bool create);
+                        var productContent = GetOrCreateContent(productContentType, umbracoChildrenContent, importProduct.NodeName, importProduct.Identifier, primaryCategoryContent, syncUser, out bool create);
 
                         if (productContent == null)
                         {
@@ -820,7 +820,7 @@ public class ImportService : IImportService
 
         foreach (var importVariantGroup in importVariantGroups)
         {
-            var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, out bool create);
+            var variantGroupContent = GetOrCreateContent(productVariantGroupContentType, umbracoVariantGroupChildrenContent, importVariantGroup.NodeName, importVariantGroup.Identifier, productContent, syncUser, out bool create);
 
             if (variantGroupContent == null)
             {
@@ -869,7 +869,7 @@ public class ImportService : IImportService
 
         foreach (var importVariant in importVariants)
         {
-            var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, out bool create);
+            var variantContent = GetOrCreateContent(productVariantContentType, umbracoVariantsChildrenContent, importVariant.NodeName, importVariant.Identifier, variantGroupContent, syncUser, out bool create);
 
             if (variantContent == null)
             {
@@ -1733,9 +1733,10 @@ public class ImportService : IImportService
     /// <param name="nodeName">The name for the new content node if creation is needed.</param>
     /// <param name="identifer">The identifier to search for in the existing content items. Cannot be null.</param>
     /// <param name="parentContent">The parent content under which the new content should be created if needed.</param>
+    /// <param name="syncUser">Id of the user doing changes</param>
     /// <param name="create">Outputs true if a new content item was created, false otherwise.</param>
     /// <returns>The found or newly created content item.</returns>
-    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> allUmbracoCategories, string nodeName, string identifer, IContent parentContent, out bool create)
+    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> allUmbracoCategories, string nodeName, string identifer, IContent parentContent, int syncUser, out bool create)
     {
         ArgumentNullException.ThrowIfNull(contenType);
         ArgumentNullException.ThrowIfNull(nodeName);
@@ -1752,8 +1753,15 @@ public class ImportService : IImportService
 
         if (content == null)
         {
-            content = new Umbraco.Cms.Core.Models.Content(nodeName, parentContent.Id, contenType);
-            create = true;
+            try
+            {
+                content = _contentService.Create(nodeName, parentContent.Id, contenType, syncUser);
+                create = true;
+            } catch(Exception ex)
+            {
+                _logger.LogError(ex, $"Could not create {contenType.Alias} node with name {nodeName} under parent {parentContent.Id}. Message: {ex.Message}");
+            }
+
         }
 
         return content;
