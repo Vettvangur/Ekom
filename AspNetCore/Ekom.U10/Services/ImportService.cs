@@ -1628,58 +1628,67 @@ public class ImportService : IImportService
         }
     }
 
-    private void SaveEvent(IContent content, ImportSaveEntEnum saveEvent, bool preservePublishStatus, int syncUser, bool create, IContent? recycleBinNode = null, IContent? productProcessNode = null)
+    private void SaveEvent(
+        IContent content,
+        ImportSaveEntEnum saveEvent,
+        bool preservePublishStatus,
+        int syncUser,
+        bool create,
+        IContent? recycleBinNode = null,
+        IContent? productProcessNode = null)
     {
-
-        if (saveEvent == ImportSaveEntEnum.SavePublish || create)
+        // If we should be in the processing area (e.g., coming from recycle bin), move FIRST.
+        if (recycleBinNode != null
+            && productProcessNode != null
+            && content.ContentType.Alias == "ekmProduct"
+            && content.ParentId == recycleBinNode.Id)
         {
+            _contentService.Move(content, productProcessNode.Id, syncUser);
+        }
 
-            if (productProcessNode != null && content.ParentId == productProcessNode.Id)
-            {
-                _contentService.Save(content, userId: syncUser);
-                return;
-            }
+        // If content currently lives under productProcessNode, we treat it as staging: never publish here.
+        bool inProcessing = productProcessNode != null && content.ParentId == productProcessNode.Id;
 
-            if (preservePublishStatus)
-            {
-                if (content.Published)
-                {
-                    _contentService.SaveAndPublish(content, userId: syncUser);
-                    return;
-                } else
+        if (inProcessing)
+        {
+            // Always just save while in processing area.
+            _contentService.Save(content, userId: syncUser);
+            return;
+        }
+
+        switch (saveEvent)
+        {
+            case ImportSaveEntEnum.Unpublish:
+                if (create)
                 {
                     _contentService.Save(content, userId: syncUser);
-                    return;
                 }
-            }
-        }
-        else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
-        {
-            _contentService.Save(content, userId: syncUser);
-            return;
-        }
-        else if (saveEvent == ImportSaveEntEnum.Unpublish)
-        {
-            _contentService.Save(content, userId: syncUser);
-            _contentService.Unpublish(content, userId: syncUser);
-            return;
-        }
-        else
-        {
-            _contentService.Save(content, userId: syncUser);
-            return;
-        }
-
-        if (recycleBinNode != null && productProcessNode != null && content.ContentType.Alias == "ekmProduct")
-        {
-            if (content.ParentId == recycleBinNode.Id)
-            {
-                _contentService.Move(content, productProcessNode.Id, syncUser);
+                else
+                {
+                    _contentService.Save(content, userId: syncUser);
+                    _contentService.Unpublish(content, userId: syncUser);
+                }
                 return;
-            }
-        }
 
-        
+            case ImportSaveEntEnum.SavePublish:
+            default:
+                if (preservePublishStatus)
+                {
+                    if (content.Published)
+                    {
+                        _contentService.SaveAndPublish(content, userId: syncUser);
+                    }
+                    else
+                    {
+                        _contentService.Save(content, userId: syncUser);
+                    }
+                }
+                else
+                {
+                    _contentService.SaveAndPublish(content, userId: syncUser);
+                }
+                return;
+        }
     }
 
     /// <summary>
