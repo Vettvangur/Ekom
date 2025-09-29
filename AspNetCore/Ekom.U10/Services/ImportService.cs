@@ -807,10 +807,8 @@ public class ImportService : IImportService
             {
                 _logger.LogInformation($"Delete variant Group Id: {umbracoVariantGroup.Id} Name: {umbracoVariantGroup.Name} Identifier: {variantGroupIdentifier} Product Id: {productContent.Id} Product SKU: {productContent.GetValue<string>("sku")}");
 
-
-                    _contentService.Delete(umbracoVariantGroup);
+                _contentService.Delete(umbracoVariantGroup);
                 
-                   
                 allEkomNodes.RemoveAt(i);
                 umbracoVariantGroupChildrenContent.RemoveAt(i);
                 variantGroupDeleted++;
@@ -837,6 +835,12 @@ public class ImportService : IImportService
 
     private void IterateVariants(List<ImportVariant> importVariants, IContent variantGroupContent, List<IContent> allEkomNodes, List<IMedia> allUmbracoMedia, int syncUser, bool delete = true, bool forceUpdate = false)
     {
+        if (variantGroupContent == null || variantGroupContent.Id == 0)
+        {
+            _logger.LogError("Could not iterate variants. Variant Groups null or id 0. Name: {Name} Id: {Id} Path: {Path}", variantGroupContent?.Name ?? "", variantGroupContent?.Id, variantGroupContent?.Path ?? "");
+            return;
+        }
+
         var umbracoVariantsChildrenContent = allEkomNodes.Where(x => x.ParentId == variantGroupContent.Id).ToList();
 
         if (delete)
