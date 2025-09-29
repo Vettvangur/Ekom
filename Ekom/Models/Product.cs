@@ -318,7 +318,7 @@ public class Product : PerStoreNodeEntity, IProduct
             decimal storeVat = Store.Vat;
             bool storeVatIncluded = Store.VatIncludedInPrice;
 
-            string originalPrice = GetValue("price", Store.Alias);
+            string originalPrice = GetValue("price", Store.Alias, false);
 
             if (string.IsNullOrEmpty(originalPrice))
             {
@@ -332,12 +332,18 @@ public class Product : PerStoreNodeEntity, IProduct
 
             if (originalPrice.IsJson())
             {
-                var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                if (val.HasValue)
+                try
                 {
-                    return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
+
+                    if (val.HasValue)
+                    {
+                        return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                    }
+                } catch(Exception ex)
+                {
+                    throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
                 }
             }
 
@@ -508,7 +514,6 @@ public class Product : PerStoreNodeEntity, IProduct
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url).ToList();
-        InvalidateCache();
     }
 
     public void InvalidateCache()

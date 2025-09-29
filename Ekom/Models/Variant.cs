@@ -295,16 +295,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <param name="store"></param>
     public Variant(UmbracoContent item, IStore store) : base(item, store)
     {
-        if (Product != null)
-        {
-            Product.InvalidateCache();
-        }
-
-        InvalidateCache();
-    }
-
-    public void InvalidateCache()
-    {
-        _cache.Clear();
+        Product?.InvalidateCache();
     }
 }

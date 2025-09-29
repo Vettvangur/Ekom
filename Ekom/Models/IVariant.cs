@@ -107,6 +107,4 @@ public interface IVariant : IPerStoreNodeEntity
     /// Variant images
     /// </summary>
     IEnumerable<Image> Images { get; }
-
-    void InvalidateCache();
 }
