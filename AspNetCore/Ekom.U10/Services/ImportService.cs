@@ -1651,6 +1651,9 @@ public class ImportService : IImportService
                     _contentService.Save(content, userId: syncUser);
                     return;
                 }
+            } else
+            {
+                _contentService.SaveAndPublish(content, userId: syncUser);
             }
         }
         else if (saveEvent == ImportSaveEntEnum.Unpublish && create)
