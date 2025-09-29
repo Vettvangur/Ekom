@@ -122,11 +122,7 @@ public class VariantGroup : PerStoreNodeEntity, IVariantGroup
     public VariantGroup(UmbracoContent node, IStore store) : base(node, store)
     {
         storeAlias = store.Alias;
-        
-        if (Product != null)
-        {
-            Product.InvalidateCache();
-        }
-       
+
+        Product?.InvalidateCache();
     }
 }
