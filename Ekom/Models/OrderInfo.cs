@@ -190,7 +190,14 @@ class OrderInfo : IOrderInfo
             var subTotalWithOutVat = SubTotal.WithoutVat.Value;
             var subTotalWithVat = SubTotal.WithVat.Value;
 
-            var vat = new CalculatedPrice((subTotalWithVat - subTotalWithOutVat), StoreInfo.Currency);
+            var vatAmount = (subTotalWithVat - subTotalWithOutVat);
+
+            if (StoreInfo.ApplyVatOnShipping)
+            {
+                vatAmount += (ShippingProvider?.Price.Vat.Value ?? 0);
+            }
+
+            var vat = new CalculatedPrice(vatAmount, StoreInfo.Currency);
 
             return vat;
         }
