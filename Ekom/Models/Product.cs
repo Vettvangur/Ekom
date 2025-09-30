@@ -343,7 +343,7 @@ public class Product : PerStoreNodeEntity, IProduct
                     }
                 } catch(Exception ex)
                 {
-                    throw new Exception("Failed to parse original price JSON for product " + Id + " value: " + originalPrice, ex);
+                    throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
                 }
             }
 
