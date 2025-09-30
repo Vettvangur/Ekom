@@ -19,13 +19,15 @@ public class StoreInfo
         string culture,
         string alias,
         bool vatIncludedInPrice,
-        decimal vat)
+        decimal vat,
+        bool applyVatOnShipping)
     {
         Key = key;
         Culture = culture;
         Alias = alias;
         VatIncludedInPrice = vatIncludedInPrice;
         Vat = vat;
+        ApplyVatOnShipping = applyVatOnShipping;
 
         try
         {
@@ -112,11 +114,12 @@ public class StoreInfo
             };
         }
 
-        Key = Guid.Parse(storeInfoObject["Key"].Value<string>());
-        Culture = storeInfoObject["Culture"].Value<string>();
-        Alias = storeInfoObject["Alias"].Value<string>();
-        VatIncludedInPrice = storeInfoObject["VatIncludedInPrice"].Value<bool>();
-        Vat = storeInfoObject["Vat"].Value<decimal>();
+        Key = Guid.Parse(storeInfoObject[nameof(Key)].Value<string>());
+        Culture = storeInfoObject[nameof(Culture)].Value<string>();
+        Alias = storeInfoObject[nameof(Alias)].Value<string>();
+        VatIncludedInPrice = storeInfoObject[nameof(VatIncludedInPrice)].Value<bool>();
+        Vat = storeInfoObject[nameof(Vat)].Value<decimal>();
+        ApplyVatOnShipping = storeInfoObject[nameof(ApplyVatOnShipping)]?.Value<bool>() ?? false;
     }
 
     public StoreInfo(IStore store)
@@ -130,6 +133,7 @@ public class StoreInfo
             Alias = store.Alias;
             VatIncludedInPrice = store.VatIncludedInPrice;
             Vat = store.Vat;
+            ApplyVatOnShipping = store.ApplyVatOnShipping;
         }
     }
 
@@ -144,4 +148,5 @@ public class StoreInfo
     /// Effective VAT value: 28.5%<para></para>
     /// </summary>
     public decimal Vat { get; }
+    public bool ApplyVatOnShipping { get; }
 }

@@ -1,5 +1,4 @@
 using Ekom.Cache;
-using Ekom.Payments;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
@@ -16,9 +15,9 @@ namespace Ekom.Models;
 /// </summary>
 public class Store : NodeEntity, IStore
 {
-    private INodeService nodeService => Configuration.Resolver.GetService<INodeService>();
-    private IStoreDomainCache storeDomainCache => Configuration.Resolver.GetService<IStoreDomainCache>();
-    private Services.IUmbracoService umbracoService => Configuration.Resolver.GetService<Services.IUmbracoService>();
+    private INodeService? nodeService => Configuration.Resolver.GetService<INodeService>();
+    private IStoreDomainCache? storeDomainCache => Configuration.Resolver.GetService<IStoreDomainCache>();
+    private Services.IUmbracoService? umbracoService => Configuration.Resolver.GetService<Services.IUmbracoService>();
     /// <summary>
     /// Usually a two letter code, f.x. EU/IS/DK
     /// </summary>
@@ -98,7 +97,7 @@ public class Store : NodeEntity, IStore
 
             string cultures = Properties["cultures"];
 
-            return cultures.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
+            return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
         }
     }
     public virtual CurrencyModel Currency
@@ -112,7 +111,7 @@ public class Store : NodeEntity, IStore
     {
         get
         {
-            return Properties.ContainsKey("userBasket") ? Properties.GetPropertyValue("userBasket").IsBoolean() : Configuration.Instance.UserBasket;
+            return Properties.ContainsKey("userBasket") ? Properties.GetValue("userBasket").IsBoolean() : Configuration.Instance.UserBasket;
         }
     }
 
@@ -120,7 +119,15 @@ public class Store : NodeEntity, IStore
     {
         get
         {
-            return Properties.ContainsKey("shareBasketBetweenStores") ? Properties.GetPropertyValue("shareBasketBetweenStores").IsBoolean() : Configuration.Instance.ShareBasketBetweenStores;
+            return Properties.ContainsKey("shareBasketBetweenStores") ? Properties.GetValue("shareBasketBetweenStores").IsBoolean() : Configuration.Instance.ShareBasketBetweenStores;
+        }
+    }
+
+    public virtual bool ApplyVatOnShipping
+    {
+        get
+        {
+            return Properties.ContainsKey("applyVatOnShipping") ? Properties.GetValue("applyVatOnShipping").IsBoolean() : Configuration.Instance.ApplyVatOnShipping;
         }
     }
 
@@ -137,7 +144,7 @@ public class Store : NodeEntity, IStore
             Properties.TryGetValue("currency", out string? currencyJson);
 
             // Check if the value is JSON array format
-            if (!string.IsNullOrEmpty(currencyJson) && currencyJson.Contains("["))
+            if (!string.IsNullOrEmpty(currencyJson) && currencyJson.Contains("[", StringComparison.InvariantCultureIgnoreCase))
             {
                 return TryDeserializeCurrencyList(currencyJson);
             }

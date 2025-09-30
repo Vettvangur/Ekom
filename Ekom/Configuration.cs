@@ -95,7 +95,17 @@ public class Configuration
         {
             string? value = _configuration["Ekom:ShareBasket"];
 
-            return value.ConvertToBool();
+            return value?.ConvertToBool() ?? false;
+        }
+    }
+
+    public virtual bool ApplyVatOnShipping
+    {
+        get
+        {
+            string? value = _configuration["Ekom:ApplyVatOnShipping"];
+
+            return value?.ConvertToBool() ?? false;
         }
     }
 
@@ -128,7 +138,7 @@ public class Configuration
         {
             string? value = _configuration["Ekom:AbsoluteUrls"];
 
-            return value.ConvertToBool();
+            return value?.ConvertToBool() ?? false;
         }
     }
 

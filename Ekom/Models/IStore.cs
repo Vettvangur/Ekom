@@ -40,4 +40,5 @@ public interface IStore : INodeEntity
     bool VatIncludedInPrice { get; }
     bool UserBasket { get; }
     bool ShareBasketBetweenStores { get; }
+    bool ApplyVatOnShipping { get; }
 }

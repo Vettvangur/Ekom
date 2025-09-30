@@ -1102,6 +1102,19 @@ class EnsureNodesExist : IComponent
                                 {
                                     Name = "Url Prefix",
                                 },
+                                new PropertyType(_shortStringHelper, booleanDt, "userBasket")
+                                {
+                                    Name = "User Basket",
+                                    Description = "The store will keep a basket for the user between sessions and store the orderId on the memeber."
+                                },
+                                new PropertyType(_shortStringHelper, booleanDt, "shareBasketBetweenStores")
+                                {
+                                    Name = "Share Basket Between Stores",
+                                },                                
+                                new PropertyType(_shortStringHelper, booleanDt, "applyVatOnShipping")
+                                {
+                                    Name = "Apply Vat On Shipping",
+                                },
                             })
                         )
                         {
