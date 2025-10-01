@@ -1163,72 +1163,73 @@ public class ImportService : IImportService
                     }
                 }
             }
-
-            var saveImages = false;
-            var saveFiles = false;
-
-            if (allUmbracoMedia != null)
-            {
-                saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, preserveExistingValues: importVariant.PreserveExistingValues);
-
-                saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
-            }
-
-            var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
-
-            // If no changes are found and not creating then return,
-            if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
-            {
-                return;
-            }
-
-            variantContent.SetProperty("title", importVariant.Title);
-
-            if (!string.IsNullOrEmpty(importVariant.SKU))
-            {
-                variantContent.SetValue("sku", importVariant.SKU);
-            }
-
-            if (variantContent.HasProperty("description") && !importVariant.PreserveExistingValues)
-            {
-                variantContent.SetProperty("description", importVariant.Description);
-            }
-
-            if (importVariant.SortOrder.HasValue)
-            {
-                variantContent.SortOrder = importVariant.SortOrder.Value;
-            }
-
-            variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
-
-            if (importVariant.Price.Any())
-            {
-                foreach (var price in importVariant.Price)
-                {
-                    variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
-                }
-            }
-            if (importVariant.Vat.HasValue)
-            {
-                variantContent.SetValue("vat", importVariant.Vat);
-            }
-
-            if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
-            {
-                foreach (var property in importVariant.AdditionalProperties)
-                {
-                    variantContent.SetValue(property.Key, property.Value);
-                }
-            }
-
-            variantContent.SetValue("comparer", compareValue);
-
-            variantContent.Name = importVariant.NodeName;
-
-            SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
-
-            variantsSaved.Add(importVariant);
         }
+
+        var saveImages = false;
+        var saveFiles = false;
+
+        if (allUmbracoMedia != null)
+        {
+            saveImages = args.ImagesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Images, allUmbracoMedia, preserveExistingValues: importVariant.PreserveExistingValues);
+
+            saveFiles = args.FilesHaveNoChanges ? false : ImportMedia(variantContent, importVariant.Files, allUmbracoMedia, ImportMediaTypes.File, ImportMediaContentTypes.files, preserveExistingValues: importVariant.PreserveExistingValues);
+        }
+
+        var compareValue = importVariant.Comparer ?? ComputeSha256Hash(importVariant, new string[] { "Images", "EventProperties", "Files", "Stock" });
+
+        // If no changes are found and not creating then return,
+        if (!forceUpdate && !HasContentChanges(variantContent.GetValue<string>("comparer"), compareValue) && !args.IsCreateOperation && !saveImages && !saveFiles)
+        {
+            return;
+        }
+
+        variantContent.SetProperty("title", importVariant.Title);
+
+        if (!string.IsNullOrEmpty(importVariant.SKU))
+        {
+            variantContent.SetValue("sku", importVariant.SKU);
+        }
+
+        if (variantContent.HasProperty("description") && !importVariant.PreserveExistingValues)
+        {
+            variantContent.SetProperty("description", importVariant.Description);
+        }
+
+        if (importVariant.SortOrder.HasValue)
+        {
+            variantContent.SortOrder = importVariant.SortOrder.Value;
+        }
+
+        variantContent.SetValue(Configuration.ImportAliasIdentifier, importVariant.Identifier);
+
+        if (importVariant.Price.Any())
+        {
+            foreach (var price in importVariant.Price)
+            {
+                variantContent.SetPrice(price.StoreAlias, price.Currency, price.Price);
+            }
+        }
+        if (importVariant.Vat.HasValue)
+        {
+            variantContent.SetValue("vat", importVariant.Vat);
+        }
+
+        if (importVariant.AdditionalProperties != null && importVariant.AdditionalProperties.Any())
+        {
+            foreach (var property in importVariant.AdditionalProperties)
+            {
+                variantContent.SetValue(property.Key, property.Value);
+            }
+        }
+
+        variantContent.SetValue("comparer", compareValue);
+
+        variantContent.Name = importVariant.NodeName;
+
+        SaveEvent(variantContent, importVariant.SaveEvent, importVariant.PreservePublishStatus, syncUser, args.IsCreateOperation);
+
+        variantsSaved.Add(importVariant);
+        
     }
 
     private bool ImportMedia(IContent content, List<IImportMedia> importMedias, List<IMedia>? allUmbracoMedia, ImportMediaTypes mediaType = ImportMediaTypes.Image, ImportMediaContentTypes contentTypeAlias = ImportMediaContentTypes.images, bool saveContent = false, int syncUser = -1, bool preserveExistingValues = false)
@@ -1742,14 +1743,14 @@ public class ImportService : IImportService
     /// Gets an existing content item from a list of Umbraco content by its identifier or creates a new one if it doesn't exist.
     /// </summary>
     /// <param name="contenType">The content type to create</param>
-    /// <param name="allUmbracoCategories">The list of all category items to search through.</param>
+    /// <param name="allContent">The list of all content items to search through.</param>
     /// <param name="nodeName">The name for the new content node if creation is needed.</param>
     /// <param name="identifer">The identifier to search for in the existing content items. Cannot be null.</param>
     /// <param name="parentContent">The parent content under which the new content should be created if needed.</param>
     /// <param name="syncUser">Id of the user doing changes</param>
     /// <param name="create">Outputs true if a new content item was created, false otherwise.</param>
     /// <returns>The found or newly created content item.</returns>
-    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> allUmbracoCategories, string nodeName, string identifer, IContent parentContent, int syncUser, out bool create)
+    private IContent? GetOrCreateContent(IContentType? contenType, List<IContent> allContent, string nodeName, string identifer, IContent parentContent, int syncUser, out bool create)
     {
         ArgumentNullException.ThrowIfNull(contenType);
         ArgumentNullException.ThrowIfNull(nodeName);
@@ -1757,7 +1758,7 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(parentContent);
 
         create = false;
-        var content = allUmbracoCategories.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
+        var content = allContent.FirstOrDefault(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) == identifer);
 
         if (content != null && content.HasProperty("ekmDisableSync") && content.GetValue<bool>("ekmDisableSync"))
         {
@@ -1829,17 +1830,6 @@ public class ImportService : IImportService
 
         var categories = _contentService
             .GetPagedOfType(productVariantContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .ToList();
-
-        return categories;
-    }
-    private List<IContent> GetAllUmbracoCategories()
-    {
-        ArgumentNullException.ThrowIfNull(categoryContentType);
-
-        var categories = _contentService
-            .GetPagedOfType(categoryContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed))
             .ToList();
 
