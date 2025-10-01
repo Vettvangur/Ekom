@@ -1110,6 +1110,7 @@ class EnsureNodesExist : IComponent
                                 new PropertyType(_shortStringHelper, booleanDt, "shareBasketBetweenStores")
                                 {
                                     Name = "Share Basket Between Stores",
+                                    Description = "This will allow baskets to be shared between stores but we aware that it requires the same currencies to be available cross stores."
                                 },                                
                                 new PropertyType(_shortStringHelper, booleanDt, "applyVatOnShipping")
                                 {
