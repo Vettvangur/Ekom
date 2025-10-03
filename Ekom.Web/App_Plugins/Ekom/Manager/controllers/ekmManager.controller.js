@@ -69,30 +69,25 @@
       }
     }
 
+    // prevent multiplication of event listeners
+    let datepickersBound = false;
+
     $scope.DatePickers = function () {
+      if (datepickersBound) return;
+      datepickersBound = true;
+
       var datePickers = document.getElementsByClassName('ekmManager__datepicker');
-
       for (var i = 0; i < datePickers.length; i++) {
-        var datePicker = datePickers[i]
-
-        datePicker.addEventListener('change', function (e) {
-
-          if (e.target.name === 'dateFrom') {
-            $scope.dateFrom = e.target.value;
-          }
-          if (e.target.name === 'dateTo') {
-            $scope.dateTo = e.target.value;
-          }
-
-          if ($scope.location === 'analytics') {
-            $scope.analytics();
-          } else {
-            $scope.GetData();
-          }
-
-        });
+        datePickers[i].addEventListener('change', onDateChange, false);
       }
     };
+
+    function onDateChange(e) {
+      if (e.target.name === 'dateFrom') $scope.$apply(() => $scope.dateFrom = e.target.value);
+      if (e.target.name === 'dateTo') $scope.$apply(() => $scope.dateTo = e.target.value);
+      if ($scope.location === 'analytics') $scope.analytics();
+      else $scope.GetData();
+    }
 
     $scope.GetData = function () {
 
@@ -346,7 +341,7 @@
     };
 
     $scope.analytics = function () {
- 
+
       var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store;
 
       resources.Charts(query)
@@ -502,7 +497,7 @@
       if (dropdownId === 'dropdownPaymentProvider') {
         $scope.paymentProvider = status;
 
-        $scope.sharedData.store = status;
+        $scope.sharedData.paymentProvider = status;
 
       }
 
@@ -542,7 +537,7 @@
 
     };
 
-    $scope.getStatusLabel = function(value) {
+    $scope.getStatusLabel = function (value) {
 
       const item = $scope.statusList.find(obj => obj.enumValue === value);
 
@@ -577,20 +572,20 @@
 
 
     angular.element(document).ready(function () {
-        // Init Orders
-        if ($scope.location === 'orders') {
+      // Init Orders
+      if ($scope.location === 'orders') {
+        $scope.GetStores();
+        $scope.GetStatusList();
+      }
+
+      // Init Analytics
+      if ($scope.location === 'analytics') {
+        setTimeout(function () {
           $scope.GetStores();
           $scope.GetStatusList();
-        }
-
-        // Init Analytics
-        if ($scope.location === 'analytics') {
-          setTimeout(function () {
-            $scope.GetStores();
-            $scope.GetStatusList();
-            $scope.DatePickers();
-          }, 250);
-        }
+          $scope.DatePickers();
+        }, 250);
+      }
     });
 
   }
