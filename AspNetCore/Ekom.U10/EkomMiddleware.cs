@@ -84,72 +84,60 @@ class EkomMiddleware
         }
     }
 
-    private void OnBeginRequest(IUmbracoContextFactory umbracoContextFac, AppCaches appCaches, HttpContext context)
+    private const string EkmRequestKey = "ekmRequest";
+
+    private void OnBeginRequest(
+        IUmbracoContextFactory umbracoContextFactory,
+        AppCaches appCaches,
+        HttpContext http)
     {
         try
         {
-            if (context?.Request == null)
+            if (http?.Request is not { } req) return;
+            if (!AllowPath(req.Path)) return;
+
+            // Skip domain-based store resolution for /ekom routes
+            bool isEkomRoute = req.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase);
+
+            // 1) Querystring override takes precedence
+            var qsAlias = GetStoreAliasFromRequest(req);
+            IStore? store = null;
+
+            if (!string.IsNullOrWhiteSpace(qsAlias))
             {
-                return;
+                store = _storeService.GetStoreByAlias(qsAlias);
+            }
+            // 2) Only try domain mapping when NOT under /ekom
+            else if (!isEkomRoute && store is null)
+            {
+                var host = req.Host.ToString();
+                var basePath = string.Concat(host, FirstPathSegment(req.Path));
+                var culture = CultureInfo.CurrentCulture.Name;
+
+                store = _storeService.GetStoreByDomain(basePath, culture);
             }
 
-            var requestPath = context.Request?.Path.ToString() ?? "";
+            using var _ = umbracoContextFactory?.EnsureUmbracoContext();
 
-            if (!AllowPath(requestPath))
+            // Create/get the per-request payload once
+            var ekmRequest = appCaches.RequestCache.Get(EkmRequestKey, () => new ContentRequest
             {
-                return;
-            }
+                User = new User()
+                // Store set below if we resolved one
+            }) as ContentRequest;
 
-            if (context.RequestServices == null)
-            {
-                return;
-            }
+            if (ekmRequest is null) return;
 
-            if (umbracoContextFac == null)
-            {
-                return;
-            }
-
-            var host = context.Request?.Host.ToString() ?? "";
-
-            using var umbCtx = umbracoContextFac.EnsureUmbracoContext();
-
-            var basePath = host + FirstPathSegment(requestPath);
-
-            var store = _storeService.GetStoreByDomain(basePath, CultureInfo.CurrentCulture.Name);
-
-            var requestCache = _appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest());
-            
-            if (store != null && requestCache != null && requestCache is ContentRequest ekmRequest)
+            // When on /ekom with no alias, keep whatever was already in the request cache
+            if (store is not null && ekmRequest.Store?.Alias != store.Alias)
             {
                 ekmRequest.Store = store;
-
-                ekmRequest.SetStoreCookie(store.Alias, context);
+                ekmRequest.SetStoreCookie(store.Alias, http);
             }
-
-            if (umbCtx?.UmbracoContext != null)
-            {
-                if (context?.Request != null)
-                {
-                    // Check for 'storeAlias' in the query string
-                    var storeAlias = GetStoreAliasFromRequest(context.Request);
-                    if (!string.IsNullOrEmpty(storeAlias))
-                    {
-                        store = API.Store.Instance.GetStore(storeAlias);
-                    }
-                }
-
-                appCaches.RequestCache.Get("ekmRequest", () => new ContentRequest
-                {
-                    User = new User(),
-                    Store = store
-                });
-            }
-
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Http module Begin Request failed");
+            _logger.LogWarning(ex, "BeginRequest failed.");
         }
     }
     private static string FirstPathSegment(string path)
