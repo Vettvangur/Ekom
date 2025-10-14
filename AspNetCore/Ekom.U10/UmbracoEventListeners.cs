@@ -59,8 +59,8 @@ class UmbracoEventListeners :
         IShortStringHelper shortStringHelper,
         IUmbracoService umbracoService,
         IMemoryCache cache,
-        AppCaches appCaches, 
-        CouponRepository couponRepository, 
+        AppCaches appCaches,
+        CouponRepository couponRepository,
         INodeService nodeService,
         RevalidateService revalidateService)
     {

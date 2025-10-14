@@ -63,7 +63,22 @@ class CatalogContentFinder : IContentFinder
                 return Task.FromResult(false);
             }
 
-            var store = _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name, contentRequest.Culture);
+            IStore? store = null;
+
+            Lazy<object>? r = _httpContextAccessor.HttpContext?.Items[Configuration.EkmRequestKey] as Lazy<object>;
+
+            if (r != null && r.Value != null)
+            {
+                var req = r.Value as ContentRequest;
+
+                if (req?.Store != null)
+                {
+                    store = req.Store;
+                }
+
+            }
+
+            store = store ?? _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name, contentRequest.Culture);
 
             #region Product and/or Category
 

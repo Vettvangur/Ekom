@@ -85,7 +85,6 @@ public class EkomComposer : IComposer
             .AddNotificationHandler<ServerVariablesParsingNotification, UmbracoEventListeners>()
             .AddNotificationHandler<DomainDeletedNotification, UmbracoEventListeners>()
             .AddNotificationHandler<LanguageCacheRefresherNotification, UmbracoEventListeners>();
-        
 
         builder.Services.AddEkom(builder.Config);
     }
