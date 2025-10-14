@@ -25,7 +25,7 @@ class StoreService : IStoreService
         _httpContext = httpContextAccessor.HttpContext;
     }
 
-    public IStore? GetStoreByDomain(string domain = "", string culture = "")
+    public IStore? GetStoreByDomain(string domain = "", string? culture = null)
     {
         static string TrimEndSlash(string s) => (s ?? string.Empty).Trim().TrimEnd('/');
 
@@ -84,7 +84,6 @@ class StoreService : IStoreService
         }
 
         // -------- main --------
-        var requestedCulture = string.IsNullOrWhiteSpace(culture) ? CultureInfo.CurrentCulture.Name : culture;
         var (host, port, firstSeg) = ParseHostPortFirstSeg(domain);
 
         var candidates = new List<string>();
@@ -111,6 +110,8 @@ class StoreService : IStoreService
         {
             var dom = FindDomain(c);
             if (dom == null) continue;
+
+            var requestedCulture = string.IsNullOrWhiteSpace(culture) ? dom.LanguageIsoCode : culture;
 
             store = FindStoreForDomain(dom, requestedCulture);
             if (store != null) break;

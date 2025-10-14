@@ -4,7 +4,6 @@ using Ekom.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Web;
 
@@ -96,25 +95,23 @@ class EkomMiddleware
             if (http?.Request is not { } req) return;
             if (!AllowPath(req.Path)) return;
 
-            // Skip domain-based store resolution for /ekom routes
-            bool isEkomRoute = req.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase);
+            bool isEkomApiRoute = req.Path.StartsWithSegments("/ekom", StringComparison.OrdinalIgnoreCase);
 
-            // 1) Querystring override takes precedence
-            var qsAlias = GetStoreAliasFromRequest(req);
             IStore? store = null;
 
-            if (!string.IsNullOrWhiteSpace(qsAlias))
+            if (isEkomApiRoute)
             {
+                var qsAlias = GetStoreAliasFromRequest(req);
+
                 store = _storeService.GetStoreByAlias(qsAlias);
             }
             // 2) Only try domain mapping when NOT under /ekom
-            else if (!isEkomRoute && store is null)
+            else if (!isEkomApiRoute && store is null)
             {
                 var host = req.Host.ToString();
                 var basePath = string.Concat(host, FirstPathSegment(req.Path));
-                var culture = CultureInfo.CurrentCulture.Name;
 
-                store = _storeService.GetStoreByDomain(basePath, culture);
+                store = _storeService.GetStoreByDomain(basePath);
             }
 
             using var _ = umbracoContextFactory?.EnsureUmbracoContext();
@@ -140,6 +137,7 @@ class EkomMiddleware
             _logger.LogWarning(ex, "BeginRequest failed.");
         }
     }
+
     private static string FirstPathSegment(string path)
     {
         if (string.IsNullOrEmpty(path) || path == "/") return "/";
