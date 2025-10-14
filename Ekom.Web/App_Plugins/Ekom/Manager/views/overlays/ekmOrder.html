@@ -44,8 +44,8 @@
       <div ng-if="extraShippingProperties.length > 0">
         <h5 style="margin-top:20px; font-weight:bold;">Extra Shipping Data</h5>
         <ul>
-          <li ng-repeat="(key, value) in extraShippingProperties">
-            <strong>{{ cleanKey(value[0]) }}</strong>: {{ value[1] }}
+          <li ng-repeat="pair in extraShippingProperties track by $index">
+            <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
           </li>
         </ul>
       </div>
@@ -53,8 +53,8 @@
       <div ng-if="extraCustomerProperties.length > 0">
         <h5 style="margin-top:20px; font-weight:bold;">Extra Customer Data</h5>
         <ul>
-          <li ng-repeat="(key, value) in extraCustomerProperties">
-            <strong>{{ cleanKey(value[0]) }}</strong>: {{ value[1] }}
+          <li ng-repeat="pair in extraCustomerProperties track by $index">
+            <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
           </li>
         </ul>
       </div>

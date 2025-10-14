@@ -346,7 +346,7 @@
     };
 
     $scope.analytics = function () {
- 
+
       var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store;
 
       resources.Charts(query)
@@ -542,7 +542,7 @@
 
     };
 
-    $scope.getStatusLabel = function(value) {
+    $scope.getStatusLabel = function (value) {
 
       const item = $scope.statusList.find(obj => obj.enumValue === value);
 
@@ -577,20 +577,20 @@
 
 
     angular.element(document).ready(function () {
-        // Init Orders
-        if ($scope.location === 'orders') {
+      // Init Orders
+      if ($scope.location === 'orders') {
+        $scope.GetStores();
+        $scope.GetStatusList();
+      }
+
+      // Init Analytics
+      if ($scope.location === 'analytics') {
+        setTimeout(function () {
           $scope.GetStores();
           $scope.GetStatusList();
-        }
-
-        // Init Analytics
-        if ($scope.location === 'analytics') {
-          setTimeout(function () {
-            $scope.GetStores();
-            $scope.GetStatusList();
-            $scope.DatePickers();
-          }, 250);
-        }
+          $scope.DatePickers();
+        }, 250);
+      }
     });
 
   }
