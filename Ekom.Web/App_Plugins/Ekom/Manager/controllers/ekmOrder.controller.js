@@ -4,7 +4,7 @@
   function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
-    
+
     $scope.statusList = $rootScope.sharedData.statusList;
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -96,49 +96,63 @@
 
       });
     }
-
-    $scope.defaultKeys = [
-      'shippingname',
-      'shippingaddress',
-      'shippingcity',
-      'shippingcountry',
-      'shippingzipcode',
-      'shippingphone',
-      'customeremail',
-      'customername',
-      'customeraddress',
-      'customercity',
-      'customercountry',
-      'customerzipcode',
-      'customerphone'
-    ];
-
     $scope.isDefaultKey = function (key) {
-      var lowerKey = key.toLowerCase();
-      return $scope.defaultKeys.includes(lowerKey);
+      const k = (key || "").toString().toLowerCase();
+      const defaults = new Set([
+        'shippingname',
+        'shippingaddress',
+        'shippingcity',
+        'shippingcountry',
+        'shippingzipcode',
+        'shippingphone',
+        'customeremail',
+        'customername',
+        'customeraddress',
+        'customercity',
+        'customercountry',
+        'customerzipcode',
+        'customerphone'
+      ]);
+      return defaults.has(k);
     };
 
     $scope.cleanKey = function (key) {
       return key.replace(/^shipping/i, '').replace(/^customer/i, '');
     };
 
-    $scope.extraShippingProperties = [];
-    $scope.extraCustomerProperties = [];
+    const shippingProps = $scope.model.editModel.shippingAddress.properties || {};
+    $scope.extraShippingProperties = Object.entries(shippingProps)
+      .filter(([key, value]) => {
+        if (!value) return false;
+        const k = (key || "").toLowerCase();
+        return k.startsWith("shipping") && !$scope.isDefaultKey(k);
+      })
+      .map(([key, value]) => [key, htmlDecode(value)]);
 
-    $scope.computeExtraProperties = function () {
-      const shippingProps = $scope.model.editModel.shippingAddress.properties || {};
-      $scope.extraShippingProperties = Object.entries(shippingProps)
-        .filter(([key, value]) => value && key.startsWith('shipping') && !$scope.isDefaultKey(key));
+    const customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
+    $scope.extraCustomerProperties = Object.entries(customerProps)
+      .filter(([key, value]) => {
+        if (!value) return false;
+        const k = (key || "").toLowerCase();
+        return k.startsWith("customer") && !$scope.isDefaultKey(k);
+      })
+      .map(([key, value]) => [key, htmlDecode(value)]);
+    function htmlDecode(value) {
+      const txt = document.createElement('textarea');
+      txt.innerHTML = value;
+      return txt.value;
+    }
 
-      const customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
+    $scope.$watch('model.editModel.order.customerInformation.customer.properties', function (props) {
+      const customerProps = props || {};
       $scope.extraCustomerProperties = Object.entries(customerProps)
-        .filter(([key, value]) => value && key.startsWith('customer') && !$scope.isDefaultKey(key));
-    };
-
-    // Call it ONCE when loading your model
-    $scope.computeExtraProperties();
-
-
+        .filter(([key, value]) =>
+          value &&
+          key.toLowerCase().startsWith('customer') &&
+          !$scope.isDefaultKey(key)
+        )
+        .map(([key, value]) => [key, htmlDecode(value)]);
+    });
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Order", [

@@ -45,7 +45,7 @@ public class ManagerRepository
         return data;
     }
 
-    public async Task<IOrderInfo> GetOrderInfoAsync(Guid orderId)
+    public async Task<IOrderInfo?> GetOrderInfoAsync(Guid orderId)
     {
         var culture = Thread.CurrentThread.CurrentCulture.Name;
 
