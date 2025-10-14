@@ -47,10 +47,10 @@ public class ProductQuery : ProductQueryBase
                 x => x.Value.ToList());
     }
 
-    public Dictionary<string, List<string>> MetaFilters { get; set; }
-    public Dictionary<string, List<string>> PropertyFilters { get; set; }
+    public Dictionary<string, List<string>>? MetaFilters { get; set; }
+    public Dictionary<string, List<string>>? PropertyFilters { get; set; }
     public string PropertySelectorsSeparator { get; set; } = string.Empty;
-    public Dictionary<string, string> PropertySelectors { get; set; }
+    public Dictionary<string, string>? PropertySelectors { get; set; }
 
     [JsonConverter(typeof(OrderByJsonConverter))]
     [TypeConverter(typeof(OrderByTypeConverter))]
