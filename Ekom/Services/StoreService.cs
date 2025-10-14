@@ -111,7 +111,7 @@ class StoreService : IStoreService
             var dom = FindDomain(c);
             if (dom == null) continue;
 
-            var requestedCulture = string.IsNullOrWhiteSpace(culture) ? dom .LanguageIsoCode : culture;
+            var requestedCulture = string.IsNullOrWhiteSpace(culture) ? dom.LanguageIsoCode : culture;
 
             store = FindStoreForDomain(dom, requestedCulture);
             if (store != null) break;
