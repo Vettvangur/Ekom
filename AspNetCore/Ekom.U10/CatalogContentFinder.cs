@@ -75,7 +75,6 @@ class CatalogContentFinder : IContentFinder
                 {
                     store = req.Store;
                 }
-
             }
 
             store = store ?? _storeSvc.GetStoreByDomain(contentRequest.Domain?.Name, contentRequest.Culture);
