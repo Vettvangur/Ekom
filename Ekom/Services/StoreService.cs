@@ -29,7 +29,14 @@ class StoreService : IStoreService
     {
         static string TrimEndSlash(string s) => (s ?? string.Empty).Trim().TrimEnd('/');
 
-        // Parse into host / port / first segment
+        static string Normalize(string s)
+        {
+            // No trailing slashes, case-insensitive compare target
+            var t = TrimEndSlash(s).ToLowerInvariant();
+            // Make both "/seg" and "seg" comparable by also providing alternatives in candidates
+            return t;
+        }
+
         static (string host, int? port, string firstSeg) ParseHostPortFirstSeg(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return (string.Empty, null, string.Empty);
@@ -57,25 +64,38 @@ class StoreService : IStoreService
 
         UmbracoDomain? FindDomain(string key)
         {
-            var norm = TrimEndSlash(key);
+            var norm = Normalize(key);
             return _domainCache.Cache
                 .Select(kv => kv.Value)
-                .FirstOrDefault(d => string.Equals(
-                    TrimEndSlash(d.DomainName),
-                    norm,
-                    StringComparison.InvariantCultureIgnoreCase));
+                .FirstOrDefault(d =>
+                {
+                    var dom = Normalize(d.DomainName);
+
+                    // If the stored domain is relative (starts with '/'), compare against the *path* candidates only.
+                    var domIsRelative = d.DomainName?.StartsWith("/", StringComparison.Ordinal) == true;
+
+                    if (domIsRelative)
+                    {
+                        // Accept both "/seg" and "seg" equivalence
+                        var keyNoLeading = norm.StartsWith("/") ? norm[1..] : norm;
+                        var domNoLeading = dom.StartsWith("/") ? dom[1..] : dom;
+                        return string.Equals(norm, dom, StringComparison.InvariantCultureIgnoreCase)
+                            || string.Equals(keyNoLeading, domNoLeading, StringComparison.InvariantCultureIgnoreCase);
+                    }
+
+                    // Otherwise, compare full normalized strings
+                    return string.Equals(dom, norm, StringComparison.InvariantCultureIgnoreCase);
+                });
         }
 
         IStore? FindStoreForDomain(UmbracoDomain storeDomain, string requestedCulture)
         {
-            // exact culture
             var store = _storeCache.Cache
                 .Select(kv => kv.Value)
                 .FirstOrDefault(s => s.StoreRootNodeId == storeDomain.RootContentId
                                      && s.Culture != null
                                      && s.Culture.Name.Equals(requestedCulture, StringComparison.OrdinalIgnoreCase));
 
-            // any culture for that root
             store ??= _storeCache.Cache
                 .Select(kv => kv.Value)
                 .FirstOrDefault(s => s.StoreRootNodeId == storeDomain.RootContentId);
@@ -105,6 +125,13 @@ class StoreService : IStoreService
             }
         }
 
+        // ⬇️ NEW: fall back to relative culture domains
+        if (!string.IsNullOrWhiteSpace(firstSeg))
+        {
+            candidates.Add("/" + firstSeg); // matches entries saved like "/nespresso-finland-en"
+            candidates.Add(firstSeg);       // matches entries saved without the leading slash
+        }
+
         IStore? store = null;
         foreach (var c in candidates)
         {
@@ -113,14 +140,13 @@ class StoreService : IStoreService
 
             var requestedCulture = string.IsNullOrWhiteSpace(culture) ? dom.LanguageIsoCode : culture;
 
-            store = FindStoreForDomain(dom, requestedCulture);
+            store = FindStoreForDomain(dom, requestedCulture!);
             if (store != null) break;
         }
 
         store ??= GetAllStores().FirstOrDefault();
         return store ?? throw new Exception("No store found in cache.");
     }
-
 
     public IStore? GetStoreByAlias(string? alias)
     {
