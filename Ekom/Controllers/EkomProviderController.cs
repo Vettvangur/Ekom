@@ -76,12 +76,11 @@ public class EkomProviderController : ControllerBase
     /// Get Shipping Providers
     /// </summary>
     /// <param name="countryCode"></param>
-    /// <param name="orderAmount"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("shippingproviders/{storeAlias?}")]
-    public IActionResult GetShippingProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
+    public async Task<IActionResult> GetShippingProviders([FromQuery] string countryCode, string? storeAlias = null)
     {
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
@@ -90,6 +89,10 @@ public class EkomProviderController : ControllerBase
         {
             return NotFound($"Store {storeAlias} not found");
         }
+
+        var order = await Ekom.API.Order.Instance.GetOrderAsync();
+
+        var orderAmount = order != null ? order.ChargedAmount.Value - (order.ShippingProvider != null ? order.ShippingProvider.Price.Value : 0) : 0;
 
         return Ok(API.Providers.Instance.GetShippingProviders(store.Alias, countryCode, orderAmount));
 
