@@ -551,7 +551,7 @@ partial class OrderService
             {
                 orderInfo.StoreInfo.Currency = storeCurrency;
 
-                string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+                string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
 
                 order.OrderInfo = serializedOrderInfo;
 
@@ -1188,7 +1188,7 @@ partial class OrderService
 
             orderInfo.CustomerInformation.CustomerIpAddress = _ekmRequest?.IPAddress ?? "";
 
-            string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.settings);
+            string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
 
             OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
                 .ConfigureAwait(false);

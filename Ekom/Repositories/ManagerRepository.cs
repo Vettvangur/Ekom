@@ -49,7 +49,9 @@ public class ManagerRepository
     {
         var culture = Thread.CurrentThread.CurrentCulture.Name;
 
-        return await API.Order.Instance.GetOrderAsync(orderId);
+        var order = await API.Order.Instance.GetOrderAsync(orderId);
+
+        return order;
     }
 
     public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)

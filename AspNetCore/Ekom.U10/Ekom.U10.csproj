@@ -58,8 +58,9 @@
         <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.10.0" />
         <PackageReference Include="Umbraco.Cms.Web.Website" Version="13.10.0" />
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\Ekom.AspNetCore\Ekom.AspNetCore.csproj" />
+        <ProjectReference Include="..\Ekom.AspNetCore\Ekom.AspNetCore.csproj" />
     </ItemGroup>
+
 </Project>

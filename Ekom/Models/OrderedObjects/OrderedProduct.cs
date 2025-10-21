@@ -294,7 +294,7 @@ public class OrderedProduct
 
         JObject productPropertiesObject = JObject.Parse(productJson);
         ProductDiscount = productPropertiesObject[nameof(ProductDiscount)]?
-            .ToObject<IDiscount>(EkomJsonDotNet.serializer);
+            .ToObject<IDiscount>(EkomJsonDotNet.Serializer);
 
         Properties = new ReadOnlyDictionary<string, string>(
             productPropertiesObject[nameof(Properties)].ToObject<Dictionary<string, string>>());
@@ -316,7 +316,7 @@ public class OrderedProduct
                 {
                     Prices = new List<IPrice>()
                     {
-                        priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
+                        priceObj.ToObject<Price>(EkomJsonDotNet.Serializer)
                     };
                 }
                 catch

@@ -228,7 +228,7 @@ public static class StringExtension
 
             foreach (JToken price in _prices)
             {
-                CurrencyModel? currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.serializer);
+                CurrencyModel? currency = price[KeyExists(price, "Currency") ? "Currency" : "currency"].ToObject<CurrencyModel>(EkomJsonDotNet.Serializer);
 
                 prices.Add(new Price(price, currency, vat, vatIncludedInPrice));
             }
