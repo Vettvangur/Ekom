@@ -122,7 +122,7 @@ public class ManagerRepository
         }
         else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders" && orderStatus != "AllOrders")
         {
-            whereClause.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')");
+            whereClause.Append(" AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed' OR OrderStatusCol = 'ReadyForPickup')");
         }
 
         if (!string.IsNullOrEmpty(store))
@@ -152,7 +152,7 @@ public class ManagerRepository
         }
         else if (!string.IsNullOrEmpty(orderStatus) && orderStatus == "CompletedOrders")
         {
-            whereClause += " AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed')";
+            whereClause += " AND (OrderStatusCol = 'ReadyForDispatch' OR OrderStatusCol = 'OfflinePayment' OR OrderStatusCol = 'ReadyForDispatchWhenStockArrives' OR OrderStatusCol = 'Dispatched' OR OrderStatusCol = 'Closed' OR OrderStatusCol = 'ReadyForPickup')";
         }
 
         if (!string.IsNullOrEmpty(store))
