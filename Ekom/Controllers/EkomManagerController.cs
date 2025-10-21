@@ -7,6 +7,7 @@ using Ekom.Repositories;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Ekom.Controllers;
 
@@ -16,10 +17,12 @@ public class EkomManagerController : ControllerBase
 {
     readonly ManagerRepository _repo;
     readonly INodeService _nodeService;
-    public EkomManagerController(ManagerRepository repo, INodeService nodeService)
+    readonly ILogger<EkomManagerController> _logger;
+    public EkomManagerController(ManagerRepository repo, INodeService nodeService, ILogger<EkomManagerController> logger)
     {
         _repo = repo;
         _nodeService = nodeService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -45,12 +48,15 @@ public class EkomManagerController : ControllerBase
     {
         try
         {
-            return Ok(await _repo.GetOrderInfoAsync(orderId));
+            var order = await _repo.GetOrderInfoAsync(orderId);
+
+            return Ok(order);
         }
         catch(Exception ex)
         {
-            var result = ExceptionHandler.Handle(ex);
-            return result ?? StatusCode(500, "An unexpected error occurred.");
+            _logger.LogError(ex, "Failed to get orderinfo. {OrderId}", orderId);
+
+            return StatusCode(500, "An unexpected error occurred.");
         }
 
     }

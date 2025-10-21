@@ -112,7 +112,7 @@ public class ImportMediaService
         byte[] bytes = Convert.FromBase64String(image.Base64);
 
         // Create a MemoryStream with the bytes
-        MemoryStream stream = new MemoryStream(bytes);
+        var stream = new MemoryStream(bytes);
 
         stream.Seek(0, SeekOrigin.Begin);
 

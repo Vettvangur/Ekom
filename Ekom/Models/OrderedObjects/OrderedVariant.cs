@@ -197,7 +197,7 @@ public class OrderedVariant
             {
                 Prices = new List<IPrice>()
                 {
-                    priceObj.ToObject<Price>(EkomJsonDotNet.serializer)
+                    priceObj.ToObject<Price>(EkomJsonDotNet.Serializer)
                 };
             }
             catch

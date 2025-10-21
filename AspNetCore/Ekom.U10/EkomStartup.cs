@@ -86,9 +86,26 @@ public class EkomComposer : IComposer
             .AddNotificationHandler<DomainDeletedNotification, UmbracoEventListeners>()
             .AddNotificationHandler<LanguageCacheRefresherNotification, UmbracoEventListeners>();
 
+        BackwardCompatabilityDeserialization();
+
         builder.Services.AddEkom(builder.Config);
     }
+
+    private void BackwardCompatabilityDeserialization()
+    {
+        //Backward compatibility for deserialization
+        EkomJsonDotNet.AddTypeMap(
+            "Ekom.Models.OrderedObjects.OrderedDiscount, Ekom",
+            typeof(Ekom.Models.OrderedDiscount));
+
+
+        EkomJsonDotNet.AddTypeMapByName(
+            "Ekom.Models.Behaviors.Constraints",
+            typeof(Ekom.Models.Constraints));
+    }
 }
+
+
 //[RuntimeLevelAttribute(MinLevel = RuntimeLevel.Run)]
 public class RemoveCoreMemberSearchableTreeComposer : IComposer
 {
