@@ -103,7 +103,10 @@ class EkomMiddleware
             {
                 var qsAlias = GetStoreAliasFromRequest(req);
 
-                store = _storeService.GetStoreByAlias(qsAlias);
+                if (!string.IsNullOrEmpty(qsAlias))
+                {
+                    store = _storeService.GetStoreByAlias(qsAlias);
+                } 
             }
             // 2) Only try domain mapping when NOT under /ekom
             else if (!isEkomApiRoute && store is null)
