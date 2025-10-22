@@ -110,14 +110,14 @@ partial class OrderService
     /// <summary>
     /// Does not remove global discounts currently
     /// </summary>
-    public async Task RemoveDiscountFromOrderAsync(string storeAlias, DiscountOrderSettings settings = null)
+    public async Task RemoveDiscountFromOrderAsync(string storeAlias, DiscountOrderSettings? settings = null)
     {
         if (settings == null)
         {
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
@@ -179,6 +179,32 @@ partial class OrderService
             settings
         ).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Manually set coupon code on order, does not validate coupon or use other discount functionality
+    /// </summary>
+    public async Task SetCouponCodeAsync(string couponCode, string storeAlias, DiscountOrderSettings? settings = null)
+    {
+        if (string.IsNullOrEmpty(couponCode))
+        {
+            return;
+        }
+
+        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            return;
+        }
+
+        if (orderInfo.Coupon != couponCode)
+        {
+            orderInfo.Coupon = couponCode;
+
+            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true).ConfigureAwait(false);
+        }
+    }
+
 
     /// <summary>
     /// 
