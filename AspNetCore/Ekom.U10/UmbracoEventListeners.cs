@@ -105,7 +105,13 @@ class UmbracoEventListeners :
                         {
                             try
                             {
-                                var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue);
+                                var stockArray = JsonConvert.DeserializeObject<IEnumerable<StockRequest>>(stockValue)?
+                                    .Select(x => new StockRequest
+                                    {
+                                        StoreAlias = x.StoreAlias,
+                                        Value = x.Value ?? 0
+                                    })
+                                    .ToList();
 
                                 if (stockArray != null)
                                 {
@@ -113,11 +119,11 @@ class UmbracoEventListeners :
                                     {
                                         if (!string.IsNullOrEmpty(stockItem.StoreAlias))
                                         {
-                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value).Result;
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value ?? 0).Result;
                                         }
                                         else
                                         {
-                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value).Result;
+                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value ?? 0).Result;
                                         }
                                     }
                                 }
