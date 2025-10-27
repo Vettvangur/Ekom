@@ -66,8 +66,6 @@
 
         });
 
-        //$scope.prices = priceStructure;
-
         if (currentPrices !== null || currentPrices !== undefined || currentPrices !== '') {
 
           for (let storeAlias in currentPrices) {
@@ -88,6 +86,19 @@
 
           }
 
+        }
+
+        if (currentPrices !== null && currentPrices !== undefined && currentPrices !== '') {
+          for (let storeAlias in currentPrices) {
+            const storePrices = currentPrices[storeAlias];
+            if (Array.isArray(storePrices)) {
+              storePrices.forEach(p => {
+                if (p.Price === null || p.Price === undefined || p.Price === '') {
+                  p.Price = 0;
+                }
+              });
+            }
+          }
         }
 
         $scope.prices = priceStructure;
@@ -146,13 +157,21 @@
           for (let i = 0; i < obj[storeName].length; i++) {
             // If the currency matches, update the price
             if (obj[storeName][i].Currency === currency) {
-              obj[storeName][i].Price = newPrice;
+              obj[storeName][i].Price = newPrice == null || newPrice === '' ? 0 : newPrice;
             }
           }
         }
         return obj;
       }
+
       $scope.$on("formSubmitting", function () {
+        for (let storeAlias in $scope.prices) {
+          $scope.prices[storeAlias].forEach(p => {
+            if (p.Price == null || p.Price === '') {
+              p.Price = 0;
+            }
+          });
+        }
         $scope.model.value = $scope.prices;
       });
 

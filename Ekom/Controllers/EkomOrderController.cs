@@ -109,7 +109,7 @@ public partial class EkomOrderController : ControllerBase
     [Route("{orderId}")]
     public async Task<IActionResult> GetOrder(Guid orderId)
     {
-        IOrderInfo order = await Order.Instance.GetOrderAsync(orderId);
+        var order = await Order.Instance.GetOrderAsync(orderId);
 
         if (order == null)
         {

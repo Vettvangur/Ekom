@@ -43,7 +43,10 @@
 
       $scope.property = {
         config: {},
-        view: ""
+        view: "",
+        validation: {
+          mandatory: false
+        }
       };
 
 
