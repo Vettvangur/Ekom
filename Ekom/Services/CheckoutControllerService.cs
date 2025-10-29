@@ -635,11 +635,7 @@ public class CheckoutControllerService
                     OrderStatus.PaymentFailed,
                     order.UniqueId).ConfigureAwait(false);
 
-                return new CheckoutResponse
-                {
-                    ResponseBody = errorUrl,
-                    HttpStatusCode = 300,
-                };
+                throw;
             }
         }
         else
