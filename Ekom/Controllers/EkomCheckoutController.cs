@@ -172,13 +172,16 @@ public class CheckoutController : ControllerBase
 
             string culture = string.IsNullOrEmpty(paymentRequest.Culture) ? Thread.CurrentThread.CurrentCulture.Name : paymentRequest.Culture;
 
-            return await _checkoutControllerService.PayAsync(
+            var payResponse = await _checkoutControllerService.PayAsync(
                 ResponseHandler,
                 paymentRequest,
                 culture);
+
+            return payResponse;
         }
         catch (Exception ex)
         {
+
             _logger.LogError(ex, "Checkout payment failed!");
 
             var returnUrl = paymentRequest.ReturnUrl ?? "/";
@@ -236,7 +239,7 @@ public class CheckoutController : ControllerBase
                 return Redirect(checkoutResponse.ResponseBody as string);
             }
 
-            var error = checkoutResponse.ResponseBody?.ToString() ?? "unknown";
+            var error = checkoutResponse.ResponseBody?.ToString() ?? "servererror";
             var urlWithError = QueryHelpers.AddQueryString(returnUrl, "errorStatus", error);
             return Redirect(urlWithError);
         }
@@ -244,10 +247,10 @@ public class CheckoutController : ControllerBase
         if (stockError.OrderLineKey == Guid.Empty)
         {
             var url = QueryHelpers.AddQueryString(returnUrl, new Dictionary<string, string?>
-        {
-            { "errorStatus", "stockError" },
-            { "errorType", stockError.Exception?.Message ?? "unknown" }
-        });
+            {
+                { "errorStatus", "stockError" },
+                { "errorType", stockError.Exception?.Message ?? "unknown" }
+            });
             return Redirect(url);
         }
         else
