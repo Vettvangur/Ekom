@@ -104,6 +104,15 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+
+    public async Task SetCouponCodeAsync(Guid productKey, string coupon, DiscountOrderSettings? discountOrderSettings = null)
+    {
+        string storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
+
+        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings).ConfigureAwait(false);
+    }
+
+    
     /// <summary>
     /// 
     /// </summary>
