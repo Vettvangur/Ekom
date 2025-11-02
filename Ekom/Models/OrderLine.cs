@@ -6,7 +6,7 @@ namespace Ekom.Models;
 /// <summary>
 /// 
 /// </summary>
-class OrderLine : IOrderLine
+public class OrderLine : IOrderLine
 {
     public Guid ProductKey => Product.Key;
     public Guid? VariantKey => Variant?.Key;
