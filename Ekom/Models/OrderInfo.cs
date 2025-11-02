@@ -464,6 +464,11 @@ public class OrderInfo : IOrderInfo
         return null;
     }
 
+    public void UpdateOrderlines(List<OrderLine> orderlines)
+    {
+        this.orderLines = orderlines;
+    }
+
     //private OrderLineInfo CreateOrderLineInformationFromJson(JObject orderInfoJObject)
     //{
     //    if (orderInfoJObject["OrderLineInfo"] != null)
