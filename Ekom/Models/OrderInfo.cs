@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 namespace Ekom.Models;
 
 /// <inheritdoc />
-class OrderInfo : IOrderInfo
+public class OrderInfo : IOrderInfo
 {
     public StoreInfo StoreInfo { get; }
 

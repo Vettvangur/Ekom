@@ -614,6 +614,7 @@ public partial class Order
             && (orderStatus.Value == OrderStatus.OfflinePayment
             || orderStatus.Value == OrderStatus.Pending
             || orderStatus.Value == OrderStatus.ReadyForDispatch
+            || orderStatus.Value == OrderStatus.ReadyForPickup
             || orderStatus.Value == OrderStatus.ReadyForDispatchWhenStockArrives
             || orderStatus.Value == OrderStatus.Dispatched
             //|| orderStatus.Value == OrderStatus.WaitingForPayment

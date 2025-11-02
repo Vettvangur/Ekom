@@ -993,7 +993,7 @@ partial class OrderService
         OrderSettings settings
     )
     {
-        var eventModel = new AddingOrderlineEventArgs()
+        var addingOrderlineEventArgs = new AddingOrderlineEventArgs()
         {
             Product = product,
             Variant = variant,
@@ -1003,8 +1003,8 @@ partial class OrderService
             OrderInfo = orderInfo
         };
 
-        OrderEvents.OnAddingOrderline(this, eventModel);
-        await OrderEvents.OnAddingOrderlineAsync(this, eventModel);
+        OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
+        await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs);
 
         if (settings != null && settings.CustomData != null)
         {
@@ -1018,12 +1018,12 @@ partial class OrderService
                 StringComparer.OrdinalIgnoreCase
             );
 
-        quantity = eventModel.Quantity;
-        product = eventModel.Product;
-        variant = eventModel.Variant;
-        quantity = eventModel.Quantity;
-        settings = eventModel.Settings;
-        action = eventModel.Action;
+        quantity = addingOrderlineEventArgs.Quantity;
+        product = addingOrderlineEventArgs.Product;
+        variant = addingOrderlineEventArgs.Variant;
+        quantity = addingOrderlineEventArgs.Quantity;
+        settings = addingOrderlineEventArgs.Settings;
+        action = addingOrderlineEventArgs.Action;
 
         if (quantity == 0)
         {
@@ -1134,7 +1134,6 @@ partial class OrderService
                 orderInfo.orderLines.Add(orderLine);
             }
 
-
             var productDiscount = product.ProductDiscount();
 
             // Product discounts do not contain constraints that change with quantity updates or order modifications
@@ -1160,7 +1159,15 @@ partial class OrderService
                 ).ConfigureAwait(false);
             }
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+            var addedEventArgs = new AddedOrderlineEventArgs()
+            {
+                OrderInfo = orderInfo
+            };
+
+            OrderEvents.OnAddedOrderline(this, addedEventArgs);
+            await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs);
+
+            return await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
         }
         finally
