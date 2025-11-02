@@ -105,7 +105,7 @@ public partial class Order
     }
 
 
-    public async Task SetCouponCodeAsync(Guid productKey, string coupon, DiscountOrderSettings? discountOrderSettings = null)
+    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null)
     {
         string storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
