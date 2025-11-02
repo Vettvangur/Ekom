@@ -369,15 +369,20 @@ public class CheckoutControllerService
             OrderInfo = order
         });
 
-        await CheckoutEvents.OnProcessingAsync(this, new ProcessingEventArgs
+        var proccessingEventArgs = new ProcessingEventArgs
         {
             OrderInfo = order
-        });
+        };
+
+        await CheckoutEvents.OnProcessingAsync(this, proccessingEventArgs);
 
         try
         {
             // Only validate, remove stock in CheckoutService
-            Stock.Instance.ValidateOrderStock(order);
+            if (proccessingEventArgs.StockValidation)
+            {
+                Stock.Instance.ValidateOrderStock(order);
+            }
         }
         catch (NotEnoughLineStockException ex)
         {

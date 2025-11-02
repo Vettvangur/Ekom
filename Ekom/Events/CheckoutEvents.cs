@@ -68,6 +68,7 @@ public class PayEventArgs : EventArgs
 public class ProcessingEventArgs : EventArgs
 {
     public IOrderInfo OrderInfo { get; set; }
+    public bool StockValidation { get; set; } = true;
 }
 
 public class CompleteCheckoutEventArgs : EventArgs
