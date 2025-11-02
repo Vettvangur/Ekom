@@ -187,7 +187,7 @@ public partial class Stock
             }
             else
             {
-                IProduct? product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias);
+                IProduct? product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
 
                 if (product == null)
                 {
