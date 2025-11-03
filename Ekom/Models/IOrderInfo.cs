@@ -55,7 +55,7 @@ public interface IOrderInfo
     IReadOnlyCollection<IOrderLine> OrderLines { get; }
 
     /// <summary>
-    /// Includes Vat and discounts but without shipping providers and payment providers.
+    /// The total order amount including VAT, shipping, and after all discounts.
     /// </summary>
     ICalculatedPrice GrandTotal { get; }
     /// <summary>
@@ -65,7 +65,7 @@ public interface IOrderInfo
     /// </summary>
     ICalculatedPrice ChargedAmount { get; }
     /// <summary>
-    /// Subtotal
+    /// The subtotal of all order lines **excluding VAT and before any discounts**.
     /// </summary>
     IPrice SubTotal { get; }
     /// <summary>
@@ -95,6 +95,14 @@ public interface IOrderInfo
     /// Total monetary value of discount without vat in order
     /// </summary>
     ICalculatedPrice DiscountAmountWithOutVat { get; }
+    /// <summary>
+    /// Total monetary value of product discount with vat in order
+    /// </summary>
+    ICalculatedPrice ProductDiscountAmount { get; }
+    /// <summary>
+    /// Total monetary value of product discount without vat in order
+    /// </summary>
+    ICalculatedPrice ProductDiscountAmountWithOutVat { get; }
 
     /// <summary>
     /// A collection of hangfire job ids linked to this order,

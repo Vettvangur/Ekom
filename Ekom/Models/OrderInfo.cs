@@ -122,7 +122,7 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line => line.Amount.WithVat.Value);
+            decimal amount = OrderLines.Sum(line => line.Amount.Value);
 
             return new CalculatedPrice(amount, StoreInfo.Currency);
         }
@@ -166,17 +166,8 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            decimal amount = OrderLines.Sum(line =>
-            {
-                if (line.Discount == null)
-                {
-                    Price lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
 
-                    return lineWithOrderDiscount.AfterDiscount.Value;
-                }
-
-                return line.Amount.AfterDiscount.Value;
-            });
+            var amount = OrderLines.Sum(x => x.Product.Price.BeforeDiscount.Value * x.Quantity);
 
             return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
         }
@@ -187,8 +178,8 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            var subTotalWithOutVat = SubTotal.WithoutVat.Value;
-            var subTotalWithVat = SubTotal.WithVat.Value;
+            var subTotalWithOutVat = OrderLines.Sum(x => x.Amount.AfterDiscountWithOutVat.Value);
+            var subTotalWithVat = OrderLines.Sum(x => x.Amount.AfterDiscount.Value);
 
             var vatAmount = (subTotalWithVat - subTotalWithOutVat);
 
@@ -217,7 +208,7 @@ public class OrderInfo : IOrderInfo
                 if (line.Discount == null)
                 {
                     var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
-                    return lineWithOrderDiscount.Value;            // line gross (already rounded per-line)
+                    return lineWithOrderDiscount.Value;
                 }
                 return line.Amount.Value;
             });
@@ -252,15 +243,50 @@ public class OrderInfo : IOrderInfo
 
     /// <inheritdoc />
     public ICalculatedPrice DiscountAmount
-    => new CalculatedPrice(
-        OrderLineTotal.Value - SubTotal.AfterDiscount.Value,
-        StoreInfo.Currency);
+    {
+        get
+        {
+            var discountAmount = OrderLines.Sum(x => x.Amount.BeforeDiscount.Value - x.Amount.AfterDiscount.Value);
 
+            return new CalculatedPrice(
+                discountAmount,
+                StoreInfo.Currency);
+        }
+    }
 
     public ICalculatedPrice DiscountAmountWithOutVat
-    => new CalculatedPrice(
-        OrderLineTotalWithOutVat.Value - SubTotal.AfterDiscountWithOutVat.Value,
-        StoreInfo.Currency);
+    {
+        get
+        {
+            var discountAmount = OrderLines.Sum(x => x.Amount.BeforeDiscountWithOutVat.Value - x.Amount.AfterDiscountWithOutVat.Value);
+
+            return new CalculatedPrice(
+                discountAmount,
+                StoreInfo.Currency);
+        }
+    }
+
+    /// <inheritdoc />
+    public ICalculatedPrice ProductDiscountAmount
+    {
+        get
+        {
+            decimal amount = OrderLines.Sum(line => line.Product.Price.DiscountAmount.Value);
+
+            return new CalculatedPrice(amount, StoreInfo.Currency);
+        }
+    }
+
+    public ICalculatedPrice ProductDiscountAmountWithOutVat
+    {
+        get
+        {
+            decimal amount = OrderLines.Sum(line => (line.Product.Price.BeforeDiscountWithOutVat.Value - line.Product.Price.AfterDiscountWithOutVat.Value));
+
+            return new CalculatedPrice(amount, StoreInfo.Currency);
+        }
+    }
+
     /// <inheritdoc />
     public ICalculatedPrice ChargedAmount
     {

@@ -44,56 +44,71 @@ public class OrderLine : IOrderLine
     /// </summary>
     public OrderLineSettings Settings { get; internal set; } = new OrderLineSettings();
 
-    /// <summary>
-    /// Line price with discount and quantity and variant modifications
-    /// </summary>
+
+    private IPrice? _amount;
+
     public IPrice Amount
     {
         get
         {
-            OrderedDiscount? discount = Product.Price.Discount;
+            if (_amount != null)
+                return _amount;
 
-            if (OrderInfo?.Discount != null &&
-                (OrderInfo.Discount.DiscountItems.Any() && OrderInfo.Discount.DiscountItems.Contains(Product.Id.ToString()) || OrderInfo.Discount.GlobalDiscount))
-            {
-                if (Product.Price.HasDiscount && OrderInfo.Discount.Stackable)
-                {
-                    discount = OrderInfo.Discount;
-                }
-                else if (!Product.Price.HasDiscount && OrderInfo.Discount != null)
-                {
-                    discount = OrderInfo.Discount;
-                }
-                else if ((Product.Price.Discount?.Amount ?? 0) < OrderInfo.Discount?.Amount)
-                {
-                    discount = OrderInfo.Discount;
-                }
-            }
 
-            decimal _price = Product.Price.OriginalValue;
-
-            Discount = discount;
-
-            if (Product.VariantGroups != null && Product.VariantGroups.Any())
-            {
-                IEnumerable<OrderedVariant> variants = Product.VariantGroups.SelectMany(x => x.Variants);
-
-                foreach (OrderedVariant? v in variants)
-                {
-
-                    _price += (v.Price.OriginalValue - _price);
-                    
-                }
-            }
-
-            return new Price(
-                _price,
-                OrderInfo?.StoreInfo.Currency,
-                Vat,
-                OrderInfo.StoreInfo.VatIncludedInPrice,
-                discount,
-                Quantity);
+            _amount = CalculateAmount();
+            return _amount;
         }
+    }
+
+    public void InvalidateAmount() => _amount = null;
+
+    /// <summary>
+    /// Line price with discount and quantity and variant modifications
+    /// </summary>
+    private IPrice CalculateAmount() { 
+
+        OrderedDiscount? discount = Product.Price.Discount;
+
+        if (OrderInfo?.Discount != null &&
+            (OrderInfo.Discount.DiscountItems.Any() && Product.Path.Split(',').Intersect(OrderInfo.Discount.DiscountItems).Any() || OrderInfo.Discount.GlobalDiscount))
+        {
+            if (Product.Price.HasDiscount && OrderInfo.Discount.Stackable)
+            {
+                discount = OrderInfo.Discount;
+            }
+            else if (!Product.Price.HasDiscount && OrderInfo.Discount != null)
+            {
+                discount = OrderInfo.Discount;
+            }
+            else if ((Product.Price.Discount?.Amount ?? 0) < OrderInfo.Discount?.Amount)
+            {
+                discount = OrderInfo.Discount;
+            }
+        }
+
+        Discount = discount;
+
+        decimal _price = Discount != null && Discount.Stackable ? Product.Price.Value : Product.Price.OriginalValue;
+
+        if (Product.VariantGroups != null && Product.VariantGroups.Any())
+        {
+            IEnumerable<OrderedVariant> variants = Product.VariantGroups.SelectMany(x => x.Variants);
+
+            foreach (OrderedVariant? v in variants)
+            {
+                _price += (v.Price.OriginalValue - _price);
+                    
+            }
+        }
+
+        return new Price(
+            _price,
+            OrderInfo?.StoreInfo.Currency,
+            Vat,
+            OrderInfo.StoreInfo.VatIncludedInPrice,
+            discount,
+            Quantity);
+        
     }
 
     public decimal Vat

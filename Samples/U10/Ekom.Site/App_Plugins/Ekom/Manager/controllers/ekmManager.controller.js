@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope,$timeout) {
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
     $scope.result = {};
@@ -576,6 +576,42 @@
     });
 
 
+    $scope.ExportCsv = function (filename = 'orders.csv') {
+      const orders = $scope.result.orders;
+      if (!orders || !orders.length) return;
+
+      const keys = Object.keys(orders[0]);
+
+      function esc(v) {
+        if (v == null) return '';
+        if (typeof v === 'object') v = JSON.stringify(v);
+        v = String(v);
+        return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }
+
+      const lines = [];
+      lines.push(keys.join(',')); // header
+      for (let i = 0; i < orders.length; i++) {
+        const r = orders[i];
+        lines.push(keys.map(k => esc(r[k])).join(','));
+      }
+      const csv = lines.join('\r\n');
+
+      // Create CSV blob
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+
+      // Trigger click outside Angular digest
+      $timeout(() => {
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0, false);
+    };
     angular.element(document).ready(function () {
       // Init Orders
       if ($scope.location === 'orders') {
@@ -603,6 +639,7 @@
     "$document",
     'eventsService',
     '$rootScope',
+    '$timeout',
     controller
   ]);
 })();

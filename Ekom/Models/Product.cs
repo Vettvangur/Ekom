@@ -274,31 +274,26 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            var lazy = _cache.GetOrAdd($"Prices", _ =>
-                new Lazy<object>(() =>
-                {
-                    string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
+            string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
 
-                    bool vatIncludedInPrice = Store.VatIncludedInPrice;
-                    CurrencyModel storeCurrency = Store.Currency;
+            bool vatIncludedInPrice = Store.VatIncludedInPrice;
+            CurrencyModel storeCurrency = Store.Currency;
 
-                    List<IPrice> prices = GetValue("price", Store.Alias)
-                        .GetPriceValues(
-                            Store.Currencies,
-                            Vat,
-                            vatIncludedInPrice,
-                            storeCurrency,
-                            Store.Alias,
-                            Path,
-                            categories
-                        );
-                    return prices;
-                }, LazyThreadSafetyMode.ExecutionAndPublication)
-            );
+            List<IPrice> prices = GetValue("price", Store.Alias)
+                .GetPriceValues(
+                    Store.Currencies,
+                    Vat,
+                    vatIncludedInPrice,
+                    storeCurrency,
+                    Store.Alias,
+                    Path,
+                    categories
+                );
 
-            return (List<IPrice>)((Lazy<object>)lazy).Value;
+            return prices;
         }
     }
+
 
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
