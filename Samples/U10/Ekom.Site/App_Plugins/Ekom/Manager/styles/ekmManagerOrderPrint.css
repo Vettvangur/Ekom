@@ -1,0 +1,41 @@
+@media print {
+
+    * {
+        position: static !important;
+        inset: auto !important;
+        width: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .umb-app-header {
+        display: none !important;
+    }
+
+    .umb-dashboard__content {
+        padding: 5px !important;
+    }
+
+    .ekmManager .umb-overlay {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        top: 0 !important;
+        z-index: 999999999999 !important;
+        background: white !important;
+    }
+
+    .ekmManager .umb-overlay-container {
+        max-height: calc(100vh) !important;
+        padding: 0 !important;
+    }
+
+    .ekmManager .ekmOrder__ordernumber {
+        font-size: 30px !important;
+    }
+
+    .ekmManager header, .ekmManager .umb-overlay-header, .ekmManager .umb-overlay-drawer, .ekmManager .ekmOrder__header #changeOrderStatusButton, .ekmManager .ekmOrder__header #notifyOrderStatus, .ekmManager .umb-pane, .ekmManager .umb-editor-header {
+        display: none !important;
+    }
+}

@@ -1249,6 +1249,10 @@ partial class OrderService
                 orderData.Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol;
             }
 
+            foreach (var line in orderInfo.orderLines)
+            {
+                line.InvalidateAmount();
+            }
 
             await _orderRepository.UpdateOrderAsync(orderData)
                 .ConfigureAwait(false);

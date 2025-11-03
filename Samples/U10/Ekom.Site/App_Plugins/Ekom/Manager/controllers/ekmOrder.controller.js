@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope, $timeout) {
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
     
@@ -153,6 +153,34 @@
         )
         .map(([key, value]) => [key, htmlDecode(value)]);
     });
+
+    var printOrderButton = document.getElementById('printOrder');
+
+    if (printOrderButton) {
+
+      printOrderButton.addEventListener('click', function () {
+
+        var linkEl = angular.element('<link id="overlay-print-style" rel="stylesheet" media="print" href="/app_plugins/ekom/manager/styles/ekmManagerOrderPrint.css">');
+        angular.element($document[0].head).append(linkEl);
+
+        var cleanup = function () {
+          linkEl.remove();
+          window.removeEventListener('afterprint', cleanup);
+        };
+
+        window.addEventListener('afterprint', cleanup);
+
+        $timeout(function () {
+          window.print();
+
+          $timeout(cleanup, 2000);
+        }, 50);
+
+      });
+
+    }
+
+
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Order", [
@@ -163,6 +191,7 @@
     "$document",
     'eventsService',
     '$rootScope',
+    '$timeout',
     controller
   ]);
 })();
