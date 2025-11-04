@@ -158,7 +158,12 @@
     </div>
     <div class="umb-table-body">
       <div ng-repeat="orderLine in model.editModel.order.orderLines" class="umb-table-row">
-        <div class="umb-table-cell not-fixed">{{ orderLine.product.title }} ({{ orderLine.product.sku }})</div>
+        <div class="umb-table-cell not-fixed" style="flex-direction:column;">
+          {{ orderLine.product.title }} ({{ orderLine.product.sku }})
+          <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px;">
+            {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
+          </small>
+        </div>
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
         <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.vat.currencyString}}</div>
