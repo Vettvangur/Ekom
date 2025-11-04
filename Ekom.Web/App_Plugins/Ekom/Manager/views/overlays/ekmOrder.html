@@ -20,7 +20,7 @@
       </div>
       <uui-checkbox label="Fire events?" style="vertical-align: middle; margin-left:15px;" id="notifyOrderStatus"></uui-checkbox>
       <uui-button look="primary" data-orderId="{{model.editModel.order.uniqueId}}" style="margin-left: 15px;" id="changeOrderStatusButton">Save</uui-button>
-      <uui-button look="outline"  style="float:right;" id="printOrder">Print</uui-button>
+      <uui-button look="outline" style="float:right;" id="printOrder">Print</uui-button>
     </div>
     <p>UniqueId: {{ model.editModel.order.uniqueId }}</p>
     <p>Created date: {{ model.editModel.order.createDate | date:'dd. MMMM yyyy HH:mm'}}</p>
@@ -158,7 +158,12 @@
     </div>
     <div class="umb-table-body">
       <div ng-repeat="orderLine in model.editModel.order.orderLines" class="umb-table-row">
-        <div class="umb-table-cell not-fixed">{{ orderLine.product.title }} ({{ orderLine.product.sku }})</div>
+        <div class="umb-table-cell not-fixed" style="flex-direction:column;">
+          {{ orderLine.product.title }} ({{ orderLine.product.sku }})
+          <small ng-if="orderLine.variant" style="font-style:italic; display:block; margin-top:3px;">
+            {{ orderLine.variant.title }} <span ng-if="orderLine.variant.sku">({{ orderLine.variant.sku }})</span>
+          </small>
+        </div>
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
         <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.vat.currencyString}}</div>
