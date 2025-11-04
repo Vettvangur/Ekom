@@ -947,6 +947,9 @@ partial class OrderService
         }
         try
         {
+            var copyOfShippingProvider = orderInfo.ShippingProvider;
+            var copyOfPaymentProvider = orderInfo.PaymentProvider;
+
             List<IOrderLine> orderLines = orderInfo.OrderLines.ToList();
 
             if (orderLines != null && orderLines.Any())
@@ -958,6 +961,9 @@ partial class OrderService
 
                 foreach (IOrderLine? orderline in orderLines)
                 {
+                    orderInfo.ShippingProvider = copyOfShippingProvider;
+                    orderInfo.PaymentProvider = copyOfPaymentProvider;
+
                     orderInfo = await AddOrderLineAsync(orderline.ProductKey, orderline.Quantity, storeAlias, new AddOrderSettings()
                     {
                         OrderInfo = orderInfo,
