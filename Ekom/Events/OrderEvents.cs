@@ -105,7 +105,7 @@ public static class OrderEvents
     public static event EventHandler<UpdatedOrderlineEventArgs> UpdatedOrderline;
     internal static void OnUpdatedOrderline(object sender, UpdatedOrderlineEventArgs args)
         => UpdatedOrderline?.Invoke(sender, args);
-    public static event Func<object, AddedOrderlineEventArgs, Task>? UpdatedOrderlineAsync;
+    public static event Func<object, UpdatedOrderlineEventArgs, Task>? UpdatedOrderlineAsync;
     public static async Task OnUpdatedOrderlineAsync(object sender, UpdatedOrderlineEventArgs args)
     {
         if (UpdatedOrderlineAsync is null) return;
