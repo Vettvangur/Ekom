@@ -101,6 +101,21 @@ public static class OrderEvents
             await handler(sender, args);
         }
     }
+
+    public static event EventHandler<UpdatedOrderlineEventArgs> UpdatedOrderline;
+    internal static void OnUpdatedOrderline(object sender, UpdatedOrderlineEventArgs args)
+        => UpdatedOrderline?.Invoke(sender, args);
+    public static event Func<object, AddedOrderlineEventArgs, Task>? UpdatedOrderlineAsync;
+    public static async Task OnUpdatedOrderlineAsync(object sender, UpdatedOrderlineEventArgs args)
+    {
+        if (UpdatedOrderlineAsync is null) return;
+
+        foreach (var handler in UpdatedOrderlineAsync.GetInvocationList()
+                 .Cast<Func<object, UpdatedOrderlineEventArgs, Task>>())
+        {
+            await handler(sender, args);
+        }
+    }
 }
 
 /// <summary>
@@ -135,6 +150,11 @@ public class AddingOrderlineEventArgs : EventArgs
 }
 
 public class AddedOrderlineEventArgs : EventArgs
+{
+    public OrderInfo OrderInfo { get; set; }
+}
+
+public class UpdatedOrderlineEventArgs : EventArgs
 {
     public OrderInfo OrderInfo { get; set; }
 }
