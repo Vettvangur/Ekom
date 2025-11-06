@@ -44,19 +44,13 @@ public class OrderLine : IOrderLine
     /// </summary>
     public OrderLineSettings Settings { get; internal set; } = new OrderLineSettings();
 
-
     private IPrice? _amount;
 
     public IPrice Amount
     {
         get
         {
-            if (_amount != null)
-                return _amount;
-
-
-            _amount = CalculateAmount();
-            return _amount;
+            return CalculateAmount();
         }
     }
 

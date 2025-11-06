@@ -557,12 +557,14 @@ public class CheckoutControllerService
 
         bool isOfflinePayment = ekomPP.GetValue("offlinePayment", storeAlias).IsBoolean();
 
-        List<OrderItem> orderItems = new List<OrderItem>
+        var amount = order.ChargedAmount.Value;
+
+        var orderItems = new List<OrderItem>
         {
             new OrderItem
             {
-                GrandTotal = order.ChargedAmount.Value,
-                Price = order.ChargedAmount.Value,
+                GrandTotal = amount,
+                Price = amount,
                 Title = orderTitle,
                 Quantity = 1,
             }
