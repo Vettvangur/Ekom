@@ -630,7 +630,7 @@ partial class OrderService
         }
 
         IVariant? variant = null;
-        if (settings?.VariantKey != null)
+        if (settings?.VariantKey != null && settings?.VariantKey != Guid.Empty)
         {
             variant = Catalog.Instance.GetVariant(settings.VariantKey.Value, storeAlias);
 
