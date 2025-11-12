@@ -36,6 +36,10 @@ public interface IDiscount : IComparable<IDiscount>
     /// </summary>
     IReadOnlyCollection<string> DiscountItems { get; }
     /// <summary>
+    /// The products that are excluded in this discount;
+    /// </summary>
+    IReadOnlyCollection<string> ExcludeDiscountItems { get; }
+    /// <summary>
     /// Gets the unique key identifier.
     /// </summary>
     /// <value>

@@ -828,15 +828,21 @@ class EnsureNodesExist : IComponent
                                             SortOrder = 7,
                                             Description = "Controls what items in the order receive the discount. (In contrast to product discount, discount items, where it is used as a constraint)"
                                         },
+                                        new PropertyType(_shortStringHelper, multinodeCatalogDt, "excludeDiscountItems")
+                                        {
+                                            Name = "Exclude Discount Items",
+                                            SortOrder = 8,
+                                            Description = "Exclude items from discount items. For example if you select a category in discount items you can exclude a single product here."
+                                        },
                                         new PropertyType(_shortStringHelper, booleanDt, "stackable")
                                         {
                                             Name = "Stackable",
-                                            SortOrder = 8,
+                                            SortOrder = 9,
                                         },
                                         new PropertyType(_shortStringHelper, booleanDt, "globalDiscount")
                                         {
                                             Name = "Global Discount",
-                                            SortOrder = 9,
+                                            SortOrder = 10,
                                             Description = "This couponless discount will be automatically applied to orders that match it's constraints"
                                         },
                                     }))
@@ -908,6 +914,12 @@ class EnsureNodesExist : IComponent
                                             Name = "Discount Items",
                                             SortOrder = 7,
                                             Description = "Discount is automatically applied to selected items if the other constraints are valid.",
+                                        },
+                                        new PropertyType(_shortStringHelper, multinodeCatalogDt, "excludeDiscountItems")
+                                        {
+                                            Name = "Exclude Discount Items",
+                                            SortOrder = 8,
+                                            Description = "Exclude items from discount items. For example if you select a category in discount items you can exclude a single product here."
                                         },
                                     }))
                                 {

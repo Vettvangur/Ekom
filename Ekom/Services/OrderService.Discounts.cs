@@ -699,11 +699,42 @@ partial class OrderService
         }
 
 
-        return discount.Constraints.IsValid(orderInfo.StoreInfo.Culture, orderInfo.OrderLineTotal.Value)
-            && (discount.DiscountItems.Count == 0
-            || (orderLine.Product.Path.Split(',').Intersect(discount.DiscountItems).Any())
-            || (orderLine.Product.Properties.GetPropertyValue("categories").Split(',').Select(x => Configuration.Resolver.GetService<INodeService>().NodeById(x)?.Id.ToString()).Intersect(discount.DiscountItems).Any())
-            );
+        var constraintsOk = discount.Constraints.IsValid(
+            orderInfo.StoreInfo.Culture,
+            orderInfo.OrderLineTotal.Value
+        );
+
+        // Collect path items
+        var pathItems = string.IsNullOrWhiteSpace(orderLine.Product.Path)
+            ? Array.Empty<string>()
+            : orderLine.Product.Path.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        // Collect category IDs (mapped via INodeService)
+        var nodeSvc = Configuration.Resolver.GetService<INodeService>();
+        var categoryIds = ((orderLine.Product.Properties.GetPropertyValue("categories") as string) ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => nodeSvc.NodeById(x)?.Id.ToString())
+            .Where(id => !string.IsNullOrEmpty(id))
+            .ToArray();
+
+
+        var includeSet = new HashSet<string>(discount.DiscountItems ?? Enumerable.Empty<string>(),
+            StringComparer.OrdinalIgnoreCase);
+        var excludeSet = new HashSet<string>(discount.ExcludeDiscountItems ?? Enumerable.Empty<string>(),
+            StringComparer.OrdinalIgnoreCase);
+
+        // Matches include rules (empty include == match all)
+        bool matchesInclude =
+            includeSet.Count == 0 ||
+            pathItems.Any(includeSet.Contains) ||
+            categoryIds.Any(includeSet.Contains);
+
+        // Matches exclusion
+        bool matchesExclude =
+            excludeSet.Count > 0 &&
+            (pathItems.Any(excludeSet.Contains) || categoryIds.Any(excludeSet.Contains));
+
+        return constraintsOk && matchesInclude && !matchesExclude;
     }
 
     public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
