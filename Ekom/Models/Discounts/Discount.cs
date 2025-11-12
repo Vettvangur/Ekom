@@ -88,6 +88,22 @@ public class Discount : PerStoreNodeEntity, IConstrained, IDiscount, IPerStoreNo
         }
     }
 
+    public virtual IReadOnlyCollection<string> ExcludeDiscountItems
+    {
+        get
+        {
+           var returnList = new List<string>();
+
+            var umbSvc = Configuration.Resolver.GetService<IUmbracoService>();
+
+            string nodes = Properties.GetPropertyValue("excludeDiscountItems");
+
+            returnList.AddRange(umbSvc.GetContent(nodes));
+
+            return returnList.AsReadOnly();
+        }
+    }
+
     /// <summary>
     /// Means this couponless discount will be automatically applied to orders that match it's constraints
     /// We can not currently filter by discounts without a coupon since the linking is from Coupon -> Order.

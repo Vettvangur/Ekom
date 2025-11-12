@@ -35,11 +35,17 @@ class ProductDiscountService
                     continue;
                 }
 
-                Discount? disc = discount.Value as Discount;
+                var disc = discount.Value as Discount;
 
-                if (!string.IsNullOrEmpty(path)
-                && path.Split(',').Intersect(disc.DiscountItems).Any()
-                || (categories != null && categories.Intersect(disc.DiscountItems).Any()))
+                var pathItems = string.IsNullOrEmpty(path) ? Array.Empty<string>() : path.Split(',');
+                var inDiscount = pathItems.Intersect(disc.DiscountItems).Any()
+                    || (categories?.Intersect(disc.DiscountItems).Any() ?? false);
+
+                var inExclusion = (disc.ExcludeDiscountItems != null)
+                    && (pathItems.Intersect(disc.ExcludeDiscountItems).Any()
+                        || (categories?.Intersect(disc.ExcludeDiscountItems).Any() ?? false));
+
+                if (inDiscount && !inExclusion)
                 {
                     applicableDiscounts.Add(discount.Value);
                 }

@@ -17,6 +17,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         decimal amount,
         DiscountType type,
         List<string> discountItems,
+        List<string> excludeDiscountItems,
         Constraints constraints,
         bool hasMasterStock,
         bool globalDiscount)
@@ -24,6 +25,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         Key = key;
         Stackable = stackable;
         DiscountItems = discountItems;
+        ExcludeDiscountItems = excludeDiscountItems;
         Amount = amount;
         Type = type;
         Constraints = constraints;
@@ -40,6 +42,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         Stackable = discount.Stackable;
         Key = discount.Key;
         DiscountItems = discount.DiscountItems;
+        ExcludeDiscountItems = discount.ExcludeDiscountItems;
         Amount = discount.Amount;
         Type = discount.Type;
         Constraints = new Constraints(discount.Constraints);
@@ -57,6 +60,8 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     public decimal Amount { get; internal set; }
 
     public IReadOnlyCollection<string> DiscountItems { get; }
+
+    public IReadOnlyCollection<string> ExcludeDiscountItems { get; }
     /// <summary>
     /// Ranges
     /// </summary>

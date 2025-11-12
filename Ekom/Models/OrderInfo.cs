@@ -167,7 +167,7 @@ public class OrderInfo : IOrderInfo
         get
         {
 
-            var amount = OrderLines.Sum(x => x.Product.Price.BeforeDiscount.Value * x.Quantity);
+            var amount = OrderLines.Sum(x => x.Amount.BeforeDiscount.Value);
 
             return new Price(amount, StoreInfo.Currency, StoreInfo.Vat, StoreInfo.VatIncludedInPrice);
         }
@@ -199,26 +199,7 @@ public class OrderInfo : IOrderInfo
 
 
     /// <inheritdoc />
-    public ICalculatedPrice GrandTotal
-    {
-        get
-        {
-            decimal amount = OrderLines.Sum(line =>
-            {
-                if (line.Discount == null)
-                {
-                    var lineWithOrderDiscount = LinePriceWithOrderDiscount(line);
-                    return lineWithOrderDiscount.Value;
-                }
-                return line.Amount.Value;
-            });
-
-            if (ShippingProvider != null) amount += ShippingProvider.Price.Value;
-            if (PaymentProvider != null) amount += PaymentProvider.Price.Value;
-
-            return new CalculatedPrice(amount, StoreInfo.Currency);
-        }
-    }
+    public ICalculatedPrice GrandTotal => ChargedAmount;
 
     public ICalculatedPrice GrandTotalWithOutVat
     {

@@ -151,9 +151,10 @@
       <div class="umb-table-row">
         <div class="umb-table-cell not-fixed">Product</div>
         <div class="umb-table-cell">Quantity</div>
-        <div class="umb-table-cell">Price</div>
+        <div class="umb-table-cell">Unit Price (inc VAT)</div>
         <div class="umb-table-cell">Vat</div>
-        <div class="umb-table-cell">Total</div>
+        <div class="umb-table-cell">Discount</div>
+        <div class="umb-table-cell">Total (inc VAT)</div>
       </div>
     </div>
     <div class="umb-table-body">
@@ -167,7 +168,12 @@
         <div class="umb-table-cell">{{ orderLine.quantity }}</div>
         <div class="umb-table-cell">{{orderLine.product.price.withVat.currencyString}}</div>
         <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.vat.currencyString}}</div>
-        <div class="umb-table-cell" style="text-align: right;">{{orderLine.amount.withVat.currencyString}}</div>
+        <div class="umb-table-cell" style="text-align: right;">
+          -{{orderLine.amount.discountAmount.currencyString}}
+        </div>
+        <div class="umb-table-cell" style="text-align: right;" ng-if="!orderline.amount.hasDiscount">
+          {{orderLine.amount.withVat.currencyString}}
+        </div>
       </div>
     </div>
     <div class="umb-table-footer">
@@ -175,15 +181,8 @@
         <div class="umb-table-cell not-fixed"></div>
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell"></div>
-        <div class="umb-table-cell">Grand Total</div>
-        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.grandTotalWithOutVat.currencyString }}</div>
-      </div>
-      <div class="umb-table-row" ng-if="model.editModel.order.shippingProvider != null">
-        <div class="umb-table-cell not-fixed"></div>
-        <div class="umb-table-cell"></div>
-        <div class="umb-table-cell"></div>
-        <div class="umb-table-cell">Shipping Total</div>
-        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</div>
+        <div class="umb-table-cell">Sub Total (inc VAT)</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.subTotal.withVat.currencyString }}</div>
       </div>
       <div class="umb-table-row">
         <div class="umb-table-cell not-fixed"></div>
@@ -191,6 +190,13 @@
         <div class="umb-table-cell"></div>
         <div class="umb-table-cell">Discount</div>
         <div class="umb-table-cell" style="text-align: right;">-{{ model.editModel.order.discountAmount.currencyString }}</div>
+      </div>
+      <div class="umb-table-row" ng-if="model.editModel.order.shippingProvider != null">
+        <div class="umb-table-cell not-fixed"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell"></div>
+        <div class="umb-table-cell">Shipping Total</div>
+        <div class="umb-table-cell" style="text-align: right;">{{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</div>
       </div>
       <div class="umb-table-row">
         <div class="umb-table-cell not-fixed"></div>

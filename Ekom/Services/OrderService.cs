@@ -345,7 +345,7 @@ partial class OrderService
 
         OrderStatus oldStatus = order.OrderStatus;
 
-        OrderStatusEventArgs OrderStatusEventModel = new OrderStatusEventArgs()
+        var OrderStatusEventModel = new OrderStatusEventArgs()
         {
             OrderUniqueId = uniqueId,
             PreviousStatus = oldStatus,
