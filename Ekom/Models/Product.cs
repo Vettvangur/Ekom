@@ -523,7 +523,7 @@ public class Product : PerStoreNodeEntity, IProduct
         string categoryField = Properties.ContainsKey("categories") ?
                             GetValue("categories") : "";
 
-        ICategory? primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias);
+        ICategory? primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias, raiseEvent: false);
 
         if (primaryCategory != null)
         {
@@ -537,7 +537,7 @@ public class Product : PerStoreNodeEntity, IProduct
             foreach (string catId in categoryIds)
             {
                 ICategory? categoryItem
-                    = Catalog.Instance.GetCategory(catId, Store.Alias);
+                    = Catalog.Instance.GetCategory(catId, Store.Alias, raiseEvent: false);
 
                 if (categoryItem != null && !categories.Contains(categoryItem))
                 {
@@ -554,7 +554,7 @@ public class Product : PerStoreNodeEntity, IProduct
         {
             if (int.TryParse(p, out int id))
             {
-                ICategory? c = Catalog.Instance.GetCategory(id, Store.Alias);
+                ICategory? c = Catalog.Instance.GetCategory(id, Store.Alias, raiseEvent: false);
 
                 if (c != null && !c.VirtualUrl)
                 {
