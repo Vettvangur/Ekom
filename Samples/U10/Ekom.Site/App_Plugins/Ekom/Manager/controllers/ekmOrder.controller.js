@@ -117,7 +117,7 @@
     };
 
     $scope.cleanKey = function (key) {
-      return key.replace(/^shipping/i, '').replace(/^customer/i, '');
+      return key.replace(/^customshipping/i, '').replace(/^custompayment/i, '').replace(/^shipping/i, '').replace(/^customer/i, '');
     };
 
     const shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
@@ -139,6 +139,28 @@
         return k.startsWith("customer") && !$scope.isDefaultKey(k);
       })
       .map(([key, value]) => [key, htmlDecode(value)]);
+
+
+    const customShippingProps = $scope.model.editModel.order.shippingProvider.customData || {};
+
+    $scope.extraCustomShippingProperties = Object.entries(customShippingProps)
+      .filter(([key, value]) => {
+        if (!value) return false;
+        const k = (key || "").toLowerCase();
+        return k.startsWith("customshipping") && !$scope.isDefaultKey(k);
+      })
+      .map(([key, value]) => [key, htmlDecode(value)]);
+
+    const customPaymentProps = $scope.model.editModel.order.paymentProvider.customData || {};
+
+    $scope.extraCustomPaymentProperties = Object.entries(customPaymentProps)
+      .filter(([key, value]) => {
+        if (!value) return false;
+        const k = (key || "").toLowerCase();
+        return k.startsWith("custompayment") && !$scope.isDefaultKey(k);
+      })
+      .map(([key, value]) => [key, htmlDecode(value)]);
+
     function htmlDecode(value) {
       const txt = document.createElement('textarea');
       txt.innerHTML = value;
@@ -155,6 +177,22 @@
         )
         .map(([key, value]) => [key, htmlDecode(value)]);
     });
+
+    $scope.hasShippingInfo = function () {
+      var s = $scope.model.editModel.order.customerInformation.shipping;
+      if (!s) return false;
+
+      return !!(
+        s.name ||
+        s.email ||
+        s.address ||
+        s.apartment ||
+        s.city ||
+        s.country ||
+        s.zipCode ||
+        s.phone
+      );
+    };
 
     var printOrderButton = document.getElementById('printOrder');
 

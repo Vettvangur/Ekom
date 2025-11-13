@@ -4,7 +4,6 @@
 
     <h1 class="ekmOrder__ordernumber">Order number: {{ model.editModel.order.referenceId}}</h1>
 
-
     <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom:1px solid #d8d7d9;">
       <label>Order Status:</label>
       <div class="btn-group dropdown-toggle">
@@ -60,7 +59,11 @@
 
       <h4>Shipping</h4>
 
-      <div>
+      <p style="font-weight:bold" ng-if="!hasShippingInfo()">
+        Same as billing address
+      </p>
+
+      <div ng-if="hasShippingInfo()">
         <p ng-if="model.editModel.order.customerInformation.shipping.name">
           Name: {{ model.editModel.order.customerInformation.shipping.name }}
         </p>
@@ -118,17 +121,17 @@
         <div class="ekmOrder__paymentMethod ekmSplit__column">
           <h4>Payment Method</h4>
 
-          <h4>{{ model.editModel.order.paymentProvider.title }}</h4>
+          <h4><strong>{{ model.editModel.order.paymentProvider.title }}</strong></h4>
 
           <p ng-if="model.editModel.order.paymentProvider.price">
             Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}
           </p>
 
-          <div ng-if="model.editModel.order.paymentProvider.customData">
-            <h5>Extra data</h5>
+          <div ng-if="extraCustomPaymentProperties.length > 0">
+            <h5 style="margin-top:20px; font-weight:bold;">Extra Customer Data</h5>
             <ul>
-              <li ng-repeat="(key, value) in model.editModel.order.paymentProvider.customData">
-                {{ key }}: {{ value }}
+              <li ng-repeat="pair in extraCustomPaymentProperties track by $index">
+                <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
               </li>
             </ul>
           </div>
@@ -144,17 +147,17 @@
         <div class="ekmOrder__shippingMethod ekmSplit__column">
           <h4>Shipping Method</h4>
 
-          <h4>{{ model.editModel.order.shippingProvider.title }}</h4>
+          <h4><strong>{{ model.editModel.order.shippingProvider.title }}</strong></h4>
 
           <p ng-if="model.editModel.order.shippingProvider.price">
             Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}
           </p>
 
-          <div ng-if="model.editModel.order.shippingProvider.customData">
-            <h5>Extra data</h5>
+          <div ng-if="extraCustomShippingProperties.length > 0">
+            <h5 style="margin-top:20px; font-weight:bold;">Extra Customer Data</h5>
             <ul>
-              <li ng-repeat="(key, value) in model.editModel.order.shippingProvider.customData">
-                {{ key }}: {{ value }}
+              <li ng-repeat="pair in extraCustomShippingProperties track by $index">
+                <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
               </li>
             </ul>
           </div>
