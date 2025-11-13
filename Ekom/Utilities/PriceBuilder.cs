@@ -17,9 +17,21 @@ public static class PriceBuilder
         string? path,
         string[]? categories)
     {
+
         var prices = new List<IPrice>();
+
         if (string.IsNullOrWhiteSpace(priceJson))
+        {
+            prices.Add(new Price(
+                "0",
+                fallbackCurrency,
+                vat,
+                vatIncludedInPrice,
+                null
+            ));
             return prices;
+        }
+
 
         var discountSvc = Configuration.Resolver.GetService<ProductDiscountService>();
 

@@ -99,14 +99,27 @@ public class OrderedShippingProvider
     {
         get
         {
-            var price = Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
 
-            if (price == null)
+            var match = Prices.FirstOrDefault(
+                x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue
+            );
+
+            if (match != null)
+                return match;
+
+            if (Prices.Any())
             {
-                price = Prices.FirstOrDefault();
-            }
+                return Prices.First();
+            } 
 
-            return price;
+            // Return a fallback 0-price
+            return new Price(
+                "0",
+                StoreInfo.Currency,
+                StoreInfo.Vat,
+                vatIncludedInPrice: true,
+                discount: null
+            );
         }
     }
     public virtual List<IPrice> Prices { get; set; } = new List<IPrice>();

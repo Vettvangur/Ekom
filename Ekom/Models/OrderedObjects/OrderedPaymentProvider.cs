@@ -102,7 +102,27 @@ public class OrderedPaymentProvider
     {
         get
         {
-            return Prices.FirstOrDefault(x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue);
+
+            var match = Prices.FirstOrDefault(
+                x => x.Currency.CurrencyValue == StoreInfo.Currency.CurrencyValue
+            );
+
+            if (match != null)
+                return match;
+
+            if (Prices.Any())
+            {
+                return Prices.First();
+            }
+
+            // Return a fallback 0-price
+            return new Price(
+                "0",
+                StoreInfo.Currency,
+                StoreInfo.Vat,
+                vatIncludedInPrice: true,
+                discount: null
+            );
         }
     }
     public virtual List<IPrice> Prices { get; set; }
