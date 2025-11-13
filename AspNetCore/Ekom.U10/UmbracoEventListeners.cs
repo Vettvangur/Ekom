@@ -500,7 +500,16 @@ class UmbracoEventListeners :
         {
             _cache.Remove($"GetMetafields");
         }
-       
+
+        if (content.ContentType.Alias == "ekmStore" || content.ContentType.Alias == "ekmProductDiscount" || content.ContentType.Alias == "ekmOrderDiscount")
+        {
+            PriceCache.InvalidateAll();
+        }
+
+        if (content.ContentType.Alias == "ekmProduct" || content.ContentType.Alias == "ekmProductVariant")
+        {
+            PriceCache.InvalidateItem(content.Path);
+        }
     }
 
     private async Task RevalidateAsync(IContent content, CancellationToken cancellationToken)

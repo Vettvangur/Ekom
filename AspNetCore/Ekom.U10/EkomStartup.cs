@@ -10,6 +10,7 @@ using Ekom.Umb.Sections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Composing;
@@ -128,6 +129,7 @@ class EkomStartup : IComponent
     readonly Configuration _config;
     readonly ILogger _logger;
     readonly IServiceProvider _factory;
+    readonly IMemoryCache _cache;
 
     /// <summary>
     /// 
@@ -135,11 +137,13 @@ class EkomStartup : IComponent
     public EkomStartup(
         Configuration config,
         ILogger<EkomStartup> logger,
-        IServiceProvider factory)
+        IServiceProvider factory,
+        IMemoryCache cache)
     {
         _config = config;
         _logger = logger;
         _factory = factory;
+        _cache = cache;
     }
 
     /// <summary>
@@ -152,6 +156,7 @@ class EkomStartup : IComponent
             _logger.LogInformation("Initializing...");
 
             Configuration.Resolver = _factory;
+            PriceCache.SetCache(_cache);
 
             var orderRepo = _factory.GetService<OrderRepository>();
 

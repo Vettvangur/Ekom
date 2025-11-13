@@ -1,4 +1,5 @@
 using Ekom.API;
+using Ekom.Cache;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -188,25 +189,59 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            List<IPrice> prices = Properties.GetPropertyValue("price", Store.Alias)
-                .GetPriceValues(
-                    Store.Currencies,
-                    Vat,
-                    Store.VatIncludedInPrice,
-                    Store.Currency,
-                    Store.Alias,
-                    Path,
-                    Product?.Categories.Select(x => x.Id.ToString()).ToArray()
+            string priceJson = Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
+            string[] categories = Product?.Categories.Select(x => x.Id.ToString()).ToArray()
+                                    ?? Array.Empty<string>();
+
+            string itemKey = Path;
+
+            string globalGen = PriceCache.GlobalGeneration;
+            string productGen = PriceCache.GetItemGeneration(itemKey);
+
+            string cacheKey =
+                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceJson)}";
+
+            return CacheHelpers.GetOrCreateSingleFlight(
+                cacheKey,
+                () =>
+                {
+
+                    List<IPrice> prices = PriceBuilder.BuildPricesSync(
+                        priceJson,
+                        Store.Currencies,
+                        Vat,
+                        Store.VatIncludedInPrice,
+                        Store.Currency,
+                        Store.Alias,
+                        Path,
+                        categories
                     );
 
-            foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
-            {
-                int index = prices.IndexOf(p);
+                    // --- Repair any zero-priced entries using Product.Prices ---
+                    if (Product != null)
+                    {
+                        var fallbackPrices = Product.Prices;
 
-                prices[index] = Product?.Prices.FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue) ?? p;
-            }
+                        foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
+                        {
+                            var replacement = fallbackPrices
+                                .FirstOrDefault(x => x.Currency.CurrencyValue == p.Currency.CurrencyValue);
 
-            return prices;
+                            if (replacement != null)
+                            {
+                                int index = prices.IndexOf(p);
+                                if (index >= 0)
+                                {
+                                    prices[index] = replacement;
+                                }
+                            }
+                        }
+                    }
+
+                    return prices;
+                },
+                TimeSpan.FromHours(24)
+            );
         }
     }
 
@@ -296,5 +331,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     public Variant(UmbracoContent item, IStore store) : base(item, store)
     {
         Product?.InvalidateCache();
+        PriceCache.InvalidateItem(Path);
     }
 }
