@@ -3,8 +3,6 @@ using Ekom.Cache;
 using Ekom.Models.Umbraco;
 using Ekom.Services;
 using Ekom.Utilities;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
@@ -275,22 +273,30 @@ public class Product : PerStoreNodeEntity, IProduct
         get
         {
             string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
-
             bool vatIncludedInPrice = Store.VatIncludedInPrice;
-            CurrencyModel storeCurrency = Store.Currency;
+            var storeCurrency = Store.Currency;
+            string priceJson = GetValue("price", Store.Alias) ?? string.Empty;
 
-            List<IPrice> prices = GetValue("price", Store.Alias)
-                .GetPriceValues(
+            string productKey = Path;
+
+            string globalGen = PriceCache.GlobalGeneration;
+            string productGen = PriceCache.GetItemGeneration(productKey);
+
+            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceJson)}";
+
+            return CacheHelpers.GetOrCreateSingleFlight(
+                key,
+                () => PriceBuilder.BuildPricesSync(
+                    priceJson,
                     Store.Currencies,
                     Vat,
                     vatIncludedInPrice,
                     storeCurrency,
                     Store.Alias,
                     Path,
-                    categories
-                );
-
-            return prices;
+                    categories),
+                TimeSpan.FromHours(24)
+            );
         }
     }
 
@@ -513,6 +519,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public void InvalidateCache()
     {
+        PriceCache.InvalidateItem(Path);
         _cache.Clear();
     }
 

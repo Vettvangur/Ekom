@@ -54,16 +54,24 @@ public class PaymentProvider : PerStoreNodeEntity, IPerStoreNodeEntity, IPayment
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     public virtual List<IPrice> Prices
     {
         get
         {
-            List<IPrice> Prices = Properties.GetPropertyValue("price", Store.Alias).GetPriceValues(Store.Currencies, Store.Vat, Store.VatIncludedInPrice, Store.Currency);
+            var priceJson = Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
 
-            return Prices;
+            List<IPrice> prices = PriceBuilder.BuildPricesSync(
+                priceJson,
+                Store.Currencies,
+                Store.Vat,
+                Store.VatIncludedInPrice,
+                Store.Currency,
+                Store.Alias,
+                path: null,
+                categories: null
+            );
+
+            return prices;
         }
     }
 
