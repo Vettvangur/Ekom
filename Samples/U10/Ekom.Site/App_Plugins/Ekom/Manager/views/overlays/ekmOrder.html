@@ -113,19 +113,22 @@
   <div class="ekmSplit">
 
     <div class="ekmSplit__column">
-      <div ng-if="model.editModel.order.paymentProvider != null">
+      <div ng-if="model.editModel.order.paymentProvider">
 
         <div class="ekmOrder__paymentMethod ekmSplit__column">
           <h4>Payment Method</h4>
 
           <h4>{{ model.editModel.order.paymentProvider.title }}</h4>
-          <p>Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}</p>
 
-          <div ng-if="model.editModel.order.paymentProvider.customData.length > 0">
+          <p ng-if="model.editModel.order.paymentProvider.price">
+            Price: {{ model.editModel.order.paymentProvider.price.withVat.currencyString }}
+          </p>
+
+          <div ng-if="model.editModel.order.paymentProvider.customData">
             <h5>Extra data</h5>
             <ul>
-              <li ng-repeat="(key, value)  in model.editModel.order.paymentProvider.customData">
-                {{key}}: {{value}}
+              <li ng-repeat="(key, value) in model.editModel.order.paymentProvider.customData">
+                {{ key }}: {{ value }}
               </li>
             </ul>
           </div>
@@ -133,21 +136,25 @@
 
       </div>
     </div>
+
     <div class="ekmSplit__column">
 
-      <div ng-if="model.editModel.order.shippingProvider != null">
+      <div ng-if="model.editModel.order.shippingProvider">
 
         <div class="ekmOrder__shippingMethod ekmSplit__column">
           <h4>Shipping Method</h4>
 
           <h4>{{ model.editModel.order.shippingProvider.title }}</h4>
-          <p>Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}</p>
 
-          <div ng-if="model.editModel.order.shippingProvider.customData.length > 0">
+          <p ng-if="model.editModel.order.shippingProvider.price">
+            Price: {{ model.editModel.order.shippingProvider.price.withVat.currencyString }}
+          </p>
+
+          <div ng-if="model.editModel.order.shippingProvider.customData">
             <h5>Extra data</h5>
             <ul>
-              <li ng-repeat="(key, value)  in model.editModel.order.shippingProvider.customData">
-                {{key}}: {{value}}
+              <li ng-repeat="(key, value) in model.editModel.order.shippingProvider.customData">
+                {{ key }}: {{ value }}
               </li>
             </ul>
           </div>

@@ -120,7 +120,8 @@
       return key.replace(/^shipping/i, '').replace(/^customer/i, '');
     };
 
-    const shippingProps = $scope.model.editModel.shippingAddress.properties || {};
+    const shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
+
     $scope.extraShippingProperties = Object.entries(shippingProps)
       .filter(([key, value]) => {
         if (!value) return false;
@@ -130,6 +131,7 @@
       .map(([key, value]) => [key, htmlDecode(value)]);
 
     const customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
+
     $scope.extraCustomerProperties = Object.entries(customerProps)
       .filter(([key, value]) => {
         if (!value) return false;
