@@ -205,19 +205,8 @@
 
           var orderInfo = result.data;
 
-          var shippingAddress = {};
-          var sameAsShipping = orderInfo.customerInformation.shipping;
-          if (
-            orderInfo.customerInformation.shipping.name === '' &&
-            orderInfo.customerInformation.shipping.address === '') {
-            shippingAddress = orderInfo.customerInformation.customer;
-            sameAsShipping = true;
-          }
-
           var model = {
             order: orderInfo,
-            shippingAddress,
-            sameAsShipping,
             statusList: $scope.statusList
           };
 
@@ -547,6 +536,20 @@
       return value;
 
     }
+
+    $scope.onStatusChanged = function (order) {
+
+      var notify = true;
+
+      resources.ChangeOrderStatus('?orderId=' + order.uniqueId + '&orderStatus=' + order.orderStatusCol + '&notify=' + notify)
+        .then(function (result) {
+
+          notificationsService.success("Success", "Order status updated.");
+        }, function errorCallback(data) {
+          notificationsService.error("Error", "Error updating order status.");
+      });
+
+    };
 
     $document.on('click', function (event) {
       // Check if the click event target is outside of any dropdown
