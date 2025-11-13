@@ -33,24 +33,17 @@
   <div class="ekmSplit">
 
     <div class="ekmOrder__shipping ekmSplit__column">
-      <h4>Shipping Address</h4>
+      <h4>Billing</h4>
 
-      <p>Name: {{ model.editModel.shippingAddress.name }}</p>
+      <p>Name: {{ model.editModel.order.customerInformation.customer.name }}</p>
       <p>Email: {{ model.editModel.order.customerInformation.customer.email }}</p>
-      <p>Address: {{ model.editModel.shippingAddress.address }} {{ model.editModel.shippingAddress.apartment }}</p>
-      <p>City: {{ model.editModel.shippingAddress.city }}</p>
-      <p>Country: {{ model.editModel.shippingAddress.country }}</p>
-      <p>Zipcode: {{ model.editModel.shippingAddress.zipCode }}</p>
-      <p>Phone: {{ model.editModel.shippingAddress.phone }}</p>
+      <p>Address: {{ model.editModel.order.customerInformation.customer.address }} </p>
+      <p>Apartment: {{ model.editModel.order.customerInformation.customer.apartment }}</p>
+      <p>City: {{ model.editModel.order.customerInformation.customer.city }}</p>
+      <p>Country: {{ model.editModel.order.customerInformation.customer.country }}</p>
+      <p>Zipcode: {{ model.editModel.order.customerInformation.customer.zipCode }}</p>
+      <p>Phone: {{ model.editModel.order.customerInformation.customer.phone }}</p>
 
-      <div ng-if="extraShippingProperties.length > 0">
-        <h5 style="margin-top:20px; font-weight:bold;">Extra Shipping Data</h5>
-        <ul>
-          <li ng-repeat="pair in extraShippingProperties track by $index">
-            <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
-          </li>
-        </ul>
-      </div>
 
       <div ng-if="extraCustomerProperties.length > 0">
         <h5 style="margin-top:20px; font-weight:bold;">Extra Customer Data</h5>
@@ -61,31 +54,51 @@
         </ul>
       </div>
 
-
     </div>
 
     <div class="ekmOrder__billing ekmSplit__column">
 
-      <h4>Billing Address</h4>
+      <h4>Shipping</h4>
 
-      <div ng-if="model.editModel.sameAsShipping">
-        Same as shipping address
-      </div>
+      <div>
+        <p ng-if="model.editModel.order.customerInformation.shipping.name">
+          Name: {{ model.editModel.order.customerInformation.shipping.name }}
+        </p>
 
-      <div ng-if="!model.editModel.sameAsShipping">
-        <p>Name: {{ model.editModel.order.customerInformation.customer.name}}</p>
-        <p>Email: {{ model.editModel.order.customerInformation.customer.email}}</p>
-        <p>Address: {{ model.editModel.order.customerInformation.customer.address}} {{ model.editModel.order.customerInformation.customer.apartment}}</p>
-        <p>City: {{ model.editModel.order.customerInformation.customer.city}}</p>
-        <p>Country: {{ model.editModel.order.customerInformation.customer.country}}</p>
-        <p>Zipcode: {{ model.editModel.order.customerInformation.customer.zipCode}}</p>
-        <p>Phone: {{ model.editModel.order.customerInformation.customer.phone}}</p>
+        <p ng-if="model.editModel.order.customerInformation.shipping.email">
+          Email: {{ model.editModel.order.customerInformation.shipping.email }}
+        </p>
 
-        <div ng-if="model.editModel.order.customerInformation.customer.properties.length > 0">
-          <h5>Extra Data</h5>
+        <p ng-if="model.editModel.order.customerInformation.shipping.address">
+          Address: {{ model.editModel.order.customerInformation.shipping.address }}
+        </p>
+
+        <p ng-if="model.editModel.order.customerInformation.shipping.apartment">
+          Apartment: {{ model.editModel.order.customerInformation.shipping.apartment }}
+        </p>
+
+        <p ng-if="model.editModel.order.customerInformation.shipping.city">
+          City: {{ model.editModel.order.customerInformation.shipping.city }}
+        </p>
+
+        <p ng-if="model.editModel.order.customerInformation.shipping.country">
+          Country: {{ model.editModel.order.customerInformation.shipping.country }}
+        </p>
+
+        <p ng-if="model.editModel.order.customerInformation.shipping.zipCode">
+          Zipcode: {{ model.editModel.order.customerInformation.shipping.zipCode }}
+        </p>
+
+        <p ng-if="model.editModel.order.customerInformation.shipping.phone">
+          Phone: {{ model.editModel.order.customerInformation.shipping.phone }}
+        </p>
+
+
+        <div ng-if="extraShippingProperties.length > 0">
+          <h5 style="margin-top:20px; font-weight:bold;">Extra Shipping Data</h5>
           <ul>
-            <li ng-repeat="(key, value)  in model.editModel.order.customerInformation.customer.properties">
-              {{key}} : {{value}}
+            <li ng-repeat="pair in extraShippingProperties track by $index">
+              <strong>{{ cleanKey(pair[0]) }}</strong>: {{ pair[1] }}
             </li>
           </ul>
         </div>

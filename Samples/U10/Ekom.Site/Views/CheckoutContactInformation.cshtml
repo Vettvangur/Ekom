@@ -2,7 +2,7 @@
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 @{
     Layout = "Master.cshtml";
-    
+
     var currentMember = await _memberManager.GetCurrentMemberAsync();
     var memberAsContent = currentMember != null ? _memberManager.AsPublishedMember(currentMember) : null;
 
@@ -21,6 +21,11 @@
     var customerRegion = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Region) ? order.CustomerInformation.Customer.Region : memberAsContent != null ? memberAsContent.Value<string>("region") : "";
     var customerZipCode = !string.IsNullOrEmpty(order.CustomerInformation.Customer.ZipCode) ? order.CustomerInformation.Customer.ZipCode : memberAsContent != null ? memberAsContent.Value<string>("zipCode") : "";
     var customerPhone = !string.IsNullOrEmpty(order.CustomerInformation.Customer.Phone) ? order.CustomerInformation.Customer.Phone : memberAsContent != null ? memberAsContent.Value<string>("phone") : "";
+
+    var shippingAddress = order.CustomerInformation.Shipping.Address;
+    var shippingApartment = order.CustomerInformation.Shipping.Apartment;
+    var shippingCity = order.CustomerInformation.Shipping.City;
+    var shippingZipCode = order.CustomerInformation.Shipping.ZipCode;
 
     var siblings = Model.Siblings()?.Where(x => x.IsDocumentType("checkout"));
 
@@ -145,6 +150,37 @@
                             </div>
                         </div>
                     </section>
+
+                    <div>
+
+                        <div class="sm:col-span-2">
+                            <label for="shippingAddress" class="block text-sm font-medium text-gray-700">Address *</label>
+                            <div class="mt-1">
+                                <input type="text" name="shippingAddress" id="shippingAddress" autocomplete="street-address" value="@shippingAddress" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="shippingApartment" class="block text-sm font-medium text-gray-700">Apartment, suite, etc.</label>
+                            <div class="mt-1">
+                                <input type="text" name="shippingApartment" id="shippingApartment" value="@shippingApartment" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="shippingCity" class="block text-sm font-medium text-gray-700">City *</label>
+                            <div class="mt-1">
+                                <input type="text" name="shippingCity" id="shippingCity" autocomplete="address-level2" value="@shippingCity" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="shippingZipCode" class="block text-sm font-medium text-gray-700">Postal code *</label>
+                            <div class="mt-1">
+                                <input type="text" name="shippingZipCode" id="shippingZipCode" autocomplete="postal-code" value="@shippingZipCode" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
 
                 <!-- Order summary -->
