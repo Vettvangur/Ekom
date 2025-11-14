@@ -1,4 +1,3 @@
-using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +40,7 @@ public class EkomProviderController : ControllerBase
     [Route("paymentsproviders/{storeAlias?}")]
     public IActionResult GetPaymentProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
     {
+        _reqHelper.SetEkmRequest(storeAlias: storeAlias);
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
 
@@ -82,6 +82,7 @@ public class EkomProviderController : ControllerBase
     [Route("shippingproviders/{storeAlias?}")]
     public async Task<IActionResult> GetShippingProviders([FromQuery] string countryCode, string? storeAlias = null)
     {
+        _reqHelper.SetEkmRequest(storeAlias: storeAlias);
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
 
