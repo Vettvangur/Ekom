@@ -28,15 +28,20 @@ public static class PriceCache
         }
     }
 
-    // Per-product generations
     private static readonly ConcurrentDictionary<string, string> _itemGenerations = new();
 
-    public static string GetItemGeneration(string productKey)
-        => _itemGenerations.GetOrAdd(productKey, _ => Guid.NewGuid().ToString("N"));
-
-    public static void InvalidateItem(string productKey)
+    public static string GetItemGeneration(string itemKey)
     {
-        _itemGenerations[productKey] = Guid.NewGuid().ToString("N");
+        var gen = _itemGenerations.GetOrAdd(itemKey, _ => Guid.NewGuid().ToString("N"));
+
+        gen = RaiseGenerationCreated(itemKey, gen);
+
+        return gen;
+    }
+
+    public static void InvalidateItem(string itemKey)
+    {
+        _itemGenerations[itemKey] = Guid.NewGuid().ToString("N");
         (Cache as MemoryCache)?.Compact(0.05);
     }
 
@@ -49,5 +54,26 @@ public static class PriceCache
         }
 
         (Cache as MemoryCache)?.Compact(1.0);
+    }
+
+    public static event EventHandler<PriceGenerationEventArgs>? OnGenerationCreated;
+
+    private static string RaiseGenerationCreated(string itemKey, string gen)
+    {
+        var args = new PriceGenerationEventArgs(itemKey, gen);
+        OnGenerationCreated?.Invoke(null, args);
+        return args.Generation;
+    }
+
+    public class PriceGenerationEventArgs : EventArgs
+    {
+        public string ItemKey { get; }
+        public string Generation { get; set; }
+
+        public PriceGenerationEventArgs(string itemKey, string generation)
+        {
+            ItemKey = itemKey;
+            Generation = generation;
+        }
     }
 }
