@@ -41,7 +41,16 @@ public static class PriceCache
 
     public static void InvalidateItem(string itemKey)
     {
-        _itemGenerations[itemKey] = Guid.NewGuid().ToString("N");
+        var newGen = Guid.NewGuid().ToString("N");
+
+        _itemGenerations[itemKey] = newGen;
+
+
+        OnGenerationInvalidated?.Invoke(
+            null,
+            new PriceGenerationEventArgs(itemKey, newGen)
+        );
+
         (Cache as MemoryCache)?.Compact(0.05);
     }
 
@@ -57,6 +66,7 @@ public static class PriceCache
     }
 
     public static event EventHandler<PriceGenerationEventArgs>? OnGenerationCreated;
+    public static event EventHandler<PriceGenerationEventArgs>? OnGenerationInvalidated;
 
     private static string RaiseGenerationCreated(string itemKey, string gen)
     {
