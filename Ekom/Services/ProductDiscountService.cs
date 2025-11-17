@@ -1,114 +1,161 @@
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Models;
 using System.Globalization;
-
 namespace Ekom.Services;
 
 class ProductDiscountService
 {
     readonly IPerStoreCache<IProductDiscount> _productDiscountCache;
-    internal ProductDiscountService(IPerStoreCache<IProductDiscount> productDiscountCache)
+    private readonly DiscountEvents _discountEvents;
+    internal ProductDiscountService(IPerStoreCache<IProductDiscount> productDiscountCache, DiscountEvents discountEvents)
     {
         _productDiscountCache = productDiscountCache;
+        _discountEvents = discountEvents;
     }
 
-    public virtual IProductDiscount? GetProductDiscount(string path, string storeAlias, string inputPrice, string[]? categories = null)
+    public virtual IProductDiscount? GetProductDiscount(
+        string path,
+        string storeAlias,
+        string inputPrice,
+        string[]? categories = null)
     {
         inputPrice = string.IsNullOrEmpty(inputPrice)
             ? "0"
             : inputPrice.Replace(',', '.');
 
-        if (decimal.TryParse(inputPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal price))
+        if (!decimal.TryParse(inputPrice, NumberStyles.Any, CultureInfo.InvariantCulture, out var price))
+            return null;
+
+        var evalArgs = new DiscountEvents.ProductDiscountEvaluationEventArgs
         {
-            List<IProductDiscount> applicableDiscounts = new List<IProductDiscount>();
+            Path = path,
+            StoreAlias = storeAlias,
+            Price = price,
+            Categories = categories
+        };
 
-            // If no discounts are available in cache
-            if (!_productDiscountCache.Cache[storeAlias].Values.Any())
+        _discountEvents.RaiseBeforeEvaluateDiscounts(this, evalArgs);
+
+        // use possibly modified values from event args
+        path = evalArgs.Path;
+        storeAlias = evalArgs.StoreAlias;
+        price = evalArgs.Price;
+        categories = evalArgs.Categories;
+
+        if (!_productDiscountCache.Cache.TryGetValue(storeAlias, out var storeDiscounts)
+            || storeDiscounts.Count == 0)
+        {
+            return null;
+        }
+
+        var pathItems = string.IsNullOrWhiteSpace(path)
+            ? Array.Empty<string>()
+            : path.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var pathSet = pathItems.Length > 0
+            ? new HashSet<string>(pathItems)
+            : null;
+
+        var categorySet = (categories != null && categories.Length > 0)
+            ? new HashSet<string>(categories)
+            : null;
+
+        static bool HasAny(HashSet<string>? targets, IEnumerable<string>? source)
+        {
+            if (targets == null || source == null)
+                return false;
+
+            foreach (var item in source)
             {
-                return null;
+                if (targets.Contains(item))
+                    return true;
             }
 
-            foreach (KeyValuePair<Guid, IProductDiscount> discount in _productDiscountCache.Cache[storeAlias])
+            return false;
+        }
+
+        var applicableDiscounts = new List<IProductDiscount>();
+
+        foreach (var kvp in storeDiscounts)
+        {
+            if (kvp.Value.Disabled)
+                continue;
+
+            if (kvp.Value is not Discount disc)
+                continue;
+
+            var inDiscount =
+                HasAny(pathSet, disc.DiscountItems) ||
+                HasAny(categorySet, disc.DiscountItems);
+
+            var inExclusion =
+                disc.ExcludeDiscountItems != null &&
+                (HasAny(pathSet, disc.ExcludeDiscountItems) ||
+                 HasAny(categorySet, disc.ExcludeDiscountItems));
+
+            if (inDiscount && !inExclusion)
+                applicableDiscounts.Add(kvp.Value);
+        }
+
+        var applicableArgs = new DiscountEvents.ProductDiscountApplicableEventArgs(
+            path,
+            storeAlias,
+            price,
+            categories,
+            applicableDiscounts);
+
+        _discountEvents.RaiseAfterApplicableDiscounts(this, applicableArgs);
+
+        if (applicableArgs.ApplicableDiscounts.Count == 0)
+            return null;
+
+        Guid bestFixedKey = Guid.Empty;
+        Guid bestPercentageKey = Guid.Empty;
+        decimal bestPercentageValue = 0;
+        decimal bestFixedValue = 0;
+
+        foreach (var usableDiscount in applicableArgs.ApplicableDiscounts)
+        {
+            bool inRange =
+                usableDiscount.StartOfRange <= price &&
+                (usableDiscount.EndOfRange == 0 || price <= usableDiscount.EndOfRange);
+
+            if (!inRange)
+                continue;
+
+            if (usableDiscount.Type == DiscountType.Fixed)
             {
-                if (discount.Value.Disabled)
+                if (usableDiscount.Amount > bestFixedValue)
                 {
-                    continue;
+                    bestFixedValue = usableDiscount.Amount;
+                    bestFixedKey = usableDiscount.Key;
                 }
-
-                var disc = discount.Value as Discount;
-
-                var pathItems = string.IsNullOrEmpty(path) ? Array.Empty<string>() : path.Split(',');
-                var inDiscount = pathItems.Intersect(disc.DiscountItems).Any()
-                    || (categories?.Intersect(disc.DiscountItems).Any() ?? false);
-
-                var inExclusion = (disc.ExcludeDiscountItems != null)
-                    && (pathItems.Intersect(disc.ExcludeDiscountItems).Any()
-                        || (categories?.Intersect(disc.ExcludeDiscountItems).Any() ?? false));
-
-                if (inDiscount && !inExclusion)
-                {
-                    applicableDiscounts.Add(discount.Value);
-                }
             }
-
-            // If no discounts are available for this item
-            if (applicableDiscounts.Count == 0)
+            else if (usableDiscount.Type == DiscountType.Percentage)
             {
-                return null;
-            }
-
-            Guid bestFixedKey = Guid.Empty;
-            Guid bestPercentageDiscount = Guid.Empty;
-            decimal bestPercentageDiscountValue = 0;
-            decimal bestFixedDiscountValue = 0;
-
-            foreach (IProductDiscount usableDiscount in applicableDiscounts)
-            {
-                if (usableDiscount.Type == DiscountType.Fixed)
+                if (usableDiscount.Amount > bestPercentageValue)
                 {
-                    if (usableDiscount.StartOfRange < price
-                    && (usableDiscount.EndOfRange == 0 || price < usableDiscount.EndOfRange))
-                    {
-                        if (usableDiscount.Amount > bestFixedDiscountValue)
-                        {
-                            bestFixedDiscountValue = usableDiscount.Amount;
-                            bestFixedKey = usableDiscount.Key;
-                        }
-                    }
-
-                }
-                if (usableDiscount.Type == DiscountType.Percentage)
-                {
-                    if (usableDiscount.Amount > bestPercentageDiscountValue)
-                    {
-                        bestPercentageDiscount = usableDiscount.Key;
-                        bestPercentageDiscountValue = usableDiscount.Amount;
-                    }
-                }
-            }
-
-            if (bestFixedKey == Guid.Empty)
-            {
-                return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
-            }
-            else if (bestPercentageDiscount == Guid.Empty)
-            {
-                return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
-            }
-            else
-            {
-                decimal eef = Math.Abs(bestFixedDiscountValue / price) * 100;
-                if (Math.Abs(((bestFixedDiscountValue / price) * 100)) > bestPercentageDiscountValue)
-                {
-                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
-                }
-                else
-                {
-                    return applicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageDiscount);
+                    bestPercentageValue = usableDiscount.Amount;
+                    bestPercentageKey = usableDiscount.Key;
                 }
             }
         }
 
-        return null;
+        if (bestFixedKey == Guid.Empty && bestPercentageKey == Guid.Empty)
+            return null;
+
+        if (bestFixedKey == Guid.Empty)
+            return applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageKey);
+
+        if (bestPercentageKey == Guid.Empty)
+            return applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey);
+
+        var fixedAsPercent = Math.Abs(bestFixedValue / price * 100m);
+
+        return fixedAsPercent > bestPercentageValue
+            ? applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestFixedKey)
+            : applicableArgs.ApplicableDiscounts.SingleOrDefault(x => x.Key == bestPercentageKey);
     }
+
 }

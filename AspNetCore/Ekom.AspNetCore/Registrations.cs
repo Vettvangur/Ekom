@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.AspNetCore.Services;
 using Ekom.Cache;
+using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Factories;
 using Ekom.Interfaces;
@@ -44,6 +45,7 @@ static class Registrations
         services.AddSingleton<IPerStoreCache<IVariantGroup>, VariantGroupCache>();
         services.AddSingleton<IPerStoreCache<ICategory>, CategoryCache>();
         services.AddSingleton<IPerStoreCache<IProductDiscount>, ProductDiscountCache>();
+        services.AddSingleton<DiscountEvents>();
         services.AddSingleton<IPerStoreCache<IProduct>, ProductCache>();
         services.AddSingleton<IBaseCache<IZone>, ZoneCache>();
         services.AddSingleton<IPerStoreCache<Models.IPaymentProvider>, PaymentProviderCache>();
@@ -108,9 +110,11 @@ static class Registrations
 
             )
         );
+
         services.AddTransient<ProductDiscountService>(f =>
             new ProductDiscountService(
-                f.GetService<IPerStoreCache<IProductDiscount>>()
+                f.GetRequiredService<IPerStoreCache<IProductDiscount>>(),
+                f.GetRequiredService<DiscountEvents>()
             )
         );
 
