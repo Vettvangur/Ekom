@@ -27,14 +27,14 @@ public class DiscountEvents
         public string StoreAlias { get; }
         public decimal Price { get; }
         public string[]? Categories { get; }
-        public IList<IProductDiscount> ApplicableDiscounts { get; }
+        public List<IProductDiscount> ApplicableDiscounts { get; }
 
         public ProductDiscountApplicableEventArgs(
             string path,
             string storeAlias,
             decimal price,
             string[]? categories,
-            IList<IProductDiscount> applicableDiscounts)
+            List<IProductDiscount> applicableDiscounts)
         {
             Path = path;
             StoreAlias = storeAlias;
