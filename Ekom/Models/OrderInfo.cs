@@ -178,8 +178,8 @@ public class OrderInfo : IOrderInfo
     {
         get
         {
-            var subTotalWithOutVat = OrderLines.Sum(x => x.Amount.AfterDiscountWithOutVat.Value);
-            var subTotalWithVat = OrderLines.Sum(x => x.Amount.AfterDiscount.Value);
+            var subTotalWithOutVat = OrderLines.Sum(x => x.Amount.WithoutVat.Value);
+            var subTotalWithVat = OrderLines.Sum(x => x.Amount.WithVat.Value);
 
             var vatAmount = (subTotalWithVat - subTotalWithOutVat);
 
