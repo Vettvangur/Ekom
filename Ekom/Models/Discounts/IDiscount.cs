@@ -47,4 +47,5 @@ public interface IDiscount : IComparable<IDiscount>
     /// </value>
     Guid Key { get; }
     bool GlobalDiscount { get; }
+    string Title { get; }
 }

@@ -13,6 +13,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     [JsonConstructor]
     public OrderedDiscount(
         Guid key,
+        string title,
         bool stackable,
         decimal amount,
         DiscountType type,
@@ -27,6 +28,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         DiscountItems = discountItems;
         ExcludeDiscountItems = excludeDiscountItems;
         Amount = amount;
+        Title = title;
         Type = type;
         Constraints = constraints;
         HasMasterStock = hasMasterStock;
@@ -41,6 +43,7 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
         discount = discount ?? throw new ArgumentNullException(nameof(discount));
         Stackable = discount.Stackable;
         Key = discount.Key;
+        Title = discount.Title;
         DiscountItems = discount.DiscountItems;
         ExcludeDiscountItems = discount.ExcludeDiscountItems;
         Amount = discount.Amount;
@@ -77,6 +80,8 @@ public class OrderedDiscount : IComparable<IDiscount>, IDiscount
     public bool HasMasterStock { get; internal set; }
 
     public bool GlobalDiscount { get; set; }
+
+    public string Title { get; set; }
 
     /// <summary>
     /// <see cref="IComparable{T}"/> implementation

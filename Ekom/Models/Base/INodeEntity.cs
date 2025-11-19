@@ -1,144 +1,143 @@
 using Ekom.Models.Umbraco;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// Base node entity interface.
+/// All base properties common to umbraco nodes
+/// </summary>
+public interface INodeEntity
 {
     /// <summary>
-    /// Base node entity interface.
-    /// All base properties common to umbraco nodes
+    /// 
     /// </summary>
-    public interface INodeEntity
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        string Title { get; }
-
-        /// <summary>
-        /// Gets the unique identifier.
-        /// </summary>
-        /// <value>
-        /// The unique identifier.
-        /// </value>
-        int Id { get; set; }
-
-        /// <summary>
-        /// Gets the unique key identifier.
-        /// </summary>
-        /// <value>
-        /// The unique key identifier.
-        /// </value>
-        Guid Key { get; }
-
-        /// <summary>
-        /// Gets the name or alias for the type. (NodeTypeAlias/ContentTypeAlias in Umbraco)
-        /// </summary>
-        /// <value>
-        /// The type alias.
-        /// </value>
-        string ContentTypeAlias { get; }
-
-        /// <summary>
-        /// Gets the created date
-        /// </summary>
-        /// <value>
-        /// The create date.
-        /// </value>
-        DateTime CreateDate { get; }
-
-        /// <summary>
-        /// Gets the update date
-        /// </summary>
-        /// <value>
-        /// The update date.
-        /// </value>
-        DateTime UpdateDate { get; }
-
-        /// <summary>
-        /// Gets the parent ID
-        /// </summary>
-        /// <value>
-        /// The parent ID
-        /// </value>
-        int ParentId { get; }
-        /// <summary>
-        /// SortOrder for the node
-        /// </summary>
-        /// <value>
-        /// The sort order.
-        /// </value>
-        int SortOrder { get; }
-
-        /// <summary>
-        /// Level for the node
-        /// </summary>
-        /// <value>
-        /// The level.
-        /// </value>
-        int Level { get; }
-
-        /// <summary>
-        /// Varies by culture
-        /// </summary>
-        /// <value>
-        /// Boolean if node varies by culture
-        /// </value>
-        bool VariesByCulture { get; }
-
-
-        /// <summary>
-        /// Path for the node
-        /// </summary>
-        /// <value>
-        /// The path.
-        /// </value>
-        string Path { get; set; }
-
-        /// <summary>
-        /// Path for the node as array
-        /// </summary>
-        /// <value>
-        /// The path.
-        /// </value>
-        string[] PathArray { get; set; }
-
-        /// <summary>
-        /// Get value in properties by store or languge
-        /// </summary>
-        /// <param name="propAlias"></param>
-        /// <param name="alias"></param>
-        string GetValue(string propAlias, string? alias = null, bool fallback = false);
-        string GetRawValue(string propAlias);
-        /// <summary>
-        /// Umbraco node properties
-        /// </summary>
-        IReadOnlyDictionary<string, string> Properties { get; }
-    }
+    string Title { get; }
 
     /// <summary>
-    /// Node entity with URL/URLs
+    /// Gets the unique identifier.
     /// </summary>
-    public interface INodeEntityWithUrl : INodeEntity
-    {
-        /// <summary>
-        /// All entity urls, computed from stores and possibly categories.
-        /// </summary>
-        IEnumerable<string> Urls { get; }
+    /// <value>
+    /// The unique identifier.
+    /// </value>
+    int Id { get; set; }
 
-        /// <summary>
-        /// All entity urls, computed from stores and possibly categories.
-        /// </summary>
-        List<UmbracoUrl> UrlsWithContext { get; }
+    /// <summary>
+    /// Gets the unique key identifier.
+    /// </summary>
+    /// <value>
+    /// The unique key identifier.
+    /// </value>
+    Guid Key { get; }
 
-        /// <summary>
-        /// Product url in relation to current request.
-        /// This is a getter mostly for serialization purposes
-        /// methods are ofc skipped by JSON.NET
-        /// </summary>
-        string Url { get; }
+    /// <summary>
+    /// Gets the name or alias for the type. (NodeTypeAlias/ContentTypeAlias in Umbraco)
+    /// </summary>
+    /// <value>
+    /// The type alias.
+    /// </value>
+    string ContentTypeAlias { get; }
 
-        /// <summary>
-        /// Short spaceless descriptive title used to create URLs
-        /// </summary>
-        string Slug { get; }
-    }
+    /// <summary>
+    /// Gets the created date
+    /// </summary>
+    /// <value>
+    /// The create date.
+    /// </value>
+    DateTime CreateDate { get; }
+
+    /// <summary>
+    /// Gets the update date
+    /// </summary>
+    /// <value>
+    /// The update date.
+    /// </value>
+    DateTime UpdateDate { get; }
+
+    /// <summary>
+    /// Gets the parent ID
+    /// </summary>
+    /// <value>
+    /// The parent ID
+    /// </value>
+    int ParentId { get; }
+    /// <summary>
+    /// SortOrder for the node
+    /// </summary>
+    /// <value>
+    /// The sort order.
+    /// </value>
+    int SortOrder { get; }
+
+    /// <summary>
+    /// Level for the node
+    /// </summary>
+    /// <value>
+    /// The level.
+    /// </value>
+    int Level { get; }
+
+    /// <summary>
+    /// Varies by culture
+    /// </summary>
+    /// <value>
+    /// Boolean if node varies by culture
+    /// </value>
+    bool VariesByCulture { get; }
+
+
+    /// <summary>
+    /// Path for the node
+    /// </summary>
+    /// <value>
+    /// The path.
+    /// </value>
+    string Path { get; set; }
+
+    /// <summary>
+    /// Path for the node as array
+    /// </summary>
+    /// <value>
+    /// The path.
+    /// </value>
+    string[] PathArray { get; set; }
+
+    /// <summary>
+    /// Get value in properties by store or languge
+    /// </summary>
+    /// <param name="propAlias"></param>
+    /// <param name="alias"></param>
+    string GetValue(string propAlias, string? alias = null, bool fallback = false);
+    string GetRawValue(string propAlias);
+    /// <summary>
+    /// Umbraco node properties
+    /// </summary>
+    IReadOnlyDictionary<string, string> Properties { get; }
+}
+
+/// <summary>
+/// Node entity with URL/URLs
+/// </summary>
+public interface INodeEntityWithUrl : INodeEntity
+{
+    /// <summary>
+    /// All entity urls, computed from stores and possibly categories.
+    /// </summary>
+    IEnumerable<string> Urls { get; }
+
+    /// <summary>
+    /// All entity urls, computed from stores and possibly categories.
+    /// </summary>
+    List<UmbracoUrl> UrlsWithContext { get; }
+
+    /// <summary>
+    /// Product url in relation to current request.
+    /// This is a getter mostly for serialization purposes
+    /// methods are ofc skipped by JSON.NET
+    /// </summary>
+    string Url { get; }
+
+    /// <summary>
+    /// Short spaceless descriptive title used to create URLs
+    /// </summary>
+    string Slug { get; }
 }
