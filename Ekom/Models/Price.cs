@@ -199,10 +199,10 @@ public class Price : IPrice
             }
 
             // If the OriginalValue has no decimals, round DiscountedValue to integer
-            if (OriginalValue == Math.Floor(OriginalValue))
-            {
-                price = Math.Round(price);
-            }
+            //if (OriginalValue == Math.Floor(OriginalValue))
+            //{
+            //    price = Math.Round(price);
+            //}
 
             return price;
         }
