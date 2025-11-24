@@ -118,7 +118,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// </summary>
     public IProductDiscount? ProductDiscount(string price)
     {
-        return Configuration.Resolver.GetService<ProductDiscountService>()
+        return Configuration.Resolver.GetService<ProductDiscountService>()?
             .GetProductDiscount(
                 Path,
                 Store.Alias,
@@ -144,41 +144,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IPrice OriginalPrice
-    {
-        get
-        {
-            return (IPrice)_cache.GetOrAdd("OriginalPrice", key =>
-            {
-                string originalPrice = GetValue("price", Store.Alias);
+    public virtual IPrice OriginalPrice { get; set; }
 
-                if (string.IsNullOrEmpty(originalPrice))
-                {
-                    return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-                }
-
-                if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-                {
-                    return new Price(_orgPrice, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-                }
-
-                if (originalPrice.IsJson())
-                {
-                    List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                    if (val.HasValue)
-                    {
-                        return new Price(val.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-                    }
-                }
-
-                // If no price is found, return a price of 0 with store settings
-                return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-            });
-
-        }
-    }
+    private string _priceValue = "";
 
     /// <summary>
     /// Get Price by current store currency
@@ -189,7 +157,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            string priceJson = Properties.GetPropertyValue("price", Store.Alias) ?? string.Empty;
             string[] categories = Product?.Categories.Select(x => x.Id.ToString()).ToArray()
                                     ?? Array.Empty<string>();
 
@@ -199,7 +166,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
             string productGen = PriceCache.GetItemGeneration(itemKey);
 
             string cacheKey =
-                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceJson)}";
+                $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={itemKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 cacheKey,
@@ -207,7 +174,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                 {
 
                     List<IPrice> prices = PriceBuilder.BuildPricesSync(
-                        priceJson,
+                        _priceValue,
                         Store.Currencies,
                         Vat,
                         Store.VatIncludedInPrice,
@@ -240,7 +207,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
                     return prices;
                 },
-                TimeSpan.FromHours(24)
+                TimeSpan.FromHours(48)
             );
         }
     }
@@ -332,5 +299,37 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         Product?.InvalidateCache();
         PriceCache.InvalidateItem(Path);
+
+        _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
+        OriginalPrice = CreateOriginalPrice();
+    }
+
+    private IPrice CreateOriginalPrice()
+    {
+        string originalPrice = _priceValue;
+
+        if (string.IsNullOrEmpty(originalPrice))
+        {
+            return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+        }
+
+        if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+        {
+            return new Price(_orgPrice, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+        }
+
+        if (originalPrice.IsJson())
+        {
+            List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+            decimal? val = orgPrice?.FirstOrDefault()?.Price;
+
+            if (val.HasValue)
+            {
+                return new Price(val.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+            }
+        }
+
+        // If no price is found, return a price of 0 with store settings
+        return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
     }
 }
