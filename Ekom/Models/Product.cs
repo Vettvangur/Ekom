@@ -468,7 +468,7 @@ public class Product : PerStoreNodeEntity, IProduct
         Urls = urls.Select(x => x.Url).ToList();
 
         _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
-        _backorderValue = GetValue("backorder", Store.Alias);
+        _backorderValue = GetValue("enableBackorder", Store.Alias);
 
         OriginalPrice = CreateOriginalPrice();
         SKU = GetValue("sku");
