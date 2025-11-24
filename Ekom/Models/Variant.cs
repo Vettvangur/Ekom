@@ -39,8 +39,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     {
         get
         {
-            //TODO Store default setup!
-
             string backOrderValue = GetValue("enableBackorder", Store.Alias);
 
             return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
