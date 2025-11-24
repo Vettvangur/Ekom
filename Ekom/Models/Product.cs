@@ -262,6 +262,8 @@ public class Product : PerStoreNodeEntity, IProduct
     /// </summary>
     public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
 
+    private string _priceValue = "";
+
     /// <summary>
     /// 
     /// </summary>
@@ -275,19 +277,18 @@ public class Product : PerStoreNodeEntity, IProduct
             string[] categories = Categories.Select(x => x.Id.ToString()).ToArray();
             bool vatIncludedInPrice = Store.VatIncludedInPrice;
             var storeCurrency = Store.Currency;
-            string priceJson = GetValue("price", Store.Alias) ?? string.Empty;
 
             string productKey = Path;
 
             string globalGen = PriceCache.GlobalGeneration;
             string productGen = PriceCache.GetItemGeneration(productKey);
 
-            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(priceJson)}";
+            var key = $"prices:g={globalGen}:p={productGen}:store={Store.Alias}:prod={productKey}:cats={string.Join('|', categories)}:hash={CacheHelpers.Sha256(_priceValue)}";
 
             return CacheHelpers.GetOrCreateSingleFlight(
                 key,
                 () => PriceBuilder.BuildPricesSync(
-                    priceJson,
+                    _priceValue,
                     Store.Currencies,
                     Vat,
                     vatIncludedInPrice,
@@ -295,7 +296,7 @@ public class Product : PerStoreNodeEntity, IProduct
                     Store.Alias,
                     Path,
                     categories),
-                TimeSpan.FromHours(24)
+                TimeSpan.FromHours(48)
             );
         }
     }
@@ -304,54 +305,7 @@ public class Product : PerStoreNodeEntity, IProduct
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public virtual IPrice OriginalPrice
-    {
-        get
-        {
-            IPrice? primaryOriginalPrice = PrimaryVariant?.OriginalPrice;
-
-            if (primaryOriginalPrice?.Value > 0)
-            {
-                return primaryOriginalPrice;
-            }
-
-            CurrencyModel storeCurrency = Store.Currency;
-            decimal storeVat = Store.Vat;
-            bool storeVatIncluded = Store.VatIncludedInPrice;
-
-            string originalPrice = GetValue("price", Store.Alias, false);
-
-            if (string.IsNullOrEmpty(originalPrice))
-            {
-                return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-            }
-
-            if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-            {
-                return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
-            }
-
-            if (originalPrice.IsJson())
-            {
-                try
-                {
-                    var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                    decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                    if (val.HasValue)
-                    {
-                        return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
-                    }
-                } catch(Exception ex)
-                {
-                    throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
-                }
-            }
-
-            return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-
-        }
-    }
+    public virtual IPrice OriginalPrice { get; set; }
 
 
     public virtual decimal Vat
@@ -511,10 +465,14 @@ public class Product : PerStoreNodeEntity, IProduct
         PopulateCategoryAncestors();
         PopulateCategories();
 
-        List<UmbracoUrl> urls = Configuration.Resolver.GetService<IUrlService>().BuildProductUrlsWithContext(item, Categories, store, item.Id);
+       var urls = Configuration.Resolver.GetService<IUrlService>()?.BuildProductUrlsWithContext(item, Categories, store, item.Id) ?? new List<UmbracoUrl>();
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url).ToList();
+
+        _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
+
+        OriginalPrice = CreateOriginalPrice();
     }
 
     public void InvalidateCache()
@@ -609,5 +567,51 @@ public class Product : PerStoreNodeEntity, IProduct
         }
 
         return relatedProducts;
+    }
+
+    private IPrice CreateOriginalPrice()
+    {
+        IPrice? primaryOriginalPrice = PrimaryVariant?.OriginalPrice;
+
+        if (primaryOriginalPrice?.Value > 0)
+        {
+            return primaryOriginalPrice;
+        }
+
+        CurrencyModel storeCurrency = Store.Currency;
+        decimal storeVat = Store.Vat;
+        bool storeVatIncluded = Store.VatIncludedInPrice;
+
+        string originalPrice = _priceValue;
+
+        if (string.IsNullOrEmpty(originalPrice))
+        {
+            return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+        }
+
+        if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+        {
+            return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
+        }
+
+        if (originalPrice.IsJson())
+        {
+            try
+            {
+                var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
+                decimal? val = orgPrice?.FirstOrDefault()?.Price;
+
+                if (val.HasValue)
+                {
+                    return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
+            }
+        }
+
+        return new Price(0, storeCurrency, storeVat, storeVatIncluded);
     }
 }
