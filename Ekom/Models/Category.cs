@@ -138,6 +138,9 @@ public class Category : PerStoreNodeEntity, ICategory
     /// All parent categories, grandparent categories and so on.
     /// </summary>
     /// <returns></returns>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
     public IEnumerable<ICategory> Ancestors { get; set; }
 
     public IEnumerable<MetafieldGrouped> Filters(bool filterable = true)
@@ -173,13 +176,12 @@ public class Category : PerStoreNodeEntity, ICategory
 
         foreach (var node in ancestors)
         {
-            KeyValuePair<Guid, ICategory> category = _categoryCache.Cache[Store.Alias].TryGetValue(node.Key, out var cat)
-                ? new KeyValuePair<Guid, ICategory>(node.Key, cat)
-                : default;
-
-            if (category.Value != null && !category.Value.VirtualUrl)
+            if (_categoryCache.Cache[Store.Alias].TryGetValue(node.Key, out var cat))
             {
-                ancestorCategories.Add(category.Value);
+                if (cat != null && !cat.VirtualUrl)
+                {
+                    ancestorCategories.Add(cat);
+                }
             }
         }
 
