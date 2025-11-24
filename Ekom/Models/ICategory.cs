@@ -33,7 +33,7 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     /// All parent categories, grandparent categories and so on.
     /// </summary>
     /// <returns></returns>
-    IEnumerable<ICategory> Ancestors();
+    IEnumerable<ICategory> Ancestors { get; }
 
     IEnumerable<MetafieldGrouped> Filters(bool filterable = true);
 

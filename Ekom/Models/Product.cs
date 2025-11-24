@@ -41,22 +41,22 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Product SKU
     /// </summary>
-    public string SKU => GetValue("sku");
+    public string SKU {get; set;}
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Description => GetValue("description", Store.Alias);
+    public virtual string Description { get; set; }
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Summary => GetValue("summary", Store.Alias);
+    public virtual string Summary { get; set; }
 
     /// <summary>
     /// Short spaceless descriptive title used to create URLs
     /// </summary>
-    public string Slug => GetValue("slug", Store.Alias);
+    public string Slug { get; set; }
 
     /// <summary>
     /// Get the current product Stock
@@ -71,6 +71,7 @@ public class Product : PerStoreNodeEntity, IProduct
     /// </summary>
     public virtual bool Available => Stock > 0 || Backorder || AllVariants.Any(x => x.Available);
 
+    private string _backorderValue = "";
     /// <summary>
     /// Get the backorder status
     /// </summary>
@@ -78,11 +79,7 @@ public class Product : PerStoreNodeEntity, IProduct
     {
         get
         {
-            //TODO Store default setup!
-
-            string backOrderValue = GetValue("enableBackorder", Store.Alias);
-
-            return !string.IsNullOrEmpty(backOrderValue) && backOrderValue.IsBoolean();
+            return !string.IsNullOrEmpty(_backorderValue) && _backorderValue.IsBoolean();
         }
     }
 
@@ -260,7 +257,7 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// Get Price by current store currency
     /// </summary>
-    public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias);
+    public IPrice Price => CookieHelper.GetCurrencyPriceCookieValue(Prices, Store.Alias) ?? new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
 
     private string _priceValue = "";
 
@@ -471,8 +468,14 @@ public class Product : PerStoreNodeEntity, IProduct
         Urls = urls.Select(x => x.Url).ToList();
 
         _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
+        _backorderValue = GetValue("backorder", Store.Alias);
 
         OriginalPrice = CreateOriginalPrice();
+        SKU = GetValue("sku");
+        Description = GetValue("description", Store.Alias);
+        Summary = GetValue("summary", Store.Alias);
+        Slug = GetValue("slug", Store.Alias);
+
     }
 
     public void InvalidateCache()
