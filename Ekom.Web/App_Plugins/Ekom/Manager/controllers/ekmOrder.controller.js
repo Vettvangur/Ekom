@@ -141,7 +141,9 @@
       .map(([key, value]) => [key, htmlDecode(value)]);
 
 
-    const customShippingProps = $scope.model.editModel.order.shippingProvider.customData || {};
+    const customShippingProps =
+      ($scope.model.editModel.order.shippingProvider &&
+        $scope.model.editModel.order.shippingProvider.customData) || {};
 
     $scope.extraCustomShippingProperties = Object.entries(customShippingProps)
       .filter(([key, value]) => {
@@ -151,7 +153,9 @@
       })
       .map(([key, value]) => [key, htmlDecode(value)]);
 
-    const customPaymentProps = $scope.model.editModel.order.paymentProvider.customData || {};
+    const customPaymentProps =
+      ($scope.model.editModel.order.paymentProvider &&
+        $scope.model.editModel.order.paymentProvider.customData) || {};
 
     $scope.extraCustomPaymentProperties = Object.entries(customPaymentProps)
       .filter(([key, value]) => {
