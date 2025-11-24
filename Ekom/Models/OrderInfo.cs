@@ -99,7 +99,8 @@ public class OrderInfo : IOrderInfo
     internal List<OrderLine> orderLines = new List<OrderLine>();
 
     /// <inheritdoc />
-    public IReadOnlyCollection<IOrderLine> OrderLines => orderLines.AsReadOnly();
+    public IReadOnlyCollection<IOrderLine> OrderLines
+        => orderLines.Cast<IOrderLine>().ToList();
 
     public OrderedShippingProvider? ShippingProvider { get; set; }
     public OrderedPaymentProvider? PaymentProvider { get; set; }
