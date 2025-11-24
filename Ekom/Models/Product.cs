@@ -571,13 +571,6 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private IPrice CreateOriginalPrice()
     {
-        IPrice? primaryOriginalPrice = PrimaryVariant?.OriginalPrice;
-
-        if (primaryOriginalPrice?.Value > 0)
-        {
-            return primaryOriginalPrice;
-        }
-
         CurrencyModel storeCurrency = Store.Currency;
         decimal storeVat = Store.Vat;
         bool storeVatIncluded = Store.VatIncludedInPrice;
