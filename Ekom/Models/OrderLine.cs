@@ -61,7 +61,10 @@ public class OrderLine : IOrderLine
     /// </summary>
     private IPrice CalculateAmount() { 
 
-        OrderedDiscount? discount = Product.Price.Discount;
+        var orderlinePrice = Variant != null ? Variant.Price : Product.Price;
+
+
+        OrderedDiscount? discount = orderlinePrice.Discount;
 
         if (OrderInfo?.Discount != null &&
             (OrderInfo.Discount.DiscountItems.Any() && Product.Path.Split(',').Intersect(OrderInfo.Discount.DiscountItems).Any() || OrderInfo.Discount.GlobalDiscount))
@@ -82,18 +85,18 @@ public class OrderLine : IOrderLine
 
         Discount = discount;
 
-        decimal _price = Discount != null && Discount.Stackable ? Product.Price.Value : Product.Price.OriginalValue;
+        decimal _price = Discount != null && Discount.Stackable ? orderlinePrice.Value : orderlinePrice.OriginalValue;
 
-        if (Product.VariantGroups != null && Product.VariantGroups.Any())
-        {
-            IEnumerable<OrderedVariant> variants = Product.VariantGroups.SelectMany(x => x.Variants);
+        //if (Product.VariantGroups != null && Product.VariantGroups.Any())
+        //{
+        //    IEnumerable<OrderedVariant> variants = Product.VariantGroups.SelectMany(x => x.Variants);
 
-            foreach (OrderedVariant? v in variants)
-            {
-                _price += (v.Price.OriginalValue - _price);
+        //    foreach (OrderedVariant? v in variants)
+        //    {
+        //        _price += (v.Price.OriginalValue - _price);
                     
-            }
-        }
+        //    }
+        //}
 
         return new Price(
             _price,
