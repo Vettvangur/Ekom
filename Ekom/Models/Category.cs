@@ -44,13 +44,7 @@ public class Category : PerStoreNodeEntity, ICategory
     [System.Text.Json.Serialization.JsonIgnore]
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
-    public ICategory RootCategory
-    {
-        get
-        {
-            return Ancestors().FirstOrDefault();
-        }
-    }
+    public ICategory? RootCategory { get; set; }
 
     /// <inheritdoc/>
     public virtual string Url
@@ -97,20 +91,7 @@ public class Category : PerStoreNodeEntity, ICategory
         }
     }
 
-    public virtual bool VirtualUrl
-    {
-        get
-        {
-            string virtualUrl = Properties.GetPropertyValue("ekmVirtualUrl");
-
-            if (!string.IsNullOrEmpty(virtualUrl))
-            {
-                return virtualUrl.IsBoolean();
-            }
-
-            return false;
-        }
-    }
+    public virtual bool VirtualUrl { get; set; }
 
     public virtual bool HasProducts()
     {
@@ -141,9 +122,9 @@ public class Category : PerStoreNodeEntity, ICategory
             .Where(x => x.Value.Level >= Level &&
                         x.Value.PathArray.Contains(Id.ToString()))
             .Select(x => x.Value)
-            .ToList(); // ToList for better performance in the next query
+            .ToList();
 
-        HashSet<int> categoryIds = new HashSet<int>(categories.Select(c => c.Id));
+        var categoryIds = new HashSet<int>(categories.Select(c => c.Id));
 
         IEnumerable<IProduct> products = _productCache.Cache[Store.Alias]
             .Where(x => x.Value.Categories != null && x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
@@ -157,27 +138,7 @@ public class Category : PerStoreNodeEntity, ICategory
     /// All parent categories, grandparent categories and so on.
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<ICategory> Ancestors()
-    {
-        List<ICategory> list = new List<ICategory>();
-
-        foreach (string id in PathArray)
-        {
-            if (int.TryParse(id, out int categoryId))
-            {
-                KeyValuePair<Guid, ICategory> category = _categoryCache.Cache[Store.Alias]
-                    .FirstOrDefault(x => x.Value.Id == categoryId);
-
-                if (category.Value != null && !category.Value.VirtualUrl)
-                {
-                    list.Add(category.Value);
-                }
-            }
-        }
-
-        return list;
-    }
-
+    public IEnumerable<ICategory> Ancestors { get; set; }
 
     public IEnumerable<MetafieldGrouped> Filters(bool filterable = true)
     {
@@ -199,11 +160,31 @@ public class Category : PerStoreNodeEntity, ICategory
         IUrlService? urlSvc = Configuration.Resolver.GetService<IUrlService>();
         INodeService? nodeSvc = Configuration.Resolver.GetService<INodeService>();
 
-        IEnumerable<UmbracoContent> ancestors = nodeSvc.GetAllCatalogAncestors(item);
+        var ancestors = nodeSvc.GetAllCatalogAncestors(item).ToList();
 
         List<UmbracoUrl> urls = urlSvc.BuildCategoryUrls(ancestors, store);
 
         UrlsWithContext = urls;
         Urls = urls.Select(x => x.Url);
+
+        VirtualUrl = GetValue("ekmVirtualUrl").IsBoolean();
+
+        var ancestorCategories = new List<ICategory>();
+
+        foreach (var node in ancestors)
+        {
+            KeyValuePair<Guid, ICategory> category = _categoryCache.Cache[Store.Alias].TryGetValue(node.Key, out var cat)
+                ? new KeyValuePair<Guid, ICategory>(node.Key, cat)
+                : default;
+
+            if (category.Value != null && !category.Value.VirtualUrl)
+            {
+                ancestorCategories.Add(category.Value);
+            }
+        }
+
+        Ancestors = ancestorCategories;
+        RootCategory = ancestorCategories.FirstOrDefault();
+
     }
 }

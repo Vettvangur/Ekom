@@ -190,6 +190,8 @@ public abstract class NodeEntity : INodeEntity
         Id = (int.TryParse(GetValue("id"), out int _value)) ? _value : 0;
         Path = content.Path;
         PathArray = !string.IsNullOrEmpty(content.Path) ? content.Path.Split(',') : new string[] { };
+
+
     }
 
     /// <summary>

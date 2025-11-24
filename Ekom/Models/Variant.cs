@@ -22,7 +22,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// Stock Keeping Unit, identifier
     /// </summary>
-    public string SKU => string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
+    public string SKU { get; set; }
 
     /// <summary>
     /// Get the variant stock
@@ -50,7 +50,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Description => GetValue("description", Store.Alias);
+    public virtual string Description { get; set; }
 
     /// <summary>
     /// Get the availability of the variant
@@ -302,6 +302,9 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
         _priceValue = GetValue("price", Store.Alias) ?? string.Empty;
         OriginalPrice = CreateOriginalPrice();
+
+        SKU = string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
+        Description = GetValue("description", Store.Alias);
     }
 
     private IPrice CreateOriginalPrice()
