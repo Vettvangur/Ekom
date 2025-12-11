@@ -63,7 +63,6 @@ public class OrderLine : IOrderLine
 
         var orderlinePrice = Variant != null ? Variant.Price : Product.Price;
 
-
         OrderedDiscount? discount = orderlinePrice.Discount;
 
         if (OrderInfo?.Discount != null &&
