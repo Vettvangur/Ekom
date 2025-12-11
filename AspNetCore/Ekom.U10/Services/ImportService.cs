@@ -105,7 +105,7 @@ public class ImportService : IImportService
 
             ArgumentNullException.ThrowIfNull(umbracoRootContent);
             var allUmbracoCategories = allEkomNodes
-                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+                .Where(x => x.ContentType.Alias == "ekmCategory").ToList();
 
             var allUmbracoProducts = allEkomNodes.Where(x => x.ContentType.Alias == "ekmProduct")
                 .ToList();
@@ -202,7 +202,7 @@ public class ImportService : IImportService
             ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
             var allUmbracoCategories = allEkomNodes
-                .Where(x => x.ContentType.Alias == "ekmCategory" && x.Path.Split(',').Contains(umbracoRootContent.Id.ToString())).ToList();
+                .Where(x => x.ContentType.Alias == "ekmCategory").ToList();
 
 
             var stopwatch = Stopwatch.StartNew();
@@ -549,12 +549,10 @@ public class ImportService : IImportService
             // Create a HashSet of identifiers from importCategory for efficient lookups
             var importCategoryIdentifiers = new HashSet<string>(importCategories.Select(x => x.Identifier));
 
-            var targetedCategories = allUmbracoCategories.Where(x => x.Path.Contains(umbracoRootContent?.Id.ToString() ?? "", StringComparison.InvariantCulture)).Where(x => x.Path.Split(',').Contains(umbracoRootContent?.Id.ToString())).ToList();
-
             // Delete Category not present in the importCategoryIdentifiers
-            for (int i = targetedCategories.Count - 1; i >= 0; i--)
+            for (int i = allUmbracoCategories.Count - 1; i >= 0; i--)
             {
-                var umbracoCategory = targetedCategories[i];
+                var umbracoCategory = allUmbracoCategories[i];
                 var isSyncDisabled = umbracoCategory.HasProperty("ekmDisableSync") && umbracoCategory.GetValue<bool>("ekmDisableSync");
 
                 if (umbracoCategory.ParentId != parentContent.Id)
@@ -636,15 +634,10 @@ public class ImportService : IImportService
                 if (importProducts.Sum(x => x.Categories.Count) <= 0)
                     throw new ArgumentException("No products connected to categories in importProducts, sync stopped");
 
-                var rootId = umbracoRootContent.Id.ToString();
-
-                var targetedUmbracoProducts = allUmbracoProducts
-                    .Where(x => x.Path?.Split(',').Contains(rootId) == true)
-                    .ToList();
-
                 var importProductIdentifiers = importProducts.Select(x => x.Identifier).ToHashSet();
 
                 var importProductsById = new Dictionary<string, ImportProduct>();
+
                 foreach (var product in importProducts)
                 {
                     if (!importProductsById.TryAdd(product.Identifier, product))
@@ -658,9 +651,9 @@ public class ImportService : IImportService
                     .Where(x => x.HasProperty(Configuration.ImportAliasIdentifier) && !string.IsNullOrEmpty(x.GetValue<string>(Configuration.ImportAliasIdentifier)))
                     .ToDictionary(x => x.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "", x => x);
 
-                for (int i = targetedUmbracoProducts.Count - 1; i >= 0; i--)
+                for (int i = allUmbracoProducts.Count - 1; i >= 0; i--)
                 {
-                    var umbracoProduct = targetedUmbracoProducts[i];
+                    var umbracoProduct = allUmbracoProducts[i];
                     if (umbracoProduct.HasProperty("ekmDisableSync") && umbracoProduct.GetValue<bool>("ekmDisableSync"))
                         continue;
 
@@ -1849,20 +1842,14 @@ public class ImportService : IImportService
     }
     private List<IContent> GetAllEkomNodes()
     {
-        ArgumentNullException.ThrowIfNull(catalogContentType);
+        ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var catalogNode = _contentService
-                .GetPagedOfType(catalogContentType.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-                .Where(x => !x.Trashed)).FirstOrDefault();
-
-        ArgumentNullException.ThrowIfNull(catalogNode);
-
-        var categories = _contentService
-            .GetPagedDescendants(catalogNode.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
+        var catalogDecendants = _contentService
+            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
             .Where(x => !x.Trashed))
             .ToList();
-
-        return categories;
+        
+        return catalogDecendants;
     }
 
     public class MediaObject
