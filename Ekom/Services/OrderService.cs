@@ -71,7 +71,7 @@ partial class OrderService
     /// Ensure all future usages of date for this request point to the same time
     /// </summary>
     readonly DateTime _date;
-    private readonly AsyncKeyedLocker<Guid> _orderLock = new();
+    private static readonly AsyncKeyedLocker<Guid> _orderLock = new();
 
     /// <summary>
     /// W/o HttpCtx, for usage in Hangfire f.x. ?
