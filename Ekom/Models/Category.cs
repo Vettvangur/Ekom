@@ -186,7 +186,6 @@ public class Category : PerStoreNodeEntity, ICategory
         }
 
         Ancestors = ancestorCategories;
-        RootCategory = ancestorCategories.FirstOrDefault();
-
+        RootCategory = ancestorCategories.FirstOrDefault() ?? this;
     }
 }
