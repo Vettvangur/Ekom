@@ -46,17 +46,18 @@ public class Product : PerStoreNodeEntity, IProduct
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Description { get; set; }
+    public virtual string Description => GetValue("description", Store.Alias);
 
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Summary { get; set; }
+    public virtual string Summary => GetValue("summary", Store.Alias);
 
     /// <summary>
     /// Short spaceless descriptive title used to create URLs
     /// </summary>
-    public string Slug { get; set; }
+
+    public string Slug => GetValue("slug", Store.Alias);
 
     /// <summary>
     /// Get the current product Stock
@@ -472,10 +473,6 @@ public class Product : PerStoreNodeEntity, IProduct
 
         OriginalPrice = CreateOriginalPrice();
         SKU = GetValue("sku");
-        Description = GetValue("description", Store.Alias);
-        Summary = GetValue("summary", Store.Alias);
-        Slug = GetValue("slug", Store.Alias);
-
     }
 
     public void InvalidateCache()
