@@ -48,7 +48,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
     /// <summary>
     /// 
     /// </summary>
-    public virtual string Description { get; set; }
+    public virtual string Description => GetValue("description", Store.Alias);
 
     /// <summary>
     /// Get the availability of the variant
@@ -302,7 +302,6 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
         OriginalPrice = CreateOriginalPrice();
 
         SKU = string.IsNullOrEmpty(GetValue("sku")) ? Product?.SKU ?? "" : GetValue("sku");
-        Description = GetValue("description", Store.Alias);
     }
 
     private IPrice CreateOriginalPrice()
