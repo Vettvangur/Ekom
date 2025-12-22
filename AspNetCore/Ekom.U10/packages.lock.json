@@ -177,14 +177,6 @@
           "linq2db": "5.4.1"
         }
       },
-      "Ekom.Payments.Valitor": {
-        "type": "Transitive",
-        "resolved": "0.2.48",
-        "contentHash": "GfXj1RYARCOdVOx2gF7qQCwdSErUeKM1yqir+15oyFMnF/Id8phFJ1ePPbnzsHRfS4NKIRXF1/OZc1j5fcQ06A==",
-        "dependencies": {
-          "Ekom.Payments.Core": "0.2.48"
-        }
-      },
       "Examine": {
         "type": "Transitive",
         "resolved": "3.7.1",
@@ -2853,7 +2845,6 @@
           "CommonServiceLocator": "[2.0.7, )",
           "Ekom.Common": "[0.0.1, )",
           "Ekom.Payments.Core": "[0.2.48, )",
-          "Ekom.Payments.Valitor": "[0.2.48, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
