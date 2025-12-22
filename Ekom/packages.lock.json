@@ -32,15 +32,6 @@
           "linq2db": "5.4.1"
         }
       },
-      "Ekom.Payments.Valitor": {
-        "type": "Direct",
-        "requested": "[0.2.48, )",
-        "resolved": "0.2.48",
-        "contentHash": "GfXj1RYARCOdVOx2gF7qQCwdSErUeKM1yqir+15oyFMnF/Id8phFJ1ePPbnzsHRfS4NKIRXF1/OZc1j5fcQ06A==",
-        "dependencies": {
-          "Ekom.Payments.Core": "0.2.48"
-        }
-      },
       "Hangfire": {
         "type": "Direct",
         "requested": "[1.8.18, )",
