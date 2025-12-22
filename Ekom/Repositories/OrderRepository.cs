@@ -165,19 +165,46 @@ class OrderRepository
                 affected3 = await db.ExecuteAsync<int>(updateOrderStatusColDataSql);
             }
 
-            const string stockUniqueIdMoreLengthSql = @"BEGIN TRANSACTION;
-                        IF EXISTS (
-	                        SELECT 1
-	                        FROM INFORMATION_SCHEMA.COLUMNS
-	                        WHERE TABLE_NAME = 'EkomStock'
-	                        AND COLUMN_NAME = 'UniqueId'
-	                        AND DATA_TYPE = 'nvarchar'
-	                        AND CHARACTER_MAXIMUM_LENGTH = 39
-                        )
-                        Begin
-	                        ALTER TABLE [dbo].[EkomStock] ALTER COLUMN [UniqueId] [Nvarchar](255) NOT NULL;
-                        End
-                        COMMIT TRANSACTION;";
+            const string stockUniqueIdMoreLengthSql = @"
+                BEGIN TRANSACTION;
+
+                IF EXISTS (
+                    SELECT 1
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_NAME = 'EkomStock'
+                      AND COLUMN_NAME = 'UniqueId'
+                      AND DATA_TYPE = 'nvarchar'
+                      AND CHARACTER_MAXIMUM_LENGTH = 39
+                )
+                BEGIN
+                    DECLARE @pkName sysname;
+
+                    -- Find PK name on EkomStock
+                    SELECT @pkName = kc.name
+                    FROM sys.key_constraints kc
+                    JOIN sys.tables t ON t.object_id = kc.parent_object_id
+                    WHERE kc.[type] = 'PK'
+                      AND t.[name] = 'EkomStock';
+
+                    -- Drop PK if it exists
+                    IF @pkName IS NOT NULL
+                    BEGIN
+                        EXEC('ALTER TABLE [dbo].[EkomStock] DROP CONSTRAINT [' + @pkName + ']');
+                    END
+
+                    -- Alter column length
+                    ALTER TABLE [dbo].[EkomStock]
+                        ALTER COLUMN [UniqueId] NVARCHAR(255) NOT NULL;
+
+                    -- Recreate PK (assumes PK is on UniqueId)
+                    IF @pkName IS NOT NULL
+                    BEGIN
+                        EXEC('ALTER TABLE [dbo].[EkomStock] ADD CONSTRAINT [' + @pkName + '] PRIMARY KEY ([UniqueId])');
+                    END
+                END
+
+                COMMIT TRANSACTION;
+                ";
 
 
             affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
