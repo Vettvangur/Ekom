@@ -1,0 +1,8 @@
+<div ng-controller="Ekom.DecimalStock">
+  <fieldset ng-repeat="stock in stocks">
+    <legend style="font-size: 18px; font-weight:bold;">{{ stock.storeAlias }}</legend>
+    <div style="margin-bottom:10px;">
+      <input type="number" min="0" step="any" id="stock_{{ stock.storeAlias }}" ng-model="stock.value" />
+    </div>
+  <fieldset />
+</div>
