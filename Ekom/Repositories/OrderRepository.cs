@@ -265,7 +265,7 @@ class OrderRepository
 
             if ((affected2 + affected3 + affected4 + affected5 + affected6) > 0)
             {
-                _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
+                _logger.LogInformation("Migrating Ekom SQL finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5 + affected6));
             }
 
         }
