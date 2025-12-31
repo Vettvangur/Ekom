@@ -127,7 +127,7 @@ class StockRepository
             List<string>? arguments = JsonConvert.DeserializeObject<List<string>>(hangfireArgument);
 
             Guid key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
-            int stock = Convert.ToInt32(arguments.LastOrDefault());
+            decimal stock = Convert.ToDecimal(arguments.LastOrDefault());
 
             await API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
         }

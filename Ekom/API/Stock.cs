@@ -343,7 +343,7 @@ public partial class Stock
     /// <param name="timeSpan">How long to reserve</param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     /// <returns>Hangfire Job Id</returns>
-    public async Task<string> ReserveStockAsync(Guid key, int value, TimeSpan timeSpan = default)
+    public async Task<string> ReserveStockAsync(Guid key, decimal value, TimeSpan timeSpan = default)
     {
         if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
         if (timeSpan == default(TimeSpan))
@@ -371,7 +371,7 @@ public partial class Stock
     /// <param name="timeSpan">How long to reserve</param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     /// <returns>Hangfire Job Id</returns>
-    public async Task<string> ReserveStockAsync(Guid key, string storeAlias, int value, TimeSpan timeSpan = default)
+    public async Task<string> ReserveStockAsync(Guid key, string storeAlias, decimal value, TimeSpan timeSpan = default)
     {
         if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
         if (timeSpan == default)
@@ -511,7 +511,7 @@ public partial class Stock
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public static Task UpdateStockHangfireAsync(Guid key, int value)
+    public static Task UpdateStockHangfireAsync(Guid key, decimal value)
     {
         return Instance.IncrementStockAsync(key, value);
     }
@@ -522,7 +522,7 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <param name="value"></param>
-    public static Task UpdateStockHangfireAsync(Guid key, string storeAlias, int value)
+    public static Task UpdateStockHangfireAsync(Guid key, string storeAlias, decimal value)
     {
         return Instance.IncrementStockAsync(key, storeAlias, value);
     }

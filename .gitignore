@@ -101,3 +101,5 @@ Ekom.Site/App_Plugins/EkomManager/css/react-table.css
 
 # Include the media folder
 !**Ekom.Site/wwwroot/media/
+/.claude
+/nul
