@@ -56,12 +56,12 @@ angular.module('umbraco').controller('Ekom.Stock', function ($scope, $routeParam
     if (storeAlias !== '') {
       return $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'Stock/' + $scope.content.key + "/storeAlias/" + storeAlias)
         .then(function (result) {
-          return parseInt(result.data);
+          return parseFloat(result.data);
         });
     } else {
       return $http.get(Umbraco.Sys.ServerVariables.ekom.backofficeApiEndpoint + 'Stock/' + $scope.content.key)
         .then(function (result) {
-          return parseInt(result.data);
+          return parseFloat(result.data);
         });
     }
   }
