@@ -7,9 +7,9 @@ on:
     inputs:
       publish:
         type: boolean
-        description: "Publish packages to NuGet even if no release was created"
+        description: "Publish packages to NuGet"
         required: false
-        default: false
+        default: true
 
 permissions:
   contents: write
@@ -43,16 +43,43 @@ jobs:
         if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         run: dotnet build "./Ekom Build.sln" -c Release --no-restore
 
-      - name: Pack (set PackageVersion from tag)
-        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
+      - name: Pack (use tag or manifest version)
+        if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
         run: |
-          $tag = "${{ steps.rp.outputs.tag_name }}"
-          if ([string]::IsNullOrWhiteSpace($tag)) {
-            # Fallback version for manual publish when no tag exists
-            $version = "0.0.0-local.$(Get-Date -Format yyyyMMddHHmmss)"
-          } else {
+          $ErrorActionPreference = "Stop"
+
+          # Prefer release-please tag version when a release was created
+          $tag = "${{ steps.rp.outputs.tag_name }}"  # e.g. v0.1.23
+
+          if (-not [string]::IsNullOrWhiteSpace($tag)) {
             $version = $tag.TrimStart("v")
+            Write-Host "Using version from release-please tag: $version"
+          }
+          else {
+            # Manual rerun path: take the current version from manifest
+            $manifestPath = ".release-please-manifest.json"
+            if (-not (Test-Path $manifestPath)) {
+              throw "Manifest file not found: $manifestPath"
+            }
+
+            $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+
+            # release-please manifest keys are paths. Commonly "." for root.
+            if ($manifest.PSObject.Properties.Name -contains ".") {
+              $version = $manifest."."
+              Write-Host "Using version from manifest '.' : $version"
+            }
+            else {
+              # Fallback: if your manifest uses a different key, pick the first one.
+              $firstKey = $manifest.PSObject.Properties.Name | Select-Object -First 1
+              $version = $manifest.$firstKey
+              Write-Host "Using version from manifest '$firstKey' : $version"
+            }
+
+            if ([string]::IsNullOrWhiteSpace($version)) {
+              throw "Could not determine version from $manifestPath"
+            }
           }
 
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
@@ -63,15 +90,18 @@ jobs:
           dotnet pack "Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
 
+          $pkgs = Get-ChildItem -Path artifacts -Filter *.nupkg -File
+          $pkgs | Format-Table Name,Length
+
       - name: NuGet Login (OIDC)
         id: login
-        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         uses: NuGet/login@v1
         with:
           user: Vettvangur
 
       - name: Push to NuGet.org
-        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
         run: |
           dotnet nuget push "artifacts/*.nupkg" `
