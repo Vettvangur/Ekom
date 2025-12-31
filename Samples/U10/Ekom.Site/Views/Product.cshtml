@@ -12,8 +12,6 @@
     var primaryVariant = product.PrimaryVariant;
 
     var images = product.Images;
-
-
 }
 
 @section Main {
@@ -49,6 +47,7 @@
                     </div>
                 </div>
             }
+            <h2>@product.Stock</h2>
 
             <div class="mt-8 lg:col-span-5">
                 @if (product.Available)

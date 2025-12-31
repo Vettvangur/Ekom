@@ -11,7 +11,6 @@
 
         <!-- Package properties -->
         <PackageId>Ekom.U10</PackageId>
-        <Version>0.0.1</Version>
         <Title>Ekom Umbraco</Title>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

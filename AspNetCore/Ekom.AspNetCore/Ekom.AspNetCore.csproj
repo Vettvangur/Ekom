@@ -10,7 +10,6 @@
 
       <!-- Package properties -->
       <PackageId>Ekom.AspNetCore</PackageId>
-      <Version>0.0.1</Version>
       <Title>Ekom AspNetCore</Title>
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
