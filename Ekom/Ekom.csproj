@@ -9,36 +9,34 @@
 
         <!-- Package properties -->
         <PackageId>Ekom.Core</PackageId>
-        <Version>0.0.1</Version>
         <Title>Ekom Core Library</Title>
+        <Description>Ekom - E-Commerce solution for Umbraco</Description>
         <Authors>Vettvangur</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
-        <PackageIcon>images/VV_Logo.png</PackageIcon>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Description>Ekom - E-Commerce solution for Umbraco</Description>
+        <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+
         <PackageReleaseNotes></PackageReleaseNotes>
         <Copyright>Copyright 2022</Copyright>
-        <PackageTags></PackageTags>
+        <PackageTags>umbraco;ecommerce;ekom;b2c;b2b</PackageTags>
 
+        <!-- Icon & README -->
+        <PackageIcon>images/VV_Logo.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
 
-
-        <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-
-        <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-
-        <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+        <!-- Symbols & SourceLink -->
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
-        <!-- Enable NuGet package caching -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        
+        <!-- Build / docs -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-
         <RootNamespace>Ekom</RootNamespace>
+        
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
@@ -52,6 +50,7 @@
         <!-- Package icon -->
         <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
         <None Include="..\README.md" Pack="true" PackagePath="\" />
+        <None Include="../CHANGELOG.md" Pack="true" PackagePath=""/>
     </ItemGroup>
 
     <ItemGroup>

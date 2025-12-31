@@ -5,7 +5,6 @@
 
       <!-- Package properties -->
       <PackageId>Ekom.Web</PackageId>
-      <Version>0.0.9</Version>
       <Title>Ekom.Web</Title>
       <Authors>Vettvangur</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
