@@ -99,7 +99,7 @@ class OrderRepository
 
             int insertTempColumn = await db.ExecuteAsync<int>(insertTempColumnSql);
 
-            int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0, affected6 = 0;
+            int affected1 = 0, affected2 = 0, affected3 = 0, affected4 = 0, affected5 = 0;
 
             if (insertTempColumn == 1)
             {
@@ -223,49 +223,9 @@ class OrderRepository
 
             affected5 = await db.ExecuteAsync<int>(CouponDateSql);
 
-            const string DecimalStockSql = @"
-                BEGIN TRANSACTION;
-
-                DECLARE @IsNullable bit;
-                DECLARE @Affected int = 0;
-
-                SELECT @IsNullable = c.is_nullable
-                FROM sys.columns c
-                WHERE c.object_id = OBJECT_ID(N'dbo.EkomStock')
-                  AND c.name = N'Stock';
-
-                IF EXISTS (
-                    SELECT 1
-                    FROM sys.columns c
-                    JOIN sys.types t
-                      ON c.system_type_id = t.system_type_id
-                     AND t.user_type_id = t.system_type_id
-                    WHERE c.object_id = OBJECT_ID(N'dbo.EkomStock')
-                      AND c.name = N'Stock'
-                      AND t.name IN (N'decimal', N'numeric')
-                      AND c.precision = 18
-                      AND c.scale = 0
-                )
-                BEGIN
-                    DECLARE @Sql nvarchar(max) =
-                        N'ALTER TABLE dbo.EkomStock ALTER COLUMN Stock DECIMAL(18,2) ' +
-                        CASE WHEN @IsNullable = 1 THEN N'NULL' ELSE N'NOT NULL' END;
-
-                    EXEC sys.sp_executesql @Sql;
-
-                    SET @Affected = 1;
-                END
-
-                COMMIT TRANSACTION;
-
-                SELECT @Affected;
-                ";
-
-            affected6 = await db.ExecuteAsync<int>(DecimalStockSql);
-
-            if ((affected2 + affected3 + affected4 + affected5 + affected6) > 0)
+            if ((affected2 + affected3 + affected4 + affected5) > 0)
             {
-                _logger.LogInformation("Migrating Ekom SQL finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5 + affected6));
+                _logger.LogInformation("Migrating Ekom Orders from version 8 to 10 finished. Affected lines: " + (affected1 + affected2 + affected3 + affected4 + affected5));
             }
 
         }
