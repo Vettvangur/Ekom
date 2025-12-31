@@ -99,13 +99,27 @@ jobs:
         uses: NuGet/login@v1
         with:
           user: Vettvangur
-
+          
       - name: Push to NuGet.org
         if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
         run: |
-          dotnet nuget push "artifacts/*.nupkg" `
-            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
-            --source "https://api.nuget.org/v3/index.json" `
-            --skip-duplicate
+          $ErrorActionPreference = "Stop"
+
+          $pkgs = Get-ChildItem -Path "artifacts" -Filter "*.nupkg" -File -ErrorAction SilentlyContinue
+          if (-not $pkgs) {
+            Write-Host "No .nupkg found. Listing artifacts:"
+            Get-ChildItem -Recurse -Force "artifacts" | Format-Table FullName,Length
+            throw "No .nupkg files found under artifacts/"
+          }
+
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.FullName)"
+            dotnet nuget push "$($p.FullName)" `
+              --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
+              --source "https://api.nuget.org/v3/index.json" `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+          }
 
