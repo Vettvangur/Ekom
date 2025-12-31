@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.1.934...Ekom-v0.2.0) (2025-12-31)
+
+
+### Miscellaneous Chores
+
+* release 0.2.0 ([4082b10](https://github.com/Vettvangur/Ekom/commit/4082b10850ede6a8e3c0ad0908ee95695692a5b8))
+
 ## [0.1.934](https://github.com/Vettvangur/Ekom/compare/Ekom-v1.8.0...Ekom-v0.1.934) (2025-12-31)
 
 
