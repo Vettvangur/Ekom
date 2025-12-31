@@ -35,7 +35,7 @@ jobs:
 
       - name: Build (Release)
         if: ${{ steps.rp.outputs.release_created == 'true' }}
-        run: dotnet build -c Release --no-restore
+        run: dotnet build "./Ekom Build.sln" -c Release --no-restore
 
       - name: Pack (set PackageVersion from tag)
         if: ${{ steps.rp.outputs.release_created == 'true' }}
