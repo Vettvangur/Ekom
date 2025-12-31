@@ -3,7 +3,13 @@ name: release-please
 on:
   push:
     branches: ["Ekom"]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish:
+        type: boolean
+        description: "Publish packages to NuGet even if no release was created"
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -22,27 +28,32 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - uses: actions/checkout@v4
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
 
       - uses: actions/setup-dotnet@v4
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         with:
           dotnet-version: "8.0.x"
 
       - name: Restore
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         run: dotnet restore "./Ekom Build.sln"
 
       - name: Build (Release)
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         run: dotnet build "./Ekom Build.sln" -c Release --no-restore
 
       - name: Pack (set PackageVersion from tag)
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
         shell: pwsh
         run: |
-          $tag = "${{ steps.rp.outputs.tag_name }}"   # e.g. v0.1.23
-          $version = $tag.TrimStart("v")
+          $tag = "${{ steps.rp.outputs.tag_name }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            # Fallback version for manual publish when no tag exists
+            $version = "0.0.0-local.$(Get-Date -Format yyyyMMddHHmmss)"
+          } else {
+            $version = $tag.TrimStart("v")
+          }
 
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
 
@@ -54,16 +65,17 @@ jobs:
 
       - name: NuGet Login (OIDC)
         id: login
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
         uses: NuGet/login@v1
         with:
           user: Vettvangur
 
       - name: Push to NuGet.org
-        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        if: ${{ steps.rp.outputs.release_created == 'true' || inputs.publish == true }}
         shell: pwsh
         run: |
           dotnet nuget push "artifacts/*.nupkg" `
             --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
             --source "https://api.nuget.org/v3/index.json" `
             --skip-duplicate
+
