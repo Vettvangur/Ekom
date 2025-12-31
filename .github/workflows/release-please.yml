@@ -31,7 +31,7 @@ jobs:
 
       - name: Restore
         if: ${{ steps.rp.outputs.release_created == 'true' }}
-        run: dotnet restore
+        run: dotnet restore "./Ekom Build.sln"
 
       - name: Build (Release)
         if: ${{ steps.rp.outputs.release_created == 'true' }}
@@ -48,7 +48,6 @@ jobs:
 
           dotnet pack "Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom.Payments.Core/Ekom.Payments.Core.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
