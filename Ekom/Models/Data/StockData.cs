@@ -21,7 +21,7 @@ namespace Ekom.Models
         /// <summary>
         /// Unit count
         /// </summary>
-        [Column, NotNull]
+        [Column(DbType = "decimal(18,2)"), NotNull]
         public decimal Stock { get; internal set; }
 
         /// <summary>

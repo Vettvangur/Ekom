@@ -231,7 +231,7 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPatch]
     [Route("stock/{id:Guid}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> IncrementStock(Guid id, int stock)
+    public async Task<IActionResult> IncrementStock(Guid id, decimal stock)
     {
         try
         {
@@ -254,7 +254,7 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPatch]
     [Route("stock/{id:Guid}/StoreAlias/{storeAlias}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> IncrementStock(Guid id, string storeAlias, int stock)
+    public async Task<IActionResult> IncrementStock(Guid id, string storeAlias, decimal stock)
     {
         try
         {
@@ -277,7 +277,7 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPut]
     [Route("stock/{id:Guid}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> SetStock(Guid id, int stock)
+    public async Task<IActionResult> SetStock(Guid id, decimal stock)
     {
         try
         {
@@ -299,7 +299,7 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPut]
     [Route("stock/{id:Guid}/StoreAlias/{storeAlias}/value/{stock}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> SetStock(Guid id, string storeAlias, int stock)
+    public async Task<IActionResult> SetStock(Guid id, string storeAlias, decimal stock)
     {
         try
         {

@@ -241,16 +241,30 @@ class OrderRepository
         await using DbContext db = _databaseFactory.GetDatabase();
 
         const string sql = @"
+            -- Migrate from int to decimal(18,2)
             IF EXISTS (
-                SELECT 1 
-                FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_NAME = 'EkomStock' 
-                AND COLUMN_NAME = 'Stock' 
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = 'EkomStock'
+                AND COLUMN_NAME = 'Stock'
                 AND DATA_TYPE = 'int'
             )
             BEGIN
-                ALTER TABLE EkomStock 
-                ALTER COLUMN Stock DECIMAL(18,0);
+                ALTER TABLE EkomStock
+                ALTER COLUMN Stock DECIMAL(18,2);
+            END
+            -- Migrate from decimal(18,0) to decimal(18,2)
+            ELSE IF EXISTS (
+                SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = 'EkomStock'
+                AND COLUMN_NAME = 'Stock'
+                AND DATA_TYPE = 'decimal'
+                AND NUMERIC_SCALE = 0
+            )
+            BEGIN
+                ALTER TABLE EkomStock
+                ALTER COLUMN Stock DECIMAL(18,2);
             END
             ";
 
