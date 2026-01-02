@@ -185,7 +185,7 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
                     // --- Repair any zero-priced entries using Product.Prices ---
                     if (Product != null)
                     {
-                        var fallbackPrices = Product.Prices;
+                        var fallbackPrices = Product.BuildPricesFromRaw(categories);
 
                         foreach (IPrice? p in prices.Where(x => x.OriginalValue == 0).ToList())
                         {

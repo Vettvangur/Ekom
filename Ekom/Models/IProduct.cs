@@ -21,6 +21,9 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// </value>
     List<IPrice> Prices { get; }
 
+    List<IPrice> BuildPricesFromRaw( string[]? categories = null);
+
+
     /// <summary>
     /// Gets the orignal price.
     /// </summary>

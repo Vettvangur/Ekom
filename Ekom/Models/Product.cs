@@ -1,6 +1,7 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Models.Umbraco;
+using Ekom.Payments;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -297,6 +298,28 @@ public class Product : PerStoreNodeEntity, IProduct
                 TimeSpan.FromHours(48)
             );
         }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public string RawPriceValue => _priceValue;
+
+    public List<IPrice> BuildPricesFromRaw(
+        string[]? categories = null)
+    {
+        categories ??= Categories.Select(x => x.Id.ToString()).ToArray();
+
+        return PriceBuilder.BuildPricesSync(
+            _priceValue,
+            Store.Currencies,
+            Vat,
+            Store.VatIncludedInPrice,
+            Store.Currency,
+            Store.Alias,
+            Path,
+            categories
+        );
     }
 
 
