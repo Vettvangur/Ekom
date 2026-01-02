@@ -3,6 +3,8 @@
     ".": {
       "package-name": "Ekom",
       "release-type": "simple",
+      "bump-minor-pre-major": false,
+      "bump-patch-for-minor-pre-major": true,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
