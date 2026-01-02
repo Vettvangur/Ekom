@@ -49,12 +49,24 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          # Prefer release-please tag version when a release was created
-          $tag = "${{ steps.rp.outputs.tag_name }}"  # e.g. v0.1.23
+          function Get-SemVerFromString([string] $s) {
+            if ([string]::IsNullOrWhiteSpace($s)) { return $null }
 
-          if (-not [string]::IsNullOrWhiteSpace($tag)) {
-            $version = $tag.TrimStart("v")
-            Write-Host "Using version from release-please tag: $version"
+            # Extract first SemVer-like token: 0.2.1 or 0.2.1-beta.1 (NuGet allows prerelease)
+            if ($s -match '(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)') {
+              return $Matches['ver']
+            }
+
+            return $null
+          }
+
+          # Prefer release-please tag version when a release was created
+          $tag = "${{ steps.rp.outputs.tag_name }}"  # e.g. v0.2.1 or Ekom-v0.2.1
+
+          $version = Get-SemVerFromString $tag
+
+          if (-not [string]::IsNullOrWhiteSpace($version)) {
+            Write-Host "Using version from release-please tag: $version (tag was '$tag')"
           }
           else {
             # Manual rerun path: take the current version from manifest
@@ -67,20 +79,29 @@ jobs:
 
             # release-please manifest keys are paths. Commonly "." for root.
             if ($manifest.PSObject.Properties.Name -contains ".") {
-              $version = $manifest."."
-              Write-Host "Using version from manifest '.' : $version"
+              $manifestVersion = [string]$manifest."."
+              Write-Host "Using version from manifest '.' : $manifestVersion"
             }
             else {
               # Fallback: if your manifest uses a different key, pick the first one.
               $firstKey = $manifest.PSObject.Properties.Name | Select-Object -First 1
-              $version = $manifest.$firstKey
-              Write-Host "Using version from manifest '$firstKey' : $version"
+              $manifestVersion = [string]$manifest.$firstKey
+              Write-Host "Using version from manifest '$firstKey' : $manifestVersion"
             }
 
+            $version = Get-SemVerFromString $manifestVersion
+
             if ([string]::IsNullOrWhiteSpace($version)) {
-              throw "Could not determine version from $manifestPath"
+              throw "Could not determine a valid SemVer from manifest value '$manifestVersion' in $manifestPath"
             }
           }
+
+          # Final defensive validation for NuGet PackageVersion
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?$') {
+            throw "Computed version '$version' is not a valid NuGet SemVer."
+          }
+
+          Write-Host "Packing with PackageVersion=$version"
 
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
 
@@ -92,6 +113,7 @@ jobs:
 
           $pkgs = Get-ChildItem -Path artifacts -Filter *.nupkg -File
           $pkgs | Format-Table Name,Length
+
 
       - name: NuGet Login (OIDC)
         id: login
