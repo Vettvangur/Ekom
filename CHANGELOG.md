@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.0...Ekom-v0.2.1) (2026-01-02)
+
+
+### Bug Fixes
+
+* circular dependecy issues on variant 0 price fixes ([742aed7](https://github.com/Vettvangur/Ekom/commit/742aed74a4aff3064c76baf924ba1e7cc0180d18))
+* circular dependecy issues on variant 0 price fixes ([2ec49bb](https://github.com/Vettvangur/Ekom/commit/2ec49bb6fa6ea9496310d465ed391829efbc7058))
+
 ## [0.2.0](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.1.934...Ekom-v0.2.0) (2025-12-31)
 
 
