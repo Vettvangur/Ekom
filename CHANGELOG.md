@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.1...Ekom-v0.2.2) (2026-01-05)
+
+
+### Bug Fixes
+
+* Dont raise events on product and category in search tree ([67c8d8d](https://github.com/Vettvangur/Ekom/commit/67c8d8d4930059bd8ac3328ff9cc4b1b2439c303))
+
 ## [0.2.1](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.0...Ekom-v0.2.1) (2026-01-02)
 
 
