@@ -24,11 +24,11 @@ class EkomSearchTree : ISearchableTree
         var searchResults = new List<Umbraco.Cms.Core.Models.ContentEditing.SearchResultEntity?>();
         if (!string.IsNullOrEmpty(query) && query.Length > 2)
         {
+
             var results = _searchService.InternalQuery(new SearchRequest() {
                 SearchQuery = query,
                 ExamineIndex = "InternalIndex"
             }, out _);
-
 
             if (results == null)
             {
@@ -41,9 +41,10 @@ class EkomSearchTree : ISearchableTree
                 var alias = result.DocType;
                 var name = result.Name;
                 var url = result.Url;
+
                 if (alias == "ekmProduct")
                 {
-                    var product = Ekom.API.Catalog.Instance.GetProduct(result.Id);
+                    var product = Ekom.API.Catalog.Instance.GetProduct(result.Id, raiseEvent: false);
 
                     if (product != null)
                     {
@@ -57,7 +58,7 @@ class EkomSearchTree : ISearchableTree
                     name = result.Name + " (sku: " + result.SKU + ")";
                 } else if (alias == "ekmCategory")
                 {
-                    var category = Ekom.API.Catalog.Instance.GetCategory(result.Id);
+                    var category = Ekom.API.Catalog.Instance.GetCategory(result.Id, raiseEvent: false);
 
                     if (category != null)
                     {

@@ -1840,16 +1840,39 @@ public class ImportService : IImportService
 
         return categories;
     }
-    private List<IContent> GetAllEkomNodes()
+    private List<IContent> GetAllEkomNodes(int pageSize = 2_000)
     {
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var catalogDecendants = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .ToList();
-        
-        return catalogDecendants;
+        var all = new List<IContent>(capacity: pageSize * 2);
+
+        var filter = new Query<IContent>(_scopeProvider.SqlContext)
+            .Where(x => !x.Trashed);
+
+        long pageIndex = 0;
+
+        while (true)
+        {
+            var batch = _contentService.GetPagedDescendants(
+                umbracoRootContent.Id,
+                pageIndex,
+                pageSize,
+                out var totalRecords,
+                filter);
+
+            var list = batch as IList<IContent> ?? batch.ToList();
+            if (list.Count == 0)
+                break;
+
+            all.AddRange(list);
+
+            if (all.Count >= totalRecords)
+                break;
+
+            pageIndex++;
+        }
+
+        return all;
     }
 
     public class MediaObject
