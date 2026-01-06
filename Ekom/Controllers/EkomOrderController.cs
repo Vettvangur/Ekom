@@ -3,8 +3,11 @@ using Ekom.Models;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace Ekom.Controllers;
 
@@ -32,18 +35,29 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("add")]
+    [Consumes("application/json", "application/x-www-form-urlencoded", "multipart/form-data")]
+    [RequestSizeLimit(64_000)]
+    [EnableRateLimiting("order-add")]
     public async Task<IActionResult> AddToOrder([FromBody] OrderRequest request)
     {
-        if (request == null)
-        {
-            return BadRequest();
-        }
+        if (request == null) return BadRequest();
 
         Request.EnableBuffering();
 
         Dictionary<string, string> customData = new(StringComparer.OrdinalIgnoreCase);
 
-        if (Request.HasFormContentType)
+        var ct = Request.ContentType ?? "";
+        var isJson = ct.Contains("application/json", StringComparison.OrdinalIgnoreCase);
+        var isForm = Request.HasFormContentType;
+
+        if (!isJson && !isForm)
+            return StatusCode(StatusCodes.Status415UnsupportedMediaType);
+
+        if (Request.ContentLength is > 64_000)
+            return BadRequest();
+
+
+        if (isForm)
         {
             var form = await Request.ReadFormAsync();
             customData = form.ToDictionary(
@@ -52,27 +66,40 @@ public partial class EkomOrderController : ControllerBase
                 StringComparer.OrdinalIgnoreCase
             );
         }
-        else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
+        else // Json
         {
             Request.Body.Position = 0;
-            using var reader = new StreamReader(Request.Body);
-            var body = await reader.ReadToEndAsync();
+            string body;
+            using (var reader = new StreamReader(Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true))
+            {
+                body = await reader.ReadToEndAsync();
+            }
+            Request.Body.Position = 0;
 
             if (!string.IsNullOrWhiteSpace(body))
             {
-                var json = JObject.Parse(body);
+                body = body.Trim();
 
-                customData = json.Properties()
-                    .ToDictionary(
+                try
+                {
+                    // Strict: must be exactly one JSON value AND it must be an object
+                    var token = JToken.Parse(body);
+                    if (token is not JObject obj)
+                    {
+                        return BadRequest("Json is not an object");
+                    }
+
+                    customData = obj.Properties().ToDictionary(
                         p => p.Name,
                         p => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(p.Value?.ToString() ?? ""),
-                        StringComparer.OrdinalIgnoreCase
-                    );
+                        StringComparer.OrdinalIgnoreCase);
+                }
+                catch (JsonReaderException ex)
+                {
+                    
+                    return BadRequest("Invalid JSON");
+                }
             }
-        }
-        else
-        {
-            return BadRequest("Unsupported content type. Only application/json or form data is supported.");
         }
 
         IOrderInfo orderInfo = await Order.Instance.AddOrderLineAsync(
