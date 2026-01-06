@@ -12,12 +12,14 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading.RateLimiting;
 
 namespace Ekom.AspNetCore;
 
@@ -197,6 +199,29 @@ static class Registrations
         services.AddHangfire(config =>
         {
             config.UseSqlServerStorage(connectionString);
+        });
+
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy("order-add", context =>
+            {
+                // Use client IP as the partition key
+                var ip =
+                    context.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: ip,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 30,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+            });
+
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
 
         return services;
