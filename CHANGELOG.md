@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.2...Ekom-v0.2.3) (2026-01-06)
+
+
+### Bug Fixes
+
+* filter out zero prices listens to variant prices to ([b82ed21](https://github.com/Vettvangur/Ekom/commit/b82ed21c1be97f5dbc906888d9edb46f08078201))
+* filter out zero prices listens to variant prices to ([2591fdf](https://github.com/Vettvangur/Ekom/commit/2591fdf17754a24ee033ee2a5b0013ac0f2fb00b))
+
 ## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.1...Ekom-v0.2.2) (2026-01-05)
 
 
