@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.3...Ekom-v0.2.4) (2026-01-06)
+
+
+### Bug Fixes
+
+* add rate limit to add to order and early returns ([ce40823](https://github.com/Vettvangur/Ekom/commit/ce4082359f996b61e61dc3a7dbca713d27dd4b07))
+* add rate limit to add to order and early returns ([af2d200](https://github.com/Vettvangur/Ekom/commit/af2d20098bd8f37bfd07169c4f251c90999396c7))
+
 ## [0.2.3](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.2...Ekom-v0.2.3) (2026-01-06)
 
 
