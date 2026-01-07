@@ -10,7 +10,6 @@ public class SearchRequest : ProductQueryBase
     public Dictionary<string, List<string>> PropertyFilters { get; set; } = new();
     public OrderBy OrderBy { get; set; } = OrderBy.NoOrder;
     public string ExamineIndex { get; set; } = string.Empty;
-    public string StoreAlias { get; set; } = string.Empty;
 }
 
 public class EkomSearchField
