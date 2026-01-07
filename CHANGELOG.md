@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.5...Ekom-v0.2.6) (2026-01-07)
+
+
+### Bug Fixes
+
+* Buffer stock feature for category and product ([7869c8f](https://github.com/Vettvangur/Ekom/commit/7869c8f555c5a389deef550da7a4c511111f3c29))
+* Buffer stock feature for category and product ([6231f56](https://github.com/Vettvangur/Ekom/commit/6231f5688e221ac146702382a34041cc8c548ecb))
+
 ## [0.2.5](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.4...Ekom-v0.2.5) (2026-01-07)
 
 
