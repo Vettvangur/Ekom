@@ -1052,7 +1052,6 @@ partial class OrderService
         quantity = addingOrderlineEventArgs.Quantity;
         product = addingOrderlineEventArgs.Product;
         variant = addingOrderlineEventArgs.Variant;
-        quantity = addingOrderlineEventArgs.Quantity;
         settings = addingOrderlineEventArgs.Settings;
         action = addingOrderlineEventArgs.Action;
 
@@ -1083,27 +1082,26 @@ partial class OrderService
                 variant?.Key,
                 action);
 
-            OrderLine? orderLine = null;
+            OrderLine? orderLine;
             decimal existingStock;
 
             if (variant != null)
             {
                 existingStock = variant.Stock;
 
-                orderLine
-                    = orderInfo.OrderLines
-                        .FirstOrDefault(
-                            x => x.Product.Key == product.Key
-                            && x.Product.VariantGroups
-                                .Any(b => b.Variants.Any(z => z.Key == variant.Key)))
-                        as OrderLine;
+                orderLine = orderInfo.OrderLines
+                    .OfType<OrderLine>()
+                    .FirstOrDefault(x =>
+                        x.Product.Key == product.Key &&
+                        x.Product.VariantGroups.Any(g => g.Variants.Any(v => v.Key == variant.Key)));
             }
             else
             {
                 existingStock = product.Stock;
-                orderLine
-                    = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == product.Key)
-                    as OrderLine;
+
+                orderLine = orderInfo.OrderLines
+                    .OfType<OrderLine>()
+                    .FirstOrDefault(x => x.Product.Key == product.Key);
             }
 
             if (orderLine != null && action != OrderAction.New)
@@ -1769,6 +1767,15 @@ partial class OrderService
 
     private void VerifyStock(decimal quantity, decimal existingStock, IProduct product, IVariant? variant = null)
     {
+        var bufferStock =
+            product.StockBuffer
+            ?? product.CategoryAncestors?.FirstOrDefault(c => c.StockBuffer.HasValue)?.StockBuffer
+            ?? 0;
+
+        existingStock -= bufferStock;
+
+        existingStock = Math.Max(0, existingStock);
+
         if (!_config.DisableStock
         && !product.Backorder
         && existingStock < quantity)

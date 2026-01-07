@@ -204,6 +204,22 @@ class EnsureNodesExist : IComponent
                     },
                 });
 
+                var propertyNumericDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Property Editor - Numeric - Stores",
+                    Configuration = new EkomPropertyEditorConfiguration
+                    {
+                        DataType = new
+                        {
+                            guid = numericDt.Key,
+                            name = numericDt.Name,
+                            propertyEditorAlias = numericDt.EditorAlias,
+                        },
+                        useLanguages = false,
+                        HideLabel = false
+                    },
+                });
+
                 var propertyRteDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Property Editor - Richtext Editor",
@@ -634,6 +650,11 @@ class EnsureNodesExist : IComponent
                                     {
                                         Name = "Stock",
                                     },
+                                    new PropertyType(_shortStringHelper, propertyNumericDt, "ekmStockBuffer")
+                                    {
+                                        Name = "Stock Buffer",
+                                        Description = "Reduces the available stock by this amount",
+                                    },
                                     new PropertyType(_shortStringHelper, booleanDt, "enableBackorder")
                                     {
                                         Name = "Enable Backorder",
@@ -745,7 +766,12 @@ class EnsureNodesExist : IComponent
                                     new PropertyType(_shortStringHelper, booleanDt, "ekmVirtualUrl")
                                     {
                                         Name = "Virtual Url",
-                                    }
+                                    },
+                                    new PropertyType(_shortStringHelper, propertyNumericDt, "ekmStockBuffer")
+                                    {
+                                        Name = "Stock Buffer",
+                                        Description = "Sets the stock buffer for the category, this value will be applied to all products within the category.",
+                                    },
                                 }))
                                 {
                                     Alias = "category",
