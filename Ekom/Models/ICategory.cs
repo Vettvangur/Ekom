@@ -40,4 +40,12 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     bool VirtualUrl { get; }
 
     bool HasProducts();
+
+    /// <summary>
+    /// Sets the stock buffer for the category, this value will be applied to all products within the category.
+    /// If the product has its own stock buffer set, that value will take precedence.
+    /// If the Product lives in multiple categories, the primary category's stock buffer will be used.
+    /// </summary>
+    /// <returns></returns>
+    decimal? StockBuffer { get; }
 }

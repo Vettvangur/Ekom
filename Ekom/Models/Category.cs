@@ -148,6 +148,12 @@ public class Category : PerStoreNodeEntity, ICategory
         return ProductsRecursive().Products.Filters();
     }
 
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
+    public decimal? StockBuffer { get; set; }
+
+
     /// <summary>
     /// Used by Ekom extensions, keep logic empty to allow full customisation of object construction.
     /// </summary>
@@ -171,6 +177,11 @@ public class Category : PerStoreNodeEntity, ICategory
         Urls = urls.Select(x => x.Url);
 
         VirtualUrl = GetValue("ekmVirtualUrl").IsBoolean();
+
+        if (decimal.TryParse(GetValue("ekmStockBuffer", store.Alias), out var stockBuffer))
+        {
+            StockBuffer = stockBuffer;
+        }
 
         var ancestorCategories = new List<ICategory>();
 

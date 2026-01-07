@@ -51,6 +51,12 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     decimal Stock { get; }
 
     /// <summary>
+    /// Sets the stock buffer for the product
+    /// </summary>
+    /// <returns></returns>
+    decimal? StockBuffer { get; }
+
+    /// <summary>
     /// Gets the availability of the product and variants.
     /// </summary>
     /// <value>
