@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.5](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.4...Ekom-v0.2.5) (2026-01-07)
+
+
+### Bug Fixes
+
+* remove storeAlias property from search request ([8702edb](https://github.com/Vettvangur/Ekom/commit/8702edbcc13ad8403d9d62cfd22fabd91c05d9bc))
+* remove storeAlias property from search request ([3a4c323](https://github.com/Vettvangur/Ekom/commit/3a4c323c771dd4b9350610c2c67858c14babf478))
+
 ## [0.2.4](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.3...Ekom-v0.2.4) (2026-01-06)
 
 
