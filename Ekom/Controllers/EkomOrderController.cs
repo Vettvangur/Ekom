@@ -475,10 +475,17 @@ public partial class EkomOrderController : ControllerBase
             orderInfo = await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias).ConfigureAwait(false);
         }
 
-        Response.Cookies.Append("EkomCurrency-" + store.Alias, currency, new Microsoft.AspNetCore.Http.CookieOptions
-        {
-            Expires = DateTime.UtcNow.AddDays(360),
-        });
+        Response.Cookies.Append(
+            "EkomCurrency-" + store.Alias,
+            currency,
+            new CookieOptions
+            {
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddDays(360),
+                SameSite = SameSiteMode.Lax,
+                Secure = HttpContext.Request.IsHttps,
+                HttpOnly = false
+            });
 
         return Ok(orderInfo);
 
