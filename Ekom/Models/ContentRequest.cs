@@ -14,14 +14,22 @@ public class ContentRequest
 
     public void SetStoreCookie(string storeAlias, HttpContext? httpContext)
     {
-        if (httpContext != null)
-        {
-            IResponseCookies cookies = httpContext.Response.Cookies;
-            cookies?.Append("StoreInfo", "StoreAlias=" + storeAlias);
+        if (httpContext is null)
+            return;
 
-            IPAddress = httpContext.Request.Host.ToString();
-        }
+        httpContext.Response.Cookies.Append(
+            "StoreInfo",
+            "StoreAlias=" + storeAlias,
+            new CookieOptions
+            {
+                Path = "/",
+                SameSite = SameSiteMode.Lax,
+                Secure = httpContext.Request.IsHttps,
+                HttpOnly = false,
+                Expires = DateTimeOffset.UtcNow.AddDays(365)
+            });
 
+        IPAddress = httpContext.Request.Host.ToString();
     }
 
 }

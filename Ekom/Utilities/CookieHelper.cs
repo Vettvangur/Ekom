@@ -62,8 +62,17 @@ static class CookieHelper
         return prices.FirstOrDefault();
     }
 
-    public static void SetUmbracoDomain(IResponseCookies cookieCollection, Uri uri)
-        => cookieCollection.Append(Configuration.Cookie_UmbracoDomain, uri.ToString());
+    public static void SetUmbracoDomain(IResponseCookies cookieCollection, Uri uri, bool isHttps)
+        => cookieCollection.Append(
+            Configuration.Cookie_UmbracoDomain,
+            uri.ToString(),
+            new CookieOptions
+            {
+                Path = "/",
+                SameSite = SameSiteMode.Lax,
+                Secure = isHttps,
+                HttpOnly = false
+            });
 
     public static Uri? GetUmbracoDomain(IRequestCookieCollection? cookieCollection)
     {

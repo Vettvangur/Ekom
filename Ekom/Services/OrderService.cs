@@ -1939,12 +1939,19 @@ partial class OrderService
 
     private Guid CreateOrderIdCookie(string key)
     {
-        Guid guid = Guid.NewGuid();
+        var guid = Guid.NewGuid();
 
-        _httpCtx.Response.Cookies.Append(key, guid.ToString(), new CookieOptions
-        {
-            Expires = DateTime.UtcNow.AddDays(_config.BasketCookieLifetime)
-        });
+        _httpCtx.Response.Cookies.Append(
+            key,
+            guid.ToString(),
+            new CookieOptions
+            {
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddDays(_config.BasketCookieLifetime),
+                SameSite = SameSiteMode.Lax,
+                Secure = _httpCtx.Request.IsHttps,
+                HttpOnly = false
+            });
 
         return guid;
     }

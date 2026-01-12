@@ -74,7 +74,7 @@ class EkomMiddleware
             {
                 CookieHelper.SetUmbracoDomain(
                     context.Response.Cookies,
-                    umbCtx.UmbracoContext.PublishedRequest.Domain.Uri);
+                    umbCtx.UmbracoContext.PublishedRequest.Domain.Uri, context.Request.IsHttps);
             }
         }
         catch (Exception ex)
