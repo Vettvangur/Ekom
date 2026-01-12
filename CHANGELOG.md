@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.6...Ekom-v0.2.7) (2026-01-12)
+
+
+### Bug Fixes
+
+* cookies security ([b5c445c](https://github.com/Vettvangur/Ekom/commit/b5c445cbce1ad6996dd656660eb887a9b1bcc965))
+* cookies security ([d8ed7dc](https://github.com/Vettvangur/Ekom/commit/d8ed7dcd832d774791008d5b521fcdfd6d8b96d3))
+
 ## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.5...Ekom-v0.2.6) (2026-01-07)
 
 
