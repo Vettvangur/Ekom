@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.7...Ekom-v0.2.8) (2026-01-14)
+
+
+### Bug Fixes
+
+* update payment providers to allow to pass inn CspNonce ([fcace09](https://github.com/Vettvangur/Ekom/commit/fcace09360792afd70faf7b0cf9563b852ad265f))
+* update payment providers to allow to pass inn CspNonce ([824dccb](https://github.com/Vettvangur/Ekom/commit/824dccba11d5c120dd2dc773740e360369131fe1))
+
 ## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.6...Ekom-v0.2.7) (2026-01-12)
 
 
