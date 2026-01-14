@@ -5,7 +5,6 @@ namespace Ekom.Models;
 public class PaymentRequest
 {
     public Guid? PaymentProvider { get; set; }
-
     public Guid? ShippingProvider { get; set; }
     public string CardNumber { get; set; } = "";
     public string CVV { get; set; } = "";
@@ -15,4 +14,5 @@ public class PaymentRequest
     public string ReturnUrl { get; set; } = "";
     public string Culture { get; set; } = "";
     public Dictionary<string, string> AdditionalData { get; set; } = [];
+    public string? CspNonce { get; set; } = null;
 }

@@ -59,7 +59,8 @@ public class EkomCheckoutApiController : ControllerBase
                     Month = form.TryGetValue("Month", out var monthStr) && int.TryParse(monthStr, out var month) ? month : null,
                     StoreAlias = form.TryGetValue("StoreAlias", out var storeAlias) ? storeAlias.ToString() : "",
                     ReturnUrl = form.TryGetValue("ReturnUrl", out var returnUrl) ? returnUrl.ToString() : "",
-                    Culture = form.TryGetValue("Culture", out var cultureVal) ? cultureVal.ToString() : culture
+                    Culture = form.TryGetValue("Culture", out var cultureVal) ? cultureVal.ToString() : culture,
+                    CspNonce = form.TryGetValue("Nonce", out var nonceValue) ? nonceValue.ToString() : null
                 };
 
                 var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

@@ -4,11 +4,11 @@
     "net8.0": {
       "Ekom.Payments.U10": {
         "type": "Direct",
-        "requested": "[0.2.48, )",
-        "resolved": "0.2.48",
-        "contentHash": "/KEONuSaK7Z+UChqUxQO16Gh1oUTa6ZJ6wsTtMV6juiJQK6pB/RwSjrISYt3pIzh/SCVcK47gO0SWduil4LapQ==",
+        "requested": "[0.2.50, )",
+        "resolved": "0.2.50",
+        "contentHash": "wPwXT2oSX8e0o8KeFCUf4ukYNkqGrd9KVZbr5fSsHKSEUsb22FXSlZwVDSjO2AOu04TbSI1XB2gmAdNje++Tpg==",
         "dependencies": {
-          "Ekom.Payments.AspNetCore": "0.2.48",
+          "Ekom.Payments.AspNetCore": "0.2.50",
           "Umbraco.Cms.Core": "13.11.0",
           "Umbraco.Cms.Web.BackOffice": "13.11.0",
           "Umbraco.Cms.Web.Website": "13.11.0"
@@ -159,16 +159,16 @@
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.48",
-        "contentHash": "d4zqnaTCI175XSIFPIpAQVAqNN//jac0NZJa9VjEMEJsC/W8u7BAIf3ZAgyVs5tDfjKQ7Lh16+9ggUGaYLkchw==",
+        "resolved": "0.2.50",
+        "contentHash": "RrZq1/C2fK7pxhpO+uY/hn7M4gumTyVP1czbAsakV61gk15kt0mLxXbWy6kaEW8jVSBRf1i9zoFI6G/5nOOpTg==",
         "dependencies": {
-          "Ekom.Payments.Core": "0.2.48"
+          "Ekom.Payments.Core": "0.2.50"
         }
       },
       "Ekom.Payments.Core": {
         "type": "Transitive",
-        "resolved": "0.2.48",
-        "contentHash": "flCEA0ynEWzMjMd4yjiS5cDxxlA4wgtOCv2Z/4yzqhgw/mQaBphvx+RSiowpFxNYt+r+xbBNwXs+4pCg9yJYEA==",
+        "resolved": "0.2.50",
+        "contentHash": "oJnVruy6HAugv6O4g2ZgtDN8HhKAkq2nyjJM3ABEQKrMTvIuqoqksK8XqsCXU5V8MU0M1MBScDG9hXlkxIaQHA==",
         "dependencies": {
           "Azure.Core": "1.50.0",
           "Azure.Identity": "1.17.0",
@@ -2828,7 +2828,7 @@
       "ekom.aspnetcore": {
         "type": "Project",
         "dependencies": {
-          "Ekom.Core": "[0.0.1, )"
+          "Ekom.Core": "[0.2.7, )"
         }
       },
       "ekom.common": {
@@ -2843,8 +2843,8 @@
         "dependencies": {
           "Azure.Identity": "[1.17.1, )",
           "CommonServiceLocator": "[2.0.7, )",
-          "Ekom.Common": "[0.0.1, )",
-          "Ekom.Payments.Core": "[0.2.48, )",
+          "Ekom.Common": "[0.2.7, )",
+          "Ekom.Payments.Core": "[0.2.50, )",
           "Hangfire": "[1.8.18, )",
           "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
           "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",

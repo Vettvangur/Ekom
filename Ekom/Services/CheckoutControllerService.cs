@@ -136,6 +136,7 @@ public class CheckoutControllerService
         }
 
         res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+
         if (res != null)
         {
             return responseHandler(res);
@@ -611,7 +612,8 @@ public class CheckoutControllerService
                         ErrorUrl = new Uri(errorUrl),
                         PaymentProviderKey = ekomPP.Key,
                         PaymentProviderName = ekomPP.Name,
-                        OrderUniqueId = order.UniqueId
+                        OrderUniqueId = order.UniqueId,
+                        CspNonce = paymentRequest.CspNonce
                     },
                 };
 
@@ -703,6 +705,7 @@ public class CheckoutControllerService
                 Member = currentMember?.Key,
                 PaymentProviderKey = ekomPP.Key,
                 OrderUniqueId = order.UniqueId,
+                CspNonce = paymentRequest.CspNonce
             };
 
             paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());
