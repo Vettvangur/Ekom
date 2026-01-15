@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.8...Ekom-v0.2.9) (2026-01-15)
+
+
+### Bug Fixes
+
+* update ekom payments ([be618ed](https://github.com/Vettvangur/Ekom/commit/be618ed12ef785d952642a6dc37b711f2dc5563c))
+* update ekom payments ([2845162](https://github.com/Vettvangur/Ekom/commit/28451626c3ed168e0f5bd964c0ed31a4a193f63d))
+
 ## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.7...Ekom-v0.2.8) (2026-01-14)
 
 
