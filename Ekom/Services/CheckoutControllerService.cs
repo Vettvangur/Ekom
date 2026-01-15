@@ -612,8 +612,7 @@ public class CheckoutControllerService
                         ErrorUrl = new Uri(errorUrl),
                         PaymentProviderKey = ekomPP.Key,
                         PaymentProviderName = ekomPP.Name,
-                        OrderUniqueId = order.UniqueId,
-                        CspNonce = paymentRequest.CspNonce
+                        OrderUniqueId = order.UniqueId
                     },
                 };
 
@@ -704,8 +703,7 @@ public class CheckoutControllerService
                 Store = storeAlias,
                 Member = currentMember?.Key,
                 PaymentProviderKey = ekomPP.Key,
-                OrderUniqueId = order.UniqueId,
-                CspNonce = paymentRequest.CspNonce
+                OrderUniqueId = order.UniqueId
             };
 
             paymentSettings.OrderCustomData.Add("ekomOrderUniqueId", order.UniqueId.ToString());

@@ -63,7 +63,7 @@
 
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
-        <PackageReference Include="Ekom.Payments.Valitor" Version="0.2.50" />
+        <PackageReference Include="Ekom.Payments.Valitor" Version="0.2.51" />
         <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
         <PackageReference Include="Umbraco.Cms" Version="13.12.1" />
     </ItemGroup>
