@@ -206,14 +206,23 @@ public class Configuration
     }
 
     /// <summary>
-    /// Ekom:SectionAccessRules Access Rules
+    /// Ekom:Manager:SectionAccessGroup Access Groups
     /// Section Group alias acess rules, comma sepereated
     /// </summary>
-    public virtual string[] SectionAccessRules
+    public virtual string[] ManangerAccessGroup
     {
         get
         {
-            string? value = _configuration["Ekom:SectionAccessRules"];
+            string? value = _configuration["Ekom:Manager:SectionAccessGroup"];
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                return value.Split(',');
+            }
+
+            //Backward compatibility
+
+            value = _configuration["Ekom:SectionAccessRules"];
 
             if (!string.IsNullOrEmpty(value))
             {
