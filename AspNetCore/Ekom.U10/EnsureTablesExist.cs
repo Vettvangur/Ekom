@@ -1,5 +1,6 @@
 using Ekom.Services;
 using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Migrations;
 using Umbraco.Cms.Core.Services;
@@ -51,21 +52,30 @@ class EnsureTablesExist : IComponent
     private readonly IMigrationPlanExecutor _migrationPlanExecutor;
     private readonly IKeyValueService keyValueService;
     private readonly ILogger logger;
+    private readonly IRuntimeState _runtimeState;
 
     public EnsureTablesExist(
         IScopeProvider scopeProvider,
         IKeyValueService keyValueService,
         ILogger<EnsureTablesExist> logger,
-        IMigrationPlanExecutor migrationPlanExecutor)
+        IMigrationPlanExecutor migrationPlanExecutor,
+        IRuntimeState runtimeState)
     {
         this.scopeProvider = scopeProvider;
         this.keyValueService = keyValueService;
         this.logger = logger;
         _migrationPlanExecutor = migrationPlanExecutor;
+        _runtimeState = runtimeState;
     }
 
     public void Initialize()
     {
+        if (_runtimeState.Level < RuntimeLevel.Run)
+        {
+            // If Installing or Upgrading, we don't want to run this
+            return;
+        }
+
         logger.LogDebug("Ensuring Ekom db tables exist");
 
         var currentState = keyValueService.GetValue("Umbraco.Core.Upgrader.State+Ekom");
