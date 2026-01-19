@@ -16,8 +16,14 @@ internal static class ProductMapper
             StoreAlias = product.Store.Alias,
             Currency = product.OriginalPrice.Currency.ISOCurrencySymbol,
             Url = product.Url,
+            Description = product.Summary,
             ImageFullUrl = product.Images.FirstOrDefault()?.Url,
-            Published = isPublished
+            Published = isPublished,
         };
-    }   
+    }
+
+    public static IEnumerable<KlaviyoProductItem> ToKlaviyoCatalogItems(this IEnumerable<IProduct> products, bool isPublished)
+    {
+        return products.Select(x => x.ToKlaviyoCatalogItem(isPublished));
+    }
 }

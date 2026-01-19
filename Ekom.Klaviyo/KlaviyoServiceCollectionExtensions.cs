@@ -11,7 +11,7 @@ public static class KlaviyoServiceCollectionExtensions
 		Action<KlaviyoOptions>? configure = null)
 	{
 		var ob = services.AddOptions<KlaviyoOptions>()
-			.BindConfiguration("Klaviyo");
+			.BindConfiguration("Ekom:Klaviyo");
 
 		if (configure is not null) ob.Configure(configure);
 
