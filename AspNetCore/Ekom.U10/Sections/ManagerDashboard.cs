@@ -11,7 +11,7 @@ public class ManagerDashboard : IDashboard
     {
         get
         {
-            var accessRulesAliases = Configuration.Instance.SectionAccessRules;
+            var accessRulesAliases = Configuration.Instance.ManangerAccessGroup;
 
             var rules = new[]
             {
@@ -20,7 +20,7 @@ public class ManagerDashboard : IDashboard
 
             foreach (var accessRule in accessRulesAliases)
             {
-                rules = rules.Concat(new[] { new AccessRule { Type = AccessRuleType.Grant, Value = accessRule } }).ToArray();
+                rules = rules.Concat([new AccessRule { Type = AccessRuleType.Grant, Value = accessRule }]).ToArray();
             }
 
             return rules;

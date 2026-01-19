@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{02EA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Algolia", "Ekom.Algolia\Ekom.Algolia.csproj", "{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ekom.Klaviyo", "Ekom.Klaviyo\Ekom.Klaviyo.csproj", "{6A48AF16-80A0-49F3-A75E-11592435419B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A48AF16-80A0-49F3-A75E-11592435419B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A48AF16-80A0-49F3-A75E-11592435419B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A48AF16-80A0-49F3-A75E-11592435419B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A48AF16-80A0-49F3-A75E-11592435419B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,6 +92,7 @@ Global
 		{1B7AE951-B3A3-42AB-814F-EBBBDF6C5981} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
 		{349A9B46-97D4-48BA-BADC-3528F9425A02} = {B5C9BAF3-857C-4182-B0E3-E11236D8C6F4}
 		{19E60BBF-2FDE-4212-A8A2-8866EECD7EF2} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{6A48AF16-80A0-49F3-A75E-11592435419B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {411ECB7B-B382-43CA-8534-05EA8ED2F48D}

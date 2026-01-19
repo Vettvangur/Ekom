@@ -13,10 +13,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Routing;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.BackOffice.Trees;
 
 namespace Ekom.Umb;
@@ -130,6 +132,7 @@ class EkomStartup : IComponent
     readonly ILogger _logger;
     readonly IServiceProvider _factory;
     readonly IMemoryCache _cache;
+    readonly IRuntimeState _runtimeState;
 
     /// <summary>
     /// 
@@ -138,12 +141,14 @@ class EkomStartup : IComponent
         Configuration config,
         ILogger<EkomStartup> logger,
         IServiceProvider factory,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IRuntimeState runtimeState)
     {
         _config = config;
         _logger = logger;
         _factory = factory;
         _cache = cache;
+        _runtimeState = runtimeState;
     }
 
     /// <summary>
@@ -153,6 +158,12 @@ class EkomStartup : IComponent
     {
         try
         {
+            if (_runtimeState.Level < RuntimeLevel.Run)
+            {
+                // If Installing or Upgrading, we don't want to run this
+                return;
+            }
+
             _logger.LogInformation("Initializing...");
 
             Configuration.Resolver = _factory;

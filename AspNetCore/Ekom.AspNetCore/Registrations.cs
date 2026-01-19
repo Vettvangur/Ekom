@@ -189,6 +189,8 @@ static class Registrations
         services.AddHttpContextAccessor();
         services.AddMemoryCache();
 
+        services.Configure<EkomOptions>(config.GetSection("Ekom"));
+
         services.Configure<MvcOptions>(mvcOptions =>
         {
             mvcOptions.Filters.Add<HttpResponseExceptionFilter>();
