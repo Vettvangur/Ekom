@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.9...Ekom-v0.2.10) (2026-01-19)
+
+
+### Bug Fixes
+
+* do not initialize if umbraco is installing ([8b2461b](https://github.com/Vettvangur/Ekom/commit/8b2461b7ec47579995b1e8ad6e9e0ea9e1e9f624))
+* Klaviyo first version ([b78cbf5](https://github.com/Vettvangur/Ekom/commit/b78cbf500151af3c390f7816ffda5d505c2e122a))
+
 ## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.8...Ekom-v0.2.9) (2026-01-15)
 
 
