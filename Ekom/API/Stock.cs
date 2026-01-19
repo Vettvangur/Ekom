@@ -1,3 +1,4 @@
+using AsyncKeyedLock;
 using Ekom.Cache;
 using Ekom.Exceptions;
 using Ekom.Models;
@@ -6,7 +7,6 @@ using Ekom.Services;
 using Hangfire.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 
 namespace Ekom.API;
 
@@ -45,6 +45,7 @@ public partial class Stock
     readonly IStoreService _storeSvc;
     readonly IBaseCache<StockData> _stockCache;
     readonly IPerStoreCache<StockData> _stockPerStoreCache;
+    private static readonly AsyncKeyedLocker<string> _stockLocks = new();
 
     /// <summary>
     /// ctor
@@ -242,16 +243,16 @@ public partial class Stock
     /// <exception cref="NotEnoughStockException"></exception>
     public async Task IncrementStockAsync(Guid key, string storeAlias, decimal value)
     {
-        SemaphoreSlim semaphore = null;
         StockData stockData;
 
-        try
+        var lockKey = (_config.PerStoreStock)
+            ? CreateStockUniqueId(key, storeAlias)
+            : CreateStockUniqueId(key);
+
+        using (await _stockLocks.LockAsync(lockKey).ConfigureAwait(false))
         {
             if (_config.PerStoreStock)
             {
-                semaphore = GetStockLock(CreateStockUniqueId(key, storeAlias));
-                await semaphore.WaitAsync().ConfigureAwait(false);
-
                 await EnsurePerStoreEntryExistsAsync(key, storeAlias)
                     .ConfigureAwait(false);
 
@@ -259,9 +260,6 @@ public partial class Stock
             }
             else
             {
-                semaphore = GetStockLock(CreateStockUniqueId(key));
-                await semaphore.WaitAsync().ConfigureAwait(false);
-
                 await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
 
                 stockData = _stockCache.Cache[key];
@@ -274,10 +272,6 @@ public partial class Stock
 
             await SetStockWithLockAsync(stockData, stockData.Stock + value, outerLock: true)
                 .ConfigureAwait(false);
-        }
-        finally
-        {
-            semaphore?.Release();
         }
     }
 
@@ -483,12 +477,7 @@ public partial class Stock
         //    throw new ArgumentException($"Cannot set stock of {stockData.UniqueId} to negative number.", nameof(value));
         //}
 
-        SemaphoreSlim semaphore = GetStockLock(stockData.UniqueId);
-        if (!outerLock)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _stockLocks.ConditionalLockAsync(stockData.UniqueId, !outerLock).ConfigureAwait(false))
         {
             decimal oldValue = stockData.Stock;
             stockData.Stock = value;
@@ -496,13 +485,6 @@ public partial class Stock
             await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).ConfigureAwait(false);
 
             return true;
-        }
-        finally
-        {
-            if (!outerLock)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -529,9 +511,4 @@ public partial class Stock
 
     private string CreateStockUniqueId(Guid key) => key.ToString();
     private string CreateStockUniqueId(Guid key, string storeAlias) => $"{storeAlias}_{key}";
-
-    private SemaphoreSlim GetStockLock(string stockData)
-        => _stockLocks.GetOrAdd(stockData, new SemaphoreSlim(1, 1));
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _stockLocks
-        = new ConcurrentDictionary<string, SemaphoreSlim>();
 }

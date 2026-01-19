@@ -1,3 +1,4 @@
+using AsyncKeyedLock;
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Events;
@@ -70,6 +71,7 @@ partial class OrderService
     /// Ensure all future usages of date for this request point to the same time
     /// </summary>
     readonly DateTime _date;
+    private static readonly AsyncKeyedLocker<Guid> _orderLock = new();
 
     /// <summary>
     /// W/o HttpCtx, for usage in Hangfire f.x. ?
@@ -472,12 +474,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             OrderLine? orderline = orderInfo.orderLines.FirstOrDefault(x => x.Key == orderLineId);
 
@@ -528,13 +525,6 @@ partial class OrderService
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo)
                 .ConfigureAwait(false);
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -743,12 +733,7 @@ partial class OrderService
 
         OrderLine? existingOrderLine = null;
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             if (orderInfo.OrderLines != null)
             {
@@ -768,13 +753,6 @@ partial class OrderService
                         = orderInfo.OrderLines.FirstOrDefault(x => x.Product.Key == productKey)
                         as OrderLine;
                 }
-            }
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
             }
         }
 
@@ -813,12 +791,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             IOrderLine? orderLine = orderInfo.OrderLines.FirstOrDefault(x => x.Key == lineId);
 
@@ -842,13 +815,6 @@ partial class OrderService
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -878,13 +844,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
 
@@ -909,14 +869,6 @@ partial class OrderService
             }
 
             return orderInfo;
-
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -964,13 +916,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             var copyOfShippingProvider = orderInfo.ShippingProvider;
             var copyOfPaymentProvider = orderInfo.PaymentProvider;
@@ -999,14 +945,6 @@ partial class OrderService
             }
 
             return orderInfo;
-
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -1065,13 +1003,7 @@ partial class OrderService
             throw new ArgumentException("Quantity can not be set to 0 or less", nameof(quantity));
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             Guid lineId = Guid.NewGuid();
 
@@ -1207,13 +1139,6 @@ partial class OrderService
             return await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
         }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
-        }
     }
 
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
@@ -1346,18 +1271,12 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync().ConfigureAwait(false);
-        try
+        using (await _orderLock.LockAsync(orderInfo.UniqueId).ConfigureAwait(false))
         {
             orderInfo._hangfireJobs.AddRange(hangfireJobs);
 
             await UpdateOrderAndOrderInfoAsync(orderInfo)
                 .ConfigureAwait(false);
-        }
-        finally
-        {
-            semaphore.Release();
         }
     }
 
@@ -1370,18 +1289,12 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync().ConfigureAwait(false);
-        try
+        using (await _orderLock.LockAsync(orderInfo.UniqueId).ConfigureAwait(false))
         {
             orderInfo._hangfireJobs.Clear();
 
             await UpdateOrderAndOrderInfoAsync(orderInfo)
                 .ConfigureAwait(false);
-        }
-        finally
-        {
-            semaphore.Release();
         }
     }
 
@@ -1566,12 +1479,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             if (shippingProviderId == Guid.Empty) return orderInfo;
 
@@ -1587,14 +1495,6 @@ partial class OrderService
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
-
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -1626,12 +1526,7 @@ partial class OrderService
             throw new OrderInfoNotFoundException();
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             if (paymentProviderId == Guid.Empty) return orderInfo;
 
@@ -1647,14 +1542,6 @@ partial class OrderService
 
             return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                 .ConfigureAwait(false);
-
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
     public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(string userName, string? storeAlias = null)
@@ -2001,12 +1888,4 @@ partial class OrderService
 
         return key;
     }
-
-    /// See comments for service and under <see cref="OrderSettings"/>
-    private SemaphoreSlim GetOrderLock(IOrderInfo orderInfo)
-        => _orderLocks.GetOrAdd(orderInfo.UniqueId, new SemaphoreSlim(1, 1));
-
-    /// See comments for service and under <see cref="OrderSettings"/>
-    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> _orderLocks
-        = new();
 }

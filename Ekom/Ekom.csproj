@@ -78,6 +78,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="AsyncKeyedLock" Version="8.0.0" />
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
         <PackageReference Include="CommonServiceLocator" Version="2.0.7" />
         <PackageReference Include="Ekom.Payments.Core" Version="0.2.51" />

@@ -37,12 +37,7 @@ partial class OrderService
             throw new DiscountDuplicateException($"Can't add the same discount to order twice.");
         }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             if (ApplyDiscountToOrder(discount, orderInfo, settings))
             {
@@ -56,13 +51,6 @@ partial class OrderService
             }
 
             return false;
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -119,25 +107,13 @@ partial class OrderService
 
         var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             RemoveDiscountFromOrder(orderInfo);
             if (settings.UpdateOrder)
             {
                 await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                     .ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
             }
         }
     }
@@ -226,12 +202,7 @@ partial class OrderService
 
         OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == product.Key)
@@ -248,13 +219,6 @@ partial class OrderService
                 orderInfo,
                 settings
             ).ConfigureAwait(false);
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -277,12 +241,7 @@ partial class OrderService
 
         OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Key == lineKey)
@@ -299,13 +258,6 @@ partial class OrderService
                 orderInfo,
                 settings
             ).ConfigureAwait(false);
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
         }
     }
 
@@ -417,12 +369,7 @@ partial class OrderService
 
         OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
+        using (await _orderLock.ConditionalLockAsync(orderInfo.UniqueId, !settings.IsEventHandler).ConfigureAwait(false))
         {
             OrderLine? orderLine
                 = orderInfo.OrderLines.FirstOrDefault(line => line.Product.Key == productKey)
@@ -439,13 +386,6 @@ partial class OrderService
             {
                 await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
                     .ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
             }
         }
     }
