@@ -73,6 +73,7 @@
         <PackageReference Include="Microsoft.Identity.Web" Version="3.8.4" />
         <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
         <ProjectReference Include="..\..\..\Ekom.Algolia\Ekom.Algolia.csproj" />
+        <ProjectReference Include="..\..\..\Ekom.Klaviyo\Ekom.Klaviyo.csproj" />
         <Reference Include="Ekom.Payments.Borgun">
           <HintPath>..\..\..\..\..\Hreyfing\Dll\Ekom.Payments.Borgun.dll</HintPath>
         </Reference>

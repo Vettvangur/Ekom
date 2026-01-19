@@ -1,6 +1,7 @@
 using Ekom.Exceptions;
 using Ekom.Umb.DataEditors;
 using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -23,6 +24,7 @@ class EnsureNodesExist : IComponent
     private readonly IUmbracoContextFactory _contextFactory;
     private readonly IShortStringHelper _shortStringHelper;
     private readonly IConfigurationEditorJsonSerializer _configurationEditorJsonSerializer;
+    private readonly IRuntimeState _runtimeState;
 
     public EnsureNodesExist(
         ILogger<EnsureNodesExist> logger,
@@ -34,7 +36,8 @@ class EnsureNodesExist : IComponent
         Configuration configuration,
         IUmbracoContextFactory contextFactory,
         IShortStringHelper shortStringHelper,
-        IConfigurationEditorJsonSerializer configurationEditorJsonSerializer)
+        IConfigurationEditorJsonSerializer configurationEditorJsonSerializer,
+        IRuntimeState runtimeState)
     {
         _logger = logger;
         _fileService = fileService;
@@ -46,10 +49,17 @@ class EnsureNodesExist : IComponent
         _contextFactory = contextFactory;
         _shortStringHelper = shortStringHelper;
         _configurationEditorJsonSerializer = configurationEditorJsonSerializer;
+        _runtimeState = runtimeState;
     }
 
     public void Initialize()
     {
+        if (_runtimeState.Level < RuntimeLevel.Run)
+        {
+            // If Installing or Upgrading, we don't want to run this
+            return;
+        }
+
         _logger.LogDebug("Ensuring Umbraco nodes exist");
 
         try
