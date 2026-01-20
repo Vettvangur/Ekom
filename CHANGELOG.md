@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.12](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.11...Ekom-v0.2.12) (2026-01-20)
+
+
+### Bug Fixes
+
+* Add Changelog, update project settings ([43cf9a3](https://github.com/Vettvangur/Ekom/commit/43cf9a307b7fe651bdc764dcf6f6afabcf601a37))
+* Add Changelog, update project settings ([905c28e](https://github.com/Vettvangur/Ekom/commit/905c28e1c52bececf943da2c6f31702dc43fbb3f))
+
 ## [0.2.11](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.10...Ekom-v0.2.11) (2026-01-20)
 
 
