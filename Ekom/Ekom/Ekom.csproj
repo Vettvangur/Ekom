@@ -91,7 +91,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="murmurhash" Version="1.0.3" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 
     <ItemGroup>
