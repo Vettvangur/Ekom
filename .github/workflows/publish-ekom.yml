@@ -47,8 +47,8 @@ jobs:
 
           dotnet pack "Ekom/Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom/Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/AspNetCore/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
-          dotnet pack "Ekom/AspNetCore/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
           dotnet pack "Ekom/Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
 
           Get-ChildItem -Path artifacts -Filter *.nupkg -File | Format-Table Name,Length
