@@ -8,6 +8,7 @@
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
       "changelog-path": "CHANGELOG.md",
+      "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41",
       "extra-files": [
         {
           "type": "xml",
@@ -24,13 +25,7 @@
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
       "changelog-path": "Ekom.Klaviyo/CHANGELOG.md",
-      "extra-files": [
-        {
-          "type": "xml",
-          "path": "Ekom.Klaviyo/Ekom.Klaviyo.csproj",
-          "xpath": "/Project/PropertyGroup/Version"
-        }
-      ]
+      "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
     }
   }
 }
