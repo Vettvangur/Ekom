@@ -1,0 +1,98 @@
+name: release-ekom-klaviyo
+
+on:
+  push:
+    branches: ["Ekom"]
+    paths:
+    - "Ekom.Klaviyo/**"
+    - ".release-please-manifest.json"
+    - "release-please-config.json"
+  workflow_dispatch:
+    inputs:
+      publish:
+        type: boolean
+        description: "Publish Ekom.Klaviyo to NuGet"
+        required: false
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-ekom-klaviyo:
+    runs-on: windows-latest
+
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # Only proceed if Klaviyo released, or manual dispatch
+      - uses: actions/checkout@v4
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || github.event_name == 'workflow_dispatch' }}
+
+      - uses: actions/setup-dotnet@v4
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || github.event_name == 'workflow_dispatch' }}
+        with:
+          dotnet-version: "8.0.x"
+
+      # Build just Klaviyo (independent from the root solution)
+      - name: Restore Ekom.Klaviyo
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || github.event_name == 'workflow_dispatch' }}
+        run: dotnet restore "Ekom.Klaviyo/Ekom.Klaviyo.csproj"
+
+      - name: Build Ekom.Klaviyo (Release)
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || github.event_name == 'workflow_dispatch' }}
+        run: dotnet build "Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore
+
+      - name: Pack Ekom.Klaviyo
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if (Test-Path "artifacts") { Remove-Item "artifacts" -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          $manifest = Get-Content ".release-please-manifest.json" -Raw | ConvertFrom-Json
+          $klaviyoVersion = [string]$manifest."Ekom.Klaviyo"
+          if ([string]::IsNullOrWhiteSpace($klaviyoVersion)) { throw "Missing 'Ekom.Klaviyo' version in manifest." }
+
+          Write-Host "Packing Ekom.Klaviyo with PackageVersion=$klaviyoVersion"
+          dotnet pack "Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$klaviyoVersion
+
+          Get-ChildItem -Path artifacts -Filter "Ekom.Klaviyo*.nupkg" -File | Format-Table Name,Length
+
+      - name: NuGet Login (OIDC)
+        id: login
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+
+      - name: Push Ekom.Klaviyo to NuGet.org
+        if: ${{ steps.rp.outputs['Ekom.Klaviyo--release_created'] == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $pkgs = Get-ChildItem -Path "artifacts" -Filter "Ekom.Klaviyo*.nupkg" -File -ErrorAction SilentlyContinue
+          if (-not $pkgs) {
+            Write-Host "No Klaviyo .nupkg found. Listing artifacts:"
+            Get-ChildItem -Recurse -Force "artifacts" | Format-Table FullName,Length
+            throw "No Ekom.Klaviyo .nupkg files found under artifacts/."
+          }
+
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.FullName)"
+            dotnet nuget push "$($p.FullName)" `
+              --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
+              --source "https://api.nuget.org/v3/index.json" `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+          }

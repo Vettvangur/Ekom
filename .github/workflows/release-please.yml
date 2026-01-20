@@ -3,6 +3,17 @@ name: release-please
 on:
   push:
     branches: ["Ekom"]
+    paths:
+      - "Ekom/**"
+      - "Ekom.Common/**"
+      - "AspNetCore/Ekom.AspNetCore/**"
+      - "AspNetCore/Ekom.U10/**"
+      - "Ekom.Web/**"
+      - ".release-please-manifest.json"
+      - "release-please-config.json"
+      - "Directory.Build.props"
+      - "NuGet.config"
+      - ".editorconfig"
   workflow_dispatch:
     inputs:
       publish:
@@ -43,13 +54,7 @@ jobs:
         if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         run: dotnet build "./Ekom Build.sln" -c Release --no-restore
 
-      # Optional safety: if Ekom.Klaviyo is NOT included in Ekom Build.sln,
-      # this ensures it is built so "dotnet pack --no-build" won't fail.
-      - name: Build Ekom.Klaviyo (Release)
-        if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
-        run: dotnet build "Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore
-
-      - name: Pack (component-aware root vs Ekom.Klaviyo)
+      - name: Pack (use tag or manifest version)
         if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
         run: |
@@ -57,83 +62,69 @@ jobs:
 
           function Get-SemVerFromString([string] $s) {
             if ([string]::IsNullOrWhiteSpace($s)) { return $null }
-            if ($s -match '(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)') { return $Matches['ver'] }
+
+            # Extract first SemVer-like token: 0.2.1 or 0.2.1-beta.1 (NuGet allows prerelease)
+            if ($s -match '(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)') {
+              return $Matches['ver']
+            }
+
             return $null
           }
 
-          function Assert-NuGetSemVer([string] $version, [string] $label) {
-            if ([string]::IsNullOrWhiteSpace($version)) { throw "$label version is empty." }
-            if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?$') {
-              throw "$label version '$version' is not a valid NuGet SemVer."
-            }
-          }
+          # Prefer release-please tag version when a release was created
+          $tag = "${{ steps.rp.outputs.tag_name }}"  # e.g. v0.2.1 or Ekom-v0.2.1
 
-          # Clean artifacts to avoid pushing stale packages
-          if (Test-Path "artifacts") {
-            Remove-Item "artifacts" -Recurse -Force
-          }
-          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          $version = Get-SemVerFromString $tag
 
-          $manifestPath = ".release-please-manifest.json"
-          if (-not (Test-Path $manifestPath)) { throw "Manifest file not found: $manifestPath" }
-          $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-
-          $tag = "${{ steps.rp.outputs.tag_name }}" 
-          $tagVersion = Get-SemVerFromString $tag
-
-          $rootManifestVersion     = Get-SemVerFromString ([string]$manifest.".")
-          $klaviyoManifestVersion  = Get-SemVerFromString ([string]$manifest."Ekom.Klaviyo")
-
-          if (-not $rootManifestVersion) { throw "Could not read '.' version from manifest." }
-          if (-not $klaviyoManifestVersion) { throw "Could not read 'Ekom.Klaviyo' version from manifest." }
-
-          $rootVersion = $rootManifestVersion
-          $klaviyoVersion = $klaviyoManifestVersion
-
-          # Decide which component to pack when a release tag exists.
-          # On workflow_dispatch (no tag), we pack both.
-          $packRoot = $true
-          $packKlaviyo = $true
-
-          if ($tagVersion) {
-            if ($tag -match '(^|-)Ekom\.Klaviyo-?v?\d+\.\d+\.\d+') {
-              $packRoot = $false
-              $packKlaviyo = $true
-              $klaviyoVersion = $tagVersion
-              Write-Host "Tag indicates Klaviyo release. Using Klaviyo version from tag: $klaviyoVersion (tag '$tag')"
-            }
-            else {
-              $packRoot = $true
-              $packKlaviyo = $false
-              $rootVersion = $tagVersion
-              Write-Host "Tag indicates root release. Using root version from tag: $rootVersion (tag '$tag')"
-            }
+          if (-not [string]::IsNullOrWhiteSpace($version)) {
+            Write-Host "Using version from release-please tag: $version (tag was '$tag')"
           }
           else {
-            Write-Host "No tag version available (likely workflow_dispatch). Using manifest versions: root=$rootVersion, klaviyo=$klaviyoVersion"
+            # Manual rerun path: take the current version from manifest
+            $manifestPath = ".release-please-manifest.json"
+            if (-not (Test-Path $manifestPath)) {
+              throw "Manifest file not found: $manifestPath"
+            }
+
+            $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+
+            # release-please manifest keys are paths. Commonly "." for root.
+            if ($manifest.PSObject.Properties.Name -contains ".") {
+              $manifestVersion = [string]$manifest."."
+              Write-Host "Using version from manifest '.' : $manifestVersion"
+            }
+            else {
+              # Fallback: if your manifest uses a different key, pick the first one.
+              $firstKey = $manifest.PSObject.Properties.Name | Select-Object -First 1
+              $manifestVersion = [string]$manifest.$firstKey
+              Write-Host "Using version from manifest '$firstKey' : $manifestVersion"
+            }
+
+            $version = Get-SemVerFromString $manifestVersion
+
+            if ([string]::IsNullOrWhiteSpace($version)) {
+              throw "Could not determine a valid SemVer from manifest value '$manifestVersion' in $manifestPath"
+            }
           }
 
-          Assert-NuGetSemVer $rootVersion "Root"
-          Assert-NuGetSemVer $klaviyoVersion "Ekom.Klaviyo"
-
-          Write-Host "Pack selection: root=$packRoot, klaviyo=$packKlaviyo"
-
-          if ($packRoot) {
-            Write-Host "Packing root packages with PackageVersion=$rootVersion"
-            dotnet pack "Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$rootVersion
-            dotnet pack "Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$rootVersion
-            dotnet pack "AspNetCore/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$rootVersion
-            dotnet pack "AspNetCore/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$rootVersion
-            dotnet pack "Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$rootVersion
+          # Final defensive validation for NuGet PackageVersion
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?$') {
+            throw "Computed version '$version' is not a valid NuGet SemVer."
           }
 
-          if ($packKlaviyo) {
-            Write-Host "Packing Klaviyo plugin with PackageVersion=$klaviyoVersion"
-            dotnet pack "Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$klaviyoVersion
-          }
+          Write-Host "Packing with PackageVersion=$version"
+
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          dotnet pack "Ekom/Ekom.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom.Common/Ekom.Common.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "AspNetCore/Ekom.AspNetCore/Ekom.AspNetCore.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "AspNetCore/Ekom.U10/Ekom.U10.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Ekom.Web/Ekom.Web.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
 
           $pkgs = Get-ChildItem -Path artifacts -Filter *.nupkg -File
           $pkgs | Format-Table Name,Length
+
 
       - name: NuGet Login (OIDC)
         id: login
@@ -141,7 +132,7 @@ jobs:
         uses: NuGet/login@v1
         with:
           user: Vettvangur
-
+          
       - name: Push to NuGet.org
         if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
@@ -164,3 +155,4 @@ jobs:
 
             if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
           }
+
