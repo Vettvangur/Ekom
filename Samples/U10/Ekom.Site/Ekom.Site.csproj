@@ -65,18 +65,14 @@
         <PackageReference Include="Azure.Identity" Version="1.17.1" />
         <PackageReference Include="Ekom.Payments.Valitor" Version="0.2.51" />
         <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
-        <PackageReference Include="Umbraco.Cms" Version="13.12.1" />
+        <PackageReference Include="Umbraco.Cms" Version="13.13.0" />
     </ItemGroup>
 
     <!-- Force Windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older Windows 10 and most, if not all, Windows Server editions will run NLS -->
     <ItemGroup>
         <PackageReference Include="Microsoft.Identity.Web" Version="3.8.4" />
-        <ProjectReference Include="..\..\..\AspNetCore\Ekom.U10\Ekom.U10.csproj" />
-        <ProjectReference Include="..\..\..\Ekom.Algolia\Ekom.Algolia.csproj" />
-        <ProjectReference Include="..\..\..\Ekom.Klaviyo\Ekom.Klaviyo.csproj" />
-        <Reference Include="Ekom.Payments.Borgun">
-          <HintPath>..\..\..\..\..\Hreyfing\Dll\Ekom.Payments.Borgun.dll</HintPath>
-        </Reference>
+        <ProjectReference Include="..\..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Klaviyo\Ekom.Klaviyo.csproj" />
         <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
     </ItemGroup>
 
