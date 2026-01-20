@@ -11,7 +11,7 @@ public static class KlaviyoServiceCollectionExtensions
 		Action<KlaviyoOptions>? configure = null)
 	{
 		var ob = services.AddOptions<KlaviyoOptions>()
-			.BindConfiguration("Klaviyo");
+			.BindConfiguration("Ekom:Klaviyo");
 
 		if (configure is not null) ob.Configure(configure);
 
@@ -30,8 +30,13 @@ public static class KlaviyoServiceCollectionExtensions
         });
 
 
-        services.AddSingleton<IKlaviyoProductDispatcher, KlaviyoProductBatchingDispatcher>();
-        services.AddHostedService(sp => (KlaviyoProductBatchingDispatcher)sp.GetRequiredService<IKlaviyoProductDispatcher>());
+        services.AddSingleton<KlaviyoProductBatchingDispatcher>();
+
+        services.AddSingleton<IKlaviyoProductDispatcher>(sp =>
+            sp.GetRequiredService<KlaviyoProductBatchingDispatcher>());
+
+        services.AddHostedService(sp =>
+            sp.GetRequiredService<KlaviyoProductBatchingDispatcher>());
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();

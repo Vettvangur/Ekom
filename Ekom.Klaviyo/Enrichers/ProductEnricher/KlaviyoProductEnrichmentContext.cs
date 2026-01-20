@@ -6,4 +6,5 @@ internal sealed class KlaviyoProductEnrichmentContext
     public required Guid ProductKey { get; init; }
     public IProduct? SourceProduct { get; init; }
     public bool IsPublished { get; init; }
+    public bool IsFirstPublish { get; init; }
 }

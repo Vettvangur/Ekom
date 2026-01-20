@@ -1,3 +1,4 @@
+using Ekom.Klaviyo;
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
 
@@ -65,6 +66,8 @@ public class Startup
             options.MaxAge = TimeSpan.FromDays(365);
         });
 
+
+        services.AddKlaviyo();
         //services.AddEkomValitorPay(_config);
     }
 

@@ -12,7 +12,6 @@ public interface IKlaviyoProductDispatcher
 {
     ValueTask EnqueueAsync(string storeAlias, Guid catalogId, bool isPublished, CancellationToken ct = default);
 }
-
 internal sealed record ProductWork(string StoreAlias, Guid ProductId, bool IsPublished);
 
 internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKlaviyoProductDispatcher
@@ -48,41 +47,98 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_opt.Enabled) return;
+        _logger.LogInformation(
+            "Klaviyo dispatcher started. Enabled={Enabled}, ProductEventsEnabled={ProductEventsEnabled}, MaxQueueSize={MaxQueueSize}, FlushIntervalSeconds={FlushIntervalSeconds}, MaxBatchSize={MaxBatchSize}",
+            _opt.Enabled,
+            _opt.ProductEvents.Enabled,
+            _opt.MaxQueueSize,
+            _opt.FlushIntervalSeconds,
+            _opt.MaxBatchSize);
 
-        var flushDelay = TimeSpan.FromSeconds(_opt.FlushIntervalSeconds);
+        var flushDelay = TimeSpan.FromSeconds(Math.Max(1, _opt.FlushIntervalSeconds));
+        var maxBatch = _opt.MaxBatchSize <= 0 ? 100 : _opt.MaxBatchSize;
+
+        var maxDrain = Math.Max(maxBatch, 1) * 2;
+        if (maxDrain < 1) maxDrain = 200;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var hasItem = await _channel.Reader.WaitToReadAsync(stoppingToken);
-                if (!hasItem) continue;
-
-                await Task.Delay(flushDelay, stoppingToken);
-
-                var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                var work = new List<ProductWork>(capacity: 200);
-
-                while (work.Count < 200 && _channel.Reader.TryRead(out var w))
+                // Do NOT exit the service if disabled; just idle.
+                if (!_opt.Enabled || !_opt.ProductEvents.Enabled)
                 {
-                    var key = $"{w.StoreAlias}|{w.ProductId}";
-                    if (set.Add(key))
-                        work.Add(w);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    continue;
                 }
 
-                if (work.Count == 0) continue;
+                // Wait until something is available to read.
+                var hasItem = await _channel.Reader.WaitToReadAsync(stoppingToken);
+                if (!hasItem)
+                    continue;
 
-                var items = new List<KlaviyoProductItem>(work.Count);
+                // Coalesce a short burst of notifications into a single batch.
+                await Task.Delay(flushDelay, stoppingToken);
 
-                foreach (var w in work)
+                // Last-write-wins per (store, product) to avoid dropping quick publish/unpublish flips.
+                var latest = new Dictionary<string, ProductWork>(StringComparer.OrdinalIgnoreCase);
+
+                // Drain up to maxDrain items from the queue (bounded by what is available).
+                while (latest.Count < maxDrain && _channel.Reader.TryRead(out var w))
+                {
+                    var key = $"{w.StoreAlias}|{w.ProductId}";
+                    latest[key] = w; // overwrite = last state wins
+                }
+
+                if (latest.Count == 0)
+                    continue;
+
+                _logger.LogDebug(
+                    "Klaviyo dispatcher draining {Count} unique items (coalesced) from queue.",
+                    latest.Count);
+
+                var items = new List<KlaviyoProductItem>(latest.Count);
+
+                foreach (var w in latest.Values)
                 {
                     try
                     {
+                        // Fetch product
                         var product = Ekom.API.Catalog.Instance.GetProduct(w.ProductId, w.StoreAlias);
-                        if (product is null) continue;
 
-                        var item = product.ToKlaviyoCatalogItem(w.IsPublished);
+                        // If soft-delete mode, and product can't be loaded, skip.
+                        // (In hard-delete mode we can still delete by ExternalId if you have it.)
+                        if (_opt.ProductEvents.DeleteMode == KlaviyoDeleteMode.Soft && product is null)
+                        {
+                            _logger.LogDebug(
+                                "Klaviyo: product not found (soft mode), skipping. Store={Store} ProductId={ProductId}",
+                                w.StoreAlias, w.ProductId);
+                            continue;
+                        }
+
+                        KlaviyoProductItem? item;
+
+                        // If hard-delete mode and this work item represents "unpublished/deleted",
+                        // create a minimal item that has ExternalId so the client can delete it.
+                        if (_opt.ProductEvents.DeleteMode == KlaviyoDeleteMode.Hard && !w.IsPublished)
+                        {
+                            item = new KlaviyoProductItem
+                            {
+                                StoreAlias = w.StoreAlias,
+                                Id = w.ProductId,
+                                Published = false,
+                                Title = string.Empty,
+                                Description = string.Empty,
+                                Sku = string.Empty
+                            };
+                        }
+                        else
+                        {
+                            item = product?.ToKlaviyoCatalogItem(w.IsPublished, _opt.Host);
+                        }
+
+                        if (item is null)
+                            continue;
 
                         await _pipeline.ApplyAsync(
                             item,
@@ -99,22 +155,45 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex,
-                            "Klaviyo: failed mapping product {CatalogId} for store {StoreAlias}",
+                        _logger.LogWarning(
+                            ex,
+                            "Klaviyo: failed mapping/enrichment for product {ProductId} store {StoreAlias}",
                             w.ProductId, w.StoreAlias);
                     }
                 }
 
-                // send in chunks of 100
-                foreach (var chunk in items.Chunk(100))
-                    await _client.BulkUpsertCatalogItemsAsync(chunk, stoppingToken);
+                if (items.Count == 0)
+                    continue;
+
+                foreach (var chunk in items.Chunk(maxBatch))
+                {
+                    try
+                    {
+                        await _client.BulkUpsertCatalogItemsAsync(chunk, stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Do not kill the loop; log and continue.
+                        _logger.LogError(
+                            ex,
+                            "Klaviyo: bulk upsert failed for chunk size {ChunkSize}. Will continue processing future work.",
+                            chunk.Length);
+                    }
+                }
             }
-            catch (OperationCanceledException) { break; }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Catalog batch dispatch failed. Continuing.");
+                _logger.LogError(ex, "Klaviyo dispatcher loop crashed; retrying in 2 seconds.");
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
         }
+
+        _logger.LogInformation("Klaviyo dispatcher stopped.");
     }
+
+
 }

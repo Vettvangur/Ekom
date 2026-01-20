@@ -13,9 +13,11 @@ internal sealed class KlaviyoProductItem
     public string? Url { get; init; }
     public string? ImageFullUrl { get; init; }
     public bool Published { get; init; } = true;
+    public required string Description { get; init; }
+    public string Summary { get; init; } = string.Empty;
 
     public IReadOnlyCollection<string>? Categories { get; init; }
     public Dictionary<string, object?>? CustomMetadata { get; init; }
 
-    public string ExternalId => $"{StoreAlias}:{Sku}";
+    public string ExternalId => $"{StoreAlias}:{Id}";
 }
