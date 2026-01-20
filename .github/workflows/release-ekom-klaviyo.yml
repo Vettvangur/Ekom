@@ -4,7 +4,7 @@ on:
   push:
     branches: ["Ekom"]
     paths:
-    - "Ekom.Klaviyo/**"
+    - "Plugins/Ekom.Klaviyo/**"
     - ".release-please-manifest.json"
     - "release-please-config.json"
   workflow_dispatch:
