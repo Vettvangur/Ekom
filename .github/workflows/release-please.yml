@@ -3,11 +3,6 @@ name: release-please
 on:
   push:
     branches: ["Ekom"]
-    paths:
-      - "Ekom/**"
-      - "Plugins/**"
-      - ".release-please-manifest.json"
-      - "release-please-config.json"
   workflow_dispatch: {}
 
 permissions:
