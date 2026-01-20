@@ -45,6 +45,10 @@
       <PackagePath>images\</PackagePath>
       <Pack>true</Pack>
     </None>
+    <None Include="./CHANGELOG.md" Link="CHANGELOG.md">
+        <PackagePath>\</PackagePath>
+        <Pack>true</Pack>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
