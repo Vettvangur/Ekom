@@ -55,6 +55,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Ekom\Ekom.csproj" />
+      <ProjectReference Include="..\Ekom\Ekom.csproj" />
     </ItemGroup>
+
 </Project>
