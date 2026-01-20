@@ -1,4 +1,5 @@
 using Ekom.Klaviyo;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
@@ -27,15 +28,18 @@ internal sealed class KlaviyoNotifications :
     private readonly IKlaviyoProductDispatcher _dispatcher;
     private readonly KlaviyoOptions _options;
     private readonly ILogger<KlaviyoNotifications> _logger;
+    private readonly IMemoryCache _cache;
 
     public KlaviyoNotifications(
         IKlaviyoProductDispatcher dispatcher,
         IOptions<KlaviyoOptions> options,
-        ILogger<KlaviyoNotifications> logger)
+        ILogger<KlaviyoNotifications> logger,
+        IMemoryCache cache)
     {
         _dispatcher = dispatcher;
         _options = options.Value;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
@@ -53,7 +57,7 @@ internal sealed class KlaviyoNotifications :
     public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
     {
         foreach (var entity in notification.MoveInfoCollection.Select(x => x.Entity))
-            await EnqueueIfProductAsync(entity, isPublished: true, cancellationToken);
+            await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken);
     }
 
     public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
@@ -67,7 +71,7 @@ internal sealed class KlaviyoNotifications :
         if (!string.Equals(entity.ContentType.Alias, "ekmProduct", StringComparison.OrdinalIgnoreCase))
             return;
 
-        if (!_options.Enabled)
+        if (!_options.Enabled || !_options.ProductEvents.Enabled)
         {
             _logger.LogDebug("Klaviyo disabled; skipping ekmProduct {Id}.", entity.Id);
             return;
@@ -76,7 +80,17 @@ internal sealed class KlaviyoNotifications :
         foreach (var storeAlias in _options.Stores)
         {
             _logger.LogDebug("Klaviyo: enqueue ekmProduct {Id} store {Store}. Published={Published}", entity.Id, storeAlias, isPublished);
-            await _dispatcher.EnqueueAsync(storeAlias, entity.Key, isPublished, ct);
+
+            try
+            {
+                await _dispatcher.EnqueueAsync(storeAlias, entity.Key, isPublished, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Klaviyo enqueue failed for product {Id} store {Store}.", entity.Id, storeAlias);
+            }
+
+            _cache.Remove($"klaviyo:feed:v1:{storeAlias}");
         }
     }
 }
