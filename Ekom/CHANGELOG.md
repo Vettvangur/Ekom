@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.16](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.15...Ekom-v0.2.16) (2026-01-20)
+
+
+### Bug Fixes
+
+* Update newtonsoft version and ekom version in Klaviyo ([6994adb](https://github.com/Vettvangur/Ekom/commit/6994adb860e5603da8a2b8ade6e4b4396521f57e))
+
 ## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.14...Ekom-v0.2.15) (2026-01-20)
 
 
