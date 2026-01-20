@@ -1,9 +1,11 @@
 {
+  "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
   "packages": {
-    ".": {
+    "Ekom": {
+      "path": "Ekom",
       "component": "Ekom",
-      "include-component-in-tag": true,
       "package-name": "Ekom",
+      "include-component-in-tag": true,
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
@@ -18,13 +20,18 @@
       ]
     },
     "Ekom.Klaviyo": {
+      "path": "Plugins/Ekom.Klaviyo",
       "component": "Ekom.Klaviyo",
-      "include-component-in-tag": true,
       "package-name": "Ekom.Klaviyo",
+      "include-component-in-tag": true,
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
+<<<<<<< HEAD
       "changelog-path": "Ekom.Klaviyo/CHANGELOG.md",
+=======
+      "changelog-path": "CHANGELOG.md",
+>>>>>>> f7e7a3df368ff50c5bfae92a1668c6b9638486c7
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
     }
   }

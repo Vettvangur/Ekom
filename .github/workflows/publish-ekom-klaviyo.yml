@@ -1,0 +1,74 @@
+name: publish-ekom-klaviyo
+
+on:
+  push:
+    tags:
+      - "Ekom.Klaviyo-v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-ekom-klaviyo:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
+
+      - name: Build (Release)
+        run: dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore
+
+      - name: Pack Ekom.Klaviyo
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Get-SemVerFromTag([string] $tag) {
+            if ($tag -match 'v(?<ver>\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?)$') { return $Matches['ver'] }
+            throw "Could not parse SemVer from tag '$tag'"
+          }
+
+          $tag = "${{ github.ref_name }}"   # e.g. Ekom.Klaviyo-v1.0.1
+          $version = Get-SemVerFromTag $tag
+
+          if (Test-Path "artifacts") { Remove-Item "artifacts" -Recurse -Force }
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          Write-Host "Packing Ekom.Klaviyo with PackageVersion=$version (tag $tag)"
+
+          dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+
+          Get-ChildItem -Path artifacts -Filter "Ekom.Klaviyo*.nupkg" -File | Format-Table Name,Length
+
+      - name: NuGet Login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: Vettvangur
+
+      - name: Push Ekom.Klaviyo to NuGet.org
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $pkgs = Get-ChildItem -Path "artifacts" -Filter "Ekom.Klaviyo*.nupkg" -File
+          if (-not $pkgs) { throw "No Ekom.Klaviyo .nupkg files found under artifacts/." }
+
+          foreach ($p in $pkgs) {
+            Write-Host "Pushing $($p.Name)"
+            dotnet nuget push "$($p.FullName)" `
+              --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" `
+              --source "https://api.nuget.org/v3/index.json" `
+              --skip-duplicate
+
+            if ($LASTEXITCODE -ne 0) { throw "dotnet nuget push failed for $($p.Name)" }
+          }
