@@ -27,7 +27,7 @@
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
-      "changelog-path": "CHANGELOG.md",
+      "changelog-path": "Plugins/Ekom.Klaviyo/CHANGELOG.md",
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
     }
   }
