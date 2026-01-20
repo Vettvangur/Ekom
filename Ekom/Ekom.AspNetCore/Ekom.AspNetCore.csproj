@@ -42,14 +42,6 @@
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
-    <ItemGroup>
-      <Compile Remove="New folder\**" />
-      <EmbeddedResource Remove="New folder\**" />
-      <None Remove="New folder\**" />
-    </ItemGroup>
-    <ItemGroup>
-      <None Remove="packages.lock.json" />
-    </ItemGroup>
 
     <ItemGroup>
         <!-- Package icon -->
