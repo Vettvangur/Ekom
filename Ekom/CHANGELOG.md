@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.18](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.17...Ekom-v0.2.18) (2026-01-20)
+
+
+### Bug Fixes
+
+* img path error in u10 ([0f339f1](https://github.com/Vettvangur/Ekom/commit/0f339f1574f1f74ff57b33acc6f32b1137728e58))
+* more refactoring ([74936f4](https://github.com/Vettvangur/Ekom/commit/74936f42a15c5acca7db481f419be27862a3b9c0))
+* remove item groups ([107269b](https://github.com/Vettvangur/Ekom/commit/107269b7388140419ecc4142144d2282269290a3))
+
 ## [0.2.17](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.16...Ekom-v0.2.17) (2026-01-20)
 
 
