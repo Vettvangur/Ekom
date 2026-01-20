@@ -7,7 +7,7 @@ public sealed class KlaviyoOptions
 	public required string PrivateApiKey { get; init; }
 	public required string ApiBaseUrl { get; init; } = "https://a.klaviyo.com";
 	public required string Revision { get; init; }
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; } = true; // Enable/Disable all features
 
     public KlaviyoProductFeedOptions ProductFeed { get; set; } = new()
     {
