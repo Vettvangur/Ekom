@@ -5,3 +5,7 @@ Ekom Klaviyo Plugin
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 </h1>
+
+## Documentation
+
+[Link to documentation](https://vettvangur.gitbook.io/ekom/)
