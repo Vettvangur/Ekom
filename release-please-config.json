@@ -1,10 +1,11 @@
 {
+  "pullRequestTitlePattern": "chore${scope}: release ${component} ${version}",
   "packages": {
     "Ekom": {
       "path": "Ekom",
       "component": "Ekom",
-      "include-component-in-tag": true,
       "package-name": "Ekom",
+      "include-component-in-tag": true,
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
@@ -21,8 +22,8 @@
     "Ekom.Klaviyo": {
       "path": "Plugins/Ekom.Klaviyo",
       "component": "Ekom.Klaviyo",
-      "include-component-in-tag": true,
       "package-name": "Ekom.Klaviyo",
+      "include-component-in-tag": true,
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
