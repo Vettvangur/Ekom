@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -42,10 +42,18 @@
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="New folder\**" />
+      <EmbeddedResource Remove="New folder\**" />
+      <None Remove="New folder\**" />
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="packages.lock.json" />
+    </ItemGroup>
 
     <ItemGroup>
         <!-- Package icon -->
-        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
     </ItemGroup>
 
     <ItemGroup>

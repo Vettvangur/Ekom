@@ -45,7 +45,7 @@ Install the Ekom.Web package into your sites main project (contains wwwroot)
 - Advanced inventory management tools
 - Built with ASP NET Core with focus on performance and security
 - The ability to be extended as per your business requirements
-- And much more...
+- And many more features...
 
 ## Documentation
 

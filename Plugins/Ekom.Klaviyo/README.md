@@ -6,6 +6,9 @@ Ekom Klaviyo Plugin
 
 </h1>
 
+Readme for the Ekom Klaviyo Plugin.
+
+
 ## Documentation
 
 [Link to documentation](https://vettvangur.gitbook.io/ekom/)
