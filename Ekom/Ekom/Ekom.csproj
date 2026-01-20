@@ -48,9 +48,9 @@
 
     <ItemGroup>
         <!-- Package icon -->
-        <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
-        <None Include="..\README.md" Pack="true" PackagePath="\" />
-        <None Include="../CHANGELOG.md" Pack="true" PackagePath="" />
+        <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\CHANGELOG.md" Pack="true" PackagePath="" />
     </ItemGroup>
 
     <ItemGroup>

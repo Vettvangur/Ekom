@@ -5,15 +5,8 @@ on:
     branches: ["Ekom"]
     paths:
       - "Ekom/**"
-      - "Ekom.Common/**"
-      - "AspNetCore/Ekom.AspNetCore/**"
-      - "AspNetCore/Ekom.U10/**"
-      - "Ekom.Web/**"
       - ".release-please-manifest.json"
       - "release-please-config.json"
-      - "Directory.Build.props"
-      - "NuGet.config"
-      - ".editorconfig"
   workflow_dispatch:
     inputs:
       publish:
