@@ -6,7 +6,6 @@
 ### Features
 
 * **klaviyo:** initial release 1.0 ([713aa59](https://github.com/Vettvangur/Ekom/commit/713aa595b2a7e929ba00dcef0775fc8f20ebf699))
-* **klaviyo:** initial release 1.0 ([018d0da](https://github.com/Vettvangur/Ekom/commit/018d0dad81715d2eb20392de68b9c124cd293b71))
 
 
 ### Bug Fixes
