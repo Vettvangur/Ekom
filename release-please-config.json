@@ -9,12 +9,12 @@
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
-      "changelog-path": "Ekom/CHANGELOG.md",
+      "changelog-path": "CHANGELOG.md",
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41",
       "extra-files": [
         {
           "type": "xml",
-          "path": "Ekom/Directory.Build.props",
+          "path": "Directory.Build.props",
           "xpath": "/Project/PropertyGroup/Version"
         }
       ]
@@ -27,7 +27,7 @@
       "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
-      "changelog-path": "Plugins/Ekom.Klaviyo/CHANGELOG.md",
+      "changelog-path": "CHANGELOG.md",
       "bootstrap-sha": "135a8af01a63f7a55f4a730c82b8c1005d362d41"
     }
   }
