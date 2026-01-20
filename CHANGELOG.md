@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.11](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.10...Ekom-v0.2.11) (2026-01-20)
+
+
+### Features
+
+* **klaviyo:** initial release 1.0 ([713aa59](https://github.com/Vettvangur/Ekom/commit/713aa595b2a7e929ba00dcef0775fc8f20ebf699))
+* **klaviyo:** initial release 1.0 ([018d0da](https://github.com/Vettvangur/Ekom/commit/018d0dad81715d2eb20392de68b9c124cd293b71))
+
+
+### Bug Fixes
+
+* 1.0 version for Klaviyo plugin ([d3b1e8d](https://github.com/Vettvangur/Ekom/commit/d3b1e8d3015ed8651c0ea664ad1ab816299d56b1))
+* Refactor endpoints, create controller, test on sample ([04c4333](https://github.com/Vettvangur/Ekom/commit/04c4333cfd572243646c91144e67f8984dfdb15f))
+
 ## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.9...Ekom-v0.2.10) (2026-01-19)
 
 
