@@ -49,7 +49,7 @@ jobs:
         if: ${{ steps.rp.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
         run: dotnet build "Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore
 
-      - name: Pack (component-aware: root vs Ekom.Klaviyo)
+      - name: Pack (component-aware root vs Ekom.Klaviyo)
         if: ${{ steps.rp.outputs.release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.publish == true) }}
         shell: pwsh
         run: |
