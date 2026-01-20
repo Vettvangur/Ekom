@@ -6,7 +6,7 @@ Ekom Klaviyo Plugin
 
 </h1>
 
-Readme for the Ekom Klaviyo Plugin..
+Readme for the Ekom Klaviyo Plugin...
 
 
 ## Documentation
