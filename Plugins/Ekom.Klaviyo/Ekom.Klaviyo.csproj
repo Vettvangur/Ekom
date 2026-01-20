@@ -10,7 +10,6 @@
     <Title>Ekom Klaviyo Plugin</Title>
     <Description>Ekom - Klaviyo integration plugin for Umbraco</Description>
     <Authors>Vettvangur</Authors>
-    <Version>1.0.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>

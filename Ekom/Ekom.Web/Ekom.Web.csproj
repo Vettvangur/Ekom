@@ -40,7 +40,7 @@
 
     <!-- Package icon -->
     <ItemGroup>
-        <None Include="..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
     </ItemGroup>
 
   <ItemGroup>
