@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.5...Ekom.Klaviyo-v0.2.6) (2026-01-21)
+
+
+### Bug Fixes
+
+* New ImageCrop settings on Klaviyo product feed ([70e10a2](https://github.com/Vettvangur/Ekom/commit/70e10a2184c969a672a0ad715804a0d967c8c357))
+* New ImageCrop settings on Klaviyo product feed ([95a13e4](https://github.com/Vettvangur/Ekom/commit/95a13e4c4bb0cc4379abf0d4d4435a8c569105ab))
+
 ## [0.2.5](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.4...Ekom.Klaviyo-v0.2.5) (2026-01-20)
 
 
