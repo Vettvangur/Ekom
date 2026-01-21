@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,12 +11,12 @@ namespace Ekom.Klaviyo.Controllers;
 [PluginController("Ekom")]
 internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
 {
-    private readonly IKlaviyoClient _klaviyoClient;
+    private readonly IKlaviyoCatalogClient _klaviyoClient;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoBackofficeController> _logger;
 
     public KlaviyoBackofficeController(
-        IKlaviyoClient klaviyoClient, 
+        IKlaviyoCatalogClient klaviyoClient, 
         IOptions<KlaviyoOptions> opt, 
         ILogger<KlaviyoBackofficeController> logger)
     {
@@ -27,7 +28,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
     [HttpGet]
     public async Task<IActionResult> BuildProducts(CancellationToken ct)
     {
-        if (!_opt.Enabled || !_opt.ProductEvents.Enabled) { return BadRequest("Klaviyo integration is disabled."); }
+        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.Method == KlaviyoCatalogMethods.Feed) { return BadRequest("Klaviyo integration is disabled."); }
         
         _logger.LogInformation("Building products for Klaviyo integration.");
 

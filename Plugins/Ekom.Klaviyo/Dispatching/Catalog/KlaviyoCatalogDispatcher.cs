@@ -1,4 +1,5 @@
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
+using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models;
 using Microsoft.Extensions.Hosting;
@@ -6,57 +7,63 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Threading.Channels;
 
-namespace Ekom.Klaviyo;
+namespace Ekom.Klaviyo.Dispatching.Catalog;
 
-public interface IKlaviyoProductDispatcher
+public interface IKlaviyoCatalogDispatcher
 {
-    ValueTask EnqueueAsync(string storeAlias, Guid catalogId, bool isPublished, CancellationToken ct = default);
+    ValueTask EnqueueAsync(string storeAlias, Guid productId, bool isPublished, CancellationToken ct = default);
 }
-internal sealed record ProductWork(string StoreAlias, Guid ProductId, bool IsPublished);
 
-internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKlaviyoProductDispatcher
+internal sealed record CatalogWork(string StoreAlias, Guid ProductId, bool IsPublished);
+
+internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCatalogDispatcher
 {
-    private readonly IKlaviyoClient _client;
+    private readonly IKlaviyoCatalogClient _client; // or IKlaviyoClient if you keep one client
     private readonly KlaviyoOptions _opt;
     private readonly KlaviyoProductEnrichmentPipeline _pipeline;
-    private readonly ILogger<KlaviyoProductBatchingDispatcher> _logger;
+    private readonly ILogger<KlaviyoCatalogDispatcher> _logger;
 
-    private readonly Channel<ProductWork> _channel;
+    private readonly Channel<CatalogWork> _channel;
 
-    public KlaviyoProductBatchingDispatcher(
-        IKlaviyoClient client,
+    public KlaviyoCatalogDispatcher(
+        IKlaviyoCatalogClient client,
         IOptions<KlaviyoOptions> options,
-        ILogger<KlaviyoProductBatchingDispatcher> logger,
+        ILogger<KlaviyoCatalogDispatcher> logger,
         KlaviyoProductEnrichmentPipeline pipeline)
     {
         _client = client;
         _opt = options.Value;
         _logger = logger;
+        _pipeline = pipeline;
 
-        _channel = Channel.CreateBounded<ProductWork>(new BoundedChannelOptions(_opt.MaxQueueSize)
+        var dispatch = _opt.Catalog.Dispatching;
+
+        _channel = Channel.CreateBounded<CatalogWork>(new BoundedChannelOptions(dispatch.MaxQueueSize)
         {
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
         });
-        _pipeline = pipeline;
     }
 
-    public ValueTask EnqueueAsync(string storeAlias, Guid catalogId, bool isPublished, CancellationToken ct = default)
-        => _channel.Writer.WriteAsync(new ProductWork(storeAlias, catalogId, isPublished), ct);
+    public ValueTask EnqueueAsync(string storeAlias, Guid productId, bool isPublished, CancellationToken ct = default)
+        => _channel.Writer.WriteAsync(new CatalogWork(storeAlias, productId, isPublished), ct);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation(
-            "Klaviyo dispatcher started. Enabled={Enabled}, ProductEventsEnabled={ProductEventsEnabled}, MaxQueueSize={MaxQueueSize}, FlushIntervalSeconds={FlushIntervalSeconds}, MaxBatchSize={MaxBatchSize}",
-            _opt.Enabled,
-            _opt.ProductEvents.Enabled,
-            _opt.MaxQueueSize,
-            _opt.FlushIntervalSeconds,
-            _opt.MaxBatchSize);
+        var dispatch = _opt.Catalog.Dispatching;
 
-        var flushDelay = TimeSpan.FromSeconds(Math.Max(1, _opt.FlushIntervalSeconds));
-        var maxBatch = _opt.MaxBatchSize <= 0 ? 100 : _opt.MaxBatchSize;
+        _logger.LogInformation(
+            "Klaviyo Catalog dispatcher started. Enabled={Enabled}, CatalogEnabled={CatalogEnabled}, Method={Method}, MaxQueueSize={MaxQueueSize}, FlushIntervalSeconds={FlushIntervalSeconds}, MaxBatchSize={MaxBatchSize}",
+            _opt.Enabled,
+            _opt.Catalog.Enabled,
+            _opt.Catalog.Method,
+            dispatch.MaxQueueSize,
+            dispatch.FlushIntervalSeconds,
+            dispatch.MaxBatchSize);
+
+        var flushDelay = TimeSpan.FromSeconds(Math.Max(1, dispatch.FlushIntervalSeconds));
+        var maxBatch = dispatch.MaxBatchSize <= 0 ? 100 : dispatch.MaxBatchSize;
 
         var maxDrain = Math.Max(maxBatch, 1) * 2;
         if (maxDrain < 1) maxDrain = 200;
@@ -66,7 +73,9 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
             try
             {
                 // Do NOT exit the service if disabled; just idle.
-                if (!_opt.Enabled || !_opt.ProductEvents.Enabled)
+                if (!_opt.Enabled ||
+                    !_opt.Catalog.Enabled ||
+                    _opt.Catalog.Method != KlaviyoCatalogMethods.SyncEvents)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                     continue;
@@ -80,21 +89,27 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
                 // Coalesce a short burst of notifications into a single batch.
                 await Task.Delay(flushDelay, stoppingToken);
 
-                // Last-write-wins per (store, product) to avoid dropping quick publish/unpublish flips.
-                var latest = new Dictionary<string, ProductWork>(StringComparer.OrdinalIgnoreCase);
+                // Last-write-wins per (store, product)
+                var latest = new Dictionary<string, CatalogWork>(StringComparer.OrdinalIgnoreCase);
 
-                // Drain up to maxDrain items from the queue (bounded by what is available).
                 while (latest.Count < maxDrain && _channel.Reader.TryRead(out var w))
                 {
+                    // Optional store filter
+                    if (_opt.Stores is { Count: > 0 } &&
+                        !_opt.Stores.Contains(w.StoreAlias, StringComparer.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     var key = $"{w.StoreAlias}|{w.ProductId}";
-                    latest[key] = w; // overwrite = last state wins
+                    latest[key] = w;
                 }
 
                 if (latest.Count == 0)
                     continue;
 
                 _logger.LogDebug(
-                    "Klaviyo dispatcher draining {Count} unique items (coalesced) from queue.",
+                    "Klaviyo Catalog dispatcher draining {Count} unique items (coalesced) from queue.",
                     latest.Count);
 
                 var items = new List<KlaviyoProductItem>(latest.Count);
@@ -103,12 +118,10 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
                 {
                     try
                     {
-                        // Fetch product
                         var product = Ekom.API.Catalog.Instance.GetProduct(w.ProductId, w.StoreAlias);
 
-                        // If soft-delete mode, and product can't be loaded, skip.
-                        // (In hard-delete mode we can still delete by ExternalId if you have it.)
-                        if (_opt.ProductEvents.DeleteMode == KlaviyoDeleteMode.Soft && product is null)
+                        // Soft delete mode + missing product => skip
+                        if (_opt.Catalog.DeleteMode == KlaviyoDeleteMode.Soft && product is null)
                         {
                             _logger.LogDebug(
                                 "Klaviyo: product not found (soft mode), skipping. Store={Store} ProductId={ProductId}",
@@ -118,18 +131,19 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
 
                         KlaviyoProductItem? item;
 
-                        // If hard-delete mode and this work item represents "unpublished/deleted",
-                        // create a minimal item that has ExternalId so the client can delete it.
-                        if (_opt.ProductEvents.DeleteMode == KlaviyoDeleteMode.Hard && !w.IsPublished)
+                        // Hard delete mode + unpublished => minimal delete item
+                        if (_opt.Catalog.DeleteMode == KlaviyoDeleteMode.Hard && !w.IsPublished)
                         {
                             item = new KlaviyoProductItem
                             {
                                 StoreAlias = w.StoreAlias,
                                 Id = w.ProductId,
                                 Published = false,
+
+                                // Minimal but safe defaults
                                 Title = string.Empty,
                                 Description = string.Empty,
-                                Sku = string.Empty
+                                Sku = string.Empty,
                             };
                         }
                         else
@@ -140,6 +154,7 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
                         if (item is null)
                             continue;
 
+                        // Enrichment pipeline (same as your product dispatcher)
                         await _pipeline.ApplyAsync(
                             item,
                             new KlaviyoProductEnrichmentContext
@@ -169,11 +184,19 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
                 {
                     try
                     {
-                        await _client.BulkUpsertCatalogItemsAsync(chunk, stoppingToken);
+                        // Use delete mode as part of upsert semantics
+                        await _client.BulkUpsertCatalogItemsAsync(chunk, _opt.Catalog.DeleteMode, stoppingToken);
+                    }
+                    catch (KlaviyoCatalogSyncLockException ex)
+                    {
+                        // Not transient: feed sync is active in Klaviyo, stop hammering.
+                        _logger.LogError(ex,
+                            "Klaviyo Catalog API is locked by active Catalog Sync. Disable feed sync in Klaviyo or set Catalog.Method=Feed. Body={Body}",
+                            ex.ResponseBody);
+                        break; // break current flush cycle
                     }
                     catch (Exception ex)
                     {
-                        // Do not kill the loop; log and continue.
                         _logger.LogError(
                             ex,
                             "Klaviyo: bulk upsert failed for chunk size {ChunkSize}. Will continue processing future work.",
@@ -187,13 +210,11 @@ internal sealed class KlaviyoProductBatchingDispatcher : BackgroundService, IKla
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Klaviyo dispatcher loop crashed; retrying in 2 seconds.");
+                _logger.LogError(ex, "Klaviyo Catalog dispatcher loop crashed; retrying in 2 seconds.");
                 await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
         }
 
-        _logger.LogInformation("Klaviyo dispatcher stopped.");
+        _logger.LogInformation("Klaviyo Catalog dispatcher stopped.");
     }
-
-
 }

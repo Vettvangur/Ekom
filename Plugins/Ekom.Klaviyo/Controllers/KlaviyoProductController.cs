@@ -29,10 +29,10 @@ internal class KlaviyoProductController : ControllerBase
     [Produces("application/json")]
     public IActionResult GetProductFeed([FromQuery] string? storeAlias = null)
     {
-        if (!_opt.Enabled || !_opt.ProductFeed.Enabled)
+        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.Method == KlaviyoCatalogMethods.SyncEvents)
             return BadRequest("Klaviyo integration is disabled.");
 
-        if (!IsAuthorized(Request, _opt.ProductFeed.Username, _opt.ProductFeed.Password))
+        if (!IsAuthorized(Request, _opt.Catalog.Username ?? "", _opt.Catalog.Password ?? ""))
         {
             return Unauthorized();
         }
@@ -67,7 +67,7 @@ internal class KlaviyoProductController : ControllerBase
 
         Response.Headers.CacheControl = "private, max-age=3600";
 
-        if (!string.IsNullOrEmpty(_opt.ProductFeed.Username) || !string.IsNullOrEmpty(_opt.ProductFeed.Password))
+        if (!string.IsNullOrEmpty(_opt.Catalog.Username) || !string.IsNullOrEmpty(_opt.Catalog.Password))
         {
             Response.Headers.Vary = "Authorization";
         }

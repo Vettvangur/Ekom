@@ -16,17 +16,17 @@ internal static class ProductFeedMapper
         var imageUrl = product.Images?.FirstOrDefault()?.Url;
         var imageLink = string.IsNullOrWhiteSpace(imageUrl)
             ? null
-            : UrlBuilder.Combine(options.Host, imageUrl + options.ProductFeed.ImageCrop);
+            : UrlBuilder.Combine(options.Host, imageUrl + options.Catalog.ImageCrop);
 
-        var price = options.ProductFeed.HidePrice ? null : product.OriginalPrice?.Value;
+        var price = options.Catalog.HidePrice ? null : product.OriginalPrice?.Value;
 
         IReadOnlyList<string>? categories = product.Categories.Select(x => x.Title).ToList();
 
         // Inventory: adapt to your model. If not available, leave null.
-        decimal? inventoryQty = options.ProductFeed.ShowInventory ? product.Stock : null;
+        decimal? inventoryQty = options.Catalog.ShowInventory ? product.Stock : null;
 
         // 1 = your example. If you have semantics, set it based on your system.
-        int? inventoryPolicy = options.ProductFeed.InventoryPolicy;
+        int? inventoryPolicy = options.Catalog.InventoryPolicy;
 
         // Build default custom attributes and merge optional user-provided ones
         var mergedCustom = BuildDefaultCustomAttributes(product);
@@ -37,11 +37,14 @@ internal static class ProductFeedMapper
                 mergedCustom[kv.Key] = kv.Value;
         }
 
+        var description = !string.IsNullOrEmpty(product.Description) ? product.Description :
+                          !string.IsNullOrEmpty(product.Summary) ? product.Summary : product.Title;
+
         return new KlaviyoProductFeedItem(
             Id: $"{product.Store.Alias}:{product.Key.ToString()}",
             Title: product.Title ?? string.Empty,
             Link: link,
-            Description: product.Description,
+            Description: description,
             Price: price,
             ImageLink: imageLink,
             Categories: categories,

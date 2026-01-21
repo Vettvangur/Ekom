@@ -1,4 +1,5 @@
 using Ekom.Klaviyo;
+using Ekom.Klaviyo.Dispatching.Catalog;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,32 +9,32 @@ using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 
-internal sealed class ArticleComposer : IComposer
+internal sealed class KlaviyoUmbracoNoticationComposer : IComposer
 {
     public void Compose(IUmbracoBuilder builder)
     {
-        builder.AddNotificationAsyncHandler<ContentPublishedNotification, KlaviyoNotifications>();
-        builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, KlaviyoNotifications>();
-        builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, KlaviyoNotifications>();
-        builder.AddNotificationAsyncHandler<ContentDeletedNotification, KlaviyoNotifications>();
+        builder.AddNotificationAsyncHandler<ContentPublishedNotification, KlaviyoUmbracoNotifications>();
+        builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, KlaviyoUmbracoNotifications>();
+        builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, KlaviyoUmbracoNotifications>();
+        builder.AddNotificationAsyncHandler<ContentDeletedNotification, KlaviyoUmbracoNotifications>();
     }
 }
 
-internal sealed class KlaviyoNotifications :
+internal sealed class KlaviyoUmbracoNotifications :
     INotificationAsyncHandler<ContentPublishedNotification>,
     INotificationAsyncHandler<ContentUnpublishedNotification>,
     INotificationAsyncHandler<ContentMovedToRecycleBinNotification>,
     INotificationAsyncHandler<ContentDeletedNotification>
 {
-    private readonly IKlaviyoProductDispatcher _dispatcher;
+    private readonly IKlaviyoCatalogDispatcher _dispatcher;
     private readonly KlaviyoOptions _options;
-    private readonly ILogger<KlaviyoNotifications> _logger;
+    private readonly ILogger<KlaviyoUmbracoNotifications> _logger;
     private readonly IMemoryCache _cache;
 
-    public KlaviyoNotifications(
-        IKlaviyoProductDispatcher dispatcher,
+    public KlaviyoUmbracoNotifications(
+        IKlaviyoCatalogDispatcher dispatcher,
         IOptions<KlaviyoOptions> options,
-        ILogger<KlaviyoNotifications> logger,
+        ILogger<KlaviyoUmbracoNotifications> logger,
         IMemoryCache cache)
     {
         _dispatcher = dispatcher;
@@ -71,7 +72,7 @@ internal sealed class KlaviyoNotifications :
         if (!string.Equals(entity.ContentType.Alias, "ekmProduct", StringComparison.OrdinalIgnoreCase))
             return;
 
-        if (!_options.Enabled || !_options.ProductEvents.Enabled)
+        if (!_options.Enabled || !_options.Catalog.Enabled || _options.Catalog.Method == KlaviyoCatalogMethods.Feed)
         {
             _logger.LogDebug("Klaviyo disabled; skipping ekmProduct {Id}.", entity.Id);
             return;
