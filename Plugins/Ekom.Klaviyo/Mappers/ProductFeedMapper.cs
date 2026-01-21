@@ -16,7 +16,7 @@ internal static class ProductFeedMapper
         var imageUrl = product.Images?.FirstOrDefault()?.Url;
         var imageLink = string.IsNullOrWhiteSpace(imageUrl)
             ? null
-            : UrlBuilder.Combine(options.Host, imageUrl);
+            : UrlBuilder.Combine(options.Host, imageUrl + options.ProductFeed.ImageCrop);
 
         var price = options.ProductFeed.HidePrice ? null : product.OriginalPrice?.Value;
 

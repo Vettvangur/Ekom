@@ -34,6 +34,7 @@ public sealed class KlaviyoProductFeedOptions
     public string? Username { get; set; }
     public string? Password { get; set; }
     public int InventoryPolicy { get; set; } = 2; // 1 or 2
+    public string ImageCrop { get; set; } = "";
 }
 
 public sealed class KlaviyoProductEventsOptions
