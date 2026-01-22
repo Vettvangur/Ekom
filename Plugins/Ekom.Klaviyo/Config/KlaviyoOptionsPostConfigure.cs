@@ -7,8 +7,6 @@ internal sealed class KlaviyoOptionsPostConfigure
 {
     public void PostConfigure(string? name, KlaviyoOptions o)
     {
-        o.Enabled = o.Enabled;
-
         if (o.Stores is null || o.Stores.Count == 0)
             o.Enabled = false;
 
@@ -19,7 +17,7 @@ internal sealed class KlaviyoOptionsPostConfigure
             o.Events.Enabled
             || (o.Catalog.Enabled && o.Catalog.SyncMode == KlaviyoCatalogSyncMode.ApiPush);
 
-        if (needsApi && string.IsNullOrWhiteSpace(o.Revision))
+        if (needsApi && string.IsNullOrWhiteSpace(o.PrivateApiKey))
             o.Catalog.Enabled = false;
 
         if (!o.Enabled)

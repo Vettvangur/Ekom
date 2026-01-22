@@ -9,7 +9,7 @@ using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 
-internal sealed class KlaviyoUmbracoNoticationComposer : IComposer
+internal sealed class KlaviyoUmbracoNotificationComposer : IComposer
 {
     public void Compose(IUmbracoBuilder builder)
     {
