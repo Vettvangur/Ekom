@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.8...Ekom.Klaviyo-v0.2.9) (2026-01-22)
+
+
+### Bug Fixes
+
+* remove old namespace using and remove IsCatalogEnabled ([3b919bb](https://github.com/Vettvangur/Ekom/commit/3b919bbc4160fed77ee3c18a00d65fc90ecea245))
+* remove old namespace using and remove IsCatalogEnabled ([3fdeb25](https://github.com/Vettvangur/Ekom/commit/3fdeb25d16f096698f1358856258ecbe5adc1f42))
+
 ## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.7...Ekom.Klaviyo-v0.2.8) (2026-01-22)
 
 
