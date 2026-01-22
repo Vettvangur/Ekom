@@ -51,7 +51,7 @@ public sealed class KlaviyoEventsOptions
 
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 
-    public bool TrackingPlacedOrders { get; set; } = true;
+    public bool TrackingPlacedOrders { get; set; } = false;
 }
 
 public enum KlaviyoCatalogSyncMode

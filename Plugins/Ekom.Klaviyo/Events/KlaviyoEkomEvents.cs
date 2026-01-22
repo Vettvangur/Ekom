@@ -22,7 +22,7 @@ internal class KlaviyoEkomEvents : IComponent
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
     }
 
-    private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args)
+    private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args, CancellationToken ct)
     {
 
         if (!_opt.Events.TrackingPlacedOrders) { return; }
@@ -35,7 +35,7 @@ internal class KlaviyoEkomEvents : IComponent
 
         await _orderService.TrackPlacedOrderAsync(
             klaviyoOrder,
-            CancellationToken.None);
+            ct);
     }
 
     public void Terminate()
