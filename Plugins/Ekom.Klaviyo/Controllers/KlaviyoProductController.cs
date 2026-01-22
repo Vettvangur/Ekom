@@ -29,7 +29,7 @@ internal class KlaviyoProductController : ControllerBase
     [Produces("application/json")]
     public IActionResult GetProductFeed([FromQuery] string? storeAlias = null)
     {
-        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.Method == KlaviyoCatalogMethods.SyncEvents)
+        if (!_opt.Enabled || !_opt.Catalog.Enabled)
             return BadRequest("Klaviyo integration is disabled.");
 
         if (!IsAuthorized(Request, _opt.Catalog.Username ?? "", _opt.Catalog.Password ?? ""))

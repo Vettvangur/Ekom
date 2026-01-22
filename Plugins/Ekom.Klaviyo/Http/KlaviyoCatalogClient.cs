@@ -56,7 +56,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         KlaviyoDeleteMode deleteMode,
         CancellationToken ct = default)
     {
-        if (!IsCatalogApiEnabled() || items.Count == 0)
+        if (!_opt.Events.Enabled || items.Count == 0)
             return;
 
         EnsureBatchSize(items);
@@ -143,8 +143,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
 
     private bool IsCatalogApiEnabled()
         => _opt.Enabled
-           && _opt.Catalog.Enabled
-           && _opt.Catalog.Method == KlaviyoCatalogMethods.SyncEvents;
+           && _opt.Catalog.Enabled;
 
     // ----------------------------
     // Payload builders

@@ -28,7 +28,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
     [HttpGet]
     public async Task<IActionResult> BuildProducts(CancellationToken ct)
     {
-        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.Method == KlaviyoCatalogMethods.Feed) { return BadRequest("Klaviyo integration is disabled."); }
+        if (!_opt.Enabled || !_opt.Events.Enabled) { return BadRequest("Klaviyo integration is disabled."); }
         
         _logger.LogInformation("Building products for Klaviyo integration.");
 
@@ -38,7 +38,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
 
             var productsResponse = Ekom.API.Catalog.Instance.GetAllProducts(storeAlias);
 
-            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.Host).ToList();
+            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.SiteBaseUrl).ToList();
 
             await _klaviyoClient.BulkCreateCatalogItemsAsync(products, ct);
 

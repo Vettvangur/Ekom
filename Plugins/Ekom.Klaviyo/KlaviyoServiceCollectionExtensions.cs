@@ -1,6 +1,7 @@
 using Ekom.Klaviyo.API;
 using Ekom.Klaviyo.Dispatching.Catalog;
 using Ekom.Klaviyo.Dispatching.Events;
+using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,6 +57,9 @@ public static class KlaviyoServiceCollectionExtensions
 
         services.AddScoped<IKlaviyoEventService, KlaviyoEventService>();
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
+
+        // Enrichers
+        services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
 
         return services;
     }

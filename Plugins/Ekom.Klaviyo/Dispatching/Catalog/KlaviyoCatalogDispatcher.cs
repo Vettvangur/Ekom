@@ -54,10 +54,10 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
         var dispatch = _opt.Catalog.Dispatching;
 
         _logger.LogInformation(
-            "Klaviyo Catalog dispatcher started. Enabled={Enabled}, CatalogEnabled={CatalogEnabled}, Method={Method}, MaxQueueSize={MaxQueueSize}, FlushIntervalSeconds={FlushIntervalSeconds}, MaxBatchSize={MaxBatchSize}",
+            "Klaviyo Catalog dispatcher started. Enabled={Enabled}, CatalogEnabled={CatalogEnabled}, SyncMode={SyncMode}, MaxQueueSize={MaxQueueSize}, FlushIntervalSeconds={FlushIntervalSeconds}, MaxBatchSize={MaxBatchSize}",
             _opt.Enabled,
             _opt.Catalog.Enabled,
-            _opt.Catalog.Method,
+            _opt.Catalog.SyncMode,
             dispatch.MaxQueueSize,
             dispatch.FlushIntervalSeconds,
             dispatch.MaxBatchSize);
@@ -72,10 +72,8 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
         {
             try
             {
-                // Do NOT exit the service if disabled; just idle.
                 if (!_opt.Enabled ||
-                    !_opt.Catalog.Enabled ||
-                    _opt.Catalog.Method != KlaviyoCatalogMethods.SyncEvents)
+                    !_opt.Events.Enabled)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                     continue;
@@ -148,7 +146,7 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
                         }
                         else
                         {
-                            item = product?.ToKlaviyoCatalogItem(w.IsPublished, _opt.Host);
+                            item = product?.ToKlaviyoCatalogItem(w.IsPublished, _opt.SiteBaseUrl);
                         }
 
                         if (item is null)

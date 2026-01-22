@@ -11,14 +11,14 @@ internal static class ProductFeedMapper
         KlaviyoOptions options,
         IReadOnlyDictionary<string, object?>? customAttributes = null)
     {
-        var link = UrlBuilder.Combine(options.Host, product.Url);
+        var link = UrlBuilder.Combine(options.SiteBaseUrl, product.Url);
 
         var imageUrl = product.Images?.FirstOrDefault()?.Url;
         var imageLink = string.IsNullOrWhiteSpace(imageUrl)
             ? null
-            : UrlBuilder.Combine(options.Host, imageUrl + options.Catalog.ImageCrop);
+            : UrlBuilder.Combine(options.SiteBaseUrl, imageUrl + options.Catalog.ImageCrop);
 
-        var price = options.Catalog.HidePrice ? null : product.OriginalPrice?.Value;
+        var price = options.Catalog.ShowPrice ? product.OriginalPrice?.Value : null;
 
         IReadOnlyList<string>? categories = product.Categories.Select(x => x.Title).ToList();
 

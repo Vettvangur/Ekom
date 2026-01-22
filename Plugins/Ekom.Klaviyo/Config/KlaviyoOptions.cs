@@ -14,54 +14,47 @@ public sealed class KlaviyoOptions
     public KlaviyoEventsOptions Events { get; set; } = new();
 
     public IReadOnlyCollection<string> Stores { get; init; } = [];
-    public required string Host { get; init; } = "";
+    public required string SiteBaseUrl { get; init; } = "";
 }
 
 public sealed class KlaviyoCatalogOptions
 {
     public bool Enabled { get; set; } = true;
-
-    /// <summary>
-    /// Defines how the catalog is synchronized with Klaviyo.
-    /// Feed = Klaviyo pulls from a feed endpoint.
-    /// SyncEvents = application pushes updates via Catalog API.
-    /// </summary>
-    public KlaviyoCatalogMethods Method { get; set; } = KlaviyoCatalogMethods.Feed;
-
-    /// <summary>
-    /// How deleted/unpublished products are handled when using SyncEvents.
-    /// </summary>
-    public KlaviyoDeleteMode DeleteMode { get; set; } = KlaviyoDeleteMode.Soft;
-
     // Feed-only options
-    public bool HidePrice { get; set; } = false;
+    public bool ShowPrice { get; set; } = true;
     public bool ShowInventory { get; set; } = false;
     public string? Username { get; set; }
     public string? Password { get; set; }
     public int InventoryPolicy { get; set; } = 2;
     public string ImageCrop { get; set; } = "";
 
-    /// <summary>
-    /// Dispatcher settings used when Method == SyncEvents.
-    /// </summary>
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
+
+    /// <summary>
+    /// Defines how the catalog is synchronized with Klaviyo.
+    /// FeedPull = Klaviyo pulls from a feed endpoint.
+    /// ApiPush = application pushes updates via Catalog API.
+    /// </summary>
+    public KlaviyoCatalogSyncMode SyncMode { get; set; } = KlaviyoCatalogSyncMode.FeedPull;
+
+    /// <summary>
+    /// How deleted/unpublished products are handled
+    /// </summary>
+    public KlaviyoDeleteMode DeleteMode { get; set; } = KlaviyoDeleteMode.Soft;
+
 }
 
 public sealed class KlaviyoEventsOptions
 {
     public bool Enabled { get; set; } = true;
 
-    /// <summary>
-    /// Dispatcher settings for event tracking (Placed Order, etc.).
-    /// </summary>
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }
 
-
-public enum KlaviyoCatalogMethods
+public enum KlaviyoCatalogSyncMode
 {
-    SyncEvents,
-    Feed
+    FeedPull,
+    ApiPush
 }
 
 public sealed class KlaviyoDispatcherOptions
