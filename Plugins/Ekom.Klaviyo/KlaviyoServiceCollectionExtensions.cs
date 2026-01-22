@@ -1,4 +1,3 @@
-using Ekom.Klaviyo.API;
 using Ekom.Klaviyo.Dispatching.Catalog;
 using Ekom.Klaviyo.Dispatching.Events;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;

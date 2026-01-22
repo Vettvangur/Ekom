@@ -35,7 +35,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         IReadOnlyList<KlaviyoProductItem> items,
         CancellationToken ct = default)
     {
-        if (!IsCatalogApiEnabled() || items.Count == 0)
+        if (!_opt.Catalog.Enabled || items.Count == 0)
             return;
 
         EnsureBatchSize(items);
