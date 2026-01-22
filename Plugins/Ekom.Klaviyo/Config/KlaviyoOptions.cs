@@ -4,41 +4,63 @@ namespace Ekom.Klaviyo;
 
 public sealed class KlaviyoOptions
 {
-	public required string PrivateApiKey { get; init; }
-	public required string ApiBaseUrl { get; init; } = "https://a.klaviyo.com";
-	public required string Revision { get; init; }
-    public bool Enabled { get; set; } = true; // Enable/Disable all features
+    public required string PrivateApiKey { get; init; }
+    public string ApiBaseUrl { get; init; } = "https://a.klaviyo.com";
+    public required string Revision { get; init; }
 
-    public KlaviyoProductFeedOptions ProductFeed { get; set; } = new()
-    {
-        Enabled = true
-    };
-    public KlaviyoProductEventsOptions ProductEvents { get; set; } = new()
-    {
-        Enabled = true
-    };
+    public bool Enabled { get; set; } = true;
+
+    public KlaviyoCatalogOptions Catalog { get; set; } = new();
+    public KlaviyoEventsOptions Events { get; set; } = new();
 
     public IReadOnlyCollection<string> Stores { get; init; } = [];
-    public required string Host { get; init; } = "";
-
-    // batching defaults
-    public int MaxBatchSize { get; init; } = 100;          // choose conservatively
-	public int FlushIntervalSeconds { get; init; } = 2;    // low latency
-	public int MaxQueueSize { get; init; } = 10_000;       // backpressure
+    public required string SiteBaseUrl { get; init; } = "";
 }
-public sealed class KlaviyoProductFeedOptions
+
+public sealed class KlaviyoCatalogOptions
 {
     public bool Enabled { get; set; } = true;
-    public bool HidePrice { get; set; } = false;
+    // Feed-only options
+    public bool ShowPrice { get; set; } = true;
     public bool ShowInventory { get; set; } = false;
     public string? Username { get; set; }
     public string? Password { get; set; }
-    public int InventoryPolicy { get; set; } = 2; // 1 or 2
+    public int InventoryPolicy { get; set; } = 2;
     public string ImageCrop { get; set; } = "";
+
+    public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
+
+    /// <summary>
+    /// Defines how the catalog is synchronized with Klaviyo.
+    /// FeedPull = Klaviyo pulls from a feed endpoint.
+    /// ApiPush = application pushes updates via Catalog API.
+    /// </summary>
+    public KlaviyoCatalogSyncMode SyncMode { get; set; } = KlaviyoCatalogSyncMode.FeedPull;
+
+    /// <summary>
+    /// How deleted/unpublished products are handled
+    /// </summary>
+    public KlaviyoDeleteMode DeleteMode { get; set; } = KlaviyoDeleteMode.Soft;
+
 }
 
-public sealed class KlaviyoProductEventsOptions
+public sealed class KlaviyoEventsOptions
 {
     public bool Enabled { get; set; } = true;
-    public KlaviyoDeleteMode DeleteMode { get; set; } = KlaviyoDeleteMode.Soft;
+
+    public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
+}
+
+public enum KlaviyoCatalogSyncMode
+{
+    FeedPull,
+    ApiPush
+}
+
+public sealed class KlaviyoDispatcherOptions
+{
+    public int MaxBatchSize { get; init; } = 100;
+    public int FlushIntervalSeconds { get; init; } = 2;
+    public int MaxQueueSize { get; init; } = 10_000;
+    public int MaxConcurrency { get; init; } = 3;
 }
