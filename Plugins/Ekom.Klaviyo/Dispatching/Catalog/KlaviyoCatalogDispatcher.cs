@@ -73,7 +73,7 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
             try
             {
                 if (!_opt.Enabled ||
-                    !_opt.Events.Enabled)
+                    !_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                     continue;

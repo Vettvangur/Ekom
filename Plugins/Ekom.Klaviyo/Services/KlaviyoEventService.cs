@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.API;
+namespace Ekom.Klaviyo.Services;
 
 public interface IKlaviyoEventService
 {

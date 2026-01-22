@@ -28,7 +28,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
     [HttpGet]
     public async Task<IActionResult> BuildProducts(CancellationToken ct)
     {
-        if (!_opt.Enabled || !_opt.Events.Enabled) { return BadRequest("Klaviyo integration is disabled."); }
+        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.SyncMode == KlaviyoCatalogSyncMode.FeedPull) { return BadRequest("Klaviyo integration is disabled."); }
         
         _logger.LogInformation("Building products for Klaviyo integration.");
 

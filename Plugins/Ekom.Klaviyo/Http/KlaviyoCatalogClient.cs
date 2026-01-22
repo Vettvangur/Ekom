@@ -56,7 +56,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         KlaviyoDeleteMode deleteMode,
         CancellationToken ct = default)
     {
-        if (!_opt.Events.Enabled || items.Count == 0)
+        if (!_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush || items.Count == 0)
             return;
 
         EnsureBatchSize(items);
@@ -128,7 +128,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         IReadOnlyList<KlaviyoProductItem> items,
         CancellationToken ct = default)
     {
-        if (!IsCatalogApiEnabled() || items.Count == 0)
+        if (!_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush || items.Count == 0)
             return;
 
         EnsureBatchSize(items);
@@ -140,10 +140,6 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
 
         LogJobAccepted("DELETE", body);
     }
-
-    private bool IsCatalogApiEnabled()
-        => _opt.Enabled
-           && _opt.Catalog.Enabled;
 
     // ----------------------------
     // Payload builders
