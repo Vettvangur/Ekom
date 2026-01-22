@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.7...Ekom.Klaviyo-v0.2.8) (2026-01-22)
+
+
+### Bug Fixes
+
+* Add conditionals on catalog sync modes ([4977cb4](https://github.com/Vettvangur/Ekom/commit/4977cb46128a0024d2fa8364d74e6c9faf7f175a))
+* Add conditionals on catalog sync modes ([1c43650](https://github.com/Vettvangur/Ekom/commit/1c436506fdf1043072d4b2ec3b13907867021b88))
+
 ## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.6...Ekom.Klaviyo-v0.2.7) (2026-01-22)
 
 
