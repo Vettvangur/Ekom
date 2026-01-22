@@ -1,7 +1,8 @@
+using Ekom.Klaviyo.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Ekom.Klaviyo.Http;
+namespace Ekom.Klaviyo.Clients;
 
 internal interface IKlaviyoEventsClient
 {
@@ -9,7 +10,7 @@ internal interface IKlaviyoEventsClient
     /// Sends a batch of already-mapped Klaviyo event payloads.
     /// The caller controls schema; this method only transports.
     /// </summary>
-    Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, CancellationToken ct = default);
+    Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, string storeAlias, CancellationToken ct = default);
 }
 
 internal sealed class KlaviyoEventsClient : IKlaviyoEventsClient
@@ -28,16 +29,11 @@ internal sealed class KlaviyoEventsClient : IKlaviyoEventsClient
         _logger = logger;
     }
 
-    public async Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, CancellationToken ct = default)
+    public async Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, string storeAlias, CancellationToken ct = default)
     {
         if (!_opt.Enabled || !_opt.Events.Enabled || eventsPayload.Count == 0)
             return;
 
-        // NOTE: You must confirm the exact endpoint + schema you standardize on.
-        // This client intentionally mirrors your catalog client pattern and delegates schema control to caller.
-        //
-        // If you already decided on a specific Klaviyo events endpoint (e.g. /api/events),
-        // keep it here and centralize the mapping in your Event dispatcher/service.
         var payload = new
         {
             data = eventsPayload
@@ -45,6 +41,6 @@ internal sealed class KlaviyoEventsClient : IKlaviyoEventsClient
 
         _logger.LogDebug("Klaviyo: sending {Count} events", eventsPayload.Count);
 
-        await _http.PostAsync("/api/events", payload, ct);
+        await _http.PostAsync("/api/events", payload, storeAlias, ct);
     }
 }

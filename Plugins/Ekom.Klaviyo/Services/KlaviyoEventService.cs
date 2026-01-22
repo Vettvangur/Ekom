@@ -13,3 +13,8 @@ public sealed class KlaviyoEventService : IKlaviyoEventService
     }
 }
 
+
+// Placed Order
+// Started Checkout
+// Added to Cart
+// Viewed Product

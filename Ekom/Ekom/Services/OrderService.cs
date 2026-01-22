@@ -1254,12 +1254,12 @@ partial class OrderService
 
             if (fireOnOrderUpdatedEvents)
             {
-                OrderEvents.OnOrderUpdateing(this, new OrderUpdatingEventArgs
+                OrderEvents.OnOrderUpdating(this, new OrderUpdatingEventArgs
                 {
                     OrderInfo = orderInfo,
                 });
 
-                await OrderEvents.OnOrderUpdateingAsync(this, new OrderUpdatingEventArgs
+                await OrderEvents.OnOrderUpdatingAsync(this, new OrderUpdatingEventArgs
                 {
                     OrderInfo = orderInfo,
                 });

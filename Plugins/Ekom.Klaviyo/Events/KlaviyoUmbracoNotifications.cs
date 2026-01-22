@@ -78,20 +78,20 @@ internal sealed class KlaviyoUmbracoNotifications :
             return;
         }
 
-        foreach (var storeAlias in _options.Stores)
+        foreach (var store in _options.Stores)
         {
-            _logger.LogDebug("Klaviyo: enqueue ekmProduct {Id} store {Store}. Published={Published}", entity.Id, storeAlias, isPublished);
+            _logger.LogDebug("Klaviyo: enqueue ekmProduct {Id} store {Store}. Published={Published}", entity.Id, store.Alias, isPublished);
 
             try
             {
-                await _dispatcher.EnqueueAsync(storeAlias, entity.Key, isPublished, CancellationToken.None);
+                await _dispatcher.EnqueueAsync(store.Alias, entity.Key, isPublished, CancellationToken.None);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Klaviyo enqueue failed for product {Id} store {Store}.", entity.Id, storeAlias);
+                _logger.LogError(ex, "Klaviyo enqueue failed for product {Id} store {Store}.", entity.Id, store.Alias);
             }
 
-            _cache.Remove($"klaviyo:feed:v1:{storeAlias}");
+            _cache.Remove($"klaviyo:feed:v1:{store.Alias}");
         }
     }
 }

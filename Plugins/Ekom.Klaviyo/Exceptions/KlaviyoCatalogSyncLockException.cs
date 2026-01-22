@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Http;
+namespace Ekom.Klaviyo.Exceptions;
 
 /// <summary>
 /// Non-transient: Klaviyo blocks Catalog API usage when a feed/catalog sync is active.

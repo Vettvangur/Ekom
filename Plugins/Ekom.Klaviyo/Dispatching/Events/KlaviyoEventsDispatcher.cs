@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Http;
+using Ekom.Klaviyo.Clients;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,7 +10,8 @@ public interface IKlaviyoEventsDispatcher
 }
 
 /// <summary>
-/// A single queued event work item. Payload is the domain object you later map to Klaviyo.
+/// A single queued event work item.
+/// Payload is already mapped to Klaviyo Events API schema.
 /// </summary>
 public sealed record KlaviyoEventWork(
     string Name,
@@ -49,37 +50,14 @@ internal sealed class KlaviyoEventsDispatcher
         if (!_opt.Enabled || !_opt.Events.Enabled)
             return Task.FromResult(new List<KlaviyoEventWork>(0));
 
-        // Optional store filtering (only applies if your event work has StoreAlias set)
-        if (_opt.Stores is { Count: > 0 })
-        {
-            drained = drained
-                .Where(x =>
-                    x.StoreAlias is null || // keep global events
-                    _opt.Stores.Contains(x.StoreAlias, StringComparer.OrdinalIgnoreCase))
-                .ToList();
-        }
-
         return Task.FromResult(drained);
     }
 
     protected override async Task HandleChunkAsync(KlaviyoEventWork[] chunk, CancellationToken ct)
     {
-        // Mirror the catalog dispatcher approach: build the outbound payload list
-        // and let the HTTP client throw/log; dispatcher continues on subsequent chunks.
-        var payloads = new List<object>(chunk.Length);
+        var events = chunk.Select(x => x.Payload).ToList();
 
-        foreach (var e in chunk)
-        {
-            payloads.Add(new
-            {
-                name = e.Name,
-                occurred_at = e.OccurredAt,
-                store = e.StoreAlias,
-                payload = e.Payload
-            });
-        }
-
-        await _eventsClient.TrackEventsAsync(payloads, ct);
+        await _eventsClient.TrackEventsAsync(events, chunk.FirstOrDefault()?.StoreAlias ?? "", ct);
 
         _logger.LogDebug("Klaviyo EventsDispatcher sent {Count} events.", chunk.Length);
     }

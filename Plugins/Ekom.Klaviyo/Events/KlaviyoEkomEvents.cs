@@ -1,41 +1,46 @@
 using Ekom.Events;
+using Ekom.Klaviyo.Mappers;
+using Ekom.Klaviyo.Services;
+using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 
 namespace Ekom.Klaviyo.Events;
 internal class KlaviyoEkomEvents : IComponent
 {
+    private readonly IKlaviyoOrderService _orderService;
+    private readonly KlaviyoOptions _opt;
+
+    public KlaviyoEkomEvents(IKlaviyoOrderService orderService, IOptions<KlaviyoOptions> opt)
+    {
+        _orderService = orderService;
+        _opt = opt.Value;
+    }
+
     public void Initialize()
     {
-        CatalogEvents.BeforeReturnCategory += OnBeforeReturnCategory;
-        CatalogEvents.BeforeReturnCategories += OnBeforeReturnCategories;
-        CatalogEvents.BeforeReturnProduct += OnBeforeReturnProduct;
-        OrderEvents.AddingOrderline += OnAddingOrderline;
+        CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
     }
 
-    private void OnAddingOrderline(object? sender, AddingOrderlineEventArgs e)
+    private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args)
     {
 
-    }
+        if (!_opt.Events.TrackingPlacedOrders) { return; }
 
-    private void OnBeforeReturnProduct(object? sender, ProductEventArgs e)
-    {
-    }
+        var orderInfo = args.OrderInfo;
 
-    private void OnBeforeReturnCategories(object? sender, CategoriesEventArgs e)
-    {
-    }
+        if (orderInfo == null) { return; }
 
-    private void OnBeforeReturnCategory(object? sender, CategoryEventArgs e)
-    {
+        var klaviyoOrder = orderInfo.ToKlaviyoPlacedOrder(_opt.SiteBaseUrl);
+
+        await _orderService.TrackPlacedOrderAsync(
+            klaviyoOrder,
+            CancellationToken.None);
     }
 
     public void Terminate()
     {
-        CatalogEvents.BeforeReturnCategory -= OnBeforeReturnCategory;
-        CatalogEvents.BeforeReturnCategories -= OnBeforeReturnCategories;
-        CatalogEvents.BeforeReturnProduct -= OnBeforeReturnProduct;
-        OrderEvents.AddingOrderline -= OnAddingOrderline;
+        CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
     }
 }
 

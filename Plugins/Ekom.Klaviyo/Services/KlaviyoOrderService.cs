@@ -1,4 +1,8 @@
+using Ekom.Klaviyo.Dispatching.Events;
+using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Ekom.Klaviyo.Services;
 
@@ -12,6 +16,19 @@ public interface IKlaviyoOrderService
 
 public sealed class KlaviyoOrderService : IKlaviyoOrderService
 {
+    private readonly KlaviyoOptions _opt;
+    private readonly ILogger<KlaviyoOrderService> _logger;
+    private readonly IKlaviyoEventsDispatcher _dispatcher;
+    public KlaviyoOrderService(
+        IOptions<KlaviyoOptions> opt,
+        ILogger<KlaviyoOrderService> logger,
+        IKlaviyoEventsDispatcher dispatcher)
+    {
+        _opt = opt.Value;
+        _logger = logger;
+        _dispatcher = dispatcher;
+    }
+
     public ValueTask TrackCancelledOrderAsync(KlaviyoCancelledOrder payload, CancellationToken ct = default)
     {
         throw new NotImplementedException();
@@ -22,9 +39,29 @@ public sealed class KlaviyoOrderService : IKlaviyoOrderService
         throw new NotImplementedException();
     }
 
-    public ValueTask TrackPlacedOrderAsync(KlaviyoPlacedOrder payload, CancellationToken ct = default)
+    public async ValueTask TrackPlacedOrderAsync(KlaviyoPlacedOrder order, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        if (!_opt.Enabled || !_opt.Events.Enabled) return;
+
+        if (!order.Customer.HasIdentifier)
+        {
+            _logger.LogWarning(
+                "Klaviyo: skipping Placed Order {OrderId} because no customer identifier was provided.",
+                order.OrderId);
+            return;
+        }
+
+        var klaviyoEvent = order.ToPlacedOrderEvent();
+
+
+        var work = new KlaviyoEventWork(
+            Name: "PlacedOrder",
+            Payload: klaviyoEvent,
+            OccurredAt: order.PlacedAt,
+            StoreAlias: order.StoreAlias
+        );
+
+        await _dispatcher.EnqueueAsync(work, ct);
     }
 
     public ValueTask TrackRefundedOrderAsync(KlaviyoRefundedOrder payload, CancellationToken ct = default)

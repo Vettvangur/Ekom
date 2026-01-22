@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Http;
+namespace Ekom.Klaviyo.Exceptions;
 
 internal class KlaviyoApiException : Exception
 {

@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
@@ -9,6 +10,7 @@ namespace Ekom.Klaviyo.Http;
 internal sealed class KlaviyoHttpClient
 {
     private readonly HttpClient _http;
+    private readonly IKlaviyoApiKeyResolver _apiKeyResolver;
     private readonly ILogger<KlaviyoHttpClient> _logger;
 
     public static readonly JsonSerializerOptions JsonOptions = new()
@@ -17,20 +19,39 @@ internal sealed class KlaviyoHttpClient
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public KlaviyoHttpClient(HttpClient http, ILogger<KlaviyoHttpClient> logger)
+    public KlaviyoHttpClient(
+        HttpClient http,
+        IKlaviyoApiKeyResolver apiKeyResolver,
+        ILogger<KlaviyoHttpClient> logger)
     {
         _http = http;
+        _apiKeyResolver = apiKeyResolver;
         _logger = logger;
     }
 
-    public async Task<string> PostAsync(string path, object payload, CancellationToken ct)
+    public Task<string> PostAsync(string path, object payload, string? storeAlias, CancellationToken ct)
+    {
+        var apiKey = _apiKeyResolver.ResolveRequired(storeAlias);
+        return PostAsyncInternal(path, payload, apiKey, ct);
+    }
+
+    public Task<string> GetAsync(string path, string? storeAlias, CancellationToken ct)
+    {
+        var apiKey = _apiKeyResolver.ResolveRequired(storeAlias);
+        return GetAsyncInternal(path, apiKey, ct);
+    }
+
+    private async Task<string> PostAsyncInternal(string path, object payload, string apiKey, CancellationToken ct)
     {
         var json = JsonSerializer.Serialize(payload, JsonOptions);
 
         _logger.LogDebug("Klaviyo POST {Path}", path);
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        using var response = await _http.PostAsync(path, content, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        request.Headers.TryAddWithoutValidation("Authorization", $"Klaviyo-API-Key {apiKey}");
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        using var response = await _http.SendAsync(request, ct);
         var body = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
@@ -39,7 +60,6 @@ internal sealed class KlaviyoHttpClient
                 "Klaviyo API error {StatusCode} on {Path} | Body={Body} | Json={Json}",
                 (int)response.StatusCode, path, body, json);
 
-            // Special-case: catalog sync lock (non-transient)
             if (response.StatusCode == HttpStatusCode.Forbidden &&
                 body.Contains("active Catalog Sync", StringComparison.OrdinalIgnoreCase))
             {
@@ -58,11 +78,14 @@ internal sealed class KlaviyoHttpClient
         return body;
     }
 
-    public async Task<string> GetAsync(string path, CancellationToken ct)
+    private async Task<string> GetAsyncInternal(string path, string apiKey, CancellationToken ct)
     {
         _logger.LogDebug("Klaviyo GET {Path}", path);
 
-        using var response = await _http.GetAsync(path, ct);
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        request.Headers.TryAddWithoutValidation("Authorization", $"Klaviyo-API-Key {apiKey}");
+
+        using var response = await _http.SendAsync(request, ct);
         var body = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)

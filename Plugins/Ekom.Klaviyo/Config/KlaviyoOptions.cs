@@ -4,7 +4,8 @@ namespace Ekom.Klaviyo;
 
 public sealed class KlaviyoOptions
 {
-    public required string PrivateApiKey { get; init; }
+    // Global fallback key (optional if every store has its own key)
+    public string? PrivateApiKey { get; init; }
     public string ApiBaseUrl { get; init; } = "https://a.klaviyo.com";
     public required string Revision { get; init; }
 
@@ -13,7 +14,7 @@ public sealed class KlaviyoOptions
     public KlaviyoCatalogOptions Catalog { get; set; } = new();
     public KlaviyoEventsOptions Events { get; set; } = new();
 
-    public IReadOnlyCollection<string> Stores { get; init; } = [];
+    public IReadOnlyCollection<KlaviyoStoreOptions> Stores { get; init; } = [];
     public required string SiteBaseUrl { get; init; } = "";
 }
 
@@ -49,6 +50,8 @@ public sealed class KlaviyoEventsOptions
     public bool Enabled { get; set; } = true;
 
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
+
+    public bool TrackingPlacedOrders { get; set; } = true;
 }
 
 public enum KlaviyoCatalogSyncMode
@@ -63,4 +66,12 @@ public sealed class KlaviyoDispatcherOptions
     public int FlushIntervalSeconds { get; init; } = 2;
     public int MaxQueueSize { get; init; } = 10_000;
     public int MaxConcurrency { get; init; } = 3;
+}
+
+public sealed class KlaviyoStoreOptions
+{
+    public required string Alias { get; set; }
+
+    // Store override key (optional)
+    public string? PrivateApiKey { get; init; }
 }
