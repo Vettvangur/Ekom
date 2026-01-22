@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.9...Ekom.Klaviyo-v0.2.10) (2026-01-22)
+
+
+### Bug Fixes
+
+* Added klaviyo placed order tracking, Ekom events refactor to add inn ct ([bd6ed4d](https://github.com/Vettvangur/Ekom/commit/bd6ed4d850054ff0b715724964a6e762120d2c40))
+* Added klaviyo placed order tracking, Ekom events refactor to add… ([4df125f](https://github.com/Vettvangur/Ekom/commit/4df125f403fb083900da704acdba88b7b8409551))
+
 ## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.8...Ekom.Klaviyo-v0.2.9) (2026-01-22)
 
 
