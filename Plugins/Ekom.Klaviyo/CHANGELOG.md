@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.6...Ekom.Klaviyo-v0.2.7) (2026-01-22)
+
+
+### Bug Fixes
+
+* Klaviyo. Refactor options and settings to scale with more options ([7eed63f](https://github.com/Vettvangur/Ekom/commit/7eed63f3413f571c0ca57e0824a9a84d3c89c33c))
+
 ## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.5...Ekom.Klaviyo-v0.2.6) (2026-01-21)
 
 
