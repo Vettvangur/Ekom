@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Dispatching.Catalog;
 using Ekom.Klaviyo.Dispatching.Events;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
@@ -28,9 +29,6 @@ public static class KlaviyoServiceCollectionExtensions
             var opt = sp.GetRequiredService<IOptions<KlaviyoOptions>>().Value;
 
             client.BaseAddress = new Uri(opt.ApiBaseUrl);
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Klaviyo-API-Key", opt.PrivateApiKey);
-
             client.DefaultRequestHeaders.Add("revision", opt.Revision);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         });
@@ -39,8 +37,11 @@ public static class KlaviyoServiceCollectionExtensions
         {
             var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Klaviyo");
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<KlaviyoHttpClient>>();
-            return new KlaviyoHttpClient(http, logger);
+            var resolver = sp.GetRequiredService<IKlaviyoApiKeyResolver>();
+            return new KlaviyoHttpClient(http, resolver, logger);
         });
+
+        services.AddSingleton<IKlaviyoApiKeyResolver, KlaviyoApiKeyResolver>();
 
         services.AddSingleton<IKlaviyoCatalogClient, KlaviyoCatalogClient>();
         services.AddSingleton<IKlaviyoEventsClient, KlaviyoEventsClient>();

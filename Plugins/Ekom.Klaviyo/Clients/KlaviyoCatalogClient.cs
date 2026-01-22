@@ -1,15 +1,16 @@
+using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
-namespace Ekom.Klaviyo.Http;
+namespace Ekom.Klaviyo.Clients;
 
 internal interface IKlaviyoCatalogClient
 {
-    Task BulkUpsertCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, KlaviyoDeleteMode deleteMode, CancellationToken ct = default);
-    Task BulkCreateCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, CancellationToken ct = default);
-    Task BulkDeleteCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, CancellationToken ct = default);
+    Task BulkUpsertCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, KlaviyoDeleteMode deleteMode, string storeAlias, CancellationToken ct = default);
+    Task BulkCreateCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, string storeAlias, CancellationToken ct = default);
+    Task BulkDeleteCatalogItemsAsync(IReadOnlyList<KlaviyoProductItem> items, string storeAlias, CancellationToken ct = default);
 }
 
 internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
@@ -33,6 +34,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
     // ----------------------------
     public async Task BulkCreateCatalogItemsAsync(
         IReadOnlyList<KlaviyoProductItem> items,
+        string storeAlias,
         CancellationToken ct = default)
     {
         if (!_opt.Catalog.Enabled || items.Count == 0)
@@ -43,7 +45,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         _logger.LogDebug("Klaviyo: bulk CREATE {Count} catalog items", items.Count);
 
         var payload = BuildCreatePayload(items);
-        var body = await _http.PostAsync("/api/catalog-item-bulk-create-jobs", payload, ct);
+        var body = await _http.PostAsync("/api/catalog-item-bulk-create-jobs", payload, storeAlias, ct);
 
         LogJobAccepted("CREATE", body);
     }
@@ -54,6 +56,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
     public async Task BulkUpsertCatalogItemsAsync(
         IReadOnlyList<KlaviyoProductItem> items,
         KlaviyoDeleteMode deleteMode,
+        string storeAlias,
         CancellationToken ct = default)
     {
         if (!_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush || items.Count == 0)
@@ -74,14 +77,14 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
 
         if (hardDeleteItems is { Count: > 0 })
         {
-            await BulkDeleteCatalogItemsAsync(hardDeleteItems, ct);
+            await BulkDeleteCatalogItemsAsync(hardDeleteItems, storeAlias, ct);
         }
 
         if (upsertItems.Count == 0)
             return;
 
         var payload = BuildUpdatePayload(upsertItems);
-        var body = await _http.PostAsync("/api/catalog-item-bulk-update-jobs", payload, ct);
+        var body = await _http.PostAsync("/api/catalog-item-bulk-update-jobs", payload, storeAlias, ct);
 
         var job = TryParseJob(body);
         if (job is null)
@@ -97,7 +100,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         // Optional polling (keep your current behavior)
         if (string.Equals(job.Value.Status, "processing", StringComparison.OrdinalIgnoreCase))
         {
-            var polled = await PollCatalogUpdateJobAsync(job.Value.JobId, ct);
+            var polled = await PollCatalogUpdateJobAsync(job.Value.JobId, storeAlias, ct);
             if (!string.IsNullOrWhiteSpace(polled))
                 finalBody = polled!;
         }
@@ -118,7 +121,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
             "Klaviyo: UPDATE reported {Count} missing items; running CREATE fallback.",
             toCreate.Count);
 
-        await BulkCreateCatalogItemsAsync(toCreate, ct);
+        await BulkCreateCatalogItemsAsync(toCreate, storeAlias, ct);
     }
 
     // ----------------------------
@@ -126,6 +129,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
     // ----------------------------
     public async Task BulkDeleteCatalogItemsAsync(
         IReadOnlyList<KlaviyoProductItem> items,
+        string storeAlias,
         CancellationToken ct = default)
     {
         if (!_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush || items.Count == 0)
@@ -136,7 +140,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         _logger.LogDebug("Klaviyo: HARD delete {Count} catalog items", items.Count);
 
         var payload = BuildHardDeletePayload(items);
-        var body = await _http.PostAsync("/api/catalog-item-bulk-delete-jobs", payload, ct);
+        var body = await _http.PostAsync("/api/catalog-item-bulk-delete-jobs", payload, storeAlias, ct);
 
         LogJobAccepted("DELETE", body);
     }
@@ -261,7 +265,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         return $"$custom:::$default:::{externalId}";
     }
 
-    private async Task<string?> PollCatalogUpdateJobAsync(string jobId, CancellationToken ct, TimeSpan? maxDuration = null)
+    private async Task<string?> PollCatalogUpdateJobAsync(string jobId, string storeAlias, CancellationToken ct, TimeSpan? maxDuration = null)
     {
         var deadline = DateTimeOffset.UtcNow + (maxDuration ?? TimeSpan.FromMinutes(5));
         var delay = TimeSpan.FromSeconds(1);
@@ -271,7 +275,7 @@ internal sealed class KlaviyoCatalogClient : IKlaviyoCatalogClient
         {
             await Task.Delay(delay, ct);
 
-            var body = await _http.GetAsync($"/api/catalog-item-bulk-update-jobs/{jobId}/", ct);
+            var body = await _http.GetAsync($"/api/catalog-item-bulk-update-jobs/{jobId}/", storeAlias, ct);
 
             using var doc = JsonDocument.Parse(body);
             var attrs = doc.RootElement.GetProperty("data").GetProperty("attributes");

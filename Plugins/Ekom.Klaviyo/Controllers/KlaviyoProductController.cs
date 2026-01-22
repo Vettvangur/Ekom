@@ -38,7 +38,7 @@ internal class KlaviyoProductController : ControllerBase
         }
 
         // Default store if not provided
-        storeAlias ??= _opt.Stores?.FirstOrDefault();
+        storeAlias ??= _opt.Stores?.FirstOrDefault()?.Alias;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing storeAlias and no default store is configured.");

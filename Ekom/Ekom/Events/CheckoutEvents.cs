@@ -1,61 +1,35 @@
 using Ekom.Models;
 using Ekom.Payments;
+using Ekom.Utilities;
 
 namespace Ekom.Events;
 
 public static class CheckoutEvents
 {
-    public static event EventHandler<PayEventArgs> Pay;
-    internal static void OnPay(object sender, PayEventArgs args)
-        => Pay?.Invoke(sender, args);
+    // Sync events
+    public static event EventHandler<PayEventArgs>? Pay;
+    internal static void OnPay(object sender, PayEventArgs args) => Pay?.Invoke(sender, args);
 
-    public static event Func<object, PayEventArgs, Task>? PayAsync;
-    public static async Task OnPayAsync(object sender, PayEventArgs args)
-    {
-        if (PayAsync is null) return;
+    public static event EventHandler<ProcessingEventArgs>? Processing;
+    internal static void OnProcessing(object sender, ProcessingEventArgs args) => Processing?.Invoke(sender, args);
 
-        foreach (var handler in PayAsync.GetInvocationList()
-                 .Cast<Func<object, PayEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static event EventHandler<CompleteCheckoutEventArgs>? CompleteCheckout;
+    internal static void OnCompleteCheckout(object sender, CompleteCheckoutEventArgs args) => CompleteCheckout?.Invoke(sender, args);
 
-    public static event EventHandler<ProcessingEventArgs> Processing;
-    internal static void OnProcessing(object sender, ProcessingEventArgs args)
-        => Processing?.Invoke(sender, args);
+    // Async events (cancellable)
+    public static event Func<object, PayEventArgs, CancellationToken, Task>? PayAsync;
+    public static Task OnPayAsync(object sender, PayEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(PayAsync, sender, args, ct);
 
-    public static event Func<object, ProcessingEventArgs, Task>? ProcessingAsync;
-    public static async Task OnProcessingAsync(object sender, ProcessingEventArgs args)
-    {
-        if (ProcessingAsync is null) return;
+    public static event Func<object, ProcessingEventArgs, CancellationToken, Task>? ProcessingAsync;
+    public static Task OnProcessingAsync(object sender, ProcessingEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(ProcessingAsync, sender, args, ct);
 
-        foreach (var handler in ProcessingAsync.GetInvocationList()
-                 .Cast<Func<object, ProcessingEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
-
-    public static event EventHandler<CompleteCheckoutEventArgs> CompleteCheckout;
-
-    internal static void OnCompleteCheckout(object sender, CompleteCheckoutEventArgs args)
-        => CompleteCheckout?.Invoke(sender, args);
-
-    public static event Func<object, CompleteCheckoutEventArgs, Task> CompleteCheckoutAsync;
-
-    internal static async Task OnCompleteCheckoutAsync(object sender, CompleteCheckoutEventArgs args)
-    {
-        if (CompleteCheckoutAsync != null)
-        {
-            foreach (var handler in CompleteCheckoutAsync.GetInvocationList().Cast<Func<object, CompleteCheckoutEventArgs, Task>>())
-            {
-                await handler(sender, args).ConfigureAwait(false);
-            }
-        }
-    }
-
+    public static event Func<object, CompleteCheckoutEventArgs, CancellationToken, Task>? CompleteCheckoutAsync;
+    internal static Task OnCompleteCheckoutAsync(object sender, CompleteCheckoutEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(CompleteCheckoutAsync, sender, args, ct);
 }
+
 
 public class PayEventArgs : EventArgs
 {

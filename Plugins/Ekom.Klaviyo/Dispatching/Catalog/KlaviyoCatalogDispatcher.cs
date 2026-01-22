@@ -1,5 +1,6 @@
+using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
-using Ekom.Klaviyo.Http;
+using Ekom.Klaviyo.Exceptions;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models;
 using Microsoft.Extensions.Hosting;
@@ -92,13 +93,6 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
 
                 while (latest.Count < maxDrain && _channel.Reader.TryRead(out var w))
                 {
-                    // Optional store filter
-                    if (_opt.Stores is { Count: > 0 } &&
-                        !_opt.Stores.Contains(w.StoreAlias, StringComparer.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
                     var key = $"{w.StoreAlias}|{w.ProductId}";
                     latest[key] = w;
                 }
@@ -183,7 +177,7 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
                     try
                     {
                         // Use delete mode as part of upsert semantics
-                        await _client.BulkUpsertCatalogItemsAsync(chunk, _opt.Catalog.DeleteMode, stoppingToken);
+                        await _client.BulkUpsertCatalogItemsAsync(chunk, _opt.Catalog.DeleteMode, chunk.FirstOrDefault()?.StoreAlias ?? "", stoppingToken);
                     }
                     catch (KlaviyoCatalogSyncLockException ex)
                     {
