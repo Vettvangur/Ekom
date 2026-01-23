@@ -19,10 +19,21 @@ internal static class OrderMapper
                 PhoneNumber = order.CustomerInformation.Customer.Phone,
                 ExternalId = order.CustomerInformation.Customer.Email,
                 FirstName = order.CustomerInformation.Customer.FirstName,
-                LastName = order.CustomerInformation.Customer.LastName
+                LastName = order.CustomerInformation.Customer.LastName,
+                Address = order.CustomerInformation.Customer.Address,
+                ZipCode = order.CustomerInformation.Customer.ZipCode,
+                City = order.CustomerInformation.Customer.City,
+                Country = order.CustomerInformation.Customer.Country
             },
             StoreAlias = order.StoreInfo.Alias,
-            Items = order.OrderLines.ToKlaviyoOrderLines(host).ToList()
+            Items = order.OrderLines.ToKlaviyoOrderLines(host).ToList(),
+            PaymentProviderName = order.PaymentProvider?.Title,
+            PaymentProviderValue = order.PaymentProvider?.Price.WithVat.Value,
+            ShippingProviderName = order.ShippingProvider?.Title,
+            ShippingProviderValue = order.ShippingProvider?.Price.WithVat.Value,
+            TaxValue = order.Vat.Value,
+            DiscountValue = order.DiscountAmount.Value,
+            CheckoutUrl = null
         };
     }
 
@@ -51,7 +62,11 @@ internal static class OrderMapper
                             phone_number = o.Customer.PhoneNumber,
                             external_id = o.Customer.ExternalId,
                             first_name = o.Customer.FirstName,
-                            last_name = o.Customer.LastName
+                            last_name = o.Customer.LastName,
+                            country = o.Customer.Country,
+                            zip_code = o.Customer.ZipCode,
+                            address = o.Customer.Address,
+                            city = o.Customer.City
                         }
                     }
                 },
@@ -64,16 +79,25 @@ internal static class OrderMapper
                     value = o.Value,
                     currency = o.Currency,
                     checkout_url = o.CheckoutUrl,
-                    payment_method = o.PaymentMethod,
+                    payment_method = new
+                    {
+                        name = o.PaymentProviderName,
+                        price = o.PaymentProviderValue
+                    },
                     discount_value = o.DiscountValue,
-                    shipping_value = o.ShippingValue,
+                    shipping_method = new
+                    {
+                        name = o.ShippingProviderName,
+                        price = o.ShippingProviderValue
+                    },
                     tax_value = o.TaxValue,
                     items = o.Items.Select(i => new
                     {
                         product_id = i.ProductExternalId,
                         sku = i.Sku,
                         name = i.Name,
-                        price = i.Price,
+                        unit_price = i.UnitPrice,
+                        line_total = i.LineTotal,
                         quantity = i.Quantity,
                         product_url = i.ProductUrl,
                         image_url = i.ImageUrl,

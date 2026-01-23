@@ -10,7 +10,7 @@ internal interface IKlaviyoEventsClient
     /// Sends a batch of already-mapped Klaviyo event payloads.
     /// The caller controls schema; this method only transports.
     /// </summary>
-    Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, string storeAlias, CancellationToken ct = default);
+    Task TrackEventAsync(object eventPayload, string storeAlias, CancellationToken ct = default);
 }
 
 internal sealed class KlaviyoEventsClient : IKlaviyoEventsClient
@@ -29,17 +29,14 @@ internal sealed class KlaviyoEventsClient : IKlaviyoEventsClient
         _logger = logger;
     }
 
-    public async Task TrackEventsAsync(IReadOnlyList<object> eventsPayload, string storeAlias, CancellationToken ct = default)
+    public async Task TrackEventAsync(object eventPayload, string storeAlias, CancellationToken ct = default)
     {
-        if (!_opt.Enabled || !_opt.Events.Enabled || eventsPayload.Count == 0)
+        if (!_opt.Enabled || !_opt.Events.Enabled || eventPayload is null)
             return;
 
-        var payload = new
-        {
-            data = eventsPayload
-        };
+        var payload = new { data = eventPayload };
 
-        _logger.LogDebug("Klaviyo: sending {Count} events", eventsPayload.Count);
+        _logger.LogDebug("Klaviyo: sending 1 event");
 
         await _http.PostAsync("/api/events", payload, storeAlias, ct);
     }

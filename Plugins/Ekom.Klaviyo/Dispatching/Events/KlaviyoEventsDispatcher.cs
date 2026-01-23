@@ -11,7 +11,7 @@ public interface IKlaviyoEventsDispatcher
 
 /// <summary>
 /// A single queued event work item.
-/// Payload is already mapped to Klaviyo Events API schema.
+/// Payload is already mapped to Klaviyo Events API schema (the inner { type, attributes } object).
 /// </summary>
 public sealed record KlaviyoEventWork(
     string Name,
@@ -55,10 +55,38 @@ internal sealed class KlaviyoEventsDispatcher
 
     protected override async Task HandleChunkAsync(KlaviyoEventWork[] chunk, CancellationToken ct)
     {
-        var events = chunk.Select(x => x.Payload).ToList();
+        if (chunk.Length == 0)
+            return;
 
-        await _eventsClient.TrackEventsAsync(events, chunk.FirstOrDefault()?.StoreAlias ?? "", ct);
+        // /api/events expects a single event object at /data, so we send one request per event.
+        // Use bounded concurrency to preserve throughput.
+        var maxConcurrency = Math.Max(1, _opt.Events.Dispatching.MaxConcurrency); // Ensure >= 1
 
-        _logger.LogDebug("Klaviyo EventsDispatcher sent {Count} events.", chunk.Length);
+        using var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+
+        var tasks = chunk.Select(async work =>
+        {
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                var storeAlias = work.StoreAlias ?? string.Empty;
+
+                await _eventsClient.TrackEventAsync(work.Payload, storeAlias, ct).ConfigureAwait(false);
+
+                _logger.LogDebug(
+                    "Klaviyo EventsDispatcher sent event {Name} (OccurredAt={OccurredAt}, StoreAlias={StoreAlias}).",
+                    work.Name,
+                    work.OccurredAt,
+                    storeAlias);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        _logger.LogDebug("Klaviyo EventsDispatcher sent {Count} events in chunk.", chunk.Length);
     }
 }

@@ -6,28 +6,48 @@ public class Customer
 {
     public string Name
     {
-
         get
         {
-            return (string.IsNullOrEmpty(Properties.GetValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetValue("customerName"))?.Trim();
+            var fullName = Properties.GetValue("customerName");
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+                return fullName.Trim();
+
+            return $"{FirstName} {LastName}".Trim();
         }
     }
+
     public string FirstName
     {
-
-        get
-        {
-            return Properties.GetValue("customerFirstName");
-        }
+        get => Properties.GetValue("customerFirstName")?.Trim() ?? "";
     }
+
     public string LastName
     {
-
         get
         {
-            return Properties.GetValue("customerLastName");
+            var lastName = Properties.GetValue("customerLastName");
+
+            if (!string.IsNullOrWhiteSpace(lastName))
+                return lastName.Trim();
+
+            // Fallback: derive from Name
+            var name = Name;
+            if (string.IsNullOrWhiteSpace(name))
+                return "";
+
+            var parts = name
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            // Single-word name → no last name
+            if (parts.Length < 2)
+                return "";
+
+            // Everything except first word is treated as last name
+            return string.Join(' ', parts.Skip(1));
         }
     }
+
     public string Email
     {
         get

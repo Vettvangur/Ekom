@@ -39,29 +39,26 @@ public sealed class KlaviyoOrderService : IKlaviyoOrderService
         throw new NotImplementedException();
     }
 
-    public async ValueTask TrackPlacedOrderAsync(KlaviyoPlacedOrder order, CancellationToken ct = default)
+    public ValueTask TrackPlacedOrderAsync(KlaviyoPlacedOrder order, CancellationToken ct = default)
     {
-        if (!_opt.Enabled || !_opt.Events.Enabled) return;
+        if (!_opt.Enabled || !_opt.Events.Enabled) return ValueTask.CompletedTask;
 
         if (!order.Customer.HasIdentifier)
         {
             _logger.LogWarning(
                 "Klaviyo: skipping Placed Order {OrderId} because no customer identifier was provided.",
                 order.OrderId);
-            return;
+            return ValueTask.CompletedTask;
         }
-
-        var klaviyoEvent = order.ToPlacedOrderEvent();
-
 
         var work = new KlaviyoEventWork(
             Name: "PlacedOrder",
-            Payload: klaviyoEvent,
+            Payload: order.ToPlacedOrderEvent(),
             OccurredAt: order.PlacedAt,
             StoreAlias: order.StoreAlias
         );
 
-        await _dispatcher.EnqueueAsync(work, ct);
+        return _dispatcher.EnqueueAsync(work, ct);
     }
 
     public ValueTask TrackRefundedOrderAsync(KlaviyoRefundedOrder payload, CancellationToken ct = default)
