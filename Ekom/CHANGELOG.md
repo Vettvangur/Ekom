@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.20](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.19...Ekom-v0.2.20) (2026-01-25)
+
+
+### Bug Fixes
+
+* Ekom - Customer last name update, klaviyo placed order functionality and updated readme ([623aa1a](https://github.com/Vettvangur/Ekom/commit/623aa1a521da5c61ab434fabd715ef15ac5aef9c))
+* klaviyo placed order events, enricher and service. Updated readme. ([cae3108](https://github.com/Vettvangur/Ekom/commit/cae31084733e3994a1e5b19b32c1ae12c9505671))
+
 ## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.18...Ekom-v0.2.19) (2026-01-22)
 
 
