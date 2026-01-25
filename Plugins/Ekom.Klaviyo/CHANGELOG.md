@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.2.12](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.11...Ekom.Klaviyo-v0.2.12) (2026-01-25)
+
+
+### Bug Fixes
+
+* Ekom - Customer last name update, klaviyo placed order functionality and updated readme ([623aa1a](https://github.com/Vettvangur/Ekom/commit/623aa1a521da5c61ab434fabd715ef15ac5aef9c))
+* klaviyo placed order events, enricher and service. Updated readme. ([cae3108](https://github.com/Vettvangur/Ekom/commit/cae31084733e3994a1e5b19b32c1ae12c9505671))
+
+## [0.2.11](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.10...Ekom.Klaviyo-v0.2.11) (2026-01-22)
+
+
+### Bug Fixes
+
+* Update ekom version on klaviyo and add ct ([1769cf3](https://github.com/Vettvangur/Ekom/commit/1769cf36226b6bcdf0de9b9ebb89b139bd12d881))
+* Update ekom version on klaviyo and add ct ([260d3f1](https://github.com/Vettvangur/Ekom/commit/260d3f1ac283125229e753bd035a4637734ffe0f))
+
+## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.9...Ekom.Klaviyo-v0.2.10) (2026-01-22)
+
+
+### Bug Fixes
+
+* Added klaviyo placed order tracking, Ekom events refactor to add inn ct ([bd6ed4d](https://github.com/Vettvangur/Ekom/commit/bd6ed4d850054ff0b715724964a6e762120d2c40))
+* Added klaviyo placed order tracking, Ekom events refactor to add… ([4df125f](https://github.com/Vettvangur/Ekom/commit/4df125f403fb083900da704acdba88b7b8409551))
+
+## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.8...Ekom.Klaviyo-v0.2.9) (2026-01-22)
+
+
+### Bug Fixes
+
+* remove old namespace using and remove IsCatalogEnabled ([3b919bb](https://github.com/Vettvangur/Ekom/commit/3b919bbc4160fed77ee3c18a00d65fc90ecea245))
+* remove old namespace using and remove IsCatalogEnabled ([3fdeb25](https://github.com/Vettvangur/Ekom/commit/3fdeb25d16f096698f1358856258ecbe5adc1f42))
+
+## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.7...Ekom.Klaviyo-v0.2.8) (2026-01-22)
+
+
+### Bug Fixes
+
+* Add conditionals on catalog sync modes ([4977cb4](https://github.com/Vettvangur/Ekom/commit/4977cb46128a0024d2fa8364d74e6c9faf7f175a))
+* Add conditionals on catalog sync modes ([1c43650](https://github.com/Vettvangur/Ekom/commit/1c436506fdf1043072d4b2ec3b13907867021b88))
+
+## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.6...Ekom.Klaviyo-v0.2.7) (2026-01-22)
+
+
+### Bug Fixes
+
+* Klaviyo. Refactor options and settings to scale with more options ([7eed63f](https://github.com/Vettvangur/Ekom/commit/7eed63f3413f571c0ca57e0824a9a84d3c89c33c))
+
+## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.5...Ekom.Klaviyo-v0.2.6) (2026-01-21)
+
+
+### Bug Fixes
+
+* New ImageCrop settings on Klaviyo product feed ([70e10a2](https://github.com/Vettvangur/Ekom/commit/70e10a2184c969a672a0ad715804a0d967c8c357))
+* New ImageCrop settings on Klaviyo product feed ([95a13e4](https://github.com/Vettvangur/Ekom/commit/95a13e4c4bb0cc4379abf0d4d4435a8c569105ab))
+
 ## [0.2.5](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.4...Ekom.Klaviyo-v0.2.5) (2026-01-20)
 
 
