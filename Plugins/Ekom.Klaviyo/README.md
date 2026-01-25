@@ -24,7 +24,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
   "Revision": "2023-10-15",
   "SiteBaseUrl": "https://vettvangur.is",
   "Stores": [],
-  "Events": {},
+  "Orders": {},
   "Catalog": {}
 }
 ```
@@ -132,7 +132,7 @@ Use this when:
   "ApiBaseUrl": "https://a.klaviyo.com",
   "Revision": "2023-10-15",
   "SiteBaseUrl": "https://example.com",
-  "Events": {
+  "Orders": {
     "Enabled": true,
     "TrackingPlacedOrders": true,
     "Dispatching": {
