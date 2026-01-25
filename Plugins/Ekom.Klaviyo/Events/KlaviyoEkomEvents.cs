@@ -26,7 +26,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
 
     private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args, CancellationToken ct)
     {
-        if (!_opt.Enabled || !_opt.Events.TrackingPlacedOrders)
+        if (!_opt.Enabled || !_opt.Orders.TrackingPlacedOrders)
             return;
 
         var orderInfo = args.OrderInfo;

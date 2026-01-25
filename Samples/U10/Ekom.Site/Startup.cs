@@ -1,4 +1,5 @@
 using Ekom.Klaviyo;
+using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
 
@@ -66,6 +67,8 @@ public class Startup
             options.MaxAge = TimeSpan.FromDays(365);
         });
 
+
+        services.AddSingleton<IKlaviyoPlacedOrderEnricher, CustomPlacedOrderEnriching>();
 
         services.AddKlaviyo();
         //services.AddEkomValitorPay(_config);

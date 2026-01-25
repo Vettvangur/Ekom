@@ -16,4 +16,5 @@ public sealed record KlaviyoPlacedOrder
     public string? ShippingProviderName { get; init; }
     public decimal? ShippingProviderValue { get; init; }
     public decimal? TaxValue { get; init; }
+    public Dictionary<string, object?> CustomProperties { get; } = new(StringComparer.OrdinalIgnoreCase);
 }

@@ -12,7 +12,7 @@ public sealed class KlaviyoOptions
     public bool Enabled { get; set; } = true;
 
     public KlaviyoCatalogOptions Catalog { get; set; } = new();
-    public KlaviyoEventsOptions Events { get; set; } = new();
+    public KlaviyoOrdersOptions Orders { get; set; } = new();
 
     public IReadOnlyCollection<KlaviyoStoreOptions> Stores { get; init; } = [];
     public required string SiteBaseUrl { get; init; } = "";
@@ -45,7 +45,7 @@ public sealed class KlaviyoCatalogOptions
 
 }
 
-public sealed class KlaviyoEventsOptions
+public sealed class KlaviyoOrdersOptions
 {
     public bool Enabled { get; set; } = true;
 

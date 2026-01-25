@@ -1,5 +1,7 @@
+using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
 using Ekom.Models;
+using System.Text.Json.Nodes;
 
 namespace Ekom.Klaviyo.Mappers;
 
@@ -23,7 +25,8 @@ internal static class OrderMapper
                 Address = order.CustomerInformation.Customer.Address,
                 ZipCode = order.CustomerInformation.Customer.ZipCode,
                 City = order.CustomerInformation.Customer.City,
-                Country = order.CustomerInformation.Customer.Country
+                Country = order.CustomerInformation.Customer.Country,
+                Company = order.CustomerInformation.Customer.Company
             },
             StoreAlias = order.StoreInfo.Alias,
             Items = order.OrderLines.ToKlaviyoOrderLines(host).ToList(),
@@ -44,12 +47,62 @@ internal static class OrderMapper
 
     public static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o)
     {
+        var properties = new JsonObject
+        {
+            ["order_id"] = o.OrderId,
+            ["value"] = o.Value,
+            ["currency"] = o.Currency,
+            ["checkout_url"] = o.CheckoutUrl,
+            ["payment_method"] = new JsonObject
+            {
+                ["name"] = o.PaymentProviderName,
+                ["price"] = o.PaymentProviderValue
+            },
+            ["discount_value"] = o.DiscountValue,
+            ["shipping_method"] = new JsonObject
+            {
+                ["name"] = o.ShippingProviderName,
+                ["price"] = o.ShippingProviderValue
+            },
+            ["tax_value"] = o.TaxValue,
+            ["items"] = new JsonArray(
+                o.Items.Select(i =>
+                {
+                    var item = new JsonObject
+                    {
+                        ["product_id"] = i.ProductExternalId,
+                        ["sku"] = i.Sku,
+                        ["name"] = i.Name,
+                        ["unit_price"] = i.UnitPrice,
+                        ["line_total"] = i.LineTotal,
+                        ["quantity"] = i.Quantity,
+                        ["product_url"] = i.ProductUrl,
+                        ["image_url"] = i.ImageUrl,
+                        ["categories"] = i.Categories is null
+                            ? null
+                            : new JsonArray(i.Categories.Select(c => (JsonNode?)c).ToArray())
+                    };
+
+                    return item;
+                }).ToArray()
+            )
+        };
+
+        CustomPropertiesMerger.MergeCustomProperties(properties, o.CustomProperties);
+
         return new
         {
             type = "event",
             attributes = new
             {
-                metric = new { data = new { type = "metric", attributes = new { name = "Placed Order" } } },
+                metric = new
+                {
+                    data = new
+                    {
+                        type = "metric",
+                        attributes = new { name = "Placed Order" }
+                    }
+                },
 
                 profile = new
                 {
@@ -66,44 +119,14 @@ internal static class OrderMapper
                             country = o.Customer.Country,
                             zip_code = o.Customer.ZipCode,
                             address = o.Customer.Address,
-                            city = o.Customer.City
+                            city = o.Customer.City,
+                            company = o.Customer.Company
                         }
                     }
                 },
 
                 time = o.PlacedAt,
-
-                properties = new
-                {
-                    order_id = o.OrderId,
-                    value = o.Value,
-                    currency = o.Currency,
-                    checkout_url = o.CheckoutUrl,
-                    payment_method = new
-                    {
-                        name = o.PaymentProviderName,
-                        price = o.PaymentProviderValue
-                    },
-                    discount_value = o.DiscountValue,
-                    shipping_method = new
-                    {
-                        name = o.ShippingProviderName,
-                        price = o.ShippingProviderValue
-                    },
-                    tax_value = o.TaxValue,
-                    items = o.Items.Select(i => new
-                    {
-                        product_id = i.ProductExternalId,
-                        sku = i.Sku,
-                        name = i.Name,
-                        unit_price = i.UnitPrice,
-                        line_total = i.LineTotal,
-                        quantity = i.Quantity,
-                        product_url = i.ProductUrl,
-                        image_url = i.ImageUrl,
-                        categories = i.Categories
-                    }).ToList()
-                }
+                properties
             }
         };
     }

@@ -90,6 +90,13 @@ public class Customer
             return Properties.GetValue("customerRegion");
         }
     }
+    public string State
+    {
+        get
+        {
+            return Properties.GetValue("customerState");
+        }
+    }
     public string Company
     {
         get

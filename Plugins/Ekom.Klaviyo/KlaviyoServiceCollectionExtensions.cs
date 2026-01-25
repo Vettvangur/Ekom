@@ -1,6 +1,7 @@
 using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Dispatching.Catalog;
-using Ekom.Klaviyo.Dispatching.Events;
+using Ekom.Klaviyo.Dispatching.Orders;
+using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Services;
@@ -44,22 +45,23 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoApiKeyResolver, KlaviyoApiKeyResolver>();
 
         services.AddSingleton<IKlaviyoCatalogClient, KlaviyoCatalogClient>();
-        services.AddSingleton<IKlaviyoEventsClient, KlaviyoEventsClient>();
+        services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
 
         // Dispatchers (singleton hosted services)
         services.AddSingleton<KlaviyoCatalogDispatcher>();
         services.AddSingleton<IKlaviyoCatalogDispatcher>(sp => sp.GetRequiredService<KlaviyoCatalogDispatcher>());
         services.AddHostedService(sp => sp.GetRequiredService<KlaviyoCatalogDispatcher>());
 
-        services.AddSingleton<KlaviyoEventsDispatcher>();
-        services.AddSingleton<IKlaviyoEventsDispatcher>(sp => sp.GetRequiredService<KlaviyoEventsDispatcher>());
-        services.AddHostedService(sp => sp.GetRequiredService<KlaviyoEventsDispatcher>());
+        services.AddSingleton<KlaviyoOrdersDispatcher>();
+        services.AddSingleton<IKlaviyoOrdersDispatcher>(sp => sp.GetRequiredService<KlaviyoOrdersDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<KlaviyoOrdersDispatcher   >());
 
-        services.AddScoped<IKlaviyoEventService, KlaviyoEventService>();
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
+        services.AddSingleton<KlaviyoPlacedOrderEnrichmentPipeline>();
+        services.AddSingleton<IKlaviyoPlacedOrderEnricherRunner, KlaviyoPlacedOrderEnricherRunner>();
 
         return services;
     }

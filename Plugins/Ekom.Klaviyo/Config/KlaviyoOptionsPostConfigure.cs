@@ -14,7 +14,7 @@ internal sealed class KlaviyoOptionsPostConfigure
             o.Enabled = false;
 
         var needsApi =
-            o.Events.Enabled
+            o.Orders.Enabled
             || (o.Catalog.Enabled && o.Catalog.SyncMode == KlaviyoCatalogSyncMode.ApiPush);
 
         if (needsApi && string.IsNullOrWhiteSpace(o.PrivateApiKey))
@@ -23,7 +23,7 @@ internal sealed class KlaviyoOptionsPostConfigure
         if (!o.Enabled)
         {
             o.Catalog.Enabled = false;
-            o.Events.Enabled = false;
+            o.Orders.Enabled = false;
             return;
         }
 

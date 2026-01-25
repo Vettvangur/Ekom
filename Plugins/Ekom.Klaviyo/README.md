@@ -63,10 +63,10 @@ Use this when:
 
 -Each store uses a different Klaviyo account
 
-## Events
+## Orders
 
 ```json
-"Events": {
+"Orders": {
   "Enabled": true,
   "TrackingPlacedOrders": true,
   "Dispatching": {
