@@ -69,7 +69,7 @@ internal sealed class KlaviyoOrdersDispatcher
                 await _ordersClient.TrackOrderEventAsync(work.EventPayload, work.StoreAlias, ct).ConfigureAwait(false);
 
                 _logger.LogDebug(
-                    "Klaviyo OrdersDispatcher sent {Type} ({Name}) OrderId={OrderId} OccurredAt={OccurredAt} StoreAlias={StoreAlias}.",
+                    "Klaviyo OrdersDispatcher sent {Type} OrderId={OrderId} OccurredAt={OccurredAt} StoreAlias={StoreAlias}.",
                     work.Type, work.OrderId, work.OccurredAt, work.StoreAlias);
             }
             finally

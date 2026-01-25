@@ -59,9 +59,9 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 
 Use this when:
 
--Running multiple stores in a single application
+- Running multiple stores in a single application
 
--Each store uses a different Klaviyo account
+- Each store uses a different Klaviyo account
 
 ## Orders
 
