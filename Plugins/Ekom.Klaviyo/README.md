@@ -37,7 +37,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 | `Revision` | `string` | Klaviyo API revision header (required). |
 | `SiteBaseUrl` | `string` | Public site base URL used to generate product and checkout URLs. |
 | `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
-| `Events` | `object` | Event tracking configuration. |
+| `Orders` | `object` | Orders tracking configuration. |
 | `Catalog` | `object` | Product catalog synchronization configuration. |
 
 
