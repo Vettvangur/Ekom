@@ -1,6 +1,6 @@
 namespace Ekom.Klaviyo.Models;
 
-internal sealed class KlaviyoProductItem
+public sealed class KlaviyoProductItem
 {
     // store-aware catalog id
     public required string StoreAlias { get; init; }

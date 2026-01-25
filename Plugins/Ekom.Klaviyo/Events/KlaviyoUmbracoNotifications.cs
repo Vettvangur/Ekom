@@ -72,7 +72,7 @@ internal sealed class KlaviyoUmbracoNotifications :
         if (!string.Equals(entity.ContentType.Alias, "ekmProduct", StringComparison.OrdinalIgnoreCase))
             return;
 
-        if (!_options.Enabled || !_options.Events.Enabled)
+        if (!_options.Enabled || !_options.Catalog.Enabled || _options.Catalog.SyncMode != KlaviyoCatalogSyncMode.ApiPush)
         {
             _logger.LogDebug("Klaviyo disabled; skipping ekmProduct {Id}.", entity.Id);
             return;

@@ -146,14 +146,13 @@ internal sealed class KlaviyoCatalogDispatcher : BackgroundService, IKlaviyoCata
                         if (item is null)
                             continue;
 
-                        // Enrichment pipeline (same as your product dispatcher)
                         await _pipeline.ApplyAsync(
                             item,
                             new KlaviyoProductEnrichmentContext
                             {
                                 StoreAlias = w.StoreAlias,
                                 ProductKey = w.ProductId,
-                                SourceProduct = product,
+                                Product = item,
                                 IsPublished = w.IsPublished
                             },
                             stoppingToken);
