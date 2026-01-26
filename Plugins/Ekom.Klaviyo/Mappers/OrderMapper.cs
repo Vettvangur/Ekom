@@ -42,6 +42,7 @@ internal static class OrderMapper
         return new KlaviyoPlacedOrder
         {
             OrderId = order.UniqueId.ToString(),
+            OrderNumber = order.OrderNumber,
             PlacedAt = order.CreateDate,
             Value = order.ChargedAmount.Value,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
@@ -87,6 +88,7 @@ internal static class OrderMapper
         var properties = new JsonObject
         {
             ["order_id"] = o.OrderId,
+            ["order_number"] = o.OrderNumber,
             ["value"] = o.Value,
             ["currency"] = o.Currency,
             ["checkout_url"] = o.CheckoutUrl,
