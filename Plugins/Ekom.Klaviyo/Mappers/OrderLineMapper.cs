@@ -18,7 +18,7 @@ internal static class OrderLineMapper
             Sku = ol.Product?.SKU,
             Name = ol.Product?.Title ?? "",
             LineTotal = ol.Amount.Value,
-            UnitPrice = ol.Product.Price.WithVat.Value,
+            UnitPrice = ol.Product?.Price.WithVat.Value ?? 0,
             Quantity = ol.Quantity,
             ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(host, ol.Product.Url),
             ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(host, ol.Product.Images.FirstOrDefault()?.Url ?? ""),

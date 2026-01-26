@@ -6,7 +6,7 @@ public sealed record KlaviyoPlacedOrder
     public DateTimeOffset PlacedAt { get; init; }
     public decimal Value { get; init; }
     public string Currency { get; init; } = default!;
-    public KlaviyoCustomerIdentity Customer { get; init; } = default!;
+    public KlaviyoProfile Customer { get; init; } = default!;
     public IReadOnlyList<KlaviyoOrderLine> Items { get; init; } = [];
     public string StoreAlias { get; init; } = default!;
     public string? CheckoutUrl { get; init; }
