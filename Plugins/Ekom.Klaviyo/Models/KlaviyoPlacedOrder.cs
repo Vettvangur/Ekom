@@ -3,6 +3,7 @@ namespace Ekom.Klaviyo.Models;
 public sealed record KlaviyoPlacedOrder
 {
     public string OrderId { get; init; } = default!;
+    public string OrderNumber { get; init; } = default!;
     public DateTimeOffset PlacedAt { get; init; }
     public decimal Value { get; init; }
     public string Currency { get; init; } = default!;
