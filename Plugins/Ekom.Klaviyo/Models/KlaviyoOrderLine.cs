@@ -10,5 +10,5 @@ public sealed record KlaviyoOrderLine
     public string? ProductUrl { get; init; }
     public string? ImageUrl { get; init; }
     public IReadOnlyList<string>? Categories { get; init; }
-    public Dictionary<string, object?> CustomProperties { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
