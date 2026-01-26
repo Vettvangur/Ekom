@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.14...Ekom.Klaviyo-v0.2.15) (2026-01-26)
+
+
+### Bug Fixes
+
+* update placed order date ([47d8953](https://github.com/Vettvangur/Ekom/commit/47d8953f9026e3f1b468493afcdfd836d044d997))
+* update placed order date ([476c0c4](https://github.com/Vettvangur/Ekom/commit/476c0c48b62b5efc717f1c0b00630ae089aa8440))
+
+## [0.2.14](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.13...Ekom.Klaviyo-v0.2.14) (2026-01-26)
+
+
+### Bug Fixes
+
+* klaviyo ship to address and make properties with setters. ekom: … ([8de4e9c](https://github.com/Vettvangur/Ekom/commit/8de4e9c0f128b2621a6c71d3726727e153dfac53))
+* klaviyo ship to address and make properties with setters. ekom: refactor price objects ([5cd6e1c](https://github.com/Vettvangur/Ekom/commit/5cd6e1ce2327d663f3495716bd826058659d23ee))
+
+## [0.2.13](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.12...Ekom.Klaviyo-v0.2.13) (2026-01-26)
+
+
+### Bug Fixes
+
+* klaviyo - refactor profile object and add custom properties ([ec1290f](https://github.com/Vettvangur/Ekom/commit/ec1290fb1a05b44d83c24f14463ca403a3c5281c))
+
 ## [0.2.12](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.11...Ekom.Klaviyo-v0.2.12) (2026-01-25)
 
 
