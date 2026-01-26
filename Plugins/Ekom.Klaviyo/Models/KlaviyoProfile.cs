@@ -1,6 +1,6 @@
 namespace Ekom.Klaviyo.Models;
 
-public sealed record KlaviyoCustomerIdentity(
+public sealed record KlaviyoProfile(
     string? Email = null,
     string? PhoneNumber = null,
     string? ExternalId = null,
@@ -10,7 +10,8 @@ public sealed record KlaviyoCustomerIdentity(
     string? ZipCode = null,
     string? City = null,
     string? Country = null,
-    string? Company = null
+    string? Company = null,
+    IDictionary<string, object?>? CustomProperties = null
 )
 {
     public bool HasIdentifier =>
@@ -18,3 +19,5 @@ public sealed record KlaviyoCustomerIdentity(
         !string.IsNullOrWhiteSpace(PhoneNumber) ||
         !string.IsNullOrWhiteSpace(ExternalId);
 }
+
+

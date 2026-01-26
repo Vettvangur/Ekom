@@ -15,7 +15,7 @@ internal static class OrderMapper
             PlacedAt = order.CreateDate,
             Value = order.ChargedAmount.Value,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
-            Customer = new KlaviyoCustomerIdentity
+            Customer = new KlaviyoProfile
             {
                 Email = order.CustomerInformation.Customer.Email,
                 PhoneNumber = order.CustomerInformation.Customer.Phone,
@@ -66,25 +66,27 @@ internal static class OrderMapper
             },
             ["tax_value"] = o.TaxValue,
             ["items"] = new JsonArray(
-                o.Items.Select(i =>
+            o.Items.Select(i =>
+            {
+                var item = new JsonObject
                 {
-                    var item = new JsonObject
-                    {
-                        ["product_id"] = i.ProductExternalId,
-                        ["sku"] = i.Sku,
-                        ["name"] = i.Name,
-                        ["unit_price"] = i.UnitPrice,
-                        ["line_total"] = i.LineTotal,
-                        ["quantity"] = i.Quantity,
-                        ["product_url"] = i.ProductUrl,
-                        ["image_url"] = i.ImageUrl,
-                        ["categories"] = i.Categories is null
-                            ? null
-                            : new JsonArray(i.Categories.Select(c => (JsonNode?)c).ToArray())
-                    };
+                    ["product_id"] = i.ProductExternalId,
+                    ["sku"] = i.Sku,
+                    ["name"] = i.Name,
+                    ["unit_price"] = i.UnitPrice,
+                    ["line_total"] = i.LineTotal,
+                    ["quantity"] = i.Quantity,
+                    ["product_url"] = i.ProductUrl,
+                    ["image_url"] = i.ImageUrl,
+                    ["categories"] = i.Categories is null
+                        ? null
+                        : new JsonArray(i.Categories.Select(c => (JsonNode?)c).ToArray())
+                };
 
-                    return item;
-                }).ToArray()
+                CustomPropertiesMerger.MergeCustomProperties(item, i.CustomProperties);
+
+                return item;
+            }).ToArray()
             )
         };
 
@@ -109,19 +111,7 @@ internal static class OrderMapper
                     data = new
                     {
                         type = "profile",
-                        attributes = new
-                        {
-                            email = o.Customer.Email,
-                            phone_number = o.Customer.PhoneNumber,
-                            external_id = o.Customer.ExternalId,
-                            first_name = o.Customer.FirstName,
-                            last_name = o.Customer.LastName,
-                            country = o.Customer.Country,
-                            zip_code = o.Customer.ZipCode,
-                            address = o.Customer.Address,
-                            city = o.Customer.City,
-                            company = o.Customer.Company
-                        }
+                        attributes = o.Customer.ToProfileAttributes()
                     }
                 },
 
