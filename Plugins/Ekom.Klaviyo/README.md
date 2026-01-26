@@ -22,6 +22,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
   "PrivateApiKey": "secret",
   "ApiBaseUrl": "https://a.klaviyo.com",
   "Revision": "2023-10-15",
+  "ProfileExternalIdProperty": "email",
   "SiteBaseUrl": "https://vettvangur.is",
   "Stores": [],
   "Orders": {},
@@ -35,6 +36,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 | `PrivateApiKey` | `string` | Klaviyo **Private API Key** used for authentication. |
 | `ApiBaseUrl` | `string` | Klaviyo API base URL. Usually `https://a.klaviyo.com`. |
 | `Revision` | `string` | Klaviyo API revision header (required). |
+| `ProfileExternalIdProperty` | `string` | Default Email property used as the external ID for profiles. Other options: , `phone`, `username`, any property on customer `customerExternalId` . |
 | `SiteBaseUrl` | `string` | Public site base URL used to generate product and checkout URLs. |
 | `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
 | `Orders` | `object` | Orders tracking configuration. |
