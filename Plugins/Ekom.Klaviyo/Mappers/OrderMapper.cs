@@ -43,7 +43,7 @@ internal static class OrderMapper
         {
             OrderId = order.UniqueId.ToString(),
             OrderNumber = order.OrderNumber,
-            PlacedAt = order.CreateDate,
+            PlacedAt = order.PaidDate ?? order.CreateDate,
             Value = order.ChargedAmount.Value,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
             Customer = order.ToKlaviyoProfile(opt),
