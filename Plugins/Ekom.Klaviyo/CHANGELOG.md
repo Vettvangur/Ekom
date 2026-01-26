@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.13](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.12...Ekom.Klaviyo-v0.2.13) (2026-01-26)
+
+
+### Bug Fixes
+
+* klaviyo - refactor profile object and add custom properties ([ec1290f](https://github.com/Vettvangur/Ekom/commit/ec1290fb1a05b44d83c24f14463ca403a3c5281c))
+
 ## [0.2.12](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.11...Ekom.Klaviyo-v0.2.12) (2026-01-25)
 
 
