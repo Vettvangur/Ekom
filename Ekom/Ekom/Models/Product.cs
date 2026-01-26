@@ -7,6 +7,7 @@ using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -618,9 +619,13 @@ public class Product : PerStoreNodeEntity, IProduct
             return new Price(0, storeCurrency, storeVat, storeVatIncluded);
         }
 
-        if (decimal.TryParse(originalPrice, out decimal _orgPrice))
+        if (decimal.TryParse(
+                originalPrice,
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out var org))
         {
-            return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
+            return new Price(org, storeCurrency, storeVat, storeVatIncluded);
         }
 
         if (originalPrice.IsJson())

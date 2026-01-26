@@ -7,6 +7,7 @@ public sealed record KlaviyoPlacedOrder
     public decimal Value { get; init; }
     public string Currency { get; init; } = default!;
     public KlaviyoProfile Customer { get; init; } = default!;
+    public KlaviyoShipTo? ShipTo { get; set; }
     public IReadOnlyList<KlaviyoOrderLine> Items { get; init; } = [];
     public string StoreAlias { get; init; } = default!;
     public string? CheckoutUrl { get; init; }
@@ -16,5 +17,5 @@ public sealed record KlaviyoPlacedOrder
     public string? ShippingProviderName { get; init; }
     public decimal? ShippingProviderValue { get; init; }
     public decimal? TaxValue { get; init; }
-    public Dictionary<string, object?> CustomProperties { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
