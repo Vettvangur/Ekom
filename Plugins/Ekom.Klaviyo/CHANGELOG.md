@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.14](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.13...Ekom.Klaviyo-v0.2.14) (2026-01-26)
+
+
+### Bug Fixes
+
+* klaviyo ship to address and make properties with setters. ekom: … ([8de4e9c](https://github.com/Vettvangur/Ekom/commit/8de4e9c0f128b2621a6c71d3726727e153dfac53))
+* klaviyo ship to address and make properties with setters. ekom: refactor price objects ([5cd6e1c](https://github.com/Vettvangur/Ekom/commit/5cd6e1ce2327d663f3495716bd826058659d23ee))
+
 ## [0.2.13](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.12...Ekom.Klaviyo-v0.2.13) (2026-01-26)
 
 
