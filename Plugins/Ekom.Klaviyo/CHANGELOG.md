@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.14...Ekom.Klaviyo-v0.2.15) (2026-01-26)
+
+
+### Bug Fixes
+
+* update placed order date ([47d8953](https://github.com/Vettvangur/Ekom/commit/47d8953f9026e3f1b468493afcdfd836d044d997))
+* update placed order date ([476c0c4](https://github.com/Vettvangur/Ekom/commit/476c0c48b62b5efc717f1c0b00630ae089aa8440))
+
 ## [0.2.14](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.13...Ekom.Klaviyo-v0.2.14) (2026-01-26)
 
 
