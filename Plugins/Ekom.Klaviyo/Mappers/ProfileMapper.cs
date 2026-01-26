@@ -1,11 +1,60 @@
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
+using Ekom.Models;
+using System.Reflection.Emit;
 using System.Text.Json.Nodes;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Mappers;
 
 internal static class ProfileMapper
 {
+    public static KlaviyoProfile ToKlaviyoProfile(this IOrderInfo order, KlaviyoOptions opt)
+    {
+        var profile = new KlaviyoProfile()
+        {
+            Email = order.CustomerInformation.Customer.Email,
+            PhoneNumber = order.CustomerInformation.Customer.Phone,
+            ExternalId = ToProfileExternalId(order, opt),
+            FirstName = order.CustomerInformation.Customer.FirstName,
+            LastName = order.CustomerInformation.Customer.LastName,
+            Address = order.CustomerInformation.Customer.Address,
+            ZipCode = order.CustomerInformation.Customer.ZipCode,
+            City = order.CustomerInformation.Customer.City,
+            Country = order.CustomerInformation.Customer.Country,
+            Company = order.CustomerInformation.Customer.Company
+        };
+
+        return profile;
+    }
+
+    public static string ToProfileExternalId(IOrderInfo order, KlaviyoOptions opt)
+    {
+
+        if (opt.ProfileExternalIdProperty.InvariantEquals("email"))
+        {
+            return order.CustomerInformation.Customer.Email!;
+        } else  if (opt.ProfileExternalIdProperty.InvariantEquals("phone"))
+        {
+            return order.CustomerInformation.Customer.Phone!;
+        } else if (opt.ProfileExternalIdProperty.InvariantEquals("username"))
+        {
+            return order.CustomerInformation.Customer.UserName!;
+        } else
+        {
+            var customValue = order.CustomerInformation.Customer.Properties.GetValue(opt.ProfileExternalIdProperty);
+
+            if (!string.IsNullOrEmpty(customValue))
+            {
+                return customValue;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Klaviyo profile requires at least one identifier (email, phone_number, or external_id).");
+    }
+
+
     public static JsonObject ToProfileAttributes(this KlaviyoProfile c)
     {
         var attributes = new JsonObject();
