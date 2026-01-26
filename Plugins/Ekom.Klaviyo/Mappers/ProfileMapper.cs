@@ -1,13 +1,12 @@
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
 using Ekom.Models;
-using System.Reflection.Emit;
 using System.Text.Json.Nodes;
 using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Mappers;
 
-internal static class ProfileMapper
+public static class ProfileMapper
 {
     public static KlaviyoProfile ToKlaviyoProfile(this IOrderInfo order, KlaviyoOptions opt)
     {
@@ -55,7 +54,7 @@ internal static class ProfileMapper
     }
 
 
-    public static JsonObject ToProfileAttributes(this KlaviyoProfile c)
+    internal static JsonObject ToProfileAttributes(this KlaviyoProfile c)
     {
         var attributes = new JsonObject();
 
@@ -97,7 +96,7 @@ internal static class ProfileMapper
         return attributes;
     }
 
-    public static JsonObject ToProfileData(this KlaviyoProfile c)
+    internal static JsonObject ToProfileData(this KlaviyoProfile c)
     {
         if (!c.HasIdentifier)
             throw new InvalidOperationException(
