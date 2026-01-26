@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.16](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.15...Ekom.Klaviyo-v0.2.16) (2026-01-26)
+
+
+### Bug Fixes
+
+* make mappers public ([58d5cb1](https://github.com/Vettvangur/Ekom/commit/58d5cb10698a823e9d14470fcd0f37769b1d6fdd))
+* update docs ([db85b1e](https://github.com/Vettvangur/Ekom/commit/db85b1e0960151ccf561e2b13ecb378d1536cbdc))
+* update docs ([41fbe8f](https://github.com/Vettvangur/Ekom/commit/41fbe8fe8dc3ca95264b0e7d4dce176b3522a68c))
+
 ## [0.2.15](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.14...Ekom.Klaviyo-v0.2.15) (2026-01-26)
 
 
