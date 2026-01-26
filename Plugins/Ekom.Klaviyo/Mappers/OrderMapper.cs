@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace Ekom.Klaviyo.Mappers;
 
-internal static class OrderMapper
+public static class OrderMapper
 {
     public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt)
     {
@@ -49,7 +49,7 @@ internal static class OrderMapper
             Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
-            Items = order.OrderLines.ToKlaviyoOrderLines(opt.SiteBaseUrl).ToList(),
+            Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
             PaymentProviderName = order.PaymentProvider?.Title,
             PaymentProviderValue = order.PaymentProvider?.Price.WithVat.Value,
             ShippingProviderName = order.ShippingProvider?.Title,
@@ -65,7 +65,7 @@ internal static class OrderMapper
         return orders.Select(x => x.ToKlaviyoPlacedOrder(opt));
     }
 
-    public static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o)
+    internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o)
     {
         JsonObject? shippingTo = null;
 

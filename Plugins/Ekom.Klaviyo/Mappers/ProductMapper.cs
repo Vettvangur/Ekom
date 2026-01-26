@@ -4,7 +4,7 @@ using Ekom.Models;
 
 namespace Ekom.Klaviyo.Mappers;
 
-internal static class ProductMapper
+public static class ProductMapper
 {
     public static KlaviyoProductItem ToKlaviyoCatalogItem(this IProduct product, bool isPublished, string host)
     {

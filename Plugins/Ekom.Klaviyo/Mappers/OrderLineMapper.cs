@@ -4,9 +4,9 @@ using Ekom.Models;
 
 namespace Ekom.Klaviyo.Mappers;
 
-internal static class OrderLineMapper
+public static class OrderLineMapper
 {
-    public static KlaviyoOrderLine ToKlaviyoOrderLine(this IOrderLine ol, string host)
+    public static KlaviyoOrderLine ToKlaviyoOrderLine(this IOrderLine ol, KlaviyoOptions opt)
     {
         var product = API.Catalog.Instance.GetProduct(ol.ProductKey, ol.OrderInfo.StoreInfo.Alias);
 
@@ -20,14 +20,14 @@ internal static class OrderLineMapper
             LineTotal = ol.Amount.Value,
             UnitPrice = ol.Product?.Price.WithVat.Value ?? 0,
             Quantity = ol.Quantity,
-            ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(host, ol.Product.Url),
-            ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(host, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
+            ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Url),
+            ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
             Categories = categories
         };
     }
 
-    public static IEnumerable<KlaviyoOrderLine> ToKlaviyoOrderLines(this IEnumerable<IOrderLine> orderlines, string host)
+    public static IEnumerable<KlaviyoOrderLine> ToKlaviyoOrderLines(this IEnumerable<IOrderLine> orderlines, KlaviyoOptions opt)
     {
-        return orderlines.Select(x => x.ToKlaviyoOrderLine(host));
+        return orderlines.Select(x => x.ToKlaviyoOrderLine(opt));
     }
 }
