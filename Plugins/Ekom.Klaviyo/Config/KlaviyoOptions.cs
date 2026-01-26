@@ -14,6 +14,8 @@ public sealed class KlaviyoOptions
     public KlaviyoCatalogOptions Catalog { get; set; } = new();
     public KlaviyoOrdersOptions Orders { get; set; } = new();
 
+    public string ProfileExternalIdProperty { get; init; } = "email";
+
     public IReadOnlyCollection<KlaviyoStoreOptions> Stores { get; init; } = [];
     public required string SiteBaseUrl { get; init; } = "";
 }

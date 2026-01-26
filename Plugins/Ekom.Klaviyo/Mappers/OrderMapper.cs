@@ -7,7 +7,7 @@ namespace Ekom.Klaviyo.Mappers;
 
 internal static class OrderMapper
 {
-    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, string host)
+    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt)
     {
 
         var klaviyoShipTo = new KlaviyoShipTo()
@@ -27,15 +27,15 @@ internal static class OrderMapper
         {
             klaviyoShipTo = new KlaviyoShipTo()
             {
-                //Email = order.CustomerInformation.Shipping.Email,
-                //Phone = order.CustomerInformation.Shipping.Phone,
+                Email = order.CustomerInformation.Shipping.Email,
+                Phone = order.CustomerInformation.Shipping.Phone,
                 FirstName = order.CustomerInformation.Shipping.FirstName,
                 LastName = order.CustomerInformation.Shipping.LastName,
                 Address = order.CustomerInformation.Shipping.Address,
                 ZipCode = order.CustomerInformation.Shipping.ZipCode,
                 City = order.CustomerInformation.Shipping.City,
                 Country = order.CustomerInformation.Shipping.Country,
-                //Region = order.CustomerInformation.Shipping.Region,
+                Region = order.CustomerInformation.Shipping.Region,
             };
         }
 
@@ -45,22 +45,10 @@ internal static class OrderMapper
             PlacedAt = order.CreateDate,
             Value = order.ChargedAmount.Value,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
-            Customer = new KlaviyoProfile
-            {
-                Email = order.CustomerInformation.Customer.Email,
-                PhoneNumber = order.CustomerInformation.Customer.Phone,
-                ExternalId = order.CustomerInformation.Customer.Email,
-                FirstName = order.CustomerInformation.Customer.FirstName,
-                LastName = order.CustomerInformation.Customer.LastName,
-                Address = order.CustomerInformation.Customer.Address,
-                ZipCode = order.CustomerInformation.Customer.ZipCode,
-                City = order.CustomerInformation.Customer.City,
-                Country = order.CustomerInformation.Customer.Country,
-                Company = order.CustomerInformation.Customer.Company,
-            },
+            Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
-            Items = order.OrderLines.ToKlaviyoOrderLines(host).ToList(),
+            Items = order.OrderLines.ToKlaviyoOrderLines(opt.SiteBaseUrl).ToList(),
             PaymentProviderName = order.PaymentProvider?.Title,
             PaymentProviderValue = order.PaymentProvider?.Price.WithVat.Value,
             ShippingProviderName = order.ShippingProvider?.Title,
@@ -71,9 +59,9 @@ internal static class OrderMapper
         };
     }
 
-    public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, string host)
+    public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, KlaviyoOptions opt)
     {
-        return orders.Select(x => x.ToKlaviyoPlacedOrder(host));
+        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt));
     }
 
     public static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o)
