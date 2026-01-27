@@ -8,7 +8,7 @@ public class CustomerShippingInfo
     {
         get
         {
-            var fullName = Properties.GetValue("shippingName");
+            var fullName = Value("shippingName");
 
             if (!string.IsNullOrWhiteSpace(fullName))
                 return fullName.Trim();
@@ -19,24 +19,24 @@ public class CustomerShippingInfo
 
     public string FirstName
     {
-        get => Properties.GetValue("shippingFirstName")?.Trim() ?? "";
+        get => Value("shippingFirstName")?.Trim() ?? "";
     }
 
     public string LastName
     {
         get
         {
-            var lastName = Properties.GetValue("shippingLastName");
+            var lastName = Value("shippingLastName");
 
             if (!string.IsNullOrWhiteSpace(lastName))
                 return lastName.Trim();
 
             // Fallback: derive from Name
-            var name = Name;
-            if (string.IsNullOrWhiteSpace(name))
+            var fullName = Value("shippingName");
+            if (string.IsNullOrWhiteSpace(fullName))
                 return "";
 
-            var parts = name
+            var parts = fullName
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             // Single-word name → no last name
