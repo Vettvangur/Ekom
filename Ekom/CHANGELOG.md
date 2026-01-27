@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.22](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.21...Ekom-v0.2.22) (2026-01-27)
+
+
+### Bug Fixes
+
+* fix circular dependency in firstname ([ad7023c](https://github.com/Vettvangur/Ekom/commit/ad7023c748e2990de7c17990b6bc09af3f7f7847))
+* fix circular dependency in firstname ([57f00a4](https://github.com/Vettvangur/Ekom/commit/57f00a481aaad0a113752abd31e29d6b66f95ab3))
+
 ## [0.2.21](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.20...Ekom-v0.2.21) (2026-01-26)
 
 
