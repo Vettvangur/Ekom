@@ -8,7 +8,7 @@ public class Customer
     {
         get
         {
-            var fullName = Properties.GetValue("customerName");
+            var fullName = Value("customerName");
 
             if (!string.IsNullOrWhiteSpace(fullName))
                 return fullName.Trim();
@@ -19,24 +19,24 @@ public class Customer
 
     public string FirstName
     {
-        get => Properties.GetValue("customerFirstName")?.Trim() ?? "";
+        get => Value("customerFirstName")?.Trim() ?? "";
     }
 
     public string LastName
     {
         get
         {
-            var lastName = Properties.GetValue("customerLastName");
+            var lastName = Value("customerLastName");
 
             if (!string.IsNullOrWhiteSpace(lastName))
                 return lastName.Trim();
 
             // Fallback: derive from Name
-            var name = Name;
-            if (string.IsNullOrWhiteSpace(name))
+            var fullName = Value("customerName");
+            if (string.IsNullOrWhiteSpace(fullName))
                 return "";
 
-            var parts = name
+            var parts = fullName
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             // Single-word name → no last name
@@ -52,70 +52,70 @@ public class Customer
     {
         get
         {
-            return Properties.GetValue("customerEmail");
+            return Value("customerEmail");
         }
     }
     public string Address
     {
         get
         {
-            return Properties.GetValue("customerAddress");
+            return Value("customerAddress");
         }
     }
     public string City
     {
         get
         {
-            return Properties.GetValue("customerCity");
+            return Value("customerCity");
         }
     }
     public string Apartment
     {
         get
         {
-            return Properties.GetValue("customerApartment");
+            return Value("customerApartment");
         }
     }
     public string Country
     {
         get
         {
-            return Properties.GetValue("customerCountry");
+            return Value("customerCountry");
         }
     }
     public string Region
     {
         get
         {
-            return Properties.GetValue("customerRegion");
+            return Value("customerRegion");
         }
     }
     public string State
     {
         get
         {
-            return Properties.GetValue("customerState");
+            return Value("customerState");
         }
     }
     public string Company
     {
         get
         {
-            return Properties.GetValue("customerCompany");
+            return Value("customerCompany");
         }
     }
     public string ZipCode
     {
         get
         {
-            return Properties.GetValue("customerZipCode");
+            return Value("customerZipCode");
         }
     }
     public string Phone
     {
         get
         {
-            return Properties.GetValue("customerPhone");
+            return Value("customerPhone");
         }
     }
     public int UserId { get; set; }
