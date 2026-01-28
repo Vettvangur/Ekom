@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.26...Ekom-v0.2.27) (2026-01-28)
+
+
+### Bug Fixes
+
+* shipping method not read in json. added variant to klaviyo ([be68dc2](https://github.com/Vettvangur/Ekom/commit/be68dc2edf2c1f12dca1f63325fa50008a047604))
+* shipping method not read in json. added variant to klaviyo ([5572080](https://github.com/Vettvangur/Ekom/commit/5572080b97492ab146ece52f69bb1f397b8e975e))
+
 ## [0.2.26](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.25...Ekom-v0.2.26) (2026-01-28)
 
 
