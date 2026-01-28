@@ -19,7 +19,25 @@ public class Customer
 
     public string FirstName
     {
-        get => Value("customerFirstName")?.Trim() ?? "";
+        get { 
+            var firstName = Value("customerFirstName");
+
+            if (!string.IsNullOrWhiteSpace(firstName))
+            {
+                return firstName.Trim();
+            }
+
+            // Fallback: derive from Name
+            var fullName = Value("customerName");
+            if (string.IsNullOrWhiteSpace(fullName))
+                return "";
+
+            var parts = fullName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length > 0 ? parts[0] : "";
+
+        }
     }
 
     public string LastName
