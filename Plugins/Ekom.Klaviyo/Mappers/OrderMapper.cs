@@ -45,6 +45,7 @@ public static class OrderMapper
             OrderNumber = order.OrderNumber,
             PlacedAt = order.PaidDate ?? order.CreateDate,
             Value = order.ChargedAmount.Value,
+            ValueFormatted = order.ChargedAmount.CurrencyString,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
             Customer = order.ToKlaviyoProfile(opt),
             ShipTo = klaviyoShipTo,
@@ -65,7 +66,7 @@ public static class OrderMapper
         return orders.Select(x => x.ToKlaviyoPlacedOrder(opt));
     }
 
-    internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o)
+    internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o, KlaviyoOptions opt)
     {
         JsonObject? shippingTo = null;
 
@@ -112,6 +113,7 @@ public static class OrderMapper
             ["order_id"] = o.OrderId,
             ["order_number"] = o.OrderNumber,
             ["value"] = o.Value,
+            ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
             ["checkout_url"] = o.CheckoutUrl,
             ["payment_method"] = new JsonObject
@@ -137,6 +139,8 @@ public static class OrderMapper
                     ["name"] = i.Name,
                     ["unit_price"] = i.UnitPrice,
                     ["line_total"] = i.LineTotal,
+                    ["unit_price_formatted"] = i.UnitPriceFormatted,
+                    ["line_total_formatted"] = i.LineTotalFormatted,
                     ["quantity"] = i.Quantity,
                     ["product_url"] = i.ProductUrl,
                     ["image_url"] = i.ImageUrl,
@@ -165,7 +169,7 @@ public static class OrderMapper
                     data = new
                     {
                         type = "metric",
-                        attributes = new { name = "Placed Order" }
+                        attributes = new { name = "Placed Order" + (opt.Testing ? " Test" : "") }
                     }
                 },
 

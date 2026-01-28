@@ -6,6 +6,7 @@ public sealed record KlaviyoPlacedOrder
     public string OrderNumber { get; set; } = default!;
     public DateTimeOffset PlacedAt { get; set; }
     public decimal Value { get; set; }
+    public string ValueFormatted { get; set; } = default!;
     public string Currency { get; set; } = default!;
     public KlaviyoProfile Customer { get; set; } = default!;
     public KlaviyoShipTo? ShipTo { get; set; }
