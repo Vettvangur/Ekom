@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-public static class CustomPropertiesMerger
+internal static class CustomPropertiesMerger
 {
     private static readonly Regex _snakeCleanup =
         new Regex(@"_+", RegexOptions.Compiled);
@@ -19,7 +19,17 @@ public static class CustomPropertiesMerger
             if (string.IsNullOrWhiteSpace(key))
                 continue;
 
+            // Treat empty/whitespace strings as null -> don't emit
+            if (value is string s && string.IsNullOrWhiteSpace(s))
+                continue;
+
+            // If it's explicitly null -> don't emit
+            if (value is null)
+                continue;
+
             var normalizedKey = ToSnakeCase(key);
+            if (string.IsNullOrWhiteSpace(normalizedKey))
+                continue;
 
             target[normalizedKey] = JsonValue.Create(value);
         }

@@ -71,19 +71,41 @@ public static class OrderMapper
 
         if (o.ShipTo is not null)
         {
-            shippingTo = new JsonObject
-            {
-                ["email"] = o.ShipTo.Email,
-                ["phone_number"] = o.ShipTo.Phone,
-                ["first_name"] = o.ShipTo.FirstName,
-                ["last_name"] = o.ShipTo.LastName,
-                ["address1"] = o.ShipTo.Address,
-                ["zip"] = o.ShipTo.ZipCode,
-                ["city"] = o.ShipTo.City,
-                ["region"] = o.ShipTo.Region,
-                ["country"] = o.ShipTo.Country,
-            };
+            shippingTo = new JsonObject();
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.Email))
+                shippingTo["email"] = o.ShipTo.Email;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.Phone))
+                shippingTo["phone_number"] = o.ShipTo.Phone;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.FirstName))
+                shippingTo["first_name"] = o.ShipTo.FirstName;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.LastName))
+                shippingTo["last_name"] = o.ShipTo.LastName;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.Address))
+                shippingTo["address1"] = o.ShipTo.Address;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.ZipCode))
+                shippingTo["zip"] = o.ShipTo.ZipCode;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.City))
+                shippingTo["city"] = o.ShipTo.City;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.Region))
+                shippingTo["region"] = o.ShipTo.Region;
+
+            if (!string.IsNullOrWhiteSpace(o.ShipTo.Country))
+                shippingTo["country"] = o.ShipTo.Country;
+
+            // Optional: if nothing useful was added, set to null
+            if (shippingTo.Count == 0)
+                shippingTo = null;
         }
+
+        var uniqueId = $"{o.StoreAlias}:{o.OrderId}";
 
         var properties = new JsonObject
         {
@@ -137,6 +159,7 @@ public static class OrderMapper
             type = "event",
             attributes = new
             {
+                unique_id = uniqueId,
                 metric = new
                 {
                     data = new
