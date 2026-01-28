@@ -2,6 +2,7 @@ using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
 using Ekom.Models;
 using System.Text.Json.Nodes;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Mappers;
 
@@ -9,6 +10,8 @@ public static class OrderMapper
 {
     public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt)
     {
+
+        var storeOptions = opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(order.StoreInfo.Alias));
 
         var klaviyoShipTo = new KlaviyoShipTo()
         {
@@ -56,7 +59,7 @@ public static class OrderMapper
             Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
             TaxValue = order.Vat.Value,
             DiscountValue = order.DiscountAmount.Value,
-            CheckoutUrl = null,
+            CheckoutUrl = storeOptions?.CheckoutUrl,
             ShippingProvider = shippingProvider,
             PaymentProvider = paymentProvider
         };
@@ -122,8 +125,8 @@ public static class OrderMapper
             ["shipping_method"] = o.ShippingProvider?.ToShippingProviderEvent() ?? null,
             ["tax_value"] = o.TaxValue,
             ["shipping_to"] = shippingTo,
-            ["items"] = o.Items.ToOrderLinesEvent()
-            )
+            ["items"] = o.Items.ToOrderLinesEvent(),
+            ["store_alias"] = o.StoreAlias
         };
 
         CustomPropertiesMerger.MergeCustomProperties(properties, o.CustomProperties);

@@ -1,13 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 
-namespace Ekom.Factories
+namespace Ekom.Factories;
+
+class CategoryFactory : IPerStoreFactory<ICategory>
 {
-    class CategoryFactory : IPerStoreFactory<ICategory>
+    public ICategory Create(UmbracoContent item, IStore store)
     {
-        public ICategory Create(UmbracoContent item, IStore store)
-        {
-            return new Category(item, store);
-        }
+        return new Category(item, store);
     }
 }
