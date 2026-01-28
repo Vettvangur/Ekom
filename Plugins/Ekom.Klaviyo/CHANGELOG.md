@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.24](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.23...Ekom.Klaviyo-v0.2.24) (2026-01-28)
+
+
+### Bug Fixes
+
+* remove klaviyo from ekom build, add shipping method to klaviyo o… ([63175b4](https://github.com/Vettvangur/Ekom/commit/63175b461807315a3bb7951ad9a998f1c6f5cb25))
+* remove klaviyo from ekom build, add shipping method to klaviyo order ([240b110](https://github.com/Vettvangur/Ekom/commit/240b110d709f5fe3293402d07e418d249fd24e57))
+
 ## [0.2.23](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.22...Ekom.Klaviyo-v0.2.23) (2026-01-28)
 
 
