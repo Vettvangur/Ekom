@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.23](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.22...Ekom-v0.2.23) (2026-01-28)
+
+
+### Bug Fixes
+
+* update firstname to fallback to name ([40e610d](https://github.com/Vettvangur/Ekom/commit/40e610d5d64fb4d9604354ec71cc9c34496ea251))
+* update firstname to fallback to name ([6d710ea](https://github.com/Vettvangur/Ekom/commit/6d710ea462b2c83e3df93525d0beece1bbe11e66))
+
 ## [0.2.22](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.21...Ekom-v0.2.22) (2026-01-27)
 
 
