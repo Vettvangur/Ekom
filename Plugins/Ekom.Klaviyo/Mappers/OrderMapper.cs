@@ -39,6 +39,9 @@ public static class OrderMapper
             };
         }
 
+        var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
+        var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
+
         return new KlaviyoPlacedOrder
         {
             OrderId = order.UniqueId.ToString(),
@@ -51,13 +54,11 @@ public static class OrderMapper
             ShipTo = klaviyoShipTo,
             StoreAlias = order.StoreInfo.Alias,
             Items = order.OrderLines.ToKlaviyoOrderLines(opt).ToList(),
-            PaymentProviderName = order.PaymentProvider?.Title,
-            PaymentProviderValue = order.PaymentProvider?.Price.WithVat.Value,
-            ShippingProviderName = order.ShippingProvider?.Title,
-            ShippingProviderValue = order.ShippingProvider?.Price.WithVat.Value,
             TaxValue = order.Vat.Value,
             DiscountValue = order.DiscountAmount.Value,
-            CheckoutUrl = null
+            CheckoutUrl = null,
+            ShippingProvider = shippingProvider,
+            PaymentProvider = paymentProvider
         };
     }
 
@@ -116,17 +117,9 @@ public static class OrderMapper
             ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
             ["checkout_url"] = o.CheckoutUrl,
-            ["payment_method"] = new JsonObject
-            {
-                ["name"] = o.PaymentProviderName,
-                ["price"] = o.PaymentProviderValue
-            },
+            ["payment_method"] = o.PaymentProvider?.ToPaymentProviderEvent() ?? null,
             ["discount_value"] = o.DiscountValue,
-            ["shipping_method"] = new JsonObject
-            {
-                ["name"] = o.ShippingProviderName,
-                ["price"] = o.ShippingProviderValue
-            },
+            ["shipping_method"] = o.ShippingProvider?.ToShippingProviderEvent() ?? null,
             ["tax_value"] = o.TaxValue,
             ["shipping_to"] = shippingTo,
             ["items"] = new JsonArray(

@@ -22,6 +22,7 @@ public class OrderedShippingProvider
         Key = _provider.Key;
         Title = _provider.Title;
         Prices = _provider.Prices;
+        Method = _provider.Method;
         CustomData = allData.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(
                     x => x.Key,
@@ -54,6 +55,18 @@ public class OrderedShippingProvider
         Id = shippingProviderObject["Id"].Value<int>();
         Key = Guid.Parse(shippingProviderObject.GetValue("Key").ToString());
         Title = shippingProviderObject["Title"].Value<string>();
+        Method = ShippingMethods.Pickup;
+        var methodValue = shippingProviderObject["Method"].Value<string>();
+
+        if (!string.IsNullOrEmpty(methodValue))
+        {
+
+            if (Enum.TryParse<ShippingMethods>(methodValue, ignoreCase: true, out var method))
+            {
+                 Method = method;
+            }
+        }
+
 
         JToken? pricesObj = shippingProviderObject["Prices"];
 
@@ -95,6 +108,7 @@ public class OrderedShippingProvider
     public virtual int Id { get; set; }
     public virtual Guid Key { get; set; }
     public virtual string Title { get; set; }
+    public virtual ShippingMethods Method { get; set; }
     public virtual IPrice Price
     {
         get
