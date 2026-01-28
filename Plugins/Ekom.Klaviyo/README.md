@@ -21,9 +21,10 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
   "Enabled": true,
   "PrivateApiKey": "secret",
   "ApiBaseUrl": "https://a.klaviyo.com",
-  "Revision": "2023-10-15",
+  "Revision": "2026-01-15",
   "ProfileExternalIdProperty": "email",
   "SiteBaseUrl": "https://vettvangur.is",
+  "Testing": false,
   "Stores": [],
   "Orders": {},
   "Catalog": {}
@@ -38,6 +39,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 | `Revision` | `string` | Klaviyo API revision header (required). |
 | `ProfileExternalIdProperty` | `string` | Default Email property used as the external ID for profiles. Other options: , `phone`, `username`, any property on customer `customerExternalId` . |
 | `SiteBaseUrl` | `string` | Public site base URL used to generate product and checkout URLs. |
+| `Testing` | `bool` | If `true`, enables testing mode (Events will be sent to same event but with Test at the end. "Placed Order Test"). |
 | `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
 | `Orders` | `object` | Orders tracking configuration. |
 | `Catalog` | `object` | Product catalog synchronization configuration. |

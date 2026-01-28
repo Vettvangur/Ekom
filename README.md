@@ -47,6 +47,9 @@ Install the Ekom.Web package into your sites main project (contains wwwroot)
 - The ability to be extended as per your business requirements
 - And many more features.....
 
+## Plugins
+https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo
+
 ## Documentation
 
 [Link to documentation](https://vettvangur.gitbook.io/ekom/)
