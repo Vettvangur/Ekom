@@ -1,14 +1,14 @@
 namespace Ekom.Klaviyo.Models;
 public sealed record KlaviyoOrderLine
 {
-    public string? ProductExternalId { get; init; }
-    public string? Sku { get; init; }
-    public required string Name { get; init; }
-    public decimal UnitPrice { get; init; }
-    public decimal LineTotal { get; init; }
-    public decimal Quantity { get; init; }
-    public string? ProductUrl { get; init; }
-    public string? ImageUrl { get; init; }
-    public IReadOnlyList<string>? Categories { get; init; }
+    public string? ProductExternalId { get; set; }
+    public string? Sku { get; set; }
+    public required string Name { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
+    public decimal Quantity { get; set; }
+    public string? ProductUrl { get; set; }
+    public string? ImageUrl { get; set; }
+    public IReadOnlyList<string>? Categories { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

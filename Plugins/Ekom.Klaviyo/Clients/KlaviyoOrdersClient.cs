@@ -25,15 +25,39 @@ internal sealed class KlaviyoOrdersClient : IKlaviyoOrdersClient
         _logger = logger;
     }
 
-    public async Task TrackOrderEventAsync(object eventPayload, string storeAlias, CancellationToken ct = default)
+    public async Task TrackOrderEventAsync(
+        object eventPayload,
+        string storeAlias,
+        CancellationToken ct = default)
     {
         if (!_opt.Enabled || !_opt.Orders.Enabled || eventPayload is null)
             return;
 
         var payload = new { data = eventPayload };
 
-        _logger.LogDebug("Klaviyo: sending 1 order event");
+        try
+        {
+            _logger.LogDebug(
+                "Klaviyo: sending order event for store {StoreAlias}",
+                storeAlias);
 
-        await _http.PostAsync("/api/events", payload, storeAlias, ct);
+            await _http.PostAsync("/api/events", payload, storeAlias, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            _logger.LogDebug(
+                "Klaviyo: order event cancelled for store {StoreAlias}",
+                storeAlias);
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Klaviyo: failed to send order event for store {StoreAlias}. PayloadType={PayloadType}",
+                storeAlias,
+                eventPayload.GetType().Name);
+        }
     }
 }

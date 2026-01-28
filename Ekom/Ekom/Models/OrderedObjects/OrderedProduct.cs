@@ -33,7 +33,7 @@ public class OrderedProduct
         {
             if (Properties.ContainsKey("__Key"))
             {
-                string key = Properties.GetPropertyValue("__Key");
+                string key =  Properties.GetPropertyValue("__Key");
 
                 if (!Guid.TryParse(key, out Guid _key))
                 {
