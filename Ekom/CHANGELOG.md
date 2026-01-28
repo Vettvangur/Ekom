@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.25](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.24...Ekom-v0.2.25) (2026-01-28)
+
+
+### Bug Fixes
+
+* klaviyo, add formatted values and testing ([b317f7b](https://github.com/Vettvangur/Ekom/commit/b317f7b25e355162ba088ae32576655065b340a2))
+* klaviyo, add formatted values and testing ([6f92783](https://github.com/Vettvangur/Ekom/commit/6f9278347e4e0fa158f28bba6a6e254f3e32f4cb))
+
 ## [0.2.24](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.23...Ekom-v0.2.24) (2026-01-28)
 
 
