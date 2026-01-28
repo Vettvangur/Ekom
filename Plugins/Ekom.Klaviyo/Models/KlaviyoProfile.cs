@@ -1,23 +1,21 @@
 namespace Ekom.Klaviyo.Models;
 
-public sealed record KlaviyoProfile(
-    string? Email = null,
-    string? PhoneNumber = null,
-    string? ExternalId = null,
-    string? FirstName = null,
-    string? LastName = null,
-    string? Address = null,
-    string? ZipCode = null,
-    string? City = null,
-    string? Country = null,
-    string? Company = null,
-    IDictionary<string, object?>? CustomProperties = null
-)
+public sealed class KlaviyoProfile
 {
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? ExternalId { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? Address { get; set; }
+    public string? ZipCode { get; set; }
+    public string? City { get; set; }
+    public string? Country { get; set; }
+    public string? Company { get; set; }
+    public IDictionary<string, object?>? CustomProperties { get; set; }
+
     public bool HasIdentifier =>
         !string.IsNullOrWhiteSpace(Email) ||
         !string.IsNullOrWhiteSpace(PhoneNumber) ||
         !string.IsNullOrWhiteSpace(ExternalId);
 }
-
-
