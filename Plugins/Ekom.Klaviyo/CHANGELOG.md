@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.20](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.19...Ekom.Klaviyo-v0.2.20) (2026-01-28)
+
+
+### Bug Fixes
+
+* update revision in sample, init to set and log out errors ([2076596](https://github.com/Vettvangur/Ekom/commit/20765960d41a7d0fefdfd210a945c2ec5aa4f6d7))
+* update revision in sample, init to set and log out errors ([f5baad9](https://github.com/Vettvangur/Ekom/commit/f5baad956cb80dd6fe46ec1896aa1b8043899c22))
+
 ## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.18...Ekom.Klaviyo-v0.2.19) (2026-01-28)
 
 
