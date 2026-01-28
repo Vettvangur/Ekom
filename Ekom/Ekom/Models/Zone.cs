@@ -1,41 +1,40 @@
 using Newtonsoft.Json;
 
-namespace Ekom.Models
+namespace Ekom.Models;
+
+/// <summary>
+/// A grouping of countries, used to map payment providers and shipping providers to regions
+/// </summary>
+public class Zone : NodeEntity, IZone
 {
     /// <summary>
-    /// A grouping of countries, used to map payment providers and shipping providers to regions
+    /// Countries encompassing this Zone
     /// </summary>
-    public class Zone : NodeEntity, IZone
+    public IEnumerable<string> Countries
     {
-        /// <summary>
-        /// Countries encompassing this Zone
-        /// </summary>
-        public IEnumerable<string> Countries
+        get
         {
-            get
+            try
             {
-                try
-                {
-                    string[]? countries = JsonConvert.DeserializeObject<string[]>(Properties["zoneSelector"]);
+                string[]? countries = JsonConvert.DeserializeObject<string[]>(Properties["zoneSelector"]);
 
-                    return countries;
+                return countries;
 
-                }
-                catch
-                {
-                    return Properties["zoneSelector"].Split(',');
-                }
+            }
+            catch
+            {
+                return Properties["zoneSelector"].Split(',');
             }
         }
-        /// <summary>
-        /// ctor
-        /// </summary>
-        internal protected Zone() : base() { }
-
-        /// <summary>
-        /// Construct Zone
-        /// </summary>
-        /// <param name="item"></param>
-        internal protected Zone(UmbracoContent item) : base(item) { }
     }
+    /// <summary>
+    /// ctor
+    /// </summary>
+    internal protected Zone() : base() { }
+
+    /// <summary>
+    /// Construct Zone
+    /// </summary>
+    /// <param name="item"></param>
+    internal protected Zone(UmbracoContent item) : base(item) { }
 }

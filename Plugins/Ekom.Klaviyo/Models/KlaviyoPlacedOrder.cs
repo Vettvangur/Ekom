@@ -14,10 +14,23 @@ public sealed record KlaviyoPlacedOrder
     public string StoreAlias { get; set; } = default!;
     public string? CheckoutUrl { get; set; }
     public decimal? DiscountValue { get; set; }
-    public string? PaymentProviderName { get; set; }
-    public decimal? PaymentProviderValue { get; set; }
-    public string? ShippingProviderName { get; set; }
-    public decimal? ShippingProviderValue { get; set; }
+    public KlaviyoShippingProvider? ShippingProvider { get; set; } = null;
+    public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed record KlaviyoShippingProvider
+{
+    public string? Title { get; set; } = default!;
+    public decimal? Value { get; set; } = default!;
+    public string? ValueFormatted { get; set; } = default!;
+    public string Type { get; set; } = default!;
+}
+
+public sealed record KlaviyoPaymentProvider
+{
+    public string? Title { get; set; } = default!;
+    public decimal? Value { get; set; } = default!;
+    public string? ValueFormatted { get; set; } = default!;
 }

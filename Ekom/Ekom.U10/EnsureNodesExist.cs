@@ -1,4 +1,5 @@
 using Ekom.Exceptions;
+using Ekom.Models;
 using Ekom.Umb.DataEditors;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
@@ -69,80 +70,86 @@ class EnsureNodesExist : IComponent
             {
                 #region Property Editors
 
-                if (!_propertyEditorCollection.TryGet("Ekom.Stock", out IDataEditor stockEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Stock", out IDataEditor? stockEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Stock property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Cache", out IDataEditor cacheEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Cache", out IDataEditor? cacheEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Cache property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Coupon", out IDataEditor couponEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Coupon", out IDataEditor? couponEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Coupon property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Range", out IDataEditor rangeEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Range", out IDataEditor? rangeEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Range property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Price", out IDataEditor priceEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Price", out IDataEditor? priceEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Price property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Country", out IDataEditor countryPicker))
+                if (!_propertyEditorCollection.TryGet("Ekom.Country", out IDataEditor? countryPicker))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Country property picker, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Zone", out IDataEditor zonePicker))
+                if (!_propertyEditorCollection.TryGet("Ekom.Zone", out IDataEditor? zonePicker))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Zone property picker, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Currency", out IDataEditor currencyPicker))
+                if (!_propertyEditorCollection.TryGet("Ekom.Currency", out IDataEditor? currencyPicker))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Ekom Currency property picker, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor multiNodeEditor))
+                if (!_propertyEditorCollection.TryGet("Umbraco.MultiNodeTreePicker", out IDataEditor? multiNodeEditor))
                 {
                     // Should never happen
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.MultiNodeTreePicker property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Property", out IDataEditor editor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Property", out IDataEditor? editor))
                 {
                     throw new EnsureNodesException(
                         "Unable to find Ekom.Property property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor dropdownEditor))
+                if (!_propertyEditorCollection.TryGet("Umbraco.DropDown.Flexible", out IDataEditor? dropdownEditor))
                 {
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.DropDown.Flexible property editor, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Metafield", out IDataEditor metafieldPicker))
+                if (!_propertyEditorCollection.TryGet("Ekom.Metafield", out IDataEditor? metafieldPicker))
                 {
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.Metafield property picker, failed creating Ekom nodes.");
                 }
-                if (!_propertyEditorCollection.TryGet("Ekom.Metavalue", out IDataEditor metavalueEditor))
+                if (!_propertyEditorCollection.TryGet("Ekom.Metavalue", out IDataEditor? metavalueEditor))
                 {
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.Metavalue property picker, failed creating Ekom nodes.");
                 }
+                if (!_propertyEditorCollection.TryGet("Umbraco.RadioButtonList", out IDataEditor? radioList))
+                {
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.RadioButtonList property editor, failed creating Ekom nodes.");
+                }
+
 
                 #endregion
 
@@ -181,6 +188,7 @@ class EnsureNodesExist : IComponent
                 var tagsDt = _dataTypeService.GetDataType(new Guid("b6b73142-b9c1-4bf8-a16d-e1c23320b549"));
                 var rteDt = _dataTypeService.GetDataType(new Guid("ca90c950-0aff-4e72-b976-a30b1ac57dad"));
                 var textareaDt = _dataTypeService.GetDataType(new Guid("c6bac0dd-4ab9-45b1-8e30-e4b619ee5da3"));
+                var radioDt = _dataTypeService.GetDataType(new Guid("bb5f57c9-ce2b-4bb9-b697-4caca783a805"));
 
                 var propertyTextDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
@@ -343,6 +351,7 @@ class EnsureNodesExist : IComponent
                     }
                 });
 
+
                 var discountTypeDt = EnsureDataTypeExists(new DataType(dropdownEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
                     Name = "Ekom Discount Type",
@@ -377,6 +386,29 @@ class EnsureNodesExist : IComponent
                         MaxNumber = 1
                     }
                 });
+
+                var shippingMethodDt = EnsureDataTypeExists(new DataType(radioList, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Shipping Method",
+                    Configuration = new ValueListConfiguration
+                    {
+                        Items = new List<ValueListConfiguration.ValueListItem>
+                        {
+                            new ValueListConfiguration.ValueListItem
+                            {
+                                Id = 1,
+                                Value =  nameof(ShippingMethods.Pickup),
+                            },
+                            new ValueListConfiguration.ValueListItem
+                            {
+                                Id = 2,
+                                Value = nameof(ShippingMethods.Delivery),
+                            },
+                        }
+                    },
+                });
+
+
                 #endregion
 
                 var ekmDocTypeContainer = EnsureContainerExists("Ekom");
@@ -1080,11 +1112,32 @@ class EnsureNodesExist : IComponent
                     Alias = "ekmShippingProvider",
                     Icon = "icon-truck",
                     ContentTypeComposition = new List<IContentTypeComposition>
-                {
-                    baseComposition,
-                    providerComposition,
-                    rangeComposition,
-                },
+                    {
+                        baseComposition,
+                        providerComposition,
+                        rangeComposition,
+                    },
+                    PropertyGroups = new PropertyGroupCollection(
+                        new List<PropertyGroup>
+                        {
+                        new PropertyGroup(new PropertyTypeCollection(
+                            true,
+                            new List<PropertyType>
+                            {
+
+                                new PropertyType(_shortStringHelper, radioDt, "shippingMethod")
+                                {
+                                    Name = "Shipping Method",
+                                    Mandatory = true
+                                }
+                            }))
+                        {
+                            Alias = "settings",
+                            Name = "Settings",
+                            Type = PropertyGroupType.Tab
+                        },
+                        }
+                    ),
                 });
 
                 var shippingProvidersCt = EnsureContentTypeExists(new ContentType(_shortStringHelper, spContainer.Id)
@@ -1093,9 +1146,9 @@ class EnsureNodesExist : IComponent
                     Alias = "ekmShippingProviders",
                     Icon = "icon-boat-shipping",
                     AllowedContentTypes = new List<ContentTypeSort>
-                {
-                    new ContentTypeSort(shippingProviderCt.Id, 1),
-                },
+                    {
+                        new ContentTypeSort(shippingProviderCt.Id, 1),
+                    },
                 });
 
                 #endregion
@@ -1145,7 +1198,7 @@ class EnsureNodesExist : IComponent
                                 new PropertyType(_shortStringHelper, textstringDt, "orderNumberPrefix")
                                 {
                                     Name = "Order Number Prefix",
-                                },                                
+                                },
                                 new PropertyType(_shortStringHelper, propertyTextDt, "urlPrefix")
                                 {
                                     Name = "Url Prefix",
@@ -1159,7 +1212,7 @@ class EnsureNodesExist : IComponent
                                 {
                                     Name = "Share Basket Between Stores",
                                     Description = "This will allow baskets to be shared between stores but be aware that it requires the same currencies to be available cross stores."
-                                },                                
+                                },
                                 new PropertyType(_shortStringHelper, booleanDt, "applyVatOnShipping")
                                 {
                                     Name = "Apply Vat On Shipping",

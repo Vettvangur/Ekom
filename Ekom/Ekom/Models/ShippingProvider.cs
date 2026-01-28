@@ -1,6 +1,8 @@
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Ekom.Models;
 
@@ -9,12 +11,6 @@ namespace Ekom.Models;
 /// </summary>
 public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
 {
-    //readonly HttpContext _httpCtx;
-
-    //public ShippingProvider(IHttpContextAccessor httpContextAccessor)
-    //{
-    //    _httpCtx = httpContextAccessor.HttpContext;
-    //}
     /// <summary>
     /// Ranges and zones
     /// </summary>
@@ -27,7 +23,7 @@ public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
     {
         get
         {
-            HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>().HttpContext;
+            HttpContext? httpContext = Configuration.Resolver.GetService<IHttpContextAccessor>()?.HttpContext;
 
             if (httpContext?.Request != null)
             {
@@ -50,6 +46,20 @@ public class ShippingProvider : PerStoreNodeEntity, IShippingProvider
     }
 
     public virtual string Description => GetValue("description", Store.Alias);
+
+    [JsonConverter(typeof(StringEnumConverter))]
+    public virtual ShippingMethods Method { 
+        get 
+        {            
+            
+            string value = GetValue("shippingMethod", Store.Alias);
+
+            if (Enum.TryParse<ShippingMethods>(value, ignoreCase: true, out var method))
+                return method;
+
+            return ShippingMethods.Pickup;
+        }
+    }
 
     /// <summary>
     /// 

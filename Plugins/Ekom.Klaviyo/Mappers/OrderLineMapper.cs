@@ -12,19 +12,26 @@ public static class OrderLineMapper
 
         var categories = product?.Categories.Select(x => x.Title).ToList() ?? null;
 
+        var orderlineAmount = ol.Amount;
+        var productPrice = ol.Product?.Price;
+
         return new KlaviyoOrderLine
         {
             ProductExternalId = $"{ol.OrderInfo.StoreInfo.Alias}:{ol.ProductKey}",
             Sku = ol.Product?.SKU,
             Name = ol.Product?.Title ?? "",
-            LineTotal = ol.Amount.Value,
-            UnitPrice = (ol.Product?.Price.WithVat.Value ?? 0) / ol.Quantity,
+            LineTotal = orderlineAmount.WithVat.Value,
+            UnitPrice = productPrice?.WithVat.Value ?? 0,
+            LineTotalFormatted = orderlineAmount.WithVat.CurrencyString,
+            UnitPriceFormatted = productPrice?.WithVat.CurrencyString ?? "",
+            LineTotalWithOutVat = orderlineAmount.WithoutVat.Value,
+            UnitPriceWithOutVat = productPrice?.WithoutVat.Value ?? 0,
+            LineTotalWithOutVatFormatted = orderlineAmount.WithoutVat.CurrencyString,
+            UnitPriceWithOutVatFormatted = productPrice?.WithoutVat.CurrencyString ?? "",
             Quantity = ol.Quantity,
             ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Url),
             ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
-            Categories = categories,
-            LineTotalFormatted = ol.Amount.WithVat.CurrencyString,
-            UnitPriceFormatted = ol.Product?.Price.WithVat.CurrencyString ?? "",
+            Categories = categories
         };
     }
 
