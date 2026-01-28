@@ -56,17 +56,20 @@ public class OrderedShippingProvider
         Key = Guid.Parse(shippingProviderObject.GetValue("Key").ToString());
         Title = shippingProviderObject["Title"].Value<string>();
         Method = ShippingMethods.Pickup;
-        var methodValue = shippingProviderObject["Method"].Value<string>();
 
-        if (!string.IsNullOrEmpty(methodValue))
+        if (shippingProviderObject.ContainsKey("Method"))
         {
+            var methodValue = shippingProviderObject["Method"]?.Value<string>() ?? "";
 
-            if (Enum.TryParse<ShippingMethods>(methodValue, ignoreCase: true, out var method))
+            if (!string.IsNullOrEmpty(methodValue))
             {
-                 Method = method;
+
+                if (Enum.TryParse<ShippingMethods>(methodValue, ignoreCase: true, out var method))
+                {
+                    Method = method;
+                }
             }
         }
-
 
         JToken? pricesObj = shippingProviderObject["Prices"];
 

@@ -13,8 +13,16 @@ public sealed record KlaviyoOrderLine
     public decimal LineTotalWithOutVat { get; set; }
     public string LineTotalWithOutVatFormatted { get; set; } = default!;
     public decimal Quantity { get; set; }
-    public string? ProductUrl { get; set; }
-    public string? ImageUrl { get; set; }
+    public string? ProductUrl { get; set; } = default!;
+    public string? ImageUrl { get; set; } = default!;
+    public KlaviyoVariantOrderLine? Variant { get; set; } = null;
     public IReadOnlyList<string>? Categories { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+public sealed record KlaviyoVariantOrderLine
+{
+    public string? Sku { get; set; }
+    public required string Name { get; set; }
+    public string? ImageUrl { get; set; } = default!;
 }

@@ -122,30 +122,7 @@ public static class OrderMapper
             ["shipping_method"] = o.ShippingProvider?.ToShippingProviderEvent() ?? null,
             ["tax_value"] = o.TaxValue,
             ["shipping_to"] = shippingTo,
-            ["items"] = new JsonArray(
-            o.Items.Select(i =>
-            {
-                var item = new JsonObject
-                {
-                    ["product_id"] = i.ProductExternalId,
-                    ["sku"] = i.Sku,
-                    ["name"] = i.Name,
-                    ["unit_price"] = i.UnitPrice,
-                    ["line_total"] = i.LineTotal,
-                    ["unit_price_formatted"] = i.UnitPriceFormatted,
-                    ["line_total_formatted"] = i.LineTotalFormatted,
-                    ["quantity"] = i.Quantity,
-                    ["product_url"] = i.ProductUrl,
-                    ["image_url"] = i.ImageUrl,
-                    ["categories"] = i.Categories is null
-                        ? null
-                        : new JsonArray(i.Categories.Select(c => (JsonNode?)c).ToArray())
-                };
-
-                CustomPropertiesMerger.MergeCustomProperties(item, i.CustomProperties);
-
-                return item;
-            }).ToArray()
+            ["items"] = o.Items.ToOrderLinesEvent()
             )
         };
 
