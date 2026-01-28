@@ -4,13 +4,13 @@
     "net8.0": {
       "Ekom.Core": {
         "type": "Direct",
-        "requested": "[0.2.22, )",
-        "resolved": "0.2.22",
-        "contentHash": "TukcCLOQy2kV93RqloS9CLlWBB/YoLMAMvI7ZwQ7JQNaiV+F82bozsT+s5gxMae3/fGmVLoB/tlz/6uILtdgaw==",
+        "requested": "[0.2.23, )",
+        "resolved": "0.2.23",
+        "contentHash": "lkdVQVWirlVrJlVhNRZIwLGpTglNJ+BWhcuKLHCeL+ldqztNEOoSyl7dfL4r4Eil12iOUAGleYaolGKpbjQO6g==",
         "dependencies": {
           "Azure.Identity": "1.17.1",
           "CommonServiceLocator": "2.0.7",
-          "Ekom.Common": "0.2.22",
+          "Ekom.Common": "0.2.23",
           "Ekom.Payments.Core": "0.2.51",
           "Hangfire": "1.8.18",
           "Microsoft.AspNetCore.Http.Extensions": "2.3.0",
@@ -28,12 +28,12 @@
       },
       "Ekom.U10": {
         "type": "Direct",
-        "requested": "[0.2.22, )",
-        "resolved": "0.2.22",
-        "contentHash": "fHy/02iEauh36WB1cOiO24pVG9Di3vDQjxEYNlfan1ro2ctLxoT26DH4Osy8DJ1LJf67bXWi8Li3rcciY9MvFw==",
+        "requested": "[0.2.23, )",
+        "resolved": "0.2.23",
+        "contentHash": "LY0UCG9VB+i7biYxWbRU1AMvcOro00FizhB9szMGBSQJywtnk7W84FguoGFlC8QuzJxpJXW5fxOXpZODG53Ddg==",
         "dependencies": {
-          "Ekom.AspNetCore": "0.2.22",
-          "Ekom.Core": "0.2.22",
+          "Ekom.AspNetCore": "0.2.23",
+          "Ekom.Core": "0.2.23",
           "Ekom.Payments.U10": "0.2.51",
           "Umbraco.Cms.Api.Common": "13.13.0",
           "Umbraco.Cms.Core": "13.13.0",
@@ -174,16 +174,16 @@
       },
       "Ekom.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.22",
-        "contentHash": "CmNyr2bZbdY/iTyYoRWgZmlZZlGvsVHvI4B6GQRQvNDwrPHAiejs19HRFmy/v/B7//go5G5gPQ3m2TeIAzyF5w==",
+        "resolved": "0.2.23",
+        "contentHash": "B8YQObpBLcD6jBatloQOpPMSXblKWb1G3lep8IvYo1MWh0dul11vcBTFA1zWXRfTHw4XG3pkAxrEHwjdVFLnYw==",
         "dependencies": {
-          "Ekom.Core": "0.2.22"
+          "Ekom.Core": "0.2.23"
         }
       },
       "Ekom.Common": {
         "type": "Transitive",
-        "resolved": "0.2.22",
-        "contentHash": "ENC6GskYEMC7kaRhZDiOuX8rpDTVg4AGUTDYYmJtmt5zRh7XOaP5atCV5PRpEBZwCM/E4hO9B2YB6NIWOVS7dg==",
+        "resolved": "0.2.23",
+        "contentHash": "oeSjl2M5UTwR/iDRMxyh10UJFh4jgrBnOHOJQNFmt8zjVBBdJyl9xd09WghxKcfZlNoJtfr1HOjKsp9Mf4AbwA==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "8.0.1",
           "Newtonsoft.Json": "13.0.3"
