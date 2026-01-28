@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.19](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.18...Ekom.Klaviyo-v0.2.19) (2026-01-28)
+
+
+### Bug Fixes
+
+* update klaviyo ekom version ([0bdcbcb](https://github.com/Vettvangur/Ekom/commit/0bdcbcb200d78dab39f60f9fc99784768c03544d))
+* update klaviyo ekom version ([1c1e396](https://github.com/Vettvangur/Ekom/commit/1c1e396d807b52f59e60944a613d0cb07357ba63))
+
 ## [0.2.18](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.17...Ekom.Klaviyo-v0.2.18) (2026-01-28)
 
 
