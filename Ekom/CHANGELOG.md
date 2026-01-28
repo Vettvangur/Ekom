@@ -5,7 +5,7 @@
 
 ### Bug Fixes
 
-* shipping provider method added, klavti shipping and payment prov… ([da87286](https://github.com/Vettvangur/Ekom/commit/da87286c9b43d44c2829073275ef990453a8429c))
+* shipping provider method added, klaviyo shipping and payment prov… ([da87286](https://github.com/Vettvangur/Ekom/commit/da87286c9b43d44c2829073275ef990453a8429c))
 * shipping provider method added, klavti shipping and payment provider refactor ([fe43c3d](https://github.com/Vettvangur/Ekom/commit/fe43c3d40d9e00ab228bc91be32eee849dc72437))
 
 ## [0.2.25](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.24...Ekom-v0.2.25) (2026-01-28)
