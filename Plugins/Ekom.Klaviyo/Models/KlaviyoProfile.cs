@@ -11,7 +11,7 @@ public sealed class KlaviyoProfile
     public string? ZipCode { get; set; }
     public string? City { get; set; }
     public string? Country { get; set; }
-    public string? Company { get; set; }
+    public string? Organisation { get; set; }
     public IDictionary<string, object?>? CustomProperties { get; set; }
 
     public bool HasIdentifier =>

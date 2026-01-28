@@ -1,4 +1,3 @@
-using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
 using Ekom.Models;
 using System.Text.Json.Nodes;
@@ -21,7 +20,7 @@ public static class ProfileMapper
             ZipCode = order.CustomerInformation.Customer.ZipCode,
             City = order.CustomerInformation.Customer.City,
             Country = order.CustomerInformation.Customer.Country,
-            Company = order.CustomerInformation.Customer.Company
+            Organisation = order.CustomerInformation.Customer.Company
         };
 
         return profile;
@@ -73,28 +72,48 @@ public static class ProfileMapper
         if (!string.IsNullOrWhiteSpace(c.LastName))
             attributes["last_name"] = c.LastName;
 
+        if (!string.IsNullOrWhiteSpace(c.Organisation))
+            attributes["organization"] = c.Organisation;
+
+        var location = new JsonObject();
+
         if (!string.IsNullOrWhiteSpace(c.Address))
-            attributes["address"] = c.Address;
+            location["address1"] = c.Address;
 
         if (!string.IsNullOrWhiteSpace(c.ZipCode))
-            attributes["zip_code"] = c.ZipCode;
+            location["zip"] = c.ZipCode;
 
         if (!string.IsNullOrWhiteSpace(c.City))
-            attributes["city"] = c.City;
+            location["city"] = c.City;
 
         if (!string.IsNullOrWhiteSpace(c.Country))
-            attributes["country"] = c.Country;
+            location["country"] = c.Country;
 
-        if (!string.IsNullOrWhiteSpace(c.Company))
-            attributes["company"] = c.Company;
+        if (location.Count > 0)
+            attributes["location"] = location;
 
         if (c.CustomProperties is not null && c.CustomProperties.Count > 0)
         {
-            CustomPropertiesMerger.MergeCustomProperties(attributes, c.CustomProperties);
+            var properties = new JsonObject();
+
+            foreach (var kvp in c.CustomProperties)
+            {
+                if (kvp.Value is null)
+                    continue;
+
+                if (kvp.Value is string s && string.IsNullOrWhiteSpace(s))
+                    continue;
+
+                properties[kvp.Key] = JsonValue.Create(kvp.Value);
+            }
+
+            if (properties.Count > 0)
+                attributes["properties"] = properties;
         }
 
         return attributes;
     }
+
 
     internal static JsonObject ToProfileData(this KlaviyoProfile c)
     {
