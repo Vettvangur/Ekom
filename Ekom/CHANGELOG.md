@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.28](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.27...Ekom-v0.2.28) (2026-01-28)
+
+
+### Bug Fixes
+
+* reactor namespaces, fix klaviyo comma ([722ee9a](https://github.com/Vettvangur/Ekom/commit/722ee9a380b1c34c8e24c76702278c0bb8c71e8b))
+* reactor namespaces, fix klaviyo comma ([b0c6038](https://github.com/Vettvangur/Ekom/commit/b0c6038749ea02c54671277a69e4637b72b8c02f))
+
 ## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.26...Ekom-v0.2.27) (2026-01-28)
 
 
