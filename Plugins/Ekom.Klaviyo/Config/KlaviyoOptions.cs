@@ -18,6 +18,7 @@ public sealed class KlaviyoOptions
 
     public IReadOnlyCollection<KlaviyoStoreOptions> Stores { get; init; } = [];
     public required string SiteBaseUrl { get; init; } = "";
+    public bool Testing { get; init; } = false;
 }
 
 public sealed class KlaviyoCatalogOptions

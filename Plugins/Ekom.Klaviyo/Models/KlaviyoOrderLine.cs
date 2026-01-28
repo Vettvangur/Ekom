@@ -5,7 +5,9 @@ public sealed record KlaviyoOrderLine
     public string? Sku { get; set; }
     public required string Name { get; set; }
     public decimal UnitPrice { get; set; }
+    public string UnitPriceFormatted { get; set; } = default!;
     public decimal LineTotal { get; set; }
+    public string LineTotalFormatted { get; set; } = default!;
     public decimal Quantity { get; set; }
     public string? ProductUrl { get; set; }
     public string? ImageUrl { get; set; }

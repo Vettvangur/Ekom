@@ -60,7 +60,7 @@ public sealed class KlaviyoOrderService : IKlaviyoOrderService
 
         var work = new KlaviyoOrderWork(
             Type: KlaviyoOrderEventType.PlacedOrder,
-            EventPayload: order.ToPlacedOrderEvent(),
+            EventPayload: order.ToPlacedOrderEvent(_opt),
             OccurredAt: order.PlacedAt,
             StoreAlias: order.StoreAlias,
             OrderId: order.OrderId);

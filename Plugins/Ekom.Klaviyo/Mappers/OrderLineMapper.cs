@@ -22,7 +22,9 @@ public static class OrderLineMapper
             Quantity = ol.Quantity,
             ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Url),
             ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),
-            Categories = categories
+            Categories = categories,
+            LineTotalFormatted = ol.Amount.WithVat.CurrencyString,
+            UnitPriceFormatted = ol.Product?.Price.WithVat.CurrencyString ?? "",
         };
     }
 

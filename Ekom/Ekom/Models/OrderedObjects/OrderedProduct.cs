@@ -182,6 +182,11 @@ public class OrderedProduct
     {
         get
         {
+            if (Key == Guid.Empty)
+            {
+                return "";
+            }
+
             IProduct? productNode = Catalog.Instance.GetProduct(Key, StoreInfo.Alias);
 
             if (productNode != null)
