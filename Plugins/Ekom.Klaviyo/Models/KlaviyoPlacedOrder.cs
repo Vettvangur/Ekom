@@ -25,7 +25,7 @@ public sealed record KlaviyoShippingProvider
     public string? Title { get; set; } = default!;
     public decimal? Value { get; set; } = default!;
     public string? ValueFormatted { get; set; } = default!;
-    public string Type { get; set; } = default!;
+    public string Method { get; set; } = default!;
 }
 
 public sealed record KlaviyoPaymentProvider
