@@ -1,13 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 
-namespace Ekom.Factories
+namespace Ekom.Factories;
+
+class VariantGroupFactory : IPerStoreFactory<IVariantGroup>
 {
-    class VariantGroupFactory : IPerStoreFactory<IVariantGroup>
+    public IVariantGroup Create(UmbracoContent item, IStore store)
     {
-        public IVariantGroup Create(UmbracoContent item, IStore store)
-        {
-            return new VariantGroup(item, store);
-        }
+        return new VariantGroup(item, store);
     }
 }

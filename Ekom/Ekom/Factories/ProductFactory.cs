@@ -1,13 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 
-namespace Ekom.Factories
+namespace Ekom.Factories;
+
+class ProductFactory : IPerStoreFactory<IProduct>
 {
-    class ProductFactory : IPerStoreFactory<IProduct>
+    public IProduct Create(UmbracoContent item, IStore store)
     {
-        public IProduct Create(UmbracoContent item, IStore store)
-        {
-            return new Product(item, store);
-        }
+        return new Product(item, store);
     }
 }

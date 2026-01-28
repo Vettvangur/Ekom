@@ -77,4 +77,5 @@ public sealed class KlaviyoStoreOptions
 
     // Store override key (optional)
     public string? PrivateApiKey { get; init; }
+    public string? CheckoutUrl { get; init; }
 }
