@@ -1,4 +1,3 @@
-using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models;
 using Ekom.Models;
 using System.Text.Json.Nodes;
@@ -13,7 +12,8 @@ public static class ShippingProviderMapper
         {
             Title = provider.Title,
             Value = provider.Price?.WithVat.Value ?? 0,
-            ValueFormatted = provider.Price?.WithVat.CurrencyString ?? string.Empty
+            ValueFormatted = provider.Price?.WithVat.CurrencyString ?? string.Empty,
+            Method = provider.Method.ToString()
         };
     }
 
@@ -24,6 +24,7 @@ public static class ShippingProviderMapper
             ["title"] = o.Title,
             ["value"] = o.Value,
             ["value_formatted"] = o.ValueFormatted,
+            ["method"] = o.Method
         };
 
         return obj;
