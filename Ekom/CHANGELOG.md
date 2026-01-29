@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.30](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.29...Ekom-v0.2.30) (2026-01-29)
+
+
+### Bug Fixes
+
+* klaviyo time format, remove retry in cache ([85c145c](https://github.com/Vettvangur/Ekom/commit/85c145c05502fd2817ad52a8be4a5ebb4f74fa02))
+* klaviyo time format, remove retry in cache ([73e6bdf](https://github.com/Vettvangur/Ekom/commit/73e6bdfbc1ace399df3615e89ffd2b10fdc9563c))
+
 ## [0.2.29](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.28...Ekom-v0.2.29) (2026-01-29)
 
 
