@@ -110,7 +110,7 @@ public static class OrderMapper
                 shippingTo = null;
         }
 
-        var uniqueId = $"{o.StoreAlias}:{o.OrderId}";
+        var uniqueId = $"{o.StoreAlias}:{o.OrderId}{(opt.Testing ? ":Test" : "")}";
 
         var properties = new JsonObject
         {
