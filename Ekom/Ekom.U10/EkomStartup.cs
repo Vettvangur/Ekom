@@ -174,34 +174,9 @@ class EkomStartup : IComponent
             orderRepo?.MigrateOrderTableAsync();
             orderRepo?.MigrateStockToDecimalAsync();
 
-            // Fill Caches with retry logic
             foreach (var cacheEntry in _config.CacheList.Value)
             {
-                int retries = 0;
-                const int maxRetries = 3;
-                const int delayMilliseconds = 2000;
-
-                while (true)
-                {
-                    try
-                    {
-                        cacheEntry.FillCache();
-                        break; // Success, break the retry loop
-                    }
-                    catch (EkomRootNodeException ex)
-                    {
-                        retries++;
-                        _logger.LogWarning(ex, "FillCache failed. Attempt {Retry}/{MaxRetries} Cache {cache}", retries, maxRetries, cacheEntry.ToString());
-
-                        if (retries >= maxRetries)
-                        {
-                            _logger.LogError(ex, "FillCache failed after {MaxRetries} retries. Cache {cache}", retries, cacheEntry.ToString());
-                            throw; // Re-throw after max retries
-                        }
-
-                        Thread.Sleep(delayMilliseconds); // Wait before retrying
-                    }
-                }
+                cacheEntry.FillCache();
             }
 
             // Controls which stock cache will be populated
