@@ -17,6 +17,7 @@ public static class ProfileMapper
             FirstName = order.CustomerInformation.Customer.FirstName,
             LastName = order.CustomerInformation.Customer.LastName,
             Address = order.CustomerInformation.Customer.Address,
+            Address2 = order.CustomerInformation.Customer.Apartment,
             ZipCode = order.CustomerInformation.Customer.ZipCode,
             City = order.CustomerInformation.Customer.City,
             Country = order.CustomerInformation.Customer.Country,
@@ -79,6 +80,9 @@ public static class ProfileMapper
 
         if (!string.IsNullOrWhiteSpace(c.Address))
             location["address1"] = c.Address;
+
+        if (!string.IsNullOrWhiteSpace(c.Address2))
+            location["address2"] = c.Address2;
 
         if (!string.IsNullOrWhiteSpace(c.ZipCode))
             location["zip"] = c.ZipCode;
