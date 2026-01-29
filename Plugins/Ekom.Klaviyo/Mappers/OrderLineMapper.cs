@@ -29,6 +29,8 @@ public static class OrderLineMapper
             UnitPriceWithOutVat = productPrice?.WithoutVat.Value ?? 0,
             LineTotalWithOutVatFormatted = orderlineAmount.WithoutVat.CurrencyString,
             UnitPriceWithOutVatFormatted = productPrice?.WithoutVat.CurrencyString ?? "",
+            Discount = ol.Amount.DiscountAmount.Value,
+            DiscountFormatted = ol.Amount.DiscountAmount.CurrencyString,
             Quantity = ol.Quantity,
             ProductUrl = string.IsNullOrWhiteSpace(ol.Product?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Url),
             ImageUrl = string.IsNullOrWhiteSpace(ol.Product?.Images.FirstOrDefault()?.Url) ? null : UrlBuilder.Combine(opt.SiteBaseUrl, ol.Product.Images.FirstOrDefault()?.Url ?? ""),

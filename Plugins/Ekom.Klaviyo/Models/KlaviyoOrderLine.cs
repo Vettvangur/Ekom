@@ -12,6 +12,8 @@ public sealed record KlaviyoOrderLine
     public string UnitPriceWithOutVatFormatted { get; set; } = default!;
     public decimal LineTotalWithOutVat { get; set; }
     public string LineTotalWithOutVatFormatted { get; set; } = default!;
+    public decimal Discount { get; set; }
+    public string DiscountFormatted { get; set; } = default!;
     public decimal Quantity { get; set; }
     public string? ProductUrl { get; set; } = default!;
     public string? ImageUrl { get; set; } = default!;
