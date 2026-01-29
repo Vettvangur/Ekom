@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.28](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.27...Ekom.Klaviyo-v0.2.28) (2026-01-29)
+
+
+### Bug Fixes
+
+* klaviyo, add address2 ([79e42f9](https://github.com/Vettvangur/Ekom/commit/79e42f9bfd2b4edbfc47d4f2a195ef42f3e41c76))
+* update ekom version on klaviyo ([f638b69](https://github.com/Vettvangur/Ekom/commit/f638b69d60c4c408c619998c9c4bb3af2ca1bcf0))
+
 ## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.26...Ekom.Klaviyo-v0.2.27) (2026-01-29)
 
 
