@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.27](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.26...Ekom.Klaviyo-v0.2.27) (2026-01-29)
+
+
+### Bug Fixes
+
+* add orderline discount ([4a1bd5c](https://github.com/Vettvangur/Ekom/commit/4a1bd5cc0aadff33d4d62899edfa3d5cf19dfc58))
+* klaviyo: add prices without vat in orderlines ([702741c](https://github.com/Vettvangur/Ekom/commit/702741c07e3b5387633a0c07f8e1794b451a6b51))
+
 ## [0.2.26](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.25...Ekom.Klaviyo-v0.2.26) (2026-01-28)
 
 
