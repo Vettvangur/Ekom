@@ -155,7 +155,7 @@ public static class OrderMapper
                     }
                 },
 
-                time = o.PlacedAt,
+                time = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
                 properties
             }
         };
