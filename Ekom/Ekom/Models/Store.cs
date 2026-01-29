@@ -210,8 +210,17 @@ public class Store : NodeEntity, IStore
         {
             string storeRootNodeUdi = item.GetValue("storeRootNode");
 
-            Url = nodeService.GetUrl(storeRootNodeUdi);
-            StoreRootNode = nodeService.NodeById(storeRootNodeUdi);
+            Url = nodeService?.GetUrl(storeRootNodeUdi) ?? "";
+            StoreRootNode = nodeService?.NodeById(storeRootNodeUdi);
+
+            if (StoreRootNode == null)
+            {
+                throw new InvalidOperationException("Store root node could not be found for store: " + Alias + " storeRootNodeUdi: " + storeRootNodeUdi);
+            }
+            if (string.IsNullOrEmpty(Url))
+            {
+                throw new InvalidOperationException("Store root node URL could not be resolved for store: " + Alias + " storeRootNodeUdi: " + storeRootNodeUdi);
+            }
         }
 
         if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))
