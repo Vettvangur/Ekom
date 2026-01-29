@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.29](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.28...Ekom-v0.2.29) (2026-01-29)
+
+
+### Bug Fixes
+
+* ekom add error in store root node not found ([a360b97](https://github.com/Vettvangur/Ekom/commit/a360b97ab942e20cbf22a5ff0cc9a5d90816d3ec))
+* ekom add error in store root node not found ([02fbe00](https://github.com/Vettvangur/Ekom/commit/02fbe00e19d14401406e5ff5bf76579ac55834f8))
+
 ## [0.2.28](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.27...Ekom-v0.2.28) (2026-01-28)
 
 
