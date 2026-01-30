@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.31](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.30...Ekom.Klaviyo-v0.2.31) (2026-01-30)
+
+
+### Bug Fixes
+
+* url lookup for sub level urls ([ad0f0ba](https://github.com/Vettvangur/Ekom/commit/ad0f0ba46e57bf522b508726ae65f8f8939dba2e))
+* url lookup for sub level urls ([96f694b](https://github.com/Vettvangur/Ekom/commit/96f694be4cd0a6708bd160c891dff4696284e061))
+
 ## [0.2.30](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.29...Ekom.Klaviyo-v0.2.30) (2026-01-29)
 
 
