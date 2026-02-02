@@ -53,7 +53,7 @@ internal class MetafieldService : IMetafieldService
 
         var fields = GetMetafields().ToList();
 
-        JArray jArray = JArray.Parse(jsonValue);
+        var jArray = JArray.Parse(jsonValue);
         jArray = (JArray)JsonHelper.ToCamelCaseKeys(jArray);
 
         foreach (JObject item in jArray)
@@ -78,7 +78,7 @@ internal class MetafieldService : IMetafieldService
 
                             if (valueObject != null && valueObject.ContainsKey("id"))
                             {
-                                string valueId = valueObject["id"].ToString();
+                                var valueId = valueObject["id"]?.ToString();
 
                                 MetafieldValues? fieldValues = field.Values.FirstOrDefault(x => x.Id == valueId);
 
@@ -164,10 +164,10 @@ internal class MetafieldService : IMetafieldService
             {
                 MetafieldValues? firstValue = value.Value.FirstOrDefault();
                 KeyValuePair<string, string>? firstSubValue = firstValue?.Values.FirstOrDefault();
-                JArray? jArrayValue = field.Values.Count > 0 ? JArray.FromObject(value.Value) : null;
+                var jArrayValue = field.Values.Count > 0 ? JArray.FromObject(value.Value) : null;
                 jArrayValue = (JArray)JsonHelper.ToCamelCaseKeys(jArrayValue);
 
-                JObject newObject = new JObject
+                var newObject = new JObject
                 {
                     { "key", new JValue(field.Key.ToString()) },
                     { "values", jArrayValue != null ? jArrayValue : new JValue(firstSubValue?.Value) }
@@ -224,6 +224,88 @@ internal class MetafieldService : IMetafieldService
 
         return metaField.Values;
     }
+
+    public JArray AppendMetafield(
+    string? json,
+    string metafieldAlias,
+    IEnumerable<MetafieldValues> incomingValues)
+    {
+        var metaFields = GetMetafields().ToList();
+        var field = metaFields.FirstOrDefault(x =>
+            x.Alias.Equals(metafieldAlias, StringComparison.InvariantCultureIgnoreCase));
+
+        // If metafield doesn't exist in Umbraco definition, just return parsed json unchanged
+        if (field == null)
+            return string.IsNullOrWhiteSpace(json) ? new JArray() : JArray.Parse(json);
+
+        // Current JSON array for node
+        var valueJsonArray = string.IsNullOrWhiteSpace(json) ? new JArray() : JArray.Parse(json);
+        valueJsonArray = (JArray)JsonHelper.ToCamelCaseKeys(valueJsonArray);
+
+        // Find existing metafield object by key (guid string)
+        var targetObject = valueJsonArray
+            .OfType<JObject>()
+            .FirstOrDefault(o => o["key"]?.ToString() == field.Key.ToString());
+
+        // Convert incoming values to JArray (camelCase)
+        var incomingArray = JArray.FromObject(incomingValues?.ToList() ?? new List<MetafieldValues>());
+        incomingArray = (JArray)JsonHelper.ToCamelCaseKeys(incomingArray);
+
+        if (targetObject == null)
+        {
+            // No existing metafield entry -> create new with all incoming values
+            valueJsonArray.Add(new JObject
+            {
+                ["key"] = field.Key.ToString(),
+                ["values"] = incomingArray
+            });
+
+            return valueJsonArray;
+        }
+
+        // Ensure existing "values" is an array
+        var existingToken = targetObject["values"];
+        var existingArray = existingToken as JArray ?? new JArray();
+        existingArray = (JArray)JsonHelper.ToCamelCaseKeys(existingArray);
+
+        // Build index: id -> existing JObject
+        // (Only objects with an "id" are indexed. Everything else is left untouched.)
+        var existingById = existingArray
+            .OfType<JObject>()
+            .Where(o => !string.IsNullOrWhiteSpace(o["id"]?.ToString()))
+            .ToDictionary(o => o["id"]!.ToString(), o => o);
+
+        foreach (var incomingObj in incomingArray.OfType<JObject>())
+        {
+            var incomingId = incomingObj["id"]?.ToString();
+
+            // If no id, we cannot "update same id" -> just append (no deletes).
+            if (string.IsNullOrWhiteSpace(incomingId))
+            {
+                existingArray.Add(incomingObj);
+                continue;
+            }
+
+            if (existingById.TryGetValue(incomingId, out var existingObj))
+            {
+                // Update-in-place: replace properties but keep the object position.
+                // This avoids removing anything and keeps ordering stable.
+                existingObj.RemoveAll();
+                foreach (var prop in incomingObj.Properties())
+                    existingObj.Add(prop.Name, prop.Value);
+            }
+            else
+            {
+                // Append new
+                existingArray.Add(incomingObj);
+                existingById[incomingId] = incomingObj;
+            }
+        }
+
+        targetObject["values"] = existingArray;
+        return valueJsonArray;
+    }
+
 
     public string GetMetaFieldValue(IProduct product, string metafieldAlias, string culture = "")
     {
