@@ -177,6 +177,38 @@ public static class ContentExtensions
         SetProperty(content, "metafields", metaValueJson);
     }
 
+    public static void AppendMetafield(this IContent content, string metafieldAlias, IEnumerable<MetafieldValues> values)
+    {
+        if (content == null)
+        {
+            throw new ArgumentNullException("content");
+        }
+
+        if (content.ContentType.Alias != "ekmProduct")
+        {
+            throw new ArgumentNullException("Metafield can only be set on ekom product");
+        }
+
+        if (string.IsNullOrEmpty(metafieldAlias))
+        {
+            throw new ArgumentNullException("metafieldAlias");
+        }
+
+        var _metaService = Configuration.Resolver.GetService<IMetafieldService>();
+
+        var metaValue = _metaService?.AppendMetafield(content.GetValue<string>("metafields") ?? "", metafieldAlias, values);
+
+        var settings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            Formatting = Formatting.None
+        };
+
+        var metaValueJson = JsonConvert.SerializeObject(metaValue, settings);
+
+        SetProperty(content, "metafields", metaValueJson);
+    }
+
     public static List<Dictionary<string,string>> GetMetafieldValue(this IContent content, string metafieldAlias)
     {
         if (content == null)
