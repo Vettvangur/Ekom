@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.33](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.32...Ekom.Klaviyo-v0.2.33) (2026-02-03)
+
+
+### Bug Fixes
+
+* change init to set, klaviyo: update ekom ([3184d80](https://github.com/Vettvangur/Ekom/commit/3184d808e5efbde0b43547177a43196d3ec4b047))
+* change init to set, klaviyo: update ekom ([36e17cf](https://github.com/Vettvangur/Ekom/commit/36e17cf84fd455ee4b7c30f2013b064a0f6a6a84))
+
 ## [0.2.32](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.31...Ekom.Klaviyo-v0.2.32) (2026-02-03)
 
 
