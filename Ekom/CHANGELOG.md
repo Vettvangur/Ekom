@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.32](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.31...Ekom-v0.2.32) (2026-02-03)
+
+
+### Bug Fixes
+
+* ekom, append metafield. klaviyo: update ekom version ([bd4982d](https://github.com/Vettvangur/Ekom/commit/bd4982d340d362db191c0eb6c558dc139161fd5b))
+* ekom, append metafield. klaviyo: update ekom version ([d2e6511](https://github.com/Vettvangur/Ekom/commit/d2e651146955a27cd250ef68f4a0b40bc1ae5aa9))
+
 ## [0.2.31](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.30...Ekom-v0.2.31) (2026-01-30)
 
 
