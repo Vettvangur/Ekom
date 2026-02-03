@@ -97,38 +97,38 @@ public static class OrderEvents
 /// <summary>For changing and changed <see cref="OrderStatus"/> events</summary>
 public sealed class OrderStatusEventArgs : EventArgs
 {
-    public Guid OrderUniqueId { get; init; }
-    public OrderStatus PreviousStatus { get; init; }
+    public Guid OrderUniqueId { get; set; }
+    public OrderStatus PreviousStatus { get; set; }
     public OrderStatus Status { get; set; } // keep settable if handlers can change the status
     public bool ClearCustomerOrderReference { get; set; } = true;
 }
 
 public sealed class OrderUpdatedEventArgs : EventArgs
 {
-    public required IOrderInfo OrderInfo { get; init; }
+    public required IOrderInfo OrderInfo { get; set; }
 }
 
 public sealed class OrderUpdatingEventArgs : EventArgs
 {
-    public required IOrderInfo OrderInfo { get; init; }
+    public required IOrderInfo OrderInfo { get; set; }
 }
 
 public sealed class AddingOrderlineEventArgs : EventArgs
 {
-    public required OrderSettings Settings { get; init; }
-    public required IProduct Product { get; init; }
-    public IVariant? Variant { get; init; }
-    public decimal Quantity { get; init; }
-    public OrderAction Action { get; init; }
-    public required IOrderInfo OrderInfo { get; init; }
+    public required OrderSettings Settings { get; set; }
+    public required IProduct Product { get; set; }
+    public IVariant? Variant { get; set; }
+    public decimal Quantity { get; set; }
+    public OrderAction Action { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
 }
 
 public sealed class AddedOrderlineEventArgs : EventArgs
 {
-    public required OrderInfo OrderInfo { get; init; }
+    public required OrderInfo OrderInfo { get; set; }
 }
 
 public sealed class UpdatedOrderlineEventArgs : EventArgs
 {
-    public required OrderInfo OrderInfo { get; init; }
+    public required OrderInfo OrderInfo { get; set; }
 }
