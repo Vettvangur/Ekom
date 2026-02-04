@@ -198,8 +198,7 @@ public class Product : PerStoreNodeEntity, IProduct
                     if (primaryVariantGroup == null)
                         return null;
 
-                    // safe access — don't use primaryVariantGroup again in here
-                    var variants = primaryVariantGroup.Variants.ToList(); // force evaluate once
+                    var variants = primaryVariantGroup.Variants.ToList();
 
                     var primaryVariant = variants.FirstOrDefault(v => v.Available)
                                         ?? variants.FirstOrDefault();
