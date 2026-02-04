@@ -1,3 +1,4 @@
+using Ekom.Models;
 using Ekom.Site.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,7 @@ public class AuthController : SurfaceController
         _memberManager = memberManager;
         _coreScopeProvider = coreScopeProvider;
     }
+
 
     [HttpPost]
     [ValidateUmbracoFormRouteString]

@@ -51,8 +51,8 @@
   </ItemGroup>
 
   <ItemGroup>
-      <PackageReference Include="Ekom.Core" Version="0.2.36" />
-      <PackageReference Include="Ekom.U10" Version="0.2.36" />
+      <PackageReference Include="Ekom.Core" Version="0.2.37" />
+      <PackageReference Include="Ekom.U10" Version="0.2.37" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />

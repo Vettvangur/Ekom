@@ -1541,7 +1541,7 @@ partial class OrderService
     public async Task<OrderInfo> UpdateShippingInformationAsync(
         Guid shippingProviderId,
         string storeAlias,
-        Dictionary<string, string> allData,
+        Dictionary<string, string>? allData,
         OrderSettings? settings = null)
     {
         _logger.LogDebug("UpdateShippingInformation...");
@@ -1850,9 +1850,9 @@ partial class OrderService
         orderInfo.ShippingProvider = null;
     }
 
-    protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string> collection, IOrderInfo order)
+    protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string>? collection, IOrderInfo order)
     {
-        Dictionary<string, string> formCollection = collection;
+        Dictionary<string, string> formCollection = collection ?? new Dictionary<string, string>();
 
         if (formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
         {

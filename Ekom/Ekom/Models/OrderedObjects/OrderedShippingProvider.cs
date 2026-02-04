@@ -8,7 +8,7 @@ public class OrderedShippingProvider
 {
     private readonly IShippingProvider _provider;
 
-    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string> allData)
+    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string>? allData)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
@@ -23,11 +23,11 @@ public class OrderedShippingProvider
         Title = _provider.Title;
         Prices = _provider.Prices;
         Method = _provider.Method;
-        CustomData = allData.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
+        CustomData = allData?.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(
                     x => x.Key,
                     x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                );
+                ) ?? new Dictionary<string, string>();
     }
 
     public OrderedShippingProvider(JObject shippingProviderObject, StoreInfo storeInfo)
