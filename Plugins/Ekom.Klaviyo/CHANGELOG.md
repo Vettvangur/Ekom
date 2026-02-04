@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.38...Ekom.Klaviyo-v0.2.39) (2026-02-04)
+
+
+### Features
+
+* dynamic prices on shipping provider, klaviyo update ekom ([9f3e2de](https://github.com/Vettvangur/Ekom/commit/9f3e2defce0a96a52cacd12cd28f58632d4ae8d2))
+* dynamic prices on shipping provider, klaviyo update ekom ([da9c2b1](https://github.com/Vettvangur/Ekom/commit/da9c2b117eaebb9fd61579b4dee169008de26bb5))
+
 ## [0.2.38](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.37...Ekom.Klaviyo-v0.2.38) (2026-02-04)
 
 
