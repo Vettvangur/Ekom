@@ -9,10 +9,8 @@ namespace Ekom.Cache;
 
 class StockCache : BaseCache<StockData>
 {
-    readonly StockRepository _stockRepo;
-    /// <summary>
-    /// ctor
-    /// </summary>
+    private readonly StockRepository _stockRepo;
+
     public StockCache(
         Configuration config,
         ILogger<BaseCache<StockData>> logger,
@@ -28,9 +26,7 @@ class StockCache : BaseCache<StockData>
         get
         {
             if (!_config.PerStoreStock)
-            {
                 return base.Cache;
-            }
 
             throw new StockException("PerStoreStock configuration enabled, please disable PerStoreStock before accessing this cache.");
         }
@@ -40,17 +36,20 @@ class StockCache : BaseCache<StockData>
 
     public override void FillCache()
     {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
+        var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("Starting to fill stock cache...");
 
-        List<StockData> allStock = _stockRepo.GetAllStockAsync().Result;
-        foreach (StockData? stock in allStock.Where(stock => stock.UniqueId.Length == 36))
-        {
-            Guid key = Guid.Parse(stock.UniqueId);
+        var allStock = _stockRepo.GetAllStockAsync().GetAwaiter().GetResult();
 
-            Cache[key] = stock;
+        foreach (var stock in allStock)
+        {
+            if (stock?.UniqueId == null || stock.UniqueId.Length != 36)
+                continue;
+
+            if (!Guid.TryParse(stock.UniqueId, out var key))
+                continue;
+
+            AddOrReplaceFromCache(key, stock);
         }
 
         stopwatch.Stop();
@@ -59,4 +58,5 @@ class StockCache : BaseCache<StockData>
             allStock.Count,
             stopwatch.Elapsed);
     }
+    
 }

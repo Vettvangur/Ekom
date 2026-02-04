@@ -9,7 +9,8 @@ namespace Ekom.Cache;
 
 class StockPerStoreCache : PerStoreCache<StockData>
 {
-    readonly StockRepository _stockRepo;
+    private readonly StockRepository _stockRepo;
+
     public StockPerStoreCache(
         Configuration config,
         ILogger<IPerStoreCache<StockData>> logger,
@@ -26,9 +27,7 @@ class StockPerStoreCache : PerStoreCache<StockData>
         get
         {
             if (_config.PerStoreStock)
-            {
                 return base.Cache;
-            }
 
             throw new StockException(
                 "PerStoreStock configuration set to disabled, please configure PerStoreStock before accessing the cache."
@@ -36,23 +35,43 @@ class StockPerStoreCache : PerStoreCache<StockData>
         }
     }
 
+    // Not used by this cache (we fill from repository, not Umbraco)
     public override string NodeAlias { get; } = "";
+
 
     public override void FillCache()
     {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
-
-        _logger.LogInformation("Starting to fill stock cache...");
+        var stopwatch = Stopwatch.StartNew();
+        _logger.LogInformation("Starting to fill stock per store cache...");
 
         int count = 0;
 
-        List<StockData> allStock = _stockRepo.GetAllStockAsync().Result;
-        IEnumerable<StockData> filteredStock = allStock.Where(stock => stock.UniqueId.Contains("_", StringComparison.InvariantCulture));
+        var allStock = _stockRepo.GetAllStockAsync().GetAwaiter().GetResult();
 
-        foreach (IStore? store in _storeCache.Cache.Select(x => x.Value))
+        // Expect format: "{storeAlias}_{guid}"
+        foreach (var stock in allStock)
         {
-            count += FillStoreCache(store, filteredStock);
+            if (stock?.UniqueId == null)
+                continue;
+
+            int underscore = stock.UniqueId.IndexOf('_');
+            if (underscore <= 0 || underscore >= stock.UniqueId.Length - 1)
+                continue;
+
+            var storeAlias = stock.UniqueId[..underscore];
+            var keyPart = stock.UniqueId[(underscore + 1)..];
+
+            if (!Guid.TryParse(keyPart, out var key))
+                continue;
+
+            // Ensure store cache exists
+            var storeCache = Cache[storeAlias] = Cache.TryGetValue(storeAlias, out var existing)
+                ? existing
+                : new ConcurrentDictionary<Guid, StockData>();
+
+            storeCache[key] = stock;
+
+            count++;
         }
 
         stopwatch.Stop();
@@ -61,27 +80,5 @@ class StockPerStoreCache : PerStoreCache<StockData>
             count,
             stopwatch.Elapsed
         );
-    }
-
-    private int FillStoreCache(IStore store, IEnumerable<StockData> stockData)
-    {
-        int count = 0;
-
-        Cache[store.Alias] = new ConcurrentDictionary<Guid, StockData>();
-
-        ConcurrentDictionary<Guid, StockData> curStoreCache = Cache[store.Alias];
-
-        foreach (StockData? stock in stockData.Where(x => x.UniqueId.Split('_')[0].Equals(store.Alias, StringComparison.InvariantCulture)))
-        {
-            string[] stockIdSplit = stock.UniqueId.Split('_');
-
-            Guid key = Guid.Parse(stockIdSplit[1]);
-
-            curStoreCache[key] = stock;
-
-            count++;
-        }
-
-        return count;
     }
 }
