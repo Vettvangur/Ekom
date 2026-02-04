@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.34](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.33...Ekom-v0.2.34) (2026-02-04)
+
+
+### Features
+
+* new cache indexer for more performant lookups ([e4e4bdc](https://github.com/Vettvangur/Ekom/commit/e4e4bdce5aeb398141b1c13e974dabc8f5458f24))
+* new cache indexer for more performant lookups ([5e2c976](https://github.com/Vettvangur/Ekom/commit/5e2c976a419a761bb83cd886b2b414e4c076b7ee))
+
+
+### Bug Fixes
+
+* virtual added ([d779e80](https://github.com/Vettvangur/Ekom/commit/d779e8043ef8b2c0e4f915d8397219bfed47e092))
+
 ## [0.2.33](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.32...Ekom-v0.2.33) (2026-02-03)
 
 
