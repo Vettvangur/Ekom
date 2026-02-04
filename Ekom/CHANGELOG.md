@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.38](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.37...Ekom-v0.2.38) (2026-02-04)
+
+
+### Bug Fixes
+
+* remove comments, make all data nullable ([92fd6d3](https://github.com/Vettvangur/Ekom/commit/92fd6d3961ddbbbafb8e8a27243d56de4f69d8e2))
+
 ## [0.2.37](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.36...Ekom-v0.2.37) (2026-02-04)
 
 
