@@ -24,6 +24,7 @@ internal sealed class KlaviyoOptionsPostConfigure
         {
             o.Catalog.Enabled = false;
             o.Orders.Enabled = false;
+            o.Subscriptions.Enabled = false;
             return;
         }
 

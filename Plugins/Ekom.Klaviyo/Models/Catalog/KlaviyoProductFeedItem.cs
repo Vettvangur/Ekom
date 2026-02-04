@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Ekom.Klaviyo.Models;
+namespace Ekom.Klaviyo.Models.Catalog;
 
 internal sealed record KlaviyoProductFeedItem(
     [property: JsonPropertyName("id")]

@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Orders;
 
 namespace Ekom.Site;
 

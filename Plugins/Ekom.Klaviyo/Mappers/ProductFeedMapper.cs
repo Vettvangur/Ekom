@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Helpers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Ekom.Models;
 
 namespace Ekom.Klaviyo.Mappers;

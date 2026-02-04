@@ -1,4 +1,6 @@
-namespace Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Subscriptions;
+
+namespace Ekom.Klaviyo.Models.Orders;
 
 public sealed record KlaviyoPlacedOrder
 {
@@ -8,7 +10,7 @@ public sealed record KlaviyoPlacedOrder
     public decimal Value { get; set; }
     public string ValueFormatted { get; set; } = default!;
     public string Currency { get; set; } = default!;
-    public KlaviyoProfile Customer { get; set; } = default!;
+    public KlaviyoOrderProfile Customer { get; set; } = default!;
     public KlaviyoShipTo? ShipTo { get; set; }
     public IReadOnlyList<KlaviyoOrderLine> Items { get; set; } = [];
     public string StoreAlias { get; set; } = default!;
@@ -18,6 +20,7 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public KlaviyoConsentUpdate? Consent { get; set; }
 }
 
 public sealed record KlaviyoShippingProvider

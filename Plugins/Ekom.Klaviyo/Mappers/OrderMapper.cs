@@ -1,5 +1,6 @@
 using Ekom.Klaviyo.Helpers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Orders;
+using Ekom.Klaviyo.Models.Subscriptions;
 using Ekom.Models;
 using System.Text.Json.Nodes;
 using Umbraco.Extensions;
@@ -45,6 +46,35 @@ public static class OrderMapper
         var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
         var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
 
+        KlaviyoConsentUpdate? consent = null;
+
+        var consentValue = order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribe");
+
+        if (consentValue.IsBoolean())
+        {
+            consent = new KlaviyoConsentUpdate(
+                StoreAlias: order.StoreInfo.Alias,
+                Profile: order.ToKlaviyoProfile(opt).ToSubscriptionsProfile(),
+                Consents: new List<KlaviyoConsentChange>
+                {
+                    new KlaviyoConsentChange(
+                        Channel: KlaviyoConsentChannel.Email,
+                        State: KlaviyoConsentState.Subscribed,
+                        Source: "checkout",
+                        TimestampUtc: DateTimeOffset.UtcNow,
+                        ConsentTextVersion: "checkout-v1", 
+                        Ip: order.CustomerInformation.CustomerIpAddress),
+                    new KlaviyoConsentChange(
+                        Channel: KlaviyoConsentChannel.Sms,
+                        State: KlaviyoConsentState.Subscribed,
+                        Source: "checkout",
+                        TimestampUtc: DateTimeOffset.UtcNow,
+                        ConsentTextVersion: "checkout-v1",
+                        Ip: order.CustomerInformation.CustomerIpAddress)
+                }
+            );
+        }
+
         return new KlaviyoPlacedOrder
         {
             OrderId = order.UniqueId.ToString(),
@@ -61,7 +91,8 @@ public static class OrderMapper
             DiscountValue = order.DiscountAmount.Value,
             CheckoutUrl = storeOptions?.CheckoutUrl,
             ShippingProvider = shippingProvider,
-            PaymentProvider = paymentProvider
+            PaymentProvider = paymentProvider,
+            Consent = consent
         };
     }
 

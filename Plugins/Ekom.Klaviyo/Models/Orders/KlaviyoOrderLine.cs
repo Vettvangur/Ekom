@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Models;
+namespace Ekom.Klaviyo.Models.Orders;
 public sealed record KlaviyoOrderLine
 {
     public string? ProductExternalId { get; set; }

@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Clients;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Orders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
