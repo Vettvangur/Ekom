@@ -17,7 +17,7 @@ class CategoryCache : PerStoreCache<ICategory>
 
     public CategoryCache(
         Configuration config,
-        ILogger<IPerStoreCache<ICategory>> logger,
+        ILogger<IPerStoreIndexedCache<ICategory>> logger,
         IBaseCache<IStore> storeCache,
         IPerStoreFactory<ICategory> perStoreFactory,
         IServiceProvider serviceProvider

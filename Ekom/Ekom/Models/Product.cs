@@ -16,13 +16,13 @@ namespace Ekom.Models;
 /// </summary>
 public class Product : PerStoreNodeEntity, IProduct
 {
-    private IPerStoreCache<IVariant> __variantCache;
-    private IPerStoreCache<IVariant> _variantCache =>
-        __variantCache ?? (__variantCache = Configuration.Resolver.GetService<IPerStoreCache<IVariant>>());
+    private IPerStoreIndexedCache<IVariant> __variantCache;
+    private IPerStoreIndexedCache<IVariant> _variantCache =>
+        __variantCache ?? (__variantCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IVariant>>());
 
-    private IPerStoreCache<IVariantGroup> __variantGroupCache;
-    private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-        __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
+    private IPerStoreIndexedCache<IVariantGroup> __variantGroupCache;
+    private IPerStoreIndexedCache<IVariantGroup> _variantGroupCache =>
+        __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IVariantGroup>>());
 
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 

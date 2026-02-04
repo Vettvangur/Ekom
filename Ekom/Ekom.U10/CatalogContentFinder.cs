@@ -16,8 +16,8 @@ class CatalogContentFinder : IContentFinder
     readonly ILogger<CatalogContentFinder> _logger;
     readonly Configuration _config;
     readonly IStoreService _storeSvc;
-    readonly IPerStoreCache<ICategory> _categoryCache;
-    readonly IPerStoreCache<IProduct> _productCache;
+    readonly IPerStoreIndexedCache<ICategory> _categoryCache;
+    readonly IPerStoreIndexedCache<IProduct> _productCache;
     readonly AppCaches _appCaches;
     readonly IHttpContextAccessor _httpContextAccessor;
     readonly IUmbracoContextAccessor _umbracoContextAccessor;
@@ -26,8 +26,8 @@ class CatalogContentFinder : IContentFinder
         ILogger<CatalogContentFinder> logger,
         Configuration config,
         IStoreService storeSvc,
-        IPerStoreCache<ICategory> categoryCache,
-        IPerStoreCache<IProduct> productCache,
+        IPerStoreIndexedCache<ICategory> categoryCache,
+        IPerStoreIndexedCache<IProduct> productCache,
         AppCaches appCaches,
         IHttpContextAccessor httpContextAccessor,
         IUmbracoContextAccessor umbracoContextAccessor)

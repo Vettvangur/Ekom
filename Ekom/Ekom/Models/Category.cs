@@ -14,8 +14,8 @@ namespace Ekom.Models;
 /// </summary>
 public class Category : PerStoreNodeEntity, ICategory
 {
-    private IPerStoreCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreCache<ICategory>>();
-    private IPerStoreCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreCache<IProduct>>();
+    private IPerStoreIndexedCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreIndexedCache<ICategory>>();
+    private IPerStoreIndexedCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreIndexedCache<IProduct>>();
     private IProductFilterService _productFilterService => Configuration.Resolver.GetService<IProductFilterService>();
     /// <summary>
     /// Short spaceless descriptive title used to create URLs

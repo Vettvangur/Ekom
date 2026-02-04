@@ -11,7 +11,7 @@ class VariantCache : PerStoreCache<IVariant>
 
     public VariantCache(
         Configuration config,
-        ILogger<IPerStoreCache<IVariant>> logger,
+        ILogger<IPerStoreIndexedCache<IVariant>> logger,
         IBaseCache<IStore> storeCache,
         IPerStoreFactory<IVariant> perStoreFactory,
         IServiceProvider serviceProvider

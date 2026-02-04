@@ -15,7 +15,7 @@ class ProductCache : PerStoreCache<IProduct>
 
     public ProductCache(
         Configuration config,
-        ILogger<IPerStoreCache<IProduct>> logger,
+        ILogger<IPerStoreIndexedCache<IProduct>> logger,
         IBaseCache<IStore> storeCache,
         IPerStoreFactory<IProduct> perStoreFactory,
         IServiceProvider serviceProvider
