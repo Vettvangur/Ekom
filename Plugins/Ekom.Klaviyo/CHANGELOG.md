@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.38](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.37...Ekom.Klaviyo-v0.2.38) (2026-02-04)
+
+
+### Bug Fixes
+
+* ekom performance in product response, klaviyo update ekom version ([fbbfe80](https://github.com/Vettvangur/Ekom/commit/fbbfe80231c6aae2718da4154fa5fbcfaf1d292d))
+* ekom performance in product response, klaviyo update ekom version ([9e98c0e](https://github.com/Vettvangur/Ekom/commit/9e98c0e427a24b3853e84a54e3890a315bd5e0aa))
+
 ## [0.2.37](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.36...Ekom.Klaviyo-v0.2.37) (2026-02-04)
 
 
