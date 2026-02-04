@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.39...Ekom-v0.2.40) (2026-02-04)
+
+
+### Bug Fixes
+
+* ordinal string wip ([243ca71](https://github.com/Vettvangur/Ekom/commit/243ca7182109154a746acbf9db0b21cfee340a84))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.38...Ekom-v0.2.39) (2026-02-04)
 
 
