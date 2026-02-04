@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.38...Ekom-v0.2.39) (2026-02-04)
+
+
+### Bug Fixes
+
+* ekom performance in product response, klaviyo update ekom version ([fbbfe80](https://github.com/Vettvangur/Ekom/commit/fbbfe80231c6aae2718da4154fa5fbcfaf1d292d))
+* ekom performance in product response, klaviyo update ekom version ([9e98c0e](https://github.com/Vettvangur/Ekom/commit/9e98c0e427a24b3853e84a54e3890a315bd5e0aa))
+
+## [0.2.38](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.37...Ekom-v0.2.38) (2026-02-04)
+
+
+### Bug Fixes
+
+* Filter out zero price products ([9e5eb00](https://github.com/Vettvangur/Ekom/commit/9e5eb00a3df65d2208f6c87f11faf544295b0a50))
+* Filter out zero price products ([f127bc9](https://github.com/Vettvangur/Ekom/commit/f127bc943f121be9b30c5d35917f575e6f588b65))
+* remove comments, make all data nullable ([92fd6d3](https://github.com/Vettvangur/Ekom/commit/92fd6d3961ddbbbafb8e8a27243d56de4f69d8e2))
+
 ## [0.2.37](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.36...Ekom-v0.2.37) (2026-02-04)
 
 
