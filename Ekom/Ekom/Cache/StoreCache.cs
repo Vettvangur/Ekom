@@ -9,9 +9,6 @@ class StoreCache : BaseCache<IStore>
 {
     public override string NodeAlias { get; } = "ekmStore";
 
-    /// <summary>
-    /// ctor
-    /// </summary>
     public StoreCache(
         Configuration config,
         ILogger<BaseCache<IStore>> logger,
@@ -21,13 +18,12 @@ class StoreCache : BaseCache<IStore>
     {
     }
 
-    /// <summary>
-    /// Fill Store cache with all products in examine
-    /// </summary>
+    protected override bool EnableIdIndex => true;
+    protected override int GetId(IStore item) => item.Id;
+
     public override void FillCache()
     {
-        Stopwatch stopwatch = new Stopwatch();
-        stopwatch.Start();
+        var stopwatch = Stopwatch.StartNew();
 
         _logger.LogDebug("Starting to fill store cache...");
         int count = 0;
@@ -36,19 +32,13 @@ class StoreCache : BaseCache<IStore>
 
         foreach (UmbracoContent r in results)
         {
-            //try
-            //{
+            // If objectFactory is present, use it; otherwise create Store directly
             IStore item = _objFac?.Create(r) ?? new Store(r);
 
             count++;
 
+            // IMPORTANT: use helper to keep indexes consistent
             AddOrReplaceFromCache(r.Key, item);
-
-            //}
-            //catch (Exception ex) // Skip on fail
-            //{
-            //    _logger.LogError(ex, "Failed to map to store. Id: {Id}", r.Id);
-            //}
         }
 
         stopwatch.Stop();
@@ -59,29 +49,27 @@ class StoreCache : BaseCache<IStore>
     }
 
     /// <summary>
-    /// <see cref="ICache"/> implementation.
-    /// <see cref="StoreCache"/> specific implementation triggers refill of all <see cref="BaseCache{TItem}"/>
+    /// StoreCache-specific AddReplace triggers refill of succeeding per-store caches.
     /// </summary>
     public override void AddReplace(UmbracoContent node)
     {
-
         Store? item = (Store)(_objFac?.Create(node) ?? Activator.CreateInstance(typeof(Store), node));
 
-        if (item != null)
+        if (item == null)
+            return;
+
+        // IMPORTANT: use helper to keep indexes consistent
+        AddOrReplaceFromCache(node.Key, item);
+
+        IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
+
+        // Refill all per-store caches for this store
+        foreach (ICache cacheEntry in succeedingCaches)
         {
-            AddOrReplaceFromCache(node.Key, item);
-
-            IEnumerable<ICache> succeedingCaches = _config.Succeeding(this);
-
-            // Refill all per store caches
-            foreach (ICache cacheEntry in succeedingCaches)
+            if (cacheEntry is IPerStoreCache perStoreCache)
             {
-                if (cacheEntry is IPerStoreCache perStoreCache)
-                {
-                    perStoreCache.FillCache(item);
-                }
+                perStoreCache.FillCache(item);
             }
         }
-
     }
 }

@@ -60,18 +60,7 @@ public class Category : PerStoreNodeEntity, ICategory
     /// All direct child categories
     /// </summary>
     public IEnumerable<ICategory> SubCategories
-    {
-        get
-        {
-            IOrderedEnumerable<ICategory> subs = _categoryCache.Cache[Store.Alias]
-                .Where(x => x.Value.ParentId == Id)
-                .Select(x => x.Value)
-                .OrderBy(x => x.SortOrder);
-
-
-            return subs;
-        }
-    }
+        => ((CategoryCache)_categoryCache).GetChildren(Store.Alias, Id);
 
     /// <summary>
     /// All descendant categories, includes grandchild categories
@@ -80,34 +69,33 @@ public class Category : PerStoreNodeEntity, ICategory
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
     public IEnumerable<ICategory> SubCategoriesRecursive
-    {
-        get
-        {
-            return _categoryCache.Cache[Store.Alias]
-                                .Where(x => x.Value.Level > Level &&
-                                            x.Value.PathArray.Contains(Id.ToString()))
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder);
-        }
-    }
+    => ((CategoryCache)_categoryCache).GetDescendants(Store.Alias, Id)
+       .Where(c => c.Level > Level);
 
     public virtual bool VirtualUrl { get; set; }
 
     public virtual bool HasProducts()
     {
-        return _productCache.Cache[Store.Alias]
-                            .Any(x => x.Value.Categories.Any(z => z.Id == Id));
+        var storeAlias = Store.Alias;
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        return productCache.HasAnyInCategory(storeAlias, Id);
     }
+
 
     /// <summary>
     /// All direct child products of category. (No descendants)
     /// </summary>
     public ProductResponse Products(ProductQuery? query = null)
     {
+        var storeAlias = Store.Alias;
 
-        IEnumerable<IProduct> products = _productCache.Cache[Store.Alias]
-                            .Where(x => x.Value.Categories.Any(z => z.Id == Id))
-                            .Select(x => x.Value).AsEnumerable();
+        var productCache = _productCache as Ekom.Cache.ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, [Id]);
 
         return new ProductResponse(products, query, _productFilterService, this);
     }
@@ -118,21 +106,31 @@ public class Category : PerStoreNodeEntity, ICategory
     /// </summary>
     public ProductResponse ProductsRecursive(ProductQuery? query = null)
     {
-        List<ICategory> categories = _categoryCache.Cache[Store.Alias]
-            .Where(x => x.Value.Level >= Level &&
-                        x.Value.PathArray.Contains(Id.ToString()))
-            .Select(x => x.Value)
-            .ToList();
+        var storeAlias = Store.Alias;
 
-        var categoryIds = new HashSet<int>(categories.Select(c => c.Id));
+        var categoryIds = new HashSet<int>();
+        var idStr = Id.ToString();
 
-        IEnumerable<IProduct> products = _productCache.Cache[Store.Alias]
-            .Where(x => x.Value.Categories != null && x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
-            .Select(x => x.Value)
-            .AsEnumerable();
+        if (_categoryCache.Cache.TryGetValue(storeAlias, out var catDict))
+        {
+            foreach (var c in catDict.Values)
+            {
+                if (c.Level >= Level && c.PathArray.Contains(idStr))
+                    categoryIds.Add(c.Id);
+            }
+        }
+
+        if (categoryIds.Count == 0)
+            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService, this);
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
 
         return new ProductResponse(products, query, _productFilterService, this);
     }
+
 
     /// <summary>
     /// All parent categories, grandparent categories and so on.
