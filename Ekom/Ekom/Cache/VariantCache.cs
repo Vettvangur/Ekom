@@ -110,7 +110,7 @@ class VariantCache : PerStoreCache<IVariant>
     }
 
     // Keep indexes consistent for event-driven updates too
-    public new void AddOrReplaceFromCache(Guid key, Store store, IVariant item)
+    public override void AddOrReplaceFromCache(Guid key, Store store, IVariant item)
     {
         base.AddOrReplaceFromCache(key, store, item);
 
@@ -123,7 +123,7 @@ class VariantCache : PerStoreCache<IVariant>
             .Add(key);
     }
 
-    public new bool RemoveItemFromCache(IStore store, Guid key)
+    public override bool RemoveItemFromCache(IStore store, Guid key)
     {
         // We remove from primary cache; indexes are “lazy-cleaned” because getters verify:
         // storeCache.TryGetValue(key, out v) && v.Group/ProductId matches.

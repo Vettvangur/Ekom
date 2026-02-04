@@ -70,7 +70,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     }
 
     // Event-driven updates (lazy-cleaned, same approach as VariantCache)
-    public new void AddOrReplaceFromCache(Guid key, Store store, IVariantGroup item)
+    public override void AddOrReplaceFromCache(Guid key, Store store, IVariantGroup item)
     {
         base.AddOrReplaceFromCache(key, store, item);
 
@@ -79,7 +79,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
             .Add(key);
     }
 
-    public new bool RemoveItemFromCache(IStore store, Guid key)
+    public override bool RemoveItemFromCache(IStore store, Guid key)
     {
         return base.RemoveItemFromCache(store, key);
     }

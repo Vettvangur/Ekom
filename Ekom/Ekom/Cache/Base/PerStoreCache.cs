@@ -255,7 +255,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// Add/replace an item in a single store cache + indexes.
     /// Use this when you already know the store.
     /// </summary>
-    public void AddOrReplaceFromCache(Guid key, Store store, TItem item)
+    public virtual void AddOrReplaceFromCache(Guid key, Store store, TItem item)
     {
         var alias = store.Alias;
 
@@ -291,7 +291,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// <summary>
     /// Remove an item from a single store cache + indexes.
     /// </summary>
-    public bool RemoveItemFromCache(IStore store, Guid key)
+    public virtual bool RemoveItemFromCache(IStore store, Guid key)
     {
         var alias = store.Alias;
 
