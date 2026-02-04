@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.36](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.35...Ekom-v0.2.36) (2026-02-04)
+
+
+### Bug Fixes
+
+* update registrations ([37bddac](https://github.com/Vettvangur/Ekom/commit/37bddac600629617e7eb434d1d1c55f7744003ec))
+* update registrations ([c149d97](https://github.com/Vettvangur/Ekom/commit/c149d971fc2f415b8fa242550012a2d05ab43e63))
+
 ## [0.2.35](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.34...Ekom-v0.2.35) (2026-02-04)
 
 
