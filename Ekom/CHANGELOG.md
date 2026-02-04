@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.41...Ekom-v0.2.42) (2026-02-04)
+
+
+### Bug Fixes
+
+* wip ordered shipping provider ([322446c](https://github.com/Vettvangur/Ekom/commit/322446c83d58756488b31793d65a92035f2505b0))
+* wip ordered shipping provider ([25dc09b](https://github.com/Vettvangur/Ekom/commit/25dc09bfc9a87040b1f51282814df5ea49196a1e))
+
 ## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.40...Ekom-v0.2.41) (2026-02-04)
 
 
