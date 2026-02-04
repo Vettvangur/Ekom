@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.36](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.35...Ekom.Klaviyo-v0.2.36) (2026-02-04)
+
+
+### Bug Fixes
+
+* update registrations for new per store cache ([39e3611](https://github.com/Vettvangur/Ekom/commit/39e36115825006f3cc02c8291276b673987ca8f1))
+* update registrations for new per store cache ([7f6d302](https://github.com/Vettvangur/Ekom/commit/7f6d30259c378bfe7c3fd11eb55fd61e13f9fede))
+
 ## [0.2.35](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.34...Ekom.Klaviyo-v0.2.35) (2026-02-04)
 
 
