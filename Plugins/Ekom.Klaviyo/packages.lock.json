@@ -4,13 +4,13 @@
     "net8.0": {
       "Ekom.Core": {
         "type": "Direct",
-        "requested": "[0.2.36, )",
-        "resolved": "0.2.36",
-        "contentHash": "fAHcgdr5uzUXcFYqA6XwekpMs5K/vJgWf508aYeKPR+SmfY6qhdGBNXzckdfPmWO2ZUF47JCFDalzVpbKCk7zw==",
+        "requested": "[0.2.37, )",
+        "resolved": "0.2.37",
+        "contentHash": "kl34Ki/SjDJB6U7LTH6VqM/fCg3IckQdkXE1BvhZbIljN5t9AnuYPqgVCB4rIKPzj9V4n4aPd6qYDpzQ+VL/Vw==",
         "dependencies": {
           "Azure.Identity": "1.17.1",
           "CommonServiceLocator": "2.0.7",
-          "Ekom.Common": "0.2.36",
+          "Ekom.Common": "0.2.37",
           "Ekom.Payments.Core": "0.2.51",
           "Hangfire": "1.8.18",
           "Microsoft.AspNetCore.Http.Extensions": "2.3.0",
@@ -28,11 +28,11 @@
       },
       "Ekom.U10": {
         "type": "Direct",
-        "requested": "[0.2.36, )",
-        "resolved": "0.2.36",
-        "contentHash": "wgFlyw80Gu8uxLBeDD31peCzBdnu6sYB00SK9kUis6rAOpy2YVA1GgVqIJVxMsI+FUDQVZzK1rx4ZhvQCr638A==",
+        "requested": "[0.2.37, )",
+        "resolved": "0.2.37",
+        "contentHash": "WTtpgr9v+hobtqu4qVxpvn0XvSnW+Xj+kAwIxLYHNC9CRk+M4GAGdh5ojyAm7c8ggq4VBrdzQUGIPjsCevHo0g==",
         "dependencies": {
-          "Ekom.AspNetCore": "0.2.36",
+          "Ekom.AspNetCore": "0.2.37",
           "Ekom.Payments.U10": "0.2.51",
           "Umbraco.Cms.Api.Common": "13.13.0",
           "Umbraco.Cms.Core": "13.13.0",
@@ -173,16 +173,16 @@
       },
       "Ekom.AspNetCore": {
         "type": "Transitive",
-        "resolved": "0.2.36",
-        "contentHash": "Mpb8ODHrUZirV56VwQzBv2pNPiUiGtc6DakzMjcYfLFcxkZF4WM254iTvQNGm7hmYd+JaRsimKBEDdi3ZdPhVg==",
+        "resolved": "0.2.37",
+        "contentHash": "eyySBTkMdzN2YGsXx3vgEFrTxLG442E2WrAU268a+epSQAql3NJUyh57QUmeFCOQuRoTy3fypZCHmVqFbf1ffA==",
         "dependencies": {
-          "Ekom.Core": "0.2.36"
+          "Ekom.Core": "0.2.37"
         }
       },
       "Ekom.Common": {
         "type": "Transitive",
-        "resolved": "0.2.36",
-        "contentHash": "uGbWTGxvvbV21PCUpvKyh7eewKWISH5NaRHV+VbLamAcpZlhd2Lqy39CToPN/OOImnGTTS3L2zXek0abI1fzIA==",
+        "resolved": "0.2.37",
+        "contentHash": "QT25nExe04frR8xid1bhKQ2OI0r+/hO0Aj+wNruNIow9QoePQG/U915VJDcbavt4xapXW82BxRoNCqZOLjSJnA==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "8.0.1",
           "Newtonsoft.Json": "13.0.3"
