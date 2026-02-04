@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.35](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.34...Ekom-v0.2.35) (2026-02-04)
+
+
+### Bug Fixes
+
+* change registration to IPerStoreIndexedCache ([6da5c93](https://github.com/Vettvangur/Ekom/commit/6da5c935e41168ffdb5f69449ad948a87ecd95ed))
+* change registration to IPerStoreIndexedCache ([d6dd06c](https://github.com/Vettvangur/Ekom/commit/d6dd06c0d1dd8da67478f8c21d86d54a53df1c82))
+
 ## [0.2.34](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.33...Ekom-v0.2.34) (2026-02-04)
 
 
