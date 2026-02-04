@@ -1,3 +1,4 @@
+using Ekom.API;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
@@ -8,20 +9,38 @@ public class OrderedShippingProvider
 {
     private readonly IShippingProvider _provider;
 
-    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string>? allData)
+    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string>? allData, OrderSettings? orderSettings)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
         Dictionary<string, string> dictionary = provider.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
+        var orderDynamic = orderSettings?.OrderDynamicRequest;
+
+        var title = _provider.Title;
+
+        if (orderDynamic != null && !string.IsNullOrEmpty(orderDynamic.Title))
+        {
+            dictionary["title"] = orderDynamic.Title;
+            title = orderDynamic.Title;
+        }
+
         Properties = new ReadOnlyDictionary<string, string>(
-            dictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+           dictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
+        if (orderDynamic != null && orderDynamic.Prices != null && orderDynamic.Prices.Any() == true)
+        {
+            Prices = orderDynamic.Prices;
+        }
+        else
+        {
+            Prices = _provider.Prices;
+        }
 
         StoreInfo = storeInfo;
         Id = _provider.Id;
         Key = _provider.Key;
-        Title = _provider.Title;
-        Prices = _provider.Prices;
+        Title = title;
         Method = _provider.Method;
         CustomData = allData?.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(
