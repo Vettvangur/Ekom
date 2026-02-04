@@ -161,11 +161,19 @@ public class ProductResponse
         }
         else if (orderBy == Utilities.OrderBy.PriceAsc)
         {
-            return products.OrderBy(x => x.OriginalPrice.Value);
+            return products.OrderBy(p =>
+            {
+                var pv = p.PrimaryVariant;
+                return (pv?.Price?.Value ?? p.OriginalPrice?.Value) ?? 0m;
+            });
         }
         else if (orderBy == Utilities.OrderBy.PriceDesc)
         {
-            return products.OrderByDescending(x => x.OriginalPrice.Value);
+            return products.OrderByDescending(p =>
+            {
+                var pv = p.PrimaryVariant;
+                return (pv?.Price?.Value ?? p.OriginalPrice?.Value) ?? 0m;
+            });
         }
         else if (orderBy == Utilities.OrderBy.DateAsc)
         {

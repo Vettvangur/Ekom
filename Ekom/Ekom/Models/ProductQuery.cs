@@ -40,10 +40,10 @@ public class ProductQuery : ProductQueryBase
     private static Dictionary<string, List<string>> ExtractFilters(IQueryCollection query, string prefix)
     {
         return query
-            .Where(x => x.Key.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase) &&
+            .Where(x => x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
                         x.Value.All(v => !string.IsNullOrEmpty(v)))
             .ToDictionary(
-                x => x.Key.Replace(prefix, "", StringComparison.InvariantCultureIgnoreCase),
+                x => x.Key.Replace(prefix, "", StringComparison.OrdinalIgnoreCase),
                 x => x.Value.ToList());
     }
 
