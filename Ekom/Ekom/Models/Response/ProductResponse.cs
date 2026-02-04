@@ -16,131 +16,130 @@ public class ProductResponse
 
     public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null, ICategory? category = null)
     {
-        if (query != null)
+        if (query == null)
         {
-            // Filter out zero-price products
-            if (query.FilterOutZeroPriceProducts)
-            {
-                products = products.Where(x =>
-                {
-                    var pv = x.PrimaryVariant;
+            var baseList = products as List<IProduct> ?? products.ToList();
 
-                    var price = pv?.Price ?? x.Price;
-
-                    return price?.Value > 0;
-                });
-            }
-
-            // Store the total number of products before any filtering
-            TotalProductCount = products.Count();
-
-            // Apply Property Selectors
-            if (query.PropertySelectors?.Any() == true)
-            {
-                foreach (KeyValuePair<string, string> selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
-                {
-                    string separator = query.PropertySelectorsSeparator;
-
-                    List<(string Key, int)> propertyValues = products
-                        .SelectMany(x => x.GetValue(selector.Key, selector.Value)?
-                                                    .Split(new[] { separator }, StringSplitOptions.RemoveEmptyEntries)
-                                                    .Select(value => value.Trim())
-                                                    ?? Array.Empty<string>())
-                        .Where(x => !string.IsNullOrEmpty(x))
-                        .GroupBy(value => value)
-                        .Select(group => (group.Key, group.Count()))
-                        .ToList();
-
-                    PropertySelectors.Add(selector.Key, propertyValues);
-                }
-            }
-
-            if (query.AllFiltersVisible)
-            {
-                Filters = products.Filters();
-            }
-
-            // Apply Filters
-            if (query.MetaFilters?.Any() == true || query.PropertyFilters?.Any() == true)
-            {
-                products = products.Filter(query);
-            }
-
-            // Apply Search Filtering
-            if (!string.IsNullOrEmpty(query.SearchQuery))
-            {
-                long total = 0;
-
-                using IServiceScope scope = Configuration.Resolver.CreateScope();
-                ICatalogSearchService? searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
-                IEnumerable<int> searchResults = searchService?.ProductQuery(new SearchRequest
-                {
-                    SearchQuery = query.SearchQuery,
-                    NodeTypeAlias = new[] { "ekmProduct", "ekmCategory", "ekmVariant" },
-                    SearchFields = query.SearchFields
-                }, out total) ?? Enumerable.Empty<int>();
-
-                products = total > 0 ? products.Where(x => searchResults.Contains(x.Id)) : Enumerable.Empty<IProduct>();
-            }
-
-            if (!query.AllFiltersVisible)
-            {
-                Filters = products.Filters();
-            }
-
-            // Apply Sorting
-            if (query.OrderBy != Utilities.OrderBy.NoOrder)
-            {
-                products = OrderBy(products, query?.OrderBy ?? Configuration.Instance.DefaultProductOrderBy);
-            }
-
-            // Apply Additional Filtering via filterService
-            if (filterService != null && query.RaiseEvents)
-            {
-                products = filterService.ApplyFilters(products, query, category);
-            }
-
-            products = query.RaiseEvents ? CatalogEvents.RaiseOnBeforeReturnProducts(products) : products;
-
-            // Apply Query Filter
-            if (query?.Filter != null)
-            {
-                products = products.Where(query.Filter);
-            }
-
-            // Store the count after filtering
-            ProductCount = products.Count();
-
-            // Apply Pagination
-            if (query != null && query.PageSize.HasValue && query.Page.HasValue)
-            {
-                PageSize = query.PageSize.Value;
-                PageCount = (ProductCount + PageSize - 1) / PageSize;
-                Page = query.Page.Value;
-
-                Products = products.Skip((Page.Value - 1) * PageSize.Value).Take(PageSize.Value);
-            }
-            else
-            {
-                Products = products;
-            }
-        }
-        else
-        {
-            // Apply Additional Filtering via filterService
             if (filterService != null)
-            {
-                products = filterService.ApplyFilters(products, query, category);
-            }
+                products = filterService.ApplyFilters(baseList, query, category);
 
             products = CatalogEvents.RaiseOnBeforeReturnProducts(products);
 
             Products = products;
-            ProductCount = products.Count();
+            ProductCount = baseList.Count;
             TotalProductCount = ProductCount;
+            return;
         }
-    }
 
+        IEnumerable<IProduct> working = products as List<IProduct> ?? products.ToList();
+
+        if (query.PropertySelectors?.Any() == true)
+        {
+            foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
+            {
+                var sep = query.PropertySelectorsSeparator;
+
+                var propertyValues = working
+                    .SelectMany(x => x.GetValue(selector.Key, selector.Value)?
+                        .Split(new[] { sep }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(v => v.Trim())
+                        ?? Array.Empty<string>())
+                    .Where(v => !string.IsNullOrEmpty(v))
+                    .GroupBy(v => v)
+                    .Select(g => (g.Key, g.Count()))
+                    .ToList();
+
+                PropertySelectors.Add(selector.Key, propertyValues);
+            }
+        }
+
+        if (query.AllFiltersVisible)
+            Filters = working.Filters();
+
+        if (query.MetaFilters?.Any() == true || query.PropertyFilters?.Any() == true)
+            working = working.Filter(query);
+
+        if (!string.IsNullOrEmpty(query.SearchQuery))
+        {
+            using var scope = Configuration.Resolver.CreateScope();
+            var searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+
+            long total = 0;
+            var ids = searchService?.ProductQuery(new SearchRequest
+            {
+                SearchQuery = query.SearchQuery,
+                NodeTypeAlias = new[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+                SearchFields = query.SearchFields
+            }, out total) ?? Enumerable.Empty<int>();
+
+            if (total > 0)
+            {
+                var idSet = ids is HashSet<int> hs ? hs : new HashSet<int>(ids);
+                working = working.Where(p => idSet.Contains(p.Id));
+            }
+            else
+            {
+                working = Enumerable.Empty<IProduct>();
+            }
+        }
+
+        if (!query.AllFiltersVisible)
+            Filters = working.Filters();
+
+
+        if (filterService != null && query.RaiseEvents)
+            working = filterService.ApplyFilters(working, query, category);
+
+        if (query.RaiseEvents)
+            working = CatalogEvents.RaiseOnBeforeReturnProducts(working);
+
+        // Query predicate
+        if (query.Filter != null)
+            working = working.Where(query.Filter);
+
+        if (query.FilterOutZeroPriceProducts)
+        {
+            working = working.Where(p =>
+            {
+                var pv = p.PrimaryVariant;
+                var price = pv?.Price ?? p.Price;
+                return price?.Value > 0;
+            });
+        }
+
+        // Materialize once for counts + paging
+        var finalList = working as List<IProduct> ?? working.ToList();
+
+        // Total AFTER price filtering (your requirement)
+        TotalProductCount = finalList.Count;
+
+        // Sorting
+        if (query.OrderBy != Utilities.OrderBy.NoOrder)
+            finalList = OrderBy(finalList, query?.OrderBy ?? Configuration.Instance.DefaultProductOrderBy).ToList();
+
+        ProductCount = finalList.Count;
+
+        // Paging
+        if (query.PageSize.HasValue && query.Page.HasValue)
+        {
+            var pageSize = query.PageSize.Value;
+            var page = query.Page.Value;
+
+            PageSize = pageSize;
+            Page = page;
+
+            PageCount = (ProductCount + pageSize - 1) / pageSize;
+
+            Products = finalList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+        }
+        else
+        {
+            Products = finalList;
+        }
+
+    }
 
     public IEnumerable<IProduct> Products { get; set; }
     public int? PageCount { get; set; }
