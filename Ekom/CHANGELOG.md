@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.39...Ekom-v0.2.40) (2026-02-04)
+
+
+### Bug Fixes
+
+* order by set by query string ([a28ebd0](https://github.com/Vettvangur/Ekom/commit/a28ebd0ffe8c3f6d332f20fb19524f576fb32bef))
+* order by set by query string ([b4faf29](https://github.com/Vettvangur/Ekom/commit/b4faf29654a3a5d7b31a323824e7b5dca6039449))
+* ordinal string wip ([243ca71](https://github.com/Vettvangur/Ekom/commit/243ca7182109154a746acbf9db0b21cfee340a84))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.38...Ekom-v0.2.39) (2026-02-04)
 
 
