@@ -1579,7 +1579,7 @@ partial class OrderService
 
             if (provider == null) return orderInfo;
 
-            var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData);
+            var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData, settings);
 
             orderInfo.ShippingProvider = orderedShippingProvider;
 
