@@ -21,7 +21,14 @@ public class ProductResponse
             // Filter out zero-price products
             if (query.FilterOutZeroPriceProducts)
             {
-                products = products.Where(x =>  x.PrimaryVariant != null  ? x.PrimaryVariant.OriginalPrice?.Value > 0 : x.OriginalPrice?.Value > 0);
+                products = products.Where(x =>
+                {
+                    var pv = x.PrimaryVariant;
+
+                    var price = pv?.Price ?? x.Price;
+
+                    return price?.Value > 0;
+                });
             }
 
             // Store the total number of products before any filtering
