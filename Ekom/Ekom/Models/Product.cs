@@ -655,14 +655,18 @@ public class Product : PerStoreNodeEntity, IProduct
     private IPrice CreateOriginalPrice()
     {
         CurrencyModel storeCurrency = Store.Currency;
-        decimal storeVat = Store.Vat;
+        var vat = Vat;
+        if (vat <= 0)
+        {
+            vat = Store.Vat;
+        }
         bool storeVatIncluded = Store.VatIncludedInPrice;
 
         string originalPrice = _priceValue;
 
         if (string.IsNullOrEmpty(originalPrice))
         {
-            return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+            return new Price(0, storeCurrency, vat, storeVatIncluded);
         }
 
         if (decimal.TryParse(
@@ -671,7 +675,7 @@ public class Product : PerStoreNodeEntity, IProduct
                 CultureInfo.InvariantCulture,
                 out var org))
         {
-            return new Price(org, storeCurrency, storeVat, storeVatIncluded);
+            return new Price(org, storeCurrency, vat, storeVatIncluded);
         }
 
         if (originalPrice.IsJson())
@@ -683,7 +687,7 @@ public class Product : PerStoreNodeEntity, IProduct
 
                 if (val.HasValue)
                 {
-                    return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
+                    return new Price(val.Value, storeCurrency, vat, storeVatIncluded);
                 }
             }
             catch (Exception ex)
@@ -692,6 +696,6 @@ public class Product : PerStoreNodeEntity, IProduct
             }
         }
 
-        return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+        return new Price(0, storeCurrency, vat, storeVatIncluded);
     }
 }
