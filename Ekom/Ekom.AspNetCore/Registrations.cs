@@ -43,12 +43,12 @@ static class Registrations
 
         services.AddSingleton<IStoreDomainCache, StoreDomainCache>();
         services.AddSingleton<IBaseCache<IStore>, StoreCache>();
-        services.AddSingleton<IPerStoreCache<IVariant>, VariantCache>();
-        services.AddSingleton<IPerStoreCache<IVariantGroup>, VariantGroupCache>();
-        services.AddSingleton<IPerStoreCache<ICategory>, CategoryCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IVariant>, VariantCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IVariantGroup>, VariantGroupCache>();
+        services.AddSingleton<IPerStoreIndexedCache<ICategory>, CategoryCache>();
         services.AddSingleton<IPerStoreCache<IProductDiscount>, ProductDiscountCache>();
         services.AddSingleton<DiscountEvents>();
-        services.AddSingleton<IPerStoreCache<IProduct>, ProductCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IProduct>, ProductCache>();
         services.AddSingleton<IBaseCache<IZone>, ZoneCache>();
         services.AddSingleton<IPerStoreCache<Models.IPaymentProvider>, PaymentProviderCache>();
         services.AddSingleton<IPerStoreCache<IShippingProvider>, ShippingProviderCache>();
