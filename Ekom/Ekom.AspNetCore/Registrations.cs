@@ -37,7 +37,7 @@ static class Registrations
             );
         });
 
-        services.AddSingleton<Configuration>();
+        services.AddSingleton(sp => new Configuration(config));
         services.AddSingleton<IStartupFilter, EkomAspNetCoreStartupFilter>();
         services.AddSingleton<IAuthorizationHandler, UmbracoUserAuthorizationHandler>();
 
@@ -96,20 +96,19 @@ static class Registrations
         // This is needed since many of their dependencies are internal classes
         // However the API services are public, leaving their constructor public violates
         // C# visibility restrictions
-        services.AddTransient<Catalog>(f =>
+        services.AddTransient<Catalog>(sp =>
             new Catalog(
-                f.GetService<ILogger<Catalog>>(),
-                f.GetService<Configuration>(),
-                f.GetService<IMetafieldService>(),
-                f.GetService<IPerStoreIndexedCache<IProduct>>(),
-                f.GetService<IPerStoreIndexedCache<ICategory>>(),
-                f.GetService<IPerStoreCache<IProductDiscount>>(),
-                f.GetService<IPerStoreIndexedCache<IVariant>>(),
-                f.GetService<IPerStoreIndexedCache<IVariantGroup>>(),
-                f.GetService<IStoreService>(),
-                f.GetService<IHttpContextAccessor>(),
-                f.GetService<IProductFilterService>()
-
+                sp.GetRequiredService<ILogger<Catalog>>(),
+                sp.GetRequiredService<Configuration>(),
+                sp.GetRequiredService<IMetafieldService>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IProduct>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<ICategory>>(),
+                sp.GetRequiredService<IPerStoreCache<IProductDiscount>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IVariant>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IVariantGroup>>(),
+                sp.GetRequiredService<IStoreService>(),
+                sp.GetRequiredService<IHttpContextAccessor>(),
+                sp.GetRequiredService<IProductFilterService>()
             )
         );
 

@@ -1,7 +1,6 @@
 using Ekom.AspNetCore;
 using Ekom.Services;
 using Ekom.Umb.Services;
-using Ekom.Utilities;
 using EkomCore.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
