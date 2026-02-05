@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.40...Ekom.Klaviyo-v0.2.41) (2026-02-05)
+
+
+### Bug Fixes
+
+* add ct to catalog api ([07f1147](https://github.com/Vettvangur/Ekom/commit/07f11473cc73ba51b8b054066c6859236af20f44))
+* add ct to catalog api ([62f2a32](https://github.com/Vettvangur/Ekom/commit/62f2a321278c4c74d370eedec950344653a94c80))
+* klaviyo, update ekom version and add async ([b4f8548](https://github.com/Vettvangur/Ekom/commit/b4f8548b96e69cfb7f1d10e941af13a1030a339a))
+* klaviyo, update ekom version and add async ([d5712b0](https://github.com/Vettvangur/Ekom/commit/d5712b07b0f865d40a3cd984e2fc9ce85d34f02c))
+
 ## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.39...Ekom.Klaviyo-v0.2.40) (2026-02-05)
 
 
