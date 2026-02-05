@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.41...Ekom.Klaviyo-v0.2.42) (2026-02-05)
+
+
+### Bug Fixes
+
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([9b173b5](https://github.com/Vettvangur/Ekom/commit/9b173b5421d5ed2835901aa39df964ea41531f5a))
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([f0b732c](https://github.com/Vettvangur/Ekom/commit/f0b732c6bfacb68b4ab00c2004a19b4b8ed9366b))
+
 ## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.40...Ekom.Klaviyo-v0.2.41) (2026-02-05)
 
 
