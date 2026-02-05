@@ -61,7 +61,7 @@ public class CheckoutControllerService
         //HttpContext = httpContext;
     }
 
-    internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture)
+    internal async Task<T> PayAsync<T>(Func<CheckoutResponse, T> responseHandler, PaymentRequest paymentRequest, string culture, CancellationToken ct)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -93,7 +93,7 @@ public class CheckoutControllerService
 
         order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, paymentRequest.PaymentProvider, paymentRequest.ShippingProvider).ConfigureAwait(false);
 
-        var res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+        var res = await PrepareCheckoutAsync(paymentRequest, order, ct: ct).ConfigureAwait(false);
 
         if (res != null)
         {
@@ -108,7 +108,8 @@ public class CheckoutControllerService
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
-            order)
+            order,
+            ct)
             .ConfigureAwait(false);
 
         if (res != null)
@@ -121,21 +122,21 @@ public class CheckoutControllerService
         {
             foreach (string job in order.HangfireJobs)
             {
-                await Stock.Instance.RollbackJobAsync(job).ConfigureAwait(false);
+                await Stock.Instance.RollbackJobAsync(job, ct).ConfigureAwait(false);
             }
 
             await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
         }
 
         List<string> hangfireJobs = new List<string>();
-        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs, ct).ConfigureAwait(false);
 
         if (res != null)
         {
             return responseHandler(res);
         }
 
-        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs, ct).ConfigureAwait(false);
 
         if (res != null)
         {
@@ -143,11 +144,11 @@ public class CheckoutControllerService
         }
 
         // save job ids to sql for retrieval after checkout completion
-        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, order.StoreInfo.Alias).ConfigureAwait(false);
+        await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, order.StoreInfo.Alias, ct:ct).ConfigureAwait(false);
 
-        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
+        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store, ct)
             .ConfigureAwait(false);
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle, ct)
             .ConfigureAwait(false);
         return responseHandler(result);
     }
@@ -166,7 +167,7 @@ public class CheckoutControllerService
         return await PayAsync(paymentRequest, culture, order);
     }
 
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, IOrderInfo order, CancellationToken ct = default)
     {
         Logger.LogInformation("Checkout Pay - Payment request start ");
 
@@ -191,9 +192,9 @@ public class CheckoutControllerService
             throw new ArgumentNullException($"Order could not be found in store {paymentRequest.StoreAlias}");
         }
 
-        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order).ConfigureAwait(false);
+        order = await UpdateOrderDateAsync(paymentRequest.AdditionalData, order, ct: ct).ConfigureAwait(false);
 
-        CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order).ConfigureAwait(false);
+        CheckoutResponse? res = await PrepareCheckoutAsync(paymentRequest, order, ct).ConfigureAwait(false);
 
         Logger.LogInformation("Checkout Pay - Order:  " + order.UniqueId + " Customer: " + +order.CustomerInformation.Customer.UserId
             + " ," + order.CustomerInformation.Customer.UserName + " Payment Provider: " + paymentRequest.PaymentProvider);
@@ -203,42 +204,43 @@ public class CheckoutControllerService
 
         res = await ValidationAndOrderUpdatesAsync(
             paymentRequest,
-            order)
+            order, 
+            ct)
             .ConfigureAwait(false);
 
         if (order.HangfireJobs.Any())
         {
             foreach (string job in order.HangfireJobs)
             {
-                await Stock.Instance.RollbackJobAsync(job).ConfigureAwait(false);
+                await Stock.Instance.RollbackJobAsync(job, ct).ConfigureAwait(false);
             }
 
-            await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias).ConfigureAwait(false);
+            await Order.Instance.RemoveHangfireJobsFromOrderAsync(storeAlias, ct: ct).ConfigureAwait(false);
         }
 
-        List<string> hangfireJobs = new List<string>();
+        var hangfireJobs = new List<string>();
 
-        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+        res = await ProcessOrderLinesAsync(paymentRequest, order, hangfireJobs, ct: ct).ConfigureAwait(false);
 
-        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs).ConfigureAwait(false);
+        res = await ProcessCouponsAsync(paymentRequest, order, hangfireJobs, ct: ct).ConfigureAwait(false);
 
         // save job ids to sql for retrieval after checkout completion
         await Order.Instance.AddHangfireJobsToOrderAsync(hangfireJobs, order, storeAlias).ConfigureAwait(false);
 
-        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store)
+        string orderTitle = await CreateOrderTitleAsync(paymentRequest, order, store, ct: ct)
             .ConfigureAwait(false);
-        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle)
+        CheckoutResponse result = await ProcessPaymentAsync(paymentRequest, order, orderTitle, ct: ct)
             .ConfigureAwait(false);
 
         return result;
     }
 
-    protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest, IOrderInfo? orderInfo)
+    protected virtual Task<CheckoutResponse?> PrepareCheckoutAsync(PaymentRequest paymentRequest, IOrderInfo? orderInfo, CancellationToken ct)
     {
         return Task.FromResult<CheckoutResponse?>(null);
     }
 
-    protected virtual async Task<IOrderInfo> UpdateOrderDateAsync(Dictionary<string, string> collection, IOrderInfo order, Guid? paymentProviderKey = null, Guid? shippingProviderKey = null)
+    protected virtual async Task<IOrderInfo> UpdateOrderDateAsync(Dictionary<string, string> collection, IOrderInfo order, Guid? paymentProviderKey = null, Guid? shippingProviderKey = null, CancellationToken ct = default)
     {
         Dictionary<string, string> formCollection = collection;
 
@@ -285,7 +287,7 @@ public class CheckoutControllerService
 
             if (saveCustomerData)
             {
-                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection).ConfigureAwait(false);
+                order = await Order.Instance.UpdateCustomerInformationAsync(formCollection, ct: ct).ConfigureAwait(false);
             }
         }
 
@@ -313,9 +315,12 @@ public class CheckoutControllerService
         return order;
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     protected virtual async Task<CheckoutResponse?> ValidationAndOrderUpdatesAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     PaymentRequest paymentRequest,
-    IOrderInfo order)
+    IOrderInfo order,
+    CancellationToken ct)
     {
         if (paymentRequest == null)
         {
@@ -329,15 +334,15 @@ public class CheckoutControllerService
             };
         }
 
-        if (Config.StoreCustomerData)
-        {
-            await using Repositories.DbContext db = DatabaseFactory.GetDatabase();
+        //if (Config.StoreCustomerData)
+        //{
+        //    await using Repositories.DbContext db = DatabaseFactory.GetDatabase();
 
-            await db.InsertAsync(new CustomerData
-            {
-                // Unfinished
-            }).ConfigureAwait(false);
-        }
+        //    await db.InsertAsync(new CustomerData
+        //    {
+        //        // Unfinished
+        //    }).ConfigureAwait(false);
+        //}
 
         if (!string.IsNullOrEmpty(order.CustomerInformation.Customer.Name)
             && !string.IsNullOrEmpty(order.CustomerInformation.Customer.Email)) return null;
@@ -356,12 +361,11 @@ public class CheckoutControllerService
     /// Optionally return an ActionResult to immediately return a specified response
     /// </summary>
     /// <returns>Optionally return an ActionResult to immediately return a specified response</returns>
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-    protected async virtual Task<CheckoutResponse> ProcessOrderLinesAsync(
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+    protected async virtual Task<CheckoutResponse?> ProcessOrderLinesAsync(
         PaymentRequest paymentRequest,
         IOrderInfo order,
-        ICollection<string> hangfireJobs)
+        ICollection<string> hangfireJobs,
+        CancellationToken ct = default)
     {
         #region Stock
 
@@ -375,14 +379,14 @@ public class CheckoutControllerService
             OrderInfo = order
         };
 
-        await CheckoutEvents.OnProcessingAsync(this, proccessingEventArgs);
+        await CheckoutEvents.OnProcessingAsync(this, proccessingEventArgs, ct);
 
         try
         {
             // Only validate, remove stock in CheckoutService
             if (proccessingEventArgs.StockValidation)
             {
-                Stock.Instance.ValidateOrderStock(order);
+                await Stock.Instance.ValidateOrderStockAsync(order, ct);
             }
         }
         catch (NotEnoughLineStockException ex)
@@ -438,7 +442,8 @@ public class CheckoutControllerService
     protected virtual Task<CheckoutResponse> ProcessCouponsAsync(
         PaymentRequest paymentRequest,
         IOrderInfo orderInfo,
-        ICollection<string> hangfireJobs)
+        ICollection<string> hangfireJobs, 
+        CancellationToken ct)
     {
         // Does not work with Coupon codes
         //if (order.Discount != null)
@@ -493,7 +498,7 @@ public class CheckoutControllerService
     /// 
     /// </summary>
     /// <returns></returns>
-    protected virtual Task<string> CreateOrderTitleAsync(PaymentRequest paymentRequest, IOrderInfo order, IStore store)
+    protected virtual Task<string> CreateOrderTitleAsync(PaymentRequest paymentRequest, IOrderInfo order, IStore store, CancellationToken ct)
     {
         string orderTitle = "Pöntun";
 
@@ -529,7 +534,8 @@ public class CheckoutControllerService
     protected async virtual Task<CheckoutResponse> ProcessPaymentAsync(
         PaymentRequest paymentRequest,
         IOrderInfo order,
-        string orderTitle)
+        string orderTitle, 
+        CancellationToken ct)
     {
 
         if (order == null)

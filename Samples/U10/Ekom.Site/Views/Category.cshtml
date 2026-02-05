@@ -3,12 +3,12 @@
 @{
     Layout = "Master.cshtml";
 
-    var category = _catalog.GetCategory();
+    var category = await _catalog.GetCategoryAsync();
     var orderBy = Context.Request.Query["orderby"];
 
     int currentPage = PaginationHelper.GetCurrentPage(Context);
         
-    var productResponse = category.ProductsRecursive(new ProductQuery(Context.Request.Query)
+    var productResponse = await category.ProductsRecursiveAsync(new ProductQuery(Context.Request.Query)
     {
         Page = currentPage,
         PageSize = 6,

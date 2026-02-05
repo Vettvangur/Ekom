@@ -32,7 +32,7 @@ class StockRepository
     /// Guid otherwise
     /// </param>
     /// <returns></returns>
-    public async Task<StockData> GetStockByUniqueIdAsync(string uniqueId)
+    public async Task<StockData> GetStockByUniqueIdAsync(string uniqueId, CancellationToken ct)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
@@ -41,10 +41,10 @@ class StockRepository
             .FirstOrDefaultAsync()
             .ConfigureAwait(false);
 
-        return stockData ?? await CreateNewStockRecordAsync(uniqueId).ConfigureAwait(false);
+        return stockData ?? await CreateNewStockRecordAsync(uniqueId, ct).ConfigureAwait(false);
     }
 
-    public async Task<StockData> CreateNewStockRecordAsync(string uniqueId)
+    public async Task<StockData> CreateNewStockRecordAsync(string uniqueId, CancellationToken ct)
     {
         DateTime dateNow = DateTime.Now;
         StockData stockData = new StockData
@@ -57,20 +57,21 @@ class StockRepository
         // Run synchronously to ensure that callers can expect a db record present after method runs
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.InsertAsync(stockData).ConfigureAwait(false);
+        await db.InsertAsync(stockData, token: ct).ConfigureAwait(false);
 
         return stockData;
     }
 
     /// <summary>
-    /// 
+    /// Gets all stock records.
     /// </summary>
-    /// <returns></returns>
-    public async Task<List<StockData>> GetAllStockAsync()
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of all stock data</returns>
+    public async Task<List<StockData>> GetAllStockAsync(CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        return await db.StockData.ToListAsync().ConfigureAwait(false);
+        return await db.StockData.ToListAsync(token: ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -79,13 +80,14 @@ class StockRepository
     /// <param name="uniqueId"></param>
     /// <param name="value"></param>
     /// <param name="oldValue">Old stock value</param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="StockException">
     /// If database and cache are out of sync, throws an exception that contains the value currently stored in database
     /// </exception>
     /// <returns></returns>
-    public async Task<decimal> SetAsync(string uniqueId, decimal value, decimal oldValue)
+    public async Task<decimal> SetAsync(string uniqueId, decimal value, decimal oldValue, CancellationToken ct = default)
     {
-        StockData stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId).ConfigureAwait(false);
+        StockData stockDataFromRepo = await GetStockByUniqueIdAsync(uniqueId, ct).ConfigureAwait(false);
 
         if (stockDataFromRepo.Stock != oldValue)
         {
@@ -101,7 +103,7 @@ class StockRepository
 
         // Called synchronously and hopefully contained by a locking construct
         await using DbContext db = _databaseFactory.GetDatabase();
-        await db.UpdateAsync(stockDataFromRepo).ConfigureAwait(false);
+        await db.UpdateAsync(stockDataFromRepo, token: ct).ConfigureAwait(false);
         return stockDataFromRepo.Stock;
     }
 
@@ -109,8 +111,9 @@ class StockRepository
     /// Rollback scheduled stock reservation.
     /// </summary>
     /// <param name="jobId"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="StockException"></exception>
-    public async Task RollBackJob(string jobId)
+    public async Task RollBackJob(string jobId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
@@ -119,7 +122,7 @@ class StockRepository
                 jobId,
                 "Scheduled"
             )
-            .FirstOrDefaultAsync()
+            .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
         if (!string.IsNullOrEmpty(hangfireArgument))
@@ -129,7 +132,7 @@ class StockRepository
             Guid key = new Guid(JsonConvert.DeserializeObject<string>(arguments.FirstOrDefault()));
             decimal stock = Convert.ToDecimal(arguments.LastOrDefault());
 
-            await API.Stock.Instance.IncrementStockAsync(key, stock).ConfigureAwait(false);
+            await API.Stock.Instance.IncrementStockAsync(key, stock, ct).ConfigureAwait(false);
         }
     }
 }

@@ -29,33 +29,33 @@ class OrderRepository
         _memoryCache = memoryCache;
     }
 
-    public async Task<OrderData> GetOrderAsync(Guid uniqueId)
+    public async Task<OrderData> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
         OrderData? data = await db.OrderData
             .Where(x => x.UniqueId == uniqueId)
-            .SingleOrDefaultAsync()
+            .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
         return data;
 
     }
 
-    public async Task InsertOrderAsync(OrderData orderData)
+    public async Task InsertOrderAsync(OrderData orderData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
+        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = (int)referenceId;
     }
 
-    public async Task UpdateOrderAsync(OrderData orderData)
+    public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.UpdateAsync(orderData).ConfigureAwait(false);
+        await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
         //Clear cache after update.
         _memoryCache.Remove(orderData.UniqueId);
     }

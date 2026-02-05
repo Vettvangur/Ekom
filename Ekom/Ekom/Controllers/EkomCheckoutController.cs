@@ -34,7 +34,7 @@ public class EkomCheckoutApiController : ControllerBase
     /// </summary>
     [Route("pay")]
     [HttpPost]
-    public async Task<IActionResult> Pay([FromQuery] string culture)
+    public async Task<IActionResult> Pay([FromQuery] string culture, CancellationToken ct = default)
     {
         try
         {
@@ -47,7 +47,7 @@ public class EkomCheckoutApiController : ControllerBase
 
             if (Request.HasFormContentType)
             {
-                var form = await Request.ReadFormAsync();
+                var form = await Request.ReadFormAsync(ct);
 
                 paymentRequest = new PaymentRequest
                 {
@@ -97,7 +97,7 @@ public class EkomCheckoutApiController : ControllerBase
 
             paymentRequest!.AdditionalData = additionalData;
 
-            return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture);
+            return await _checkoutControllerService.PayAsync(ResponseHandler, paymentRequest, culture, ct);
         }
         catch (Exception ex)
         {
@@ -154,7 +154,7 @@ public class CheckoutController : ControllerBase
     [Route("pay")]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<ActionResult> Pay(PaymentRequest paymentRequest)
+    public async Task<ActionResult> Pay(PaymentRequest paymentRequest, CancellationToken ct = default)
     {
         try
         {
@@ -176,7 +176,8 @@ public class CheckoutController : ControllerBase
             var payResponse = await _checkoutControllerService.PayAsync(
                 ResponseHandler,
                 paymentRequest,
-                culture);
+                culture,
+                ct);
 
             return payResponse;
         }

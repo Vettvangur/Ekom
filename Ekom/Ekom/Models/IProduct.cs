@@ -135,5 +135,10 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// </summary>
     IEnumerable<IProduct> RelatedProducts(int count = 4);
 
+    /// <summary>
+    /// Get related products Async
+    /// </summary>
+    Task<IReadOnlyList<IProduct>> RelatedProductsAsync(int count = 4, CancellationToken ct = default);
+
     void InvalidateCache();
 }

@@ -4,7 +4,7 @@
 
     var rootNode = Model.GetRootNode();
 
-    var product = _catalog.GetProduct();
+    var product = await _catalog.GetProductAsync();
 
     var checkoutNode = rootNode.FirstChildOfType("checkout");
 

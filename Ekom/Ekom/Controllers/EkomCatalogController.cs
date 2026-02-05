@@ -8,14 +8,6 @@ namespace Ekom.Controllers;
 /// <summary>
 /// Product catalog
 /// </summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Reliability",
-    "CA2007:Consider calling ConfigureAwait on the awaited task",
-    Justification = "Async controller actions don't need ConfigureAwait")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Style",
-    "VSTHRD200:Use \"Async\" suffix for async methods",
-    Justification = "Async controller action")]
 [Route("ekom/catalog")]
 [ServiceFilter(typeof(ApiExceptionFilter))]
 public class EkomCatalogController : ControllerBase
@@ -35,12 +27,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Id
     /// </summary>
     /// <param name="Id">Guid Key of product</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/{id:Guid}")]
-    public IActionResult GetProduct(Guid Id)
+    public async Task<IActionResult> GetProductAsync(Guid Id, CancellationToken ct = default)
     {
-        IProduct? product = API.Catalog.Instance.GetProduct(Id);
+        IProduct? product = await API.Catalog.Instance.GetProductAsync(Id, ct: ct);
 
         if (product == null)
         {
@@ -54,12 +47,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Id
     /// </summary>
     /// <param name="Id">Int Id of product</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/{id:Int}")]
-    public IActionResult GetProduct(int Id)
+    public async Task<IActionResult> GetProductAsync(int Id, CancellationToken ct = default)
     {
-        IProduct? product = API.Catalog.Instance.GetProduct(Id);
+        IProduct? product = await API.Catalog.Instance.GetProductAsync(Id, ct: ct);
 
         if (product == null)
         {
@@ -73,12 +67,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Sku
     /// </summary>
     /// <param name="sku">Sku of product</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/sku/{sku}")]
-    public IActionResult GetProduct(string sku)
+    public async Task<IActionResult> GetProductAsync(string sku, CancellationToken ct = default)
     {
-        IProduct? product = API.Catalog.Instance.GetProduct(sku);
+        IProduct? product = await API.Catalog.Instance.GetProductAsync(sku, ct: ct);
 
         if (product == null)
         {
@@ -92,12 +87,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Product By Route
     /// </summary>
     /// <param name="route">Route</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpGet]
     [Route("product/route")]
-    public IActionResult GetProductByRoute([FromQuery] string route)
+    public async Task<IActionResult> GetProductByRouteAsync([FromQuery] string route, CancellationToken ct = default)
     {
-        IProduct? product = API.Catalog.Instance.GetProductByRoute(route);
+        IProduct? product = await API.Catalog.Instance.GetProductByRouteAsync(route, ct: ct);
 
         if (product == null)
         {
@@ -112,15 +108,15 @@ public class EkomCatalogController : ControllerBase
     /// </summary>
     /// <param name="route">Route</param>
     /// <param name="query">Product query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsrecursive/route")]
-    public IActionResult GetProductsRecursiveByRoute([FromQuery] string route, [FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsRecursiveByRouteAsync([FromQuery] string route, [FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
         _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
 
-        ProductResponse? products = API.Catalog.Instance.GetProductsRescursiveByRoute(route, query);
-
+        ProductResponse? products = await API.Catalog.Instance.GetProductsRescursiveByRouteAsync(route, query, ct: ct);
         return Ok(products);
     }
 
@@ -129,12 +125,13 @@ public class EkomCatalogController : ControllerBase
     /// </summary>
     /// <param name="categoryId">Id of category</param>
     /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsrecursive/{categoryId:Int}")]
-    public IActionResult GetProductsRecursive(int categoryId, [FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsRecursiveAsync(int categoryId, [FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(categoryId, query?.StoreAlias, ct: ct);
 
         if (category == null)
         {
@@ -143,20 +140,21 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(category);
 
-        return Ok(category.ProductsRecursive(query));
+        return Ok(await category.ProductsRecursiveAsync(query, ct: ct));
     }
 
     /// <summary>
     /// Get Recursive Products Of A Category
     /// </summary>
-    /// <param name="categoryKey">Key of category</param
+    /// <param name="categoryKey">Key of category</param>
     /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsrecursive/{categoryKey:Guid}")]
-    public IActionResult GetProductsRecursive(Guid categoryKey, [FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsRecursiveAsync(Guid categoryKey, [FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(categoryKey, query?.StoreAlias, ct: ct);
 
         if (category == null)
         {
@@ -165,7 +163,7 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(category);
 
-        return Ok(category.ProductsRecursive(query));
+        return Ok(await category.ProductsRecursiveAsync(query, ct: ct));
     }
 
     /// <summary>
@@ -173,12 +171,13 @@ public class EkomCatalogController : ControllerBase
     /// </summary>
     /// <param name="categoryId">Id of category</param>
     /// <param name="query">Product query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("products/{categoryId:Int}")]
-    public IActionResult GetProducts(int categoryId, [FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsAsync(int categoryId, [FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(categoryId, query?.StoreAlias);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(categoryId, query?.StoreAlias, ct: ct);
 
         if (category == null)
         {
@@ -187,7 +186,7 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(category);
 
-        return Ok(category.Products(query));
+        return Ok(await category.ProductsAsync(query, ct));
     }
 
     /// <summary>
@@ -195,12 +194,13 @@ public class EkomCatalogController : ControllerBase
     /// </summary>
     /// <param name="categoryKey">Key of category</param>
     /// <param name="query"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("products/{categoryKey:Guid}")]
-    public IActionResult GetProducts(Guid categoryKey, [FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsAsync(Guid categoryKey, [FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(categoryKey, query?.StoreAlias);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(categoryKey, query?.StoreAlias, ct: ct);
 
         if (category == null)
         {
@@ -209,17 +209,18 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(category);
 
-        return Ok(category.Products(query));
+        return Ok(await category.ProductsAsync(query, ct: ct));
     }
 
     /// <summary>
     /// Get Products By Ids
     /// </summary>
     /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsbyids")]
-    public IActionResult GetProductsByIds([FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsByIdsAsync([FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
         if (query == null)
         {
@@ -228,7 +229,7 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
 
-        ProductResponse productsResponse = API.Catalog.Instance.GetProductsByIds(query);
+        var productsResponse = await API.Catalog.Instance.GetProductsByIdsAsync(query, ct: ct);
 
         return Ok(productsResponse);
     }
@@ -237,10 +238,11 @@ public class EkomCatalogController : ControllerBase
     /// Get Products By Keys
     /// </summary>
     /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsbykeys")]
-    public IActionResult GetProductsByKeys([FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetProductsByKeysAsync([FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
         if (query == null)
         {
@@ -249,7 +251,7 @@ public class EkomCatalogController : ControllerBase
 
         _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
 
-        ProductResponse productsResponse = API.Catalog.Instance.GetProductsByKeys(query);
+        ProductResponse productsResponse = await API.Catalog.Instance.GetProductsByKeysAsync(query, ct: ct);
 
         return Ok(productsResponse);
     }
@@ -257,12 +259,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get All Products
     /// </summary>
+    /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("allproducts")]
-    public IActionResult GetAllProducts([FromBody] ProductQuery? query = null)
+    public async Task<IActionResult> GetAllProductsAsync([FromBody] ProductQuery? query = null, CancellationToken ct = default)
     {
-        ProductResponse productsResponse = API.Catalog.Instance.GetAllProducts(query);
+        ProductResponse productsResponse = await API.Catalog.Instance.GetAllProductsAsync(query, ct: ct);
 
         return Ok(productsResponse);
     }
@@ -271,12 +275,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Category By Id
     /// </summary>
     /// <param name="Id">Int Id of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("category/{id:Int}")]
-    public IActionResult GetCategory(int Id)
+    public async Task<IActionResult> GetCategoryAsync(int Id, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(Id);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(Id, ct: ct);
 
         if (category == null)
         {
@@ -290,12 +295,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Category By Id
     /// </summary>
     /// <param name="Id">Int Id of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("category/{id:Guid}")]
-    public IActionResult GetCategory(Guid Id)
+    public async Task<IActionResult> GetCategoryAsync(Guid Id, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(Id.ToString());
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(Id.ToString(), ct: ct);
 
         if (category == null)
         {
@@ -309,17 +315,18 @@ public class EkomCatalogController : ControllerBase
     /// Get Category By Route
     /// </summary>
     /// <param name="route">Route</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpGet, HttpPost]
     [Route("category/route")]
-    public IActionResult GetCategoryByRoute([FromQuery] string route)
+    public async Task<IActionResult> GetCategoryByRouteAsync([FromQuery] string route, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(route))
         {
             return BadRequest();
         }
 
-        ICategory? category = API.Catalog.Instance.GetCategoryByRoute(route);
+        ICategory? category = await API.Catalog.Instance.GetCategoryByRouteAsync(route, ct: ct);
 
         if (category == null)
         {
@@ -333,17 +340,18 @@ public class EkomCatalogController : ControllerBase
     /// Get Categories By Keys
     /// </summary>
     /// <param name="keys">Guid[] keys of categories</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoriesbykeys")]
-    public IActionResult GetCategoriesByKeys([FromBody] Guid[] keys)
+    public async Task<IActionResult> GetCategoriesByKeysAsync([FromBody] Guid[] keys, CancellationToken ct = default)
     {
         if (keys == null || keys.Length <= 0)
         {
             return BadRequest();
         }
 
-        IEnumerable<ICategory> categories = API.Catalog.Instance.GetCategoriesByKeys(keys);
+        IEnumerable<ICategory> categories = await API.Catalog.Instance.GetCategoriesByKeysAsync(keys, ct: ct);
 
         return Ok(categories);
     }
@@ -352,12 +360,13 @@ public class EkomCatalogController : ControllerBase
     /// Get Categories By Ids
     /// </summary>
     /// <param name="ids">Int[] ids of categories</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoriesbyids")]
-    public IActionResult GetCategoriesByIds([FromBody] int[] ids)
+    public async Task<IActionResult> GetCategoriesByIdsAsync([FromBody] int[] ids, CancellationToken ct = default)
     {
-        IEnumerable<ICategory> categories = API.Catalog.Instance.GetCategoriesByIds(ids);
+        IEnumerable<ICategory> categories = await API.Catalog.Instance.GetCategoriesByIdsAsync(ids, ct: ct);
 
         return Ok(categories);
     }
@@ -365,12 +374,13 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Root Categories
     /// </summary>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("rootcategories")]
-    public IActionResult GetRootCategories()
+    public async Task<IActionResult> GetRootCategoriesAsync(CancellationToken ct = default)
     {
-        IEnumerable<ICategory> categories = API.Catalog.Instance.GetRootCategories();
+        IEnumerable<ICategory> categories = await API.Catalog.Instance.GetRootCategoriesAsync(ct: ct);
 
         return Ok(categories);
     }
@@ -378,12 +388,13 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get All Categories
     /// </summary>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("allcategories")]
-    public IActionResult GetAllCategories()
+    public async Task<IActionResult> GetAllCategoriesAsync(CancellationToken ct = default)
     {
-        IEnumerable<ICategory> categories = API.Catalog.Instance.GetAllCategories();
+        IEnumerable<ICategory> categories = await API.Catalog.Instance.GetAllCategoriesAsync(ct: ct);
 
         return Ok(categories);
     }
@@ -391,12 +402,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Sub Categories
     /// </summary>
+    /// <param name="id">Int Id of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategories/{id:Int}")]
-    public IActionResult GetSubCategories(int id)
+    public async Task<IActionResult> GetSubCategoriesAsync(int id, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(id);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(id, ct: ct);
 
         if (category == null)
         {
@@ -409,12 +422,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Sub Categories
     /// </summary>
+    /// <param name="key">Guid key of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategories/{key:Guid}")]
-    public IActionResult GetSubCategories(Guid key)
+    public async Task<IActionResult> GetSubCategoriesAsync(Guid key, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(key);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(key, ct: ct);
 
         if (category == null)
         {
@@ -428,12 +443,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Sub Categories Recursive
     /// </summary>
+    /// <param name="id">Int Id of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategoriesrecursive/{id:Int}")]
-    public IActionResult GetSubCategoriesRecurisve(int id)
+    public async Task<IActionResult> GetSubCategoriesRecursiveAsync(int id, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(id);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(id, ct: ct);
 
         if (category == null)
         {
@@ -446,12 +463,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Sub Categories Recursive
     /// </summary>
+    /// <param name="key">Guid key of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("subcategoriesrecursive/{key:Guid}")]
-    public IActionResult GetSubCategoriesRecurisve(Guid key)
+    public async Task<IActionResult> GetSubCategoriesRecursiveAsync(Guid key, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(key);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(key, ct: ct);
 
         if (category == null)
         {
@@ -465,49 +484,56 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Category Filters
     /// </summary>
+    /// <param name="id">Int Id of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoryfilters/{id:Int}")]
-    public IActionResult GetCategoryFilters(int id)
+    public async Task<IActionResult> GetCategoryFiltersAsync(int id, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(id);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(id, ct: ct);
 
         if (category == null)
         {
             return NotFound();
         }
 
-        return Ok(category.Filters());
+        return Ok(await category.FiltersAsync(ct: ct));
     }
 
     /// <summary>
     /// Get Category Filters
     /// </summary>
+    /// <param name="key">Guid key of category</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("categoryfilters/{key:Guid}")]
-    public IActionResult GetCategoryFilters(Guid key)
+    public async Task<IActionResult> GetCategoryFiltersAsync(Guid key, CancellationToken ct = default)
     {
-        ICategory? category = API.Catalog.Instance.GetCategory(key);
+        ICategory? category = await API.Catalog.Instance.GetCategoryAsync(key, ct: ct);
 
         if (category == null)
         {
             return NotFound();
         }
 
-        return Ok(category.Filters());
+        return Ok(await category.FiltersAsync(ct: ct));
     }
 
 
     /// <summary>
     /// Get Related Products
     /// </summary>
+    /// <param name="id">Guid Id of product</param>
+    /// <param name="count">Number of related products to return</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproducts/{id:Guid}/{count:Int}")]
-    public IActionResult GetRelatedProducts([FromRoute] Guid id, [FromRoute] int count = 4)
+    public async Task<IActionResult> GetRelatedProductsAsync([FromRoute] Guid id, [FromRoute] int count = 4, CancellationToken ct = default)
     {
-        IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProducts(id, count);
+        IEnumerable<IProduct> products = await API.Catalog.Instance.GetRelatedProductsAsync(id, count, ct: ct);
 
         return Ok(products);
     }
@@ -515,16 +541,19 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Related Products
     /// </summary>
+    /// <param name="ids">Guid Ids of products</param>
+    /// <param name="count">Number of related products to return</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproducts")]
-    public IActionResult GetRelatedProducts([FromQuery] IEnumerable<Guid> ids, [FromQuery] int count = 4)
+    public async Task<IActionResult> GetRelatedProductsAsync([FromQuery] IEnumerable<Guid> ids, [FromQuery] int count = 4, CancellationToken ct = default)
     {
         var relatedProducts = new List<IProduct>();
 
         foreach (Guid id in ids)
         {
-            IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProducts(id, count);
+            IEnumerable<IProduct> products = await API.Catalog.Instance.GetRelatedProductsAsync(id, count, ct: ct);
             relatedProducts.AddRange(products);
         }
 
@@ -534,12 +563,15 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Related Products By Sku
     /// </summary>
-    /// <returns></returns>a
+    /// <param name="sku">Sku of product</param>
+    /// <param name="count">Number of related products to return</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproductsbysku/{sku}/{count:Int}")]
-    public IActionResult GetRelatedProductsBySku([FromRoute] string sku, [FromRoute] int count = 4)
+    public async Task<IActionResult> GetRelatedProductsBySkuAsync([FromRoute] string sku, [FromRoute] int count = 4, CancellationToken ct = default)
     {
-        IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+        IEnumerable<IProduct> products = await API.Catalog.Instance.GetRelatedProductsBySkuAsync(sku, count, ct: ct);
 
         return Ok(products);
     }
@@ -547,16 +579,19 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Get Related Products By Sku
     /// </summary>
+    /// <param name="skus">Skus of products</param>
+    /// <param name="count">Number of related products to return</param>
+    /// <param name="ct">Cancellation token</param> 
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("relatedproductsbyskus")]
-    public IActionResult GetRelatedProductsBySku([FromQuery] IEnumerable<string> skus, [FromQuery] int count = 4)
+    public async Task<IActionResult> GetRelatedProductsBySkuAsync([FromQuery] IEnumerable<string> skus, [FromQuery] int count = 4, CancellationToken ct = default)
     {
         var relatedProducts = new List<IProduct>();
 
         foreach (string sku in skus)
         {
-            IEnumerable<IProduct> products = API.Catalog.Instance.GetRelatedProductsBySku(sku, count);
+            IEnumerable<IProduct> products = await API.Catalog.Instance.GetRelatedProductsBySkuAsync(sku, count, ct: ct);
             relatedProducts.AddRange(products);
         }
 
@@ -566,12 +601,14 @@ public class EkomCatalogController : ControllerBase
     /// <summary>
     /// Product Search
     /// </summary>
+    /// <param name="req">Search request</param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     [HttpPost, HttpGet]
     [Route("productsearch")]
-    public IActionResult ProductSearch([FromBody] SearchRequest req)
+    public async Task<IActionResult> ProductSearchAsync([FromBody] SearchRequest req, CancellationToken ct = default)
     {
-        ProductResponse products = API.Catalog.Instance.ProductSearch(req);
+        ProductResponse products = await API.Catalog.Instance.ProductSearchAsync(req, ct: ct);
 
         return Ok(products);
     }

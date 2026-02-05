@@ -58,7 +58,7 @@
     
     if (Model.IsDocumentType("ekmProduct"))
     {
-        var product = _catalog.GetProduct();
+        var product = await _catalog.GetProductAsync();
 
         pageTitle = product.Title;
 

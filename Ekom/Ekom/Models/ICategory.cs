@@ -12,10 +12,19 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     ProductResponse Products(ProductQuery? query = null);
 
     /// <summary>
+    /// All direct child products of category. (No descendants) Async
+    /// </summary>
+    ValueTask<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default);
+
+    /// <summary>
     /// All descendant products of category, this includes child products of sub-categories
     /// </summary>
     ProductResponse ProductsRecursive(ProductQuery? query = null);
 
+    /// <summary>
+    /// All descendant products of category, this includes child products of sub-categories Async
+    /// </summary>
+    Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default);
     /// <summary>
     /// Our eldest ancestor category
     /// </summary>
@@ -36,7 +45,7 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     IEnumerable<ICategory> Ancestors { get; }
 
     IEnumerable<MetafieldGrouped> Filters(bool filterable = true);
-
+    Task<IEnumerable<MetafieldGrouped>> FiltersAsync(bool filterable = true, CancellationToken ct = default);
     bool VirtualUrl { get; }
 
     bool HasProducts();
