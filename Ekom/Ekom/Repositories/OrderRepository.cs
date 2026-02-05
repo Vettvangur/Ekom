@@ -279,6 +279,7 @@ class OrderRepository
     /// <returns></returns>
     public async Task<List<OrderData>> GetStatusOrdersAsync(
         Expression<Func<OrderData, bool>>? filter = null,
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -293,7 +294,7 @@ class OrderRepository
         }
 
         return await query
-            .ToListAsync()
+            .ToListAsync(ct)
             .ConfigureAwait(false);
     }
 }
