@@ -14,11 +14,11 @@ public partial class Order
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
     /// <returns></returns>
-    public async Task<bool> ApplyCouponToOrderAsync(string coupon)
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon, CancellationToken ct = default)
     {
         string storeAlias = _storeSvc.GetStoreFromCache()?.Alias ?? "";
 
-        return await ApplyCouponToOrderAsync(coupon, storeAlias)
+        return await ApplyCouponToOrderAsync(coupon, storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -28,7 +28,7 @@ public partial class Order
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
     /// <returns></returns>
-    public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias)
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(coupon))
         {
@@ -54,7 +54,7 @@ public partial class Order
                     new DiscountOrderSettings
                     {
                         Coupon = coupon,
-                    })
+                    }, ct)
                 .ConfigureAwait(false);
         }
 
@@ -66,26 +66,27 @@ public partial class Order
     /// 
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync()
+    public async Task RemoveCouponFromOrderAsync(CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
+        await RemoveCouponFromOrderAsync(storeAlias, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync(string storeAlias)
+    public async Task RemoveCouponFromOrderAsync(string? storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
+        await _orderService.RemoveDiscountFromOrderAsync(storeAlias, ct: ct)
             .ConfigureAwait(false);
     }
 
