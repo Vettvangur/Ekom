@@ -32,7 +32,6 @@ public class Catalog
     readonly IPerStoreIndexedCache<IVariant> _variantCache;
     readonly IPerStoreIndexedCache<IVariantGroup> _variantGroupCache;
     readonly IProductFilterService _productFilterService;
-    readonly ICatalogSearchService _catalogSearchService;
     /// <summary>
     /// ctor
     /// </summary>
@@ -47,8 +46,7 @@ public class Catalog
         IPerStoreIndexedCache<IVariantGroup> variantGroupCache,
         IStoreService storeService,
         IHttpContextAccessor httpContextAccessor,
-        IProductFilterService productFilterService,
-        ICatalogSearchService catalogSearchService)
+        IProductFilterService productFilterService)
     {
         _config = config;
         _logger = logger;
@@ -61,7 +59,6 @@ public class Catalog
         _metafieldService = metafieldService;
         _httpContext = httpContextAccessor?.HttpContext;
         _productFilterService = productFilterService;
-        _catalogSearchService = catalogSearchService;
     }
 
     /// <summary>
@@ -1311,9 +1308,12 @@ public class Catalog
         if (req.NodeTypeAlias == null || !req.NodeTypeAlias.Any())
             req.NodeTypeAlias = ["ekmProduct", "ekmVariant"];
 
-        var (ids, total) = _catalogSearchService == null
+        IServiceScope scope = Configuration.Resolver.CreateScope();
+        var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+
+        var (ids, total) = _searhService == null
             ? (Enumerable.Empty<int>(), 0L)
-            : await _catalogSearchService.ProductQueryAsync(req, ct);
+            : await _searhService.ProductQueryAsync(req, ct);
 
         ct.ThrowIfCancellationRequested();
 
