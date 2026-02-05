@@ -36,7 +36,7 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
         {
             _logger.LogInformation("Building products for store {StoreAlias}.", store.Alias);
 
-            var productsResponse = Ekom.API.Catalog.Instance.GetAllProducts(store.Alias);
+            var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(store.Alias);
 
             var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.SiteBaseUrl).ToList();
 

@@ -27,7 +27,7 @@ internal class KlaviyoProductController : ControllerBase
 
     [HttpGet("feed")]
     [Produces("application/json")]
-    public IActionResult GetProductFeed([FromQuery] string? storeAlias = null)
+    public async Task<IActionResult> GetProductFeedAsync([FromQuery] string? storeAlias = null, CancellationToken ct = default)
     {
         if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.FeedPull)
             return BadRequest("Klaviyo integration is disabled.");
@@ -45,12 +45,12 @@ internal class KlaviyoProductController : ControllerBase
 
         var cacheKey = $"klaviyo:feed:v1:{storeAlias}";
 
-        var json = _cache.GetOrCreate(cacheKey, entry =>
+        var json = await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60);
             entry.Priority = CacheItemPriority.High;
 
-            var productsResponse = Ekom.API.Catalog.Instance.GetAllProducts(storeAlias);
+            var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(storeAlias, ct: ct);
             var products = productsResponse?.Products;
 
             var feed = products is null
