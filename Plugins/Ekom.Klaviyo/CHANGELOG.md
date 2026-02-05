@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.39...Ekom.Klaviyo-v0.2.40) (2026-02-05)
+
+
+### Bug Fixes
+
+* fix nuget package referenced, klaviyo subscription service ([324874a](https://github.com/Vettvangur/Ekom/commit/324874a36895a2626cbc947047548f200c30396e))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.38...Ekom.Klaviyo-v0.2.39) (2026-02-04)
 
 

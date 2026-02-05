@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.43](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.42...Ekom-v0.2.43) (2026-02-05)
+
+
+### Features
+
+* async catalog ([53ca58e](https://github.com/Vettvangur/Ekom/commit/53ca58e5e78a412087dc5f0ef7a45990b8518c86))
+
+
+### Bug Fixes
+
+* Add AllProducts and registration fix ([e1ee926](https://github.com/Vettvangur/Ekom/commit/e1ee9263c502d814b81353b5b13d09dcbc274206))
+* fix nuget package referenced, klaviyo subscription service ([324874a](https://github.com/Vettvangur/Ekom/commit/324874a36895a2626cbc947047548f200c30396e))
+
 ## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.41...Ekom-v0.2.42) (2026-02-04)
 
 
