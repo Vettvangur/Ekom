@@ -319,7 +319,7 @@ public class Catalog
         return null;
     }
 
-    private List<IProduct> GetAllProductsRaw(string storeAlias, CancellationToken ct)
+    private List<IProduct> GetAllProductsRaw(string storeAlias, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -329,6 +329,48 @@ public class Catalog
         return dict.Values
             .OrderBy(x => x.SortOrder)
             .ToList();
+    }
+
+    /// <summary>
+    /// Get all products in store, using store from ekmRequest
+    /// </summary>
+    public ProductResponse GetAllProducts(ProductQuery? query = null)
+    {
+
+        var store = !string.IsNullOrEmpty(query?.StoreAlias)
+            ? _storeSvc.GetStoreByAlias(query.StoreAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null)
+        {
+            return new ProductResponse(
+                Enumerable.Empty<IProduct>(),
+                query,
+                _productFilterService,
+                category: null);
+        }
+
+        return GetAllProducts(store.Alias, query);
+    }
+
+    /// <summary>
+    /// Get all products from specific store
+    /// </summary>
+    public ProductResponse GetAllProducts(string storeAlias, ProductQuery? query = null)
+    {
+        if (string.IsNullOrWhiteSpace(storeAlias))
+            throw new ArgumentException(nameof(storeAlias));
+
+        if (!_productCache.Cache.ContainsKey(storeAlias))
+            return new ProductResponse();
+
+        var products = GetAllProductsRaw(storeAlias);
+
+        return new ProductResponse(
+            products,
+            query,
+            _productFilterService,
+            category: null);
     }
 
     /// <summary>

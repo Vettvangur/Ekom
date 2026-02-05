@@ -108,7 +108,8 @@ static class Registrations
                 sp.GetRequiredService<IPerStoreIndexedCache<IVariantGroup>>(),
                 sp.GetRequiredService<IStoreService>(),
                 sp.GetRequiredService<IHttpContextAccessor>(),
-                sp.GetRequiredService<IProductFilterService>()
+                sp.GetRequiredService<IProductFilterService>(),
+                sp.GetRequiredService<ICatalogSearchService>()
             )
         );
 
