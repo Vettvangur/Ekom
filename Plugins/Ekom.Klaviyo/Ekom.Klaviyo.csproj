@@ -67,7 +67,7 @@
 
     <!-- CI / normal: use NuGet packages -->
     <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
-        <PackageReference Include="Ekom.U10" Version="0.2.40" />
+        <PackageReference Include="Ekom.U10" Version="0.2.43" />
     </ItemGroup>
 
 </Project>
