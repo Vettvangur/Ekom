@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.41...Ekom-v0.2.42) (2026-02-04)
+
+
+### Bug Fixes
+
+* wip ordered shipping provider ([322446c](https://github.com/Vettvangur/Ekom/commit/322446c83d58756488b31793d65a92035f2505b0))
+* wip ordered shipping provider ([25dc09b](https://github.com/Vettvangur/Ekom/commit/25dc09bfc9a87040b1f51282814df5ea49196a1e))
+
+## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.40...Ekom-v0.2.41) (2026-02-04)
+
+
+### Features
+
+* dynamic prices on shipping provider, klaviyo update ekom ([9f3e2de](https://github.com/Vettvangur/Ekom/commit/9f3e2defce0a96a52cacd12cd28f58632d4ae8d2))
+* dynamic prices on shipping provider, klaviyo update ekom ([da9c2b1](https://github.com/Vettvangur/Ekom/commit/da9c2b117eaebb9fd61579b4dee169008de26bb5))
+
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.39...Ekom-v0.2.40) (2026-02-04)
+
+
+### Bug Fixes
+
+* order by set by query string ([a28ebd0](https://github.com/Vettvangur/Ekom/commit/a28ebd0ffe8c3f6d332f20fb19524f576fb32bef))
+* order by set by query string ([b4faf29](https://github.com/Vettvangur/Ekom/commit/b4faf29654a3a5d7b31a323824e7b5dca6039449))
+* ordinal string wip ([243ca71](https://github.com/Vettvangur/Ekom/commit/243ca7182109154a746acbf9db0b21cfee340a84))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.38...Ekom-v0.2.39) (2026-02-04)
 
 
