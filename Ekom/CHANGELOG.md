@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.44](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.43...Ekom-v0.2.44) (2026-02-05)
+
+
+### Bug Fixes
+
+* remove scoped service from singleton ([86b49bd](https://github.com/Vettvangur/Ekom/commit/86b49bd5e171645705e55328a86c9775d9ca9920))
+* remove scoped service from singleton ([9dddf56](https://github.com/Vettvangur/Ekom/commit/9dddf569fb5f538bfd1abdff8498598a74f3374d))
+
 ## [0.2.43](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.42...Ekom-v0.2.43) (2026-02-05)
 
 
