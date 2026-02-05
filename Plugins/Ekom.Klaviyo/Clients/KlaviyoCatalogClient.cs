@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Http;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;

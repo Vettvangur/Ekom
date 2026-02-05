@@ -279,9 +279,9 @@ public partial class Order
     /// 
     /// </summary>
     /// <exception cref="OrderInfoNotFoundException">OrderData not found for given OrderId</exception>
-    public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, ChangeOrderSettings settings = null)
+    public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string? userName = null, ChangeOrderSettings? settings = null, CancellationToken ct = default)
     {
-        await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings)
+        await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -347,14 +347,15 @@ public partial class Order
     /// </summary>
     public async Task<IOrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (form == null)
         {
             throw new ArgumentNullException(nameof(form));
         }
 
-        return await _orderService.UpdateCustomerInformationAsync(form, settings ?? null)
+        return await _orderService.UpdateCustomerInformationAsync(form, settings ?? null, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -479,7 +480,8 @@ public partial class Order
     /// <param name="hangfireJobs">Job IDs to add</param>
     /// <param name="orderInfo">orderInfo</param>
     /// <param name="storeAlias">storeAlias</param>
-    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null)
+    /// <param name="ct">CancellationToken</param>
+    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
     {
         if (hangfireJobs == null)
         {
@@ -499,7 +501,7 @@ public partial class Order
         {
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
-        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo)
+        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct: ct)
             .ConfigureAwait(false);
     }
     /// <summary>
@@ -508,7 +510,8 @@ public partial class Order
     /// <param name="storeAlias"></param>
     /// <param name="hangfireJobs">Job IDs to add</param>
     /// <param name="orderInfo">orderInfo</param>
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo)
+    /// <param name="ct">CancellationToken</param>
+    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)
     {
         if (hangfireJobs == null)
         {
@@ -523,7 +526,7 @@ public partial class Order
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
 
-        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo)
+        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo, ct)
             .ConfigureAwait(false);
     }
 
@@ -531,14 +534,14 @@ public partial class Order
     /// Remove all hangfire job ids to <see cref="IOrderInfo"/> and db
     /// </summary>
     /// <param name="storeAlias"></param>
-    public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias)
+    public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
+        await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -566,8 +569,9 @@ public partial class Order
     /// <param name="paymentRequest"></param>
     /// <param name="storeAlias"></param>
     /// <param name="order"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -579,7 +583,7 @@ public partial class Order
             throw new ArgumentNullException(nameof(order));
         }
 
-        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", order)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", order, ct)
             .ConfigureAwait(false);
 
         return res;

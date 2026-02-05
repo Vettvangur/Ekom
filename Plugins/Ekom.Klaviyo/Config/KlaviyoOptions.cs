@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 
 namespace Ekom.Klaviyo;
 
@@ -13,6 +13,7 @@ public sealed class KlaviyoOptions
 
     public KlaviyoCatalogOptions Catalog { get; set; } = new();
     public KlaviyoOrdersOptions Orders { get; set; } = new();
+    public KlaviyoSubscriptionOptions Subscriptions { get; set; } = new();
 
     public string ProfileExternalIdProperty { get; init; } = "email";
 
@@ -61,6 +62,13 @@ public enum KlaviyoCatalogSyncMode
 {
     FeedPull,
     ApiPush
+}
+
+public sealed class KlaviyoSubscriptionOptions
+{
+    public bool Enabled { get; set; } = true;
+
+    public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }
 
 public sealed class KlaviyoDispatcherOptions

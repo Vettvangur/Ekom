@@ -590,6 +590,12 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public IEnumerable<IProduct> RelatedProducts(int count = 4)
     {
+        return RelatedProductsAsync(count).GetAwaiter().GetResult();
+    }
+
+    public async Task<IReadOnlyList<IProduct>> RelatedProductsAsync(int count = 4, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
         if (count <= 0) return Array.Empty<IProduct>();
 
         // Prevent duplicates (in case related + category overlap)
@@ -609,13 +615,14 @@ public class Product : PerStoreNodeEntity, IProduct
 
                 foreach (var guid in guids)
                 {
+                    ct.ThrowIfCancellationRequested();
                     if (result.Count >= count) break;
                     if (!seen.Add(guid)) continue;
 
-                    var p = Catalog.Instance.GetProduct(guid, Store.Alias);
+                    // async fetch so async product events can run
+                    var p = await Catalog.Instance.GetProductAsync(guid, Store.Alias, raiseEvent: true, ct: ct);
                     if (p is null) continue;
 
-                    // if keys/ids can differ, keep both checks
                     if (p.Key == Key || p.Id == Id) continue;
 
                     result.Add(p);
@@ -623,23 +630,29 @@ public class Product : PerStoreNodeEntity, IProduct
             }
         }
 
-        // 2) Fill from category
+        // 2) Fill from category (recursive)
         if (result.Count < count)
         {
-            var category = Catalog.Instance.GetCategory(ParentId, Store.Alias);
+            ct.ThrowIfCancellationRequested();
+
+            // async fetch so async category events can run
+            var category = await Catalog.Instance.GetCategoryAsync(ParentId, Store.Alias, global: false, raiseEvent: true, ct: ct);
 
             if (category != null)
             {
                 var needed = count - result.Count;
 
-                foreach (var p in category.ProductsRecursive().Products)
+                // async recursive so ProductResponse pipeline is async-first
+                var pr = await category.ProductsRecursiveAsync(query: null, ct: ct);
+
+                foreach (var p in pr.Products)
                 {
+                    ct.ThrowIfCancellationRequested();
                     if (needed == 0) break;
                     if (p is null) continue;
 
                     // Skip current + duplicates
                     if (p.Id == Id) continue;
-
                     if (!seen.Add(p.Key)) continue;
 
                     result.Add(p);

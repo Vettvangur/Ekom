@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Orders;
 using Ekom.Models;
 using System.Text.Json.Nodes;
 

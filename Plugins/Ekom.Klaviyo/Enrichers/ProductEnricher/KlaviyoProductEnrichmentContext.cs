@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 
 public sealed class KlaviyoProductEnrichmentContext
 {

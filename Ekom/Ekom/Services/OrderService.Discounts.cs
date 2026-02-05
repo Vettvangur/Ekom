@@ -165,7 +165,7 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        var product = Catalog.Instance.GetProduct(productKey, storeAlias);
+        var product = await Catalog.Instance.GetProductAsync(productKey, storeAlias);
 
         if (product == null)
         {
@@ -267,7 +267,8 @@ partial class OrderService
         Guid lineKey,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -275,12 +276,12 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -297,7 +298,8 @@ partial class OrderService
                 orderLine,
                 discount,
                 orderInfo,
-                settings
+                settings,
+                ct: ct
             ).ConfigureAwait(false);
         }
         finally
@@ -318,7 +320,8 @@ partial class OrderService
         OrderLine orderLine,
         IDiscount discount,
         OrderInfo orderInfo,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         _logger.LogDebug("Applying discount to orderline");
@@ -342,7 +345,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
                             .ConfigureAwait(false);
                     }
 
@@ -364,7 +367,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
                             .ConfigureAwait(false);
                     }
 

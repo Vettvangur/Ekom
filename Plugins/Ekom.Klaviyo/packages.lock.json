@@ -2,44 +2,6 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
-      "Ekom.Core": {
-        "type": "Direct",
-        "requested": "[0.2.40, )",
-        "resolved": "0.2.40",
-        "contentHash": "uCKgLKPMAaX6E8M/e0Ggq2EWlBE5miigiJ3cX96p938pOxyqqhZe/KJ8k87vigwAbD14XEU30Akk5egRnxymyQ==",
-        "dependencies": {
-          "Azure.Identity": "1.17.1",
-          "CommonServiceLocator": "2.0.7",
-          "Ekom.Common": "0.2.40",
-          "Ekom.Payments.Core": "0.2.51",
-          "Hangfire": "1.8.18",
-          "Microsoft.AspNetCore.Http.Extensions": "2.3.0",
-          "Microsoft.AspNetCore.Mvc.Abstractions": "2.3.0",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "8.0.11",
-          "Microsoft.Data.SqlClient": "6.1.2",
-          "Microsoft.Extensions.Caching.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration": "8.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
-          "Newtonsoft.Json": "13.0.4",
-          "linq2db": "5.4.1",
-          "murmurhash": "1.0.3"
-        }
-      },
-      "Ekom.U10": {
-        "type": "Direct",
-        "requested": "[0.2.40, )",
-        "resolved": "0.2.40",
-        "contentHash": "A+cVoJ4D1VR1sAxZ9Tq10l+WXUwHy5ShZ17IBhwo2AR/bN0jSqXRk9hKvxxxYGosSBt9iILm4Fls7bbZjMdnnw==",
-        "dependencies": {
-          "Ekom.AspNetCore": "0.2.40",
-          "Ekom.Payments.U10": "0.2.51",
-          "Umbraco.Cms.Api.Common": "13.13.0",
-          "Umbraco.Cms.Core": "13.13.0",
-          "Umbraco.Cms.Web.BackOffice": "13.13.0",
-          "Umbraco.Cms.Web.Website": "13.13.0"
-        }
-      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Direct",
         "requested": "[8.0.1, )",
@@ -170,23 +132,6 @@
         "type": "Transitive",
         "resolved": "3.1.0",
         "contentHash": "i6x0hDsFWg6Ke2isaNAcHQ9ChxBvTJu2cSmBY+Jtjiv2W4q6y9QlA3JKYuZqJ573TAZmpAn65Qf3sRpjvZ1gmw=="
-      },
-      "Ekom.AspNetCore": {
-        "type": "Transitive",
-        "resolved": "0.2.40",
-        "contentHash": "kf/tVE1i2D4SoIwvZXULbOPkGkjwkaidynm88gOWILhvDWEPjFvpQz/3OVLkgLosGTyZWGoYdZBr67X6m5PEfA==",
-        "dependencies": {
-          "Ekom.Core": "0.2.40"
-        }
-      },
-      "Ekom.Common": {
-        "type": "Transitive",
-        "resolved": "0.2.40",
-        "contentHash": "UdNIX4oTPwYHM6hzG5FrlCNhPQiH20dwIQhdCINLFNNjD8xfFFEumtUbJa2iBwePxt7aktaDLYHYYkc6UgQFIA==",
-        "dependencies": {
-          "Microsoft.Extensions.Caching.Memory": "8.0.1",
-          "Newtonsoft.Json": "13.0.3"
-        }
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
@@ -2859,6 +2804,51 @@
         "type": "Transitive",
         "resolved": "15.0.0",
         "contentHash": "YSDIkxq44VMy2N3jBTwJBJ/ZjGyuyb0GRyfQAUIma07dCHIbjXgKXjZaAxVa6ik3XTqgcyATvwYJL0EBtAClwA=="
+      },
+      "ekom.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.Core": "[0.2.39, )"
+        }
+      },
+      "ekom.common": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Memory": "[8.0.1, )",
+          "Newtonsoft.Json": "[13.0.3, )"
+        }
+      },
+      "Ekom.Core": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Identity": "[1.17.1, )",
+          "CommonServiceLocator": "[2.0.7, )",
+          "Ekom.Common": "[0.2.39, )",
+          "Ekom.Payments.Core": "[0.2.51, )",
+          "Hangfire": "[1.8.18, )",
+          "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
+          "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
+          "Microsoft.Data.SqlClient": "[6.1.2, )",
+          "Microsoft.Extensions.Caching.Abstractions": "[8.0.0, )",
+          "Microsoft.Extensions.Configuration": "[8.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.2, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[8.0.3, )",
+          "Newtonsoft.Json": "[13.0.4, )",
+          "linq2db": "[5.4.1, )",
+          "murmurhash": "[1.0.3, )"
+        }
+      },
+      "ekom.u10": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.AspNetCore": "[0.2.39, )",
+          "Ekom.Payments.U10": "[0.2.51, )",
+          "Umbraco.Cms.Api.Common": "[13.13.0, )",
+          "Umbraco.Cms.Core": "[13.13.0, )",
+          "Umbraco.Cms.Web.BackOffice": "[13.13.0, )",
+          "Umbraco.Cms.Web.Website": "[13.13.0, )"
+        }
       }
     }
   }

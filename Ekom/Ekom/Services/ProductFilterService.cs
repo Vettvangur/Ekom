@@ -8,4 +8,14 @@ public class ProductFilterService : IProductFilterService
     {
         return products;
     }
+
+    public virtual ValueTask<IEnumerable<IProduct>> ApplyFiltersAsync(
+        IEnumerable<IProduct> products,
+        ProductQuery? query = null,
+        ICategory? category = null,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return new ValueTask<IEnumerable<IProduct>>(ApplyFilters(products, query, category));
+    }
 }

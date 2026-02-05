@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Mappers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;

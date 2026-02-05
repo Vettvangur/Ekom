@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Models;
+namespace Ekom.Klaviyo.Models.Catalog;
 
 public enum KlaviyoDeleteMode
 {

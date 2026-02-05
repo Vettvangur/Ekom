@@ -134,11 +134,14 @@ public partial class Stock
     /// Verify stock for <see cref="IOrderInfo"/>
     /// </summary>
     /// <param name="orderInfo"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
-    public void ValidateOrderStock(IOrderInfo orderInfo)
+    public async Task ValidateOrderStockAsync(IOrderInfo orderInfo, CancellationToken ct = default)
     {
         foreach (IOrderLine orderLine in orderInfo.OrderLines)
         {
+            ct.ThrowIfCancellationRequested();
+
             if (orderLine.Product.Backorder)
             {
                 continue;
@@ -169,7 +172,7 @@ public partial class Stock
             }
             else
             {
-                IProduct? product = Catalog.Instance.GetProduct(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false);
+                IProduct? product = await  Catalog.Instance.GetProductAsync(orderLine.ProductKey, orderInfo.StoreInfo.Alias, raiseEvent: false, ct: ct);
 
                 if (product == null)
                 {
@@ -197,18 +200,19 @@ public partial class Stock
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
-    public async Task IncrementStockAsync(Guid key, decimal value)
+    public async Task IncrementStockAsync(Guid key, decimal value, CancellationToken ct = default)
     {
         if (_config.PerStoreStock)
         {
             IStore? store = _storeSvc.GetStoreFromCache();
-            await IncrementStockAsync(key, store.Alias, value)
+            await IncrementStockAsync(key, store.Alias, value, ct)
                 .ConfigureAwait(false);
         }
         else
         {
-            await IncrementStockAsync(key, null, value)
+            await IncrementStockAsync(key, null, value, ct)
                 .ConfigureAwait(false);
         }
     }
@@ -220,11 +224,12 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <param name="value"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <returns></returns>
     /// <exception cref="NotEnoughStockException"></exception>
-    public async Task IncrementStockAsync(Guid key, string storeAlias, decimal value)
+    public async Task IncrementStockAsync(Guid key, string storeAlias, decimal value, CancellationToken ct = default)
     {
-        SemaphoreSlim semaphore = null;
+        SemaphoreSlim? semaphore = null;
         StockData stockData;
 
         try
@@ -232,9 +237,9 @@ public partial class Stock
             if (_config.PerStoreStock)
             {
                 semaphore = GetStockLock(CreateStockUniqueId(key, storeAlias));
-                await semaphore.WaitAsync().ConfigureAwait(false);
+                await semaphore.WaitAsync(ct).ConfigureAwait(false);
 
-                await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+                await EnsurePerStoreEntryExistsAsync(key, storeAlias, ct)
                     .ConfigureAwait(false);
 
                 stockData = _stockPerStoreCache.Cache[storeAlias][key];
@@ -242,9 +247,9 @@ public partial class Stock
             else
             {
                 semaphore = GetStockLock(CreateStockUniqueId(key));
-                await semaphore.WaitAsync().ConfigureAwait(false);
+                await semaphore.WaitAsync(ct).ConfigureAwait(false);
 
-                await EnsureStockEntryExistsAsync(key).ConfigureAwait(false);
+                await EnsureStockEntryExistsAsync(key, ct).ConfigureAwait(false);
 
                 stockData = _stockCache.Cache[key];
             }
@@ -254,7 +259,7 @@ public partial class Stock
                 throw new NotEnoughStockException($"Not enough stock available for {stockData.UniqueId}.");
             }
 
-            await SetStockWithLockAsync(stockData, stockData.Stock + value, outerLock: true)
+            await SetStockWithLockAsync(stockData, stockData.Stock + value, outerLock: true, ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -271,17 +276,18 @@ public partial class Stock
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<bool> SetStockAsync(Guid key, decimal value)
+    public async Task<bool> SetStockAsync(Guid key, decimal value, CancellationToken ct = default)
     {
         if (_config.PerStoreStock)
         {
             IStore? store = _storeSvc.GetStoreFromCache();
-            return await SetStockAsync(key, store.Alias, value).ConfigureAwait(false);
+            return await SetStockAsync(key, store.Alias, value, ct).ConfigureAwait(false);
         }
         else
         {
-            return await SetStockAsync(key, null, value).ConfigureAwait(false);
+            return await SetStockAsync(key, null, value, ct).ConfigureAwait(false);
         }
     }
 
@@ -293,27 +299,28 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <param name="value"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<bool> SetStockAsync(Guid key, string storeAlias, decimal value)
+    public async Task<bool> SetStockAsync(Guid key, string storeAlias, decimal value, CancellationToken ct = default)
     {
         StockData stockData;
 
         if (_config.PerStoreStock)
         {
-            await EnsurePerStoreEntryExistsAsync(key, storeAlias)
+            await EnsurePerStoreEntryExistsAsync(key, storeAlias, ct)
                 .ConfigureAwait(false);
 
             stockData = _stockPerStoreCache.Cache[storeAlias][key];
         }
         else
         {
-            await EnsureStockEntryExistsAsync(key)
+            await EnsureStockEntryExistsAsync(key, ct)
                 .ConfigureAwait(false);
 
             stockData = _stockCache.Cache[key];
         }
 
-        return await SetStockWithLockAsync(stockData, value).ConfigureAwait(false);
+        return await SetStockWithLockAsync(stockData, value, ct: ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -323,9 +330,10 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
     /// <param name="timeSpan">How long to reserve</param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     /// <returns>Hangfire Job Id</returns>
-    public async Task<string> ReserveStockAsync(Guid key, decimal value, TimeSpan timeSpan = default)
+    public async Task<string> ReserveStockAsync(Guid key, decimal value, TimeSpan timeSpan = default, CancellationToken ct = default)
     {
         if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
         if (timeSpan == default(TimeSpan))
@@ -333,10 +341,10 @@ public partial class Stock
             timeSpan = _config.ReservationTimeout;
         }
 
-        await IncrementStockAsync(key, value).ConfigureAwait(false);
+        await IncrementStockAsync(key, value, ct).ConfigureAwait(false);
 
         string jobId = Hangfire.BackgroundJob.Schedule(() =>
-            UpdateStockHangfireAsync(key, -value),
+            UpdateStockHangfireAsync(key, -value, ct),
             timeSpan
         );
 
@@ -351,9 +359,10 @@ public partial class Stock
     /// <param name="storeAlias"></param>
     /// <param name="value">Only accepts negative values to indicate amount of stock to decrement</param>
     /// <param name="timeSpan">How long to reserve</param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     /// <returns>Hangfire Job Id</returns>
-    public async Task<string> ReserveStockAsync(Guid key, string storeAlias, decimal value, TimeSpan timeSpan = default)
+    public async Task<string> ReserveStockAsync(Guid key, string storeAlias, decimal value, TimeSpan timeSpan = default, CancellationToken ct = default)
     {
         if (value >= 0) throw new ArgumentOutOfRangeException(nameof(value), "Reserve stock called with non-negative value");
         if (timeSpan == default)
@@ -361,11 +370,11 @@ public partial class Stock
             timeSpan = _config.ReservationTimeout;
         }
 
-        await IncrementStockAsync(key, storeAlias, value)
+        await IncrementStockAsync(key, storeAlias, value, ct)
             .ConfigureAwait(false);
 
         string jobId = Hangfire.BackgroundJob.Schedule(() =>
-            UpdateStockHangfireAsync(key, storeAlias, -value),
+            UpdateStockHangfireAsync(key, storeAlias, -value, ct),
             timeSpan
         );
 
@@ -392,10 +401,11 @@ public partial class Stock
     /// Rollback scheduled stock reservation.
     /// </summary>
     /// <param name="jobId"></param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="StockException"></exception>
-    public async Task RollbackJobAsync(string jobId)
+    public async Task RollbackJobAsync(string jobId, CancellationToken ct = default)
     {
-        await _stockRepo.RollBackJob(jobId).ConfigureAwait(false);
+        await _stockRepo.RollBackJob(jobId, ct).ConfigureAwait(false);
 
         Hangfire.BackgroundJob.Delete(jobId, ScheduledState.StateName);
         Hangfire.BackgroundJob.Delete(jobId, EnqueuedState.StateName);
@@ -414,22 +424,23 @@ public partial class Stock
         );
     }
 
-    private async Task EnsureStockEntryExistsAsync(Guid key)
+
+    private async Task EnsureStockEntryExistsAsync(Guid key, CancellationToken ct)
     {
         if (!_stockCache.Cache.ContainsKey(key))
         {
             _stockCache.Cache[key]
-                = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key))
+                = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key), ct)
                 .ConfigureAwait(false);
         }
     }
 
-    private async Task EnsurePerStoreEntryExistsAsync(Guid key, string storeAlias)
+    private async Task EnsurePerStoreEntryExistsAsync(Guid key, string storeAlias, CancellationToken ct)
     {
         if (!_stockPerStoreCache.Cache[storeAlias].ContainsKey(key))
         {
             _stockPerStoreCache.Cache[storeAlias][key]
-                = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key, storeAlias))
+                = await _stockRepo.CreateNewStockRecordAsync(CreateStockUniqueId(key, storeAlias), ct)
                 .ConfigureAwait(false);
         }
     }
@@ -441,11 +452,12 @@ public partial class Stock
     /// <param name="stockData"></param>
     /// <param name="value"></param>
     /// <param name="outerLock">True when locking is configured around this method</param>
+    /// <param name="ct">Cancellation token</param>
     /// <exception cref="ArgumentException">
     /// Throws an exception when current value and provided value are equal
     /// </exception>
     /// <exception cref="ArgumentNullException"/>
-    private async Task<bool> SetStockWithLockAsync(StockData stockData, decimal value, bool outerLock = false)
+    private async Task<bool> SetStockWithLockAsync(StockData stockData, decimal value, bool outerLock = false, CancellationToken ct = default)
     {
         if (stockData == null)
         {
@@ -468,14 +480,14 @@ public partial class Stock
         SemaphoreSlim semaphore = GetStockLock(stockData.UniqueId);
         if (!outerLock)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
             decimal oldValue = stockData.Stock;
             stockData.Stock = value;
 
-            await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue).ConfigureAwait(false);
+            await _stockRepo.SetAsync(stockData.UniqueId, value, oldValue, ct).ConfigureAwait(false);
 
             return true;
         }
@@ -493,9 +505,10 @@ public partial class Stock
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public static Task UpdateStockHangfireAsync(Guid key, decimal value)
+    /// <param name="ct">Cancellation token</param>
+    public static Task UpdateStockHangfireAsync(Guid key, decimal value, CancellationToken ct)
     {
-        return Instance.IncrementStockAsync(key, value);
+        return Instance.IncrementStockAsync(key, value, ct);
     }
 
     /// <summary>
@@ -504,9 +517,10 @@ public partial class Stock
     /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <param name="value"></param>
-    public static Task UpdateStockHangfireAsync(Guid key, string storeAlias, decimal value)
+    /// <param name="ct">Cancellation token</param>
+    public static Task UpdateStockHangfireAsync(Guid key, string storeAlias, decimal value, CancellationToken ct)
     {
-        return Instance.IncrementStockAsync(key, storeAlias, value);
+        return Instance.IncrementStockAsync(key, storeAlias, value, ct);
     }
 
     private string CreateStockUniqueId(Guid key) => key.ToString();

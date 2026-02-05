@@ -2,7 +2,7 @@ using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Exceptions;
 using Ekom.Klaviyo.Mappers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

@@ -1,6 +1,6 @@
-namespace Ekom.Klaviyo.Models;
+namespace Ekom.Klaviyo.Models.Orders;
 
-public sealed class KlaviyoProfile
+public sealed class KlaviyoOrderProfile
 {
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }

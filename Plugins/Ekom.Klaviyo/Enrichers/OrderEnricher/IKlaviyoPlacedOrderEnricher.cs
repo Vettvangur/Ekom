@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Orders;
 
 namespace Ekom.Klaviyo.Enrichers.OrderEnricher;
 

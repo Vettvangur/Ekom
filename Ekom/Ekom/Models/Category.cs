@@ -92,12 +92,35 @@ public class Category : PerStoreNodeEntity, ICategory
     {
         var storeAlias = Store.Alias;
 
-        var productCache = _productCache as Ekom.Cache.ProductCache
+        var productCache = _productCache as ProductCache
             ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
 
         var products = productCache.GetByAnyCategoryIds(storeAlias, [Id]);
 
         return new ProductResponse(products, query, _productFilterService, this);
+    }
+
+
+    /// <summary>
+    /// All direct child products of category. (No descendants) Async
+    /// </summary>
+    public ValueTask<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var storeAlias = Store.Alias;
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, new[] { Id });
+
+        ct.ThrowIfCancellationRequested();
+
+        // ValueTask-returning pipeline already exists via CreateAsync (Task),
+        // so we wrap it as ValueTask
+        return new ValueTask<ProductResponse>(
+            ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct));
     }
 
 
@@ -131,6 +154,49 @@ public class Category : PerStoreNodeEntity, ICategory
         return new ProductResponse(products, query, _productFilterService, this);
     }
 
+    /// <summary>
+    /// All descendant products of category, this includes child products of sub-categories (async).
+    /// </summary>
+    public async Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var storeAlias = Store.Alias;
+
+        var categoryIds = new HashSet<int>();
+        var idStr = Id.ToString();
+
+        if (_categoryCache.Cache.TryGetValue(storeAlias, out var catDict))
+        {
+            foreach (var c in catDict.Values)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (c.Level >= Level && c.PathArray.Contains(idStr))
+                    categoryIds.Add(c.Id);
+            }
+        }
+
+        if (categoryIds.Count == 0)
+        {
+            return await ProductResponse.CreateAsync(
+                Enumerable.Empty<IProduct>(),
+                query,
+                _productFilterService,
+                category: this,
+                ct: ct);
+        }
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        ct.ThrowIfCancellationRequested();
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
+
+        return await ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
+    }
+
 
     /// <summary>
     /// All parent categories, grandparent categories and so on.
@@ -144,6 +210,12 @@ public class Category : PerStoreNodeEntity, ICategory
     public IEnumerable<MetafieldGrouped> Filters(bool filterable = true)
     {
         return ProductsRecursive().Products.Filters();
+    }
+
+    public async Task<IEnumerable<MetafieldGrouped>> FiltersAsync(bool filterable = true, CancellationToken ct = default)
+    {
+        var products = await ProductsRecursiveAsync(ct: ct);
+        return products.Products.Filters();
     }
 
     [System.Text.Json.Serialization.JsonIgnore]
