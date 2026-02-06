@@ -100,6 +100,21 @@ public class Category : PerStoreNodeEntity, ICategory
         return new ProductResponse(products, query, _productFilterService, this);
     }
 
+    /// <summary>
+    /// All direct child products of category (async version).
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        var storeAlias = Store.Alias;
+
+        var productCache = _productCache as Ekom.Cache.ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, [Id]);
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, this, cancellationToken);
+    }
 
     /// <summary>
     /// All descendant products of category, this includes child products of sub-categories
@@ -129,6 +144,37 @@ public class Category : PerStoreNodeEntity, ICategory
         var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
 
         return new ProductResponse(products, query, _productFilterService, this);
+    }
+
+    /// <summary>
+    /// All descendant products of category (async version).
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        var storeAlias = Store.Alias;
+
+        var categoryIds = new HashSet<int>();
+        var idStr = Id.ToString();
+
+        if (_categoryCache.Cache.TryGetValue(storeAlias, out var catDict))
+        {
+            foreach (var c in catDict.Values)
+            {
+                if (c.Level >= Level && c.PathArray.Contains(idStr))
+                    categoryIds.Add(c.Id);
+            }
+        }
+
+        if (categoryIds.Count == 0)
+            return ProductResponse.CreateAsync(Enumerable.Empty<IProduct>(), query, _productFilterService, this, cancellationToken);
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, this, cancellationToken);
     }
 
 

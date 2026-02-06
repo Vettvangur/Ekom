@@ -287,6 +287,22 @@ public class Catalog
     }
 
     /// <summary>
+    /// Get all products in store asynchronously, using store from ekmRequest.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetAllProductsAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            return GetAllProductsAsync(store.Alias, query, cancellationToken);
+        }
+
+        return ProductResponse.CreateAsync(Enumerable.Empty<IProduct>(), query, _productFilterService, null, cancellationToken);
+    }
+
+    /// <summary>
     /// Get products by category route
     /// </summary>
     /// <returns></returns>
@@ -300,6 +316,22 @@ public class Catalog
         }
 
         return category.ProductsRecursive(query);
+    }
+
+    /// <summary>
+    /// Get products by category route asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetProductsRecursiveByRouteAsync(string route, ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        ICategory? category = GetCategoryByRoute(route, query != null ? query.StoreAlias : null);
+
+        if (category == null)
+        {
+            return ProductResponse.CreateAsync(Enumerable.Empty<IProduct>(), query, _productFilterService, null, cancellationToken);
+        }
+
+        return category.ProductsRecursiveAsync(query, cancellationToken);
     }
 
     /// <summary>
@@ -323,6 +355,27 @@ public class Catalog
     }
 
     /// <summary>
+    /// Get all products from specific store asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetAllProductsAsync(string storeAlias, ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException(nameof(storeAlias));
+        }
+
+        if (!_productCache.Cache.ContainsKey(storeAlias))
+        {
+            return Task.FromResult(new ProductResponse());
+        }
+
+        IOrderedEnumerable<IProduct> products = _productCache.Cache[storeAlias].Select(x => x.Value).OrderBy(x => x.SortOrder);
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, null, cancellationToken);
+    }
+
+    /// <summary>
     /// Get multiple products by id from store in ekmRequest
     /// </summary>
     public ProductResponse GetProductsByIds(ProductQuery? query = null)
@@ -340,6 +393,27 @@ public class Catalog
         }
 
         return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
+    }
+
+    /// <summary>
+    /// Get multiple products by id from store in ekmRequest asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetProductsByIdsAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        if (query == null)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            return GetProductsByIdsAsync(store.Alias, query, cancellationToken);
+        }
+
+        return ProductResponse.CreateAsync(Enumerable.Empty<IProduct>(), query, _productFilterService, null, cancellationToken);
     }
 
     /// <summary>
@@ -362,6 +436,26 @@ public class Catalog
     }
 
     /// <summary>
+    /// Get multiple products by id from specific store asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetProductsByIdsAsync(string storeAlias, ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        if (query == null) throw new ArgumentNullException(nameof(query));
+        if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
+
+        var products = new List<IProduct>();
+
+        foreach (int id in query.Ids)
+        {
+            if (_productCache.TryGetById(storeAlias, id, out var product) && product != null)
+                products.Add(product);
+        }
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, null, cancellationToken);
+    }
+
+    /// <summary>
     /// Get multiple products by key from store in ekmRequest
     /// </summary>
     public ProductResponse GetProductsByKeys(ProductQuery? query = null)
@@ -379,6 +473,27 @@ public class Catalog
         }
 
         return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
+    }
+
+    /// <summary>
+    /// Get multiple products by key from store in ekmRequest asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetProductsByKeysAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        if (query == null)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+
+        IStore? store = !string.IsNullOrEmpty(query?.StoreAlias) ? _storeSvc.GetStoreByAlias(query.StoreAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            return GetProductsByKeysAsync(store.Alias, query, cancellationToken);
+        }
+
+        return ProductResponse.CreateAsync(Enumerable.Empty<IProduct>(), query, _productFilterService, null, cancellationToken);
     }
 
     /// <summary>
@@ -407,6 +522,35 @@ public class Catalog
             }
         }
         return new ProductResponse(products, query, _productFilterService);
+    }
+
+    /// <summary>
+    /// Get multiple products by key from specific store asynchronously.
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    public Task<ProductResponse> GetProductsByKeysAsync(string storeAlias, ProductQuery? query = null, CancellationToken cancellationToken = default)
+    {
+        if (query == null)
+        {
+            throw new ArgumentNullException(nameof(query));
+        }
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            throw new ArgumentException(nameof(storeAlias));
+        }
+
+        List<IProduct> products = new List<IProduct>();
+        if (_productCache.Cache.TryGetValue(storeAlias, out var storeProducts))
+        {
+            foreach (Guid key in query.Keys)
+            {
+                if (storeProducts.TryGetValue(key, out var product))
+                {
+                    products.Add(product);
+                }
+            }
+        }
+        return ProductResponse.CreateAsync(products, query, _productFilterService, null, cancellationToken);
     }
 
     /// <summary>

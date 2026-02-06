@@ -14,6 +14,143 @@ public class ProductResponse
         Filters = Enumerable.Empty<MetafieldGrouped>();
     }
 
+    /// <summary>
+    /// Creates a ProductResponse asynchronously, using ApplyFiltersAsync for non-blocking filter execution.
+    /// Use this factory method when your IProductFilterService implementation requires async operations.
+    /// </summary>
+    public static async Task<ProductResponse> CreateAsync(
+        IEnumerable<IProduct> products,
+        ProductQuery? query = null,
+        IProductFilterService? filterService = null,
+        ICategory? category = null,
+        CancellationToken cancellationToken = default)
+    {
+        var response = new ProductResponse();
+
+        if (query == null)
+        {
+            var baseList = products as List<IProduct> ?? products.ToList();
+
+            if (filterService != null)
+                products = await filterService.ApplyFiltersAsync(baseList, query, category, cancellationToken).ConfigureAwait(false);
+
+            products = CatalogEvents.RaiseOnBeforeReturnProducts(products);
+
+            response.Products = products;
+            response.ProductCount = baseList.Count;
+            response.TotalProductCount = response.ProductCount;
+            return response;
+        }
+
+        IEnumerable<IProduct> working = products as List<IProduct> ?? products.ToList();
+
+        if (query.PropertySelectors?.Any() == true)
+        {
+            foreach (var selector in query.PropertySelectors.Where(s => !string.IsNullOrEmpty(s.Key)))
+            {
+                var sep = query.PropertySelectorsSeparator;
+
+                var propertyValues = working
+                    .SelectMany(x => x.GetValue(selector.Key, selector.Value)?
+                        .Split(new[] { sep }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(v => v.Trim())
+                        ?? Array.Empty<string>())
+                    .Where(v => !string.IsNullOrEmpty(v))
+                    .GroupBy(v => v)
+                    .Select(g => (g.Key, g.Count()))
+                    .ToList();
+
+                response.PropertySelectors.Add(selector.Key, propertyValues);
+            }
+        }
+
+        if (query.AllFiltersVisible)
+            response.Filters = working.Filters();
+
+        if (query.MetaFilters?.Any() == true || query.PropertyFilters?.Any() == true)
+            working = working.Filter(query);
+
+        if (!string.IsNullOrEmpty(query.SearchQuery))
+        {
+            using var scope = Configuration.Resolver.CreateScope();
+            var searchService = scope.ServiceProvider.GetService<ICatalogSearchService>();
+
+            long total = 0;
+            var ids = searchService?.ProductQuery(new SearchRequest
+            {
+                SearchQuery = query.SearchQuery,
+                NodeTypeAlias = new[] { "ekmProduct", "ekmCategory", "ekmVariant" },
+                SearchFields = query.SearchFields
+            }, out total) ?? Enumerable.Empty<int>();
+
+            if (total > 0)
+            {
+                var idSet = ids is HashSet<int> hs ? hs : new HashSet<int>(ids);
+                working = working.Where(p => idSet.Contains(p.Id));
+            }
+            else
+            {
+                working = Enumerable.Empty<IProduct>();
+            }
+        }
+
+        if (!query.AllFiltersVisible)
+            response.Filters = working.Filters();
+
+        if (filterService != null && query.RaiseEvents)
+            working = await filterService.ApplyFiltersAsync(working, query, category, cancellationToken).ConfigureAwait(false);
+
+        if (query.RaiseEvents)
+            working = CatalogEvents.RaiseOnBeforeReturnProducts(working);
+
+        // Query predicate
+        if (query.Filter != null)
+            working = working.Where(query.Filter);
+
+        if (query.FilterOutZeroPriceProducts)
+        {
+            working = working.Where(p =>
+            {
+                var pv = p.PrimaryVariant;
+                var price = pv?.Price ?? p.Price;
+                return price?.Value > 0;
+            });
+        }
+
+        // Materialize once for counts + paging
+        var finalList = working as List<IProduct> ?? working.ToList();
+
+        // Total AFTER price filtering
+        response.TotalProductCount = finalList.Count;
+
+        // Sorting
+        if (query.OrderBy != Utilities.OrderBy.NoOrder)
+            finalList = response.OrderByInternal(finalList, query?.OrderBy ?? Configuration.Instance.DefaultProductOrderBy).ToList();
+
+        response.ProductCount = finalList.Count;
+
+        // Paging
+        if (query.PageSize.HasValue && query.Page.HasValue)
+        {
+            var pageSize = query.PageSize.Value;
+            var page = query.Page.Value;
+
+            response.PageSize = pageSize;
+            response.Page = page;
+            response.PageCount = (response.ProductCount + pageSize - 1) / pageSize;
+
+            response.Products = finalList
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+        }
+        else
+        {
+            response.Products = finalList;
+        }
+
+        return response;
+    }
+
     public ProductResponse(IEnumerable<IProduct> products, ProductQuery? query = null, IProductFilterService? filterService = null, ICategory? category = null)
     {
         if (query == null)
@@ -149,7 +286,17 @@ public class ProductResponse
     public int TotalProductCount { get; set; }
     public IEnumerable<MetafieldGrouped> Filters { get; set; } = new List<MetafieldGrouped>();
     public Dictionary<string, List<(string, int)>> PropertySelectors = new Dictionary<string, List<(string, int)>>();
+
+    /// <summary>
+    /// Internal ordering method used by both sync constructor and async factory.
+    /// </summary>
+    internal IEnumerable<IProduct> OrderByInternal(IEnumerable<IProduct> products, OrderBy orderBy)
+        => OrderByProducts(products, orderBy);
+
     private IEnumerable<IProduct> OrderBy(IEnumerable<IProduct> products, OrderBy orderBy)
+        => OrderByProducts(products, orderBy);
+
+    private static IEnumerable<IProduct> OrderByProducts(IEnumerable<IProduct> products, OrderBy orderBy)
     {
         if (orderBy == Utilities.OrderBy.TitleAsc)
         {

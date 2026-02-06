@@ -12,9 +12,23 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     ProductResponse Products(ProductQuery? query = null);
 
     /// <summary>
+    /// All direct child products of category (async version).
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    Task<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+        => Task.FromResult(Products(query));
+
+    /// <summary>
     /// All descendant products of category, this includes child products of sub-categories
     /// </summary>
     ProductResponse ProductsRecursive(ProductQuery? query = null);
+
+    /// <summary>
+    /// All descendant products of category (async version).
+    /// Use this when your IProductFilterService requires async operations.
+    /// </summary>
+    Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken cancellationToken = default)
+        => Task.FromResult(ProductsRecursive(query));
 
     /// <summary>
     /// Our eldest ancestor category
