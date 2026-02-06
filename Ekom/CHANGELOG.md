@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.45...Ekom-v0.2.46) (2026-02-06)
+
+
+### Bug Fixes
+
+* IServiceScope leak in ProductSearchAsync ([fb1971e](https://github.com/Vettvangur/Ekom/commit/fb1971e2d277ab80977af0e9f5833704e7bc8752))
+* IServiceScope leak in ProductSearchAsync ([bd1d74e](https://github.com/Vettvangur/Ekom/commit/bd1d74e3d6dac8b2021645e5a61f1998fb9de6f8))
+
 ## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.44...Ekom-v0.2.45) (2026-02-05)
 
 
