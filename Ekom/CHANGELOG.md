@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.46...Ekom-v0.2.47) (2026-02-08)
+
+
+### Bug Fixes
+
+* product cache issues fixed with categories.  Added orderlines to order settings ([f47f769](https://github.com/Vettvangur/Ekom/commit/f47f769f03c98ec3e1e2be174895a31e7dca5a6d))
+
 ## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.45...Ekom-v0.2.46) (2026-02-06)
 
 
