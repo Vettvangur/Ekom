@@ -1308,7 +1308,7 @@ public class Catalog
         if (req.NodeTypeAlias == null || !req.NodeTypeAlias.Any())
             req.NodeTypeAlias = ["ekmProduct", "ekmVariant"];
 
-        IServiceScope scope = Configuration.Resolver.CreateScope();
+        using IServiceScope scope = Configuration.Resolver.CreateScope();
         var _searhService = scope.ServiceProvider.GetService<ICatalogSearchService>();
 
         var (ids, total) = _searhService == null
