@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.41...Ekom.Klaviyo-v0.2.42) (2026-02-05)
+
+
+### Bug Fixes
+
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([9b173b5](https://github.com/Vettvangur/Ekom/commit/9b173b5421d5ed2835901aa39df964ea41531f5a))
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([f0b732c](https://github.com/Vettvangur/Ekom/commit/f0b732c6bfacb68b4ab00c2004a19b4b8ed9366b))
+
+## [0.2.41](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.40...Ekom.Klaviyo-v0.2.41) (2026-02-05)
+
+
+### Bug Fixes
+
+* add ct to catalog api ([07f1147](https://github.com/Vettvangur/Ekom/commit/07f11473cc73ba51b8b054066c6859236af20f44))
+* add ct to catalog api ([62f2a32](https://github.com/Vettvangur/Ekom/commit/62f2a321278c4c74d370eedec950344653a94c80))
+* klaviyo, update ekom version and add async ([b4f8548](https://github.com/Vettvangur/Ekom/commit/b4f8548b96e69cfb7f1d10e941af13a1030a339a))
+* klaviyo, update ekom version and add async ([d5712b0](https://github.com/Vettvangur/Ekom/commit/d5712b07b0f865d40a3cd984e2fc9ce85d34f02c))
+
+## [0.2.40](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.39...Ekom.Klaviyo-v0.2.40) (2026-02-05)
+
+
+### Bug Fixes
+
+* fix nuget package referenced, klaviyo subscription service ([324874a](https://github.com/Vettvangur/Ekom/commit/324874a36895a2626cbc947047548f200c30396e))
+
 ## [0.2.39](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.38...Ekom.Klaviyo-v0.2.39) (2026-02-04)
 
 

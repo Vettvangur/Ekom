@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.45...Ekom-v0.2.46) (2026-02-06)
+
+
+### Bug Fixes
+
+* IServiceScope leak in ProductSearchAsync ([fb1971e](https://github.com/Vettvangur/Ekom/commit/fb1971e2d277ab80977af0e9f5833704e7bc8752))
+* IServiceScope leak in ProductSearchAsync ([bd1d74e](https://github.com/Vettvangur/Ekom/commit/bd1d74e3d6dac8b2021645e5a61f1998fb9de6f8))
+
+## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.44...Ekom-v0.2.45) (2026-02-05)
+
+
+### Bug Fixes
+
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([9b173b5](https://github.com/Vettvangur/Ekom/commit/9b173b5421d5ed2835901aa39df964ea41531f5a))
+* ekom: adding cancellation tokens, klaviyo: update ekom version ([f0b732c](https://github.com/Vettvangur/Ekom/commit/f0b732c6bfacb68b4ab00c2004a19b4b8ed9366b))
+
+## [0.2.44](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.43...Ekom-v0.2.44) (2026-02-05)
+
+
+### Bug Fixes
+
+* remove scoped service from singleton ([86b49bd](https://github.com/Vettvangur/Ekom/commit/86b49bd5e171645705e55328a86c9775d9ca9920))
+* remove scoped service from singleton ([9dddf56](https://github.com/Vettvangur/Ekom/commit/9dddf569fb5f538bfd1abdff8498598a74f3374d))
+
+## [0.2.43](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.42...Ekom-v0.2.43) (2026-02-05)
+
+
+### Features
+
+* async catalog ([53ca58e](https://github.com/Vettvangur/Ekom/commit/53ca58e5e78a412087dc5f0ef7a45990b8518c86))
+
+
+### Bug Fixes
+
+* Add AllProducts and registration fix ([e1ee926](https://github.com/Vettvangur/Ekom/commit/e1ee9263c502d814b81353b5b13d09dcbc274206))
+* fix nuget package referenced, klaviyo subscription service ([324874a](https://github.com/Vettvangur/Ekom/commit/324874a36895a2626cbc947047548f200c30396e))
+
 ## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.41...Ekom-v0.2.42) (2026-02-04)
 
 
