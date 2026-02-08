@@ -618,12 +618,14 @@ public class CheckoutControllerService
                         ErrorUrl = new Uri(errorUrl),
                         PaymentProviderKey = ekomPP.Key,
                         PaymentProviderName = ekomPP.Name,
-                        OrderUniqueId = order.UniqueId
+                        OrderUniqueId = order.UniqueId,
+                        Orders = orderItems
                     },
                 };
 
                 CheckoutEvents.OnPay(this, eventsArgs);
                 await CheckoutEvents.OnPayAsync(this, eventsArgs);
+
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();

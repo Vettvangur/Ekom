@@ -85,21 +85,45 @@ public class Category : PerStoreNodeEntity, ICategory
     }
 
 
+    private ProductCache ProductCache =>
+        _productCache as ProductCache
+        ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+    private CategoryCache CategoryCache =>
+        _categoryCache as CategoryCache
+        ?? throw new InvalidOperationException("Expected _categoryCache to be CategoryCache (desc index required).");
+
+    private IEnumerable<IProduct> GetProductsByCategoryIds(string storeAlias, IEnumerable<int> categoryIds)
+    {
+        // One place for the cache + index-based lookup.
+        return ProductCache.GetByAnyCategoryIds(storeAlias, categoryIds);
+    }
+
+    private HashSet<int> GetRecursiveCategoryIds(string storeAlias, CancellationToken ct = default)
+    {
+        // This category + all descendants, using your precomputed descendant index.
+        var ids = new HashSet<int> { Id };
+
+        foreach (var d in CategoryCache.GetDescendants(storeAlias, Id))
+        {
+            ct.ThrowIfCancellationRequested();
+            ids.Add(d.Id);
+        }
+
+        return ids;
+    }
+
     /// <summary>
-    /// All direct child products of category. (No descendants)
+    /// All direct child products of category. (No descendants) Sync
     /// </summary>
     public ProductResponse Products(ProductQuery? query = null)
     {
         var storeAlias = Store.Alias;
 
-        var productCache = _productCache as ProductCache
-            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
-
-        var products = productCache.GetByAnyCategoryIds(storeAlias, [Id]);
+        var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
         return new ProductResponse(products, query, _productFilterService, this);
     }
-
 
     /// <summary>
     /// All direct child products of category. (No descendants) Async
@@ -110,93 +134,45 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var storeAlias = Store.Alias;
 
-        var productCache = _productCache as ProductCache
-            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+        var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
-        var products = productCache.GetByAnyCategoryIds(storeAlias, new[] { Id });
-
-        ct.ThrowIfCancellationRequested();
-
-        // ValueTask-returning pipeline already exists via CreateAsync (Task),
-        // so we wrap it as ValueTask
+        // If CreateAsync does real async work, this is fine.
+        // If CreateAsync is often synchronous, you can optimize with ValueTask only if you can avoid Task allocation.
         return new ValueTask<ProductResponse>(
             ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct));
     }
 
-
     /// <summary>
-    /// All descendant products of category, this includes child products of sub-categories
+    /// All descendant products of category, includes child products of sub-categories. Sync
     /// </summary>
     public ProductResponse ProductsRecursive(ProductQuery? query = null)
     {
         var storeAlias = Store.Alias;
 
-        var categoryIds = new HashSet<int>();
-        var idStr = Id.ToString();
+        var categoryIds = GetRecursiveCategoryIds(storeAlias);
 
-        if (_categoryCache.Cache.TryGetValue(storeAlias, out var catDict))
-        {
-            foreach (var c in catDict.Values)
-            {
-                if (c.Level >= Level && c.PathArray.Contains(idStr))
-                    categoryIds.Add(c.Id);
-            }
-        }
-
-        if (categoryIds.Count == 0)
-            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService, this);
-
-        var productCache = _productCache as ProductCache
-            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
-
-        var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
+        // categoryIds always contains Id at minimum; no need for Count==0 checks.
+        var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
         return new ProductResponse(products, query, _productFilterService, this);
     }
 
     /// <summary>
-    /// All descendant products of category, this includes child products of sub-categories (async).
+    /// All descendant products of category, includes child products of sub-categories. Async
     /// </summary>
-    public async Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
+    public ValueTask<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
         var storeAlias = Store.Alias;
 
-        var categoryIds = new HashSet<int>();
-        var idStr = Id.ToString();
+        var categoryIds = GetRecursiveCategoryIds(storeAlias, ct);
 
-        if (_categoryCache.Cache.TryGetValue(storeAlias, out var catDict))
-        {
-            foreach (var c in catDict.Values)
-            {
-                ct.ThrowIfCancellationRequested();
+        var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
-                if (c.Level >= Level && c.PathArray.Contains(idStr))
-                    categoryIds.Add(c.Id);
-            }
-        }
-
-        if (categoryIds.Count == 0)
-        {
-            return await ProductResponse.CreateAsync(
-                Enumerable.Empty<IProduct>(),
-                query,
-                _productFilterService,
-                category: this,
-                ct: ct);
-        }
-
-        var productCache = _productCache as ProductCache
-            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
-
-        ct.ThrowIfCancellationRequested();
-
-        var products = productCache.GetByAnyCategoryIds(storeAlias, categoryIds);
-
-        return await ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
+        return new ValueTask<ProductResponse>(
+            ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct));
     }
-
 
     /// <summary>
     /// All parent categories, grandparent categories and so on.
