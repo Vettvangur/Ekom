@@ -24,7 +24,7 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// All descendant products of category, this includes child products of sub-categories Async
     /// </summary>
-    Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default);
+    ValueTask<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default);
     /// <summary>
     /// Our eldest ancestor category
     /// </summary>
