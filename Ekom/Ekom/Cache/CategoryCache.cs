@@ -26,6 +26,12 @@ class CategoryCache : PerStoreCache<ICategory>
     }
 
     protected override bool EnableIdIndex => true;
+    protected override bool EnableRouteIndex => true;
+    protected override IEnumerable<string> GetRoutes(ICategory item)
+        => item.Urls ?? Enumerable.Empty<string>();
+
+    protected override string NormalizeRoute(string route)
+        => base.NormalizeRoute(route);
     protected override int GetId(ICategory item) => item.Id;
 
     protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)

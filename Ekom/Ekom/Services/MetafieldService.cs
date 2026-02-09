@@ -271,9 +271,6 @@ internal class MetafieldService : IMetafieldService
         var existingArray = existingToken as JArray ?? new JArray();
         existingArray = (JArray)JsonHelper.ToCamelCaseKeys(existingArray);
 
-        // -----------------------------
-        // SAFE EXISTING INDEX
-        // -----------------------------
         var existingById = new Dictionary<string, JObject>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var o in existingArray.OfType<JObject>())
@@ -287,10 +284,6 @@ internal class MetafieldService : IMetafieldService
                 existingById[id] = o;
         }
 
-        // -----------------------------
-        // OPTIONAL INCOMING GUARD
-        // (last incoming wins)
-        // -----------------------------
         var incomingById = new Dictionary<string, JObject>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var incomingObj in incomingArray.OfType<JObject>())

@@ -144,11 +144,8 @@ public class Catalog
 
         if (route)
         {
-            if (!_productCache.Cache.TryGetValue(store.Alias, out var productDict))
+            if (!_productCache.TryGetByRoute(store.Alias, id, out var product))
                 return null;
-
-            var product = productDict.Values
-                .FirstOrDefault(p => p.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase)));
 
             return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
         }
@@ -740,11 +737,8 @@ public class Catalog
 
         if (route)
         {
-            if (!_categoryCache.Cache.TryGetValue(store.Alias, out var categoryDict))
+            if (!_categoryCache.TryGetByRoute(store.Alias, id, out var category))
                 return null;
-
-            var category = categoryDict.Values
-                .FirstOrDefault(c => c.Urls.Any(url => url.Equals(id, StringComparison.OrdinalIgnoreCase)));
 
             return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(category) : category;
         }
