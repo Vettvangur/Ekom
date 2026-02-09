@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.47...Ekom-v0.2.48) (2026-02-09)
+
+
+### Bug Fixes
+
+* change valuetask to task, add getVariant async ([6150dca](https://github.com/Vettvangur/Ekom/commit/6150dca91e0254807851f632394c8830faee0c0b))
+* change valuetask to task, add getVariant async ([7bd134b](https://github.com/Vettvangur/Ekom/commit/7bd134b8bd33089c5c0492625ab58bddd294b8d0))
+
 ## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.46...Ekom-v0.2.47) (2026-02-08)
 
 
