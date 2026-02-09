@@ -128,7 +128,7 @@ public class Category : PerStoreNodeEntity, ICategory
     /// <summary>
     /// All direct child products of category. (No descendants) Async
     /// </summary>
-    public ValueTask<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default)
+    public Task<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -136,10 +136,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
-        // If CreateAsync does real async work, this is fine.
-        // If CreateAsync is often synchronous, you can optimize with ValueTask only if you can avoid Task allocation.
-        return new ValueTask<ProductResponse>(
-            ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct));
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
     }
 
     /// <summary>
@@ -160,7 +157,7 @@ public class Category : PerStoreNodeEntity, ICategory
     /// <summary>
     /// All descendant products of category, includes child products of sub-categories. Async
     /// </summary>
-    public ValueTask<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
+    public Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -170,8 +167,7 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
-        return new ValueTask<ProductResponse>(
-            ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct));
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
     }
 
     /// <summary>

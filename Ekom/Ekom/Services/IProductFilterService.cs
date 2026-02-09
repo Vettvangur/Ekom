@@ -8,7 +8,7 @@ public interface IProductFilterService
         IEnumerable<IProduct> products, 
         ProductQuery? query = null, 
         ICategory? category = null);
-    ValueTask<IEnumerable<IProduct>> ApplyFiltersAsync(
+    Task<IEnumerable<IProduct>> ApplyFiltersAsync(
         IEnumerable<IProduct> products,
         ProductQuery? query = null,
         ICategory? category = null,

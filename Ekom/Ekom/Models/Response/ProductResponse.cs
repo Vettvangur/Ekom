@@ -279,6 +279,8 @@ public class ProductResponse
 
         var filtered = await filterService.ApplyFiltersAsync(products, query, category, ct);
 
+        filtered = filterService.ApplyFilters(products, query, category);
+
         ct.ThrowIfCancellationRequested();
         return filtered;
     }
