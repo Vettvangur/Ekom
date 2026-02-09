@@ -16,6 +16,7 @@ public class ProductFilterService : IProductFilterService
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
-        return Task.FromResult(ApplyFilters(products, query, category));
+        var result = ApplyFilters(products, query, category);
+        return Task.FromResult(result);
     }
 }
