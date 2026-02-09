@@ -43,4 +43,5 @@ interface IPerStoreIndexedCache<T> : IPerStoreCache<T>
     bool TryGetByKey(string storeAlias, Guid key, out T? item);
     bool TryGetById(string storeAlias, int id, out T? item);
     bool TryGetBySku(string storeAlias, string sku, out T? item);
+    bool TryGetByRoute(string storeAlias, string route, out T? item);
 }

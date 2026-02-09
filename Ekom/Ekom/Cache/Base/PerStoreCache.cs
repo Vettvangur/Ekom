@@ -14,9 +14,9 @@ namespace Ekom.Cache;
 /// Supports optional secondary indexes per store:
 ///  - Id (int) -> Key (Guid)
 ///  - Sku (string) -> Key (Guid)
+///  - Route (string) -> Key (Guid)
 /// Primary store remains: storeAlias -> (Key Guid -> TItem)
 /// </summary>
-/// <typeparam name="TItem">Type of entity to cache</typeparam>
 abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TItem>, IPerStoreIndexedCache<TItem>
     where TItem : class
 {
@@ -77,6 +77,11 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     protected virtual bool EnableSkuIndex => false;
 
     /// <summary>
+    /// Opt-in Route index. Override to true for caches that support route/urls.
+    /// </summary>
+    protected virtual bool EnableRouteIndex => false;
+
+    /// <summary>
     /// Return the stable int Id for this item (only used if EnableIdIndex == true).
     /// </summary>
     protected virtual int GetId(TItem item) =>
@@ -88,6 +93,11 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     protected virtual string? GetSku(TItem item) => null;
 
     /// <summary>
+    /// Return 0..N routes/urls for this item (only used if EnableRouteIndex == true).
+    /// </summary>
+    protected virtual IEnumerable<string> GetRoutes(TItem item) => Enumerable.Empty<string>();
+
+    /// <summary>
     /// Normalize SKU before storing/looking up in SKU index.
     /// </summary>
     protected virtual string NormalizeSku(string sku) => sku.Trim();
@@ -96,6 +106,38 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     /// SKU comparer for dictionary (default case-insensitive).
     /// </summary>
     protected virtual StringComparer SkuComparer => StringComparer.OrdinalIgnoreCase;
+
+    /// <summary>
+    /// Normalize route before storing/looking up in Route index.
+    /// Default behavior:
+    ///  - Trim
+    ///  - Remove query/hash
+    ///  - Ensure leading slash
+    ///  - Remove trailing slash (except "/")
+    /// </summary>
+    protected virtual string NormalizeRoute(string route)
+    {
+        if (string.IsNullOrWhiteSpace(route)) return string.Empty;
+
+        var r = route.Trim();
+
+        var cut = r.IndexOfAny(new[] { '?', '#' });
+        if (cut >= 0)
+            r = r.Substring(0, cut);
+
+        if (!r.StartsWith("/"))
+            r = "/" + r;
+
+        if (r.Length > 1 && r.EndsWith("/"))
+            r = r.TrimEnd('/');
+
+        return r;
+    }
+
+    /// <summary>
+    /// Route comparer for dictionary (default case-insensitive).
+    /// </summary>
+    protected virtual StringComparer RouteComparer => StringComparer.OrdinalIgnoreCase;
 
     /// <summary>
     /// storeAlias -> (Id -> Key)
@@ -109,6 +151,12 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> SkuIndex { get; }
         = new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>();
 
+    /// <summary>
+    /// storeAlias -> (Route -> Key)
+    /// </summary>
+    protected virtual ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>> RouteIndex { get; }
+        = new ConcurrentDictionary<string, ConcurrentDictionary<string, Guid>>();
+
     private ConcurrentDictionary<Guid, TItem> GetStoreCache(string alias) =>
         Cache.GetOrAdd(alias, _ => new ConcurrentDictionary<Guid, TItem>());
 
@@ -118,19 +166,15 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     private ConcurrentDictionary<string, Guid> GetStoreSkuIndex(string alias) =>
         SkuIndex.GetOrAdd(alias, _ => new ConcurrentDictionary<string, Guid>(SkuComparer));
 
+    private ConcurrentDictionary<string, Guid> GetStoreRouteIndex(string alias) =>
+        RouteIndex.GetOrAdd(alias, _ => new ConcurrentDictionary<string, Guid>(RouteComparer));
+
     // -----------------------------
     // Fill
     // -----------------------------
 
     public virtual void FillCache() => FillCache(null);
 
-    /// <summary>
-    /// Base Fill cache method appropriate for most derived caches
-    /// </summary>
-    /// <param name="storeParam">
-    /// This parameter is supplied when adding a store at runtime,
-    /// triggering the given store's filling
-    /// </param>
     public virtual void FillCache(IStore? storeParam = null)
     {
         if (string.IsNullOrWhiteSpace(NodeAlias))
@@ -149,14 +193,12 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
             List<UmbracoContent> results = nodeService.NodesByTypes(NodeAlias).ToList();
             _logger.LogInformation("Filling per store cache for {NodeAlias}... Nodes: {Count}", NodeAlias, results.Count);
 
-            if (storeParam == null) // Startup initialization
+            if (storeParam == null)
             {
                 foreach (IStore store in _storeCache.Cache.Select(x => x.Value))
-                {
                     count += FillStoreCache(store, results, NodeAlias);
-                }
             }
-            else // Triggered with dynamic addition/removal of store
+            else
             {
                 count += FillStoreCache(storeParam, results, NodeAlias);
             }
@@ -187,12 +229,16 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
         ConcurrentDictionary<int, Guid>? curIdIndex = null;
         ConcurrentDictionary<string, Guid>? curSkuIndex = null;
+        ConcurrentDictionary<string, Guid>? curRouteIndex = null;
 
         if (EnableIdIndex)
             curIdIndex = IdIndex[store.Alias] = new ConcurrentDictionary<int, Guid>();
 
         if (EnableSkuIndex)
             curSkuIndex = SkuIndex[store.Alias] = new ConcurrentDictionary<string, Guid>(SkuComparer);
+
+        if (EnableRouteIndex)
+            curRouteIndex = RouteIndex[store.Alias] = new ConcurrentDictionary<string, Guid>(RouteComparer);
 
         LoopTimer timer = new LoopTimer(results.Count, _logger, nodeAlias);
 
@@ -230,6 +276,20 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
                     if (!string.IsNullOrWhiteSpace(sku))
                         curSkuIndex![NormalizeSku(sku)] = r.Key;
                 }
+
+                // Optional Route index
+                if (EnableRouteIndex)
+                {
+                    foreach (var route in GetRoutes(item))
+                    {
+                        if (string.IsNullOrWhiteSpace(route)) continue;
+
+                        var norm = NormalizeRoute(route);
+                        if (string.IsNullOrWhiteSpace(norm)) continue;
+
+                        curRouteIndex![norm] = r.Key;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -251,17 +311,13 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
     // Event updates
     // -----------------------------
 
-    /// <summary>
-    /// Add/replace an item in a single store cache + indexes.
-    /// Use this when you already know the store.
-    /// </summary>
     public virtual void AddOrReplaceFromCache(Guid key, Store store, TItem item)
     {
         var alias = store.Alias;
 
         var storeCache = GetStoreCache(alias);
 
-        // If item already exists, remove stale index entries (Id/Sku might have changed)
+        // If item already exists, remove stale index entries (Id/Sku/Routes might have changed)
         if (storeCache.TryGetValue(key, out var old))
         {
             if (EnableIdIndex)
@@ -272,6 +328,15 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
                 var oldSku = GetSku(old);
                 if (!string.IsNullOrWhiteSpace(oldSku))
                     GetStoreSkuIndex(alias).TryRemove(NormalizeSku(oldSku), out _);
+            }
+
+            if (EnableRouteIndex)
+            {
+                foreach (var oldRoute in GetRoutes(old))
+                {
+                    if (string.IsNullOrWhiteSpace(oldRoute)) continue;
+                    GetStoreRouteIndex(alias).TryRemove(NormalizeRoute(oldRoute), out _);
+                }
             }
         }
 
@@ -286,11 +351,23 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
             if (!string.IsNullOrWhiteSpace(sku))
                 GetStoreSkuIndex(alias)[NormalizeSku(sku)] = key;
         }
+
+        if (EnableRouteIndex)
+        {
+            var routeIdx = GetStoreRouteIndex(alias);
+
+            foreach (var route in GetRoutes(item))
+            {
+                if (string.IsNullOrWhiteSpace(route)) continue;
+
+                var norm = NormalizeRoute(route);
+                if (string.IsNullOrWhiteSpace(norm)) continue;
+
+                routeIdx[norm] = key;
+            }
+        }
     }
 
-    /// <summary>
-    /// Remove an item from a single store cache + indexes.
-    /// </summary>
     public virtual bool RemoveItemFromCache(IStore store, Guid key)
     {
         var alias = store.Alias;
@@ -308,13 +385,18 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
                 GetStoreSkuIndex(alias).TryRemove(NormalizeSku(sku), out _);
         }
 
+        if (EnableRouteIndex)
+        {
+            foreach (var route in GetRoutes(item))
+            {
+                if (string.IsNullOrWhiteSpace(route)) continue;
+                GetStoreRouteIndex(alias).TryRemove(NormalizeRoute(route), out _);
+            }
+        }
+
         return true;
     }
 
-    /// <summary>
-    /// Adds or replaces an item from all store caches (based on disabled rules).
-    /// Also maintains optional Id/SKU indexes.
-    /// </summary>
     public void AddOrReplaceFromAllCaches(UmbracoContent node)
     {
         IEnumerable<UmbracoContent> ancestors = nodeService.NodeAncestors(node.Id.ToString());
@@ -329,7 +411,6 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
 
                 if (isDisabled)
                 {
-                    // remove from primary + indexes
                     RemoveItemFromCache(store.Value, node.Key);
                     continue;
                 }
@@ -338,10 +419,7 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
                              ?? (TItem)Activator.CreateInstance(typeof(TItem), node, store.Value);
 
                 if (item != null)
-                {
-                    // Use the unified method that also handles stale indexes
                     AddOrReplaceFromCache(node.Key, (Store)store.Value, item);
-                }
             }
             catch (Exception ex)
             {
@@ -355,15 +433,10 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
         }
     }
 
-    /// <summary>
-    /// Removes an item from all store caches + indexes.
-    /// </summary>
     public void RemoveItemFromAllCaches(Guid key)
     {
         foreach (KeyValuePair<Guid, IStore> store in _storeCache.Cache)
-        {
             RemoveItemFromCache(store.Value, key);
-        }
     }
 
     // -----------------------------
@@ -403,6 +476,19 @@ abstract class PerStoreCache<TItem> : ICache, IPerStoreCache, IPerStoreCache<TIt
         var norm = NormalizeSku(sku);
 
         return SkuIndex.TryGetValue(storeAlias, out var idx)
+            && idx.TryGetValue(norm, out var key)
+            && Cache.TryGetValue(storeAlias, out var d)
+            && d.TryGetValue(key, out item);
+    }
+
+    public bool TryGetByRoute(string storeAlias, string route, out TItem? item)
+    {
+        item = null;
+        if (!EnableRouteIndex || string.IsNullOrWhiteSpace(route)) return false;
+
+        var norm = NormalizeRoute(route);
+
+        return RouteIndex.TryGetValue(storeAlias, out var idx)
             && idx.TryGetValue(norm, out var key)
             && Cache.TryGetValue(storeAlias, out var d)
             && d.TryGetValue(key, out item);

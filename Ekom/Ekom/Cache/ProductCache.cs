@@ -26,8 +26,16 @@ class ProductCache : PerStoreCache<IProduct>
 
     protected override bool EnableIdIndex => true;
     protected override bool EnableSkuIndex => true;
+    protected override bool EnableRouteIndex => true;
     protected override int GetId(IProduct item) => item.Id;
     protected override string? GetSku(IProduct item) => item.SKU;
+    protected override IEnumerable<string> GetRoutes(IProduct item)
+        => item.Urls ?? Enumerable.Empty<string>();
+
+    // optional: if you want different normalization for products
+    protected override string NormalizeRoute(string route)
+        => base.NormalizeRoute(route);
+
     protected override string NormalizeSku(string sku) => sku.Trim();
 
     /// <summary>
