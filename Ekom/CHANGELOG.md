@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.50...Ekom-v0.2.51) (2026-02-09)
+
+
+### Bug Fixes
+
+* get by route async faster ([e545448](https://github.com/Vettvangur/Ekom/commit/e545448c3ccdcf142c0fa7d836d7f44814b7c210))
+* get by route async faster ([44e34eb](https://github.com/Vettvangur/Ekom/commit/44e34eb99bce36925d2348513542bbb4c1f70a35))
+
 ## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.49...Ekom-v0.2.50) (2026-02-09)
 
 
