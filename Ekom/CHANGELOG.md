@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.48...Ekom-v0.2.49) (2026-02-09)
+
+
+### Bug Fixes
+
+* append metafield update ([6445a50](https://github.com/Vettvangur/Ekom/commit/6445a50c9c2ff3ff582f81438689acfaa5cfe140))
+* append metafield update ([1c11d47](https://github.com/Vettvangur/Ekom/commit/1c11d47429ccccefa6c5ff555849d6f47c292679))
+
 ## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.47...Ekom-v0.2.48) (2026-02-09)
 
 
