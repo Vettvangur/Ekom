@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.49...Ekom-v0.2.50) (2026-02-09)
+
+
+### Bug Fixes
+
+* get category and product by route ([db72b48](https://github.com/Vettvangur/Ekom/commit/db72b486a1f5dc43e112d8fc2aba2e168dab2b6a))
+* get category and product by route ([3ea7f9e](https://github.com/Vettvangur/Ekom/commit/3ea7f9ea05d9a6c766c20071cad2f16692833dd0))
+
 ## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.48...Ekom-v0.2.49) (2026-02-09)
 
 
