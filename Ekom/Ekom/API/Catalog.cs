@@ -1116,7 +1116,7 @@ public class Catalog
         return transformed as IReadOnlyList<ICategory> ?? transformed.ToList();
     }
 
-    public IVariant? GetVariant(Guid Id, string storeAlias = null)
+    public IVariant? GetVariant(Guid Id, string? storeAlias = null)
     {
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
@@ -1130,6 +1130,20 @@ public class Catalog
 
         return null;
     }
+    public Task<IVariant?> GetVariantAsync(Guid Id, string? storeAlias = null)
+    {
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            if (_variantCache.Cache[store.Alias].TryGetValue(Id, out var val))
+            {
+                return Task.FromResult(val);
+            }
+        }
+
+        return Task.FromResult<IVariant?>(null);
+    }
 
     public IVariant? GetVariant(int id, string? storeAlias = null)
     {
@@ -1141,6 +1155,18 @@ public class Catalog
             return null;
 
         return _variantCache.TryGetById(store.Alias, id, out var variant) ? variant : null;
+    }
+
+    public Task<IVariant?> GetVariantAsync(int id, string? storeAlias = null)
+    {
+        IStore? store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null)
+            return Task.FromResult<IVariant?>(null);
+
+        return _variantCache.TryGetById(store.Alias, id, out var variant) ? Task.FromResult(variant) : Task.FromResult<IVariant?>(null);
     }
 
     /// <summary>
@@ -1165,11 +1191,22 @@ public class Catalog
         return _variantCache.TryGetBySku(store.Alias, sku, out var variant) ? variant : null;
     }
 
-
-    [Obsolete]
-    public IVariant GetVariant(string storeAlias, Guid key)
+    public Task<IVariant?> GetVariantAsync(string sku, string? storeAlias = null)
     {
-        return GetVariant(key, storeAlias);
+        IStore? store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null)
+            return Task.FromResult<IVariant?>(null);
+
+        if (string.IsNullOrWhiteSpace(store.Alias))
+            throw new ArgumentException(nameof(store.Alias));
+
+        if (string.IsNullOrWhiteSpace(sku))
+            throw new ArgumentException(nameof(sku));
+
+        return _variantCache.TryGetBySku(store.Alias, sku, out var variant) ? Task.FromResult(variant) : Task.FromResult<IVariant?>(null);
     }
 
     public IEnumerable<IVariant> GetVariantsByGroup(int id, string? storeAlias = null)
@@ -1183,10 +1220,15 @@ public class Catalog
         return ((VariantCache)_variantCache).GetByGroup(store.Alias, id);
     }
 
-    [Obsolete]
-    public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, int Id)
+    public Task<IEnumerable<IVariant>> GetVariantsByGroupAsync(int id, string? storeAlias = null)
     {
-        return GetVariantsByGroup(Id, storeAlias);
+        var store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null) return Task.FromResult(Enumerable.Empty<IVariant>());
+
+        return Task.FromResult(((VariantCache)_variantCache).GetByGroup(store.Alias, id));
     }
 
     public IVariantGroup? GetVariantGroup(Guid key, string? storeAlias = null)
@@ -1204,10 +1246,19 @@ public class Catalog
         return null;
     }
 
-    [Obsolete]
-    public IVariantGroup? GetVariantGroup(string storeAlias, Guid key)
+    public Task<IVariantGroup?> GetVariantGroupAsync(Guid key, string? storeAlias = null)
     {
-        return GetVariantGroup(key, storeAlias);
+        IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            if (_variantGroupCache.Cache[store.Alias].TryGetValue(key, out var val))
+            {
+                return Task.FromResult(val);
+            }
+        }
+
+        return Task.FromResult<IVariantGroup?>(null);
     }
 
     public IVariantGroup? GetVariantGroup(int id, string? storeAlias = null)
@@ -1221,7 +1272,35 @@ public class Catalog
 
         return _variantGroupCache.TryGetById(store.Alias, id, out var group) ? group : null;
     }
+    public Task<IVariantGroup?> GetVariantGroupAsync(int id, string? storeAlias = null)
+    {
+        IStore? store = !string.IsNullOrEmpty(storeAlias)
+            ? _storeSvc.GetStoreByAlias(storeAlias)
+            : _storeSvc.GetStoreFromCache();
 
+        if (store == null)
+            return Task.FromResult<IVariantGroup?>(null);
+
+        return _variantGroupCache.TryGetById(store.Alias, id, out var group) ? Task.FromResult(group) : Task.FromResult<IVariantGroup?>(null);
+    }
+
+    [Obsolete]
+    public IVariant GetVariant(string storeAlias, Guid key)
+    {
+        return GetVariant(key, storeAlias);
+    }
+
+    [Obsolete]
+    public IEnumerable<IVariant> GetVariantsByGroup(string storeAlias, int Id)
+    {
+        return GetVariantsByGroup(Id, storeAlias);
+    }
+
+    [Obsolete]
+    public IVariantGroup? GetVariantGroup(string storeAlias, Guid key)
+    {
+        return GetVariantGroup(key, storeAlias);
+    }
 
     [Obsolete]
     public IVariantGroup? GetVariantGroup(string storeAlias, int id)

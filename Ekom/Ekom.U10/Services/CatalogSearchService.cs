@@ -49,32 +49,32 @@ public class CatalogSearchService : ICatalogSearchService
     // Async
     // =========================
 
-    public virtual ValueTask<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
+    public virtual Task<(IEnumerable<SearchResultEntity> Results, long Total)> PublicQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var results = PublicQueryCore(req, out var total, ct);
-        return new ValueTask<(IEnumerable<SearchResultEntity>, long)>((results, total));
+        return Task.FromResult((results, total));
     }
 
-    public virtual ValueTask<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
+    public virtual Task<(IEnumerable<SearchResultEntity> Results, long Total)> InternalQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var results = InternalQueryCore(req, out var total, ct);
-        return new ValueTask<(IEnumerable<SearchResultEntity>, long)>((results, total));
+        return Task.FromResult((results, total));
     }
 
-    public virtual ValueTask<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
+    public virtual Task<(IEnumerable<int> Ids, long Total)> ProductQueryAsync(
         SearchRequest req,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var results = PublicQueryCore(req, out var total, ct);
         var ids = results.Select(x => x.Id);
-        return new ValueTask<(IEnumerable<int>, long)>((ids, total));
+        return Task.FromResult((ids, total));
     }
 
     // =========================
