@@ -223,7 +223,7 @@ public class Catalog
             if (!_productCache.TryGetByRoute(store.Alias, id, out var product))
                 return null;
 
-            return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnProduct(product) : product;
+            return raiseEvent ? await CatalogEvents.RaiseOnBeforeReturnProductAsync(product) : product;
         }
         else if (sku)
         {
@@ -897,7 +897,7 @@ public class Catalog
             if (!_categoryCache.TryGetByRoute(store.Alias, id, out var category))
                 return null;
 
-            return raiseEvent ? CatalogEvents.RaiseOnBeforeReturnCategory(category) : category;
+            return raiseEvent ? await CatalogEvents.RaiseOnBeforeReturnCategoryAsync(category, ct) : category;
         }
         else if (int.TryParse(id, out var intId))
         {
@@ -1216,8 +1216,10 @@ public class Catalog
 
         return null;
     }
-    public Task<IVariant?> GetVariantAsync(Guid Id, string? storeAlias = null)
+    public Task<IVariant?> GetVariantAsync(Guid Id, string? storeAlias = null, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
@@ -1243,8 +1245,10 @@ public class Catalog
         return _variantCache.TryGetById(store.Alias, id, out var variant) ? variant : null;
     }
 
-    public Task<IVariant?> GetVariantAsync(int id, string? storeAlias = null)
+    public Task<IVariant?> GetVariantAsync(int id, string? storeAlias = null, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         IStore? store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
             : _storeSvc.GetStoreFromCache();
@@ -1277,8 +1281,10 @@ public class Catalog
         return _variantCache.TryGetBySku(store.Alias, sku, out var variant) ? variant : null;
     }
 
-    public Task<IVariant?> GetVariantAsync(string sku, string? storeAlias = null)
+    public Task<IVariant?> GetVariantAsync(string sku, string? storeAlias = null, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         IStore? store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
             : _storeSvc.GetStoreFromCache();
@@ -1306,8 +1312,10 @@ public class Catalog
         return ((VariantCache)_variantCache).GetByGroup(store.Alias, id);
     }
 
-    public Task<IEnumerable<IVariant>> GetVariantsByGroupAsync(int id, string? storeAlias = null)
+    public Task<IEnumerable<IVariant>> GetVariantsByGroupAsync(int id, string? storeAlias = null,CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         var store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
             : _storeSvc.GetStoreFromCache();
@@ -1332,8 +1340,10 @@ public class Catalog
         return null;
     }
 
-    public Task<IVariantGroup?> GetVariantGroupAsync(Guid key, string? storeAlias = null)
+    public Task<IVariantGroup?> GetVariantGroupAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         IStore? store = !string.IsNullOrEmpty(storeAlias) ? _storeSvc.GetStoreByAlias(storeAlias) : _storeSvc.GetStoreFromCache();
 
         if (store != null)
@@ -1358,8 +1368,10 @@ public class Catalog
 
         return _variantGroupCache.TryGetById(store.Alias, id, out var group) ? group : null;
     }
-    public Task<IVariantGroup?> GetVariantGroupAsync(int id, string? storeAlias = null)
+    public Task<IVariantGroup?> GetVariantGroupAsync(int id, string? storeAlias = null, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
+
         IStore? store = !string.IsNullOrEmpty(storeAlias)
             ? _storeSvc.GetStoreByAlias(storeAlias)
             : _storeSvc.GetStoreFromCache();
