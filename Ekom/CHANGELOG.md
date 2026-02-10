@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.53](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.52...Ekom-v0.2.53) (2026-02-10)
+
+
+### Bug Fixes
+
+* cancellationtoken to get variants async, change sync to async event ([101b29b](https://github.com/Vettvangur/Ekom/commit/101b29b9299372ac0b7af4da715eb476be673410))
+* cancellationtoken to get variants async, change sync to async event ([2411e29](https://github.com/Vettvangur/Ekom/commit/2411e29920571ab7e4182e103416729a2f03bbd3))
+
 ## [0.2.52](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.51...Ekom-v0.2.52) (2026-02-10)
 
 
