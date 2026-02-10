@@ -257,6 +257,28 @@ public class EkomCatalogController : ControllerBase
     }
 
     /// <summary>
+    /// Get Products By Skus
+    /// </summary>
+    /// <param name="query">Product Query</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns></returns>
+    [HttpPost, HttpGet]
+    [Route("productsbyskus")]
+    public async Task<IActionResult> GetProductsBySkusAsync([FromBody] ProductQuery? query = null, CancellationToken ct = default)
+    {
+        if (query == null)
+        {
+            return BadRequest();
+        }
+
+        _reqHelper.SetEkmRequest(storeAlias: query?.StoreAlias);
+
+        ProductResponse productsResponse = await API.Catalog.Instance.GetProductsBySkusAsync(query, ct: ct);
+
+        return Ok(productsResponse);
+    }
+
+    /// <summary>
     /// Get All Products
     /// </summary>
     /// <param name="query">Product Query</param>

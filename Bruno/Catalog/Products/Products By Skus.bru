@@ -1,0 +1,22 @@
+meta {
+  name: Products By Skus
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/ekom/catalog/productsbyskus
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "PropertyFilters": {},
+    "MetaFilters": {},
+    "Keys": ["xxxx","xxxx"],
+    "Page": 1,
+    "PageSize": 10,
+    "StoreAlias": "Store"
+  }
+}
