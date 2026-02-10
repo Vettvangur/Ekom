@@ -553,6 +553,101 @@ public class Catalog
     }
 
     /// <summary>
+    /// Shared: load products from cache by Skus.
+    /// </summary>
+    private List<IProduct> GetProductsBySkusRaw(string storeAlias, ProductQuery query, CancellationToken ct)
+    {
+        if (query.Keys == null)
+            return new List<IProduct>();
+
+        var products = new List<IProduct>();
+
+        foreach (string sku in query.Skus)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            if (_productCache.TryGetBySku(storeAlias, sku, out var product) && product != null)
+                products.Add(product);
+        }
+        
+        return products;
+    }
+
+    /// <summary>
+    /// Get multiple products by sku from store in ekmRequest
+    /// </summary>
+    public ProductResponse GetProductsBySkus(ProductQuery? query = null)
+    {
+        if (query == null) throw new ArgumentNullException(nameof(query));
+
+        var store = !string.IsNullOrEmpty(query.StoreAlias)
+            ? _storeSvc.GetStoreByAlias(query.StoreAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null)
+            return new ProductResponse(Enumerable.Empty<IProduct>(), query, _productFilterService);
+
+        return GetProductsBySkus(store.Alias, query);
+    }
+
+    /// <summary>
+    /// Get multiple products by sku from store in ekmRequest (async).
+    /// </summary>
+    public async Task<ProductResponse> GetProductsBySkusAsync(ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (query == null) throw new ArgumentNullException(nameof(query));
+
+        var store = !string.IsNullOrEmpty(query.StoreAlias)
+            ? _storeSvc.GetStoreByAlias(query.StoreAlias)
+            : _storeSvc.GetStoreFromCache();
+
+        if (store == null)
+        {
+            return await ProductResponse.CreateAsync(
+                Enumerable.Empty<IProduct>(),
+                query,
+                _productFilterService,
+                category: null,
+                ct: ct);
+        }
+
+        return await GetProductsBySkusAsync(store.Alias, query, ct);
+    }
+
+    /// <summary>
+    /// Get multiple products by sku from specific store
+    /// </summary>
+    public ProductResponse GetProductsBySkus(string storeAlias, ProductQuery? query = null)
+    {
+        if (query == null) throw new ArgumentNullException(nameof(query));
+        if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
+
+        var products = GetProductsBySkusRaw(storeAlias, query, CancellationToken.None);
+        return new ProductResponse(products, query, _productFilterService);
+    }
+
+    /// <summary>
+    /// Get multiple products by sku from specific store (async).
+    /// </summary>
+    public async Task<ProductResponse> GetProductsBySkusAsync(string storeAlias, ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (query == null) throw new ArgumentNullException(nameof(query));
+        if (string.IsNullOrWhiteSpace(storeAlias)) throw new ArgumentException(nameof(storeAlias));
+
+        var products = GetProductsBySkusRaw(storeAlias, query, ct);
+
+        return await ProductResponse.CreateAsync(
+            products,
+            query,
+            _productFilterService,
+            category: null,
+            ct: ct);
+    }
+
+    /// <summary>
     /// Shared: load products from cache by Keys.
     /// </summary>
     private List<IProduct> GetProductsByKeysRaw(string storeAlias, ProductQuery query, CancellationToken ct)
@@ -595,7 +690,6 @@ public class Catalog
 
     /// <summary>
     /// Get multiple products by key from store in ekmRequest (async).
-    /// Uses ProductResponse.CreateAsync so async events + cancellation propagate.
     /// </summary>
     public async Task<ProductResponse> GetProductsByKeysAsync(ProductQuery? query = null, CancellationToken ct = default)
     {
