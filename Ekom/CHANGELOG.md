@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.52](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.51...Ekom-v0.2.52) (2026-02-10)
+
+
+### Features
+
+* get products bu skus api ([c5de28b](https://github.com/Vettvangur/Ekom/commit/c5de28b0a5d19f66c898a0df19fc09807a50e236))
+
+
+### Bug Fixes
+
+* image with no constructor ([9df2c18](https://github.com/Vettvangur/Ekom/commit/9df2c18f77453a4f241d8bda7a6b2228c62e17d2))
+* image with no constructor ([41d1773](https://github.com/Vettvangur/Ekom/commit/41d1773eebd54542794882c64329731f6ca087ec))
+* image with no constructor ([32120f6](https://github.com/Vettvangur/Ekom/commit/32120f6daa124ea4f42d8c0a7fbbd881e7b6c46f))
+
 ## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.50...Ekom-v0.2.51) (2026-02-09)
 
 
