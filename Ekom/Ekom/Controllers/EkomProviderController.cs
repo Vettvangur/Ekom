@@ -35,10 +35,11 @@ public class EkomProviderController : ControllerBase
     /// <param name="countryCode"></param>
     /// <param name="orderAmount"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsproviders/{storeAlias?}")]
-    public IActionResult GetPaymentProviders([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null)
+    public async Task<IActionResult> GetPaymentProvidersAsync([FromQuery] string countryCode, [FromQuery] decimal orderAmount, string? storeAlias = null, CancellationToken ct = default)
     {
         _reqHelper.SetEkmRequest(storeAlias: storeAlias);
 
@@ -49,18 +50,20 @@ public class EkomProviderController : ControllerBase
             return NotFound($"Store {storeAlias} not found");
         }
 
-        return Ok(API.Providers.Instance.GetPaymentProviders(store.Alias, countryCode, orderAmount));
+        var providers = await API.Providers.Instance.GetPaymentProvidersAsync(store.Alias, countryCode, orderAmount, ct);
 
+        return Ok(providers);
     }
 
     /// <summary>
     /// Get Payment Provider
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpGet]
     [Route("paymentsprovider/{id:Guid}")]
-    public IActionResult GetPaymentProvider([FromRoute] Guid id)
+    public async Task<IActionResult> GetPaymentProviderAsync([FromRoute] Guid id, CancellationToken ct = default)
     {
         IStore? store = API.Store.Instance.GetStore();
 
@@ -69,7 +72,9 @@ public class EkomProviderController : ControllerBase
             return NotFound($"Store not found");
         }
 
-        return Ok(API.Providers.Instance.GetPaymentProvider(id, store));
+        var provider = await API.Providers.Instance.GetPaymentProviderAsync(id, store, ct);
+
+        return Ok(provider);
     }
 
     /// <summary>
@@ -77,10 +82,11 @@ public class EkomProviderController : ControllerBase
     /// </summary>
     /// <param name="countryCode"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpGet]
     [Route("shippingproviders/{storeAlias?}")]
-    public async Task<IActionResult> GetShippingProviders([FromQuery] string countryCode, string? storeAlias = null)
+    public async Task<IActionResult> GetShippingProvidersAsync([FromQuery] string countryCode, string? storeAlias = null, CancellationToken ct = default)
     {
         _reqHelper.SetEkmRequest(storeAlias: storeAlias);
 
@@ -91,23 +97,24 @@ public class EkomProviderController : ControllerBase
             return NotFound($"Store {storeAlias} not found");
         }
 
-        var order = await Ekom.API.Order.Instance.GetOrderAsync();
+        var order = await API.Order.Instance.GetOrderAsync(ct);
 
         var orderAmount = order != null ? order.ChargedAmount.Value - (order.ShippingProvider != null ? order.ShippingProvider.Price.Value : 0) : 0;
 
-        return Ok(API.Providers.Instance.GetShippingProviders(store.Alias, countryCode, orderAmount));
+        var providers = await API.Providers.Instance.GetShippingProvidersAsync(store.Alias, countryCode, orderAmount, ct);
 
+        return Ok(providers);
     }
 
     /// <summary>
     /// Get Shipping Provider
     /// </summary>
     /// <param name="id"></param>
-    /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpGet]
     [Route("shippingprovider/{id:Guid}")]
-    public IActionResult GetShippingProvider([FromRoute] Guid id)
+    public async Task<IActionResult> GetShippingProviderAsync([FromRoute] Guid id, CancellationToken ct = default)
     {
         IStore? store = API.Store.Instance.GetStore();
 
@@ -116,7 +123,9 @@ public class EkomProviderController : ControllerBase
             return NotFound($"Store not found");
         }
 
-        return Ok(API.Providers.Instance.GetShippingProvider(id, store));
+        var provider = await API.Providers.Instance.GetShippingProviderAsync(id, store, ct);
+
+        return Ok(provider);
     }
 
     /// <summary>

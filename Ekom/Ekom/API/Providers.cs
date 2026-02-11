@@ -87,6 +87,48 @@ public class Providers
         }
     }
 
+    /// <summary>
+    /// Get shipping providers, optionally filter on country code and amount.
+    /// </summary>
+    /// <param name="store"></param>
+    /// <param name="countryCode">
+    /// Only show <see cref="ShippingProvider"/> in a zone that contains the given country code.
+    /// </param>
+    /// <param name="orderAmount">
+    /// <param name="ct">CancellationToken</param>
+    /// Only show <see cref="ShippingProvider"/> where the given amount falls within their range.
+    /// </param>
+    /// <returns></returns>
+    public async Task<IReadOnlyList<IShippingProvider>> GetShippingProvidersAsync(
+        string? store = null,
+        string? countryCode = null,
+        decimal orderAmount = 0,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var providers = GetProviders(
+                storeAlias => _shippingProviderCache[storeAlias]
+                    .Select(x => x.Value)
+                    .ToList(),
+                store,
+                countryCode,
+                orderAmount
+            )
+            .Cast<IShippingProvider>()
+            .OrderBy(x => x.SortOrder)
+            .ToList();
+
+        var processed = await ProviderEvents
+            .RaiseOnBeforeReturnShippingProvidersAsync(
+                providers,
+                store ?? string.Empty
+            );
+
+        ct.ThrowIfCancellationRequested();
+
+        return processed.ToList();
+    }
 
     /// <summary>
     /// Get payment providers, optionally filter on country code and amount.
@@ -116,6 +158,79 @@ public class Providers
         {
             yield return provider;
         }
+    }
+
+    /// <summary>
+    /// Get payment providers, optionally filter on country code and amount.
+    /// </summary>
+    /// <param name="store"></param>
+    /// <param name="countryCode">
+    /// Only show <see cref="PaymentProvider"/> in a zone that contains the given country code.
+    /// </param>
+    /// <param name="orderAmount">
+    /// Only show <see cref="PaymentProvider"/> where the given amount falls within their range.
+    /// </param>
+    /// <returns></returns>
+    public async IAsyncEnumerable<IPaymentProvider> GetPaymentProvidersAsync(
+        string? store = null,
+        string? countryCode = null,
+        decimal orderAmount = 0
+    )
+    {
+        var providers = GetProviders(
+            storeAlias => _paymentProviderCache[storeAlias].Select(x => x.Value).ToList(),
+            store,
+            countryCode,
+            orderAmount
+        ).Cast<IPaymentProvider>().OrderBy(x => x.SortOrder);
+
+        foreach (var provider in await ProviderEvents.RaiseOnBeforeReturnPaymentProvidersAsync(providers, store ?? ""))
+        {
+            yield return provider;
+        }
+    }
+
+    /// <summary>
+    /// Get payment providers, optionally filter on country code and amount.
+    /// </summary>
+    /// <param name="store"></param>
+    /// <param name="countryCode">
+    /// Only show <see cref="PaymentProvider"/> in a zone that contains the given country code.
+    /// </param>
+    /// <param name="orderAmount">
+    /// <param name="ct">CancellationToken</param>
+    /// Only show <see cref="PaymentProvider"/> where the given amount falls within their range.
+    /// </param>
+    /// <returns></returns>
+    public async Task<IReadOnlyList<IPaymentProvider>> GetPaymentProvidersAsync(
+        string? store = null,
+        string? countryCode = null,
+        decimal orderAmount = 0,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var providers = GetProviders(
+                storeAlias => _paymentProviderCache[storeAlias]
+                    .Select(x => x.Value)
+                    .ToList(),
+                store,
+                countryCode,
+                orderAmount
+            )
+            .Cast<IPaymentProvider>()
+            .OrderBy(x => x.SortOrder)
+            .ToList();
+
+        var processed = await ProviderEvents
+            .RaiseOnBeforeReturnPaymentProvidersAsync(
+                providers,
+                store ?? string.Empty
+            );
+
+        ct.ThrowIfCancellationRequested();
+
+        return processed.ToList();
     }
 
     /// <summary>
@@ -193,10 +308,54 @@ public class Providers
     /// Get shipping provider from cache
     /// </summary>
     /// <param name="key"></param>
+    /// <param name="store"></param>
+    /// <param name="ct">CancellationToken</param>
+    /// <returns></returns>
+    public async Task<IShippingProvider?> GetShippingProviderAsync(Guid key, IStore? store = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (store == null)
+        {
+            store = _storeSvc.GetStoreFromCache();
+
+            ArgumentNullException.ThrowIfNull(store);
+        }
+
+        return _shippingProviderCache[store.Alias].ContainsKey(key) ? _shippingProviderCache[store.Alias][key] : null;
+    }
+
+    /// <summary>
+    /// Get shipping provider from cache
+    /// </summary>
+    /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
     public IShippingProvider? GetShippingProvider(Guid key, string? storeAlias = null)
     {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            IStore? store = _storeSvc.GetStoreFromCache();
+
+            ArgumentNullException.ThrowIfNull(store);
+
+            storeAlias = store.Alias;
+        }
+
+        return _shippingProviderCache[storeAlias].ContainsKey(key) ? _shippingProviderCache[storeAlias][key] : null;
+    }
+
+    /// <summary>
+    /// Get shipping provider from cache
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>  
+    /// <returns></returns>
+    public async Task<IShippingProvider?> GetShippingProviderAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
         if (string.IsNullOrEmpty(storeAlias))
         {
             IStore? store = _storeSvc.GetStoreFromCache();
@@ -231,10 +390,54 @@ public class Providers
     /// Get payment provider from cache
     /// </summary>
     /// <param name="key"></param>
+    /// <param name="store"></param>
+    /// <param name="ct">CancellationToken</param>
+    /// <returns></returns>
+    public async Task<IPaymentProvider?> GetPaymentProviderAsync(Guid key, IStore? store = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (store == null)
+        {
+            store = _storeSvc.GetStoreFromCache();
+
+            ArgumentNullException.ThrowIfNull(store);
+        }
+
+        return _paymentProviderCache[store.Alias].ContainsKey(key) ? _paymentProviderCache[store.Alias][key] : null;
+    }
+
+    /// <summary>
+    /// Get payment provider from cache
+    /// </summary>
+    /// <param name="key"></param>
     /// <param name="storeAlias"></param>
     /// <returns></returns>
     public IPaymentProvider? GetPaymentProvider(Guid key, string? storeAlias = null)
     {
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            IStore? store = _storeSvc.GetStoreFromCache();
+
+            ArgumentNullException.ThrowIfNull(store);
+
+            storeAlias = store.Alias;
+        }
+
+        return _paymentProviderCache[storeAlias].ContainsKey(key) ? _paymentProviderCache[storeAlias][key] : null;
+    }
+
+    /// <summary>
+    /// Get payment provider from cache
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
+    /// <returns></returns>
+    public async Task<IPaymentProvider?> GetPaymentProviderAsync(Guid key, string? storeAlias = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
         if (string.IsNullOrEmpty(storeAlias))
         {
             IStore? store = _storeSvc.GetStoreFromCache();
