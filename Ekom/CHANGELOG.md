@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.53...Ekom-v0.2.54) (2026-02-11)
+
+
+### Bug Fixes
+
+* Make providers async ([385efe4](https://github.com/Vettvangur/Ekom/commit/385efe4e08b5dc0dc43517c9b328c1b7ecdf49b8))
+* Make providers async ([9194aa2](https://github.com/Vettvangur/Ekom/commit/9194aa27253578ee13a965b1cdd3d1b1dd133878))
+
 ## [0.2.53](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.52...Ekom-v0.2.53) (2026-02-10)
 
 
