@@ -503,6 +503,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/apply")]
+    [EnableRateLimiting("order-coupon")]
     public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(model.coupon))
@@ -524,6 +525,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/remove")]
+    [EnableRateLimiting("order-coupon")]
     public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias, CancellationToken ct = default)
     {
         await Order.Instance.RemoveCouponFromOrderAsync(storeAlias, ct);

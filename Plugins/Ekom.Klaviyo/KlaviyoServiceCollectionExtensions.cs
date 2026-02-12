@@ -2,6 +2,8 @@ using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Dispatching.Catalog;
 using Ekom.Klaviyo.Dispatching.Orders;
 using Ekom.Klaviyo.Dispatching.Subscriptions;
+using Ekom.Klaviyo.Dispatching.Tracking;
+using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
 using Ekom.Klaviyo.Enrichers.SubscriptionsEnricher;
@@ -49,6 +51,7 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoCatalogClient, KlaviyoCatalogClient>();
         services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
         services.AddSingleton<IKlaviyoSubscriptionsClient, KlaviyoSubscriptionsClient>();
+        services.AddSingleton<IKlaviyoTrackingClient, KlaviyoTrackingClient>();
 
         // Dispatchers (singleton hosted services)
         services.AddSingleton<KlaviyoCatalogDispatcher>();
@@ -63,8 +66,13 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoSubscriptionsDispatcher>(sp => sp.GetRequiredService<KlaviyoSubscriptionsDispatcher>());
         services.AddHostedService(sp => sp.GetRequiredService<KlaviyoSubscriptionsDispatcher>());
 
+        services.AddSingleton<KlaviyoTrackingDispatcher>();
+        services.AddSingleton<IKlaviyoTrackingDispatcher>(sp => sp.GetRequiredService<KlaviyoTrackingDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<KlaviyoTrackingDispatcher>());
+
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
         services.AddScoped<IKlaviyoSubscriptionsService, KlaviyoSubscriptionsService>();
+        services.AddScoped<IKlaviyoTrackingService, KlaviyoTrackingService>();
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
@@ -73,6 +81,9 @@ public static class KlaviyoServiceCollectionExtensions
 
         services.AddSingleton<IKlaviyoPlacedOrderEnricherRunner, KlaviyoPlacedOrderEnricherRunner>();
         services.AddSingleton<IKlaviyoSubscriptionsEnricherRunner, KlaviyoSubscriptionsEnricherRunner>();
+
+        services.AddSingleton<KlaviyoTrackingEnrichmentPipeline>();
+        services.AddSingleton<IKlaviyoTrackingEnricherRunner, KlaviyoTrackingEnricherRunner>();
 
         return services;
     }

@@ -64,7 +64,7 @@ partial class OrderService
             {
                 if (settings.UpdateOrder)
                 {
-                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                         .ConfigureAwait(false);
                 }
 
@@ -145,7 +145,7 @@ partial class OrderService
             RemoveDiscountFromOrder(orderInfo);
             if (settings.UpdateOrder)
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
             }
         }
@@ -199,7 +199,7 @@ partial class OrderService
     /// <summary>
     /// Manually set coupon code on order, does not validate coupon or use other discount functionality
     /// </summary>
-    public async Task SetCouponCodeAsync(string couponCode, string storeAlias, DiscountOrderSettings? settings = null)
+    public async Task SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
@@ -217,7 +217,7 @@ partial class OrderService
         {
             orderInfo.Coupon = couponCode;
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true).ConfigureAwait(false);
+            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
         }
     }
 
@@ -361,7 +361,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                             .ConfigureAwait(false);
                     }
 
@@ -383,7 +383,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                             .ConfigureAwait(false);
                     }
 
@@ -427,7 +427,8 @@ partial class OrderService
     public async Task RemoveDiscountFromOrderLineAsync(
         Guid productKey,
         string storeAlias,
-        DiscountOrderSettings settings = null)
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (settings == null)
         {
@@ -456,7 +457,7 @@ partial class OrderService
 
             if (settings.UpdateOrder)
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
             }
         }

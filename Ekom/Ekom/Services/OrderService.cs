@@ -531,7 +531,7 @@ partial class OrderService
             OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
             await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -850,7 +850,7 @@ partial class OrderService
             await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -862,73 +862,74 @@ partial class OrderService
         }
     }
 
-    public async Task<OrderInfo> RemoveOrderLinesAsync(
-        Guid[] lineIds,
-        string storeAlias,
-        OrderSettings? settings = null)
-    {
-        _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
+    //public async Task<OrderInfo> RemoveOrderLinesAsync(
+    //    Guid[] lineIds,
+    //    string storeAlias,
+    //    OrderSettings? settings = null,
+    //    CancellationToken ct = default)
+    //{
+    //    _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
 
-        if (settings == null)
-        {
-            settings = new OrderSettings();
-        }
-        OrderInfo? orderInfo;
-        if (settings.OrderInfo == null)
-        {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
-        }
-        else
-        {
-            orderInfo = settings.OrderInfo as OrderInfo;
-        }
+    //    if (settings == null)
+    //    {
+    //        settings = new OrderSettings();
+    //    }
+    //    OrderInfo? orderInfo;
+    //    if (settings.OrderInfo == null)
+    //    {
+    //        orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+    //    }
+    //    else
+    //    {
+    //        orderInfo = settings.OrderInfo as OrderInfo;
+    //    }
 
-        if (orderInfo == null)
-        {
-            throw new OrderInfoNotFoundException();
-        }
+    //    if (orderInfo == null)
+    //    {
+    //        throw new OrderInfoNotFoundException();
+    //    }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+    //    SemaphoreSlim semaphore = GetOrderLock(orderInfo);
 
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
-        {
-            IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
+    //    if (!settings.IsEventHandler)
+    //    {
+    //        await semaphore.WaitAsync().ConfigureAwait(false);
+    //    }
+    //    try
+    //    {
+    //        IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
 
 
-            if (orderLines != null && orderLines.Any())
-            {
-                foreach (IOrderLine? orderline in orderLines)
-                {
-                    RemoveOrderLine(orderInfo, orderline as OrderLine);
-                }
+    //        if (orderLines != null && orderLines.Any())
+    //        {
+    //            foreach (IOrderLine? orderline in orderLines)
+    //            {
+    //                RemoveOrderLine(orderInfo, orderline as OrderLine);
+    //            }
 
-                var updatedEventArgs = new UpdatedOrderlineEventArgs()
-                {
-                    OrderInfo = orderInfo
-                };
+    //            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+    //            {
+    //                OrderInfo = orderInfo
+    //            };
 
-                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
+    //            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+    //            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
 
-                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                    .ConfigureAwait(false);
-            }
+    //            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+    //                .ConfigureAwait(false);
+    //        }
 
-            return orderInfo;
+    //        return orderInfo;
 
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
-        }
-    }
+    //    }
+    //    finally
+    //    {
+    //        if (!settings.IsEventHandler)
+    //        {
+    //            semaphore.Release();
+    //        }
+    //    }
+    //}
 
     private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
     {
@@ -951,7 +952,8 @@ partial class OrderService
 
     public async Task<OrderInfo> ReInitializeOrderLinesAsync(
         string storeAlias,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         _logger.LogDebug("ReInitializeOrderLinesAsync...");
 
@@ -991,7 +993,7 @@ partial class OrderService
             {
                 orderInfo.orderLines.Clear();
 
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
 
                 foreach (IOrderLine? orderline in orderLines)
@@ -1231,6 +1233,7 @@ partial class OrderService
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
         OrderInfo orderInfo,
         bool fireOnOrderUpdatedEvents = true,
+        string? previousCustomerEmail = null,
         CancellationToken ct = default)
     {
         try
@@ -1313,17 +1316,28 @@ partial class OrderService
             {
                 OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
                 {
-                    OrderInfo = orderInfo,
+                    OrderInfo = orderInfo
                 });
 
                 await OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs
                 {
-                    OrderInfo = orderInfo,
+                    OrderInfo = orderInfo
                 }, ct);
+
+                var newCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+
+                if (string.IsNullOrWhiteSpace(previousCustomerEmail)
+                    && !string.IsNullOrWhiteSpace(newCustomerEmail))
+                {
+                    await OrderEvents.OnCustomerEmailAddedAsync(this, new CustomerEmailAddedEventArgs
+                    {
+                        OrderInfo = orderInfo,
+                        PreviousCustomerEmail = previousCustomerEmail,
+                        NewCustomerEmail = newCustomerEmail
+                    }, ct);
+                }
             }
 
-            // Regardless of modifications from event handlers,
-            // everybody references the same OrderInfo object
             return orderInfo;
         }
         catch (Exception ex)
@@ -1492,6 +1506,8 @@ partial class OrderService
             throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
+        var previousCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+
         var shippingProviderKey = form.Keys
             .FirstOrDefault(k => string.Equals(k, "ShippingProvider", StringComparison.OrdinalIgnoreCase));
 
@@ -1551,7 +1567,7 @@ partial class OrderService
             orderInfo.CustomerInformation.Shipping.Properties[key] = value;
         }
 
-        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
             .ConfigureAwait(false);
 
     }
@@ -1604,7 +1620,7 @@ partial class OrderService
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
 
         }
@@ -1665,7 +1681,7 @@ partial class OrderService
 
             await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
 
         }

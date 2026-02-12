@@ -222,6 +222,25 @@ static class Registrations
                     });
             });
 
+            options.AddPolicy("order-coupon", context =>
+            {
+                var ip =
+                    context.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetTokenBucketLimiter(
+                    partitionKey: ip,
+                    factory: _ => new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit = 13,
+                        TokensPerPeriod = 10,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    });
+            });
+
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
 

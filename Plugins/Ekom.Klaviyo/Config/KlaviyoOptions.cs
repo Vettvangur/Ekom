@@ -14,6 +14,7 @@ public sealed class KlaviyoOptions
     public KlaviyoCatalogOptions Catalog { get; set; } = new();
     public KlaviyoOrdersOptions Orders { get; set; } = new();
     public KlaviyoSubscriptionOptions Subscriptions { get; set; } = new();
+    public KlaviyoTrackingOptions Tracking { get; set; } = new();
 
     public string ProfileExternalIdProperty { get; init; } = "email";
 
@@ -67,6 +68,20 @@ public enum KlaviyoCatalogSyncMode
 public sealed class KlaviyoSubscriptionOptions
 {
     public bool Enabled { get; set; } = true;
+
+    public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
+}
+
+public sealed class KlaviyoTrackingOptions
+{
+    public bool Enabled { get; set; } = true;
+
+    public bool Search { get; set; } = true;
+    public bool AddedToCart { get; set; } = true;
+    public bool ViewedCategory { get; set; } = true;
+    public bool ViewedProduct { get; set; } = true;
+    public bool ActiveOnSite { get; set; } = true;
+    public bool CheckoutStarted { get; set; } = true;
 
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }

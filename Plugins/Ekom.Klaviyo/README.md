@@ -27,7 +27,8 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
   "Testing": false,
   "Stores": [],
   "Orders": {},
-  "Catalog": {}
+  "Catalog": {},
+  "Tracking": {}
 }
 ```
 
@@ -43,6 +44,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 | `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
 | `Orders` | `object` | Orders tracking configuration. |
 | `Catalog` | `object` | Product catalog synchronization configuration. |
+| `Tracking` | `object` | Custom event tracking configuration. |
 
 
 ## Stores
@@ -125,6 +127,66 @@ Use this when:
 | `Dispatching` | `object` | Background dispatching settings. |
 | `SyncMode` | `string` | Catalog sync strategy (`ApiPush` or `FeedPull`). |
 | `DeleteMode` | `string` | Product deletion behavior (`Hard` or `Soft`). |
+
+
+## Tracking
+
+```json
+"Tracking": {
+  "Enabled": true,
+  "Search": true,
+  "AddedToCart": true,
+  "ViewedCategory": true,
+  "ViewedProduct": true,
+  "ActiveOnSite": true,
+  "CheckoutStarted": true,
+  "Dispatching": {
+    "MaxBatchSize": 100,
+    "FlushIntervalSeconds": 2,
+    "MaxQueueSize": 10000
+  }
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `Enabled` | `bool` | Enables custom event tracking. |
+| `Search` | `bool` | Enables *Search* tracking. |
+| `AddedToCart` | `bool` | Enables *Added to Cart* tracking. |
+| `ViewedCategory` | `bool` | Enables *Viewed Category* tracking. |
+| `ViewedProduct` | `bool` | Enables *Viewed Product* tracking. |
+| `ActiveOnSite` | `bool` | Enables *Active on Site* tracking. |
+| `CheckoutStarted` | `bool` | Enables *Checkout Started* tracking. |
+| `Dispatching` | `object` | Background dispatching settings. |
+
+
+## Tracking Enrichers
+
+Tracking events can be enriched before being mapped and dispatched. Implement `IKlaviyoTrackingEnricher` and register it with DI to add or modify properties on the tracking payload.
+
+```csharp
+using Ekom.Klaviyo.Enrichers.TrackingEnricher;
+using Ekom.Klaviyo.Models.Tracking;
+
+public sealed class MyTrackingEnricher : IKlaviyoTrackingEnricher
+{
+    public ValueTask EnrichAsync(KlaviyoTrackingEnrichmentContext context, CancellationToken ct = default)
+    {
+        if (context.Payload is KlaviyoViewedProductEvent e)
+        {
+            e.CustomProperties["source"] = "ekom";
+        }
+
+        return ValueTask.CompletedTask;
+    }
+}
+```
+
+Register your enricher in DI:
+
+```csharp
+services.AddSingleton<IKlaviyoTrackingEnricher, MyTrackingEnricher>();
+```
 
 
 ## Typical Production Setup
