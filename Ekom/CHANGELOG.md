@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.55...Ekom-v0.2.56) (2026-02-12)
+
+
+### Bug Fixes
+
+* orderline in addedorderline event, checkout started klaviyo event ([96ed4e2](https://github.com/Vettvangur/Ekom/commit/96ed4e244e53c983c6ec72038aab389f6e066b91))
+* orderline in addedorderline event, checkout started klaviyo event ([dc39ba6](https://github.com/Vettvangur/Ekom/commit/dc39ba6e6522de78258e6fde12cb314615e01624))
+
 ## [0.2.55](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.54...Ekom-v0.2.55) (2026-02-12)
 
 
