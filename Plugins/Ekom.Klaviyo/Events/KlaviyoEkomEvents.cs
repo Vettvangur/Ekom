@@ -38,6 +38,10 @@ internal sealed class KlaviyoEkomEvents : IComponent
         if (orderInfo == null)
             return;
 
+        var orderline = args.OrderLine;
+        if (orderline == null)
+            return;
+
         using var scope = _scopeFactory.CreateScope();
         var trackingService = scope.ServiceProvider.GetRequiredService<IKlaviyoTrackingService>();
 
@@ -45,8 +49,15 @@ internal sealed class KlaviyoEkomEvents : IComponent
         {
             Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
             Customer = orderInfo.ToKlaviyoProfile(_opt), 
-            //EventId = $"{orderInfo.KlaviyoUniqueId()}-{args..LineId}",
+            EventId = $"{orderInfo.KlaviyoUniqueId()}-{orderline.Key}",
             StoreAlias = orderInfo.StoreInfo.Alias,
+            Sku = orderline.Variant?.SKU ?? orderline.Product.SKU,
+            Quantity = orderline.Quantity,
+            Price = orderline.Amount.WithVat.Value,
+            PriceFormatted = orderline.Amount.WithVat.CurrencyString,
+            ProductId= orderline.Product.Key.ToString(), 
+            ProductName = orderline.Product.Title,
+            ProductUrl = string.IsNullOrWhiteSpace(orderline.Product?.Url) ? null : UrlBuilder.Combine(_opt.SiteBaseUrl, orderline.Product.Url),
             OccurredAt = DateTimeOffset.UtcNow
         };
 
