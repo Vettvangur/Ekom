@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.56...Ekom-v0.2.57) (2026-02-12)
+
+
+### Bug Fixes
+
+* add and update cancellation tokens ([077c5a1](https://github.com/Vettvangur/Ekom/commit/077c5a1a50f669541d5193435d21d5c5fe447c52))
+* add and update cancellation tokens ([58a4865](https://github.com/Vettvangur/Ekom/commit/58a4865a813de5c9b71d8dc2812f0c94873609a5))
+
 ## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.55...Ekom-v0.2.56) (2026-02-12)
 
 

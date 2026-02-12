@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.44...Ekom.Klaviyo-v0.2.45) (2026-02-12)
+
+
+### Bug Fixes
+
+* default options to false, finish events for add to cart ([6bbbcbf](https://github.com/Vettvangur/Ekom/commit/6bbbcbf01e2918931862d7b0b14e9d96c9dfd350))
+* default options to false, finish events for add to cart ([399d642](https://github.com/Vettvangur/Ekom/commit/399d6428c869129b0b899150f8750d50e7002a05))
+
 ## [0.2.44](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.43...Ekom.Klaviyo-v0.2.44) (2026-02-12)
 
 
