@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.43](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.42...Ekom.Klaviyo-v0.2.43) (2026-02-12)
+
+
+### Bug Fixes
+
+* Ekom - Order customer email change. Rate Limit. Klaviyo - Tracki… ([f6d8266](https://github.com/Vettvangur/Ekom/commit/f6d82663cc1108da7eb87117b9adb7d639156fd8))
+* Ekom - Order customer email change. Rate Limit. Klaviyo - Tracking service ([9fd10bf](https://github.com/Vettvangur/Ekom/commit/9fd10bf99ed68c89b33b6da318cf55c5c23a5e12))
+
 ## [0.2.42](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.41...Ekom.Klaviyo-v0.2.42) (2026-02-05)
 
 
