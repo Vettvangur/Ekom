@@ -76,12 +76,12 @@ public sealed class KlaviyoTrackingOptions
 {
     public bool Enabled { get; set; } = true;
 
-    public bool Search { get; set; } = true;
-    public bool AddedToCart { get; set; } = true;
-    public bool ViewedCategory { get; set; } = true;
-    public bool ViewedProduct { get; set; } = true;
-    public bool ActiveOnSite { get; set; } = true;
-    public bool CheckoutStarted { get; set; } = true;
+    public bool Search { get; set; } = false;
+    public bool AddedToCart { get; set; } = false;
+    public bool ViewedCategory { get; set; } = false;
+    public bool ViewedProduct { get; set; } = false;
+    public bool ActiveOnSite { get; set; } = false;
+    public bool CheckoutStarted { get; set; } = false;
 
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }
