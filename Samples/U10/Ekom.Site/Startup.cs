@@ -1,5 +1,6 @@
 using Ekom.Klaviyo;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
+using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
 
@@ -69,6 +70,7 @@ public class Startup
 
 
         services.AddSingleton<IKlaviyoPlacedOrderEnricher, CustomPlacedOrderEnriching>();
+        services.AddSingleton<IKlaviyoTrackingEnricher, CustomTrackingEnricher>();
 
         services.AddKlaviyo();
         //services.AddEkomValitorPay(_config);

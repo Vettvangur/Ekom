@@ -40,10 +40,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackSearchAsync(KlaviyoSearchEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.Search)) return;
-        if (!ValidatePayload(payload, "Search")) return;
 
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.Search, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Search")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.Search,
@@ -58,10 +59,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackAddedToCartAsync(KlaviyoAddedToCartEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.AddedToCart)) return;
-        if (!ValidatePayload(payload, "Added to Cart")) return;
 
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.AddedToCart, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Added to Cart")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.AddedToCart,
@@ -76,10 +78,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackViewedCategoryAsync(KlaviyoViewedCategoryEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.ViewedCategory)) return;
-        if (!ValidatePayload(payload, "Viewed Category")) return;
 
         if (_enrichers is not null)
-            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ViewedCategory, payload, payload.StoreAlias, ct);
+            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ViewedCategory, payload, payload.StoreAlias, ct); 
+        
+        if (!ValidatePayload(payload, "Viewed Category")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.ViewedCategory,
@@ -94,10 +97,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackViewedProductAsync(KlaviyoViewedProductEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.ViewedProduct)) return;
-        if (!ValidatePayload(payload, "Viewed Product")) return;
 
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ViewedProduct, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Viewed Product")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.ViewedProduct,
@@ -112,10 +116,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackActiveOnSiteAsync(KlaviyoActiveOnSiteEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.ActiveOnSite)) return;
-        if (!ValidatePayload(payload, "Active on Site")) return;
-
+        
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ActiveOnSite, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Active on Site")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.ActiveOnSite,
@@ -130,10 +135,11 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     public async ValueTask TrackCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.CheckoutStarted)) return;
-        if (!ValidatePayload(payload, "Checkout Started")) return;
 
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.CheckoutStarted, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Checkout Started")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.CheckoutStarted,
