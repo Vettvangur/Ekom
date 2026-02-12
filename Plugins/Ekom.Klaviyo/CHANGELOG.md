@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.45...Ekom.Klaviyo-v0.2.46) (2026-02-12)
+
+
+### Bug Fixes
+
+* add username to add to cart event ([501ac2f](https://github.com/Vettvangur/Ekom/commit/501ac2ff772a3a7591dfb396e623ae4522344f33))
+* add username to add to cart event ([879e1af](https://github.com/Vettvangur/Ekom/commit/879e1af79ca2e332f7b48c472fc93a7e91cbdfd6))
+
 ## [0.2.45](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.44...Ekom.Klaviyo-v0.2.45) (2026-02-12)
 
 
