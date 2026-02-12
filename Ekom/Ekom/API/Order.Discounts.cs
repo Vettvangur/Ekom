@@ -106,11 +106,11 @@ public partial class Order
     }
 
 
-    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null)
+    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings).ConfigureAwait(false);
+        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
     }
 
     
@@ -169,11 +169,11 @@ public partial class Order
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderLineNotFoundException"></exception>
-    public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
+        await RemoveCouponFromOrderLineAsync(productKey, storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -182,9 +182,10 @@ public partial class Order
     /// </summary>
     /// <param name="productKey"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderLineNotFoundException"></exception>
-    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string storeAlias)
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string? storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -195,7 +196,7 @@ public partial class Order
             throw new ArgumentException("== Guid.Empty", nameof(productKey));
         }
 
-        await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
+        await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias, ct: ct)
             .ConfigureAwait(false);
     }
 

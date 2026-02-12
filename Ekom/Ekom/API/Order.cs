@@ -302,9 +302,9 @@ public partial class Order
     /// <summary>
     /// 
     /// </summary>
-    public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null)
+    public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)
     {
-        return await _orderService.ReInitializeOrderLinesAsync(storeAlias, settings)
+        return await _orderService.ReInitializeOrderLinesAsync(storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 

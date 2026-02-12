@@ -22,6 +22,15 @@ public static class OrderEvents
         => AsyncEventInvoker.InvokeAsync(OrderUpdatedAsync, sender, args, ct);
 
     // ----------------------------
+    // Customer email added
+    // ----------------------------
+
+    public static event Func<object, CustomerEmailAddedEventArgs, CancellationToken, Task>? CustomerEmailAddedAsync;
+
+    public static Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(CustomerEmailAddedAsync, sender, args, ct);
+
+    // ----------------------------
     // Order updating
     // ----------------------------
 
@@ -106,6 +115,13 @@ public sealed class OrderStatusEventArgs : EventArgs
 public sealed class OrderUpdatedEventArgs : EventArgs
 {
     public required IOrderInfo OrderInfo { get; set; }
+}
+
+public sealed class CustomerEmailAddedEventArgs : EventArgs
+{
+    public required IOrderInfo OrderInfo { get; set; }
+    public string? PreviousCustomerEmail { get; set; }
+    public required string NewCustomerEmail { get; set; }
 }
 
 public sealed class OrderUpdatingEventArgs : EventArgs
