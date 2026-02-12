@@ -1204,7 +1204,8 @@ partial class OrderService
 
             var addedEventArgs = new AddedOrderlineEventArgs()
             {
-                OrderInfo = orderInfo
+                OrderInfo = orderInfo,
+                OrderLine = orderLine
             };
 
             OrderEvents.OnAddedOrderline(this, addedEventArgs);

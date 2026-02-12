@@ -77,7 +77,7 @@ public static class OrderMapper
 
         return new KlaviyoPlacedOrder
         {
-            OrderId = order.UniqueId.ToString(),
+            OrderId = order.KlaviyoUniqueId(),
             OrderNumber = order.OrderNumber,
             PlacedAt = order.PaidDate ?? order.CreateDate,
             Value = order.ChargedAmount.Value,

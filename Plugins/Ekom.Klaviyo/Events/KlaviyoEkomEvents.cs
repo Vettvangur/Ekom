@@ -1,10 +1,13 @@
 using Ekom.Events;
+using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
+using Ekom.Klaviyo.Models.Tracking;
 using Ekom.Klaviyo.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Events;
 
@@ -22,6 +25,64 @@ internal sealed class KlaviyoEkomEvents : IComponent
     public void Initialize()
     {
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
+        OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
+        OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
+    }
+
+    private async Task OnAddedOrderlineAsync(object arg1, AddedOrderlineEventArgs args, CancellationToken ct)
+    {
+        if (!_opt.Enabled || !_opt.Tracking.AddedToCart)
+            return;
+
+        var orderInfo = args.OrderInfo;
+        if (orderInfo == null)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var trackingService = scope.ServiceProvider.GetRequiredService<IKlaviyoTrackingService>();
+
+        var eventsArgs = new KlaviyoAddedToCartEvent
+        {
+            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
+            Customer = orderInfo.ToKlaviyoProfile(_opt), 
+            //EventId = $"{orderInfo.KlaviyoUniqueId()}-{args..LineId}",
+            StoreAlias = orderInfo.StoreInfo.Alias,
+            OccurredAt = DateTimeOffset.UtcNow
+        };
+
+        await trackingService.TrackAddedToCartAsync(eventsArgs, ct);
+    }
+
+    private async Task OnCustomerEmailAddedAsync(object arg1, CustomerEmailAddedEventArgs args, CancellationToken ct)
+    {
+
+        if (!_opt.Enabled || !_opt.Tracking.CheckoutStarted)
+            return;
+
+        var orderInfo = args.OrderInfo;
+        if (orderInfo == null)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var trackingService = scope.ServiceProvider.GetRequiredService<IKlaviyoTrackingService>();
+
+        var storeOptions = _opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(orderInfo.StoreInfo.Alias));
+
+        var eventArgs = new KlaviyoCheckoutStartedEvent
+        {
+            CartId = orderInfo.KlaviyoUniqueId(),
+            Customer = orderInfo.ToKlaviyoProfile(_opt), 
+            Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt)).ToList(),
+            CheckoutUrl = storeOptions?.CheckoutUrl,
+            Value = orderInfo.ChargedAmount.Value,
+            ValueFormatted = orderInfo.ChargedAmount.CurrencyString,
+            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
+            EventId= orderInfo.KlaviyoUniqueId(), // Using the same unique ID for the event, as Klaviyo can deduplicate events with the same ID, preventing duplicates if the email is changed multiple times during checkout
+            StoreAlias = orderInfo.StoreInfo.Alias, 
+            OccurredAt = DateTimeOffset.UtcNow
+        };
+
+        await trackingService.TrackCheckoutStartedAsync(eventArgs, ct);
     }
 
     private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args, CancellationToken ct)
@@ -44,6 +105,8 @@ internal sealed class KlaviyoEkomEvents : IComponent
     public void Terminate()
     {
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
+        OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync; 
+        OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
     }
 }
 
