@@ -30,14 +30,14 @@ class CouponRepository
         _nodeService = nodeService;
     }
 
-    public async Task InsertCouponAsync(CouponData couponData)
+    public async Task InsertCouponAsync(CouponData couponData, CancellationToken ct = default)
     {
         if (!await CouponCodeExistAsync(couponData.CouponCode)
             .ConfigureAwait(false))
         {
             await using DbContext db = _databaseFactory.GetDatabase();
 
-            await db.InsertAsync(couponData)
+            await db.InsertAsync(couponData, token: ct)
                 .ConfigureAwait(false);
 
             RefreshCache(couponData);
@@ -48,26 +48,26 @@ class CouponRepository
         }
     }
 
-    public async Task UpdateCouponAsync(CouponData couponData)
+    public async Task UpdateCouponAsync(CouponData couponData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.UpdateAsync(couponData)
+        await db.UpdateAsync(couponData, token: ct)
             .ConfigureAwait(false);
 
         RefreshCache(couponData);
     }
 
-    public async Task RemoveCouponAsync(Guid discountId, string couponCode)
+    public async Task RemoveCouponAsync(Guid discountId, string couponCode, CancellationToken ct = default)
     {
-        CouponData coupon = await GetCouponAsync(discountId, couponCode)
+        CouponData coupon = await GetCouponAsync(discountId, couponCode, ct)
                 .ConfigureAwait(false);
 
         if (coupon != null)
         {
             await using DbContext db = _databaseFactory.GetDatabase();
 
-            await db.DeleteAsync(coupon)
+            await db.DeleteAsync(coupon, token: ct)
                 .ConfigureAwait(false);
 
             RemoveCache(coupon);
@@ -79,13 +79,13 @@ class CouponRepository
 
     }
 
-    public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode)
+    public async Task<CouponData> GetCouponAsync(Guid discountId, string couponCode, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
         CouponData? data = await db.CouponData
             .Where(x => x.DiscountId == discountId && x.CouponCode == couponCode)
-            .FirstOrDefaultAsync()
+            .FirstOrDefaultAsync(token: ct)
             .ConfigureAwait(false);
         return data;
     }
@@ -111,14 +111,14 @@ class CouponRepository
         return data;
     }
 
-    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
         int totalCount = await db.CouponData
             .Where(x => x.DiscountId == discountId)
             .Where(x => string.IsNullOrEmpty(query) || x.CouponCode.Contains(query, StringComparison.InvariantCultureIgnoreCase))
-            .CountAsync()
+            .CountAsync(ct)
             .ConfigureAwait(false);
 
         // Calculate total pages
@@ -133,30 +133,30 @@ class CouponRepository
             .OrderByDescending(x => x.Date) // Ensure to order the data before applying Skip and Take
             .Skip(skip)
             .Take(pageSize)
-            .ToListAsync()
+            .ToListAsync(ct)
             .ConfigureAwait(false);
 
         return (data, totalPages);
     }
 
-    public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId)
+    public async Task<List<CouponData>> GetCouponsForDiscountAsync(Guid discountId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
         List<CouponData> data = await db.CouponData
             .Where(x => x.DiscountId == discountId)
-            .ToListAsync()
+            .ToListAsync(ct)
             .ConfigureAwait(false);
         return data;
     }
 
-    public async Task DeleteCouponsByDiscountAsync(Guid discountId)
+    public async Task DeleteCouponsByDiscountAsync(Guid discountId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
-        List<CouponData> coupons = await GetCouponsForDiscountAsync(discountId).ConfigureAwait(false);
+        List<CouponData> coupons = await GetCouponsForDiscountAsync(discountId, ct).ConfigureAwait(false);
 
         foreach (CouponData coupon in coupons)
         {
-            await db.DeleteAsync(coupon).ConfigureAwait(false);
+            await db.DeleteAsync(coupon, token: ct).ConfigureAwait(false);
 
             RemoveCache(coupon);
         }

@@ -32,6 +32,7 @@ public partial class EkomOrderController : ControllerBase
     /// Add product to order, also for updating or setting quantity of orderlines
     /// </summary>
     /// <param name="request">Guid Key of product</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpPost]
     [Route("add")]

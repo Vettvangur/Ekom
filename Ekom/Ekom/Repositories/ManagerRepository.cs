@@ -36,20 +36,20 @@ public class ManagerRepository
         return data;
     }
 
-    public async Task<OrderData> GetOrderAsync(Guid orderId)
+    public async Task<OrderData> GetOrderAsync(Guid orderId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        OrderData data = await db.OrderData.FirstAsync(x => x.UniqueId == orderId).ConfigureAwait(false);
+        OrderData data = await db.OrderData.FirstAsync(x => x.UniqueId == orderId, token: ct).ConfigureAwait(false);
 
         return data;
     }
 
-    public async Task<IOrderInfo?> GetOrderInfoAsync(Guid orderId)
+    public async Task<IOrderInfo?> GetOrderInfoAsync(Guid orderId, CancellationToken ct = default)
     {
         var culture = Thread.CurrentThread.CurrentCulture.Name;
 
-        var order = await API.Order.Instance.GetOrderAsync(orderId);
+        var order = await API.Order.Instance.GetOrderAsync(orderId, ct);
 
         return order;
     }

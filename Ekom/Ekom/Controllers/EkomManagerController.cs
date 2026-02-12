@@ -36,20 +36,19 @@ public class EkomManagerController : ControllerBase
     [HttpGet]
     [Route("Order/{orderId}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> GetOrderAsync(Guid orderId)
+    public async Task<IActionResult> GetOrderAsync(Guid orderId, CancellationToken ct = default)
     {
-        return Ok(await _repo.GetOrderAsync(orderId));
+        return Ok(await _repo.GetOrderAsync(orderId, ct));
     }
 
     [HttpGet]
     [Route("OrderInfo/{orderId}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> GetOrderInfoAsync(Guid orderId)
+    public async Task<IActionResult> GetOrderInfoAsync(Guid orderId, CancellationToken ct = default)
     {
         try
         {
-            var order = await _repo.GetOrderInfoAsync(orderId);
-
+            var order = await _repo.GetOrderInfoAsync(orderId, ct);
             return Ok(order);
         }
         catch(Exception ex)

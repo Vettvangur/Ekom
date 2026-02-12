@@ -25,7 +25,7 @@ class UmbracoEventListeners :
     INotificationAsyncHandler<ContentPublishedNotification>,
     INotificationAsyncHandler<ContentUnpublishedNotification>,
     INotificationAsyncHandler<ContentSavingNotification>,
-    INotificationHandler<ContentDeletedNotification>,
+    INotificationAsyncHandler<ContentDeletedNotification>,
     INotificationHandler<ContentMovedToRecycleBinNotification>,
     INotificationHandler<ContentMovedNotification>,
     INotificationHandler<DomainSavedNotification>,
@@ -223,7 +223,7 @@ class UmbracoEventListeners :
         }
     }
 
-    public void Handle(ContentDeletedNotification args)
+    public async Task HandleAsync(ContentDeletedNotification args, CancellationToken cancellationToken)
     {
         foreach (var node in args.DeletedEntities)
         {
@@ -237,7 +237,7 @@ class UmbracoEventListeners :
 
                 if (node.ContentType.Alias == "ekmOrderDiscount")
                 {
-                    _couponRepository.DeleteCouponsByDiscountAsync(node.Key).Wait();
+                    await _couponRepository.DeleteCouponsByDiscountAsync(node.Key, cancellationToken);
                 }
             }
         }

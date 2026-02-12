@@ -200,9 +200,9 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
-    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)
     {
-        await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId)
+        await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -212,9 +212,9 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
-    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
-        return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
+        return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
             .ConfigureAwait(false);
     }
 }

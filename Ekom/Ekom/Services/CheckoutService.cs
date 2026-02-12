@@ -38,7 +38,7 @@ class CheckoutService
         _mailService = mailService;
     }
 
-    public async Task CompleteAsync(Guid key)
+    public async Task CompleteAsync(Guid key, CancellationToken ct = default)
     {
         OrderData? o = null;
         OrderInfo? oi = null;
@@ -47,7 +47,7 @@ class CheckoutService
         {
             _logger.LogInformation("Completing order {OrderId}", key);
 
-            o = await _orderRepo.GetOrderAsync(key).ConfigureAwait(false);
+            o = await _orderRepo.GetOrderAsync(key, ct).ConfigureAwait(false);
 
             if (o == null)
             {
