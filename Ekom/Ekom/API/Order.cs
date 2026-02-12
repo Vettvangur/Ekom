@@ -55,7 +55,7 @@ public partial class Order
         _checkoutControllerService = checkoutControllerService;
     }
 
-    public IOrderInfo? GetOrder() => GetOrderAsync().Result;
+    public IOrderInfo? GetOrder() => GetOrderAsync().GetAwaiter().GetResult();
 
     /// <summary>
     /// Get order using cookie data and ekmRequest store.
@@ -258,7 +258,7 @@ public partial class Order
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderInfoNotFoundException"></exception>
-    public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings settings = null)
+    public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings? settings = null, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -268,7 +268,7 @@ public partial class Order
         OrderInfo? orderInfo;
         if (settings?.OrderInfo == null)
         {
-            orderInfo = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await _orderService.GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -280,7 +280,7 @@ public partial class Order
             throw new OrderInfoNotFoundException();
         }
 
-        await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings)
+        await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings, ct = ct)
             .ConfigureAwait(false);
     }
 
@@ -419,14 +419,15 @@ public partial class Order
     public async Task<IOrderInfo> RemoveOrderLineProductAsync(
         Guid productKey,
         string storeAlias,
-        RemoveOrderSettings settings = null)
+        RemoveOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.RemoveOrderLineProductAsync(productKey, storeAlias, settings ?? null)
+        return await _orderService.RemoveOrderLineProductAsync(productKey, storeAlias, settings ?? null, ct)
             .ConfigureAwait(false);
     }
 
@@ -479,15 +480,15 @@ public partial class Order
     /// <summary>
     /// 
     /// </summary>
-    public async Task CompleteOrderAsync(Guid orderId)
+    public async Task CompleteOrderAsync(Guid orderId, CancellationToken ct = default)
     {
-        await _checkoutService.CompleteAsync(orderId)
+        await _checkoutService.CompleteAsync(orderId, ct)
             .ConfigureAwait(false);
     }
 
-    public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData order = null)
+    public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData? order = null, CancellationToken ct = default)
     {
-        order = order == null ? await _orderRepo.GetOrderAsync(orderId).ConfigureAwait(false) : order;
+        order = order == null ? await _orderRepo.GetOrderAsync(orderId, ct).ConfigureAwait(false) : order;
 
         _orderService.ClearCustomerOrderReference(order);
     }
@@ -568,14 +569,14 @@ public partial class Order
     /// <param name="paymentRequest"></param>
     /// <param name="storeAlias"></param>
     /// <param name="orderId"></param>
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId, ct)
             .ConfigureAwait(false);
 
         return res;

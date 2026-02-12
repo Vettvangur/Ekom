@@ -733,12 +733,13 @@ partial class OrderService
     public async Task<OrderInfo> RemoveOrderLineProductAsync(
         Guid productKey,
         string storeAlias,
-        RemoveOrderSettings? settings = null)
+        RemoveOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         OrderInfo? orderInfo;
-        if (settings.OrderInfo == null)
+        if (settings?.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -753,9 +754,9 @@ partial class OrderService
         OrderLine? existingOrderLine = null;
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!(settings?.IsEventHandler ?? false))
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -781,7 +782,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!(settings?.IsEventHandler ?? false))
             {
                 semaphore.Release();
             }
@@ -792,7 +793,7 @@ partial class OrderService
             throw new OrderLineNotFoundException("Could not find order line with the given product or variant");
         }
 
-        return await RemoveOrderLineAsync(existingOrderLine.Key, storeAlias, settings)
+        return await RemoveOrderLineAsync(existingOrderLine.Key, storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -964,7 +965,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -980,7 +981,7 @@ partial class OrderService
 
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {

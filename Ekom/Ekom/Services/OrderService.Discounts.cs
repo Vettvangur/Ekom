@@ -173,7 +173,8 @@ partial class OrderService
         Guid productKey,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -181,7 +182,7 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        var product = await Catalog.Instance.GetProductAsync(productKey, storeAlias);
+        var product = await Catalog.Instance.GetProductAsync(productKey, storeAlias, ct: ct);
 
         if (product == null)
         {
@@ -190,9 +191,10 @@ partial class OrderService
 
         return await ApplyDiscountToOrderLineProductAsync(
             product,
-            discount,
+            discount, 
             storeAlias,
-            settings
+            settings,
+            ct
         ).ConfigureAwait(false);
     }
 
@@ -206,7 +208,7 @@ partial class OrderService
             return;
         }
 
-        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         if (orderInfo == null)
         {
@@ -232,7 +234,8 @@ partial class OrderService
         IProduct product,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -240,12 +243,17 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            throw new Exception($"Unable to find order for store alias: {storeAlias}");
+        }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -262,7 +270,8 @@ partial class OrderService
                 orderLine,
                 discount,
                 orderInfo,
-                settings
+                settings,
+                ct: ct
             ).ConfigureAwait(false);
         }
         finally
@@ -293,6 +302,11 @@ partial class OrderService
         }
 
         var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            throw new Exception($"Unable to find order for store alias: {storeAlias}");
+        }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
@@ -440,7 +454,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -757,7 +771,7 @@ partial class OrderService
         return constraintsOk && matchesInclude && !matchesExclude;
     }
 
-    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
@@ -775,11 +789,11 @@ partial class OrderService
             CouponKey = Guid.NewGuid(),
             DiscountId = discountId,
             NumberAvailable = numberAvailable,
-            Date = DateTime.Now
-        }).ConfigureAwait(false);
+            Date = DateTime.Now,
+        }, ct: ct).ConfigureAwait(false);
     }
 
-    public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
+    public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
@@ -791,18 +805,18 @@ partial class OrderService
             throw new ArgumentException("== Guid.Empty", nameof(discountId));
         }
 
-        await _couponRepository.RemoveCouponAsync(discountId, couponCode)
+        await _couponRepository.RemoveCouponAsync(discountId, couponCode, ct)
             .ConfigureAwait(false);
     }
 
-    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
         if (discountId == Guid.Empty)
         {
             throw new ArgumentException("== Guid.Empty", nameof(discountId));
         }
 
-        return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
+        return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
             .ConfigureAwait(false);
     }
 }

@@ -84,7 +84,7 @@ public class CheckoutControllerService
         }
 
         // ToDo: Lock order throughout request
-        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias).ConfigureAwait(false);
+        var order = await Order.Instance.GetOrderAsync(paymentRequest.StoreAlias, ct).ConfigureAwait(false);
 
         if (order == null)
         {
@@ -154,10 +154,10 @@ public class CheckoutControllerService
     }
 
 
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, Guid orderId)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string culture, Guid orderId, CancellationToken ct = default)
     {
 
-        IOrderInfo order = await Order.Instance.GetOrderAsync(orderId).ConfigureAwait(false);
+        var order = await Order.Instance.GetOrderAsync(orderId, ct).ConfigureAwait(false);
 
         if (order == null)
         {
@@ -605,7 +605,7 @@ public class CheckoutControllerService
 
                 await Order.Instance.UpdateStatusAsync(
                     OrderStatus.OfflinePayment,
-                    order.UniqueId).ConfigureAwait(false);
+                    order.UniqueId, ct: ct).ConfigureAwait(false);
 
                 string? memberKey = _httpCtx.User.Identity != null ? _httpCtx.User.Identity.IsAuthenticated ? MemberService.GetCurrentMember().Result?.Key.ToString() : "" : "";
 
@@ -624,13 +624,13 @@ public class CheckoutControllerService
                 };
 
                 CheckoutEvents.OnPay(this, eventsArgs);
-                await CheckoutEvents.OnPayAsync(this, eventsArgs);
+                await CheckoutEvents.OnPayAsync(this, eventsArgs, ct);
 
                 errorUrl = eventsArgs.PaymentSettings.ErrorUrl.ToString();
 
                 CheckoutService checkoutSvc = _factory.GetRequiredService<CheckoutService>();
 
-                await checkoutSvc.CompleteAsync(order.UniqueId);
+                await checkoutSvc.CompleteAsync(order.UniqueId, ct);
 
                 return new CheckoutResponse
                 {
@@ -649,7 +649,7 @@ public class CheckoutControllerService
 
                 await Order.Instance.UpdateStatusAsync(
                     OrderStatus.PaymentFailed,
-                    order.UniqueId).ConfigureAwait(false);
+                    order.UniqueId, ct: ct).ConfigureAwait(false);
 
                 throw;
             }
@@ -727,7 +727,7 @@ public class CheckoutControllerService
             {
                 OrderInfo = order,
                 PaymentSettings = paymentSettings,
-            });
+            }, ct: ct);
 
             string content = await pp.RequestAsync(paymentSettings).ConfigureAwait(false);
 
