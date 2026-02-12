@@ -3,6 +3,7 @@ using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Tracking;
 using Ekom.Klaviyo.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
@@ -14,12 +15,14 @@ namespace Ekom.Klaviyo.Events;
 internal sealed class KlaviyoEkomEvents : IComponent
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly KlaviyoOptions _opt;
 
-    public KlaviyoEkomEvents(IServiceScopeFactory scopeFactory, IOptions<KlaviyoOptions> opt)
+    public KlaviyoEkomEvents(IServiceScopeFactory scopeFactory, IOptions<KlaviyoOptions> opt, IHttpContextAccessor httpContextAccessor)
     {
         _scopeFactory = scopeFactory;
         _opt = opt.Value;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public void Initialize()
@@ -60,6 +63,25 @@ internal sealed class KlaviyoEkomEvents : IComponent
             ProductUrl = string.IsNullOrWhiteSpace(orderline.Product?.Url) ? null : UrlBuilder.Combine(_opt.SiteBaseUrl, orderline.Product.Url),
             OccurredAt = DateTimeOffset.UtcNow
         };
+
+        if (_httpContextAccessor.HttpContext != null)
+        {
+            var userName = _httpContextAccessor.HttpContext.User.Identity?.Name;
+
+            if (!string.IsNullOrEmpty(userName))
+            {
+                if (string.IsNullOrEmpty(eventsArgs.Customer.ExternalId))
+                {
+                    eventsArgs.Customer.ExternalId = userName;
+                }
+
+                if (string.IsNullOrEmpty(eventsArgs.Customer.Email) && userName.Contains("@", StringComparison.OrdinalIgnoreCase))
+                {
+                    eventsArgs.Customer.Email = userName;
+                }
+
+            }
+        }
 
         await trackingService.TrackAddedToCartAsync(eventsArgs, ct);
     }
