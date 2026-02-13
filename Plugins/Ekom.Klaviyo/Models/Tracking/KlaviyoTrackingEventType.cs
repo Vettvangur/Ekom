@@ -7,6 +7,6 @@ public enum KlaviyoTrackingEventType
     ViewedCategory,
     ViewedProduct,
     ActiveOnSite,
-    CheckoutStarted
+    StartedCheckout
 }
 

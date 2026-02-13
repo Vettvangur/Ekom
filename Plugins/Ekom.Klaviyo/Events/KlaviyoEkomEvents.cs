@@ -89,7 +89,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
     private async Task OnCustomerEmailAddedAsync(object arg1, CustomerEmailAddedEventArgs args, CancellationToken ct)
     {
 
-        if (!_opt.Enabled || !_opt.Tracking.CheckoutStarted)
+        if (!_opt.Enabled || !_opt.Tracking.StartedCheckout)
             return;
 
         var orderInfo = args.OrderInfo;
