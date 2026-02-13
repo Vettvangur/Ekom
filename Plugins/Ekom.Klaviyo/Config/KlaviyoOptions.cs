@@ -81,7 +81,7 @@ public sealed class KlaviyoTrackingOptions
     public bool ViewedCategory { get; set; } = false;
     public bool ViewedProduct { get; set; } = false;
     public bool ActiveOnSite { get; set; } = false;
-    public bool CheckoutStarted { get; set; } = false;
+    public bool StartedCheckout { get; set; } = false;
 
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }

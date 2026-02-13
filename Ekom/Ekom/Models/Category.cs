@@ -148,7 +148,6 @@ public class Category : PerStoreNodeEntity, ICategory
 
         var categoryIds = GetRecursiveCategoryIds(storeAlias);
 
-        // categoryIds always contains Id at minimum; no need for Count==0 checks.
         var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
         return new ProductResponse(products, query, _productFilterService, this);

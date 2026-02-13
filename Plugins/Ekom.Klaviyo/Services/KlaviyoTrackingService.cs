@@ -134,15 +134,15 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
     public async ValueTask TrackCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct = default)
     {
-        if (!IsEnabled(_opt.Tracking.CheckoutStarted)) return;
+        if (!IsEnabled(_opt.Tracking.StartedCheckout)) return;
 
         if (_enrichers is not null)
-            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.CheckoutStarted, payload, payload.StoreAlias, ct);
+            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.StartedCheckout, payload, payload.StoreAlias, ct);
 
-        if (!ValidatePayload(payload, "Checkout Started")) return;
+        if (!ValidatePayload(payload, "Started Checkout")) return;
 
         var work = new KlaviyoTrackingWork(
-            Type: KlaviyoTrackingEventType.CheckoutStarted,
+            Type: KlaviyoTrackingEventType.StartedCheckout,
             EventPayload: payload.ToTrackingEvent(_opt),
             OccurredAt: payload.OccurredAt,
             StoreAlias: payload.StoreAlias,

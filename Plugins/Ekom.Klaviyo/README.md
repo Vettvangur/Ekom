@@ -156,7 +156,7 @@ Use this when:
 | `ViewedCategory` | `bool` | Enables *Viewed Category* tracking. |
 | `ViewedProduct` | `bool` | Enables *Viewed Product* tracking. |
 | `ActiveOnSite` | `bool` | Enables *Active on Site* tracking. |
-| `CheckoutStarted` | `bool` | Enables *Checkout Started* tracking. |
+| `StartedCheckout` | `bool` | Enables *Started Checkout* tracking. |
 | `Dispatching` | `object` | Background dispatching settings. |
 
 
