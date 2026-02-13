@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.58](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.57...Ekom-v0.2.58) (2026-02-13)
+
+
+### Bug Fixes
+
+* filter async event, started checkout event change ([6ad3d4d](https://github.com/Vettvangur/Ekom/commit/6ad3d4dc1e1a9c5c50d8fb7f420702a175695c92))
+* filter async event, started checkout event change ([3c8ede2](https://github.com/Vettvangur/Ekom/commit/3c8ede2438effdc7ae738f05a197baccf16e3753))
+
 ## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.56...Ekom-v0.2.57) (2026-02-12)
 
 

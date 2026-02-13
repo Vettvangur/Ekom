@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.46...Ekom.Klaviyo-v0.2.47) (2026-02-13)
+
+
+### Bug Fixes
+
+* filter async event, started checkout event change ([6ad3d4d](https://github.com/Vettvangur/Ekom/commit/6ad3d4dc1e1a9c5c50d8fb7f420702a175695c92))
+* filter async event, started checkout event change ([3c8ede2](https://github.com/Vettvangur/Ekom/commit/3c8ede2438effdc7ae738f05a197baccf16e3753))
+
 ## [0.2.46](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.45...Ekom.Klaviyo-v0.2.46) (2026-02-12)
 
 
