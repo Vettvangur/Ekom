@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.58...Ekom-v0.2.59) (2026-02-16)
+
+
+### Bug Fixes
+
+* lock get orderasync ([74c87bd](https://github.com/Vettvangur/Ekom/commit/74c87bdb5be6eb04d16af012918a5dc629351681))
+* lock get orderasync ([27e7f51](https://github.com/Vettvangur/Ekom/commit/27e7f51eba320df099d255bd8404607bedad08ba))
+
 ## [0.2.58](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.57...Ekom-v0.2.58) (2026-02-13)
 
 
