@@ -300,19 +300,47 @@ partial class OrderService
         return null;
     }
 
-    public Task<OrderInfo?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
+    public async Task<OrderInfo?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
     {
-        return _memoryCache.GetOrCreateAsync(
-            uniqueId.ToString(),
-            cacheEntry =>
+        string key = uniqueId.ToString();
+
+        if (_memoryCache.TryGetValue(key, out OrderInfo? cached))
+        {
+            return cached;
+        }
+
+        SemaphoreSlim sem = _orderLocks.GetOrAdd(uniqueId, _ => new SemaphoreSlim(1, 1));
+        await sem.WaitAsync(ct).ConfigureAwait(false);
+
+        try
+        {
+            if (_memoryCache.TryGetValue(key, out cached))
             {
-                cacheEntry.SetAbsoluteExpiration(Configuration.orderInfoCacheTime);
-                return GetOrderInfoAsync(uniqueId, ct);
-            });
+                return cached;
+            }
+
+            OrderInfo? orderInfo = await GetOrderInfoAsync(uniqueId, ct).ConfigureAwait(false);
+            _memoryCache.Set(key, orderInfo, Configuration.orderInfoCacheTime);
+            return orderInfo;
+        }
+        finally
+        {
+            sem.Release();
+
+            if (sem.CurrentCount == 1)
+            {
+                _orderLocks.TryRemove(uniqueId, out _);
+            }
+        }
     }
 
-    private async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId, CancellationToken ct = default)
+    private async Task<OrderInfo?> GetOrderInfoAsync(Guid uniqueId, CancellationToken ct = default)
     {
+        if (ct.IsCancellationRequested)
+        {
+            return await Task.FromCanceled<OrderInfo?>(ct).ConfigureAwait(false);
+        }
+
         OrderData orderData = await _orderRepository.GetOrderAsync(uniqueId, ct)
             .ConfigureAwait(false);
 
