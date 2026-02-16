@@ -29,7 +29,7 @@ class OrderRepository
         _memoryCache = memoryCache;
     }
 
-    public async Task<OrderData> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
+    public async Task<OrderData?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
