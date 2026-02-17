@@ -5,6 +5,8 @@ using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Linq;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
@@ -58,6 +60,20 @@ public sealed class KlaviyoSubscriptionsService : IKlaviyoSubscriptionsService
             CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs());
 
         await _dispatcher.EnqueueAsync(work, ct);
+
+        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
+        if (!string.IsNullOrWhiteSpace(listId))
+        {
+            var listWork = new KlaviyoSubscriptionsWork(
+                Type: KlaviyoSubscriptionsEventType.AddToList,
+                Payload: payload.Profile.ToAddToListRequest(),
+                OccurredAt: DateTimeOffset.UtcNow,
+                StoreAlias: payload.StoreAlias,
+                CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs(),
+                ListId: listId);
+
+            await _dispatcher.EnqueueAsync(listWork, ct);
+        }
     }
 
     public async ValueTask SubscribeAsync(KlaviyoConsentUpdate payload, CancellationToken ct = default)
@@ -111,4 +127,18 @@ public sealed class KlaviyoSubscriptionsService : IKlaviyoSubscriptionsService
     }
 
     private bool IsEnabled() => _opt.Enabled && _opt.Subscriptions.Enabled;
+
+    private string? ResolveListId(string storeAlias, string? explicitListId)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitListId))
+            return explicitListId;
+
+        var store = _opt.Stores.FirstOrDefault(s => s.Alias.InvariantEquals(storeAlias));
+        if (!string.IsNullOrWhiteSpace(store?.ListId))
+            return store.ListId;
+
+        return string.IsNullOrWhiteSpace(_opt.Subscriptions.DefaultListId)
+            ? null
+            : _opt.Subscriptions.DefaultListId;
+    }
 }

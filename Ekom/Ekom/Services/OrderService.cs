@@ -341,7 +341,7 @@ partial class OrderService
             return await Task.FromCanceled<OrderInfo?>(ct).ConfigureAwait(false);
         }
 
-        OrderData orderData = await _orderRepository.GetOrderAsync(uniqueId, ct)
+        var orderData = await _orderRepository.GetOrderAsync(uniqueId, ct)
             .ConfigureAwait(false);
 
         // Here we check if there is any OrderInfo at all to create an OrderInfo out of
@@ -367,7 +367,7 @@ partial class OrderService
             settings = new ChangeOrderSettings();
         }
 
-        OrderData order = await _orderRepository.GetOrderAsync(uniqueId, ct)
+        var order = await _orderRepository.GetOrderAsync(uniqueId, ct)
                 .ConfigureAwait(false);
 
         if (order == null)
@@ -453,7 +453,7 @@ partial class OrderService
 
         IStore? store = API.Store.Instance.GetStore(order.StoreAlias);
 
-        if (store.UserBasket && !string.IsNullOrEmpty((userName)))
+        if (store != null && store.UserBasket && !string.IsNullOrEmpty((userName)))
         {
             _memberService.Save(new Dictionary<string, object>() {
                 { "orderId", "" }

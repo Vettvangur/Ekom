@@ -27,6 +27,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
   "Testing": false,
   "Stores": [],
   "Orders": {},
+  "Subscriptions": {},
   "Catalog": {},
   "Tracking": {}
 }
@@ -43,6 +44,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 | `Testing` | `bool` | If `true`, enables testing mode (Events will be sent to same event but with Test at the end. "Placed Order Test"). |
 | `Stores` | `array` | Optional per-store configuration. If empty the first store will be used. |
 | `Orders` | `object` | Orders tracking configuration. |
+| `Subscriptions` | `object` | Profile subscription and list configuration. |
 | `Catalog` | `object` | Product catalog synchronization configuration. |
 | `Tracking` | `object` | Custom event tracking configuration. |
 
@@ -52,8 +54,9 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 ```json
 "Stores": [
   {
-    "StoreAlias": "Store"
-    // "PrivateApiKey": "xxx"
+    "StoreAlias": "Store",
+    // "PrivateApiKey": "xxx",
+    // "ListId": "LIST_ID"
   }
 ]
 ```
@@ -62,6 +65,7 @@ The configuration is typically placed in `appsettings.json` or an environment-sp
 |-----|------|-------------|
 | `StoreAlias` | `string` | Store identifier (must match Ekom store alias). |
 | `PrivateApiKey` | `string` | Optional API key override for this store. |
+| `ListId` | `string` | Optional list ID override for this store. |
 
 Use this when:
 
@@ -96,6 +100,35 @@ Use this when:
 | `MaxBatchSize` | `int` | Maximum number of queued events processed per dispatch cycle. |
 | `FlushIntervalSeconds` | `int` | Interval in seconds between dispatcher flushes. |
 | `MaxQueueSize` | `int` | Maximum number of queued events before backpressure applies. |
+
+
+## Subscriptions
+
+```json
+"Subscriptions": {
+  "Enabled": true,
+  "DefaultListId": "LIST_ID",
+  "Dispatching": {
+    "MaxBatchSize": 100,
+    "FlushIntervalSeconds": 2,
+    "MaxQueueSize": 10000
+  }
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `Enabled` | `bool` | Enables profile upsert and list add operations. |
+| `DefaultListId` | `string` | Optional global list ID used when no store list is set. |
+| `Dispatching` | `object` | Background dispatching settings. |
+
+List resolution precedence:
+
+- Explicit list ID on the profile update payload
+- Store `ListId`
+- `Subscriptions.DefaultListId`
+
+If none are set, profiles are not added to a list.
 
 
 ## Catalog

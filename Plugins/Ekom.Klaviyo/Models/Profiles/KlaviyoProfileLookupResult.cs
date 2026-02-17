@@ -1,0 +1,21 @@
+using Ekom.Klaviyo.Models.Subscriptions;
+using System;
+using System.Linq;
+
+namespace Ekom.Klaviyo.Models.Profiles;
+
+public sealed class KlaviyoProfileLookupResult
+{
+    public string? ProfileId { get; init; }
+    public string? Email { get; init; }
+    public string? PhoneNumber { get; init; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? ExternalId { get; init; }
+
+    public IReadOnlyList<KlaviyoConsentChannel> SubscribedChannels { get; set; }
+        = Array.Empty<KlaviyoConsentChannel>();
+
+    public bool IsEmailSubscribed
+        => SubscribedChannels.Contains(KlaviyoConsentChannel.Email);
+}

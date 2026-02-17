@@ -15,17 +15,20 @@ public sealed record KlaviyoSubscriptionsWork(
     object Payload,
     DateTimeOffset OccurredAt,
     string StoreAlias,
-    string CustomerIdentifier);
+    string CustomerIdentifier,
+    string? ListId = null);
 
 internal sealed class KlaviyoSubscriptionsDispatcher
     : BatchingChannelDispatcher<KlaviyoSubscriptionsWork>, IKlaviyoSubscriptionsDispatcher
 {
     private readonly IKlaviyoSubscriptionsClient _client;
+    private readonly IKlaviyoListsClient _listsClient;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoSubscriptionsDispatcher> _logger;
 
     public KlaviyoSubscriptionsDispatcher(
         IKlaviyoSubscriptionsClient client,
+        IKlaviyoListsClient listsClient,
         IOptions<KlaviyoOptions> options,
         ILogger<KlaviyoSubscriptionsDispatcher> logger)
         : base(
@@ -34,6 +37,7 @@ internal sealed class KlaviyoSubscriptionsDispatcher
             logger: logger)
     {
         _client = client;
+        _listsClient = listsClient;
         _opt = options.Value;
         _logger = logger;
     }
@@ -65,6 +69,11 @@ internal sealed class KlaviyoSubscriptionsDispatcher
                 {
                     case KlaviyoSubscriptionsEventType.ProfileUpsert:
                         await _client.UpsertProfileAsync(work.Payload, work.StoreAlias, ct).ConfigureAwait(false);
+                        break;
+
+                    case KlaviyoSubscriptionsEventType.AddToList:
+                        await _listsClient.AddProfilesToListAsync(work.ListId ?? string.Empty, work.Payload, work.StoreAlias, ct)
+                            .ConfigureAwait(false);
                         break;
 
                     case KlaviyoSubscriptionsEventType.Subscribe:

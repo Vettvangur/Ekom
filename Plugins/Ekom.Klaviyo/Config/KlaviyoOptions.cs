@@ -69,6 +69,8 @@ public sealed class KlaviyoSubscriptionOptions
 {
     public bool Enabled { get; set; } = true;
 
+    public string? DefaultListId { get; set; }
+
     public KlaviyoDispatcherOptions Dispatching { get; init; } = new();
 }
 
@@ -101,4 +103,5 @@ public sealed class KlaviyoStoreOptions
     // Store override key (optional)
     public string? PrivateApiKey { get; init; }
     public string? CheckoutUrl { get; init; }
+    public string? ListId { get; set; }
 }

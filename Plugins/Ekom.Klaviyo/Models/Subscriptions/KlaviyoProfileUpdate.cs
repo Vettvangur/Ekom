@@ -2,4 +2,5 @@ namespace Ekom.Klaviyo.Models.Subscriptions;
 
 public sealed record KlaviyoProfileUpdate(
     string StoreAlias,
-    KlaviyoProfile Profile);
+    KlaviyoProfile Profile,
+    string? ListId = null);
