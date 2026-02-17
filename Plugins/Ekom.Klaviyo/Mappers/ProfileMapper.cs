@@ -116,6 +116,24 @@ public static class ProfileMapper
         };
     }
 
+    // 1b) /api/lists/{id}/relationships/profiles
+    public static object ToAddToListRequest(this KlaviyoProfile p)
+    {
+        if (!p.Customer.HasIdentifier)
+            throw new InvalidOperationException(
+                "Klaviyo profile requires at least one identifier (email, phone_number, external_id, or klaviyo profile id).");
+
+        return new JsonObject
+        {
+            ["data"] = new JsonArray(
+                new JsonObject
+                {
+                    ["type"] = "profile",
+                    ["attributes"] = p.ToProfileAttributes()
+                })
+        };
+    }
+
     // 2) /api/profile-subscription-bulk-create-jobs
     public static object ToBulkSubscribeJobRequest(this KlaviyoConsentUpdate u)
     {
@@ -348,4 +366,5 @@ internal static JsonObject ToProfileAttributes(this KlaviyoProfile p)
 
         return attributes;
     }
+
 }

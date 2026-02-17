@@ -49,7 +49,9 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoApiKeyResolver, KlaviyoApiKeyResolver>();
 
         services.AddSingleton<IKlaviyoCatalogClient, KlaviyoCatalogClient>();
+        services.AddSingleton<IKlaviyoListsClient, KlaviyoListsClient>();
         services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
+        services.AddSingleton<IKlaviyoProfilesClient, KlaviyoProfilesClient>();
         services.AddSingleton<IKlaviyoSubscriptionsClient, KlaviyoSubscriptionsClient>();
         services.AddSingleton<IKlaviyoTrackingClient, KlaviyoTrackingClient>();
 
@@ -71,6 +73,7 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddHostedService(sp => sp.GetRequiredService<KlaviyoTrackingDispatcher>());
 
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
+        services.AddScoped<IKlaviyoProfilesService, KlaviyoProfilesService>();
         services.AddScoped<IKlaviyoSubscriptionsService, KlaviyoSubscriptionsService>();
         services.AddScoped<IKlaviyoTrackingService, KlaviyoTrackingService>();
 
