@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.47...Ekom.Klaviyo-v0.2.48) (2026-02-17)
+
+
+### Bug Fixes
+
+* klaviyo profile service ([731449e](https://github.com/Vettvangur/Ekom/commit/731449e40ba0a870c6289559a9daf84ead558706))
+* klaviyo profile service ([e5deb75](https://github.com/Vettvangur/Ekom/commit/e5deb75f6310072175063d625a35ee952f9d050c))
+
 ## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.46...Ekom.Klaviyo-v0.2.47) (2026-02-13)
 
 
