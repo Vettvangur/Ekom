@@ -1372,7 +1372,7 @@ partial class OrderService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync failed: " + JsonConvert.SerializeObject(orderInfo));
+            _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync Failed. {OrderId} Message: {Message}", orderInfo.UniqueId, ex.Message);
             throw;
         }
 
