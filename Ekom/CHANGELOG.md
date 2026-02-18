@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.61](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.60...Ekom-v0.2.61) (2026-02-18)
+
+
+### Bug Fixes
+
+* remove json log error line for order data ([ce55c5c](https://github.com/Vettvangur/Ekom/commit/ce55c5cf8d7b3fe425cf04dd328c7696824b0540))
+* remove json log error line for order data ([3332534](https://github.com/Vettvangur/Ekom/commit/333253427a0310eeca8feefa06535213fd5f1b32))
+* update search catalog ([20d4970](https://github.com/Vettvangur/Ekom/commit/20d49703244653229500e5a3ba938d3860d715f6))
+* update search catalog ([b43e824](https://github.com/Vettvangur/Ekom/commit/b43e824667b7f5741a3f70174157d10fd2cb931c))
+
 ## [0.2.60](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.59...Ekom-v0.2.60) (2026-02-17)
 
 
