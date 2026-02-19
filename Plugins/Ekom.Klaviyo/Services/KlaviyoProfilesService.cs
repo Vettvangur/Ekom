@@ -1,15 +1,24 @@
 using Ekom.Klaviyo.Clients;
+using Ekom.Klaviyo.Dispatching.Subscriptions;
+using Ekom.Klaviyo.Enrichers.SubscriptionsEnricher;
 using Ekom.Klaviyo.Exceptions;
+using Ekom.Klaviyo.Helpers;
+using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Klaviyo.Models.Subscriptions;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
 public interface IKlaviyoProfilesService
 {
+    ValueTask UpsertProfileAsync(
+        KlaviyoProfileUpdate payload, 
+        CancellationToken ct = default);
     ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
         string profileId,
         string? storeAlias,
@@ -38,15 +47,61 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     private readonly IKlaviyoProfilesClient _client;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoProfilesService> _logger;
+    private readonly IKlaviyoSubscriptionsDispatcher _dispatcher;
+    private readonly IKlaviyoSubscriptionsEnricherRunner? _enrichers;
 
     public KlaviyoProfilesService(
         IKlaviyoProfilesClient client,
         IOptions<KlaviyoOptions> options,
-        ILogger<KlaviyoProfilesService> logger)
+        ILogger<KlaviyoProfilesService> logger,
+        IKlaviyoSubscriptionsDispatcher dispatcher,
+        IKlaviyoSubscriptionsEnricherRunner? enrichers)
     {
         _client = client;
         _opt = options.Value;
         _logger = logger;
+        _dispatcher = dispatcher;
+        _enrichers = enrichers;
+    }
+
+    public async ValueTask UpsertProfileAsync(KlaviyoProfileUpdate payload, CancellationToken ct = default)
+    {
+        if (!IsEnabled()) return;
+
+        if (!payload.Profile.Customer.HasIdentifier)
+        {
+            _logger.LogWarning(
+                "Klaviyo: skipping Profile Upsert because no customer identifier was provided. Store={StoreAlias}",
+                payload.StoreAlias);
+            return;
+        }
+
+        if (_enrichers is not null)
+            await _enrichers.ApplyAsync(payload, ct);
+
+        var work = new KlaviyoSubscriptionsWork(
+            Type: KlaviyoSubscriptionsEventType.ProfileUpsert,
+            Payload: payload.ToProfileImportRequest(),
+            OccurredAt: DateTimeOffset.UtcNow,
+            StoreAlias: payload.StoreAlias,
+            CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs());
+
+        await _dispatcher.EnqueueAsync(work, ct);
+
+        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
+
+        if (!string.IsNullOrWhiteSpace(listId))
+        {
+            var listWork = new KlaviyoSubscriptionsWork(
+                Type: KlaviyoSubscriptionsEventType.AddToList,
+                Payload: payload.Profile.ToAddToListRequest(),
+                OccurredAt: DateTimeOffset.UtcNow,
+                StoreAlias: payload.StoreAlias,
+                CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs(),
+                ListId: listId);
+
+            await _dispatcher.EnqueueAsync(listWork, ct);
+        }
     }
 
     public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
@@ -231,12 +286,22 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         }
     }
 
-    private static bool IsEnabled(KlaviyoOptions opt)
-        => opt.Enabled;
-
     private bool IsEnabled()
-        => IsEnabled(_opt);
+        => _opt.Enabled;
 
+    private string? ResolveListId(string storeAlias, string? explicitListId)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitListId))
+            return explicitListId;
+
+        var store = _opt.Stores.FirstOrDefault(s => s.Alias.InvariantEquals(storeAlias));
+        if (!string.IsNullOrWhiteSpace(store?.ListId))
+            return store.ListId;
+
+        return string.IsNullOrWhiteSpace(_opt.Subscriptions.DefaultListId)
+            ? null
+            : _opt.Subscriptions.DefaultListId;
+    }
     private static bool TryGetProfileData(JsonElement root, out JsonElement profileData)
     {
         profileData = default;

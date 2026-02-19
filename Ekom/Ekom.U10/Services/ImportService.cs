@@ -626,7 +626,9 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
         ArgumentNullException.ThrowIfNull(catalogContentType);
 
-        if (importProducts != null || importProducts?.Count > 0)
+        _logger.LogInformation($"Iterating products. Import Count: {(importProducts != null ? importProducts.Count : 0)} Umbraco Product Count: {allUmbracoProducts.Count} Umbraco Categories Count: {allUmbracoCategories.Count} Delete: {delete}");
+
+        if (importProducts != null && importProducts.Count > 0)
         {
 
             if (delete)
@@ -677,54 +679,75 @@ public class ImportService : IImportService
                         productDeleted++;
                         continue;
                     }
-
-                    // Check if product moved
-                    if (umbracoCategoriesById.TryGetValue(umbracoProduct.ParentId, out var parentCategory))
+                    // Check if product moved (also handles restore from recycle bin)
+                    if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
                     {
-                        var currentCategoryIdentifier = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-                        if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
+                        if (importProduct.PreserveExistingValues)
+                            continue;
+
+                        var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
+                        if (string.IsNullOrWhiteSpace(newCategoryIdentifier))
+                            continue;
+
+                        var isInRecycleBin = recycleBinNode != null && umbracoProduct.ParentId == recycleBinNode.Id;
+
+                        // Only read current category identifier if parent is actually a category (not recycle bin)
+                        var currentCategoryIdentifier = "";
+                        if (!isInRecycleBin && umbracoCategoriesById.TryGetValue(umbracoProduct.ParentId, out var parentCategory))
                         {
+                            currentCategoryIdentifier = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                        }
 
-                            if (importProduct.PreserveExistingValues)
+                        // If in recycle bin, always allow "move" (restore). Otherwise only when identifier changed.
+                        var needsMove = isInRecycleBin || newCategoryIdentifier != currentCategoryIdentifier;
+                        if (!needsMove)
+                            continue;
+
+                        if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
+                        {
+                            _logger.LogInformation(
+                                $"Product {(isInRecycleBin ? "restored" : "moved")}. " +
+                                $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                            _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+
+                            if (isInRecycleBin)
+                                _contentService.SaveAndPublish(umbracoProduct, userId: syncUser);
+                        }
+                        else
+                        {
+                            if (recycleBinNode != null)
                             {
-                                continue;
+                                _logger.LogInformation(
+                                    $"Product deleted and moved to recycle bin. Product moved, category does not exist yet. " +
+                                    $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                    $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                    $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                                _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                            }
+                            else
+                            {
+                                _logger.LogInformation(
+                                    $"Product deleted. Product moved, category does not exist yet. " +
+                                    $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                    $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                    $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                _contentService.Delete(umbracoProduct, syncUser);
                             }
 
-                            var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
-                            if (!string.IsNullOrEmpty(newCategoryIdentifier) &&
-                                newCategoryIdentifier != currentCategoryIdentifier)
-                            {
-                                if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
-                                {
-                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
-
-
-                                    _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
-                                    
-                                }
-                                else
-                                {
-                                    _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
-
-                  
-                                    if (recycleBinNode != null)
-                                    {
-                                        _contentService.Unpublish(umbracoProduct, userId: syncUser);
-                                        _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
-                                    }
-                                    else
-                                    {
-                                        _contentService.Delete(umbracoProduct, syncUser);
-                                    }
-                                    
-
-                                    productDeleted++;
-                                }
-                            }
+                            productDeleted++;
                         }
                     }
+
                 }
             }
+
+            _logger.LogInformation($"Iterating {importProducts.Count} products");
 
             foreach (var importProduct in importProducts)
             {
