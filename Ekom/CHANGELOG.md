@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.63](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.62...Ekom-v0.2.63) (2026-02-19)
+
+
+### Bug Fixes
+
+* remove if statement around restore in import. update klaviyo eko… ([d1db770](https://github.com/Vettvangur/Ekom/commit/d1db7703e481e51cc8a33adc16d3794d40159aa3))
+* remove if statement around restore in import. update klaviyo ekom version ([16dbe78](https://github.com/Vettvangur/Ekom/commit/16dbe784d1144694d0d2afeaa2608bf209d9715a))
+
 ## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.61...Ekom-v0.2.62) (2026-02-19)
 
 
