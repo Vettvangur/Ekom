@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Models.Subscriptions;
+namespace Ekom.Klaviyo.Models.Profiles;
 
 public sealed class KlaviyoCustomer
 {
@@ -13,27 +13,20 @@ public sealed class KlaviyoCustomer
     public string? PhoneNumber { get; init; }
 
     /// <summary>
-    /// Your system's unique ID (customer/member/user id).
-    /// Strongly recommended for deduplication.
+    /// system's unique ID (customer/member/user id).
     /// </summary>
     public string? ExternalId { get; init; }
 
-    /// <summary>
-    /// Optional Klaviyo profile ID if already known.
-    /// Rarely required but useful for migrations.
-    /// </summary>
-    public string? KlaviyoProfileId { get; init; }
 
     public bool HasIdentifier =>
         !string.IsNullOrWhiteSpace(Email) ||
         !string.IsNullOrWhiteSpace(PhoneNumber) ||
-        !string.IsNullOrWhiteSpace(ExternalId) ||
-        !string.IsNullOrWhiteSpace(KlaviyoProfileId);
+        !string.IsNullOrWhiteSpace(ExternalId);
 
     public void Validate()
     {
         if (!HasIdentifier)
             throw new InvalidOperationException(
-                "KlaviyoCustomer requires at least one identifier (Email, PhoneNumber, ExternalId, or KlaviyoProfileId).");
+                "KlaviyoCustomer requires at least one identifier (Email, PhoneNumber, or ExternalId).");
     }
 }

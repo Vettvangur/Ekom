@@ -1,12 +1,12 @@
 using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Dispatching.Catalog;
 using Ekom.Klaviyo.Dispatching.Orders;
-using Ekom.Klaviyo.Dispatching.Subscriptions;
+using Ekom.Klaviyo.Dispatching.Profiles;
 using Ekom.Klaviyo.Dispatching.Tracking;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Enrichers.ProductEnricher;
-using Ekom.Klaviyo.Enrichers.SubscriptionsEnricher;
+using Ekom.Klaviyo.Enrichers.ProfilesEnricher;
 using Ekom.Klaviyo.Http;
 using Ekom.Klaviyo.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +52,6 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoListsClient, KlaviyoListsClient>();
         services.AddSingleton<IKlaviyoOrdersClient, KlaviyoOrdersClient>();
         services.AddSingleton<IKlaviyoProfilesClient, KlaviyoProfilesClient>();
-        services.AddSingleton<IKlaviyoSubscriptionsClient, KlaviyoSubscriptionsClient>();
         services.AddSingleton<IKlaviyoTrackingClient, KlaviyoTrackingClient>();
 
         // Dispatchers (singleton hosted services)
@@ -64,9 +63,9 @@ public static class KlaviyoServiceCollectionExtensions
         services.AddSingleton<IKlaviyoOrdersDispatcher>(sp => sp.GetRequiredService<KlaviyoOrdersDispatcher>());
         services.AddHostedService(sp => sp.GetRequiredService<KlaviyoOrdersDispatcher>());
 
-        services.AddSingleton<KlaviyoSubscriptionsDispatcher>();
-        services.AddSingleton<IKlaviyoSubscriptionsDispatcher>(sp => sp.GetRequiredService<KlaviyoSubscriptionsDispatcher>());
-        services.AddHostedService(sp => sp.GetRequiredService<KlaviyoSubscriptionsDispatcher>());
+        services.AddSingleton<KlaviyoProfilesDispatcher>();
+        services.AddSingleton<IKlaviyoProfilesDispatcher>(sp => sp.GetRequiredService<KlaviyoProfilesDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<KlaviyoProfilesDispatcher>());
 
         services.AddSingleton<KlaviyoTrackingDispatcher>();
         services.AddSingleton<IKlaviyoTrackingDispatcher>(sp => sp.GetRequiredService<KlaviyoTrackingDispatcher>());
@@ -74,16 +73,15 @@ public static class KlaviyoServiceCollectionExtensions
 
         services.AddScoped<IKlaviyoOrderService, KlaviyoOrderService>();
         services.AddScoped<IKlaviyoProfilesService, KlaviyoProfilesService>();
-        services.AddScoped<IKlaviyoSubscriptionsService, KlaviyoSubscriptionsService>();
         services.AddScoped<IKlaviyoTrackingService, KlaviyoTrackingService>();
 
         // Enrichers
         services.AddSingleton<KlaviyoProductEnrichmentPipeline>();
-        services.AddSingleton<KlaviyoSubscriptionsEnrichmentPipeline>();
+        services.AddSingleton<KlaviyoProfilesEnrichmentPipeline>();
         services.AddSingleton<KlaviyoPlacedOrderEnrichmentPipeline>();
 
         services.AddSingleton<IKlaviyoPlacedOrderEnricherRunner, KlaviyoPlacedOrderEnricherRunner>();
-        services.AddSingleton<IKlaviyoSubscriptionsEnricherRunner, KlaviyoSubscriptionsEnricherRunner>();
+        services.AddSingleton<IKlaviyoProfilesEnricherRunner, KlaviyoProfilesEnricherRunner>();
 
         services.AddSingleton<KlaviyoTrackingEnrichmentPipeline>();
         services.AddSingleton<IKlaviyoTrackingEnricherRunner, KlaviyoTrackingEnricherRunner>();

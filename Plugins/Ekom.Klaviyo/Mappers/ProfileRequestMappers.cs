@@ -1,8 +1,8 @@
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 
 namespace Ekom.Klaviyo.Mappers;
 
-public static class KlaviyoSubscriptionRequestMappers
+public static class KlaviyoProfileRequestMappers
 {
     public static object ToProfileUpdateRequest(this KlaviyoProfileUpdate u, KlaviyoOptions opt)
     {
@@ -15,7 +15,7 @@ public static class KlaviyoSubscriptionRequestMappers
         };
     }
 
-    public static object ToSubscriptionUpdateRequest(this KlaviyoSubscriptionUpdate u, KlaviyoOptions opt)
+    public static object ToSubscriptionUpdateRequest(this KlaviyoProfileSubscriptionUpdate u, KlaviyoOptions opt)
     {
         return new
         {
@@ -25,17 +25,20 @@ public static class KlaviyoSubscriptionRequestMappers
         };
     }
 
-    public static object ToConsentUpdateRequest(this KlaviyoConsentUpdate u, KlaviyoOptions opt)
+    public static object ToConsentUpdateRequest(this KlaviyoProfileConsentRequest u, KlaviyoOptions opt)
     {
         return new
         {
             storeAlias = u.StoreAlias,
-            profile = u.Profile.ToProfileObject(includeAttributes: false), // identity only is usually enough
+            profile = new Dictionary<string, object?>
+            {
+                ["email"] = NullIfWhiteSpace(u.Email)
+            },
             consents = u.Consents.Select(c => c.ToConsentObject()).ToArray()
         };
     }
 
-    private static object ToConsentObject(this KlaviyoConsentChange c)
+    private static object ToConsentObject(this KlaviyoProfileConsentChange c)
     {
         return new
         {
@@ -59,7 +62,6 @@ public static class KlaviyoSubscriptionRequestMappers
         Add(profile, "email", NullIfWhiteSpace(customer.Email));
         Add(profile, "phoneNumber", NullIfWhiteSpace(customer.PhoneNumber));
         Add(profile, "externalId", NullIfWhiteSpace(customer.ExternalId));
-        Add(profile, "klaviyoProfileId", NullIfWhiteSpace(customer.KlaviyoProfileId));
 
         if (!includeAttributes || p.Attributes is null)
             return profile;

@@ -1,6 +1,6 @@
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Models.Orders;
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Models;
 using System.Text.Json.Nodes;
 using Umbraco.Extensions;
@@ -46,27 +46,27 @@ public static class OrderMapper
         var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
         var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
 
-        KlaviyoConsentUpdate? consent = null;
+        KlaviyoProfileConsentRequest? consent = null;
 
         var consentValue = order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribe");
 
         if (consentValue.IsBoolean())
         {
-            consent = new KlaviyoConsentUpdate(
+            consent = new KlaviyoProfileConsentRequest(
                 StoreAlias: order.StoreInfo.Alias,
-                Profile: order.ToKlaviyoProfile(opt).ToSubscriptionsProfile(),
-                Consents: new List<KlaviyoConsentChange>
+                Email: order.CustomerInformation.Customer.Email ?? string.Empty,
+                Consents: new List<KlaviyoProfileConsentChange>
                 {
-                    new KlaviyoConsentChange(
-                        Channel: KlaviyoConsentChannel.Email,
-                        State: KlaviyoConsentState.Subscribed,
+                    new KlaviyoProfileConsentChange(
+                        Channel: KlaviyoProfileConsentChannel.Email,
+                        State: KlaviyoProfileConsentState.Subscribed,
                         Source: "checkout",
                         TimestampUtc: DateTimeOffset.UtcNow,
                         ConsentTextVersion: "checkout-v1", 
                         Ip: order.CustomerInformation.CustomerIpAddress),
-                    new KlaviyoConsentChange(
-                        Channel: KlaviyoConsentChannel.Sms,
-                        State: KlaviyoConsentState.Subscribed,
+                    new KlaviyoProfileConsentChange(
+                        Channel: KlaviyoProfileConsentChannel.Sms,
+                        State: KlaviyoProfileConsentState.Subscribed,
                         Source: "checkout",
                         TimestampUtc: DateTimeOffset.UtcNow,
                         ConsentTextVersion: "checkout-v1",

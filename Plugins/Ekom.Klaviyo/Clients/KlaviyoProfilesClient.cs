@@ -28,6 +28,10 @@ internal interface IKlaviyoProfilesClient
         string profileId,
         string? storeAlias,
         CancellationToken ct = default);
+
+    Task UpsertProfileAsync(object profileImportRequest, string storeAlias, CancellationToken ct = default);
+    Task BulkSubscribeAsync(object bulkSubscribeJobRequest, string storeAlias, CancellationToken ct = default);
+    Task BulkUnsubscribeAsync(object bulkUnsubscribeJobRequest, string storeAlias, CancellationToken ct = default);
 }
 
 internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
@@ -140,4 +144,39 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
             return null;
         }
     }
+
+    public async Task UpsertProfileAsync(object profileImportRequest, string storeAlias, CancellationToken ct = default)
+    {
+        if (!IsSubscriptionsEnabled(profileImportRequest)) return;
+
+        _logger.LogDebug("Klaviyo: profile-import (upsert) for store {StoreAlias}", storeAlias);
+
+        // POST https://a.klaviyo.com/api/profile-import
+        await _http.PostAsync("/api/profile-import", profileImportRequest, storeAlias, ct).ConfigureAwait(false);
+    }
+
+    public async Task BulkSubscribeAsync(object bulkSubscribeJobRequest, string storeAlias, CancellationToken ct = default)
+    {
+        if (!IsSubscriptionsEnabled(bulkSubscribeJobRequest)) return;
+
+        _logger.LogDebug("Klaviyo: profile-subscription-bulk-create-jobs for store {StoreAlias}", storeAlias);
+
+        // POST https://a.klaviyo.com/api/profile-subscription-bulk-create-jobs
+        await _http.PostAsync("/api/profile-subscription-bulk-create-jobs", bulkSubscribeJobRequest, storeAlias, ct)
+            .ConfigureAwait(false);
+    }
+
+    public async Task BulkUnsubscribeAsync(object bulkUnsubscribeJobRequest, string storeAlias, CancellationToken ct = default)
+    {
+        if (!IsSubscriptionsEnabled(bulkUnsubscribeJobRequest)) return;
+
+        _logger.LogDebug("Klaviyo: profile-subscription-bulk-delete-jobs for store {StoreAlias}", storeAlias);
+
+        // POST https://a.klaviyo.com/api/profile-subscription-bulk-delete-jobs
+        await _http.PostAsync("/api/profile-subscription-bulk-delete-jobs", bulkUnsubscribeJobRequest, storeAlias, ct)
+            .ConfigureAwait(false);
+    }
+
+    private bool IsSubscriptionsEnabled(object payload)
+        => _opt.Enabled && _opt.Subscriptions.Enabled && payload is not null;
 }

@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 
 namespace Ekom.Klaviyo.Models.Orders;
 
@@ -20,7 +20,7 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public KlaviyoConsentUpdate? Consent { get; set; }
+    public KlaviyoProfileConsentRequest? Consent { get; set; }
 }
 
 public sealed record KlaviyoShippingProvider

@@ -1,11 +1,10 @@
 using Ekom.Klaviyo.Clients;
-using Ekom.Klaviyo.Dispatching.Subscriptions;
-using Ekom.Klaviyo.Enrichers.SubscriptionsEnricher;
+using Ekom.Klaviyo.Dispatching.Profiles;
+using Ekom.Klaviyo.Enrichers.ProfilesEnricher;
 using Ekom.Klaviyo.Exceptions;
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Profiles;
-using Ekom.Klaviyo.Models.Subscriptions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,6 +18,8 @@ public interface IKlaviyoProfilesService
     ValueTask UpsertProfileAsync(
         KlaviyoProfileUpdate payload, 
         CancellationToken ct = default);
+    ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
+    ValueTask UnsubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
     ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
         string profileId,
         string? storeAlias,
@@ -47,15 +48,15 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     private readonly IKlaviyoProfilesClient _client;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoProfilesService> _logger;
-    private readonly IKlaviyoSubscriptionsDispatcher _dispatcher;
-    private readonly IKlaviyoSubscriptionsEnricherRunner? _enrichers;
+    private readonly IKlaviyoProfilesDispatcher _dispatcher;
+    private readonly IKlaviyoProfilesEnricherRunner? _enrichers;
 
     public KlaviyoProfilesService(
         IKlaviyoProfilesClient client,
         IOptions<KlaviyoOptions> options,
         ILogger<KlaviyoProfilesService> logger,
-        IKlaviyoSubscriptionsDispatcher dispatcher,
-        IKlaviyoSubscriptionsEnricherRunner? enrichers)
+        IKlaviyoProfilesDispatcher dispatcher,
+        IKlaviyoProfilesEnricherRunner? enrichers)
     {
         _client = client;
         _opt = options.Value;
@@ -79,8 +80,8 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(payload, ct);
 
-        var work = new KlaviyoSubscriptionsWork(
-            Type: KlaviyoSubscriptionsEventType.ProfileUpsert,
+        var work = new KlaviyoProfilesWork(
+            Type: KlaviyoProfilesEventType.ProfileUpsert,
             Payload: payload.ToProfileImportRequest(),
             OccurredAt: DateTimeOffset.UtcNow,
             StoreAlias: payload.StoreAlias,
@@ -92,8 +93,8 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
         if (!string.IsNullOrWhiteSpace(listId))
         {
-            var listWork = new KlaviyoSubscriptionsWork(
-                Type: KlaviyoSubscriptionsEventType.AddToList,
+            var listWork = new KlaviyoProfilesWork(
+                Type: KlaviyoProfilesEventType.AddToList,
                 Payload: payload.Profile.ToAddToListRequest(),
                 OccurredAt: DateTimeOffset.UtcNow,
                 StoreAlias: payload.StoreAlias,
@@ -102,6 +103,16 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
             await _dispatcher.EnqueueAsync(listWork, ct);
         }
+    }
+
+    public async ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default)
+    {
+        await SendConsentJobAsync(payload, KlaviyoProfilesEventType.Subscribe, ct);
+    }
+
+    public async ValueTask UnsubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default)
+    {
+        await SendConsentJobAsync(payload, KlaviyoProfilesEventType.Unsubscribe, ct);
     }
 
     public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
@@ -236,7 +247,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
             return null;
 
         var attributes = GetAttributes(profileData);
-        var channels = new HashSet<KlaviyoConsentChannel>();
+        var channels = new HashSet<KlaviyoProfileConsentChannel>();
         var hasConsentData = TryParseSubscriptions(attributes, channels);
 
         if (!hasConsentData && TryParseConsentProperties(attributes, channels))
@@ -288,6 +299,46 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
     private bool IsEnabled()
         => _opt.Enabled;
+
+    private async ValueTask SendConsentJobAsync(KlaviyoProfileConsentRequest payload, KlaviyoProfilesEventType type, CancellationToken ct)
+    {
+        if (!IsEnabled() || !_opt.Subscriptions.Enabled) return;
+
+        if (string.IsNullOrWhiteSpace(payload.Email))
+        {
+            _logger.LogWarning(
+                "Klaviyo: skipping {Type} because no email was provided. Store={StoreAlias}",
+                type, payload.StoreAlias);
+            return;
+        }
+
+        if (payload.Consents is null || payload.Consents.Count == 0)
+        {
+            _logger.LogDebug(
+                "Klaviyo: skipping {Type} because no consent changes were provided. Store={StoreAlias}",
+                type, payload.StoreAlias);
+            return;
+        }
+
+        if (_enrichers is not null)
+            await _enrichers.ApplyAsync(payload, ct);
+
+        var request = type switch
+        {
+            KlaviyoProfilesEventType.Subscribe => payload.ToBulkSubscribeJobRequest(),
+            KlaviyoProfilesEventType.Unsubscribe => payload.ToBulkUnsubscribeJobRequest(),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unexpected profiles event type")
+        };
+
+        var work = new KlaviyoProfilesWork(
+            Type: type,
+            Payload: request,
+            OccurredAt: DateTimeOffset.UtcNow,
+            StoreAlias: payload.StoreAlias,
+            CustomerIdentifier: KlaviyoCustomerLoggingExtensions.MaskEmailForLogs(payload.Email));
+
+        await _dispatcher.EnqueueAsync(work, ct);
+    }
 
     private string? ResolveListId(string storeAlias, string? explicitListId)
     {
@@ -342,7 +393,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
-    private static bool TryParseSubscriptions(JsonElement attributes, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryParseSubscriptions(JsonElement attributes, ISet<KlaviyoProfileConsentChannel> channels)
     {
         if (attributes.ValueKind != JsonValueKind.Object)
             return false;
@@ -353,7 +404,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return TryParseSubscriptionsObject(subs, channels);
     }
 
-    private static bool TryParseConsentProperties(JsonElement attributes, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryParseConsentProperties(JsonElement attributes, ISet<KlaviyoProfileConsentChannel> channels)
     {
         if (attributes.ValueKind != JsonValueKind.Object)
             return false;
@@ -381,7 +432,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return added;
     }
 
-    private static bool TryAddConsentChannel(string? channel, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryAddConsentChannel(string? channel, ISet<KlaviyoProfileConsentChannel> channels)
     {
         var parsed = ParseChannel(channel);
         if (parsed is null) return false;
@@ -390,7 +441,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return true;
     }
 
-    private static bool TryParseSubscriptionsObject(JsonElement subs, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryParseSubscriptionsObject(JsonElement subs, ISet<KlaviyoProfileConsentChannel> channels)
     {
         if (subs.ValueKind != JsonValueKind.Object)
             return false;
@@ -413,7 +464,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return hasAnyConsent;
     }
 
-    private static bool TryParseSubscriptionResponse(string json, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryParseSubscriptionResponse(string json, ISet<KlaviyoProfileConsentChannel> channels)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -440,7 +491,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return hasAnyConsent;
     }
 
-    private static bool TryParseSubscriptionData(JsonElement data, ISet<KlaviyoConsentChannel> channels)
+    private static bool TryParseSubscriptionData(JsonElement data, ISet<KlaviyoProfileConsentChannel> channels)
     {
         if (data.ValueKind != JsonValueKind.Object)
             return false;
@@ -472,15 +523,15 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return false;
     }
 
-    private static KlaviyoConsentChannel? ParseChannel(string? channel)
+    private static KlaviyoProfileConsentChannel? ParseChannel(string? channel)
     {
         if (string.IsNullOrWhiteSpace(channel)) return null;
 
         return channel.Trim().ToLowerInvariant() switch
         {
-            "email" => KlaviyoConsentChannel.Email,
-            "sms" => KlaviyoConsentChannel.Sms,
-            "push" => KlaviyoConsentChannel.Push,
+            "email" => KlaviyoProfileConsentChannel.Email,
+            "sms" => KlaviyoProfileConsentChannel.Sms,
+            "push" => KlaviyoProfileConsentChannel.Push,
             _ => null
         };
     }
