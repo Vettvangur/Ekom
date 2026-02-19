@@ -5,15 +5,11 @@ using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Linq;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
 public interface IKlaviyoSubscriptionsService
 {
-    ValueTask UpsertProfileAsync(KlaviyoProfileUpdate payload, CancellationToken ct = default);
-
     ValueTask SubscribeAsync(KlaviyoConsentUpdate payload, CancellationToken ct = default);
     ValueTask UnsubscribeAsync(KlaviyoConsentUpdate payload, CancellationToken ct = default);
 }
@@ -35,45 +31,6 @@ public sealed class KlaviyoSubscriptionsService : IKlaviyoSubscriptionsService
         _logger = logger;
         _dispatcher = dispatcher;
         _enrichers = enrichers;
-    }
-
-    public async ValueTask UpsertProfileAsync(KlaviyoProfileUpdate payload, CancellationToken ct = default)
-    {
-        if (!IsEnabled()) return;
-
-        if (!payload.Profile.Customer.HasIdentifier)
-        {
-            _logger.LogWarning(
-                "Klaviyo: skipping Profile Upsert because no customer identifier was provided. Store={StoreAlias}",
-                payload.StoreAlias);
-            return;
-        }
-
-        if (_enrichers is not null)
-            await _enrichers.ApplyAsync(payload, ct);
-
-        var work = new KlaviyoSubscriptionsWork(
-            Type: KlaviyoSubscriptionsEventType.ProfileUpsert,
-            Payload: payload.ToProfileImportRequest(),
-            OccurredAt: DateTimeOffset.UtcNow,
-            StoreAlias: payload.StoreAlias,
-            CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs());
-
-        await _dispatcher.EnqueueAsync(work, ct);
-
-        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
-        if (!string.IsNullOrWhiteSpace(listId))
-        {
-            var listWork = new KlaviyoSubscriptionsWork(
-                Type: KlaviyoSubscriptionsEventType.AddToList,
-                Payload: payload.Profile.ToAddToListRequest(),
-                OccurredAt: DateTimeOffset.UtcNow,
-                StoreAlias: payload.StoreAlias,
-                CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs(),
-                ListId: listId);
-
-            await _dispatcher.EnqueueAsync(listWork, ct);
-        }
     }
 
     public async ValueTask SubscribeAsync(KlaviyoConsentUpdate payload, CancellationToken ct = default)
@@ -127,18 +84,4 @@ public sealed class KlaviyoSubscriptionsService : IKlaviyoSubscriptionsService
     }
 
     private bool IsEnabled() => _opt.Enabled && _opt.Subscriptions.Enabled;
-
-    private string? ResolveListId(string storeAlias, string? explicitListId)
-    {
-        if (!string.IsNullOrWhiteSpace(explicitListId))
-            return explicitListId;
-
-        var store = _opt.Stores.FirstOrDefault(s => s.Alias.InvariantEquals(storeAlias));
-        if (!string.IsNullOrWhiteSpace(store?.ListId))
-            return store.ListId;
-
-        return string.IsNullOrWhiteSpace(_opt.Subscriptions.DefaultListId)
-            ? null
-            : _opt.Subscriptions.DefaultListId;
-    }
 }
