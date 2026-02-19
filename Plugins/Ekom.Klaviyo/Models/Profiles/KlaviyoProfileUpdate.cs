@@ -1,4 +1,4 @@
-namespace Ekom.Klaviyo.Models.Subscriptions;
+namespace Ekom.Klaviyo.Models.Profiles;
 
 public sealed record KlaviyoProfileUpdate(
     string StoreAlias,

@@ -1,7 +1,8 @@
-namespace Ekom.Klaviyo.Models.Subscriptions;
+namespace Ekom.Klaviyo.Models.Profiles;
 
 public sealed class KlaviyoProfileAttributes
 {
+    public string? FullName { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
 

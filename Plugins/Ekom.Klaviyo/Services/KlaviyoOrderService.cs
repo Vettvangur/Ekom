@@ -2,7 +2,7 @@ using Ekom.Klaviyo.Dispatching.Orders;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Orders;
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -22,20 +22,20 @@ public sealed class KlaviyoOrderService : IKlaviyoOrderService
     private readonly ILogger<KlaviyoOrderService> _logger;
     private readonly IKlaviyoOrdersDispatcher _dispatcher;
     private readonly IKlaviyoPlacedOrderEnricherRunner _placedOrderEnrichers;
-    private readonly IKlaviyoSubscriptionsService _subscriptions;
+    private readonly IKlaviyoProfilesService _profiles;
 
     public KlaviyoOrderService(
         IOptions<KlaviyoOptions> opt,
         ILogger<KlaviyoOrderService> logger,
         IKlaviyoOrdersDispatcher dispatcher,
         IKlaviyoPlacedOrderEnricherRunner placedOrderEnrichers,
-        IKlaviyoSubscriptionsService subscriptions)
+        IKlaviyoProfilesService profiles)
     {
         _opt = opt.Value;
         _logger = logger;
         _dispatcher = dispatcher;
         _placedOrderEnrichers = placedOrderEnrichers;
-        _subscriptions = subscriptions;
+        _profiles = profiles;
     }
 
     public ValueTask TrackCancelledOrderAsync(KlaviyoCancelledOrder payload, CancellationToken ct = default)
@@ -76,8 +76,8 @@ public sealed class KlaviyoOrderService : IKlaviyoOrderService
             order.Consent.Consents.Count > 0)
         {
           
-            if (order.Consent.Consents.Any(c => c.State == KlaviyoConsentState.Subscribed))
-                await _subscriptions.SubscribeAsync(order.Consent, ct);
+            if (order.Consent.Consents.Any(c => c.State == KlaviyoProfileConsentState.Subscribed))
+                await _profiles.SubscribeAsync(order.Consent, ct);
         }
     }
 

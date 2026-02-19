@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 
 namespace Ekom.Klaviyo.Helpers;
 
@@ -11,9 +11,6 @@ public static class KlaviyoCustomerLoggingExtensions
         if (!string.IsNullOrWhiteSpace(c.ExternalId))
             return $"ext:{c.ExternalId}";
 
-        if (!string.IsNullOrWhiteSpace(c.KlaviyoProfileId))
-            return $"kid:{c.KlaviyoProfileId}";
-
         if (!string.IsNullOrWhiteSpace(c.Email))
             return MaskEmail(c.Email);
 
@@ -21,6 +18,13 @@ public static class KlaviyoCustomerLoggingExtensions
             return MaskPhone(c.PhoneNumber);
 
         return "(unknown)";
+    }
+
+
+    public static string MaskEmailForLogs(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return "(unknown)";
+        return MaskEmail(email);
     }
 
     private static string MaskEmail(string email)

@@ -1,38 +1,38 @@
 using Ekom.Klaviyo.Clients;
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Ekom.Klaviyo.Dispatching.Subscriptions;
+namespace Ekom.Klaviyo.Dispatching.Profiles;
 
-public interface IKlaviyoSubscriptionsDispatcher
+public interface IKlaviyoProfilesDispatcher
 {
-    ValueTask EnqueueAsync(KlaviyoSubscriptionsWork work, CancellationToken ct = default);
+    ValueTask EnqueueAsync(KlaviyoProfilesWork work, CancellationToken ct = default);
 }
 
-public sealed record KlaviyoSubscriptionsWork(
-    KlaviyoSubscriptionsEventType Type,
+public sealed record KlaviyoProfilesWork(
+    KlaviyoProfilesEventType Type,
     object Payload,
     DateTimeOffset OccurredAt,
     string StoreAlias,
     string CustomerIdentifier,
     string? ListId = null);
 
-internal sealed class KlaviyoSubscriptionsDispatcher
-    : BatchingChannelDispatcher<KlaviyoSubscriptionsWork>, IKlaviyoSubscriptionsDispatcher
+internal sealed class KlaviyoProfilesDispatcher
+    : BatchingChannelDispatcher<KlaviyoProfilesWork>, IKlaviyoProfilesDispatcher
 {
-    private readonly IKlaviyoSubscriptionsClient _client;
+    private readonly IKlaviyoProfilesClient _client;
     private readonly IKlaviyoListsClient _listsClient;
     private readonly KlaviyoOptions _opt;
-    private readonly ILogger<KlaviyoSubscriptionsDispatcher> _logger;
+    private readonly ILogger<KlaviyoProfilesDispatcher> _logger;
 
-    public KlaviyoSubscriptionsDispatcher(
-        IKlaviyoSubscriptionsClient client,
+    public KlaviyoProfilesDispatcher(
+        IKlaviyoProfilesClient client,
         IKlaviyoListsClient listsClient,
         IOptions<KlaviyoOptions> options,
-        ILogger<KlaviyoSubscriptionsDispatcher> logger)
+        ILogger<KlaviyoProfilesDispatcher> logger)
         : base(
-            name: "SubscriptionsDispatcher",
+            name: "ProfilesDispatcher",
             dispatch: options.Value.Subscriptions.Dispatching,
             logger: logger)
     {
@@ -42,18 +42,18 @@ internal sealed class KlaviyoSubscriptionsDispatcher
         _logger = logger;
     }
 
-    public ValueTask EnqueueAsync(KlaviyoSubscriptionsWork work, CancellationToken ct = default)
+    public ValueTask EnqueueAsync(KlaviyoProfilesWork work, CancellationToken ct = default)
         => base.EnqueueAsync(work, ct);
 
-    protected override Task<List<KlaviyoSubscriptionsWork>> PrepareBatchAsync(List<KlaviyoSubscriptionsWork> drained, CancellationToken ct)
+    protected override Task<List<KlaviyoProfilesWork>> PrepareBatchAsync(List<KlaviyoProfilesWork> drained, CancellationToken ct)
     {
         if (!_opt.Enabled || !_opt.Subscriptions.Enabled)
-            return Task.FromResult(new List<KlaviyoSubscriptionsWork>(0));
+            return Task.FromResult(new List<KlaviyoProfilesWork>(0));
 
         return Task.FromResult(drained);
     }
 
-    protected override async Task HandleChunkAsync(KlaviyoSubscriptionsWork[] chunk, CancellationToken ct)
+    protected override async Task HandleChunkAsync(KlaviyoProfilesWork[] chunk, CancellationToken ct)
     {
         if (chunk.Length == 0) return;
 
@@ -67,20 +67,20 @@ internal sealed class KlaviyoSubscriptionsDispatcher
             {
                 switch (work.Type)
                 {
-                    case KlaviyoSubscriptionsEventType.ProfileUpsert:
+                    case KlaviyoProfilesEventType.ProfileUpsert:
                         await _client.UpsertProfileAsync(work.Payload, work.StoreAlias, ct).ConfigureAwait(false);
                         break;
 
-                    case KlaviyoSubscriptionsEventType.AddToList:
+                    case KlaviyoProfilesEventType.AddToList:
                         await _listsClient.AddProfilesToListAsync(work.ListId ?? string.Empty, work.Payload, work.StoreAlias, ct)
                             .ConfigureAwait(false);
                         break;
 
-                    case KlaviyoSubscriptionsEventType.Subscribe:
+                    case KlaviyoProfilesEventType.Subscribe:
                         await _client.BulkSubscribeAsync(work.Payload, work.StoreAlias, ct).ConfigureAwait(false);
                         break;
 
-                    case KlaviyoSubscriptionsEventType.Unsubscribe:
+                    case KlaviyoProfilesEventType.Unsubscribe:
                         await _client.BulkUnsubscribeAsync(work.Payload, work.StoreAlias, ct).ConfigureAwait(false);
                         break;
 
@@ -89,7 +89,7 @@ internal sealed class KlaviyoSubscriptionsDispatcher
                 }
 
                 _logger.LogDebug(
-                    "Klaviyo SubscriptionsDispatcher sent {Type} CustomerIdentifier={CustomerIdentifier} OccurredAt={OccurredAt} StoreAlias={StoreAlias} Testing={Testing}.",
+                    "Klaviyo ProfilesDispatcher sent {Type} CustomerIdentifier={CustomerIdentifier} OccurredAt={OccurredAt} StoreAlias={StoreAlias} Testing={Testing}.",
                     work.Type, work.CustomerIdentifier, work.OccurredAt, work.StoreAlias, _opt.Testing);
             }
             finally
@@ -99,6 +99,6 @@ internal sealed class KlaviyoSubscriptionsDispatcher
         });
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
-        _logger.LogDebug("Klaviyo SubscriptionsDispatcher sent {Count} subscriptions jobs in chunk.", chunk.Length);
+        _logger.LogDebug("Klaviyo ProfilesDispatcher sent {Count} profiles jobs in chunk.", chunk.Length);
     }
 }

@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Models.Orders;
-using Ekom.Klaviyo.Models.Subscriptions;
+using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Models;
 using System.Text.Json.Nodes;
 using Umbraco.Extensions;
@@ -80,7 +80,7 @@ public static class ProfileMapper
         };
     }
 
-    public static KlaviyoProfile ToSubscriptionsProfile(this KlaviyoOrderProfile o)
+    public static KlaviyoProfile ToProfile(this KlaviyoOrderProfile o)
             => new()
             {
                 Customer = new KlaviyoCustomer
@@ -135,7 +135,7 @@ public static class ProfileMapper
     }
 
     // 2) /api/profile-subscription-bulk-create-jobs
-    public static object ToBulkSubscribeJobRequest(this KlaviyoConsentUpdate u)
+    public static object ToBulkSubscribeJobRequest(this KlaviyoProfileConsentRequest u)
     {
         return u.ToSubscriptionJobRequest(
             jobType: "profile-subscription-bulk-create-job",
@@ -143,7 +143,7 @@ public static class ProfileMapper
     }
 
     // 3) /api/profile-subscription-bulk-delete-jobs
-    public static object ToBulkUnsubscribeJobRequest(this KlaviyoConsentUpdate u)
+    public static object ToBulkUnsubscribeJobRequest(this KlaviyoProfileConsentRequest u)
     {
         return u.ToSubscriptionJobRequest(
             jobType: "profile-subscription-bulk-delete-job",
@@ -152,14 +152,12 @@ public static class ProfileMapper
 
   
 
-    private static object ToSubscriptionJobRequest(this KlaviyoConsentUpdate u, string jobType, bool includeSubscriptionsObject)
+    private static object ToSubscriptionJobRequest(this KlaviyoProfileConsentRequest u, string jobType, bool includeSubscriptionsObject)
     {
         var profileAttributes = new JsonObject();
 
-            profileAttributes["email"] = u.Profile.Customer.Email;
+        profileAttributes["email"] = u.Email;
 
-        if (!string.IsNullOrWhiteSpace(u.Profile.Customer.PhoneNumber))
-            profileAttributes["phone_number"] = u.Profile.Customer.PhoneNumber;
 
         if (includeSubscriptionsObject)
         {
@@ -169,16 +167,16 @@ public static class ProfileMapper
             {
                 var channelKey = c.Channel switch
                 {
-                    KlaviyoConsentChannel.Email => "email",
-                    KlaviyoConsentChannel.Sms => "sms",
-                    KlaviyoConsentChannel.Push => null,
+                    KlaviyoProfileConsentChannel.Email => "email",
+                    KlaviyoProfileConsentChannel.Sms => "sms",
+                    KlaviyoProfileConsentChannel.Push => null,
                     _ => null
                 };
 
                 if (channelKey is null)
                     continue;
 
-                var consentValue = c.State == KlaviyoConsentState.Subscribed
+                var consentValue = c.State == KlaviyoProfileConsentState.Subscribed
                     ? "SUBSCRIBED"
                     : "UNSUBSCRIBED";
 
@@ -244,12 +242,13 @@ internal static JsonObject ToProfileAttributes(this KlaviyoProfile p)
             return attributes;
 
         var a = p.Attributes;
+        var (firstName, lastName) = GetNameParts(a);
 
-        if (!string.IsNullOrWhiteSpace(a.FirstName))
-            attributes["first_name"] = a.FirstName;
+        if (!string.IsNullOrWhiteSpace(firstName))
+            attributes["first_name"] = firstName;
 
-        if (!string.IsNullOrWhiteSpace(a.LastName))
-            attributes["last_name"] = a.LastName;
+        if (!string.IsNullOrWhiteSpace(lastName))
+            attributes["last_name"] = lastName;
 
         if (!string.IsNullOrWhiteSpace(a.Organisation))
             attributes["organization"] = a.Organisation;
@@ -291,6 +290,25 @@ internal static JsonObject ToProfileAttributes(this KlaviyoProfile p)
         }
 
         return attributes;
+    }
+
+    private static (string? FirstName, string? LastName) GetNameParts(KlaviyoProfileAttributes attributes)
+    {
+        if (!string.IsNullOrWhiteSpace(attributes.FirstName) || !string.IsNullOrWhiteSpace(attributes.LastName))
+            return (attributes.FirstName, attributes.LastName);
+
+        if (string.IsNullOrWhiteSpace(attributes.FullName))
+            return (null, null);
+
+        var parts = attributes.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            return (null, null);
+
+        if (parts.Length == 1)
+            return (parts[0], null);
+
+        var lastName = string.Join(' ', parts, 1, parts.Length - 1);
+        return (parts[0], lastName);
     }
 
     internal static JsonObject ToProfileData(this KlaviyoProfile p)
