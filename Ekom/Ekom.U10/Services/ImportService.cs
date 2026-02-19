@@ -679,13 +679,12 @@ public class ImportService : IImportService
                         productDeleted++;
                         continue;
                     }
+
                     // Check if product moved (also handles restore from recycle bin)
                     if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
                     {
-                        if (importProduct.PreserveExistingValues)
-                            continue;
-
                         var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
+
                         if (string.IsNullOrWhiteSpace(newCategoryIdentifier))
                             continue;
 
