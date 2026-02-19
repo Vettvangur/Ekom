@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.61...Ekom-v0.2.62) (2026-02-19)
+
+
+### Bug Fixes
+
+* restore products from recyclebin in import. ([4d13f6e](https://github.com/Vettvangur/Ekom/commit/4d13f6ecca486b5a0eaa30903718bfb47ab9ee55))
+* restore products from recyclebin in import. ([4b3be3b](https://github.com/Vettvangur/Ekom/commit/4b3be3bc15fd382d6c67b77c6c91a4d2005cbf24))
+
 ## [0.2.61](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.60...Ekom-v0.2.61) (2026-02-18)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.48...Ekom.Klaviyo-v0.2.49) (2026-02-19)
+
+
+### Bug Fixes
+
+* restore products from recyclebin in import. ([4d13f6e](https://github.com/Vettvangur/Ekom/commit/4d13f6ecca486b5a0eaa30903718bfb47ab9ee55))
+* restore products from recyclebin in import. ([4b3be3b](https://github.com/Vettvangur/Ekom/commit/4b3be3bc15fd382d6c67b77c6c91a4d2005cbf24))
+
 ## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.47...Ekom.Klaviyo-v0.2.48) (2026-02-17)
 
 
