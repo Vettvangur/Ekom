@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.50...Ekom.Klaviyo-v0.2.51) (2026-02-19)
+
+
+### Bug Fixes
+
+* merge subscriptions to profiles, simplify requests. ([2077e50](https://github.com/Vettvangur/Ekom/commit/2077e50d859077462a70a354a24b101c61d1ee24))
+* merge subscriptions to profiles, simplify requests. ([48ac7a6](https://github.com/Vettvangur/Ekom/commit/48ac7a68faa880a80f4cf2eed7f90f36a953fc6a))
+
 ## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.49...Ekom.Klaviyo-v0.2.50) (2026-02-19)
 
 
