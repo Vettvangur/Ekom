@@ -36,8 +36,6 @@ internal interface IKlaviyoProfilesClient
 
 internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
 {
-    private const string SubscriptionsQuery = "additional_fields[profile]=subscriptions";
-
     private readonly KlaviyoHttpClient _http;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoProfilesClient> _logger;
@@ -62,8 +60,6 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         if (!_opt.Enabled) return null;
 
         var path = $"/api/profiles/{Uri.EscapeDataString(profileId)}";
-        if (includeSubscriptions)
-            path += $"?{SubscriptionsQuery}";
 
         _logger.LogDebug("Klaviyo: profiles GET by id for store {StoreAlias}", storeAlias);
 
@@ -89,9 +85,6 @@ internal sealed class KlaviyoProfilesClient : IKlaviyoProfilesClient
         var sanitizedEmail = email.Replace("\"", "\\\"");
         var filter = $"equals(email,\"{sanitizedEmail}\")";
         var query = $"?filter={Uri.EscapeDataString(filter)}";
-
-        if (includeSubscriptions)
-            query += $"&{SubscriptionsQuery}";
 
         var path = $"/api/profiles{query}";
 

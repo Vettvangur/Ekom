@@ -1,0 +1,11 @@
+meta {
+  name: Get Profile By Email
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/ekom/klaviyo/profile/by-email?email={{email}}&storeAlias={{storeAlias}}&includeSubscriptions={{includeSubscriptions}}
+  body: none
+  auth: none
+}

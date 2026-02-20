@@ -666,48 +666,78 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private IPrice CreateOriginalPrice()
     {
-        CurrencyModel storeCurrency = Store.Currency;
+        var storeCurrency = Store.Currency;
+
         var vat = Vat;
-        if (vat <= 0)
-        {
-            vat = Store.Vat;
-        }
-        bool storeVatIncluded = Store.VatIncludedInPrice;
+        if (vat <= 0) vat = Store.Vat;
 
-        string originalPrice = _priceValue;
+        var storeVatIncluded = Store.VatIncludedInPrice;
 
-        if (string.IsNullOrEmpty(originalPrice))
-        {
+        // Fast-path: null/empty
+        var s = _priceValue;
+        if (string.IsNullOrWhiteSpace(s))
             return new Price(0, storeCurrency, vat, storeVatIncluded);
-        }
 
-        if (decimal.TryParse(
-                originalPrice,
-                NumberStyles.Number,
-                CultureInfo.InvariantCulture,
-                out var org))
-        {
+        // Fast-path: plain decimal string
+        if (decimal.TryParse(s, NumberStyles.Number, CultureInfo.InvariantCulture, out var org))
             return new Price(org, storeCurrency, vat, storeVatIncluded);
-        }
 
-        if (originalPrice.IsJson())
+        // Cheap JSON detection (avoid IsJson() and avoid building JToken trees)
+        s = s.Trim();
+        if (s.Length == 0)
+            return new Price(0, storeCurrency, vat, storeVatIncluded);
+
+        var first = s[0];
+        if (first != '[' && first != '{')
+            return new Price(0, storeCurrency, vat, storeVatIncluded);
+
+        try
         {
-            try
+            // CASE 1: JSON array root: [ { Currency, Price }, ... ]
+            if (first == '[')
             {
-                var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                decimal? val = orgPrice?.FirstOrDefault()?.Price;
+                var list = JsonConvert.DeserializeObject<List<CurrencyPrice>>(s);
+                var val = list?.Count > 0 ? list[0].Price : (decimal?)null;
 
-                if (val.HasValue)
+                return val.HasValue
+                    ? new Price(val.Value, storeCurrency, vat, storeVatIncluded)
+                    : new Price(0, storeCurrency, vat, storeVatIncluded);
+            }
+
+            // CASE 2: JSON object root:
+            // { "StoreName": [ { Currency, Price }, ... ], "OtherStore": [ ... ] }
+            var byStore = JsonConvert.DeserializeObject<Dictionary<string, List<CurrencyPrice>>>(s);
+            if (byStore == null || byStore.Count == 0)
+                return new Price(0, storeCurrency, vat, storeVatIncluded);
+
+            if (string.IsNullOrWhiteSpace(Store?.Alias))
+                return new Price(0, storeCurrency, vat, storeVatIncluded);
+
+            // Case-insensitive lookup
+            List<CurrencyPrice>? storePrices = null;
+            if (!byStore.TryGetValue(Store.Alias, out storePrices))
+            {
+                foreach (var kv in byStore)
                 {
-                    return new Price(val.Value, storeCurrency, vat, storeVatIncluded);
+                    if (string.Equals(kv.Key, Store?.Alias, StringComparison.OrdinalIgnoreCase))
+                    {
+                        storePrices = kv.Value;
+                        break;
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
-            }
-        }
 
-        return new Price(0, storeCurrency, vat, storeVatIncluded);
+            var storeVal = storePrices?.Count > 0 ? storePrices[0].Price : (decimal?)null;
+
+            return storeVal.HasValue
+                ? new Price(storeVal.Value, storeCurrency, vat, storeVatIncluded)
+                : new Price(0, storeCurrency, vat, storeVatIncluded);
+        }
+        catch
+        {
+            // Any unexpected JSON shape / malformed JSON => return 0
+            return new Price(0, storeCurrency, vat, storeVatIncluded);
+        }
     }
+
 }

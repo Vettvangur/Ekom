@@ -1,0 +1,17 @@
+meta {
+  name: Get Profile By Id
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ekom/klaviyo/profile/by-id?profileId=12345&storeAlias={{storeAlias}}&includeSubscriptions={{includeSubscriptions}}
+  body: none
+  auth: none
+}
+
+params:query {
+  profileId: 12345
+  storeAlias: {{storeAlias}}
+  includeSubscriptions: {{includeSubscriptions}}
+}

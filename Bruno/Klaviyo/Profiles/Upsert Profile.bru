@@ -1,0 +1,33 @@
+meta {
+  name: Upsert Profile
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/ekom/klaviyo/profile/upsert
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "storeAlias": "Store",
+    "email": "test@example.com",
+    "phoneNumber": "+3548662620",
+    "externalId": null,
+    "fullName": "Jane Doe",
+    "firstName": null,
+    "lastName": null,
+    "address": "Street 1",
+    "address2": "",
+    "zipCode": "101",
+    "city": "Reykjavik",
+    "country": "IS",
+    "organisation": "",
+    "customProperties": {
+      "note": "test"
+    },
+    "listId": "SXAp9a"
+  }
+}

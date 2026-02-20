@@ -18,6 +18,10 @@ public interface IKlaviyoProfilesService
     ValueTask UpsertProfileAsync(
         KlaviyoProfileUpdate payload, 
         CancellationToken ct = default);
+    ValueTask UpsertAndSubscribeAsync(
+        KlaviyoProfileUpdate profileUpdate,
+        KlaviyoProfileConsentRequest consent,
+        CancellationToken ct = default);
     ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
     ValueTask UnsubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
     ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
@@ -89,20 +93,25 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
         await _dispatcher.EnqueueAsync(work, ct);
 
-        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
+    }
 
-        if (!string.IsNullOrWhiteSpace(listId))
+    public async ValueTask UpsertAndSubscribeAsync(
+        KlaviyoProfileUpdate profileUpdate,
+        KlaviyoProfileConsentRequest consent,
+        CancellationToken ct = default)
+    {
+        if (!IsEnabled()) return;
+        if (profileUpdate is null) throw new ArgumentNullException(nameof(profileUpdate));
+        if (consent is null) throw new ArgumentNullException(nameof(consent));
+
+        if (!string.Equals(profileUpdate.StoreAlias, consent.StoreAlias, StringComparison.OrdinalIgnoreCase))
         {
-            var listWork = new KlaviyoProfilesWork(
-                Type: KlaviyoProfilesEventType.AddToList,
-                Payload: payload.Profile.ToAddToListRequest(),
-                OccurredAt: DateTimeOffset.UtcNow,
-                StoreAlias: payload.StoreAlias,
-                CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs(),
-                ListId: listId);
-
-            await _dispatcher.EnqueueAsync(listWork, ct);
+            throw new InvalidOperationException(
+                "Klaviyo: StoreAlias mismatch between profile update and consent request.");
         }
+
+        await UpsertProfileAsync(profileUpdate, ct);
+        await SubscribeAsync(consent, ct);
     }
 
     public async ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default)
