@@ -5,6 +5,7 @@ using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Xml.Serialization;
 
 
@@ -306,30 +307,17 @@ public class Variant : PerStoreNodeEntity, IVariant, IPerStoreNodeEntity
 
     private IPrice CreateOriginalPrice()
     {
-        string originalPrice = _priceValue;
+        var storeCurrency = Store.Currency;
 
-        if (string.IsNullOrEmpty(originalPrice))
-        {
-            return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-        }
+        var vat = Vat;
+        if (vat <= 0) vat = Store.Vat;
 
-        if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-        {
-            return new Price(_orgPrice, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-        }
+        var storeVatIncluded = Store.VatIncludedInPrice;
 
-        if (originalPrice.IsJson())
-        {
-            List<CurrencyPrice>? orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-            decimal? val = orgPrice?.FirstOrDefault()?.Price;
+        var s = _priceValue;
+        if (s.TryGetOriginalPriceValue(Store?.Alias, out var value))
+            return new Price(value, storeCurrency, vat, storeVatIncluded);
 
-            if (val.HasValue)
-            {
-                return new Price(val.Value, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
-            }
-        }
-
-        // If no price is found, return a price of 0 with store settings
-        return new Price(0, Store.Currency, Store.Vat, Store.VatIncludedInPrice);
+        return new Price(0, storeCurrency, vat, storeVatIncluded);
     }
 }
