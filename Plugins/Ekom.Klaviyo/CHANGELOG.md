@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.52](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.51...Ekom.Klaviyo-v0.2.52) (2026-02-20)
+
+
+### Bug Fixes
+
+* klaviyo updates and ekom original price refactor ([419fef4](https://github.com/Vettvangur/Ekom/commit/419fef40a52c4155bab0cb108923844237bd8bb7))
+* klaviyo updates and ekom original price refactor ([8cdab69](https://github.com/Vettvangur/Ekom/commit/8cdab69c6e14afc3679a3815160013002670abc3))
+
 ## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.50...Ekom.Klaviyo-v0.2.51) (2026-02-19)
 
 
