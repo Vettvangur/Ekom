@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.64...Ekom-v0.2.65) (2026-02-20)
+
+
+### Bug Fixes
+
+* original price as helper ([01ea998](https://github.com/Vettvangur/Ekom/commit/01ea99898e2badeb949151ddded732808ab0dcf0))
+* original price as helper ([721eac4](https://github.com/Vettvangur/Ekom/commit/721eac49f79c0f7bf9eb2ea2165cc00c3240b689))
+
 ## [0.2.64](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.63...Ekom-v0.2.64) (2026-02-20)
 
 
