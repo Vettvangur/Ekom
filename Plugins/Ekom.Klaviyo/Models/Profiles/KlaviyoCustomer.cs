@@ -17,16 +17,22 @@ public sealed class KlaviyoCustomer
     /// </summary>
     public string? ExternalId { get; init; }
 
+    /// <summary>
+    /// Klaviyo profile id (if known).
+    /// </summary>
+    public string? KlaviyoProfileId { get; init; }
+
 
     public bool HasIdentifier =>
         !string.IsNullOrWhiteSpace(Email) ||
         !string.IsNullOrWhiteSpace(PhoneNumber) ||
-        !string.IsNullOrWhiteSpace(ExternalId);
+        !string.IsNullOrWhiteSpace(ExternalId) ||
+        !string.IsNullOrWhiteSpace(KlaviyoProfileId);
 
     public void Validate()
     {
         if (!HasIdentifier)
             throw new InvalidOperationException(
-                "KlaviyoCustomer requires at least one identifier (Email, PhoneNumber, or ExternalId).");
+                "KlaviyoCustomer requires at least one identifier (Email, PhoneNumber, ExternalId, or KlaviyoProfileId).");
     }
 }

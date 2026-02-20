@@ -119,9 +119,9 @@ public static class ProfileMapper
     // 1b) /api/lists/{id}/relationships/profiles
     public static object ToAddToListRequest(this KlaviyoProfile p)
     {
-        if (!p.Customer.HasIdentifier)
+        if (string.IsNullOrWhiteSpace(p.Customer.KlaviyoProfileId))
             throw new InvalidOperationException(
-                "Klaviyo profile requires at least one identifier (email, phone_number, external_id, or klaviyo profile id).");
+                "Klaviyo profile requires KlaviyoProfileId to add to list.");
 
         return new JsonObject
         {
@@ -129,7 +129,7 @@ public static class ProfileMapper
                 new JsonObject
                 {
                     ["type"] = "profile",
-                    ["attributes"] = p.ToProfileAttributes()
+                    ["id"] = p.Customer.KlaviyoProfileId
                 })
         };
     }
@@ -147,7 +147,7 @@ public static class ProfileMapper
     {
         return u.ToSubscriptionJobRequest(
             jobType: "profile-subscription-bulk-delete-job",
-            includeSubscriptionsObject: false);
+            includeSubscriptionsObject: true);
     }
 
   
@@ -213,6 +213,21 @@ public static class ProfileMapper
             ["type"] = jobType,
             ["attributes"] = attributes
         };
+
+        if (includeSubscriptionsObject && !string.IsNullOrWhiteSpace(u.ListId))
+        {
+            data["relationships"] = new JsonObject
+            {
+                ["list"] = new JsonObject
+                {
+                    ["data"] = new JsonObject
+                    {
+                        ["type"] = "list",
+                        ["id"] = u.ListId
+                    }
+                }
+            };
+        }
 
         return new JsonObject
         {

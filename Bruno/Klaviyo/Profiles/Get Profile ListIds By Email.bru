@@ -1,0 +1,11 @@
+meta {
+  name: Get Profile ListIds By Email
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/ekom/klaviyo/profile/list-ids/by-email?email={{email}}&storeAlias={{storeAlias}}
+  body: none
+  auth: none
+}

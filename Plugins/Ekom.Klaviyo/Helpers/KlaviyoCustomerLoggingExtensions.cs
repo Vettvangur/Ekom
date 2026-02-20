@@ -11,6 +11,9 @@ public static class KlaviyoCustomerLoggingExtensions
         if (!string.IsNullOrWhiteSpace(c.ExternalId))
             return $"ext:{c.ExternalId}";
 
+        if (!string.IsNullOrWhiteSpace(c.KlaviyoProfileId))
+            return $"kid:{c.KlaviyoProfileId}";
+
         if (!string.IsNullOrWhiteSpace(c.Email))
             return MaskEmail(c.Email);
 

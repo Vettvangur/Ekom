@@ -1,0 +1,22 @@
+meta {
+  name: Subscribe Profile
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/ekom/klaviyo/profile/subscribe
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "storeAlias": "Store",
+    "email": "gardar@vettvangur.is",
+    "channel": "Email",
+    "source": "test",
+    "timestampUtc": "2026-02-19T12:05:00Z",
+    "listId": "SXAp9a"
+  }
+}

@@ -8,5 +8,6 @@ public static class KlaviyoProfileIdentityExtensions
         => new(
             Email: customer.Email,
             PhoneNumber: customer.PhoneNumber,
-            ExternalId: customer.ExternalId);
+            ExternalId: customer.ExternalId,
+            KlaviyoProfileId: customer.KlaviyoProfileId);
 }
