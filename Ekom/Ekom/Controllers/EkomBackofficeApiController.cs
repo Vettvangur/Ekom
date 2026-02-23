@@ -82,6 +82,40 @@ public class EkomBackofficeApiController : ControllerBase
         => _umbracoService.GetLanguages();
 
     [HttpGet]
+    [Route("Languages/{id:int}")]
+    [UmbracoUserAuthorize]
+    public IEnumerable<object> GetLanguagesByNode([FromRoute] int id)
+    {
+        var stores = LoadStores(id);
+        var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var store in stores)
+        {
+            foreach (var culture in store.Cultures)
+            {
+                if (!string.IsNullOrWhiteSpace(culture.Name))
+                {
+                    supportedCultures.Add(culture.Name);
+                }
+            }
+        }
+
+        var languages = _umbracoService.GetLanguages();
+
+        if (languages == null)
+        {
+            return Array.Empty<object>();
+        }
+
+        if (supportedCultures.Count == 0)
+        {
+            return languages.ToList();
+        }
+
+        return languages.Where(language => supportedCultures.Contains(language.IsoCode)).ToList();
+    }
+
+    [HttpGet]
     [Route("Stores")]
     [UmbracoUserAuthorize]
     public async Task<IEnumerable<IStore>> GetAllStores()

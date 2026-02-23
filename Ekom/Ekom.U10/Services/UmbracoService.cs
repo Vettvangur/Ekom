@@ -4,7 +4,9 @@ using Ekom.Umb.Models;
 using Ekom.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Net;
+using System.Threading;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -16,6 +18,8 @@ namespace Ekom.Umb.Services;
 
 class UmbracoService : IUmbracoService
 {
+    private const string LanguagesCacheKey = "ekmLanguages";
+    private static readonly ConcurrentDictionary<string, Lazy<IReadOnlyList<UmbracoLanguage>>> _languageLocks = new();
     private readonly IDataTypeService _dataTypeService;
     private readonly IDomainService _domainService;
     private readonly INodeService _nodeService;
@@ -146,21 +150,51 @@ class UmbracoService : IUmbracoService
 
     public IEnumerable<UmbracoLanguage>? GetLanguages()
     {
-        return _runtimeCache.GetCacheItem("ekmLanguages", () => {
-            return _localizationService.GetAllLanguages().OrderByDescending(x => x.IsDefault).ThenBy(x => x.CultureName).Select(x => new UmbracoLanguage()
+        return _runtimeCache.GetCacheItem(LanguagesCacheKey, () =>
+        {
+            var lazy = _languageLocks.GetOrAdd(LanguagesCacheKey, _ =>
+                new Lazy<IReadOnlyList<UmbracoLanguage>>(
+                    LoadLanguages,
+                    LazyThreadSafetyMode.ExecutionAndPublication));
+
+            try
+            {
+                return lazy.Value;
+            }
+            catch
+            {
+                _languageLocks.TryRemove(LanguagesCacheKey, out _);
+                throw;
+            }
+            finally
+            {
+                if (lazy.IsValueCreated)
+                {
+                    _languageLocks.TryRemove(LanguagesCacheKey, out _);
+                }
+            }
+        }, TimeSpan.FromHours(6));
+    }
+
+    private IReadOnlyList<UmbracoLanguage> LoadLanguages()
+    {
+        return _localizationService.GetAllLanguages()
+            .OrderByDescending(x => x.IsDefault)
+            .ThenBy(x => x.CultureName)
+            .Select(x => new UmbracoLanguage()
             {
                 Culture = x.CultureInfo,
                 CultureName = x.CultureName,
                 IsoCode = x.IsoCode
-            });
-        }, TimeSpan.FromMinutes(30));
+            })
+            .ToList();
     }
 
     public string DefaultLanguage()
     {
         return _runtimeCache.GetCacheItem("ekmDefaultLanguage", () => {
             return _localizationService.GetDefaultLanguageIsoCode();
-        }, TimeSpan.FromMinutes(30));
+        }, TimeSpan.FromHours(6));
     }
 
     private object FormatDataType(IDataType dtd)
