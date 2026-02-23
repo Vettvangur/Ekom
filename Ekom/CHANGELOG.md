@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.65...Ekom-v0.2.66) (2026-02-23)
+
+
+### Bug Fixes
+
+* reduce backoffice language/store fetches ([21349e5](https://github.com/Vettvangur/Ekom/commit/21349e5c59932f29c148923c32a14048c9517cda))
+* reduce backoffice language/store fetches ([307f72d](https://github.com/Vettvangur/Ekom/commit/307f72d138241ec28c2c6ee013e458f33156df6f))
+
 ## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.64...Ekom-v0.2.65) (2026-02-20)
 
 
