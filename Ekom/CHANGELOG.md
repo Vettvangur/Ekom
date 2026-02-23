@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.66...Ekom-v0.2.67) (2026-02-23)
+
+
+### Bug Fixes
+
+* ensure node exist - Cultures with repeatable textstrings in store ([49f67e4](https://github.com/Vettvangur/Ekom/commit/49f67e44b9686b3f96866bfa5307fc8f97772a50))
+* ensure node exist - Cultures with repeatable textstrings in store ([7894433](https://github.com/Vettvangur/Ekom/commit/78944339a3381d1b3717706b14700e2606a8a104))
+
 ## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.65...Ekom-v0.2.66) (2026-02-23)
 
 
