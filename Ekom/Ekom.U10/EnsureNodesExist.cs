@@ -149,6 +149,11 @@ class EnsureNodesExist : IComponent
                     throw new EnsureNodesException(
                         "Unable to find Umbraco.RadioButtonList property editor, failed creating Ekom nodes.");
                 }
+                if (!_propertyEditorCollection.TryGet("Umbraco.MultipleTextstring", out IDataEditor? multipleTextstringEditor))
+                {
+                    throw new EnsureNodesException(
+                        "Unable to find Umbraco.MultipleTextstring property editor, failed creating Ekom nodes.");
+                }
 
 
                 #endregion
@@ -189,6 +194,11 @@ class EnsureNodesExist : IComponent
                 var rteDt = _dataTypeService.GetDataType(new Guid("ca90c950-0aff-4e72-b976-a30b1ac57dad"));
                 var textareaDt = _dataTypeService.GetDataType(new Guid("c6bac0dd-4ab9-45b1-8e30-e4b619ee5da3"));
                 var radioDt = _dataTypeService.GetDataType(new Guid("bb5f57c9-ce2b-4bb9-b697-4caca783a805"));
+
+                var multipleTextstringDt = EnsureDataTypeExists(new DataType(multipleTextstringEditor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
+                {
+                    Name = "Ekom Repeatable Textstrings",
+                });
 
                 var propertyTextDt = EnsureDataTypeExists(new DataType(editor, _configurationEditorJsonSerializer, ekmDtContainer.Id)
                 {
@@ -1177,10 +1187,9 @@ class EnsureNodesExist : IComponent
                                     Name = "Vat",
                                     Mandatory = true,
                                 },
-                                new PropertyType(_shortStringHelper, textstringDt, "culture")
+                                new PropertyType(_shortStringHelper, multipleTextstringDt, "cultures")
                                 {
-                                    Name = "Culture",
-                                    Mandatory = true,
+                                    Name = "Cultures",
                                 },
                                 new PropertyType(_shortStringHelper, currencyDt, "currency")
                                 {
