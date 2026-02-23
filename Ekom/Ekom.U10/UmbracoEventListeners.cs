@@ -456,6 +456,7 @@ class UmbracoEventListeners :
     public void Handle(LanguageCacheRefresherNotification notification)
     {
         _runtimeCache.Clear("ekmLanguages");
+        _runtimeCache.Clear("ekmDefaultLanguage");
     }
 
     private void RefreshCacheForRelatedNodes(int Id, bool remove = false)

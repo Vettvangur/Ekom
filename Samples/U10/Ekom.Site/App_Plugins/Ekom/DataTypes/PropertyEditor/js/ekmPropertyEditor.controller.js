@@ -92,7 +92,7 @@
 
             $scope.model.value.type = "Language";
 
-            ekmResources.getLanguages().then(function (languages) {
+            ekmResources.getLanguagesByNode($routeParams.id).then(function (languages) {
 
               $scope.tabs = languages.map(x => ({ value: x.isoCode, text: x.cultureName }));
 
