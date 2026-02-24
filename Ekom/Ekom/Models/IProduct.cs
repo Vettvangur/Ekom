@@ -19,6 +19,9 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <value>
     /// The price.
     /// </value>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     List<IPrice> Prices { get; }
 
     List<IPrice> BuildPricesFromRaw( string[]? categories = null);
@@ -30,6 +33,9 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <value>
     /// The original price.
     /// </value>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IPrice OriginalPrice { get; }
 
     /// <summary>
@@ -48,12 +54,18 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <value>
     /// The stock.
     /// </value>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     decimal Stock { get; }
 
     /// <summary>
     /// Sets the stock buffer for the product
     /// </summary>
     /// <returns></returns>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     decimal? StockBuffer { get; }
 
     /// <summary>
@@ -68,16 +80,25 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// All ancestor categories this <see cref="Product"/> belongs to from the primary category.
     /// </summary>
     /// <returns></returns>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<ICategory> CategoryAncestors { get; }
 
     /// <summary>
     /// All categories product belongs to, includes parent category and related categories.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<ICategory> Categories { get; }
 
     /// <summary>
     /// All ID's of categories product belongs to, includes parent category and related categories.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<Guid> CategoriesIds { get; }
 
     /// <summary>
@@ -100,12 +121,18 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// therefore we allow to configure a default/primary variant group.
     /// If none is configured, we return the first possible item.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IVariantGroup? PrimaryVariantGroup { get; }
 
     /// <summary>
     /// Select the Primary variant.
     /// First Variant in the primary variant group that is available, if none are available, return the first variant.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IVariant? PrimaryVariant { get; }
 
     /// <summary>
@@ -119,10 +146,16 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// All child variant groups of this product
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<IVariantGroup> VariantGroups { get; }
     /// <summary>
     /// All variants belonging to product.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<IVariant> AllVariants { get; }
 
     /// <summary>

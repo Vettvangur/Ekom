@@ -5,9 +5,12 @@ namespace Ekom.Models
     /// </summary>
     public interface IPerStoreNodeEntity : INodeEntity
     {
-        /// <summary>
-        /// Ekom Store
-        /// </summary>
-        IStore Store { get; }
+    /// <summary>
+    /// Ekom Store
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
+    IStore Store { get; }
     }
 }
