@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.68...Ekom-v0.2.69) (2026-02-24)
+
+
+### Bug Fixes
+
+* cached endpoints in property editor ([c85575d](https://github.com/Vettvangur/Ekom/commit/c85575d183f49cbc2339042dbed784d5ffbbce03))
+* cached endpoints in property editor ([f5ec150](https://github.com/Vettvangur/Ekom/commit/f5ec150806b079778c171ba63e89994a93c9e8be))
+
 ## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.67...Ekom-v0.2.68) (2026-02-24)
 
 
