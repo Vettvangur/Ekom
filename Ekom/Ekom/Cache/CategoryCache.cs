@@ -38,11 +38,32 @@ class CategoryCache : PerStoreCache<ICategory>
     {
         var count = base.FillStoreCache(store, results, nodeAlias);
 
-        // rebuild children + descendants indexes from the fresh store cache
+        RebuildIndexes(store.Alias);
+
+        return count;
+    }
+
+    public override void AddOrReplaceFromCache(Guid key, Store store, ICategory item)
+    {
+        base.AddOrReplaceFromCache(key, store, item);
+        RebuildIndexes(store.Alias);
+    }
+
+    public override bool RemoveItemFromCache(IStore store, Guid key)
+    {
+        var removed = base.RemoveItemFromCache(store, key);
+        if (removed)
+            RebuildIndexes(store.Alias);
+
+        return removed;
+    }
+
+    private void RebuildIndexes(string storeAlias)
+    {
         var children = new ConcurrentDictionary<int, ConcurrentBag<Guid>>();
         var desc = new ConcurrentDictionary<int, ConcurrentBag<Guid>>();
 
-        if (Cache.TryGetValue(store.Alias, out var storeCache))
+        if (Cache.TryGetValue(storeAlias, out var storeCache))
         {
             // children index
             foreach (var kv in storeCache)
@@ -50,15 +71,21 @@ class CategoryCache : PerStoreCache<ICategory>
                 var key = kv.Key;
                 var c = kv.Value;
 
+                if (c == null)
+                    continue;
+
                 children.GetOrAdd(c.ParentId, _ => new ConcurrentBag<Guid>()).Add(key);
             }
 
-            // descendants index (using PathArray as you do today, but once per fill)
+            // descendants index (using PathArray as you do today, but once per rebuild)
             // For each category, add itself as descendant to each ancestor id found in its PathArray.
             foreach (var kv in storeCache)
             {
                 var key = kv.Key;
                 var c = kv.Value;
+
+                if (c == null)
+                    continue;
 
                 // PathArray contains string ids like "123"
                 foreach (var pathIdStr in c.PathArray)
@@ -72,10 +99,8 @@ class CategoryCache : PerStoreCache<ICategory>
             }
         }
 
-        _childrenIndex[store.Alias] = children;
-        _descIndex[store.Alias] = desc;
-
-        return count;
+        _childrenIndex[storeAlias] = children;
+        _descIndex[storeAlias] = desc;
     }
 
     public IEnumerable<ICategory> GetChildren(string storeAlias, int parentId)
