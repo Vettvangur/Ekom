@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.67...Ekom-v0.2.68) (2026-02-24)
+
+
+### Bug Fixes
+
+* ignore on interface level ([d86bc4c](https://github.com/Vettvangur/Ekom/commit/d86bc4c78e85b76e4398cce47026583ef4b59070))
+* ignore on interface level ([42fe139](https://github.com/Vettvangur/Ekom/commit/42fe139c5883feae6194f59d61a1da6e04afe35a))
+
 ## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.66...Ekom-v0.2.67) (2026-02-23)
 
 
