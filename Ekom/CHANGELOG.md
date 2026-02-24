@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.69...Ekom-v0.2.70) (2026-02-24)
+
+
+### Bug Fixes
+
+* fix cache when category is moved ([5b6c16c](https://github.com/Vettvangur/Ekom/commit/5b6c16cd62647b186e6f74239646c17263d76232))
+* fix cache when category is moved ([307249d](https://github.com/Vettvangur/Ekom/commit/307249df41f082cd1ef238da5b8685c402f6a3ef))
+
 ## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.68...Ekom-v0.2.69) (2026-02-24)
 
 
