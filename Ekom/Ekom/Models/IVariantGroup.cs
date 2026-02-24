@@ -17,6 +17,9 @@ public interface IVariantGroup : IPerStoreNodeEntity
     /// <summary>
     /// Parent <see cref="IProduct"/> of Variant
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IProduct Product { get; }
     /// <summary>
     /// Id of Parent <see cref="IProduct"/> of Variant

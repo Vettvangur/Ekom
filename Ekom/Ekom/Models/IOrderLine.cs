@@ -54,6 +54,9 @@ public interface IOrderLine
     /// <summary>
     /// 
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IOrderInfo OrderInfo { get; }
 
     /// <summary>

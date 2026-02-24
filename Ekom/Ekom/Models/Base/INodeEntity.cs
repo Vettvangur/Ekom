@@ -122,11 +122,17 @@ public interface INodeEntityWithUrl : INodeEntity
     /// <summary>
     /// All entity urls, computed from stores and possibly categories.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<string> Urls { get; }
 
     /// <summary>
     /// All entity urls, computed from stores and possibly categories.
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     List<UmbracoUrl> UrlsWithContext { get; }
 
     /// <summary>
