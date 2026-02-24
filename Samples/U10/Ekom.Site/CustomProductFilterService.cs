@@ -36,8 +36,6 @@ public class CustomProductFilterService : ProductFilterService
         //}
 
         // Optionally call the base method if you want the default filtering logic
-        var result = base.ApplyFilters(products, query, category);
-
-        return Task.FromResult(result);
+        return base.ApplyFiltersAsync(products, query, category, ct);
     }
 }

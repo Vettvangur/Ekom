@@ -195,6 +195,11 @@ class UmbracoEventListeners :
                 var parentNode = _nodeService.NodeById(node.Id);
 
                 cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
+
+                if (node.ContentType.Alias == "ekmCategory")
+                {
+                    RefreshCacheForRelatedNodes(node.Id);
+                }
             }
 
 
