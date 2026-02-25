@@ -45,64 +45,6 @@ public static class ProfileMapper
             "Klaviyo profile requires at least one identifier (email, phone_number, or external_id).");
     }
 
-    public static KlaviyoProfileUpdate ToKlaviyoProfileUpsert(this IOrderInfo order, string storeAlias, KlaviyoOptions opt)
-    {
-        var customer = order.ToKlaviyoCustomer(opt);
-
-        var attributes = new KlaviyoProfileAttributes
-        {
-            FirstName = order.CustomerInformation.Customer.FirstName,
-            LastName = order.CustomerInformation.Customer.LastName,
-            Address = order.CustomerInformation.Customer.Address,
-            Address2 = order.CustomerInformation.Customer.Apartment,
-            ZipCode = order.CustomerInformation.Customer.ZipCode,
-            City = order.CustomerInformation.Customer.City,
-            Country = order.CustomerInformation.Customer.Country,
-            Organisation = order.CustomerInformation.Customer.Company
-        };
-
-        return new KlaviyoProfileUpdate(
-            StoreAlias: storeAlias,
-            Profile: new KlaviyoProfile
-            {
-                Customer = customer,
-                Attributes = attributes
-            });
-    }
-
-    public static KlaviyoCustomer ToKlaviyoCustomer(this IOrderInfo order, KlaviyoOptions opt)
-    {
-        return new KlaviyoCustomer
-        {
-            Email = order.CustomerInformation.Customer.Email,
-            PhoneNumber = order.CustomerInformation.Customer.Phone,
-            ExternalId = ToProfileExternalId(order, opt)
-        };
-    }
-
-    public static KlaviyoProfile ToProfile(this KlaviyoOrderProfile o)
-            => new()
-            {
-                Customer = new KlaviyoCustomer
-                {
-                    Email = o.Email,
-                    PhoneNumber = o.PhoneNumber,
-                    ExternalId = o.ExternalId
-                },
-                Attributes = new KlaviyoProfileAttributes
-                {
-                    FirstName = o.FirstName,
-                    LastName = o.LastName,
-                    Address = o.Address,
-                    Address2 = o.Address2,
-                    ZipCode = o.ZipCode,
-                    City = o.City,
-                    Country = o.Country,
-                    Organisation = o.Organisation,
-                    CustomProperties = o.CustomProperties
-                }
-            };
-
     // -----------------------------
     // JSON payload builders (Klaviyo expects snake_case keys)
     // -----------------------------
@@ -117,9 +59,9 @@ public static class ProfileMapper
     }
 
     // 1b) /api/lists/{id}/relationships/profiles
-    public static object ToAddToListRequest(this KlaviyoProfile p)
+    public static object ToAddToListRequest(string profileId)
     {
-        if (string.IsNullOrWhiteSpace(p.Customer.KlaviyoProfileId))
+        if (string.IsNullOrWhiteSpace(profileId))
             throw new InvalidOperationException(
                 "Klaviyo profile requires KlaviyoProfileId to add to list.");
 
@@ -129,41 +71,78 @@ public static class ProfileMapper
                 new JsonObject
                 {
                     ["type"] = "profile",
-                    ["id"] = p.Customer.KlaviyoProfileId
+                    ["id"] = profileId
                 })
         };
     }
 
     // 2) /api/profile-subscription-bulk-create-jobs
-    public static object ToBulkSubscribeJobRequest(this KlaviyoProfileConsentRequest u)
+    public static object ToBulkSubscribeJobRequest(this KlaviyoProfileSubscribeRequest u)
     {
         return u.ToSubscriptionJobRequest(
             jobType: "profile-subscription-bulk-create-job",
             includeSubscriptionsObject: true);
     }
 
-    // 3) /api/profile-subscription-bulk-delete-jobs
-    public static object ToBulkUnsubscribeJobRequest(this KlaviyoProfileConsentRequest u)
+    public static object ToBulkUnsubscribeJobRequest(this KlaviyoProfileUnsubscribeRequest u)
     {
-        return u.ToSubscriptionJobRequest(
-            jobType: "profile-subscription-bulk-delete-job",
-            includeSubscriptionsObject: true);
+        var profileAttributes = new JsonObject
+        {
+            ["email"] = u.Email,
+            ["subscriptions"] = new JsonObject
+            {
+                ["email"] = new JsonObject
+                {
+                    ["marketing"] = new JsonObject
+                    {
+                        ["consent"] = "UNSUBSCRIBED"
+                    }
+                }
+            }
+        };
+
+        var profiles = new JsonObject
+        {
+            ["data"] = new JsonArray(
+                new JsonObject
+                {
+                    ["type"] = "profile",
+                    ["attributes"] = profileAttributes
+                })
+        };
+
+        var attributes = new JsonObject
+        {
+            ["profiles"] = profiles
+        };
+
+        var data = new JsonObject
+        {
+            ["type"] = "profile-subscription-bulk-delete-job",
+            ["attributes"] = attributes
+        };
+
+        return new JsonObject
+        {
+            ["data"] = data
+        };
     }
 
-  
-
-    private static object ToSubscriptionJobRequest(this KlaviyoProfileConsentRequest u, string jobType, bool includeSubscriptionsObject)
+    private static object ToSubscriptionJobRequest(this KlaviyoProfileSubscribeRequest u, string jobType, bool includeSubscriptionsObject)
     {
         var profileAttributes = new JsonObject();
 
         profileAttributes["email"] = u.Email;
+
+        if (!string.IsNullOrWhiteSpace(u.PhoneNumber))
+            profileAttributes["phone_number"] = u.PhoneNumber;
 
 
         if (includeSubscriptionsObject)
         {
             var subscriptions = new JsonObject();
 
-            foreach (var c in u.Consents)
+            foreach (var c in u.Consents ?? Array.Empty<KlaviyoProfileConsentChange>())
             {
                 var channelKey = c.Channel switch
                 {
@@ -214,7 +193,7 @@ public static class ProfileMapper
             ["attributes"] = attributes
         };
 
-        if (includeSubscriptionsObject && !string.IsNullOrWhiteSpace(u.ListId))
+        if (!string.IsNullOrWhiteSpace(u.ListId))
         {
             data["relationships"] = new JsonObject
             {
@@ -233,6 +212,28 @@ public static class ProfileMapper
         {
             ["data"] = data
         };
+    }
+
+    private static (string? FirstName, string? LastName) GetNameParts(
+        string? firstName,
+        string? lastName,
+        string? fullName)
+    {
+        if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+            return (firstName, lastName);
+
+        if (string.IsNullOrWhiteSpace(fullName))
+            return (null, null);
+
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+            return (null, null);
+
+        if (parts.Length == 1)
+            return (parts[0], null);
+
+        var computedLastName = string.Join(' ', parts, 1, parts.Length - 1);
+        return (parts[0], computedLastName);
     }
 
 
@@ -307,97 +308,97 @@ internal static JsonObject ToProfileAttributes(this KlaviyoProfile p)
         return attributes;
     }
 
-    private static (string? FirstName, string? LastName) GetNameParts(KlaviyoProfileAttributes attributes)
+private static (string? FirstName, string? LastName) GetNameParts(KlaviyoProfileAttributes attributes)
+{
+    if (!string.IsNullOrWhiteSpace(attributes.FirstName) || !string.IsNullOrWhiteSpace(attributes.LastName))
+        return (attributes.FirstName, attributes.LastName);
+
+    if (string.IsNullOrWhiteSpace(attributes.FullName))
+        return (null, null);
+
+    var parts = attributes.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    if (parts.Length == 0)
+        return (null, null);
+
+    if (parts.Length == 1)
+        return (parts[0], null);
+
+    var lastName = string.Join(' ', parts, 1, parts.Length - 1);
+    return (parts[0], lastName);
+}
+
+internal static JsonObject ToProfileData(this KlaviyoProfile p)
+{
+    if (!p.Customer.HasIdentifier)
+        throw new InvalidOperationException(
+            "Klaviyo profile requires at least one identifier (email, phone_number, external_id, or klaviyo profile id).");
+
+    return new JsonObject
     {
-        if (!string.IsNullOrWhiteSpace(attributes.FirstName) || !string.IsNullOrWhiteSpace(attributes.LastName))
-            return (attributes.FirstName, attributes.LastName);
+        ["type"] = "profile",
+        ["attributes"] = p.ToProfileAttributes()
+    };
+}
 
-        if (string.IsNullOrWhiteSpace(attributes.FullName))
-            return (null, null);
+internal static JsonObject ToProfileAttributes(this KlaviyoOrderProfile c)
+{
+    var attributes = new JsonObject();
 
-        var parts = attributes.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-            return (null, null);
+    if (!string.IsNullOrWhiteSpace(c.Email))
+        attributes["email"] = c.Email;
 
-        if (parts.Length == 1)
-            return (parts[0], null);
+    if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+        attributes["phone_number"] = c.PhoneNumber;
 
-        var lastName = string.Join(' ', parts, 1, parts.Length - 1);
-        return (parts[0], lastName);
-    }
+    if (!string.IsNullOrWhiteSpace(c.ExternalId))
+        attributes["external_id"] = c.ExternalId;
 
-    internal static JsonObject ToProfileData(this KlaviyoProfile p)
+    if (!string.IsNullOrWhiteSpace(c.FirstName))
+        attributes["first_name"] = c.FirstName;
+
+    if (!string.IsNullOrWhiteSpace(c.LastName))
+        attributes["last_name"] = c.LastName;
+
+    if (!string.IsNullOrWhiteSpace(c.Organisation))
+        attributes["organization"] = c.Organisation;
+
+    var location = new JsonObject();
+
+    if (!string.IsNullOrWhiteSpace(c.Address))
+        location["address1"] = c.Address;
+
+    if (!string.IsNullOrWhiteSpace(c.Address2))
+        location["address2"] = c.Address2;
+
+    if (!string.IsNullOrWhiteSpace(c.ZipCode))
+        location["zip"] = c.ZipCode;
+
+    if (!string.IsNullOrWhiteSpace(c.City))
+        location["city"] = c.City;
+
+    if (!string.IsNullOrWhiteSpace(c.Country))
+        location["country"] = c.Country;
+
+    if (location.Count > 0)
+        attributes["location"] = location;
+
+    if (c.CustomProperties is not null && c.CustomProperties.Count > 0)
     {
-        if (!p.Customer.HasIdentifier)
-            throw new InvalidOperationException(
-                "Klaviyo profile requires at least one identifier (email, phone_number, external_id, or klaviyo profile id).");
+        var properties = new JsonObject();
 
-        return new JsonObject
+        foreach (var kvp in c.CustomProperties)
         {
-            ["type"] = "profile",
-            ["attributes"] = p.ToProfileAttributes()
-        };
-    }
+            if (kvp.Value is null) continue;
+            if (kvp.Value is string s && string.IsNullOrWhiteSpace(s)) continue;
 
-    internal static JsonObject ToProfileAttributes(this KlaviyoOrderProfile c)
-    {
-        var attributes = new JsonObject();
-
-        if (!string.IsNullOrWhiteSpace(c.Email))
-            attributes["email"] = c.Email;
-
-        if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
-            attributes["phone_number"] = c.PhoneNumber;
-
-        if (!string.IsNullOrWhiteSpace(c.ExternalId))
-            attributes["external_id"] = c.ExternalId;
-
-        if (!string.IsNullOrWhiteSpace(c.FirstName))
-            attributes["first_name"] = c.FirstName;
-
-        if (!string.IsNullOrWhiteSpace(c.LastName))
-            attributes["last_name"] = c.LastName;
-
-        if (!string.IsNullOrWhiteSpace(c.Organisation))
-            attributes["organization"] = c.Organisation;
-
-        var location = new JsonObject();
-
-        if (!string.IsNullOrWhiteSpace(c.Address))
-            location["address1"] = c.Address;
-
-        if (!string.IsNullOrWhiteSpace(c.Address2))
-            location["address2"] = c.Address2;
-
-        if (!string.IsNullOrWhiteSpace(c.ZipCode))
-            location["zip"] = c.ZipCode;
-
-        if (!string.IsNullOrWhiteSpace(c.City))
-            location["city"] = c.City;
-
-        if (!string.IsNullOrWhiteSpace(c.Country))
-            location["country"] = c.Country;
-
-        if (location.Count > 0)
-            attributes["location"] = location;
-
-        if (c.CustomProperties is not null && c.CustomProperties.Count > 0)
-        {
-            var properties = new JsonObject();
-
-            foreach (var kvp in c.CustomProperties)
-            {
-                if (kvp.Value is null) continue;
-                if (kvp.Value is string s && string.IsNullOrWhiteSpace(s)) continue;
-
-                properties[kvp.Key] = JsonValue.Create(kvp.Value);
-            }
-
-            if (properties.Count > 0)
-                attributes["properties"] = properties;
+            properties[kvp.Key] = JsonValue.Create(kvp.Value);
         }
 
-        return attributes;
+        if (properties.Count > 0)
+            attributes["properties"] = properties;
     }
+
+    return attributes;
+}
 
 }

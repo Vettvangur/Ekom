@@ -9,6 +9,8 @@ public sealed record KlaviyoCheckoutStartedEvent
     public KlaviyoOrderProfile Customer { get; set; } = default!;
     public string? EventId { get; set; }
 
+    public string? ListId { get; set; }
+
     public string? CartId { get; set; }
     public decimal? Value { get; set; }
     public string? ValueFormatted { get; set; }

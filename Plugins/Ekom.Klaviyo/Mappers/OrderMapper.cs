@@ -46,13 +46,13 @@ public static class OrderMapper
         var shippingProvider = order.ShippingProvider?.ToKlaviyoShippingProvider() ?? null;
         var paymentProvider = order.PaymentProvider?.ToKlaviyoPaymentProvider() ?? null;
 
-        KlaviyoProfileConsentRequest? consent = null;
+        KlaviyoProfileSubscribeRequest? consent = null;
 
         var consentValue = order.CustomerInformation.Customer.Value("customerKlaviyoConsentToSubscribe");
 
         if (consentValue.IsBoolean())
         {
-            consent = new KlaviyoProfileConsentRequest(
+            consent = new KlaviyoProfileSubscribeRequest(
                 StoreAlias: order.StoreInfo.Alias,
                 Email: order.CustomerInformation.Customer.Email ?? string.Empty,
                 Consents: new List<KlaviyoProfileConsentChange>

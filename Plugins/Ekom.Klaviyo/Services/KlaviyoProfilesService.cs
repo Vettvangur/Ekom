@@ -5,11 +5,9 @@ using Ekom.Klaviyo.Exceptions;
 using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Profiles;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
@@ -18,12 +16,15 @@ public interface IKlaviyoProfilesService
     ValueTask UpsertProfileAsync(
         KlaviyoProfileUpdate payload, 
         CancellationToken ct = default);
-    ValueTask UpsertAndSubscribeAsync(
-        KlaviyoProfileUpdate profileUpdate,
-        KlaviyoProfileConsentRequest consent,
+
+    ValueTask SubscribeAsync(
+        KlaviyoProfileSubscribeRequest payload, 
         CancellationToken ct = default);
-    ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
-    ValueTask UnsubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default);
+
+    ValueTask UnsubscribeAsync(
+        KlaviyoProfileUnsubscribeRequest payload, 
+        CancellationToken ct = default);
+
     ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
         string profileId,
         string? storeAlias,
@@ -36,7 +37,7 @@ public interface IKlaviyoProfilesService
         bool includeSubscriptions = false,
         CancellationToken ct = default);
 
-    ValueTask<IReadOnlyList<string>?> GetProfileListIdsAsync(
+    ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
         string profileId,
         string? storeAlias,
         CancellationToken ct = default);
@@ -93,35 +94,51 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
 
         await _dispatcher.EnqueueAsync(work, ct);
 
-    }
-
-    public async ValueTask UpsertAndSubscribeAsync(
-        KlaviyoProfileUpdate profileUpdate,
-        KlaviyoProfileConsentRequest consent,
-        CancellationToken ct = default)
-    {
-        if (!IsEnabled()) return;
-        if (profileUpdate is null) throw new ArgumentNullException(nameof(profileUpdate));
-        if (consent is null) throw new ArgumentNullException(nameof(consent));
-
-        if (!string.Equals(profileUpdate.StoreAlias, consent.StoreAlias, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(payload.ListId))
         {
-            throw new InvalidOperationException(
-                "Klaviyo: StoreAlias mismatch between profile update and consent request.");
+            string? profileId = payload.Profile.Customer.KlaviyoProfileId;
+
+            if (string.IsNullOrWhiteSpace(profileId) &&
+                !string.IsNullOrWhiteSpace(payload.Profile.Customer.Email))
+            {
+                var lookup = await GetProfileByEmailAsync(
+                    payload.Profile.Customer.Email,
+                    payload.StoreAlias,
+                    includeSubscriptions: false,
+                    ct).ConfigureAwait(false);
+
+                profileId = lookup?.ProfileId;
+            }
+
+            if (string.IsNullOrWhiteSpace(profileId))
+            {
+                _logger.LogDebug(
+                    "Klaviyo: skipping list add because no profile id was resolved. Store={StoreAlias}",
+                    payload.StoreAlias);
+                return;
+            }
+
+            var addToList = new KlaviyoProfilesWork(
+                Type: KlaviyoProfilesEventType.AddToList,
+                Payload: ProfileMapper.ToAddToListRequest(profileId),
+                OccurredAt: DateTimeOffset.UtcNow,
+                StoreAlias: payload.StoreAlias,
+                CustomerIdentifier: payload.Profile.Customer.IdentifierForLogs(),
+                ListId: payload.ListId);
+
+            await _dispatcher.EnqueueAsync(addToList, ct);
         }
 
-        await UpsertProfileAsync(profileUpdate, ct);
-        await SubscribeAsync(consent, ct);
     }
 
-    public async ValueTask SubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default)
+    public async ValueTask SubscribeAsync(KlaviyoProfileSubscribeRequest payload, CancellationToken ct = default)
     {
-        await SendConsentJobAsync(payload, KlaviyoProfilesEventType.Subscribe, ct);
+        await SendSubscribeJobAsync(payload, ct);
     }
 
-    public async ValueTask UnsubscribeAsync(KlaviyoProfileConsentRequest payload, CancellationToken ct = default)
+    public async ValueTask UnsubscribeAsync(KlaviyoProfileUnsubscribeRequest payload, CancellationToken ct = default)
     {
-        await SendConsentJobAsync(payload, KlaviyoProfilesEventType.Unsubscribe, ct);
+        await SendUnsubscribeJobAsync(payload, ct);
     }
 
     public async ValueTask<KlaviyoProfileLookupResult?> GetProfileByIdAsync(
@@ -154,7 +171,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         return await ParseProfileResponseAsync(json, storeAlias, includeSubscriptions, ct).ConfigureAwait(false);
     }
 
-    public async ValueTask<IReadOnlyList<string>?> GetProfileListIdsAsync(
+    public async ValueTask<IReadOnlyList<string>?> GetProfileListIdsByProfileIdAsync(
         string profileId,
         string? storeAlias,
         CancellationToken ct = default)
@@ -179,7 +196,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         var profile = await GetProfileByEmailAsync(email, storeAlias, includeSubscriptions: false, ct).ConfigureAwait(false);
         if (profile?.ProfileId is null) return null;
 
-        return await GetProfileListIdsAsync(profile.ProfileId, storeAlias, ct).ConfigureAwait(false);
+        return await GetProfileListIdsByProfileIdAsync(profile.ProfileId, storeAlias, ct).ConfigureAwait(false);
     }
 
     private async Task<string?> TryGetByIdAsync(
@@ -309,7 +326,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
     private bool IsEnabled()
         => _opt.Enabled;
 
-    private async ValueTask SendConsentJobAsync(KlaviyoProfileConsentRequest payload, KlaviyoProfilesEventType type, CancellationToken ct)
+    private async ValueTask SendSubscribeJobAsync(KlaviyoProfileSubscribeRequest payload, CancellationToken ct)
     {
         if (!IsEnabled() || !_opt.Subscriptions.Enabled) return;
 
@@ -317,7 +334,7 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         {
             _logger.LogWarning(
                 "Klaviyo: skipping {Type} because no email was provided. Store={StoreAlias}",
-                type, payload.StoreAlias);
+                KlaviyoProfilesEventType.Subscribe, payload.StoreAlias);
             return;
         }
 
@@ -325,22 +342,19 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         {
             _logger.LogDebug(
                 "Klaviyo: skipping {Type} because no consent changes were provided. Store={StoreAlias}",
-                type, payload.StoreAlias);
+                KlaviyoProfilesEventType.Subscribe, payload.StoreAlias);
             return;
         }
+
+        await TryUpsertProfileForSubscribeAsync(payload, ct);
 
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(payload, ct);
 
-        var request = type switch
-        {
-            KlaviyoProfilesEventType.Subscribe => payload.ToBulkSubscribeJobRequest(),
-            KlaviyoProfilesEventType.Unsubscribe => payload.ToBulkUnsubscribeJobRequest(),
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unexpected profiles event type")
-        };
+        var request = payload.ToBulkSubscribeJobRequest();
 
         var work = new KlaviyoProfilesWork(
-            Type: type,
+            Type: KlaviyoProfilesEventType.Subscribe,
             Payload: request,
             OccurredAt: DateTimeOffset.UtcNow,
             StoreAlias: payload.StoreAlias,
@@ -349,19 +363,59 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         await _dispatcher.EnqueueAsync(work, ct);
     }
 
-    private string? ResolveListId(string storeAlias, string? explicitListId)
+    private async ValueTask TryUpsertProfileForSubscribeAsync(KlaviyoProfileSubscribeRequest payload, CancellationToken ct)
     {
-        if (!string.IsNullOrWhiteSpace(explicitListId))
-            return explicitListId;
+        if (string.IsNullOrWhiteSpace(payload.FirstName) &&
+            string.IsNullOrWhiteSpace(payload.LastName) &&
+            string.IsNullOrWhiteSpace(payload.FullName))
+        {
+            return;
+        }
 
-        var store = _opt.Stores.FirstOrDefault(s => s.Alias.InvariantEquals(storeAlias));
-        if (!string.IsNullOrWhiteSpace(store?.ListId))
-            return store.ListId;
+        var update = new KlaviyoProfileUpdate(
+            StoreAlias: payload.StoreAlias,
+            Profile: new KlaviyoProfile
+            {
+                Customer = new KlaviyoCustomer
+                {
+                    Email = payload.Email,
+                    PhoneNumber = payload.PhoneNumber
+                },
+                Attributes = new KlaviyoProfileAttributes
+                {
+                    FullName = payload.FullName,
+                    FirstName = payload.FirstName,
+                    LastName = payload.LastName
+                }
+            });
 
-        return string.IsNullOrWhiteSpace(_opt.Subscriptions.DefaultListId)
-            ? null
-            : _opt.Subscriptions.DefaultListId;
+        await UpsertProfileAsync(update, ct);
     }
+
+    private async ValueTask SendUnsubscribeJobAsync(KlaviyoProfileUnsubscribeRequest payload, CancellationToken ct)
+    {
+        if (!IsEnabled() || !_opt.Subscriptions.Enabled) return;
+
+        if (string.IsNullOrWhiteSpace(payload.Email))
+        {
+            _logger.LogWarning(
+                "Klaviyo: skipping {Type} because no email was provided. Store={StoreAlias}",
+                KlaviyoProfilesEventType.Unsubscribe, payload.StoreAlias);
+            return;
+        }
+
+        var request = payload.ToBulkUnsubscribeJobRequest();
+
+        var work = new KlaviyoProfilesWork(
+            Type: KlaviyoProfilesEventType.Unsubscribe,
+            Payload: request,
+            OccurredAt: DateTimeOffset.UtcNow,
+            StoreAlias: payload.StoreAlias,
+            CustomerIdentifier: KlaviyoCustomerLoggingExtensions.MaskEmailForLogs(payload.Email));
+
+        await _dispatcher.EnqueueAsync(work, ct);
+    }
+
     private static bool TryGetProfileData(JsonElement root, out JsonElement profileData)
     {
         profileData = default;
