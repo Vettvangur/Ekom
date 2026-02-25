@@ -20,7 +20,7 @@ public sealed record KlaviyoPlacedOrder
     public KlaviyoPaymentProvider? PaymentProvider { get; set; } = null;
     public decimal? TaxValue { get; set; }
     public Dictionary<string, object?> CustomProperties { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    public KlaviyoProfileConsentRequest? Consent { get; set; }
+    public KlaviyoProfileSubscribeRequest? Consent { get; set; }
 }
 
 public sealed record KlaviyoShippingProvider

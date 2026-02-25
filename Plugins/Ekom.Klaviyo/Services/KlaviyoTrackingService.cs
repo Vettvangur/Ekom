@@ -2,9 +2,12 @@ using Ekom.Klaviyo.Dispatching.Tracking;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Orders;
+using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Klaviyo.Models.Tracking;
+using Ekom.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
@@ -23,17 +26,20 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoTrackingService> _logger;
     private readonly IKlaviyoTrackingDispatcher _dispatcher;
+    private readonly IKlaviyoProfilesService _profiles;
     private readonly IKlaviyoTrackingEnricherRunner? _enrichers;
 
     public KlaviyoTrackingService(
         IOptions<KlaviyoOptions> opt,
         ILogger<KlaviyoTrackingService> logger,
         IKlaviyoTrackingDispatcher dispatcher,
+        IKlaviyoProfilesService profiles,
         IKlaviyoTrackingEnricherRunner? enrichers = null)
     {
         _opt = opt.Value;
         _logger = logger;
         _dispatcher = dispatcher;
+        _profiles = profiles;
         _enrichers = enrichers;
     }
 
@@ -56,6 +62,65 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         await _dispatcher.EnqueueAsync(work, ct);
     }
 
+    private async ValueTask TryProfileUpdateCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct)
+    {
+        if (payload is null || payload.Customer is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(payload.ListId) &&
+            string.IsNullOrWhiteSpace(payload.Customer.FirstName))
+        {
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
+
+        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
+
+        var email = payload?.Customer?.Email;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogDebug(
+                "Klaviyo: skipping checkout started list subscribe because no email was provided. Store={StoreAlias}",
+                payload.StoreAlias);
+            return;
+        }
+
+        var profilePayload = new KlaviyoProfileUpdate(
+            StoreAlias: payload.StoreAlias,
+            Profile: new KlaviyoProfile
+            {
+                Customer = new KlaviyoCustomer
+                {
+                    Email = payload?.Customer?.Email,
+                    PhoneNumber = payload?.Customer?.PhoneNumber
+                },
+                Attributes = new KlaviyoProfileAttributes
+                {
+                    FirstName = payload?.Customer?.FirstName,
+                    LastName = payload?.Customer?.LastName
+                }
+            },
+            ListId: listId);
+
+        await _profiles.UpsertProfileAsync(profilePayload, ct);
+    }
+
+    private string? ResolveListId(string storeAlias, string? listId)
+    {
+        if (!string.IsNullOrWhiteSpace(listId))
+            return listId;
+
+        var storeListId = _opt.Stores
+            .FirstOrDefault(x => x.Alias.InvariantEquals(storeAlias))
+            ?.ListId;
+
+        if (!string.IsNullOrWhiteSpace(storeListId))
+            return storeListId;
+
+        return _opt.Subscriptions.DefaultListId;
+    }
+
     public async ValueTask TrackAddedToCartAsync(KlaviyoAddedToCartEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.AddedToCart)) return;
@@ -63,12 +128,17 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(KlaviyoTrackingEventType.AddedToCart, payload, payload.StoreAlias, ct);
 
+        if (payload.Customer is null || !payload.Customer.HasIdentifier)
+        {
+            return;
+        }
+
         if (!ValidatePayload(payload, "Added to Cart")) return;
 
         var work = new KlaviyoTrackingWork(
             Type: KlaviyoTrackingEventType.AddedToCart,
             EventPayload: payload.ToTrackingEvent(_opt),
-            OccurredAt: payload.OccurredAt,
+            OccurredAt: payload.OccurredAt, 
             StoreAlias: payload.StoreAlias,
             EventId: payload.EventId ?? string.Empty);
 
@@ -80,8 +150,13 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         if (!IsEnabled(_opt.Tracking.ViewedCategory)) return;
 
         if (_enrichers is not null)
-            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ViewedCategory, payload, payload.StoreAlias, ct); 
-        
+            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.ViewedCategory, payload, payload.StoreAlias, ct);
+
+        if (payload.Customer is null || !payload.Customer.HasIdentifier)
+        {
+            return;
+        }
+
         if (!ValidatePayload(payload, "Viewed Category")) return;
 
         var work = new KlaviyoTrackingWork(
@@ -149,6 +224,8 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
             EventId: payload.EventId ?? string.Empty);
 
         await _dispatcher.EnqueueAsync(work, ct);
+
+        await TryProfileUpdateCheckoutStartedAsync(payload, ct);
     }
 
     private bool IsEnabled(bool eventEnabled)
@@ -171,6 +248,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
     private bool ValidatePayload(KlaviyoCheckoutStartedEvent payload, string eventName)
         => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
+
 
     private bool ValidatePayload(string storeAlias, KlaviyoOrderProfile customer, string eventName)
     {

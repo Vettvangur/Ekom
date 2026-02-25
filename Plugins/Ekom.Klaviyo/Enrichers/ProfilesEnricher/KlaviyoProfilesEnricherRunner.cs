@@ -6,7 +6,7 @@ public interface IKlaviyoProfilesEnricherRunner
 {
     ValueTask ApplyAsync(KlaviyoProfileSubscriptionUpdate update, CancellationToken ct);
     ValueTask ApplyAsync(KlaviyoProfileUpdate update, CancellationToken ct);
-    ValueTask ApplyAsync(KlaviyoProfileConsentRequest update, CancellationToken ct);
+    ValueTask ApplyAsync(KlaviyoProfileSubscribeRequest update, CancellationToken ct);
 }
 
 internal sealed class KlaviyoProfilesEnricherRunner : IKlaviyoProfilesEnricherRunner
@@ -22,6 +22,6 @@ internal sealed class KlaviyoProfilesEnricherRunner : IKlaviyoProfilesEnricherRu
     public ValueTask ApplyAsync(KlaviyoProfileUpdate update, CancellationToken ct)
         => _pipeline.ApplyAsync(update.Profile.Customer.Email ?? string.Empty, consents: null, ct);
 
-    public ValueTask ApplyAsync(KlaviyoProfileConsentRequest update, CancellationToken ct)
+    public ValueTask ApplyAsync(KlaviyoProfileSubscribeRequest update, CancellationToken ct)
         => _pipeline.ApplyAsync(update.Email, update.Consents, ct);
 }
