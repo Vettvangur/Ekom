@@ -172,7 +172,7 @@ If none are set, profiles are not added to a list.
   "ViewedCategory": true,
   "ViewedProduct": true,
   "ActiveOnSite": true,
-  "CheckoutStarted": true,
+  "StartedCheckout": true,
   "Dispatching": {
     "MaxBatchSize": 100,
     "FlushIntervalSeconds": 2,

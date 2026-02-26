@@ -4,7 +4,6 @@ using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Orders;
 using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Klaviyo.Models.Tracking;
-using Ekom.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Extensions;
@@ -18,7 +17,7 @@ public interface IKlaviyoTrackingService
     ValueTask TrackViewedCategoryAsync(KlaviyoViewedCategoryEvent payload, CancellationToken ct = default);
     ValueTask TrackViewedProductAsync(KlaviyoViewedProductEvent payload, CancellationToken ct = default);
     ValueTask TrackActiveOnSiteAsync(KlaviyoActiveOnSiteEvent payload, CancellationToken ct = default);
-    ValueTask TrackCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct = default);
+    ValueTask TrackStartedCheckoutAsync(KlaviyoStartedCheckoutEvent payload, CancellationToken ct = default);
 }
 
 public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
@@ -62,7 +61,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         await _dispatcher.EnqueueAsync(work, ct);
     }
 
-    private async ValueTask TryProfileUpdateCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct)
+    private async ValueTask TryProfileUpdateStarteCheckoutdAsync(KlaviyoStartedCheckoutEvent payload, CancellationToken ct)
     {
         if (payload is null || payload.Customer is null)
             return;
@@ -81,7 +80,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         if (string.IsNullOrWhiteSpace(email))
         {
             _logger.LogDebug(
-                "Klaviyo: skipping checkout started list subscribe because no email was provided. Store={StoreAlias}",
+                "Klaviyo: skipping started checkout list subscribe because no email was provided. Store={StoreAlias}",
                 payload.StoreAlias);
             return;
         }
@@ -207,7 +206,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         await _dispatcher.EnqueueAsync(work, ct);
     }
 
-    public async ValueTask TrackCheckoutStartedAsync(KlaviyoCheckoutStartedEvent payload, CancellationToken ct = default)
+    public async ValueTask TrackStartedCheckoutAsync(KlaviyoStartedCheckoutEvent payload, CancellationToken ct = default)
     {
         if (!IsEnabled(_opt.Tracking.StartedCheckout)) return;
 
@@ -225,7 +224,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
         await _dispatcher.EnqueueAsync(work, ct);
 
-        await TryProfileUpdateCheckoutStartedAsync(payload, ct);
+        await TryProfileUpdateStarteCheckoutdAsync(payload, ct);
     }
 
     private bool IsEnabled(bool eventEnabled)
@@ -246,7 +245,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     private bool ValidatePayload(KlaviyoActiveOnSiteEvent payload, string eventName)
         => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
 
-    private bool ValidatePayload(KlaviyoCheckoutStartedEvent payload, string eventName)
+    private bool ValidatePayload(KlaviyoStartedCheckoutEvent payload, string eventName)
         => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
 
 
