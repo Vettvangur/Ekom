@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.53...Ekom.Klaviyo-v0.2.54) (2026-02-26)
+
+
+### Bug Fixes
+
+* klaviyo started checkout refactoring ([9b93f27](https://github.com/Vettvangur/Ekom/commit/9b93f27aac5b6ebf48f32ec106ed1a9397ba6def))
+* klaviyo started checkout refactoring ([4fa6a8e](https://github.com/Vettvangur/Ekom/commit/4fa6a8eef3a25b4dd6e4ec23b507e006ca0423c4))
+
 ## [0.2.53](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.52...Ekom.Klaviyo-v0.2.53) (2026-02-25)
 
 
