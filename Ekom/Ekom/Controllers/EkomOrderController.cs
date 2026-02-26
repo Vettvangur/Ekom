@@ -37,7 +37,6 @@ public partial class EkomOrderController : ControllerBase
     [HttpPost]
     [Route("add")]
     [Consumes("application/json", "application/x-www-form-urlencoded", "multipart/form-data")]
-    [RequestSizeLimit(64_000)]
     [EnableRateLimiting("order-add")]
     public async Task<IActionResult> AddToOrder([FromBody] OrderRequest request, CancellationToken ct = default)
     {
