@@ -37,5 +37,5 @@ internal sealed class KlaviyoListsClient : IKlaviyoListsClient
     }
 
     private bool IsEnabled(object payload)
-        => _opt.Enabled && _opt.Subscriptions.Enabled && payload is not null;
+        => _opt.Enabled && payload is not null;
 }
