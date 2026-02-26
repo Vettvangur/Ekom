@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.53...Ekom.Klaviyo-v0.2.54) (2026-02-26)
+
+
+### Bug Fixes
+
+* klaviyo started checkout refactoring ([9b93f27](https://github.com/Vettvangur/Ekom/commit/9b93f27aac5b6ebf48f32ec106ed1a9397ba6def))
+* klaviyo started checkout refactoring ([4fa6a8e](https://github.com/Vettvangur/Ekom/commit/4fa6a8eef3a25b4dd6e4ec23b507e006ca0423c4))
+
+## [0.2.53](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.52...Ekom.Klaviyo-v0.2.53) (2026-02-25)
+
+
+### Bug Fixes
+
+* klaviyo. refactor subscribe and checkout started ([b452ea4](https://github.com/Vettvangur/Ekom/commit/b452ea4fb0cc74056baa95c167e5b8403f985fcd))
+* klaviyo. refactor subscribe and checkout started ([656d8c7](https://github.com/Vettvangur/Ekom/commit/656d8c7132de856a2f875a86021eb1fbf8065ac4))
+
+## [0.2.52](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.51...Ekom.Klaviyo-v0.2.52) (2026-02-20)
+
+
+### Bug Fixes
+
+* klaviyo updates and ekom original price refactor ([419fef4](https://github.com/Vettvangur/Ekom/commit/419fef40a52c4155bab0cb108923844237bd8bb7))
+* klaviyo updates and ekom original price refactor ([8cdab69](https://github.com/Vettvangur/Ekom/commit/8cdab69c6e14afc3679a3815160013002670abc3))
+
+## [0.2.51](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.50...Ekom.Klaviyo-v0.2.51) (2026-02-19)
+
+
+### Bug Fixes
+
+* merge subscriptions to profiles, simplify requests. ([2077e50](https://github.com/Vettvangur/Ekom/commit/2077e50d859077462a70a354a24b101c61d1ee24))
+* merge subscriptions to profiles, simplify requests. ([48ac7a6](https://github.com/Vettvangur/Ekom/commit/48ac7a68faa880a80f4cf2eed7f90f36a953fc6a))
+
+## [0.2.50](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.49...Ekom.Klaviyo-v0.2.50) (2026-02-19)
+
+
+### Bug Fixes
+
+* remove if statement around restore in import. update klaviyo eko… ([d1db770](https://github.com/Vettvangur/Ekom/commit/d1db7703e481e51cc8a33adc16d3794d40159aa3))
+* remove if statement around restore in import. update klaviyo ekom version ([16dbe78](https://github.com/Vettvangur/Ekom/commit/16dbe784d1144694d0d2afeaa2608bf209d9715a))
+
+## [0.2.49](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.48...Ekom.Klaviyo-v0.2.49) (2026-02-19)
+
+
+### Bug Fixes
+
+* restore products from recyclebin in import. ([4d13f6e](https://github.com/Vettvangur/Ekom/commit/4d13f6ecca486b5a0eaa30903718bfb47ab9ee55))
+* restore products from recyclebin in import. ([4b3be3b](https://github.com/Vettvangur/Ekom/commit/4b3be3bc15fd382d6c67b77c6c91a4d2005cbf24))
+
+## [0.2.48](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.47...Ekom.Klaviyo-v0.2.48) (2026-02-17)
+
+
+### Bug Fixes
+
+* klaviyo profile service ([731449e](https://github.com/Vettvangur/Ekom/commit/731449e40ba0a870c6289559a9daf84ead558706))
+* klaviyo profile service ([e5deb75](https://github.com/Vettvangur/Ekom/commit/e5deb75f6310072175063d625a35ee952f9d050c))
+
 ## [0.2.47](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.46...Ekom.Klaviyo-v0.2.47) (2026-02-13)
 
 

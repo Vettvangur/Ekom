@@ -1,5 +1,95 @@
 # Changelog
 
+## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.69...Ekom-v0.2.70) (2026-02-24)
+
+
+### Bug Fixes
+
+* fix cache when category is moved ([5b6c16c](https://github.com/Vettvangur/Ekom/commit/5b6c16cd62647b186e6f74239646c17263d76232))
+* fix cache when category is moved ([307249d](https://github.com/Vettvangur/Ekom/commit/307249df41f082cd1ef238da5b8685c402f6a3ef))
+
+## [0.2.69](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.68...Ekom-v0.2.69) (2026-02-24)
+
+
+### Bug Fixes
+
+* cached endpoints in property editor ([c85575d](https://github.com/Vettvangur/Ekom/commit/c85575d183f49cbc2339042dbed784d5ffbbce03))
+* cached endpoints in property editor ([f5ec150](https://github.com/Vettvangur/Ekom/commit/f5ec150806b079778c171ba63e89994a93c9e8be))
+
+## [0.2.68](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.67...Ekom-v0.2.68) (2026-02-24)
+
+
+### Bug Fixes
+
+* ignore on interface level ([d86bc4c](https://github.com/Vettvangur/Ekom/commit/d86bc4c78e85b76e4398cce47026583ef4b59070))
+* ignore on interface level ([42fe139](https://github.com/Vettvangur/Ekom/commit/42fe139c5883feae6194f59d61a1da6e04afe35a))
+
+## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.66...Ekom-v0.2.67) (2026-02-23)
+
+
+### Bug Fixes
+
+* ensure node exist - Cultures with repeatable textstrings in store ([49f67e4](https://github.com/Vettvangur/Ekom/commit/49f67e44b9686b3f96866bfa5307fc8f97772a50))
+* ensure node exist - Cultures with repeatable textstrings in store ([7894433](https://github.com/Vettvangur/Ekom/commit/78944339a3381d1b3717706b14700e2606a8a104))
+
+## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.65...Ekom-v0.2.66) (2026-02-23)
+
+
+### Bug Fixes
+
+* reduce backoffice language/store fetches ([21349e5](https://github.com/Vettvangur/Ekom/commit/21349e5c59932f29c148923c32a14048c9517cda))
+* reduce backoffice language/store fetches ([307f72d](https://github.com/Vettvangur/Ekom/commit/307f72d138241ec28c2c6ee013e458f33156df6f))
+
+## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.64...Ekom-v0.2.65) (2026-02-20)
+
+
+### Bug Fixes
+
+* original price as helper ([01ea998](https://github.com/Vettvangur/Ekom/commit/01ea99898e2badeb949151ddded732808ab0dcf0))
+* original price as helper ([721eac4](https://github.com/Vettvangur/Ekom/commit/721eac49f79c0f7bf9eb2ea2165cc00c3240b689))
+
+## [0.2.64](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.63...Ekom-v0.2.64) (2026-02-20)
+
+
+### Bug Fixes
+
+* klaviyo updates and ekom original price refactor ([419fef4](https://github.com/Vettvangur/Ekom/commit/419fef40a52c4155bab0cb108923844237bd8bb7))
+* klaviyo updates and ekom original price refactor ([8cdab69](https://github.com/Vettvangur/Ekom/commit/8cdab69c6e14afc3679a3815160013002670abc3))
+
+## [0.2.63](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.62...Ekom-v0.2.63) (2026-02-19)
+
+
+### Bug Fixes
+
+* remove if statement around restore in import. update klaviyo eko… ([d1db770](https://github.com/Vettvangur/Ekom/commit/d1db7703e481e51cc8a33adc16d3794d40159aa3))
+* remove if statement around restore in import. update klaviyo ekom version ([16dbe78](https://github.com/Vettvangur/Ekom/commit/16dbe784d1144694d0d2afeaa2608bf209d9715a))
+
+## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.61...Ekom-v0.2.62) (2026-02-19)
+
+
+### Bug Fixes
+
+* restore products from recyclebin in import. ([4d13f6e](https://github.com/Vettvangur/Ekom/commit/4d13f6ecca486b5a0eaa30903718bfb47ab9ee55))
+* restore products from recyclebin in import. ([4b3be3b](https://github.com/Vettvangur/Ekom/commit/4b3be3bc15fd382d6c67b77c6c91a4d2005cbf24))
+
+## [0.2.61](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.60...Ekom-v0.2.61) (2026-02-18)
+
+
+### Bug Fixes
+
+* remove json log error line for order data ([ce55c5c](https://github.com/Vettvangur/Ekom/commit/ce55c5cf8d7b3fe425cf04dd328c7696824b0540))
+* remove json log error line for order data ([3332534](https://github.com/Vettvangur/Ekom/commit/333253427a0310eeca8feefa06535213fd5f1b32))
+* update search catalog ([20d4970](https://github.com/Vettvangur/Ekom/commit/20d49703244653229500e5a3ba938d3860d715f6))
+* update search catalog ([b43e824](https://github.com/Vettvangur/Ekom/commit/b43e824667b7f5741a3f70174157d10fd2cb931c))
+
+## [0.2.60](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.59...Ekom-v0.2.60) (2026-02-17)
+
+
+### Bug Fixes
+
+* klaviyo profile service ([731449e](https://github.com/Vettvangur/Ekom/commit/731449e40ba0a870c6289559a9daf84ead558706))
+* klaviyo profile service ([e5deb75](https://github.com/Vettvangur/Ekom/commit/e5deb75f6310072175063d625a35ee952f9d050c))
+
 ## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.58...Ekom-v0.2.59) (2026-02-16)
 
 
