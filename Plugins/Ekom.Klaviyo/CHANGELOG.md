@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.55](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.54...Ekom.Klaviyo-v0.2.55) (2026-02-26)
+
+
+### Bug Fixes
+
+* ekom, remove request limit. klaviyo, add to background thread ([3d17025](https://github.com/Vettvangur/Ekom/commit/3d17025e4c1408c77668d9b85f3d653b9314726e))
+
 ## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.53...Ekom.Klaviyo-v0.2.54) (2026-02-26)
 
 
