@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.70...Ekom-v0.2.71) (2026-02-26)
+
+
+### Bug Fixes
+
+* merge versions ([6f0580b](https://github.com/Vettvangur/Ekom/commit/6f0580b209a7f770df4aad345040a54ac5daba67))
+
 ## [0.2.70](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.69...Ekom-v0.2.70) (2026-02-24)
 
 
