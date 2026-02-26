@@ -4,6 +4,8 @@ using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Orders;
 using Ekom.Klaviyo.Models.Profiles;
 using Ekom.Klaviyo.Models.Tracking;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Umbraco.Extensions;
@@ -25,21 +27,24 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoTrackingService> _logger;
     private readonly IKlaviyoTrackingDispatcher _dispatcher;
-    private readonly IKlaviyoProfilesService _profiles;
     private readonly IKlaviyoTrackingEnricherRunner? _enrichers;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IHostApplicationLifetime _appLifetime;
 
     public KlaviyoTrackingService(
         IOptions<KlaviyoOptions> opt,
         ILogger<KlaviyoTrackingService> logger,
         IKlaviyoTrackingDispatcher dispatcher,
-        IKlaviyoProfilesService profiles,
-        IKlaviyoTrackingEnricherRunner? enrichers = null)
+        IKlaviyoTrackingEnricherRunner? enrichers,
+        IServiceScopeFactory scopeFactory,
+        IHostApplicationLifetime appLifetime)
     {
         _opt = opt.Value;
         _logger = logger;
         _dispatcher = dispatcher;
-        _profiles = profiles;
         _enrichers = enrichers;
+        _scopeFactory = scopeFactory;
+        _appLifetime = appLifetime;
     }
 
     public async ValueTask TrackSearchAsync(KlaviyoSearchEvent payload, CancellationToken ct = default)
@@ -61,7 +66,10 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         await _dispatcher.EnqueueAsync(work, ct);
     }
 
-    private async ValueTask TryProfileUpdateStarteCheckoutdAsync(KlaviyoStartedCheckoutEvent payload, CancellationToken ct)
+    private async ValueTask TryProfileUpdateStartedCheckoutAsync(
+        KlaviyoStartedCheckoutEvent payload,
+        IKlaviyoProfilesService profiles,
+        CancellationToken ct)
     {
         if (payload is null || payload.Customer is null)
             return;
@@ -102,7 +110,29 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
             },
             ListId: listId);
 
-        await _profiles.UpsertProfileAsync(profilePayload, ct);
+        await profiles.UpsertProfileAsync(profilePayload, ct).ConfigureAwait(false);
+    }
+
+    private void QueueStartedCheckoutProfileUpdate(KlaviyoStartedCheckoutEvent payload)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var profiles = scope.ServiceProvider.GetRequiredService<IKlaviyoProfilesService>();
+
+                await TryProfileUpdateStartedCheckoutAsync(payload, profiles, _appLifetime.ApplicationStopping)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (_appLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Klaviyo: failed background profile update for started checkout.");
+            }
+        }, _appLifetime.ApplicationStopping);
     }
 
     private string? ResolveListId(string storeAlias, string? listId)
@@ -224,7 +254,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
         await _dispatcher.EnqueueAsync(work, ct);
 
-        await TryProfileUpdateStarteCheckoutdAsync(payload, ct);
+        QueueStartedCheckoutProfileUpdate(payload);
     }
 
     private bool IsEnabled(bool eventEnabled)
