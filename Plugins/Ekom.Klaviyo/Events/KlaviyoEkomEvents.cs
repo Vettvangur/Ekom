@@ -101,7 +101,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
 
         var storeOptions = _opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(orderInfo.StoreInfo.Alias));
 
-        var eventArgs = new KlaviyoCheckoutStartedEvent
+        var eventArgs = new KlaviyoStartedCheckoutEvent
         {
             CartId = orderInfo.KlaviyoUniqueId(),
             Customer = orderInfo.ToKlaviyoProfile(_opt), 
@@ -115,7 +115,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
             OccurredAt = DateTimeOffset.UtcNow
         };
 
-        await trackingService.TrackCheckoutStartedAsync(eventArgs, ct);
+        await trackingService.TrackStartedCheckoutAsync(eventArgs, ct);
     }
 
     private async Task OnCompleteCheckoutAsync(object e, CompleteCheckoutEventArgs args, CancellationToken ct)

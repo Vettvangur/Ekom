@@ -2,7 +2,7 @@ using Ekom.Klaviyo.Models.Orders;
 
 namespace Ekom.Klaviyo.Models.Tracking;
 
-public sealed record KlaviyoCheckoutStartedEvent
+public sealed record KlaviyoStartedCheckoutEvent
 {
     public string StoreAlias { get; set; } = default!;
     public DateTimeOffset OccurredAt { get; set; }

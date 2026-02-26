@@ -142,7 +142,7 @@ internal static class TrackingMapper
         return CreateEventPayload("Active on Site", e.StoreAlias, e.EventId, e.OccurredAt, e.Customer, properties, opt);
     }
 
-    internal static object ToTrackingEvent(this KlaviyoCheckoutStartedEvent e, KlaviyoOptions opt)
+    internal static object ToTrackingEvent(this KlaviyoStartedCheckoutEvent e, KlaviyoOptions opt)
     {
         var properties = new JsonObject
         {
@@ -169,7 +169,7 @@ internal static class TrackingMapper
 
         CustomPropertiesMerger.MergeCustomProperties(properties, e.CustomProperties);
 
-        return CreateEventPayload("Checkout Started", e.StoreAlias, e.EventId, e.OccurredAt, e.Customer, properties, opt);
+        return CreateEventPayload("Started Checkout", e.StoreAlias, e.EventId, e.OccurredAt, e.Customer, properties, opt);
     }
 
     private static object CreateEventPayload(
