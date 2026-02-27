@@ -82,12 +82,10 @@ class CatalogContentFinder : IContentFinder
             #region Product and/or Category
 
             // Requesting Product?
-            var product = _productCache.Cache[store.Alias]
-                            .FirstOrDefault(x => x.Value.Urls != null &&
-                                                x.Value.Urls.Contains(path)).Value;
+            var product = API.Catalog.Instance.GetProductByRoute(path, store?.Alias); 
 
             var contentId = 0;
-            ICategory category;
+            ICategory? category;
 
             if (product != null && !string.IsNullOrEmpty(product.GetValue("slug", fallback: true)))
             {
@@ -97,20 +95,14 @@ class CatalogContentFinder : IContentFinder
                 var categoryUrlArray = urlArray.Take(urlArray.Length - 2);
                 var categoryUrl = string.Join("/", categoryUrlArray).AddTrailing();
 
-                category = _categoryCache.Cache[store.Alias]
-                                        .FirstOrDefault(x => x.Value.Urls.Contains(categoryUrl))
-                                        .Value;
+                category = API.Catalog.Instance.GetCategoryByRoute(categoryUrl, store?.Alias); 
             }
             else // Request Category?
             {
-                category = _categoryCache.Cache[store.Alias]
-                                        .FirstOrDefault(x => x.Value.Urls != null &&
-                                                             x.Value.Urls.Contains(path))
-                                        .Value;
+                category = API.Catalog.Instance.GetCategoryByRoute(path, store?.Alias);
 
                 if (category != null && !string.IsNullOrEmpty(category.GetValue("slug", fallback: true)))
                 {
-
                     contentId = category.Id;
                 }
                 // else Requesting Neither
@@ -131,7 +123,7 @@ class CatalogContentFinder : IContentFinder
             // Request for Product or Category
             if (contentId != 0)
             {
-                var content = umbracoContext.Content.GetById(contentId);
+                var content = umbracoContext.Content?.GetById(contentId);
 
                 if (content != null && !content.Value<bool>("ekmVirtualUrl"))
                 {
