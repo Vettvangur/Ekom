@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.74...Ekom-v0.2.75) (2026-03-04)
+
+
+### Bug Fixes
+
+* skip migrations when sql lite ([5603207](https://github.com/Vettvangur/Ekom/commit/56032071d9677e9ace27849c109b3a8b9ff0023c))
+* sql lite support ([6a6cbaa](https://github.com/Vettvangur/Ekom/commit/6a6cbaaf4e2af09a6d4322b7426002e740b82417))
+* sql lite support ([3d228d5](https://github.com/Vettvangur/Ekom/commit/3d228d52fcec61ea0e29145f8f1f61d13c448b8a))
+
 ## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.73...Ekom-v0.2.74) (2026-03-04)
 
 
