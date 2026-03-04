@@ -61,6 +61,9 @@ public class Store : NodeEntity, IStore
     }
 
     public virtual string Url { get; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
     public virtual CultureInfo Culture
     {
         get
@@ -82,6 +85,13 @@ public class Store : NodeEntity, IStore
             return Cultures.FirstOrDefault();
         }
     }
+    [System.Text.Json.Serialization.JsonPropertyName("Culture")]
+    [Newtonsoft.Json.JsonProperty("Culture")]
+    public CultureInfoDto CultureDto => CultureInfoDto.From(Culture);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [XmlIgnore]
     public virtual List<CultureInfo> Cultures
     {
         get
@@ -100,6 +110,10 @@ public class Store : NodeEntity, IStore
             return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
         }
     }
+
+    [System.Text.Json.Serialization.JsonPropertyName("Cultures")]
+    [Newtonsoft.Json.JsonProperty("Cultures")]
+    public List<CultureInfoDto> CulturesDto => Cultures.Select(CultureInfoDto.From).ToList();
     public virtual CurrencyModel Currency
     {
         get
