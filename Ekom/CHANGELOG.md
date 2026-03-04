@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.78...Ekom-v0.2.79) (2026-03-04)
+
+
+### Bug Fixes
+
+* fix culture interface on stores ([b16123f](https://github.com/Vettvangur/Ekom/commit/b16123fd20fc98122ed60c5e3d874f4e1e137d3c))
+* fix culture interface on stores ([8a00f10](https://github.com/Vettvangur/Ekom/commit/8a00f10a68a6e3bad0ebed3b052b6cd4c9936789))
+
 ## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.77...Ekom-v0.2.78) (2026-03-04)
 
 
