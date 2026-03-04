@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.75...Ekom-v0.2.76) (2026-03-04)
+
+
+### Bug Fixes
+
+* update db factory with sql lite support ([bacde8b](https://github.com/Vettvangur/Ekom/commit/bacde8b50c2bf3253743b44e008b0aa8ab5a47b1))
+* update db factory with sql lite support ([2fe0093](https://github.com/Vettvangur/Ekom/commit/2fe0093c066abd589f0775f07bff0cdd337cf83e))
+
 ## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.74...Ekom-v0.2.75) (2026-03-04)
 
 
