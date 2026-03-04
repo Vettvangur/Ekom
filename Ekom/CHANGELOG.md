@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.76...Ekom-v0.2.77) (2026-03-04)
+
+
+### Bug Fixes
+
+* ensure create table runs for sqllite ([68ea58c](https://github.com/Vettvangur/Ekom/commit/68ea58c064e7606ef773583aca61a255d94a0f81))
+* ensure create table runs for sqllite ([18931b4](https://github.com/Vettvangur/Ekom/commit/18931b4a84e7a7365c57846f423905a7d2152b5e))
+
 ## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.75...Ekom-v0.2.76) (2026-03-04)
 
 
