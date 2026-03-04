@@ -146,9 +146,6 @@ public interface IProduct : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// All child variant groups of this product
     /// </summary>
-    [System.Text.Json.Serialization.JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<IVariantGroup> VariantGroups { get; }
     /// <summary>
     /// All variants belonging to product.
