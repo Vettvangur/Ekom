@@ -210,11 +210,16 @@ class OrderRepository
             affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
 
             const string CouponDateSql = @"BEGIN TRANSACTION;
-                        IF NOT EXISTS(
-                            SELECT *
+                        IF EXISTS(
+                            SELECT 1
+                            FROM INFORMATION_SCHEMA.TABLES
+                            WHERE TABLE_NAME = 'EkomCoupon'
+                        )
+                        AND NOT EXISTS(
+                            SELECT 1
                             FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_NAME = 'EkomCoupon' AND COLUMN_NAME = 'Date'
-                            )
+                            WHERE TABLE_NAME = 'EkomCoupon' AND COLUMN_NAME = 'Date'
+                        )
                         BEGIN
                             ALTER TABLE EkomCoupon
                         ADD[Date] DATETIME NOT NULL DEFAULT GETDATE()
