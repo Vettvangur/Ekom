@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.77...Ekom-v0.2.78) (2026-03-04)
+
+
+### Bug Fixes
+
+* fux cultureInfo Parent recursive ([17af8fa](https://github.com/Vettvangur/Ekom/commit/17af8faaeb176ca5e7fe6ab4a1ce78880e9c5880))
+* fux cultureInfo Parent recursive ([c09076f](https://github.com/Vettvangur/Ekom/commit/c09076f090f8ac9d7b3689ca2b5711b13abf46d0))
+
 ## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.76...Ekom-v0.2.77) (2026-03-04)
 
 
