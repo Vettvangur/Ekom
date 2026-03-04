@@ -2,10 +2,8 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
 using LinqToDB;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using System.Data;
-using System.Text;
 
 namespace Ekom.Repositories;
 
@@ -98,51 +96,22 @@ class DiscountStockRepository
             };
         }
 
-        stockDataFromRepo.Stock += value;
-        stockDataFromRepo.UpdateDate = DateTime.Now;
+        await using DbContext db = _databaseFactory.GetDatabase();
+        await using var transaction = await db.BeginTransactionAsync(IsolationLevel.Serializable).ConfigureAwait(false);
 
-        // Called synchronously and hopefully contained by a locking construct
-        await using SqlConnection cnn = _databaseFactory.GetSqlConnection();
-        await using SqlCommand command = cnn.CreateCommand();
+        int rows = await db.DiscountStockData
+            .Where(x => x.UniqueId == uniqueId && x.Stock + value >= 0)
+            .Set(x => x.Stock, x => x.Stock + value)
+            .Set(x => x.UpdateDate, x => DateTime.Now)
+            .UpdateAsync()
+            .ConfigureAwait(false);
 
-        StringBuilder cmdText = new StringBuilder();
-
-        cmdText.AppendLine("BEGIN");
-
-        // Update stock with locking
-        cmdText.AppendLine("BEGIN");
-        cmdText.AppendLine("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
-        cmdText.AppendLine("SET DEADLOCK_PRIORITY LOW;");
-        cmdText.AppendLine("DECLARE @status int = 0;");
-        cmdText.AppendLine("DECLARE @stock int = 0;");
-        cmdText.AppendLine($"SELECT TOP 1 @stock = Stock FROM @DiscountStockTableName ");
-        cmdText.AppendLine($"WHERE UniqueId = @{nameof(uniqueId)}");
-        cmdText.AppendLine("BEGIN TRANSACTION");
-        cmdText.AppendLine("IF (@stock + @0 >= 0)");
-        cmdText.AppendLine("BEGIN");
-        cmdText.AppendLine("UPDATE @DiscountStockTableName");
-        cmdText.AppendLine("SET Stock = @stock + @0");
-        cmdText.AppendLine($"WHERE UniqueId = @{nameof(uniqueId)}");
-        cmdText.AppendLine("END");
-        cmdText.AppendLine("ELSE");
-        cmdText.AppendLine("SET @status = 1");
-        cmdText.AppendLine("COMMIT TRANSACTION");
-        cmdText.AppendLine("RETURN @status");
-        cmdText.AppendLine("END");
-
-        command.Parameters.AddWithValue($"@{nameof(uniqueId)}", uniqueId);
-        command.Parameters.AddWithValue("@0", value);
-        command.Parameters.AddWithValue("@DiscountStockTableName", Configuration.DiscountStockTableName);
-
-        SqlParameter returnValue = new SqlParameter();
-        returnValue.Direction = ParameterDirection.ReturnValue;
-        command.Parameters.Add(returnValue);
-
-        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-        if ((int)returnValue.Value != 0)
+        if (rows == 0)
         {
+            await transaction.RollbackAsync().ConfigureAwait(false);
             throw new NotEnoughStockException($"Not enough stock available for {uniqueId}.");
         }
+
+        await transaction.CommitAsync().ConfigureAwait(false);
     }
 }
