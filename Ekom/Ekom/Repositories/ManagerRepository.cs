@@ -63,11 +63,25 @@ public class ManagerRepository
 
         int _page = string.IsNullOrEmpty(page) || !int.TryParse(page, out int tempPage) ? 1 : tempPage;
         int _pageSize = string.IsNullOrEmpty(pageSize) || !int.TryParse(pageSize, out int tempPageSize) ? 30 : tempPageSize;
+        int offset = (_page - 1) * _pageSize;
 
-        sqlBuilder.Append(" OFFSET (" + _page + " - 1) * " + _pageSize + " ROWS\r\nFETCH NEXT " + _pageSize + " ROWS ONLY;");
+        if (_databaseFactory.IsSqlite)
+        {
+            sqlBuilder.Append(" LIMIT @pageSize OFFSET @offset;");
+        }
+        else
+        {
+            sqlBuilder.Append(" OFFSET @offset ROWS\r\nFETCH NEXT @pageSize ROWS ONLY;");
+        }
 
         string sqlQuery = sqlBuilder.ToString();
         string sqlTotalQuery = sqlTotalBuilder.ToString();
+
+        string? paymentProviderValue = null;
+        if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out Guid parsedPaymentProvider))
+        {
+            paymentProviderValue = parsedPaymentProvider.ToString();
+        }
 
         var param = new
         {
@@ -75,7 +89,10 @@ public class ManagerRepository
             endDate = end.Date.AddDays(1).AddTicks(-1),
             query = "%" + query + "%",
             orderStatus,
-            store
+            store,
+            paymentProvider = paymentProviderValue,
+            pageSize = _pageSize,
+            offset
         };
 
         await using DbContext db = _databaseFactory.GetDatabase();
@@ -111,9 +128,16 @@ public class ManagerRepository
             whereClause.Append(" AND (CustomerName LIKE @query OR ReferenceId LIKE @query OR OrderNumber LIKE @query OR CustomerEmail LIKE @query OR CustomerId LIKE @query OR CustomerUsername LIKE @query)");
         }
 
-        if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out Guid _paymentProvider))
+        if (!string.IsNullOrEmpty(paymentProvider) && Guid.TryParse(paymentProvider, out _))
         {
-            whereClause.Append(" AND JSON_VALUE(OrderInfo, '$.PaymentProvider.Key') = '" + _paymentProvider + "'");
+            if (_databaseFactory.IsSqlite)
+            {
+                whereClause.Append(" AND json_extract(OrderInfo, '$.PaymentProvider.Key') = @paymentProvider");
+            }
+            else
+            {
+                whereClause.Append(" AND JSON_VALUE(OrderInfo, '$.PaymentProvider.Key') = @paymentProvider");
+            }
         }
 
         if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
@@ -168,7 +192,18 @@ public class ManagerRepository
             store
         };
 
-        var sqlBuilder = new StringBuilder(@"SELECT 
+        var sqlBuilder = _databaseFactory.IsSqlite
+            ? new StringBuilder(@"SELECT 
+                MAX(json_extract(OL.value, '$.Product.SKU')) as SKU,
+                MAX(json_extract(OL.value, '$.Product.Title')) as Title,
+                json_extract(OL.value, '$.Product.Id') as Id,
+                SUM(CAST(json_extract(OL.value, '$.Quantity') AS REAL)) AS ProductCount 
+            FROM 
+                EkomOrders O
+            JOIN 
+                json_each(O.OrderInfo, '$.OrderLines') AS OL
+            WHERE ")
+            : new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
                 OL.Id,

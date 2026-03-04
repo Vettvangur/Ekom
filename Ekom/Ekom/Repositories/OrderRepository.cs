@@ -63,6 +63,11 @@ class OrderRepository
 
     public async Task MigrateOrderTableAsync()
     {
+        if (!_databaseFactory.IsSqlServer)
+        {
+            return;
+        }
+
         try
         {
             await using DbContext db = _databaseFactory.GetDatabase();
@@ -243,6 +248,11 @@ class OrderRepository
 
     public async Task MigrateStockToDecimalAsync()
     {
+        if (!_databaseFactory.IsSqlServer)
+        {
+            return;
+        }
+
         await using DbContext db = _databaseFactory.GetDatabase();
 
         const string sql = @"
