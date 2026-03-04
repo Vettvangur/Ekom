@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.73...Ekom-v0.2.74) (2026-03-04)
+
+
+### Bug Fixes
+
+* remove ignore on variantgroups on product ([ab00e7e](https://github.com/Vettvangur/Ekom/commit/ab00e7ebe3d7089fc2ce62db0b4d50006b7eb33d))
+* remove ignore on variantgroups on product ([d8a6f3a](https://github.com/Vettvangur/Ekom/commit/d8a6f3a98183bf10bf8536ae9f2f086b70eb4c68))
+
 ## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.72...Ekom-v0.2.73) (2026-03-04)
 
 
