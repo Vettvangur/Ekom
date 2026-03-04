@@ -61,10 +61,9 @@ public class Store : NodeEntity, IStore
     }
 
     public virtual string Url { get; }
-    [System.Text.Json.Serialization.JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [XmlIgnore]
-    public virtual CultureInfo Culture
+
+
+    public virtual CultureInfoDto Culture
     {
         get
         {
@@ -74,7 +73,7 @@ public class Store : NodeEntity, IStore
 
             if (culture != null)
             {
-                CultureInfo? c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
+                var c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
 
                 if (c != null)
                 {
@@ -82,17 +81,11 @@ public class Store : NodeEntity, IStore
                 }
             }
 
-            return Cultures.FirstOrDefault();
+            return Cultures.FirstOrDefault() ?? new CultureInfoDto() {  Name = "en-US" };
         }
     }
-    [System.Text.Json.Serialization.JsonPropertyName("Culture")]
-    [Newtonsoft.Json.JsonProperty("Culture")]
-    public CultureInfoDto CultureDto => CultureInfoDto.From(Culture);
 
-    [System.Text.Json.Serialization.JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
-    [XmlIgnore]
-    public virtual List<CultureInfo> Cultures
+    public virtual List<CultureInfoDto> Cultures
     {
         get
         {
@@ -102,18 +95,15 @@ public class Store : NodeEntity, IStore
 
                 ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
 
-                return new List<CultureInfo>() { ci };
+                return new List<CultureInfoDto>() { CultureInfoDto.From(ci) };
             }
 
             string cultures = Properties["cultures"];
 
-            return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
+            return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => CultureInfoDto.From(new CultureInfo(x))).ToList();
         }
     }
 
-    [System.Text.Json.Serialization.JsonPropertyName("Cultures")]
-    [Newtonsoft.Json.JsonProperty("Cultures")]
-    public List<CultureInfoDto> CulturesDto => Cultures.Select(CultureInfoDto.From).ToList();
     public virtual CurrencyModel Currency
     {
         get
@@ -121,6 +111,7 @@ public class Store : NodeEntity, IStore
             return GetCurrentCurrency();
         }
     }
+
     public virtual bool UserBasket
     {
         get

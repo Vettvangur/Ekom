@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Ekom.Models;
 
 /// <summary>
@@ -20,9 +18,9 @@ public interface IStore : INodeEntity
     /// <value>
     /// The culture.
     /// </value>
-    CultureInfo Culture { get; }
+    CultureInfoDto Culture { get; }
 
-    List<CultureInfo> Cultures { get; }
+    List<CultureInfoDto> Cultures { get; }
 
     CurrencyModel Currency { get; }
 
