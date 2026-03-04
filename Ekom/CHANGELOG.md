@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.72...Ekom-v0.2.73) (2026-03-04)
+
+
+### Bug Fixes
+
+* Add some safety to migration ([23cfc8d](https://github.com/Vettvangur/Ekom/commit/23cfc8d5a7df47912975c80fdd260f6b7e61335b))
+* get by route api in content finder ([d1f6995](https://github.com/Vettvangur/Ekom/commit/d1f69958324d25d8ed789a03d110cd6846ecc3cf))
+
 ## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.71...Ekom-v0.2.72) (2026-02-26)
 
 
