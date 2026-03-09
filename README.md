@@ -2,7 +2,11 @@
 Ekom
  
 [![Nuget](https://img.shields.io/nuget/vpre/Ekom.U10?color=ed0f0f)](https://www.nuget.org/packages/Ekom.U10/)
+[![Nuget](https://img.shields.io/nuget/vpre/Ekom.Klaviyo?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Klaviyo/)
+[![Nuget](https://img.shields.io/nuget/vpre/Ekom.Algolia?color=ed0f0f)](https://www.nuget.org/packages/Ekom.Algolia/)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![Publish Ekom.Klaviyo](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-klaviyo.yml/badge.svg?branch=Ekom)](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-klaviyo.yml)
+[![Publish Ekom.Algolia](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-algolia.yml/badge.svg?branch=Ekom)](https://github.com/Vettvangur/Ekom/actions/workflows/publish-ekom-algolia.yml)
 
 </h1>
 
@@ -48,7 +52,8 @@ Install the Ekom.Web package into your sites main project (contains wwwroot)
 - And many more features.....
 
 ## Plugins
-https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo
+- https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo
+- https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Algolia
 
 ## Documentation
 

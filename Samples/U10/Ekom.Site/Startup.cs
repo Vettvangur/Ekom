@@ -1,3 +1,4 @@
+using Ekom.Algolia;
 using Ekom.Klaviyo;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
@@ -73,6 +74,7 @@ public class Startup
         services.AddSingleton<IKlaviyoTrackingEnricher, CustomTrackingEnricher>();
 
         services.AddKlaviyo();
+        services.AddAlgolia();
         //services.AddEkomValitorPay(_config);
     }
 

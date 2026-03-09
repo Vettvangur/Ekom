@@ -4,6 +4,56 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- Package properties -->
+    <PackageId>Ekom.Algolia</PackageId>
+    <Title>Ekom Algolia Plugin</Title>
+    <Description>Ekom - Algolia integration plugin for Umbraco</Description>
+    <Authors>Vettvangur</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Vettvangur/Ekom</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Vettvangur/Ekom</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>VV_Logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <Copyright>Copyright 2026</Copyright>
+    <PackageTags>umbraco;ecommerce;ekom;algolia;search;plugin;extension</PackageTags>
+
+    <!-- Symbols & SourceLink -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Build / docs -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Algolia.Search" Version="7.38.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="CHANGELOG.md" Pack="true" PackagePath="" />
+    <None Include="VV_Logo.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!-- Local dev: flip this to true (Directory.Build.props) -->
+  <ItemGroup Condition="'$(UseProjectReferences)' == 'true'">
+    <ProjectReference Include="..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+  </ItemGroup>
+
+  <!-- CI / normal: use NuGet packages -->
+  <ItemGroup Condition="'$(UseProjectReferences)' != 'true'">
+    <PackageReference Include="Ekom.U10" Version="0.2.70" />
+  </ItemGroup>
 
 </Project>
