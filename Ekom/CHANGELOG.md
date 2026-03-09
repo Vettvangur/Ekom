@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.78...Ekom-v0.2.79) (2026-03-04)
+
+
+### Bug Fixes
+
+* fix culture interface on stores ([b16123f](https://github.com/Vettvangur/Ekom/commit/b16123fd20fc98122ed60c5e3d874f4e1e137d3c))
+* fix culture interface on stores ([8a00f10](https://github.com/Vettvangur/Ekom/commit/8a00f10a68a6e3bad0ebed3b052b6cd4c9936789))
+
+## [0.2.78](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.77...Ekom-v0.2.78) (2026-03-04)
+
+
+### Bug Fixes
+
+* fux cultureInfo Parent recursive ([17af8fa](https://github.com/Vettvangur/Ekom/commit/17af8faaeb176ca5e7fe6ab4a1ce78880e9c5880))
+* fux cultureInfo Parent recursive ([c09076f](https://github.com/Vettvangur/Ekom/commit/c09076f090f8ac9d7b3689ca2b5711b13abf46d0))
+
+## [0.2.77](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.76...Ekom-v0.2.77) (2026-03-04)
+
+
+### Bug Fixes
+
+* ensure create table runs for sqllite ([68ea58c](https://github.com/Vettvangur/Ekom/commit/68ea58c064e7606ef773583aca61a255d94a0f81))
+* ensure create table runs for sqllite ([18931b4](https://github.com/Vettvangur/Ekom/commit/18931b4a84e7a7365c57846f423905a7d2152b5e))
+
+## [0.2.76](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.75...Ekom-v0.2.76) (2026-03-04)
+
+
+### Bug Fixes
+
+* update db factory with sql lite support ([bacde8b](https://github.com/Vettvangur/Ekom/commit/bacde8b50c2bf3253743b44e008b0aa8ab5a47b1))
+* update db factory with sql lite support ([2fe0093](https://github.com/Vettvangur/Ekom/commit/2fe0093c066abd589f0775f07bff0cdd337cf83e))
+
+## [0.2.75](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.74...Ekom-v0.2.75) (2026-03-04)
+
+
+### Bug Fixes
+
+* skip migrations when sql lite ([5603207](https://github.com/Vettvangur/Ekom/commit/56032071d9677e9ace27849c109b3a8b9ff0023c))
+* sql lite support ([6a6cbaa](https://github.com/Vettvangur/Ekom/commit/6a6cbaaf4e2af09a6d4322b7426002e740b82417))
+* sql lite support ([3d228d5](https://github.com/Vettvangur/Ekom/commit/3d228d52fcec61ea0e29145f8f1f61d13c448b8a))
+
+## [0.2.74](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.73...Ekom-v0.2.74) (2026-03-04)
+
+
+### Bug Fixes
+
+* remove ignore on variantgroups on product ([ab00e7e](https://github.com/Vettvangur/Ekom/commit/ab00e7ebe3d7089fc2ce62db0b4d50006b7eb33d))
+* remove ignore on variantgroups on product ([d8a6f3a](https://github.com/Vettvangur/Ekom/commit/d8a6f3a98183bf10bf8536ae9f2f086b70eb4c68))
+
+## [0.2.73](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.72...Ekom-v0.2.73) (2026-03-04)
+
+
+### Bug Fixes
+
+* Add some safety to migration ([23cfc8d](https://github.com/Vettvangur/Ekom/commit/23cfc8d5a7df47912975c80fdd260f6b7e61335b))
+* get by route api in content finder ([d1f6995](https://github.com/Vettvangur/Ekom/commit/d1f69958324d25d8ed789a03d110cd6846ecc3cf))
+
+## [0.2.72](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.71...Ekom-v0.2.72) (2026-02-26)
+
+
+### Bug Fixes
+
+* ekom, remove request limit. klaviyo, add to background thread ([3d17025](https://github.com/Vettvangur/Ekom/commit/3d17025e4c1408c77668d9b85f3d653b9314726e))
+
 ## [0.2.71](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.70...Ekom-v0.2.71) (2026-02-26)
 
 

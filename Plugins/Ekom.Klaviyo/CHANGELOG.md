@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.55...Ekom.Klaviyo-v0.2.56) (2026-03-04)
+
+
+### Bug Fixes
+
+* sql lite support ([6a6cbaa](https://github.com/Vettvangur/Ekom/commit/6a6cbaaf4e2af09a6d4322b7426002e740b82417))
+* sql lite support ([3d228d5](https://github.com/Vettvangur/Ekom/commit/3d228d52fcec61ea0e29145f8f1f61d13c448b8a))
+
+## [0.2.55](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.54...Ekom.Klaviyo-v0.2.55) (2026-02-26)
+
+
+### Bug Fixes
+
+* ekom, remove request limit. klaviyo, add to background thread ([3d17025](https://github.com/Vettvangur/Ekom/commit/3d17025e4c1408c77668d9b85f3d653b9314726e))
+
 ## [0.2.54](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.53...Ekom.Klaviyo-v0.2.54) (2026-02-26)
 
 
