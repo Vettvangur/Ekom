@@ -1,4 +1,5 @@
 {
   "Ekom": "0.2.71",
-  "Plugins/Ekom.Klaviyo": "0.2.54"
+  "Plugins/Ekom.Klaviyo": "0.2.54",
+  "Plugins/Ekom.Algolia": "0.2.0"
 }

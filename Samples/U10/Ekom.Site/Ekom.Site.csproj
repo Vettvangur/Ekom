@@ -73,6 +73,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Identity.Web" Version="3.8.4" />
         <ProjectReference Include="..\..\..\Ekom\Ekom.U10\Ekom.U10.csproj" />
+        <ProjectReference Include="..\..\..\Plugins\Ekom.Algolia\Ekom.Algolia.csproj" />
         <ProjectReference Include="..\..\..\Plugins\Ekom.Klaviyo\Ekom.Klaviyo.csproj" />
         <RuntimeHostConfigurationOption Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" Condition="$(RuntimeIdentifier.StartsWith('linux')) or $(RuntimeIdentifier.StartsWith('win')) or ('$(RuntimeIdentifier)' == '' and !$([MSBuild]::IsOSPlatform('osx')))" />
     </ItemGroup>
