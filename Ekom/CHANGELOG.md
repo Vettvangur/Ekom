@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.79...Ekom-v0.2.80) (2026-03-10)
+
+
+### Bug Fixes
+
+* issue in variant cache when sorting, created duplicates ([6fc457e](https://github.com/Vettvangur/Ekom/commit/6fc457e0fe5c1893d70a3eddefc94ab77c0c387e))
+* issue in variant cache when sorting, created duplicates ([75dd63e](https://github.com/Vettvangur/Ekom/commit/75dd63e10bd5c135da728eed34a92efac4ff6cba))
+
 ## [0.2.79](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.78...Ekom-v0.2.79) (2026-03-04)
 
 
