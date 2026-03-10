@@ -29,20 +29,20 @@ class VariantCache : PerStoreCache<IVariant>
     // -----------------------------
     // Group index: storeAlias -> (VariantGroupId -> variant keys)
     // -----------------------------
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _groupIndex
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _groupIndex
         = new();
 
-    private ConcurrentDictionary<int, ConcurrentBag<Guid>> GetStoreGroupIndex(string storeAlias) =>
-        _groupIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentBag<Guid>>());
+    private ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>> GetStoreGroupIndex(string storeAlias) =>
+        _groupIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
 
     // -----------------------------
     // Product index: storeAlias -> (ProductId -> variant keys)
     // -----------------------------
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _productIndex
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _productIndex
         = new();
 
-    private ConcurrentDictionary<int, ConcurrentBag<Guid>> GetStoreProductIndex(string storeAlias) =>
-        _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentBag<Guid>>());
+    private ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>> GetStoreProductIndex(string storeAlias) =>
+        _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
 
     protected override int FillStoreCache(IStore store, List<UmbracoContent> results, string nodeAlias)
     {
@@ -50,8 +50,8 @@ class VariantCache : PerStoreCache<IVariant>
         var count = base.FillStoreCache(store, results, nodeAlias);
 
         // rebuild group + product indexes for the store from the freshly built store cache
-        var gi = new ConcurrentDictionary<int, ConcurrentBag<Guid>>();
-        var pi = new ConcurrentDictionary<int, ConcurrentBag<Guid>>();
+        var gi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
+        var pi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 
         if (Cache.TryGetValue(store.Alias, out var storeCache))
         {
@@ -60,8 +60,8 @@ class VariantCache : PerStoreCache<IVariant>
                 var key = kv.Key;
                 var v = kv.Value;
 
-                gi.GetOrAdd(v.VariantGroupId, _ => new ConcurrentBag<Guid>()).Add(key);
-                pi.GetOrAdd(v.ProductId, _ => new ConcurrentBag<Guid>()).Add(key);
+                gi.GetOrAdd(v.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
+                pi.GetOrAdd(v.ProductId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
             }
         }
 
@@ -80,7 +80,7 @@ class VariantCache : PerStoreCache<IVariant>
             return Enumerable.Empty<IVariant>();
 
         var list = new List<IVariant>();
-        foreach (var key in keys)
+        foreach (var key in keys.Keys)
         {
             if (storeCache.TryGetValue(key, out var v) && v != null && v.VariantGroupId == groupId)
                 list.Add(v);
@@ -99,7 +99,7 @@ class VariantCache : PerStoreCache<IVariant>
             return Enumerable.Empty<IVariant>();
 
         var list = new List<IVariant>();
-        foreach (var key in keys)
+        foreach (var key in keys.Keys)
         {
             if (storeCache.TryGetValue(key, out var v) && v != null && v.ProductId == productId)
                 list.Add(v);
@@ -115,12 +115,12 @@ class VariantCache : PerStoreCache<IVariant>
         base.AddOrReplaceFromCache(key, store, item);
 
         GetStoreGroupIndex(store.Alias)
-            .GetOrAdd(item.VariantGroupId, _ => new ConcurrentBag<Guid>())
-            .Add(key);
+            .GetOrAdd(item.VariantGroupId, _ => new ConcurrentDictionary<Guid, byte>())
+            .TryAdd(key, 0);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentBag<Guid>())
-            .Add(key);
+            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .TryAdd(key, 0);
     }
 
     public override bool RemoveItemFromCache(IStore store, Guid key)
