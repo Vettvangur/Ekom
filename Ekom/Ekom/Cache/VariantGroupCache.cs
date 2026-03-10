@@ -10,11 +10,11 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     public override string NodeAlias { get; } = "ekmProductVariantGroup";
 
     // storeAlias -> (ProductId -> group keys)
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentBag<Guid>>> _productIndex
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>> _productIndex
         = new();
 
-    private ConcurrentDictionary<int, ConcurrentBag<Guid>> GetStoreProductIndex(string storeAlias) =>
-        _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentBag<Guid>>());
+    private ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>> GetStoreProductIndex(string storeAlias) =>
+        _productIndex.GetOrAdd(storeAlias, _ => new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>());
 
     public VariantGroupCache(
         Configuration config,
@@ -33,7 +33,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
     {
         var count = base.FillStoreCache(store, results, nodeAlias);
 
-        var pi = new ConcurrentDictionary<int, ConcurrentBag<Guid>>();
+        var pi = new ConcurrentDictionary<int, ConcurrentDictionary<Guid, byte>>();
 
         if (Cache.TryGetValue(store.Alias, out var storeCache))
         {
@@ -42,7 +42,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
                 var key = kv.Key;
                 var g = kv.Value;
 
-                pi.GetOrAdd(g.ProductId, _ => new ConcurrentBag<Guid>()).Add(key);
+                pi.GetOrAdd(g.ProductId, _ => new ConcurrentDictionary<Guid, byte>()).TryAdd(key, 0);
             }
         }
 
@@ -59,7 +59,7 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
             return Enumerable.Empty<IVariantGroup>();
 
         var list = new List<IVariantGroup>();
-        foreach (var key in keys)
+        foreach (var key in keys.Keys)
         {
             if (storeCache.TryGetValue(key, out var g) && g != null && g.ProductId == productId)
                 list.Add(g);
@@ -75,8 +75,8 @@ class VariantGroupCache : PerStoreCache<IVariantGroup>
         base.AddOrReplaceFromCache(key, store, item);
 
         GetStoreProductIndex(store.Alias)
-            .GetOrAdd(item.ProductId, _ => new ConcurrentBag<Guid>())
-            .Add(key);
+            .GetOrAdd(item.ProductId, _ => new ConcurrentDictionary<Guid, byte>())
+            .TryAdd(key, 0);
     }
 
     public override bool RemoveItemFromCache(IStore store, Guid key)
