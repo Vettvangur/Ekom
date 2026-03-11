@@ -128,3 +128,15 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 ## Documentation
 
 [Link to documentation](https://vettvangur.gitbook.io/ekom/)
+
+## Contributing
+
+We use squash merges and Conventional Commit style PR titles so release-please can generate release PRs.
+
+Example PR titles:
+
+```text
+feat: add vat rounding settings to docs
+fix: handle null payment provider in checkout
+chore: update dependencies
+```
