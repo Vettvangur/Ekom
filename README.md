@@ -133,6 +133,8 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 
 We use squash merges and Conventional Commit style PR titles so release-please can generate release PRs.
 
+If you must use merge commits, every individual commit message still has to be Conventional Commits.
+
 Example PR titles:
 
 ```text
