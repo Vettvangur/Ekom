@@ -2,6 +2,7 @@ using Ekom.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Globalization;
 
@@ -10,9 +11,13 @@ namespace Ekom;
 public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLocalizationOptions>
 {
     private readonly IUmbracoService _umbracoService;
-    public EkomCultureRequestLocalizationOptions(IUmbracoService umbracoService)
+    private readonly ILogger<EkomCultureRequestLocalizationOptions> _logger;
+    public EkomCultureRequestLocalizationOptions(
+        IUmbracoService umbracoService,
+        ILogger<EkomCultureRequestLocalizationOptions> logger)
     {
         _umbracoService = umbracoService;
+        _logger = logger;
     }
 
     public void Configure(RequestLocalizationOptions options)
@@ -33,7 +38,7 @@ public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLo
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Failed configuring Ekom localization: " + ex.ToString());
+            _logger.LogWarning(ex, "Failed configuring Ekom localization.");
         }
     }
 
@@ -42,10 +47,17 @@ public class EkomCultureRequestLocalizationOptions : IConfigureOptions<RequestLo
 public class EkomCultureProvider : RequestCultureProvider
 {
     private readonly RequestLocalizationOptions _localizationOptions;
+    private readonly Dictionary<string, string> _supportedCulturesByName;
 
     // ctor with reference to the RequestLocalizationOptions
     public EkomCultureProvider(RequestLocalizationOptions localizationOptions)
-        => _localizationOptions = localizationOptions;
+    {
+        _localizationOptions = localizationOptions;
+        _supportedCulturesByName = localizationOptions.SupportedCultures
+            ?.DistinctBy(culture => culture.Name)
+            .ToDictionary(culture => culture.Name, culture => culture.Name, StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
 
     public override Task<ProviderCultureResult> DetermineProviderCultureResult(HttpContext context)
     {
@@ -74,14 +86,10 @@ public class EkomCultureProvider : RequestCultureProvider
 
         cultureName = ParseAcceptLanguageHeader(cultureName);
 
-        // Try to match with supported cultures
-        var supported = _localizationOptions.SupportedCultures
-            ?.FirstOrDefault(c => string.Equals(c.Name, cultureName, StringComparison.OrdinalIgnoreCase));
-
-        if (supported != null)
+        if (_supportedCulturesByName.TryGetValue(cultureName, out string? supportedCulture))
         {
             // Found in supported list
-            return Task.FromResult(new ProviderCultureResult(supported.Name, supported.Name));
+            return Task.FromResult(new ProviderCultureResult(supportedCulture, supportedCulture));
         }
 
         return Task.FromResult(

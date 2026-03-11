@@ -964,11 +964,13 @@ partial class OrderService
     {
         try
         {
-            List<OrderLine> linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
-
-            foreach (OrderLine? linkedLine in linkedLines)
+            for (int i = orderInfo.orderLines.Count - 1; i >= 0; i--)
             {
-                orderInfo.orderLines.Remove(linkedLine);
+                OrderLine linkedLine = orderInfo.orderLines[i];
+                if (linkedLine.Settings != null && linkedLine.Settings.Link == orderLine.Key)
+                {
+                    orderInfo.orderLines.RemoveAt(i);
+                }
             }
 
             orderInfo.orderLines.Remove(orderLine);
@@ -1018,7 +1020,7 @@ partial class OrderService
 
             List<IOrderLine> orderLines = orderInfo.OrderLines.ToList();
 
-            if (orderLines != null && orderLines.Any())
+            if (orderLines.Count > 0)
             {
                 orderInfo.orderLines.Clear();
 
@@ -1538,63 +1540,81 @@ partial class OrderService
 
         var previousCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
 
-        var shippingProviderKey = form.Keys
-            .FirstOrDefault(k => string.Equals(k, "ShippingProvider", StringComparison.OrdinalIgnoreCase));
+        string? shippingProviderKey = null;
+        string? shippingProviderValue = null;
+        string? paymentProviderKey = null;
+        string? paymentProviderValue = null;
+        Dictionary<string, string>? customShippingData = null;
+        Dictionary<string, string>? customPaymentData = null;
 
-        if (shippingProviderKey != null && form.TryGetValue(shippingProviderKey, out string? shippingProvider))
+        foreach (var kvp in form)
         {
-            if (Guid.TryParse(shippingProvider, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
-            {
-                Dictionary<string, string> customData = form.Keys
-                    .Where(x => !string.Equals(x, shippingProviderKey, StringComparison.OrdinalIgnoreCase) &&
-                                x.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+            string key = kvp.Key;
+            string value = kvp.Value;
 
-                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+            if (shippingProviderKey == null && string.Equals(key, "ShippingProvider", StringComparison.OrdinalIgnoreCase))
+            {
+                shippingProviderKey = key;
+                shippingProviderValue = value;
+                continue;
             }
-        }
 
-
-        var paymentProviderKey = form.Keys
-            .FirstOrDefault(k => string.Equals(k, "PaymentProvider", StringComparison.OrdinalIgnoreCase));
-
-        if (paymentProviderKey != null && form.TryGetValue(paymentProviderKey, out string? paymentProvider))
-        {
-            if (Guid.TryParse(paymentProvider, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
+            if (paymentProviderKey == null && string.Equals(key, "PaymentProvider", StringComparison.OrdinalIgnoreCase))
             {
-                Dictionary<string, string> customData = form.Keys
-                    .Where(x => !string.Equals(x, paymentProviderKey, StringComparison.OrdinalIgnoreCase) &&
-                                x.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
-
-                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings, ct).ConfigureAwait(false);
+                paymentProviderKey = key;
+                paymentProviderValue = value;
+                continue;
             }
-        }
 
-        foreach (string? key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
-        {
-            string value = form[key];
-
-            if (key == "customerEmail" && !string.IsNullOrEmpty(value))
+            if (key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
             {
-                if (!value.IsValidEmail())
+                customShippingData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                customShippingData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                continue;
+            }
+
+            if (key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
+            {
+                customPaymentData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                customPaymentData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                continue;
+            }
+
+            if (key.StartsWith("customer", StringComparison.InvariantCulture))
+            {
+                if (string.Equals(key, "customerEmail", StringComparison.Ordinal) && !string.IsNullOrEmpty(value))
                 {
-                    _logger.LogError($"Invalid email address: {value}");
-                    throw new FormatException($"Invalid email address: {value}");
+                    if (!value.IsValidEmail())
+                    {
+                        _logger.LogError($"Invalid email address: {value}");
+                        throw new FormatException($"Invalid email address: {value}");
+                    }
                 }
+
+                orderInfo.CustomerInformation.Customer.Properties[key] = value;
+                continue;
             }
 
-            orderInfo.CustomerInformation.Customer.Properties[key] = value;
+            if (key.StartsWith("shipping", StringComparison.InvariantCulture))
+            {
+                orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+            }
         }
 
-        foreach (string? key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
+        if (shippingProviderKey != null && shippingProviderValue != null)
         {
-            string value = form[key];
-            orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+            if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
+            {
+                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings).ConfigureAwait(false);
+            }
+        }
+
+        if (paymentProviderKey != null && paymentProviderValue != null)
+        {
+            if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
+            {
+                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData, settings, ct).ConfigureAwait(false);
+            }
         }
 
         return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
