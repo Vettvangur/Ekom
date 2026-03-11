@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.81](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.80...Ekom-v0.2.81) (2026-03-11)
+
+
+### Bug Fixes
+
+* Linq optimizations ([#386](https://github.com/Vettvangur/Ekom/issues/386)) ([bff6260](https://github.com/Vettvangur/Ekom/commit/bff626031f670ac061b67a844be3e51c2d97b845))
+
 ## [0.2.80](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.79...Ekom-v0.2.80) (2026-03-10)
 
 
