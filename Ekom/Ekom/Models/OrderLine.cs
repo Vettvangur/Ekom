@@ -1,4 +1,5 @@
 using Ekom.Utilities;
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -116,7 +117,7 @@ public class OrderLine : IOrderLine
             if (variantGroup != null && !string.IsNullOrEmpty(variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias)))
             {
                 string vatVal = variantGroup.Properties.GetPropertyValue("vat", OrderInfo.StoreInfo.Alias);
-                return Convert.ToDecimal(vatVal) / 100;
+                return Convert.ToDecimal(vatVal, CultureInfo.InvariantCulture) / 100;
             }
             else
             {
