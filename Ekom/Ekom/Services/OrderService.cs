@@ -1754,13 +1754,26 @@ partial class OrderService
 
         ).ConfigureAwait(false);
 
-        if (!string.IsNullOrEmpty(storeAlias))
+        var result = new List<OrderInfo>(orders.Count);
+        if (string.IsNullOrEmpty(storeAlias))
         {
-            orders = orders.Where(x => x.StoreAlias == storeAlias).ToList();
+            foreach (OrderData order in orders)
+            {
+                result.Add(new OrderInfo(order));
+            }
+
+            return result;
         }
 
+        foreach (OrderData order in orders)
+        {
+            if (order.StoreAlias == storeAlias)
+            {
+                result.Add(new OrderInfo(order));
+            }
+        }
 
-        return orders.Select(x => new OrderInfo(x)).ToList();
+        return result;
     }
     public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)
     {
