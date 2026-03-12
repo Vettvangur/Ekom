@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.82](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.81...Ekom-v0.2.82) (2026-03-12)
+
+
+### Bug Fixes
+
+* Prevent Null customPaymentData error ([#389](https://github.com/Vettvangur/Ekom/issues/389)) ([d2b8301](https://github.com/Vettvangur/Ekom/commit/d2b8301cf1c89aadf5bc3cd6e362aaee069a64da))
+
 ## [0.2.81](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.80...Ekom-v0.2.81) (2026-03-11)
 
 
