@@ -1613,7 +1613,7 @@ partial class OrderService
         {
             if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
             {
-                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData, settings, ct).ConfigureAwait(false);
+                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData ?? new Dictionary<string, string>(), settings, ct).ConfigureAwait(false);
             }
         }
 
