@@ -1,6 +1,7 @@
 using Ekom.Models;
 using Ekom.Tests.Objects;
 using Ekom.Utilities;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Ekom.Tests.Tests;
@@ -224,6 +225,22 @@ public class PriceTests
 
         var usd = new CurrencyModel { CurrencyValue = "en-US", CurrencyFormat = "C" };
         Assert.Equal("USD", usd.ISOCurrencySymbol);
+    }
+
+    [Fact]
+    public void CurrencyModel_Invalid_Culture_Does_Not_Break_Json_Serialization()
+    {
+        var currency = new CurrencyModel
+        {
+            CurrencyValue = "Ekom.Models.CultureInfoDto",
+            CurrencyFormat = "C"
+        };
+
+        var json = JsonConvert.SerializeObject(currency);
+
+        Assert.Contains("\"CurrencyValue\":\"Ekom.Models.CultureInfoDto\"", json);
+        Assert.Contains("\"CurrencySymbol\":\"\"", json);
+        Assert.Contains("\"ISOCurrencySymbol\":\"\"", json);
     }
 
     [Theory]
