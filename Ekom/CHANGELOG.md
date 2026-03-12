@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.83](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.82...Ekom-v0.2.83) (2026-03-12)
+
+
+### Bug Fixes
+
+* improve Ekom stability and contributor guidance ([#391](https://github.com/Vettvangur/Ekom/issues/391)) ([2f146b5](https://github.com/Vettvangur/Ekom/commit/2f146b5d9fd9a018c072949c08a16a567a0ed898))
+
 ## [0.2.82](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.81...Ekom-v0.2.82) (2026-03-12)
 
 
