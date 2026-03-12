@@ -180,7 +180,7 @@ public class Store : NodeEntity, IStore
     private List<CurrencyModel> CreateDefaultCurrencyList(string currency)
     {
         // Use the currency value if available, otherwise default to Culture
-        string currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.ToString();
+        string currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.Name;
 
         return new List<CurrencyModel>
         {
