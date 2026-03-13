@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.83...Ekom-v0.2.84) (2026-03-13)
+
+
+### Bug Fixes
+
+* algolia product index update ([#393](https://github.com/Vettvangur/Ekom/issues/393)) ([d5b7676](https://github.com/Vettvangur/Ekom/commit/d5b76766e93373a682275cfada21b89b1ecb2e0b))
+
 ## [0.2.83](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.82...Ekom-v0.2.83) (2026-03-12)
 
 

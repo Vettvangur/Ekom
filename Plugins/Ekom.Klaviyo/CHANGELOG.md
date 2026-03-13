@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.56...Ekom.Klaviyo-v0.2.57) (2026-03-13)
+
+
+### Bug Fixes
+
+* algolia product index update ([#393](https://github.com/Vettvangur/Ekom/issues/393)) ([d5b7676](https://github.com/Vettvangur/Ekom/commit/d5b76766e93373a682275cfada21b89b1ecb2e0b))
+
 ## [0.2.56](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.55...Ekom.Klaviyo-v0.2.56) (2026-03-04)
 
 

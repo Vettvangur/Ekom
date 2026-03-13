@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.1...Ekom.Algolia-v0.2.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* algolia product index update ([#393](https://github.com/Vettvangur/Ekom/issues/393)) ([d5b7676](https://github.com/Vettvangur/Ekom/commit/d5b76766e93373a682275cfada21b89b1ecb2e0b))
+
 ## [Unreleased]
 
 - Resolve Algolia locale and currency from the Ekom store by alias instead of configuring them per store in `appsettings`.
