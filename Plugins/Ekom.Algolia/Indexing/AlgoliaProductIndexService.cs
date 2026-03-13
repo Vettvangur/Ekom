@@ -33,22 +33,61 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
     public Task EnqueueProductsAsync(string storeAlias, IReadOnlyCollection<Guid> productKeys, bool isPublished, CancellationToken ct = default)
     {
         if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
+        {
+            _logger.LogDebug(
+                "Algolia enqueue skipped because indexing is disabled. Store={Store}, Published={IsPublished}, Keys={Count}",
+                storeAlias,
+                isPublished,
+                productKeys.Count);
             return Task.CompletedTask;
+        }
 
         if (string.IsNullOrWhiteSpace(storeAlias) || productKeys.Count == 0)
+        {
+            _logger.LogDebug(
+                "Algolia enqueue skipped because store alias or product keys were missing. Store={Store}, Published={IsPublished}, Keys={Count}",
+                storeAlias,
+                isPublished,
+                productKeys.Count);
             return Task.CompletedTask;
+        }
 
         var type = isPublished ? AlgoliaProductIndexJobType.Upsert : AlgoliaProductIndexJobType.Delete;
         var job = new AlgoliaProductIndexJob(type, storeAlias, productKeys);
 
+        _logger.LogDebug(
+            "Algolia queueing {Type} job for store {Store} with {Count} product keys.",
+            type,
+            storeAlias,
+            productKeys.Count);
+
         if (_queue.TryEnqueue(job))
+        {
+            _logger.LogDebug(
+                "Algolia queued {Type} job for store {Store} with {Count} product keys using TryEnqueue.",
+                type,
+                storeAlias,
+                productKeys.Count);
             return Task.CompletedTask;
+        }
 
         _ = Task.Run(async () =>
         {
             try
             {
+                _logger.LogDebug(
+                    "Algolia queue full for immediate write; waiting to enqueue {Type} job for store {Store} with {Count} product keys.",
+                    type,
+                    storeAlias,
+                    productKeys.Count);
+
                 await _queue.EnqueueAsync(job, ct).ConfigureAwait(false);
+
+                _logger.LogDebug(
+                    "Algolia queued {Type} job for store {Store} with {Count} product keys after waiting.",
+                    type,
+                    storeAlias,
+                    productKeys.Count);
             }
             catch (OperationCanceledException)
             {
@@ -71,6 +110,8 @@ internal sealed class AlgoliaProductIndexService : IAlgoliaProductIndexService
             return Task.CompletedTask;
 
         var job = new AlgoliaProductIndexJob(AlgoliaProductIndexJobType.RebuildStore, storeAlias, Array.Empty<Guid>());
+
+        _logger.LogDebug("Algolia queueing rebuild job for store {Store}.", storeAlias);
 
         if (_queue.TryEnqueue(job))
             return Task.CompletedTask;
