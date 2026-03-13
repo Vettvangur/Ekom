@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.3](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.2...Ekom.Algolia-v0.2.3) (2026-03-13)
+
+
+### Bug Fixes
+
+* Algolia debug logging ([#395](https://github.com/Vettvangur/Ekom/issues/395)) ([9f8d9f6](https://github.com/Vettvangur/Ekom/commit/9f8d9f63d5ff48ce74613ccd1aa6f5f54971b5e5))
+
 ## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.1...Ekom.Algolia-v0.2.2) (2026-03-13)
 
 ### Bug Fixes
