@@ -1,3 +1,5 @@
+using Ekom.Models;
+
 namespace Ekom.Algolia;
 
 public sealed class AlgoliaOptions
@@ -23,7 +25,6 @@ public sealed class AlgoliaIndexingOptions
     public bool Products { get; set; } = true;
 
     public int BatchSize { get; set; } = 1000;
-    public bool IncludeAllProperties { get; set; } = false;
 
     public IReadOnlyCollection<string> ProductProperties { get; init; } = [];
     public IReadOnlyCollection<AlgoliaSortedReplicaOptions> SortedReplicas { get; init; } = [];
@@ -51,9 +52,46 @@ public sealed class AlgoliaDispatcherOptions
 public sealed class AlgoliaStoreOptions
 {
     public required string Alias { get; set; }
-    public string? Locale { get; set; }
-    public string? Currency { get; set; }
     public string? Domain { get; set; }
+    public bool IncludeStock { get; set; }
+}
+
+public sealed class AlgoliaResolvedStore
+{
+    public required string Alias { get; init; }
+    public string? Domain { get; init; }
+    public string? Locale { get; init; }
+    public string? Currency { get; init; }
+    public bool IncludeStock { get; init; }
+    public IReadOnlyList<string> Locales { get; init; } = [];
+    public IReadOnlyList<string> Currencies { get; init; } = [];
+
+    public IReadOnlyList<AlgoliaResolvedStore> ExpandIndexTargets()
+    {
+        var locales = Locales.Count > 0
+            ? Locales
+            : [Locale ?? string.Empty];
+        var currencies = Currencies.Count > 0
+            ? Currencies
+            : [Currency ?? string.Empty];
+
+        return locales
+            .SelectMany(locale => currencies.Select(currency => WithSelection(locale, currency)))
+            .DistinctBy(x => new { x.Locale, x.Currency })
+            .ToList();
+    }
+
+    public AlgoliaResolvedStore WithSelection(string? locale, string? currency)
+        => new()
+        {
+            Alias = Alias,
+            Domain = Domain,
+            Locale = locale,
+            Currency = currency,
+            IncludeStock = IncludeStock,
+            Locales = Locales,
+            Currencies = Currencies
+        };
 }
 
 public sealed class AlgoliaSortedReplicaOptions

@@ -5,7 +5,7 @@ namespace Ekom.Algolia.Mappers;
 
 public interface IAlgoliaProductIndexMapper
 {
-    AlgoliaProductRecord? Map(IProduct product, AlgoliaStoreOptions store, string baseIndexName);
+    AlgoliaProductRecord? Map(IProduct product, AlgoliaResolvedStore store, string baseIndexName);
 }
 
 public interface IAlgoliaProductEnricher
@@ -23,13 +23,13 @@ public interface IAlgoliaProductFieldConverter
 
 public sealed record AlgoliaProductEnrichmentContext(
     IProduct Product,
-    AlgoliaStoreOptions Store,
+    AlgoliaResolvedStore Store,
     string BaseIndexName,
     IReadOnlyDictionary<string, AlgoliaFieldTransform> AllowedProperties);
 
 public sealed record AlgoliaProductFieldContext(
     IProduct Product,
-    AlgoliaStoreOptions Store,
+    AlgoliaResolvedStore Store,
     string PropertyAlias,
     string BaseIndexName);
 

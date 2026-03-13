@@ -11,25 +11,24 @@ internal sealed class IndexNameBuilder
         _options = options.Value;
     }
 
-    public string BuildPrimary(string entity, AlgoliaStoreOptions? store = null)
+    public string BuildPrimary(string entity, AlgoliaResolvedStore? store = null)
         => Build(AlgoliaIndexKind.Primary, entity, store, replica: null);
 
-    public string BuildReplica(string entity, AlgoliaSortedReplicaOptions replica, AlgoliaStoreOptions? store = null)
+    public string BuildReplica(string entity, AlgoliaSortedReplicaOptions replica, AlgoliaResolvedStore? store = null)
         => Build(AlgoliaIndexKind.Replica, entity, store, replica);
 
-    public string BuildQuerySuggestions(string entity, AlgoliaStoreOptions? store = null)
+    public string BuildQuerySuggestions(string entity, AlgoliaResolvedStore? store = null)
         => Build(AlgoliaIndexKind.QuerySuggestions, entity, store, replica: null);
 
     public string Build(
         AlgoliaIndexKind kind,
         string entity,
-        AlgoliaStoreOptions? store,
+        AlgoliaResolvedStore? store,
         AlgoliaSortedReplicaOptions? replica,
         string? localeOverride = null,
         string? currencyOverride = null)
     {
         var env = string.IsNullOrWhiteSpace(_options.Environment) ? "prod" : _options.Environment;
-        var domain = store?.Domain ?? _options.Domain;
 
         var tokenKind = kind switch
         {
@@ -41,8 +40,8 @@ internal sealed class IndexNameBuilder
 
         var name = tokenKind + "." + env;
 
-        if (!string.IsNullOrWhiteSpace(domain))
-            name += "." + domain;
+        if (!string.IsNullOrWhiteSpace(store?.Alias))
+            name += "." + store.Alias;
 
         name += "." + entity;
 

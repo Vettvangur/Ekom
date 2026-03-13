@@ -13,20 +13,6 @@
           "System.Text.Json": "[8.0.5, 11.0.0)"
         }
       },
-      "Ekom.U10": {
-        "type": "Direct",
-        "requested": "[0.2.70, )",
-        "resolved": "0.2.70",
-        "contentHash": "l+RUDXtzraHPQP74rDZkYLhX7pb0EHCUl8Dh4BXZeWy7DS8ZZLNxuGdw3QeQ0CMpMgGJaLOOzaYcaDTEnKIg9Q==",
-        "dependencies": {
-          "Ekom.AspNetCore": "0.2.70",
-          "Ekom.Payments.U10": "0.2.51",
-          "Umbraco.Cms.Api.Common": "13.13.0",
-          "Umbraco.Cms.Core": "13.13.0",
-          "Umbraco.Cms.Web.BackOffice": "13.13.0",
-          "Umbraco.Cms.Web.Website": "13.13.0"
-        }
-      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Direct",
         "requested": "[8.0.1, )",
@@ -168,47 +154,6 @@
         "type": "Transitive",
         "resolved": "3.1.0",
         "contentHash": "i6x0hDsFWg6Ke2isaNAcHQ9ChxBvTJu2cSmBY+Jtjiv2W4q6y9QlA3JKYuZqJ573TAZmpAn65Qf3sRpjvZ1gmw=="
-      },
-      "Ekom.AspNetCore": {
-        "type": "Transitive",
-        "resolved": "0.2.70",
-        "contentHash": "TgH+V4hlxBrNa/pdQP8r165Y4nh1iODQRRW6ePBrJP0I5Q1/vh1lSb43BLWCMxImjaNc3ncgYw6qyLn8U1rIBQ==",
-        "dependencies": {
-          "Ekom.Core": "0.2.70"
-        }
-      },
-      "Ekom.Common": {
-        "type": "Transitive",
-        "resolved": "0.2.70",
-        "contentHash": "xMDSdu1FFa3j++Ua2ac9JRlrAIcaIXA/uEzBk6TW6xnGWtFzFDIjVdkZDNZPXlYZ/jqyT40jn0rn5glTrRynrQ==",
-        "dependencies": {
-          "Microsoft.Extensions.Caching.Memory": "8.0.1",
-          "Newtonsoft.Json": "13.0.3"
-        }
-      },
-      "Ekom.Core": {
-        "type": "Transitive",
-        "resolved": "0.2.70",
-        "contentHash": "hop+NYEUmK3lW2FgZCOo4WF/uRx6bRxMPlvA8+T9hcKx7+pyzEE3S67OFLgo1yhI7taRhxdOTyRZSEXswPojyg==",
-        "dependencies": {
-          "Azure.Identity": "1.17.1",
-          "CommonServiceLocator": "2.0.7",
-          "Ekom.Common": "0.2.70",
-          "Ekom.Payments.Core": "0.2.51",
-          "Hangfire": "1.8.18",
-          "Microsoft.AspNetCore.Http.Extensions": "2.3.0",
-          "Microsoft.AspNetCore.Mvc.Abstractions": "2.3.0",
-          "Microsoft.AspNetCore.Mvc.Core": "2.3.9",
-          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "8.0.11",
-          "Microsoft.Data.SqlClient": "6.1.2",
-          "Microsoft.Extensions.Caching.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration": "8.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
-          "Newtonsoft.Json": "13.0.4",
-          "linq2db": "5.4.1",
-          "murmurhash": "1.0.3"
-        }
       },
       "Ekom.Payments.AspNetCore": {
         "type": "Transitive",
@@ -889,6 +834,23 @@
         "type": "Transitive",
         "resolved": "6.0.2",
         "contentHash": "f+pRODTWX7Y67jXO3T5S2dIPZ9qMJNySjlZT/TKmWVNWe19N8jcWmHaqHnnchaq3gxEKv1SWVY5EFzOD06l41w=="
+      },
+      "Microsoft.Data.Sqlite": {
+        "type": "Transitive",
+        "resolved": "8.0.11",
+        "contentHash": "6JocV6S1akKlXaDVpRmmwc9d/M7wXBmiEZ7RxB5lxDk+er9Xi3P+yVYVnh+6IJ+Y6v8pecGWhGwcgH1mONcLuw==",
+        "dependencies": {
+          "Microsoft.Data.Sqlite.Core": "8.0.11",
+          "SQLitePCLRaw.bundle_e_sqlite3": "2.1.6"
+        }
+      },
+      "Microsoft.Data.Sqlite.Core": {
+        "type": "Transitive",
+        "resolved": "8.0.11",
+        "contentHash": "PrDkI9SeU/MEP/IHriczeYmRVbzEcfp66UlZRjL5ikHIJGIYOrby55GoehLCJzJiTwJ+rGkjSRctZnWgfC95fg==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.6"
+        }
       },
       "Microsoft.Extensions.ApiDescription.Server": {
         "type": "Transitive",
@@ -1927,6 +1889,36 @@
           "Smidge": "4.6.0"
         }
       },
+      "SQLitePCLRaw.bundle_e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.6",
+        "contentHash": "BmAf6XWt4TqtowmiWe4/5rRot6GerAeklmOPfviOvwLoF5WwgxcJHAxZtySuyW9r9w+HLILnm8VfJFLCUJYW8A==",
+        "dependencies": {
+          "SQLitePCLRaw.lib.e_sqlite3": "2.1.6",
+          "SQLitePCLRaw.provider.e_sqlite3": "2.1.6"
+        }
+      },
+      "SQLitePCLRaw.core": {
+        "type": "Transitive",
+        "resolved": "2.1.6",
+        "contentHash": "wO6v9GeMx9CUngAet8hbO7xdm+M42p1XeJq47ogyRoYSvNSp0NGLI+MgC0bhrMk9C17MTVFlLiN6ylyExLCc5w==",
+        "dependencies": {
+          "System.Memory": "4.5.3"
+        }
+      },
+      "SQLitePCLRaw.lib.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.6",
+        "contentHash": "2ObJJLkIUIxRpOUlZNGuD4rICpBnrBR5anjyfUFQep4hMOIeqW+XGQYzrNmHSVz5xSWZ3klSbh7sFR6UyDj68Q=="
+      },
+      "SQLitePCLRaw.provider.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.6",
+        "contentHash": "PQ2Oq3yepLY4P7ll145P3xtx2bX8xF4PzaKPRpw9jZlKvfe4LE/saAV82inND9usn1XRpmxXk7Lal3MTI+6CNg==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.6"
+        }
+      },
       "Swashbuckle.AspNetCore": {
         "type": "Transitive",
         "resolved": "6.9.0",
@@ -2358,6 +2350,11 @@
           "System.Runtime.Extensions": "4.3.0",
           "System.Threading": "4.3.0"
         }
+      },
+      "System.Memory": {
+        "type": "Transitive",
+        "resolved": "4.5.3",
+        "contentHash": "3oDzvc/zzetpTKWMShs1AADwZjQ/36HnsufHRPcOjyRAAMLDlu2iD33MBI2opxnezcVUtXyqDXXjoFMOU9c7SA=="
       },
       "System.Memory.Data": {
         "type": "Transitive",
@@ -3076,6 +3073,53 @@
         "type": "Transitive",
         "resolved": "15.0.0",
         "contentHash": "YSDIkxq44VMy2N3jBTwJBJ/ZjGyuyb0GRyfQAUIma07dCHIbjXgKXjZaAxVa6ik3XTqgcyATvwYJL0EBtAClwA=="
+      },
+      "ekom.aspnetcore": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.Core": "[0.2.82, )"
+        }
+      },
+      "ekom.common": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Memory": "[8.0.1, )",
+          "Newtonsoft.Json": "[13.0.3, )"
+        }
+      },
+      "Ekom.Core": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Identity": "[1.17.1, )",
+          "CommonServiceLocator": "[2.0.7, )",
+          "Ekom.Common": "[0.2.82, )",
+          "Ekom.Payments.Core": "[0.2.51, )",
+          "Hangfire": "[1.8.18, )",
+          "Microsoft.AspNetCore.Http.Extensions": "[2.3.0, )",
+          "Microsoft.AspNetCore.Mvc.Abstractions": "[2.3.0, )",
+          "Microsoft.AspNetCore.Mvc.Core": "[2.3.9, )",
+          "Microsoft.AspNetCore.Mvc.NewtonsoftJson": "[8.0.11, )",
+          "Microsoft.Data.SqlClient": "[6.1.2, )",
+          "Microsoft.Data.Sqlite": "[8.0.11, )",
+          "Microsoft.Extensions.Caching.Abstractions": "[8.0.0, )",
+          "Microsoft.Extensions.Configuration": "[8.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[8.0.2, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[8.0.3, )",
+          "Newtonsoft.Json": "[13.0.4, )",
+          "linq2db": "[5.4.1, )",
+          "murmurhash": "[1.0.3, )"
+        }
+      },
+      "ekom.u10": {
+        "type": "Project",
+        "dependencies": {
+          "Ekom.AspNetCore": "[0.2.82, )",
+          "Ekom.Payments.U10": "[0.2.51, )",
+          "Umbraco.Cms.Api.Common": "[13.13.0, )",
+          "Umbraco.Cms.Core": "[13.13.0, )",
+          "Umbraco.Cms.Web.BackOffice": "[13.13.0, )",
+          "Umbraco.Cms.Web.Website": "[13.13.0, )"
+        }
       }
     }
   }
