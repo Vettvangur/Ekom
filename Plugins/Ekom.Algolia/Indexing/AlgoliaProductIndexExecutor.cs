@@ -125,6 +125,7 @@ internal sealed class AlgoliaProductIndexExecutor
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
             await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
+
             var skippedProducts = 0;
 
             foreach (var product in products)
@@ -144,9 +145,6 @@ internal sealed class AlgoliaProductIndexExecutor
                 target.Currency,
                 records.Count,
                 skippedProducts);
-
-            if (records.Count == 0)
-                continue;
 
             var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
 
@@ -205,7 +203,9 @@ internal sealed class AlgoliaProductIndexExecutor
             var indexName = _indexNameBuilder.BuildPrimary("products", target);
             await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
+
             var skippedProducts = 0;
+
 
             foreach (var product in products)
             {
@@ -232,6 +232,7 @@ internal sealed class AlgoliaProductIndexExecutor
                     target.Locale,
                     target.Currency);
                 continue;
+            
             }
 
             _logger.LogDebug(
