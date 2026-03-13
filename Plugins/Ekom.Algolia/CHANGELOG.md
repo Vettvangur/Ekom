@@ -1,7 +1,7 @@
 # Changelog
 
-## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.1...Ekom.Algolia-v0.2.2) (2026-03-13)
 
+## [0.2.2](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.1...Ekom.Algolia-v0.2.2) (2026-03-13)
 
 ### Bug Fixes
 

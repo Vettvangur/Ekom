@@ -43,6 +43,8 @@ internal sealed class AlgoliaProductIndexExecutor
         if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
             return;
 
+        _logger.LogDebug("Algolia executor handling {Count} queued jobs.", jobs.Count);
+
         var byStore = jobs.GroupBy(j => j.StoreAlias, StringComparer.OrdinalIgnoreCase);
 
         foreach (var storeGroup in byStore)
@@ -51,9 +53,20 @@ internal sealed class AlgoliaProductIndexExecutor
 
             var storeAlias = storeGroup.Key;
             var store = _storeResolver.Resolve(storeAlias);
+            var storeJobs = storeGroup.ToList();
 
-            if (storeGroup.Any(j => j.Type == AlgoliaProductIndexJobType.RebuildStore))
+            _logger.LogDebug(
+                "Algolia executor resolved store {Store}. Locale={Locale}, Currency={Currency}, Locales={LocaleCount}, Currencies={CurrencyCount}, Jobs={JobCount}",
+                store.Alias,
+                store.Locale,
+                store.Currency,
+                store.Locales.Count,
+                store.Currencies.Count,
+                storeJobs.Count);
+
+            if (storeJobs.Any(j => j.Type == AlgoliaProductIndexJobType.RebuildStore))
             {
+                _logger.LogDebug("Algolia executor starting rebuild for store {Store}.", store.Alias);
                 await RebuildStoreAsync(store, ct).ConfigureAwait(false);
                 continue;
             }
@@ -61,7 +74,7 @@ internal sealed class AlgoliaProductIndexExecutor
             var upsertKeys = new HashSet<Guid>();
             var deleteKeys = new HashSet<Guid>();
 
-            foreach (var job in storeGroup)
+            foreach (var job in storeJobs)
             {
                 if (job.Type == AlgoliaProductIndexJobType.Delete)
                 {
@@ -77,6 +90,12 @@ internal sealed class AlgoliaProductIndexExecutor
 
             foreach (var key in deleteKeys)
                 upsertKeys.Remove(key);
+
+            _logger.LogDebug(
+                "Algolia executor prepared store {Store} with {UpsertCount} upserts and {DeleteCount} deletes.",
+                store.Alias,
+                upsertKeys.Count,
+                deleteKeys.Count);
 
             if (upsertKeys.Count > 0)
                 await UpsertAsync(store, upsertKeys, ct).ConfigureAwait(false);
@@ -95,6 +114,8 @@ internal sealed class AlgoliaProductIndexExecutor
         var response = await Catalog.Instance.GetAllProductsAsync(store.Alias, query, ct: ct);
         var products = response.Products?.ToList() ?? [];
 
+        _logger.LogDebug("Algolia rebuild fetched {Count} products for store {Store}.", products.Count, store.Alias);
+
         if (products.Count == 0)
             return;
 
@@ -105,16 +126,25 @@ internal sealed class AlgoliaProductIndexExecutor
             await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
 
+            var skippedProducts = 0;
+
             foreach (var product in products)
             {
                 ct.ThrowIfCancellationRequested();
                 var record = _mapper.Map(product, target, indexName);
                 if (record != null)
                     records.Add(record);
+                else
+                    skippedProducts++;
             }
 
-            if (records.Count == 0)
-                continue;
+            _logger.LogDebug(
+                "Algolia rebuild mapped store {Store} locale {Locale} currency {Currency} to {RecordCount} records. Skipped={SkippedCount}",
+                target.Alias,
+                target.Locale,
+                target.Currency,
+                records.Count,
+                skippedProducts);
 
             var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
 
@@ -136,6 +166,8 @@ internal sealed class AlgoliaProductIndexExecutor
 
     private async Task UpsertAsync(AlgoliaResolvedStore store, IReadOnlyCollection<Guid> keys, CancellationToken ct)
     {
+        _logger.LogDebug("Algolia upsert requested for store {Store} with {Count} product keys.", store.Alias, keys.Count);
+
         var missingKeys = new List<Guid>();
         var products = new List<IProduct>(keys.Count);
 
@@ -156,6 +188,8 @@ internal sealed class AlgoliaProductIndexExecutor
 
         if (products.Count == 0)
         {
+            _logger.LogDebug("Algolia upsert resolved no products for store {Store}. MissingKeys={MissingCount}", store.Alias, missingKeys.Count);
+
             if (missingKeys.Count > 0)
                 await DeleteAsync(store, missingKeys, ct).ConfigureAwait(false);
             return;
@@ -170,15 +204,36 @@ internal sealed class AlgoliaProductIndexExecutor
             await EnsureReplicasAsync(target, indexName, ct).ConfigureAwait(false);
             var records = new List<AlgoliaProductRecord>(products.Count);
 
+            var skippedProducts = 0;
+
+
             foreach (var product in products)
             {
                 var record = _mapper.Map(product, target, indexName);
                 if (record != null)
                     records.Add(record);
+                else
+                    skippedProducts++;
             }
 
+            _logger.LogDebug(
+                "Algolia upsert mapped store {Store} locale {Locale} currency {Currency} to {RecordCount} records. Skipped={SkippedCount}",
+                target.Alias,
+                target.Locale,
+                target.Currency,
+                records.Count,
+                skippedProducts);
+
             if (records.Count == 0)
+            {
+                _logger.LogDebug(
+                    "Algolia upsert produced no records for store {Store} locale {Locale} currency {Currency}; skipping save.",
+                    target.Alias,
+                    target.Locale,
+                    target.Currency);
                 continue;
+            
+            }
 
             _logger.LogDebug(
                 "Algolia upsert {Count} products to {IndexName} for locale {Locale} currency {Currency}",
@@ -204,6 +259,8 @@ internal sealed class AlgoliaProductIndexExecutor
     {
         if (keys.Count == 0)
             return;
+
+        _logger.LogDebug("Algolia delete requested for store {Store} with {Count} product keys.", store.Alias, keys.Count);
 
         var ids = keys.Select(k => k.ToString()).ToList();
         var batchSize = _options.Indexing.BatchSize <= 0 ? 1000 : _options.Indexing.BatchSize;
@@ -248,6 +305,12 @@ internal sealed class AlgoliaProductIndexExecutor
 
         if (replicas.Count == 0)
             return;
+
+        _logger.LogDebug(
+            "Algolia configuring {ReplicaCount} replicas for {IndexName} in store {Store}.",
+            replicas.Count,
+            primaryIndexName,
+            store.Alias);
 
         await _client.SetSettingsAsync(
             primaryIndexName,

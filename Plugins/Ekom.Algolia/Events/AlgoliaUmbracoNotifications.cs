@@ -44,24 +44,32 @@ internal sealed class AlgoliaUmbracoNotifications :
 
     public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Algolia received ContentPublishedNotification with {Count} published entities.", notification.PublishedEntities.Count());
+
         foreach (var entity in notification.PublishedEntities)
             await EnqueueIfProductAsync(entity, isPublished: true, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Algolia received ContentUnpublishedNotification with {Count} unpublished entities.", notification.UnpublishedEntities.Count());
+
         foreach (var entity in notification.UnpublishedEntities)
             await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Algolia received ContentMovedToRecycleBinNotification with {Count} entities.", notification.MoveInfoCollection.Count());
+
         foreach (var entity in notification.MoveInfoCollection.Select(x => x.Entity))
             await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
     {
+        _logger.LogDebug("Algolia received ContentDeletedNotification with {Count} deleted entities.", notification.DeletedEntities.Count());
+
         foreach (var entity in notification.DeletedEntities)
             await EnqueueIfProductAsync(entity, isPublished: false, cancellationToken).ConfigureAwait(false);
     }
@@ -69,7 +77,21 @@ internal sealed class AlgoliaUmbracoNotifications :
     private async Task EnqueueIfProductAsync(IContent entity, bool isPublished, CancellationToken ct)
     {
         if (!string.Equals(entity.ContentType.Alias, ProductAlias, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogDebug(
+                "Algolia skipping content {Id} because alias {Alias} is not {ProductAlias}.",
+                entity.Id,
+                entity.ContentType.Alias,
+                ProductAlias);
             return;
+        }
+
+        _logger.LogDebug(
+            "Algolia handling product publish event for content {Id} key {Key}. Published={IsPublished}, StoresConfigured={StoreCount}",
+            entity.Id,
+            entity.Key,
+            isPublished,
+            _options.Stores.Count);
 
         if (!_options.Enabled || !_options.Indexing.Enabled || !_options.Indexing.Products)
         {
@@ -87,7 +109,21 @@ internal sealed class AlgoliaUmbracoNotifications :
         {
             try
             {
+                _logger.LogDebug(
+                    "Algolia enqueue requested for product {Id} key {Key} store {Store}. Published={IsPublished}",
+                    entity.Id,
+                    entity.Key,
+                    store.Alias,
+                    isPublished);
+
                 await _indexer.EnqueueProductAsync(store.Alias, entity.Key, isPublished, ct).ConfigureAwait(false);
+
+                _logger.LogDebug(
+                    "Algolia enqueue completed for product {Id} key {Key} store {Store}. Published={IsPublished}",
+                    entity.Id,
+                    entity.Key,
+                    store.Alias,
+                    isPublished);
             }
             catch (Exception ex)
             {

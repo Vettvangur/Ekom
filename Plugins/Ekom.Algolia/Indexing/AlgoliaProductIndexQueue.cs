@@ -39,6 +39,15 @@ internal sealed class AlgoliaProductIndexQueue : IAlgoliaProductIndexQueue
     {
         var ok = _channel.Writer.TryWrite(job);
 
+        if (ok)
+        {
+            _logger.LogDebug(
+                "Algolia queue accepted {Type} for store {Store} with {Count} product keys.",
+                job.Type,
+                job.StoreAlias,
+                job.ProductKeys.Count);
+        }
+
         if (!ok)
         {
             _logger.LogWarning(
@@ -52,5 +61,13 @@ internal sealed class AlgoliaProductIndexQueue : IAlgoliaProductIndexQueue
     }
 
     public ValueTask EnqueueAsync(AlgoliaProductIndexJob job, CancellationToken ct = default)
-        => _channel.Writer.WriteAsync(job, ct);
+    {
+        _logger.LogDebug(
+            "Algolia queue waiting to accept {Type} for store {Store} with {Count} product keys.",
+            job.Type,
+            job.StoreAlias,
+            job.ProductKeys.Count);
+
+        return _channel.Writer.WriteAsync(job, ct);
+    }
 }

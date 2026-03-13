@@ -52,9 +52,13 @@ internal sealed class AlgoliaProductIndexWorker : BackgroundService
                 if (drained.Count == 0)
                     continue;
 
+                _logger.LogDebug("Algolia Product Indexer drained {Count} queued jobs.", drained.Count);
+
                 foreach (var chunk in drained.Chunk(maxBatch))
                 {
                     await throttler.WaitAsync(stoppingToken).ConfigureAwait(false);
+
+                    _logger.LogDebug("Algolia Product Indexer dispatching chunk with {ChunkSize} jobs.", chunk.Length);
 
                     _ = Task.Run(async () =>
                     {
