@@ -1,6 +1,5 @@
 using Ekom.Algolia.Models.Events;
 using Ekom.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Ekom.Algolia.Services;
@@ -18,23 +17,23 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
     private const string ProductsEntity = "products";
 
     private readonly AlgoliaOptions _options;
+    private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
     private readonly IAlgoliaUserTokenProvider _userTokenProvider;
     private readonly IAlgoliaInsightsClient _insightsClient;
-    private readonly ILogger<AlgoliaEventService> _logger;
 
     public AlgoliaEventService(
         IOptions<AlgoliaOptions> options,
+        AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
         IAlgoliaUserTokenProvider userTokenProvider,
-        IAlgoliaInsightsClient insightsClient,
-        ILogger<AlgoliaEventService> logger)
+        IAlgoliaInsightsClient insightsClient)
     {
         _options = options.Value;
+        _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
         _userTokenProvider = userTokenProvider;
         _insightsClient = insightsClient;
-        _logger = logger;
     }
 
     public Task TrackViewedProductAsync(IProduct product, CancellationToken ct = default)
@@ -46,7 +45,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
-        var store = ResolveStoreOptions(product.Store.Alias);
+        var store = _storeResolver.Resolve(product.Store.Alias);
         var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, store);
 
         var evt = new AlgoliaInsightsEvent
@@ -70,8 +69,14 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
-        var store = ResolveStoreOptions(orderInfo.StoreInfo.Alias);
-        var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, store);
+        var store = _storeResolver.Resolve(orderInfo.StoreInfo.Alias);
+        var indexName = _indexNameBuilder.Build(
+            AlgoliaIndexKind.Primary,
+            ProductsEntity,
+            store,
+            replica: null,
+            localeOverride: orderInfo.StoreInfo.Culture,
+            currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var evt = new AlgoliaInsightsEvent
         {
@@ -84,7 +89,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             {
                 ["quantity"] = orderLine.Quantity,
                 ["value"] = orderLine.Amount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.ISOCurrencySymbol
+                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
             }
         };
 
@@ -100,8 +105,14 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
-        var store = ResolveStoreOptions(orderInfo.StoreInfo.Alias);
-        var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, store);
+        var store = _storeResolver.Resolve(orderInfo.StoreInfo.Alias);
+        var indexName = _indexNameBuilder.Build(
+            AlgoliaIndexKind.Primary,
+            ProductsEntity,
+            store,
+            replica: null,
+            localeOverride: orderInfo.StoreInfo.Culture,
+            currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var objectIds = orderInfo.OrderLines
             .Select(l => l.ProductKey.ToString())
@@ -121,7 +132,7 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             ObjectData = new Dictionary<string, object?>
             {
                 ["value"] = orderInfo.ChargedAmount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.ISOCurrencySymbol
+                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
             }
         };
 
@@ -137,8 +148,14 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
         if (string.IsNullOrWhiteSpace(userToken))
             return Task.CompletedTask;
 
-        var store = ResolveStoreOptions(orderInfo.StoreInfo.Alias);
-        var indexName = _indexNameBuilder.BuildPrimary(ProductsEntity, store);
+        var store = _storeResolver.Resolve(orderInfo.StoreInfo.Alias);
+        var indexName = _indexNameBuilder.Build(
+            AlgoliaIndexKind.Primary,
+            ProductsEntity,
+            store,
+            replica: null,
+            localeOverride: orderInfo.StoreInfo.Culture,
+            currencyOverride: orderInfo.StoreInfo.Currency.CurrencyValue);
 
         var objectIds = orderInfo.OrderLines
             .Select(l => l.ProductKey.ToString())
@@ -158,20 +175,11 @@ internal sealed class AlgoliaEventService : IAlgoliaEventService
             ObjectData = new Dictionary<string, object?>
             {
                 ["value"] = orderInfo.ChargedAmount.Value,
-                ["currency"] = orderInfo.StoreInfo.Currency.ISOCurrencySymbol
+                ["currency"] = orderInfo.StoreInfo.Currency.CurrencyValue
             }
         };
 
         return _insightsClient.SendEventsAsync(new[] { evt }, ct);
     }
 
-    private AlgoliaStoreOptions ResolveStoreOptions(string storeAlias)
-    {
-        var store = _options.Stores.FirstOrDefault(s => s.Alias.Equals(storeAlias, StringComparison.OrdinalIgnoreCase));
-        if (store != null)
-            return store;
-
-        _logger.LogDebug("Algolia store config not found for {Store}; using defaults.", storeAlias);
-        return new AlgoliaStoreOptions { Alias = storeAlias };
-    }
 }

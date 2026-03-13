@@ -8,7 +8,7 @@ Algolia integration plugin for Ekom (Umbraco).
 ## Features
 - Product indexing with background queue/worker.
 - Algolia Insights events for view, add-to-cart, checkout, purchase.
-- Index naming convention: `{primary|replica|query_suggestions}.ENVIRONMENT[.Domain].ENTITY[_sorted_by_{asc|desc}_ATTRIBUTE[.Locale][.Currency]]`.
+- Index naming convention: `{primary|replica|query_suggestions}.ENVIRONMENT[.Domain].ENTITY[_sorted_by_{asc|desc}_ATTRIBUTE][.Locale][.Currency]`.
 
 ## Install
 
@@ -59,8 +59,6 @@ services.AddAlgolia();
       "Stores": [
         {
           "Alias": "Store",
-          "Locale": "cs",
-          "Currency": "chf",
           "Domain": "example"
         }
       ]
@@ -71,4 +69,6 @@ services.AddAlgolia();
 
 ## Notes
 - Indexing triggers from Umbraco content notifications for `ekmProduct`.
+- Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias and optional domain.
+- Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - Variants are not indexed by default.

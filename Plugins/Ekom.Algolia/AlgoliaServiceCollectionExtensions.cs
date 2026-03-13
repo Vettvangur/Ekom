@@ -47,6 +47,7 @@ public static class AlgoliaServiceCollectionExtensions
         });
 
         services.AddSingleton<IndexNameBuilder>();
+        services.AddSingleton<AlgoliaStoreResolver>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();
 
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();

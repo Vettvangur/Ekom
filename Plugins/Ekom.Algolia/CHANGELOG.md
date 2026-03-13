@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Resolve Algolia locale and currency from the Ekom store by alias instead of configuring them per store in `appsettings`.
+
 ## [0.2.1](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.0...Ekom.Algolia-v0.2.1) (2026-03-09)
 
 

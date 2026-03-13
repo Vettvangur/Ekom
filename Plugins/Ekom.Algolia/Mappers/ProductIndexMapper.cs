@@ -2,6 +2,7 @@ using Ekom.Algolia.Models.Indexing;
 using Ekom.Models;
 using Microsoft.Extensions.Options;
 using System.Globalization;
+using System.Linq;
 
 namespace Ekom.Algolia.Mappers;
 
@@ -25,48 +26,62 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             .ToList();
     }
 
-    public AlgoliaProductRecord? Map(IProduct product, AlgoliaStoreOptions store, string baseIndexName)
+    public AlgoliaProductRecord? Map(IProduct product, AlgoliaResolvedStore store, string baseIndexName)
     {
         if (product == null)
             return null;
 
         var allowedProps = BuildAllowedProperties(product, store);
+        var price = ResolvePrice(product, store);
+        var locale = store.Locale;
+        var categoryPageIdentifiers = BuildCategoryPageIdentifiers(product, locale);
 
         var images = product.Images
             .Select(i => i?.Url)
             .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => ApplyDomain(u!, store.Domain))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var urls = product.Urls
-            ?.Where(u => !string.IsNullOrWhiteSpace(u))
+        var urls = product.UrlsWithContext
+            .Where(u => string.IsNullOrWhiteSpace(locale) || u.Culture.Equals(locale, StringComparison.OrdinalIgnoreCase))
+            .Select(u => u.Url)
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => ApplyDomain(u!, store.Domain))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList()
             ?? [];
+
+        if (urls.Count == 0)
+        {
+            urls = product.Urls
+                ?.Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => ApplyDomain(u!, store.Domain))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList()
+                ?? [];
+        }
 
         var record = new AlgoliaProductRecord
         {
             ObjectId = product.Key.ToString(),
             Sku = product.SKU,
-            Name = product.Title,
-            Summary = product.Summary,
-            Description = product.Description,
-            Url = product.Url,
-            Urls = urls,
+            Name = GetLocalizedValue(product, "title", product.Title, locale),
+            Summary = GetLocalizedValue(product, "summary", product.Summary, locale),
+            Description = GetLocalizedValue(product, "description", product.Description, locale),
+            Url = urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain),
             ImageUrls = images,
-            Price = product.Price.Value,
-            OriginalPrice = product.OriginalPrice.OriginalValue,
-            Currency = product.Price.Currency.ISOCurrencySymbol,
+            Price = price?.Value,
+            PriceWithVat = price?.WithVat.Value,
+            PriceWithoutVat = price?.WithoutVat.Value,
+            Currency = price?.Currency.CurrencyValue ?? store.Currency,
             Available = product.Available,
-            Stock = product.Stock,
-            Backorder = product.Backorder,
+            Stock = store.IncludeStock ? product.Stock : null,
             StoreAlias = store.Alias,
             Locale = store.Locale,
-            CategoryNames = product.Categories.Select(c => c.Title).ToList(),
-            CategoryKeys = product.Categories.Select(c => c.Key.ToString()).ToList(),
-            CategoryAncestors = product.CategoryAncestors.Select(c => c.Title).ToList(),
-            CreatedAt = product.CreateDate,
-            UpdatedAt = product.UpdateDate,
+            CategoryPageIdentifier = categoryPageIdentifiers,
+            CreatedAt = ToUnixTimeSeconds(product.CreateDate),
+            UpdatedAt = ToUnixTimeSeconds(product.UpdateDate),
             Data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         };
 
@@ -75,7 +90,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             var alias = kvp.Key;
             var transform = kvp.Value;
 
-            var raw = product.GetValue(alias, store.Alias);
+            var raw = GetLocalizedValue(product, alias, product.GetValue(alias, store.Alias), locale);
             if (string.IsNullOrWhiteSpace(raw))
                 continue;
 
@@ -112,17 +127,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return record;
     }
 
-    private Dictionary<string, AlgoliaFieldTransform> BuildAllowedProperties(IProduct product, AlgoliaStoreOptions store)
+    private Dictionary<string, AlgoliaFieldTransform> BuildAllowedProperties(IProduct product, AlgoliaResolvedStore store)
     {
-        if (_options.Indexing.IncludeAllProperties)
-        {
-            return product.Properties
-                .Keys
-                .Where(k => !string.IsNullOrWhiteSpace(k) && !k.StartsWith("__", StringComparison.OrdinalIgnoreCase))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(k => k, _ => AlgoliaFieldTransform.None, StringComparer.OrdinalIgnoreCase);
-        }
-
         if (_options.Indexing.ProductProperties.Count == 0)
             return new Dictionary<string, AlgoliaFieldTransform>(StringComparer.OrdinalIgnoreCase);
 
@@ -142,6 +148,69 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         }
 
         return value;
+    }
+
+    private static string GetLocalizedValue(INodeEntity node, string propertyAlias, string fallbackValue, string? locale)
+    {
+        if (string.IsNullOrWhiteSpace(locale))
+            return fallbackValue;
+
+        var localized = node.GetValue(propertyAlias, locale, fallback: true);
+        return string.IsNullOrWhiteSpace(localized) ? fallbackValue : localized;
+    }
+
+    private static string ApplyDomain(string? url, string? domain)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return string.Empty;
+
+        if (string.IsNullOrWhiteSpace(domain))
+            return url;
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out _))
+            return url;
+
+        if (!Uri.TryCreate(domain, UriKind.Absolute, out var baseUri))
+            return url;
+
+        if (!Uri.TryCreate(baseUri, url, out var absoluteUri))
+            return url;
+
+        return absoluteUri.ToString();
+    }
+
+    private static IReadOnlyList<string> BuildCategoryPageIdentifiers(IProduct product, string? locale)
+    {
+        var identifiers = new List<string>();
+
+        foreach (var category in product.Categories)
+        {
+            var segments = category.Ancestors
+                .Select(ancestor => GetLocalizedValue(ancestor, "title", ancestor.Title, locale))
+                .Where(title => !string.IsNullOrWhiteSpace(title))
+                .ToList();
+
+            var categoryTitle = GetLocalizedValue(category, "title", category.Title, locale);
+            if (!string.IsNullOrWhiteSpace(categoryTitle))
+                segments.Add(categoryTitle);
+
+            for (var i = 0; i < segments.Count; i++)
+                identifiers.Add(string.Join(" > ", segments.Take(i + 1)));
+        }
+
+        return identifiers
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IPrice? ResolvePrice(IProduct product, AlgoliaResolvedStore store)
+    {
+        if (string.IsNullOrWhiteSpace(store.Currency))
+            return product.Price;
+
+        return product.Prices.FirstOrDefault(x => x.Currency.CurrencyValue.Equals(store.Currency, StringComparison.OrdinalIgnoreCase))
+            ?? product.Price;
     }
 
     private static object? TryToUnix(object? value, bool unixMilliseconds)
@@ -176,6 +245,21 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         }
 
         return unixMilliseconds ? dto.ToUnixTimeMilliseconds() : dto.ToUnixTimeSeconds();
+    }
+
+    private static long? ToUnixTimeSeconds(DateTime? value)
+    {
+        if (!value.HasValue)
+            return null;
+
+        var dto = value.Value.Kind switch
+        {
+            DateTimeKind.Utc => new DateTimeOffset(value.Value, TimeSpan.Zero),
+            DateTimeKind.Local => new DateTimeOffset(value.Value),
+            _ => new DateTimeOffset(DateTime.SpecifyKind(value.Value, DateTimeKind.Utc), TimeSpan.Zero)
+        };
+
+        return dto.ToUnixTimeSeconds();
     }
 
     internal readonly record struct ConfiguredField(string Alias, AlgoliaFieldTransform Transform)
