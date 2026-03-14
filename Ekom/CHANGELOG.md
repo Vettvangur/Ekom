@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.85](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.84...Ekom-v0.2.85) (2026-03-14)
+
+
+### Bug Fixes
+
+* discount will now work also on related categories ([#397](https://github.com/Vettvangur/Ekom/issues/397)) ([8e8c206](https://github.com/Vettvangur/Ekom/commit/8e8c206839515e87058a761762af153daa1cae84))
+
 ## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.83...Ekom-v0.2.84) (2026-03-13)
 
 
