@@ -1,4 +1,7 @@
+using Ekom.API;
+using Ekom.Services;
 using Ekom.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.Xml.Serialization;
 
@@ -66,8 +69,28 @@ public class OrderLine : IOrderLine
 
         OrderedDiscount? discount = orderlinePrice.Discount;
 
+        var paths = new HashSet<string>(Product.Path.Split(','));
+        var categoriesUdi = Product.Properties.GetValue("categories").Split(',');
+
+        var nodeService = Configuration.Resolver.GetService<INodeService>();
+
+        if (nodeService != null && categoriesUdi.Any())
+        {
+            foreach (var categoryUdi in categoriesUdi)
+            {
+                var categoryNode = nodeService.NodeById(categoryUdi, false);
+
+                if (categoryNode != null)
+                {
+                    paths.UnionWith(categoryNode.Path.Split(','));
+                }
+            }
+        }
+
+        var uniquePaths = paths.ToList();
+
         if (OrderInfo?.Discount != null &&
-            (OrderInfo.Discount.DiscountItems.Any() && Product.Path.Split(',').Intersect(OrderInfo.Discount.DiscountItems).Any() || OrderInfo.Discount.GlobalDiscount))
+            (OrderInfo.Discount.DiscountItems.Any() && paths.Intersect(OrderInfo.Discount.DiscountItems).Any() || OrderInfo.Discount.GlobalDiscount))
         {
             if (Product.Price.HasDiscount && OrderInfo.Discount.Stackable)
             {
@@ -94,7 +117,7 @@ public class OrderLine : IOrderLine
         //    foreach (OrderedVariant? v in variants)
         //    {
         //        _price += (v.Price.OriginalValue - _price);
-                    
+
         //    }
         //}
 
