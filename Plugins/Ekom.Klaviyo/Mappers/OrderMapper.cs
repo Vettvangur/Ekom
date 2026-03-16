@@ -9,7 +9,7 @@ namespace Ekom.Klaviyo.Mappers;
 
 public static class OrderMapper
 {
-    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt)
+    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt, DateTimeOffset? placedAt = null)
     {
 
         var storeOptions = opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(order.StoreInfo.Alias));
@@ -79,7 +79,7 @@ public static class OrderMapper
         {
             OrderId = order.KlaviyoUniqueId(),
             OrderNumber = order.OrderNumber,
-            PlacedAt = order.PaidDate ?? order.CreateDate,
+            PlacedAt = placedAt ?? order.PaidDate ?? order.CreateDate,
             Value = order.ChargedAmount.Value,
             ValueFormatted = order.ChargedAmount.CurrencyString,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
