@@ -9,7 +9,7 @@ namespace Ekom.Klaviyo.Mappers;
 
 public static class OrderMapper
 {
-    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt, DateTimeOffset? placedAt = null)
+    public static KlaviyoPlacedOrder ToKlaviyoPlacedOrder(this IOrderInfo order, KlaviyoOptions opt, DateTimeOffset placedAt)
     {
 
         var storeOptions = opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(order.StoreInfo.Alias));
@@ -79,7 +79,9 @@ public static class OrderMapper
         {
             OrderId = order.KlaviyoUniqueId(),
             OrderNumber = order.OrderNumber,
-            PlacedAt = placedAt ?? order.PaidDate ?? order.CreateDate,
+            PlacedAt = placedAt,
+            CreatedAt = order.CreateDate,
+            PaidAt = order.PaidDate,
             Value = order.ChargedAmount.Value,
             ValueFormatted = order.ChargedAmount.CurrencyString,
             Currency = order.StoreInfo.Currency.ISOCurrencySymbol,
@@ -96,9 +98,9 @@ public static class OrderMapper
         };
     }
 
-    public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, KlaviyoOptions opt)
+    public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, KlaviyoOptions opt, DateTimeOffset placedAt)
     {
-        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt));
+        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt, placedAt));
     }
 
     internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o, KlaviyoOptions opt)
@@ -150,6 +152,9 @@ public static class OrderMapper
             ["value"] = o.Value,
             ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
+            ["placed_at"] = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+            ["created_at"] = o.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
+            ["paid_at"] = o.PaidAt?.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
             ["checkout_url"] = o.CheckoutUrl,
             ["payment_method"] = o.PaymentProvider?.ToPaymentProviderEvent() ?? null,
             ["discount_value"] = o.DiscountValue,

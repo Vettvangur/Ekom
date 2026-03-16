@@ -11,7 +11,8 @@ public sealed record KlaviyoStartedCheckoutEvent
 
     public string? ListId { get; set; }
 
-    public string? CartId { get; set; }
+    public string? OrderId { get; set; }
+    public string? OrderNumber { get; set; }
     public decimal? Value { get; set; }
     public string? ValueFormatted { get; set; }
     public string? Currency { get; set; }
