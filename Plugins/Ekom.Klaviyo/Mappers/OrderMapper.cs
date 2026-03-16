@@ -98,7 +98,7 @@ public static class OrderMapper
 
     public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, KlaviyoOptions opt)
     {
-        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt));
+        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt, DateTimeOffset.UtcNow));
     }
 
     internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o, KlaviyoOptions opt)
@@ -150,6 +150,7 @@ public static class OrderMapper
             ["value"] = o.Value,
             ["value_formatted"] = o.ValueFormatted,
             ["currency"] = o.Currency,
+            ["placed_at"] = o.PlacedAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"),
             ["checkout_url"] = o.CheckoutUrl,
             ["payment_method"] = o.PaymentProvider?.ToPaymentProviderEvent() ?? null,
             ["discount_value"] = o.DiscountValue,
