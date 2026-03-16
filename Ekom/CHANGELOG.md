@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.86](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.85...Ekom-v0.2.86) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, update placed order date ([#399](https://github.com/Vettvangur/Ekom/issues/399)) ([94f5d26](https://github.com/Vettvangur/Ekom/commit/94f5d26afad5a2d658424edd161618e4b62b3d50))
+
 ## [0.2.85](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.84...Ekom-v0.2.85) (2026-03-14)
 
 
