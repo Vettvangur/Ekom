@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.61](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.60...Ekom.Klaviyo-v0.2.61) (2026-03-16)
+
+
+### Bug Fixes
+
+* preserve Klaviyo order timing details and related category discounts ([#405](https://github.com/Vettvangur/Ekom/issues/405)) ([d3f6917](https://github.com/Vettvangur/Ekom/commit/d3f69173f46941fe199ea6372d7783ed8cd2b792))
+
 ## [0.2.60](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.59...Ekom.Klaviyo-v0.2.60) (2026-03-16)
 
 
