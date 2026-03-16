@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.58...Ekom.Klaviyo-v0.2.59) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, add dates in events to be able to debug timestamps ([#401](https://github.com/Vettvangur/Ekom/issues/401)) ([1c939e2](https://github.com/Vettvangur/Ekom/commit/1c939e2a294b62d47bb19419c3861710d14648d8))
+
 ## [0.2.58](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.57...Ekom.Klaviyo-v0.2.58) (2026-03-16)
 
 
