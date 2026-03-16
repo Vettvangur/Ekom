@@ -127,7 +127,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
         if (orderInfo == null)
             return;
 
-        var klaviyoOrder = orderInfo.ToKlaviyoPlacedOrder(_opt);
+        var klaviyoOrder = orderInfo.ToKlaviyoPlacedOrder(_opt, DateTimeOffset.UtcNow);
 
         using var scope = _scopeFactory.CreateScope();
         var orderService = scope.ServiceProvider.GetRequiredService<IKlaviyoOrderService>();
