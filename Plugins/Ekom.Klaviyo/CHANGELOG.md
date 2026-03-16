@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.60](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.59...Ekom.Klaviyo-v0.2.60) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, update placed order date ([#403](https://github.com/Vettvangur/Ekom/issues/403)) ([c1631af](https://github.com/Vettvangur/Ekom/commit/c1631af52a931b5477465b80ea806b2efffd72b3))
+
+## [0.2.59](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.58...Ekom.Klaviyo-v0.2.59) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, add dates in events to be able to debug timestamps ([#401](https://github.com/Vettvangur/Ekom/issues/401)) ([1c939e2](https://github.com/Vettvangur/Ekom/commit/1c939e2a294b62d47bb19419c3861710d14648d8))
+
+## [0.2.58](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.57...Ekom.Klaviyo-v0.2.58) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, update placed order date ([#399](https://github.com/Vettvangur/Ekom/issues/399)) ([94f5d26](https://github.com/Vettvangur/Ekom/commit/94f5d26afad5a2d658424edd161618e4b62b3d50))
+
 ## [0.2.57](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.56...Ekom.Klaviyo-v0.2.57) (2026-03-13)
 
 
