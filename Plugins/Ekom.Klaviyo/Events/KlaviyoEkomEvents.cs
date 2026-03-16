@@ -103,7 +103,8 @@ internal sealed class KlaviyoEkomEvents : IComponent
 
         var eventArgs = new KlaviyoStartedCheckoutEvent
         {
-            CartId = orderInfo.KlaviyoUniqueId(),
+            OrderId = orderInfo.KlaviyoUniqueId(),
+            OrderNumber = orderInfo.OrderNumber,
             Customer = orderInfo.ToKlaviyoProfile(_opt), 
             Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt)).ToList(),
             CheckoutUrl = storeOptions?.CheckoutUrl,

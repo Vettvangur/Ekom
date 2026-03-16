@@ -146,11 +146,15 @@ internal static class TrackingMapper
     {
         var properties = new JsonObject
         {
-            ["store_alias"] = e.StoreAlias
+            ["store_alias"] = e.StoreAlias,
+            ["occurred_at"] = e.OccurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
         };
 
-        if (!string.IsNullOrWhiteSpace(e.CartId))
-            properties["cart_id"] = e.CartId;
+        if (!string.IsNullOrWhiteSpace(e.OrderId))
+            properties["cart_id"] = e.OrderId;
+
+        if (!string.IsNullOrWhiteSpace(e.OrderNumber))
+            properties["order_number"] = e.OrderNumber;
 
         if (e.Value.HasValue)
             properties["value"] = e.Value.Value;
