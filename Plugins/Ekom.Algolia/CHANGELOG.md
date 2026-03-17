@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.5...Ekom.Algolia-v0.2.6) (2026-03-17)
+
+
+### Bug Fixes
+
+* algolia reindex and product index fields ([#411](https://github.com/Vettvangur/Ekom/issues/411)) ([f6c4c06](https://github.com/Vettvangur/Ekom/commit/f6c4c0695f8fa2f33a90c9fd7ea9e2e4822be3f8))
+
 ## [0.2.5](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.4...Ekom.Algolia-v0.2.5) (2026-03-17)
 
 
