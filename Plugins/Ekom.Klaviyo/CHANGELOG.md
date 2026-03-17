@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.63](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.62...Ekom.Klaviyo-v0.2.63) (2026-03-17)
+
+
+### Bug Fixes
+
+* algolia, add primary image url ([#409](https://github.com/Vettvangur/Ekom/issues/409)) ([104720c](https://github.com/Vettvangur/Ekom/commit/104720cc5ebf6ced9e262c7d0024c9d785e0c97d))
+
 ## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.61...Ekom.Klaviyo-v0.2.62) (2026-03-17)
 
 
