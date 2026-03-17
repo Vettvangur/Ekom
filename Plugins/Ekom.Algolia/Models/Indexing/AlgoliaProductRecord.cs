@@ -8,7 +8,8 @@ public sealed class AlgoliaProductRecord
     public required string ObjectId { get; init; }
 
     public string? Sku { get; init; }
-    public string? Name { get; init; }
+    public string? NodeName { get; init; }
+    public required string Title { get; init; }
     public string? Summary { get; init; }
     public string? Description { get; init; }
     public string? Url { get; init; }

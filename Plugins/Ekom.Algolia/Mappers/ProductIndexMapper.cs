@@ -35,6 +35,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var price = ResolvePrice(product, store);
         var locale = store.Locale;
         var categoryPageIdentifiers = BuildCategoryPageIdentifiers(product, locale);
+        var title = GetLocalizedValue(product, "title", product.Title, locale);
 
         var images = product.Images
             .Select(i => i?.Url)
@@ -66,7 +67,8 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         {
             ObjectId = product.Key.ToString(),
             Sku = product.SKU,
-            Name = GetLocalizedValue(product, "title", product.Title, locale),
+            NodeName = product.Title,
+            Title = title,
             Summary = GetLocalizedValue(product, "summary", product.Summary, locale),
             Description = GetLocalizedValue(product, "description", product.Description, locale),
             Url = urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain),
