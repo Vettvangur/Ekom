@@ -72,3 +72,5 @@ services.AddAlgolia();
 - Store `Locale` and `Currency` now come from the Ekom store resolved by alias, so `appsettings.json` only needs the store alias and optional domain.
 - Request and order context decide which culture and currency suffix is used; background indexing falls back to the store's default culture/currency.
 - Variants are not indexed by default.
+- Manual reindex all endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildIndexesAsync`.
+- Manual reindex store endpoint: `GET` or `POST /umbraco/backoffice/api/Ekom/AlgoliaBackoffice/RebuildStoreIndexesAsync?storeAlias=Store`.
