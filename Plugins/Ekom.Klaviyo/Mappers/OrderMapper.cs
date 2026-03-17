@@ -100,7 +100,7 @@ public static class OrderMapper
 
     public static IEnumerable<KlaviyoPlacedOrder> ToKlaviyoPlacedOrders(this IEnumerable<IOrderInfo> orders, KlaviyoOptions opt, DateTimeOffset placedAt)
     {
-        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt, placedAt));
+        return orders.Select(x => x.ToKlaviyoPlacedOrder(opt, DateTimeOffset.UtcNow));
     }
 
     internal static object ToPlacedOrderEvent(this KlaviyoPlacedOrder o, KlaviyoOptions opt)
