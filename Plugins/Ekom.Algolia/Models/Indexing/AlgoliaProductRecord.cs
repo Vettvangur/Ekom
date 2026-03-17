@@ -12,6 +12,10 @@ public sealed class AlgoliaProductRecord
     public string? Summary { get; init; }
     public string? Description { get; init; }
     public string? Url { get; init; }
+
+    [JsonPropertyName("image_url")]
+    public string? ImageUrl { get; init; }
+
     public IReadOnlyList<string> ImageUrls { get; init; } = [];
 
     public decimal? Price { get; init; }

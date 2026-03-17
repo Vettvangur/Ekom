@@ -70,6 +70,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Summary = GetLocalizedValue(product, "summary", product.Summary, locale),
             Description = GetLocalizedValue(product, "description", product.Description, locale),
             Url = urls.FirstOrDefault() ?? ApplyDomain(product.Url, store.Domain),
+            ImageUrl = images.FirstOrDefault(),
             ImageUrls = images,
             Price = price?.Value,
             PriceWithVat = price?.WithVat.Value,
