@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.62](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.61...Ekom.Klaviyo-v0.2.62) (2026-03-17)
+
+
+### Bug Fixes
+
+* algolia controller to rebuild index ([#407](https://github.com/Vettvangur/Ekom/issues/407)) ([3ae1be5](https://github.com/Vettvangur/Ekom/commit/3ae1be524818e61ded7a96e380a43fd9b7201248))
+
 ## [0.2.61](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.60...Ekom.Klaviyo-v0.2.61) (2026-03-16)
 
 

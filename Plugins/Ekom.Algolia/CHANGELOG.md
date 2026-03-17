@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.4](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.3...Ekom.Algolia-v0.2.4) (2026-03-17)
+
+
+### Bug Fixes
+
+* algolia controller to rebuild index ([#407](https://github.com/Vettvangur/Ekom/issues/407)) ([3ae1be5](https://github.com/Vettvangur/Ekom/commit/3ae1be524818e61ded7a96e380a43fd9b7201248))
+
 ## [0.2.3](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.2...Ekom.Algolia-v0.2.3) (2026-03-13)
 
 
