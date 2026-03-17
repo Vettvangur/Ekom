@@ -17,6 +17,8 @@
 ## [Unreleased]
 
 - Resolve Algolia locale and currency from the Ekom store by alias instead of configuring them per store in `appsettings`.
+- Add a backoffice API endpoint to manually queue a reindex for all configured Algolia stores.
+- Add a backoffice API endpoint to manually queue a reindex for a single configured Algolia store.
 
 ## [0.2.1](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.0...Ekom.Algolia-v0.2.1) (2026-03-09)
 
