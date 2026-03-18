@@ -3,8 +3,8 @@ using Ekom.Algolia.Mappers;
 using Ekom.Algolia.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
 using Algolia.Search.Clients;
+using System.Net.Http.Headers;
 
 namespace Ekom.Algolia;
 
@@ -21,12 +21,16 @@ public static class AlgoliaServiceCollectionExtensions
             ob.Configure(configure);
 
         services.AddHttpContextAccessor();
+        services.AddMemoryCache();
+        services.AddHttpClient<IAlgoliaQuerySuggestionsConfigurator, AlgoliaQuerySuggestionsConfigurator>();
 
         services.AddSingleton<ISearchClient>(sp =>
         {
             var opt = sp.GetRequiredService<IOptions<AlgoliaOptions>>().Value;
             return new SearchClient(opt.ApplicationId, opt.AdminApiKey);
         });
+
+        services.AddSingleton<IAlgoliaQueryClient, AlgoliaQueryClient>();
 
         services.AddHttpClient("AlgoliaInsights", (sp, client) =>
         {
@@ -48,6 +52,8 @@ public static class AlgoliaServiceCollectionExtensions
 
         services.AddSingleton<IndexNameBuilder>();
         services.AddSingleton<AlgoliaStoreResolver>();
+        services.AddSingleton<AlgoliaSearchCacheVersionProvider>();
+        services.AddSingleton<AlgoliaSearchCacheKeyBuilder>();
         services.AddSingleton<IAlgoliaProductIndexMapper, ProductIndexMapper>();
 
         services.AddSingleton<IAlgoliaProductIndexQueue, AlgoliaProductIndexQueue>();
@@ -58,6 +64,7 @@ public static class AlgoliaServiceCollectionExtensions
 
         services.AddSingleton<IAlgoliaUserTokenProvider, DefaultAlgoliaUserTokenProvider>();
         services.AddSingleton<IAlgoliaEventService, AlgoliaEventService>();
+        services.AddSingleton<IAlgoliaSearchService, AlgoliaSearchService>();
 
         return services;
     }

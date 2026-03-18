@@ -8,13 +8,16 @@ public sealed class AlgoliaOptions
 
     public required string ApplicationId { get; init; }
     public required string AdminApiKey { get; init; }
+    public required string SearchApiKey { get; init; }
     public string? InsightsApiKey { get; init; }
+    public string? AnalyticsRegion { get; init; }
 
     public string Environment { get; init; } = "prod";
     public string? Domain { get; init; }
 
     public AlgoliaIndexingOptions Indexing { get; set; } = new();
     public AlgoliaEventsOptions Events { get; set; } = new();
+    public AlgoliaSearchOptions Search { get; set; } = new();
 
     public IReadOnlyCollection<AlgoliaStoreOptions> Stores { get; init; } = [];
 }
@@ -39,6 +42,35 @@ public sealed class AlgoliaEventsOptions
     public bool AddedToCart { get; set; } = true;
     public bool StartedCheckout { get; set; } = true;
     public bool Purchase { get; set; } = true;
+}
+
+public sealed class AlgoliaSearchOptions
+{
+    public bool Enabled { get; set; } = true;
+    public bool Products { get; set; } = true;
+    public bool QuerySuggestions { get; set; }
+    public int MinimumQueryLength { get; set; } = 2;
+    public int MaxHitsPerPage { get; set; } = 100;
+    public AlgoliaSearchCacheOptions Cache { get; set; } = new();
+    public AlgoliaQuerySuggestionsProvisioningOptions QuerySuggestionsProvisioning { get; set; } = new();
+}
+
+public sealed class AlgoliaSearchCacheOptions
+{
+    public bool Enabled { get; set; } = true;
+    public int DurationMinutes { get; set; } = 60;
+    public bool CacheEmptyResults { get; set; } = true;
+}
+
+public sealed class AlgoliaQuerySuggestionsProvisioningOptions
+{
+    public bool Enabled { get; set; } = true;
+    public bool UseReplicas { get; set; }
+    public int MinimumHits { get; set; } = 5;
+    public int MinimumLetters { get; set; } = 4;
+    public bool EnablePersonalization { get; set; }
+    public bool AllowSpecialCharacters { get; set; }
+    public IReadOnlyCollection<string> Exclude { get; init; } = [];
 }
 
 public sealed class AlgoliaDispatcherOptions

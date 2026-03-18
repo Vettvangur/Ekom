@@ -16,6 +16,8 @@ internal sealed class AlgoliaProductIndexExecutor
     private readonly AlgoliaOptions _options;
     private readonly AlgoliaStoreResolver _storeResolver;
     private readonly IndexNameBuilder _indexNameBuilder;
+    private readonly IAlgoliaQuerySuggestionsConfigurator _querySuggestionsConfigurator;
+    private readonly AlgoliaSearchCacheVersionProvider _searchCacheVersions;
     private readonly IAlgoliaProductIndexMapper _mapper;
     private readonly ILogger<AlgoliaProductIndexExecutor> _logger;
 
@@ -24,6 +26,8 @@ internal sealed class AlgoliaProductIndexExecutor
         IOptions<AlgoliaOptions> options,
         AlgoliaStoreResolver storeResolver,
         IndexNameBuilder indexNameBuilder,
+        IAlgoliaQuerySuggestionsConfigurator querySuggestionsConfigurator,
+        AlgoliaSearchCacheVersionProvider searchCacheVersions,
         IAlgoliaProductIndexMapper mapper,
         ILogger<AlgoliaProductIndexExecutor> logger)
     {
@@ -31,6 +35,8 @@ internal sealed class AlgoliaProductIndexExecutor
         _options = options.Value;
         _storeResolver = storeResolver;
         _indexNameBuilder = indexNameBuilder;
+        _querySuggestionsConfigurator = querySuggestionsConfigurator;
+        _searchCacheVersions = searchCacheVersions;
         _mapper = mapper;
         _logger = logger;
     }
@@ -161,7 +167,11 @@ internal sealed class AlgoliaProductIndexExecutor
                 objects: records,
                 batchSize: batchSize,
                 cancellationToken: ct).ConfigureAwait(false);
+
+            await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
+
+        _searchCacheVersions.InvalidateStore(store.Alias);
     }
 
     private async Task UpsertAsync(AlgoliaResolvedStore store, IReadOnlyCollection<Guid> keys, CancellationToken ct)
@@ -249,7 +259,11 @@ internal sealed class AlgoliaProductIndexExecutor
                 waitForTasks: true,
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
+
+            await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
+
+        _searchCacheVersions.InvalidateStore(store.Alias);
 
         if (missingKeys.Count > 0)
             await DeleteAsync(store, missingKeys, ct).ConfigureAwait(false);
@@ -285,7 +299,11 @@ internal sealed class AlgoliaProductIndexExecutor
                 waitForTasks: false,
                 options: null,
                 cancellationToken: ct).ConfigureAwait(false);
+
+            await EnsureQuerySuggestionsAsync(target, indexName, ct).ConfigureAwait(false);
         }
+
+        _searchCacheVersions.InvalidateStore(store.Alias);
     }
 
     private async Task EnsureReplicasAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
@@ -335,6 +353,9 @@ internal sealed class AlgoliaProductIndexExecutor
                 cancellationToken: ct).ConfigureAwait(false);
         }
     }
+
+    private Task EnsureQuerySuggestionsAsync(AlgoliaResolvedStore store, string primaryIndexName, CancellationToken ct)
+        => _querySuggestionsConfigurator.EnsureConfiguredAsync(store, primaryIndexName, ct);
 
     private static List<string> BuildReplicaRanking(AlgoliaSortedReplicaOptions replica)
     {
