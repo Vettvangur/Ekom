@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.88](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.87...Ekom-v0.2.88) (2026-03-18)
+
+
+### Bug Fixes
+
+* algolia search feature with a demo in site ([#413](https://github.com/Vettvangur/Ekom/issues/413)) ([0c2480f](https://github.com/Vettvangur/Ekom/commit/0c2480f22227462531cd2bc0341f95b60acbade1))
+
 ## [0.2.87](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.86...Ekom-v0.2.87) (2026-03-16)
 
 

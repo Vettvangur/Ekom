@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.6...Ekom.Algolia-v0.2.7) (2026-03-18)
+
+
+### Bug Fixes
+
+* algolia search feature with a demo in site ([#413](https://github.com/Vettvangur/Ekom/issues/413)) ([0c2480f](https://github.com/Vettvangur/Ekom/commit/0c2480f22227462531cd2bc0341f95b60acbade1))
+
 ## [0.2.6](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.5...Ekom.Algolia-v0.2.6) (2026-03-17)
 
 
