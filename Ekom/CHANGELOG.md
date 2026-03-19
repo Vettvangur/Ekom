@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.91](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.90...Ekom-v0.2.91) (2026-03-19)
+
+
+### Bug Fixes
+
+* import, infinite loop ([#421](https://github.com/Vettvangur/Ekom/issues/421)) ([3efef6e](https://github.com/Vettvangur/Ekom/commit/3efef6e2767ddcf832e73908bbbf70d35cbe60f9))
+
 ## [0.2.90](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.89...Ekom-v0.2.90) (2026-03-19)
 
 
