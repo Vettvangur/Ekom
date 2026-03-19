@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.2.90](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.89...Ekom-v0.2.90) (2026-03-19)
+
+
+### Bug Fixes
+
+* import saved enable backorder ([#417](https://github.com/Vettvangur/Ekom/issues/417)) ([6dfc43f](https://github.com/Vettvangur/Ekom/commit/6dfc43f1037686202a13d5f8d748f458d7357b2e))
+
+## [0.2.89](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.88...Ekom-v0.2.89) (2026-03-19)
+
+
+### Bug Fixes
+
+* optimize sync ([#415](https://github.com/Vettvangur/Ekom/issues/415)) ([236095b](https://github.com/Vettvangur/Ekom/commit/236095bdb4ecfe50442ab9709af3351fe2b5190f))
+
+## [0.2.88](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.87...Ekom-v0.2.88) (2026-03-18)
+
+
+### Bug Fixes
+
+* algolia search feature with a demo in site ([#413](https://github.com/Vettvangur/Ekom/issues/413)) ([0c2480f](https://github.com/Vettvangur/Ekom/commit/0c2480f22227462531cd2bc0341f95b60acbade1))
+
+## [0.2.87](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.86...Ekom-v0.2.87) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, add dates in events to be able to debug timestamps ([#401](https://github.com/Vettvangur/Ekom/issues/401)) ([1c939e2](https://github.com/Vettvangur/Ekom/commit/1c939e2a294b62d47bb19419c3861710d14648d8))
+
+## [0.2.86](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.85...Ekom-v0.2.86) (2026-03-16)
+
+
+### Bug Fixes
+
+* klaviyo, update placed order date ([#399](https://github.com/Vettvangur/Ekom/issues/399)) ([94f5d26](https://github.com/Vettvangur/Ekom/commit/94f5d26afad5a2d658424edd161618e4b62b3d50))
+
+## [0.2.85](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.84...Ekom-v0.2.85) (2026-03-14)
+
+
+### Bug Fixes
+
+* discount will now work also on related categories ([#397](https://github.com/Vettvangur/Ekom/issues/397)) ([8e8c206](https://github.com/Vettvangur/Ekom/commit/8e8c206839515e87058a761762af153daa1cae84))
+
 ## [0.2.84](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.83...Ekom-v0.2.84) (2026-03-13)
 
 

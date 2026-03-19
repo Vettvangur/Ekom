@@ -320,9 +320,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser);
 
@@ -345,9 +343,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser, false);
 
@@ -369,10 +365,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
 
@@ -401,10 +394,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importVariant.Identifier);
 
@@ -431,10 +421,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var category = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmCategory" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.Identifier);
 
@@ -1089,6 +1076,11 @@ public class ImportService : IImportService
             } else
             {
                 productContent.SetValue("categories", "");
+            }
+
+            if (importProduct.EnableBackorder)
+            {
+                productContent.SetValue("enableBackorder", importProduct.EnableBackorder);
             }
 
             productContent.SetValue("comparer", compareValue);
@@ -1882,7 +1874,7 @@ public class ImportService : IImportService
                 out var totalRecords,
                 filter);
 
-            var list = batch as IList<IContent> ?? batch.ToList();
+            var list = batch as IList<IContent> ?? batch.Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
             if (list.Count == 0)
                 break;
 

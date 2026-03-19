@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ekom\Ekom.csproj" />
+    <ProjectReference Include="..\..\Plugins\Ekom.Algolia\Ekom.Algolia.csproj" />
   </ItemGroup>
 
 </Project>
