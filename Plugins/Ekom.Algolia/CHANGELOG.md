@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.8](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.7...Ekom.Algolia-v0.2.8) (2026-03-19)
+
+
+### Bug Fixes
+
+* import saved enable backorder ([#417](https://github.com/Vettvangur/Ekom/issues/417)) ([6dfc43f](https://github.com/Vettvangur/Ekom/commit/6dfc43f1037686202a13d5f8d748f458d7357b2e))
+
 ## [0.2.7](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.6...Ekom.Algolia-v0.2.7) (2026-03-18)
 
 
