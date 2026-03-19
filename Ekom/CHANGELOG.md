@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.92](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.91...Ekom-v0.2.92) (2026-03-19)
+
+
+### Bug Fixes
+
+* algolia category levels added ([#423](https://github.com/Vettvangur/Ekom/issues/423)) ([ec2353b](https://github.com/Vettvangur/Ekom/commit/ec2353be355a632ac6fd599800b71f3dd782389b))
+
 ## [0.2.91](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.90...Ekom-v0.2.91) (2026-03-19)
 
 
