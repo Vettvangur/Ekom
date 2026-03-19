@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.89](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.88...Ekom-v0.2.89) (2026-03-19)
+
+
+### Bug Fixes
+
+* optimize sync ([#415](https://github.com/Vettvangur/Ekom/issues/415)) ([236095b](https://github.com/Vettvangur/Ekom/commit/236095bdb4ecfe50442ab9709af3351fe2b5190f))
+
 ## [0.2.88](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.87...Ekom-v0.2.88) (2026-03-18)
 
 
