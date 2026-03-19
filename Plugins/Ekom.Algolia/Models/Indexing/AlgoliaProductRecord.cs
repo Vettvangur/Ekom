@@ -32,8 +32,6 @@ public sealed class AlgoliaProductRecord
     public string? StoreAlias { get; init; }
     public string? Locale { get; init; }
 
-    public IReadOnlyList<string> CategoryPageIdentifier { get; init; } = [];
-
     public long? CreatedAt { get; init; }
     public long? UpdatedAt { get; init; }
 
