@@ -1078,6 +1078,11 @@ public class ImportService : IImportService
                 productContent.SetValue("categories", "");
             }
 
+            if (importProduct.EnableBackorder)
+            {
+                productContent.SetValue("enableBackorder", importProduct.EnableBackorder);
+            }
+
             productContent.SetValue("comparer", compareValue);
 
             productContent.Name = importProduct.NodeName;
