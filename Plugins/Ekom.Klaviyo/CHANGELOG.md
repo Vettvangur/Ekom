@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.64...Ekom.Klaviyo-v0.2.65) (2026-03-19)
+
+
+### Bug Fixes
+
+* import saved enable backorder ([#417](https://github.com/Vettvangur/Ekom/issues/417)) ([6dfc43f](https://github.com/Vettvangur/Ekom/commit/6dfc43f1037686202a13d5f8d748f458d7357b2e))
+
 ## [0.2.64](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.63...Ekom.Klaviyo-v0.2.64) (2026-03-17)
 
 
