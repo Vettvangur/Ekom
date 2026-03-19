@@ -3,6 +3,7 @@ using Ekom.Services;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -33,7 +34,7 @@ public class OrderedProduct
         {
             if (Properties.ContainsKey("__Key"))
             {
-                string key = Properties.GetPropertyValue("__Key");
+                string key =  Properties.GetPropertyValue("__Key");
 
                 if (!Guid.TryParse(key, out Guid _key))
                 {
@@ -115,7 +116,7 @@ public class OrderedProduct
             {
                 string value = Properties.GetPropertyValue("vat", StoreInfo.Alias);
 
-                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, out decimal _val))
+                if (!string.IsNullOrEmpty(value) && decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal _val))
                 {
                     return _val / 100;
                 }
@@ -182,6 +183,11 @@ public class OrderedProduct
     {
         get
         {
+            if (Key == Guid.Empty)
+            {
+                return "";
+            }
+
             IProduct? productNode = Catalog.Instance.GetProduct(Key, StoreInfo.Alias);
 
             if (productNode != null)

@@ -6,156 +6,146 @@ namespace Ekom.Events;
 
 public static class OrderEvents
 {
-    /// <summary>
-    /// Event to fire on <see cref="IOrderInfo"/> updates
-    /// </summary>
-    public static event EventHandler<OrderUpdatedEventArgs> OrderUpdated;
+    // ----------------------------
+    // Order updated
+    // ----------------------------
+
+    /// <summary>Event to fire on <see cref="IOrderInfo"/> updates</summary>
+    public static event EventHandler<OrderUpdatedEventArgs>? OrderUpdated;
+
     internal static void OnOrderUpdated(object sender, OrderUpdatedEventArgs args)
         => OrderUpdated?.Invoke(sender, args);
 
-    public static event Func<object, OrderUpdatedEventArgs, Task>? OrderUpdatedAsync;
-    public static async Task OnOrderUpdatedAsync(object sender, OrderUpdatedEventArgs args)
-    {
-        if (OrderUpdatedAsync is null) return;
+    public static event Func<object, OrderUpdatedEventArgs, CancellationToken, Task>? OrderUpdatedAsync;
 
-        foreach (var handler in OrderUpdatedAsync.GetInvocationList()
-                 .Cast<Func<object, OrderUpdatedEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static Task OnOrderUpdatedAsync(object sender, OrderUpdatedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(OrderUpdatedAsync, sender, args, ct);
 
-    public static event EventHandler<OrderUpdatingEventArgs> OrderUpdateing;
-    internal static void OnOrderUpdateing(object sender, OrderUpdatingEventArgs args)
-        => OrderUpdateing?.Invoke(sender, args);
+    // ----------------------------
+    // Customer email added
+    // ----------------------------
 
-    public static event Func<object, OrderUpdatingEventArgs, Task>? OrderUpdateingAsync;
-    public static async Task OnOrderUpdateingAsync(object sender, OrderUpdatingEventArgs args)
-    {
-        if (OrderUpdateingAsync is null) return;
+    public static event Func<object, CustomerEmailAddedEventArgs, CancellationToken, Task>? CustomerEmailAddedAsync;
 
-        foreach (var handler in OrderUpdateingAsync.GetInvocationList()
-                 .Cast<Func<object, OrderUpdatingEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static Task OnCustomerEmailAddedAsync(object sender, CustomerEmailAddedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(CustomerEmailAddedAsync, sender, args, ct);
 
-    public static event EventHandler<OrderStatusEventArgs> OrderStatusChanging;
+    // ----------------------------
+    // Order updating
+    // ----------------------------
+
+    public static event EventHandler<OrderUpdatingEventArgs>? OrderUpdating;
+
+    internal static void OnOrderUpdating(object sender, OrderUpdatingEventArgs args)
+        => OrderUpdating?.Invoke(sender, args);
+
+    public static event Func<object, OrderUpdatingEventArgs, CancellationToken, Task>? OrderUpdatingAsync;
+
+    public static Task OnOrderUpdatingAsync(object sender, OrderUpdatingEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(OrderUpdatingAsync, sender, args, ct);
+
+    // ----------------------------
+    // Order status changing/changed
+    // ----------------------------
+
+    public static event EventHandler<OrderStatusEventArgs>? OrderStatusChanging;
+
     internal static void OnOrderStatusChanging(object sender, OrderStatusEventArgs args)
         => OrderStatusChanging?.Invoke(sender, args);
 
-    public static event Func<object, OrderStatusEventArgs, Task>? OrderStatusChangingAsync;
-    public static async Task OnOrderStatusChangingAsync(object sender, OrderStatusEventArgs args)
-    {
-        if (OrderStatusChangingAsync is null) return;
+    public static event Func<object, OrderStatusEventArgs, CancellationToken, Task>? OrderStatusChangingAsync;
 
-        foreach (var handler in OrderStatusChangingAsync.GetInvocationList()
-                 .Cast<Func<object, OrderStatusEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static Task OnOrderStatusChangingAsync(object sender, OrderStatusEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(OrderStatusChangingAsync, sender, args, ct);
 
-    public static event EventHandler<OrderStatusEventArgs> OrderStatusChanged;
+    public static event EventHandler<OrderStatusEventArgs>? OrderStatusChanged;
+
     internal static void OnOrderStatusChanged(object sender, OrderStatusEventArgs args)
         => OrderStatusChanged?.Invoke(sender, args);
 
-    public static event Func<object, OrderStatusEventArgs, Task>? OrderStatusChangedAsync;
-    public static async Task OnOrderStatusChangedAsync(object sender, OrderStatusEventArgs args)
-    {
-        if (OrderStatusChangedAsync is null) return;
+    public static event Func<object, OrderStatusEventArgs, CancellationToken, Task>? OrderStatusChangedAsync;
 
-        foreach (var handler in OrderStatusChangedAsync.GetInvocationList()
-                 .Cast<Func<object, OrderStatusEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
-    public static event EventHandler<AddingOrderlineEventArgs> AddingOrderline;
+    public static Task OnOrderStatusChangedAsync(object sender, OrderStatusEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(OrderStatusChangedAsync, sender, args, ct);
+
+    // ----------------------------
+    // Order lines
+    // ----------------------------
+
+    public static event EventHandler<AddingOrderlineEventArgs>? AddingOrderline;
+
     internal static void OnAddingOrderline(object sender, AddingOrderlineEventArgs args)
         => AddingOrderline?.Invoke(sender, args);
-    public static event Func<object, AddingOrderlineEventArgs, Task>? AddingOrderlineAsync;
-    public static async Task OnAddingOrderlineAsync(object sender, AddingOrderlineEventArgs args)
-    {
-        if (AddingOrderlineAsync is null) return;
 
-        foreach (var handler in AddingOrderlineAsync.GetInvocationList()
-                 .Cast<Func<object, AddingOrderlineEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static event Func<object, AddingOrderlineEventArgs, CancellationToken, Task>? AddingOrderlineAsync;
 
-    public static event EventHandler<AddedOrderlineEventArgs> AddedOrderline;
+    public static Task OnAddingOrderlineAsync(object sender, AddingOrderlineEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(AddingOrderlineAsync, sender, args, ct);
+
+    public static event EventHandler<AddedOrderlineEventArgs>? AddedOrderline;
+
     internal static void OnAddedOrderline(object sender, AddedOrderlineEventArgs args)
         => AddedOrderline?.Invoke(sender, args);
-    public static event Func<object, AddedOrderlineEventArgs, Task>? AddedOrderlineAsync;
-    public static async Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args)
-    {
-        if (AddedOrderlineAsync is null) return;
 
-        foreach (var handler in AddedOrderlineAsync.GetInvocationList()
-                 .Cast<Func<object, AddedOrderlineEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static event Func<object, AddedOrderlineEventArgs, CancellationToken, Task>? AddedOrderlineAsync;
 
-    public static event EventHandler<UpdatedOrderlineEventArgs> UpdatedOrderline;
+    public static Task OnAddedOrderlineAsync(object sender, AddedOrderlineEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(AddedOrderlineAsync, sender, args, ct);
+
+    public static event EventHandler<UpdatedOrderlineEventArgs>? UpdatedOrderline;
+
     internal static void OnUpdatedOrderline(object sender, UpdatedOrderlineEventArgs args)
         => UpdatedOrderline?.Invoke(sender, args);
-    public static event Func<object, UpdatedOrderlineEventArgs, Task>? UpdatedOrderlineAsync;
-    public static async Task OnUpdatedOrderlineAsync(object sender, UpdatedOrderlineEventArgs args)
-    {
-        if (UpdatedOrderlineAsync is null) return;
 
-        foreach (var handler in UpdatedOrderlineAsync.GetInvocationList()
-                 .Cast<Func<object, UpdatedOrderlineEventArgs, Task>>())
-        {
-            await handler(sender, args);
-        }
-    }
+    public static event Func<object, UpdatedOrderlineEventArgs, CancellationToken, Task>? UpdatedOrderlineAsync;
+
+    public static Task OnUpdatedOrderlineAsync(object sender, UpdatedOrderlineEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(UpdatedOrderlineAsync, sender, args, ct);
 }
 
-/// <summary>
-/// For changing and changed <see cref="OrderStatus"/> events
-/// </summary>
-public class OrderStatusEventArgs : EventArgs
+/// <summary>For changing and changed <see cref="OrderStatus"/> events</summary>
+public sealed class OrderStatusEventArgs : EventArgs
 {
     public Guid OrderUniqueId { get; set; }
-
     public OrderStatus PreviousStatus { get; set; }
-
-    public OrderStatus Status { get; set; }
+    public OrderStatus Status { get; set; } // keep settable if handlers can change the status
     public bool ClearCustomerOrderReference { get; set; } = true;
 }
 
-public class OrderUpdatedEventArgs : EventArgs
+public sealed class OrderUpdatedEventArgs : EventArgs
 {
-    public IOrderInfo OrderInfo { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
 }
-public class OrderUpdatingEventArgs : EventArgs
+
+public sealed class CustomerEmailAddedEventArgs : EventArgs
 {
-    public IOrderInfo OrderInfo { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
+    public string? PreviousCustomerEmail { get; set; }
+    public required string NewCustomerEmail { get; set; }
 }
-public class AddingOrderlineEventArgs : EventArgs
+
+public sealed class OrderUpdatingEventArgs : EventArgs
 {
-    public OrderSettings Settings { get; set; }
-    public IProduct Product { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
+}
+
+public sealed class AddingOrderlineEventArgs : EventArgs
+{
+    public required OrderSettings Settings { get; set; }
+    public required IProduct Product { get; set; }
     public IVariant? Variant { get; set; }
     public decimal Quantity { get; set; }
     public OrderAction Action { get; set; }
-    public IOrderInfo OrderInfo { get; set; }
+    public required IOrderInfo OrderInfo { get; set; }
 }
 
-public class AddedOrderlineEventArgs : EventArgs
+public sealed class AddedOrderlineEventArgs : EventArgs
 {
-    public OrderInfo OrderInfo { get; set; }
+    public required OrderInfo OrderInfo { get; set; }
+    public required OrderLine OrderLine { get; set; }
 }
 
-public class UpdatedOrderlineEventArgs : EventArgs
+public sealed class UpdatedOrderlineEventArgs : EventArgs
 {
-    public OrderInfo OrderInfo { get; set; }
+    public required OrderInfo OrderInfo { get; set; }
 }
-

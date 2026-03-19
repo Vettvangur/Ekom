@@ -4,50 +4,39 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-
 namespace Ekom.Cache;
 
 class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
 {
+    // This cache is not filled via NodesByTypes, so leave NodeAlias empty.
     public override string NodeAlias { get; } = "";
 
     protected IUmbracoService umbracoService => _serviceProvider.GetService<IUmbracoService>();
 
-    /// <summary>
-    /// ctor
-    /// </summary>
     public StoreDomainCache(
         Configuration config,
         ILogger<BaseCache<UmbracoDomain>> logger,
         IServiceProvider serviceProvider
     ) : base(config, logger, null, serviceProvider)
     {
-        _config = config;
-        _logger = logger;
     }
-
-    /// <summary>
-    /// Fill store domain cache with domains from domain service
-    /// </summary>
     public override void FillCache()
     {
         try
         {
             List<UmbracoDomain> domains = umbracoService.GetDomains().ToList();
 
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
+            var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting to fill store domain cache with {Count} domains...", domains.Count);
 
-            if (domains.Any())
+            foreach (var d in domains)
             {
-                foreach (UmbracoDomain? d in domains)
-                {
-                    AddOrReplaceFromCache(d.Key, d);
-                }
+                if (d == null) continue;
+
+                AddOrReplaceFromCache(d.Key, d);
             }
 
+            stopwatch.Stop();
             _logger.LogInformation(
                 "Finished filling store domain cache with {Count} domain items. Time it took to fill: {Elapsed}",
                 domains.Count,
@@ -58,12 +47,13 @@ class StoreDomainCache : BaseCache<UmbracoDomain>, IStoreDomainCache
         {
             _logger.LogError(ex, "StoreDomainCache: Error filling cache");
         }
-
     }
 
     /// <inheritdoc />
     public void AddReplace(UmbracoDomain domain)
     {
-        Cache[domain.Key] = domain;
+        if (domain == null) return;
+
+        AddOrReplaceFromCache(domain.Key, domain);
     }
 }

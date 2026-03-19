@@ -381,6 +381,94 @@ public static class StringExtension
         return c == '{' || c == '[' || c == '"';
     }
 
+    internal static bool TryGetOriginalPriceValue(this string? priceJson, string? storeAlias, out decimal value)
+    {
+        value = 0m;
+
+        if (string.IsNullOrWhiteSpace(priceJson))
+            return false;
+
+        if (decimal.TryParse(priceJson, NumberStyles.Number, CultureInfo.InvariantCulture, out var org))
+        {
+            value = org;
+            return true;
+        }
+
+        var s = priceJson.Trim();
+        if (s.Length == 0)
+            return false;
+
+        var first = s[0];
+        if (first != '[' && first != '{')
+            return false;
+
+        try
+        {
+            if (first == '[')
+            {
+                var list = JsonConvert.DeserializeObject<List<CurrencyPrice>>(s);
+                var val = list?.Count > 0 ? list[0].Price : (decimal?)null;
+                if (val.HasValue)
+                {
+                    value = val.Value;
+                    return true;
+                }
+
+                return false;
+            }
+
+            var root = JToken.Parse(s);
+            if (root is not JObject obj)
+                return false;
+
+            JToken? storeToken = null;
+            if (!string.IsNullOrWhiteSpace(storeAlias))
+            {
+                obj.TryGetValue(storeAlias, StringComparison.OrdinalIgnoreCase, out storeToken);
+            }
+
+            if (storeToken == null)
+                return TryReadCurrencyPrice(obj, out value);
+
+            return TryReadCurrencyPriceStoreToken(storeToken, out value);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool TryReadCurrencyPriceStoreToken(JToken token, out decimal price)
+    {
+        price = 0m;
+
+        switch (token.Type)
+        {
+            case JTokenType.Array:
+                var firstItem = token.First;
+                return firstItem != null && TryReadCurrencyPrice(firstItem, out price);
+            case JTokenType.Object:
+                return TryReadCurrencyPrice(token, out price);
+            case JTokenType.Integer:
+            case JTokenType.Float:
+            case JTokenType.String:
+                return TryGetDecimalInvariant(token, out price);
+            default:
+                return false;
+        }
+    }
+
+    private static bool TryReadCurrencyPrice(JToken token, out decimal price)
+    {
+        price = 0m;
+
+        var priceToken = token["Price"] ?? token["price"] ?? token["Value"] ?? token["value"];
+        if (priceToken == null)
+            return false;
+
+        return TryGetDecimalInvariant(priceToken, out price);
+    }
+
     private static bool TryReadCurrencyValue(JToken t, out CurrencyValue cv)
     {
         cv = default;

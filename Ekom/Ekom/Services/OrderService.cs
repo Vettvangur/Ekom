@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Threading;
 
 namespace Ekom.Services;
 
@@ -134,7 +135,7 @@ partial class OrderService
 
     }
 
-    public Task<OrderInfo?> GetOrderAsync(string storeAlias)
+    public Task<OrderInfo?> GetOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
@@ -143,16 +144,16 @@ partial class OrderService
             throw new ArgumentNullException($"Could not find store with the alias {storeAlias}");
         }
 
-        return GetOrderAsync(store);
+        return GetOrderAsync(store, ct: ct);
     }
 
-    public async Task<OrderInfo?> GetOrderAsync(IStore store)
+    public async Task<OrderInfo?> GetOrderAsync(IStore store, CancellationToken ct = default)
     {
         if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest?.User?.Username))
         {
-            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId, ct: ct).ConfigureAwait(false);
 
-            return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
+            return await ReturnNonFinalOrderAsync(orderInfo, ct).ConfigureAwait(false);
         }
         else
         {
@@ -163,7 +164,7 @@ partial class OrderService
             // If Cookie Exist then return Cart
             if (orderUniqueId != Guid.Empty)
             {
-                OrderInfo? orderInfo = await GetOrderAsync(orderUniqueId).ConfigureAwait(false);
+                OrderInfo? orderInfo = await GetOrderAsync(orderUniqueId, ct: ct).ConfigureAwait(false);
 
                 _logger.LogDebug("GetOrderAsync - Found order with {UniqueId}", orderInfo?.UniqueId);
 
@@ -179,7 +180,7 @@ partial class OrderService
 
                 //var orderInfo = (OrderInfo)_httpCtx.Session[key];
 
-                return await ReturnNonFinalOrderAsync(orderInfo).ConfigureAwait(false);
+                return await ReturnNonFinalOrderAsync(orderInfo, ct: ct).ConfigureAwait(false);
             }
         }
 
@@ -214,8 +215,11 @@ partial class OrderService
     /// 
     /// </summary>
     /// <param name="orderInfo"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    private async Task<OrderInfo?> ReturnNonFinalOrderAsync(OrderInfo? orderInfo)
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    private async Task<OrderInfo?> ReturnNonFinalOrderAsync(OrderInfo? orderInfo, CancellationToken ct = default)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         if (orderInfo == null)
         {
@@ -261,7 +265,7 @@ partial class OrderService
         return null;
     }
 
-    public async Task<OrderInfo?> GetCompletedOrderAsync(string storeAlias)
+    public async Task<OrderInfo?> GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)
     {
 
         IStore? store = API.Store.Instance.GetStore(storeAlias);
@@ -269,7 +273,7 @@ partial class OrderService
         // Add timelimit to get the order ? Maybe 1-2 hours ?
         if (store.UserBasket && !string.IsNullOrEmpty(_ekmRequest.User.Username))
         {
-            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId).ConfigureAwait(false);
+            OrderInfo? orderInfo = await GetOrderAsync(_ekmRequest.User.OrderId, ct).ConfigureAwait(false);
 
             if (Order.IsOrderFinal(orderInfo?.OrderStatus))
             {
@@ -296,21 +300,48 @@ partial class OrderService
         return null;
     }
 
-    public Task<OrderInfo?> GetOrderAsync(Guid uniqueId)
+    public async Task<OrderInfo?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
     {
-        // Check for cache ?
-        return _memoryCache.GetOrCreateAsync(
-            uniqueId.ToString(),
-            cacheEntry =>
+        string key = uniqueId.ToString();
+
+        if (_memoryCache.TryGetValue(key, out OrderInfo? cached))
+        {
+            return cached;
+        }
+
+        SemaphoreSlim sem = _orderLocks.GetOrAdd(uniqueId, _ => new SemaphoreSlim(1, 1));
+        await sem.WaitAsync(ct).ConfigureAwait(false);
+
+        try
+        {
+            if (_memoryCache.TryGetValue(key, out cached))
             {
-                cacheEntry.SetAbsoluteExpiration(Configuration.orderInfoCacheTime);
-                return GetOrderInfoAsync(uniqueId);
-            });
+                return cached;
+            }
+
+            OrderInfo? orderInfo = await GetOrderInfoAsync(uniqueId, ct).ConfigureAwait(false);
+            _memoryCache.Set(key, orderInfo, Configuration.orderInfoCacheTime);
+            return orderInfo;
+        }
+        finally
+        {
+            sem.Release();
+
+            if (sem.CurrentCount == 1)
+            {
+                _orderLocks.TryRemove(uniqueId, out _);
+            }
+        }
     }
 
-    private async Task<OrderInfo> GetOrderInfoAsync(Guid uniqueId)
+    private async Task<OrderInfo?> GetOrderInfoAsync(Guid uniqueId, CancellationToken ct = default)
     {
-        OrderData orderData = await _orderRepository.GetOrderAsync(uniqueId)
+        if (ct.IsCancellationRequested)
+        {
+            return await Task.FromCanceled<OrderInfo?>(ct).ConfigureAwait(false);
+        }
+
+        var orderData = await _orderRepository.GetOrderAsync(uniqueId, ct)
             .ConfigureAwait(false);
 
         // Here we check if there is any OrderInfo at all to create an OrderInfo out of
@@ -326,7 +357,8 @@ partial class OrderService
         Guid uniqueId,
         OrderStatus status,
         string? userName = null,
-        ChangeOrderSettings? settings = null)
+        ChangeOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         // ToDo: Lock
 
@@ -335,7 +367,7 @@ partial class OrderService
             settings = new ChangeOrderSettings();
         }
 
-        OrderData order = await _orderRepository.GetOrderAsync(uniqueId)
+        var order = await _orderRepository.GetOrderAsync(uniqueId, ct)
                 .ConfigureAwait(false);
 
         if (order == null)
@@ -421,7 +453,7 @@ partial class OrderService
 
         IStore? store = API.Store.Instance.GetStore(order.StoreAlias);
 
-        if (store.UserBasket && !string.IsNullOrEmpty((userName)))
+        if (store != null && store.UserBasket && !string.IsNullOrEmpty((userName)))
         {
             _memberService.Save(new Dictionary<string, object>() {
                 { "orderId", "" }
@@ -437,12 +469,13 @@ partial class OrderService
         Guid orderLineId,
         decimal quantity,
         string storeAlias,
-        OrderSettings? settings = null
+        OrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (quantity <= 0)
         {
-            return await RemoveOrderLineAsync(orderLineId, storeAlias, settings).ConfigureAwait(false);
+            return await RemoveOrderLineAsync(orderLineId, storeAlias, settings, ct).ConfigureAwait(false);
         }
 
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
@@ -475,7 +508,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -488,7 +521,7 @@ partial class OrderService
 
             decimal existingStock;
 
-            IProduct? product = Catalog.Instance.GetProduct(orderline.ProductKey, storeAlias);
+            IProduct? product = await Catalog.Instance.GetProductAsync(orderline.ProductKey, storeAlias, ct: ct);
 
             if (product == null)
             {
@@ -524,9 +557,9 @@ partial class OrderService
             };
 
             OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
+            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -538,22 +571,22 @@ partial class OrderService
         }
     }
 
-    public async Task<IOrderInfo> ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias)
+    public async Task<IOrderInfo?> ChangeCurrencyAsync(Guid uniqueId, string currency, string storeAlias, CancellationToken ct = default)
     {
         IStore? store = _storeSvc.GetStoreByAlias(storeAlias);
 
-        CurrencyModel? storeCurrency = store.Currencies.FirstOrDefault(x => x.CurrencyValue == currency);
+        CurrencyModel? storeCurrency = store?.Currencies.FirstOrDefault(x => x.CurrencyValue == currency);
 
         if (storeCurrency != null)
         {
             // ToDo: Lock
-            OrderData order = await _orderRepository.GetOrderAsync(uniqueId).ConfigureAwait(false);
+            OrderData order = await _orderRepository.GetOrderAsync(uniqueId, ct).ConfigureAwait(false);
 
             string oldCurrency = order.Currency;
 
             order.Currency = storeCurrency.ISOCurrencySymbol;
 
-            OrderInfo? orderInfo = await GetOrderAsync(uniqueId).ConfigureAwait(false);
+            OrderInfo? orderInfo = await GetOrderAsync(uniqueId, ct).ConfigureAwait(false);
 
             if (orderInfo != null)
             {
@@ -563,7 +596,7 @@ partial class OrderService
 
                 order.OrderInfo = serializedOrderInfo;
 
-                await _orderRepository.UpdateOrderAsync(order).ConfigureAwait(false);
+                await _orderRepository.UpdateOrderAsync(order, ct).ConfigureAwait(false);
 
                 orderInfo = new OrderInfo(order);
 
@@ -584,15 +617,15 @@ partial class OrderService
         return null;
     }
 
-    public async Task UpdatePaidDateAsync(Guid uniqueId)
+    public async Task UpdatePaidDateAsync(Guid uniqueId, CancellationToken ct)
     {
         // ToDo: Lock
-        OrderData order = await _orderRepository.GetOrderAsync(uniqueId)
+        OrderData order = await _orderRepository.GetOrderAsync(uniqueId, ct)
             .ConfigureAwait(false);
 
         order.PaidDate = DateTime.Now;
 
-        await _orderRepository.UpdateOrderAsync(order)
+        await _orderRepository.UpdateOrderAsync(order, ct)
             .ConfigureAwait(false);
 
         _memoryCache.Remove(uniqueId.ToString());
@@ -614,7 +647,8 @@ partial class OrderService
         Guid productKey,
         decimal quantity,
         string storeAlias,
-        AddOrderSettings? settings = null
+        AddOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (productKey == Guid.Empty)
@@ -622,7 +656,7 @@ partial class OrderService
             throw new ArgumentException("Empty product key", nameof(productKey));
         }
 
-        IProduct? product = Catalog.Instance.GetProduct(productKey, storeAlias);
+        IProduct? product = await Catalog.Instance.GetProductAsync(productKey, storeAlias, ct: ct);
 
         if (product == null)
         {
@@ -653,7 +687,8 @@ partial class OrderService
             store,
             settings?.OrderAction,
             variant,
-            settings
+            settings,
+            ct: ct
         ).ConfigureAwait(false);
     }
 
@@ -668,7 +703,8 @@ partial class OrderService
         IStore? store,
         OrderAction? action = null,
         IVariant? variant = null,
-        OrderSettings? settings = null
+        OrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -682,7 +718,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(store).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(store, ct).ConfigureAwait(false);
         }
         else
         {
@@ -691,7 +727,7 @@ partial class OrderService
 
         if (orderInfo == null)
         {
-            orderInfo = await CreateEmptyOrderAsync(store.Alias).ConfigureAwait(false);
+            orderInfo = await CreateEmptyOrderAsync(store.Alias, ct).ConfigureAwait(false);
         }
 
         _logger.LogDebug("ProductId: {ProductId}" +
@@ -716,7 +752,8 @@ partial class OrderService
             quantity,
             cartAction,
             variant,
-            settings).ConfigureAwait(false);
+            settings, 
+            ct: ct).ConfigureAwait(false);
 
         return orderInfo;
     }
@@ -724,12 +761,13 @@ partial class OrderService
     public async Task<OrderInfo> RemoveOrderLineProductAsync(
         Guid productKey,
         string storeAlias,
-        RemoveOrderSettings? settings = null)
+        RemoveOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         OrderInfo? orderInfo;
-        if (settings.OrderInfo == null)
+        if (settings?.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -744,9 +782,9 @@ partial class OrderService
         OrderLine? existingOrderLine = null;
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        if (!settings.IsEventHandler)
+        if (!(settings?.IsEventHandler ?? false))
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -772,7 +810,7 @@ partial class OrderService
         }
         finally
         {
-            if (!settings.IsEventHandler)
+            if (!(settings?.IsEventHandler ?? false))
             {
                 semaphore.Release();
             }
@@ -783,14 +821,15 @@ partial class OrderService
             throw new OrderLineNotFoundException("Could not find order line with the given product or variant");
         }
 
-        return await RemoveOrderLineAsync(existingOrderLine.Key, storeAlias, settings)
+        return await RemoveOrderLineAsync(existingOrderLine.Key, storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 
     public async Task<OrderInfo> RemoveOrderLineAsync(
         Guid lineId,
         string storeAlias,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         _logger.LogDebug("Remove OrderLine... LineId: " + lineId);
 
@@ -801,7 +840,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -816,7 +855,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -837,10 +876,10 @@ partial class OrderService
             };
 
             OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
+            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -852,83 +891,86 @@ partial class OrderService
         }
     }
 
-    public async Task<OrderInfo> RemoveOrderLinesAsync(
-        Guid[] lineIds,
-        string storeAlias,
-        OrderSettings? settings = null)
-    {
-        _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
+    //public async Task<OrderInfo> RemoveOrderLinesAsync(
+    //    Guid[] lineIds,
+    //    string storeAlias,
+    //    OrderSettings? settings = null,
+    //    CancellationToken ct = default)
+    //{
+    //    _logger.LogDebug("Remove OrderLines... LineId: " + string.Join(',', lineIds));
 
-        if (settings == null)
-        {
-            settings = new OrderSettings();
-        }
-        OrderInfo? orderInfo;
-        if (settings.OrderInfo == null)
-        {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
-        }
-        else
-        {
-            orderInfo = settings.OrderInfo as OrderInfo;
-        }
+    //    if (settings == null)
+    //    {
+    //        settings = new OrderSettings();
+    //    }
+    //    OrderInfo? orderInfo;
+    //    if (settings.OrderInfo == null)
+    //    {
+    //        orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+    //    }
+    //    else
+    //    {
+    //        orderInfo = settings.OrderInfo as OrderInfo;
+    //    }
 
-        if (orderInfo == null)
-        {
-            throw new OrderInfoNotFoundException();
-        }
+    //    if (orderInfo == null)
+    //    {
+    //        throw new OrderInfoNotFoundException();
+    //    }
 
-        SemaphoreSlim semaphore = GetOrderLock(orderInfo);
+    //    SemaphoreSlim semaphore = GetOrderLock(orderInfo);
 
-        if (!settings.IsEventHandler)
-        {
-            await semaphore.WaitAsync().ConfigureAwait(false);
-        }
-        try
-        {
-            IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
+    //    if (!settings.IsEventHandler)
+    //    {
+    //        await semaphore.WaitAsync().ConfigureAwait(false);
+    //    }
+    //    try
+    //    {
+    //        IEnumerable<IOrderLine> orderLines = orderInfo.OrderLines.Where(x => lineIds.Contains(x.Key));
 
 
-            if (orderLines != null && orderLines.Any())
-            {
-                foreach (IOrderLine? orderline in orderLines)
-                {
-                    RemoveOrderLine(orderInfo, orderline as OrderLine);
-                }
+    //        if (orderLines != null && orderLines.Any())
+    //        {
+    //            foreach (IOrderLine? orderline in orderLines)
+    //            {
+    //                RemoveOrderLine(orderInfo, orderline as OrderLine);
+    //            }
 
-                var updatedEventArgs = new UpdatedOrderlineEventArgs()
-                {
-                    OrderInfo = orderInfo
-                };
+    //            var updatedEventArgs = new UpdatedOrderlineEventArgs()
+    //            {
+    //                OrderInfo = orderInfo
+    //            };
 
-                OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-                await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
+    //            OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
+    //            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
 
-                return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
-                    .ConfigureAwait(false);
-            }
+    //            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+    //                .ConfigureAwait(false);
+    //        }
 
-            return orderInfo;
+    //        return orderInfo;
 
-        }
-        finally
-        {
-            if (!settings.IsEventHandler)
-            {
-                semaphore.Release();
-            }
-        }
-    }
+    //    }
+    //    finally
+    //    {
+    //        if (!settings.IsEventHandler)
+    //        {
+    //            semaphore.Release();
+    //        }
+    //    }
+    //}
 
     private void RemoveOrderLine(OrderInfo orderInfo, OrderLine orderLine)
     {
         try
         {
-            List<OrderLine> linkedLines = orderInfo.orderLines.Where(x => x.Settings != null && x.Settings.Link == orderLine.Key).ToList();
-
-            foreach (OrderLine? linkedLine in linkedLines)
+            for (int i = orderInfo.orderLines.Count - 1; i >= 0; i--)
             {
-                orderInfo.orderLines.Remove(linkedLine);
+                OrderLine linkedLine = orderInfo.orderLines[i];
+                if (linkedLine.Settings != null && linkedLine.Settings.Link == orderLine.Key)
+                {
+                    orderInfo.orderLines.RemoveAt(i);
+                }
             }
 
             orderInfo.orderLines.Remove(orderLine);
@@ -941,7 +983,8 @@ partial class OrderService
 
     public async Task<OrderInfo> ReInitializeOrderLinesAsync(
         string storeAlias,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         _logger.LogDebug("ReInitializeOrderLinesAsync...");
 
@@ -952,7 +995,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -968,7 +1011,7 @@ partial class OrderService
 
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -977,11 +1020,11 @@ partial class OrderService
 
             List<IOrderLine> orderLines = orderInfo.OrderLines.ToList();
 
-            if (orderLines != null && orderLines.Any())
+            if (orderLines.Count > 0)
             {
                 orderInfo.orderLines.Clear();
 
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
 
                 foreach (IOrderLine? orderline in orderLines)
@@ -1021,7 +1064,8 @@ partial class OrderService
         decimal quantity,
         OrderAction action,
         IVariant? variant,
-        OrderSettings settings
+        OrderSettings settings,
+        CancellationToken ct = default
     )
     {
         var addingOrderlineEventArgs = new AddingOrderlineEventArgs()
@@ -1035,11 +1079,11 @@ partial class OrderService
         };
 
         OrderEvents.OnAddingOrderline(this, addingOrderlineEventArgs);
-        await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs);
+        await OrderEvents.OnAddingOrderlineAsync(this, addingOrderlineEventArgs, ct);
 
         if (settings != null && settings.CustomData != null)
         {
-            orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo));
+            orderInfo = (OrderInfo)(await UpdateCustomerInformationInProvidersAsync(settings.CustomData, orderInfo, ct));
         }
 
         var filteredOrderlineData = settings.CustomData.Where(kvp =>
@@ -1068,7 +1112,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
 
         try
@@ -1184,17 +1228,19 @@ partial class OrderService
                     new DiscountOrderSettings
                     {
                         UpdateOrder = false,
-                    }
+                    },
+                    ct: ct
                 ).ConfigureAwait(false);
             }
 
             var addedEventArgs = new AddedOrderlineEventArgs()
             {
-                OrderInfo = orderInfo
+                OrderInfo = orderInfo,
+                OrderLine = orderLine
             };
 
             OrderEvents.OnAddedOrderline(this, addedEventArgs);
-            await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs);
+            await OrderEvents.OnAddedOrderlineAsync(this, addedEventArgs,ct);
 
             var updatedEventArgs = new UpdatedOrderlineEventArgs()
             {
@@ -1202,9 +1248,9 @@ partial class OrderService
             };
 
             OrderEvents.OnUpdatedOrderline(this, updatedEventArgs);
-            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs);
+            await OrderEvents.OnUpdatedOrderlineAsync(this, updatedEventArgs, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent)
+            return await UpdateOrderAndOrderInfoAsync(addedEventArgs.OrderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -1218,7 +1264,9 @@ partial class OrderService
 
     private async Task<OrderInfo> UpdateOrderAndOrderInfoAsync(
         OrderInfo orderInfo,
-        bool fireOnOrderUpdatedEvents = true)
+        bool fireOnOrderUpdatedEvents = true,
+        string? previousCustomerEmail = null,
+        CancellationToken ct = default)
     {
         try
         {
@@ -1234,7 +1282,7 @@ partial class OrderService
 
             string serializedOrderInfo = JsonConvert.SerializeObject(orderInfo, EkomJsonDotNet.Settings);
 
-            OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId)
+            OrderData orderData = await _orderRepository.GetOrderAsync(orderInfo.UniqueId, ct)
                 .ConfigureAwait(false);
 
             if (_ekmRequest != null && _ekmRequest.User != null && !string.IsNullOrEmpty(_ekmRequest.User.Username))
@@ -1254,15 +1302,15 @@ partial class OrderService
 
             if (fireOnOrderUpdatedEvents)
             {
-                OrderEvents.OnOrderUpdateing(this, new OrderUpdatingEventArgs
+                OrderEvents.OnOrderUpdating(this, new OrderUpdatingEventArgs
                 {
                     OrderInfo = orderInfo,
                 });
 
-                await OrderEvents.OnOrderUpdateingAsync(this, new OrderUpdatingEventArgs
+                await OrderEvents.OnOrderUpdatingAsync(this, new OrderUpdatingEventArgs
                 {
                     OrderInfo = orderInfo,
-                });
+                }, ct);
             }
 
             orderData.OrderInfo = serializedOrderInfo;
@@ -1291,30 +1339,42 @@ partial class OrderService
                 line.InvalidateAmount();
             }
 
-            await _orderRepository.UpdateOrderAsync(orderData)
+            await _orderRepository.UpdateOrderAsync(orderData, ct)
                 .ConfigureAwait(false);
+
             UpdateOrderInfoInCache(orderInfo);
 
             if (fireOnOrderUpdatedEvents)
             {
                 OrderEvents.OnOrderUpdated(this, new OrderUpdatedEventArgs
                 {
-                    OrderInfo = orderInfo,
+                    OrderInfo = orderInfo
                 });
 
                 await OrderEvents.OnOrderUpdatedAsync(this, new OrderUpdatedEventArgs
                 {
-                    OrderInfo = orderInfo,
-                });
+                    OrderInfo = orderInfo
+                }, ct);
+
+                var newCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
+
+                if (string.IsNullOrWhiteSpace(previousCustomerEmail)
+                    && !string.IsNullOrWhiteSpace(newCustomerEmail))
+                {
+                    await OrderEvents.OnCustomerEmailAddedAsync(this, new CustomerEmailAddedEventArgs
+                    {
+                        OrderInfo = orderInfo,
+                        PreviousCustomerEmail = previousCustomerEmail,
+                        NewCustomerEmail = newCustomerEmail
+                    }, ct);
+                }
             }
 
-            // Regardless of modifications from event handlers,
-            // everybody references the same OrderInfo object
             return orderInfo;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync failed: " + JsonConvert.SerializeObject(orderInfo));
+            _logger.LogError(ex, "UpdateOrderAndOrderInfoAsync Failed. {OrderId} Message: {Message}", orderInfo.UniqueId, ex.Message);
             throw;
         }
 
@@ -1339,7 +1399,7 @@ partial class OrderService
             Configuration.orderInfoCacheTime);
     }
 
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo)
+    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, OrderInfo orderInfo, CancellationToken ct = default)
     {
         if (orderInfo == null)
         {
@@ -1347,12 +1407,12 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync().ConfigureAwait(false);
+        await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             orderInfo._hangfireJobs.AddRange(hangfireJobs);
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
+            await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -1361,9 +1421,9 @@ partial class OrderService
         }
     }
 
-    public async Task RemoveHangfireJobsToOrderAsync(string storeAlias)
+    public async Task RemoveHangfireJobsToOrderAsync(string storeAlias, CancellationToken ct)
     {
-        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         if (orderInfo == null)
         {
@@ -1371,12 +1431,12 @@ partial class OrderService
         }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
-        await semaphore.WaitAsync().ConfigureAwait(false);
+        await semaphore.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             orderInfo._hangfireJobs.Clear();
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo)
+            await UpdateOrderAndOrderInfoAsync(orderInfo, ct: ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -1385,7 +1445,7 @@ partial class OrderService
         }
     }
 
-    private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias)
+    private async Task<OrderInfo> CreateEmptyOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         _logger.LogDebug("CreateEmptyOrderAsync..");
 
@@ -1406,16 +1466,16 @@ partial class OrderService
             orderUniqueId = CreateOrderIdCookie(CreateKey(store));
         }
 
-        OrderData orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store)
+        OrderData orderdata = await SaveEmptyOrderDataAsync(orderUniqueId, store, ct)
             .ConfigureAwait(false);
 
         return new OrderInfo(orderdata, store);
     }
-    private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId, IStore store)
+    private async Task<OrderData> SaveEmptyOrderDataAsync(Guid uniqueId, IStore store, CancellationToken ct)
     {
         _logger.LogDebug("SaveEmptyOrderDataAsync Store: {Store}", store.Alias);
 
-        OrderData orderData = new OrderData
+        var orderData = new OrderData
         {
             UniqueId = uniqueId,
             CreateDate = _date,
@@ -1433,12 +1493,12 @@ partial class OrderService
             orderData.CustomerName = _ekmRequest.User.Name?.Trim();
         }
 
-        await _orderRepository.InsertOrderAsync(orderData)
+        await _orderRepository.InsertOrderAsync(orderData, ct)
             .ConfigureAwait(false);
 
         orderData.OrderNumber = GenerateOrderNumberTemplate(orderData.ReferenceId, store);
 
-        await _orderRepository.UpdateOrderAsync(orderData)
+        await _orderRepository.UpdateOrderAsync(orderData, ct)
             .ConfigureAwait(false);
 
         return orderData;
@@ -1446,8 +1506,12 @@ partial class OrderService
 
     public async Task<OrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
+
+        ct.ThrowIfCancellationRequested();
+
         _logger.LogDebug("UpdateCustomerInformation...");
 
         if (settings == null)
@@ -1462,7 +1526,7 @@ partial class OrderService
 
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -1474,66 +1538,86 @@ partial class OrderService
             throw new ArgumentException("Orderinfo is missing", nameof(orderInfo));
         }
 
-        var shippingProviderKey = form.Keys
-            .FirstOrDefault(k => string.Equals(k, "ShippingProvider", StringComparison.OrdinalIgnoreCase));
+        var previousCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
 
-        if (shippingProviderKey != null && form.TryGetValue(shippingProviderKey, out string? shippingProvider))
+        string? shippingProviderKey = null;
+        string? shippingProviderValue = null;
+        string? paymentProviderKey = null;
+        string? paymentProviderValue = null;
+        Dictionary<string, string>? customShippingData = null;
+        Dictionary<string, string>? customPaymentData = null;
+
+        foreach (var kvp in form)
         {
-            if (Guid.TryParse(shippingProvider, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
-            {
-                Dictionary<string, string> customData = form.Keys
-                    .Where(x => !string.Equals(x, shippingProviderKey, StringComparison.OrdinalIgnoreCase) &&
-                                x.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
+            string key = kvp.Key;
+            string value = kvp.Value;
 
-                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+            if (shippingProviderKey == null && string.Equals(key, "ShippingProvider", StringComparison.OrdinalIgnoreCase))
+            {
+                shippingProviderKey = key;
+                shippingProviderValue = value;
+                continue;
             }
-        }
 
-
-        var paymentProviderKey = form.Keys
-            .FirstOrDefault(k => string.Equals(k, "PaymentProvider", StringComparison.OrdinalIgnoreCase));
-
-        if (paymentProviderKey != null && form.TryGetValue(paymentProviderKey, out string? paymentProvider))
-        {
-            if (Guid.TryParse(paymentProvider, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
+            if (paymentProviderKey == null && string.Equals(key, "PaymentProvider", StringComparison.OrdinalIgnoreCase))
             {
-                Dictionary<string, string> customData = form.Keys
-                    .Where(x => !string.Equals(x, paymentProviderKey, StringComparison.OrdinalIgnoreCase) &&
-                                x.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
-                    .ToDictionary(
-                        k => k,
-                        v => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(form[v]));
-
-                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customData, settings).ConfigureAwait(false);
+                paymentProviderKey = key;
+                paymentProviderValue = value;
+                continue;
             }
-        }
 
-        foreach (string? key in form.Keys.Where(x => x.StartsWith("customer", StringComparison.InvariantCulture)))
-        {
-            string value = form[key];
-
-            if (key == "customerEmail" && !string.IsNullOrEmpty(value))
+            if (key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
             {
-                if (!value.IsValidEmail())
+                customShippingData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                customShippingData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                continue;
+            }
+
+            if (key.StartsWith("custompayment", StringComparison.OrdinalIgnoreCase))
+            {
+                customPaymentData ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                customPaymentData[key] = System.Text.Encodings.Web.HtmlEncoder.Default.Encode(value);
+                continue;
+            }
+
+            if (key.StartsWith("customer", StringComparison.InvariantCulture))
+            {
+                if (string.Equals(key, "customerEmail", StringComparison.Ordinal) && !string.IsNullOrEmpty(value))
                 {
-                    _logger.LogError($"Invalid email address: {value}");
-                    throw new FormatException($"Invalid email address: {value}");
+                    if (!value.IsValidEmail())
+                    {
+                        _logger.LogError($"Invalid email address: {value}");
+                        throw new FormatException($"Invalid email address: {value}");
+                    }
                 }
+
+                orderInfo.CustomerInformation.Customer.Properties[key] = value;
+                continue;
             }
 
-            orderInfo.CustomerInformation.Customer.Properties[key] = value;
+            if (key.StartsWith("shipping", StringComparison.InvariantCulture))
+            {
+                orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+            }
         }
 
-        foreach (string? key in form.Keys.Where(x => x.StartsWith("shipping", StringComparison.InvariantCulture)))
+        if (shippingProviderKey != null && shippingProviderValue != null)
         {
-            string value = form[key];
-            orderInfo.CustomerInformation.Shipping.Properties[key] = value;
+            if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
+            {
+                orderInfo = await UpdateShippingInformationAsync(_providerKey, storeAlias, customShippingData, settings).ConfigureAwait(false);
+            }
         }
 
-        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+        if (paymentProviderKey != null && paymentProviderValue != null)
+        {
+            if (Guid.TryParse(paymentProviderValue, out Guid _providerKey) && (orderInfo.PaymentProvider?.Key ?? Guid.Empty) != _providerKey)
+            {
+                orderInfo = await UpdatePaymentInformationAsync(_providerKey, storeAlias, customPaymentData ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), settings, ct).ConfigureAwait(false);
+            }
+        }
+
+        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
             .ConfigureAwait(false);
 
     }
@@ -1541,8 +1625,9 @@ partial class OrderService
     public async Task<OrderInfo> UpdateShippingInformationAsync(
         Guid shippingProviderId,
         string storeAlias,
-        Dictionary<string, string> allData,
-        OrderSettings? settings = null)
+        Dictionary<string, string>? allData,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         _logger.LogDebug("UpdateShippingInformation...");
 
@@ -1555,7 +1640,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -1569,7 +1654,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -1579,13 +1664,13 @@ partial class OrderService
 
             if (provider == null) return orderInfo;
 
-            var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData);
+            var orderedShippingProvider = new OrderedShippingProvider(provider, orderInfo.StoreInfo, allData, settings);
 
             orderInfo.ShippingProvider = orderedShippingProvider;
 
-            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo);
+            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
 
         }
@@ -1602,7 +1687,8 @@ partial class OrderService
         Guid paymentProviderId,
         string storeAlias,
         Dictionary<string, string> allData,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         _logger.LogDebug("UpdatePaymentInformation...");
 
@@ -1615,7 +1701,7 @@ partial class OrderService
         OrderInfo? orderInfo;
         if (settings.OrderInfo == null)
         {
-            orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -1629,7 +1715,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -1643,9 +1729,9 @@ partial class OrderService
 
             orderInfo.PaymentProvider = orderedPaymentProvider;
 
-            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo);
+            await UpdateCustomerInformationInProvidersAsync(allData, orderInfo, ct);
 
-            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+            return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                 .ConfigureAwait(false);
 
         }
@@ -1657,28 +1743,43 @@ partial class OrderService
             }
         }
     }
-    public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(string userName, string? storeAlias = null)
+    public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(string userName, CancellationToken ct = default, string? storeAlias = null)
     {
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
             x => x.CustomerUsername == userName,
+            ct,
             OrderStatus.ReadyForDispatch,
             OrderStatus.OfflinePayment,
             OrderStatus.Dispatched
 
         ).ConfigureAwait(false);
 
-        if (!string.IsNullOrEmpty(storeAlias))
+        var result = new List<OrderInfo>(orders.Count);
+        if (string.IsNullOrEmpty(storeAlias))
         {
-            orders = orders.Where(x => x.StoreAlias == storeAlias).ToList();
+            foreach (OrderData order in orders)
+            {
+                result.Add(new OrderInfo(order));
+            }
+
+            return result;
         }
 
+        foreach (OrderData order in orders)
+        {
+            if (order.StoreAlias == storeAlias)
+            {
+                result.Add(new OrderInfo(order));
+            }
+        }
 
-        return orders.Select(x => new OrderInfo(x)).ToList();
+        return result;
     }
-    public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
+    public async Task<List<OrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)
     {
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
             x => x.CustomerId == customerId,
+            ct,
             OrderStatus.ReadyForDispatch,
             OrderStatus.OfflinePayment,
             OrderStatus.Dispatched
@@ -1694,37 +1795,38 @@ partial class OrderService
         return orders.Select(x => new OrderInfo(x)).ToList();
     }
 
-    public async Task<List<OrderInfo>> GetStatusOrdersAsync(params OrderStatus[] orderStatuses)
+    public async Task<List<OrderInfo>> GetStatusOrdersAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)
     {
-        return (await _orderRepository.GetStatusOrdersAsync(null, orderStatuses).ConfigureAwait(false))
+        return (await _orderRepository.GetStatusOrdersAsync(null, ct, orderStatuses).ConfigureAwait(false))
             .Select(x => new OrderInfo(x))
             .ToList();
     }
-    public Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(params OrderStatus[] orderStatuses)
+    public Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(CancellationToken ct = default, params OrderStatus[] orderStatuses)
     {
         if (_ekmRequest.User?.UserId == null)
         {
             return Task.FromResult<List<OrderInfo>>(null);
         }
 
-        return GetStatusOrdersByCustomerIdAsync(_ekmRequest.User.UserId, orderStatuses);
+        return GetStatusOrdersByCustomerIdAsync(_ekmRequest.User.UserId, ct, orderStatuses);
     }
-    public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, params OrderStatus[] orderStatuses)
+    public async Task<List<OrderInfo>> GetStatusOrdersByCustomerIdAsync(int customerId, CancellationToken ct = default, params OrderStatus[] orderStatuses)
     {
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
             x => x.CustomerId == customerId,
+            ct,
             orderStatuses
 
         ).ConfigureAwait(false);
 
         return orders.Select(x => new OrderInfo(x)).ToList();
     }
-    public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, params OrderStatus[] orderStatuses)
+    public async Task<List<OrderInfo>> GetStatusOrdersByCustomerUsernameAsync(string customerUsername, CancellationToken ct = default, params OrderStatus[] orderStatuses)
     {
         List<OrderData> orders = await _orderRepository.GetStatusOrdersAsync(
             x => x.CustomerUsername == customerUsername,
+            ct,
             orderStatuses
-
         ).ConfigureAwait(false);
 
         return orders.Select(x => new OrderInfo(x)).ToList();
@@ -1850,9 +1952,9 @@ partial class OrderService
         orderInfo.ShippingProvider = null;
     }
 
-    protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string> collection, IOrderInfo order)
+    protected virtual async Task<IOrderInfo> UpdateCustomerInformationInProvidersAsync(Dictionary<string, string>? collection, IOrderInfo order, CancellationToken ct = default)
     {
-        Dictionary<string, string> formCollection = collection;
+        Dictionary<string, string> formCollection = collection ?? new Dictionary<string, string>();
 
         if (formCollection.Keys.Contains("ekomUpdateInformation", StringComparer.OrdinalIgnoreCase))
         {
@@ -1907,7 +2009,7 @@ partial class OrderService
                         StringComparer.OrdinalIgnoreCase
                     );
 
-                order = await Order.Instance.UpdateCustomerInformationAsync(filteredFormCollection).ConfigureAwait(false);
+                order = await Order.Instance.UpdateCustomerInformationAsync(filteredFormCollection, ct: ct).ConfigureAwait(false);
             }
         }
 

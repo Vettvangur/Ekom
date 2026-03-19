@@ -5,5 +5,6 @@ namespace Ekom.Models
         IPrice Price { get; }
 
         List<IPrice> Prices { get; }
+        ShippingMethods Method { get; }
     }
 }

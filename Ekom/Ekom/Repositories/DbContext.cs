@@ -5,7 +5,7 @@ namespace Ekom.Repositories;
 
 public class DbContext : LinqToDB.Data.DataConnection
 {
-    public DbContext(string connectionString) : base(LinqToDB.ProviderName.SqlServer, connectionString) { }
+    public DbContext(string providerName, string connectionString) : base(providerName, connectionString) { }
 
     public ITable<CouponData> CouponData => this.GetTable<CouponData>();
     public ITable<CustomerData> CustomerData => this.GetTable<CustomerData>();

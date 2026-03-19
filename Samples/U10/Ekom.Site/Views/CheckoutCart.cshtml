@@ -38,7 +38,7 @@
                     {
                         var images = orderline.Product.Images.ToList();
                         
-                        var ekmProduct = _catalog.GetProduct(orderline.ProductKey);
+                        var ekmProduct = await _catalog.GetProductAsync(orderline.ProductKey);
 
                         <li class="flex py-6 sm:py-10">
                             <div class="flex-shrink-0">

@@ -1,3 +1,4 @@
+using Ekom.API;
 using Ekom.Utilities;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
@@ -8,25 +9,44 @@ public class OrderedShippingProvider
 {
     private readonly IShippingProvider _provider;
 
-    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string> allData)
+    public OrderedShippingProvider(IShippingProvider provider, StoreInfo storeInfo, Dictionary<string, string>? allData, OrderSettings? orderSettings)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
         Dictionary<string, string> dictionary = provider.Properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
+        var orderDynamic = orderSettings?.OrderDynamicRequest;
+
+        var title = _provider.Title;
+
+        if (orderDynamic != null && !string.IsNullOrEmpty(orderDynamic.Title))
+        {
+            dictionary["title"] = orderDynamic.Title;
+            title = orderDynamic.Title;
+        }
+
         Properties = new ReadOnlyDictionary<string, string>(
-            dictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+           dictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+
+        if (orderDynamic != null && orderDynamic.Prices != null && orderDynamic.Prices.Any() == true)
+        {
+            Prices = orderDynamic.Prices;
+        }
+        else
+        {
+            Prices = _provider.Prices;
+        }
 
         StoreInfo = storeInfo;
         Id = _provider.Id;
         Key = _provider.Key;
-        Title = _provider.Title;
-        Prices = _provider.Prices;
-        CustomData = allData.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
+        Title = title;
+        Method = _provider.Method;
+        CustomData = allData?.Where(x => x.Key.StartsWith("customshipping", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(
                     x => x.Key,
                     x => System.Text.Encodings.Web.HtmlEncoder.Default.Encode(x.Value)
-                );
+                ) ?? new Dictionary<string, string>();
     }
 
     public OrderedShippingProvider(JObject shippingProviderObject, StoreInfo storeInfo)
@@ -54,6 +74,21 @@ public class OrderedShippingProvider
         Id = shippingProviderObject["Id"].Value<int>();
         Key = Guid.Parse(shippingProviderObject.GetValue("Key").ToString());
         Title = shippingProviderObject["Title"].Value<string>();
+        Method = ShippingMethods.Pickup;
+
+        if (shippingProviderObject.ContainsKey("Method"))
+        {
+            var methodValue = shippingProviderObject["Method"]?.Value<string>() ?? "";
+
+            if (!string.IsNullOrEmpty(methodValue))
+            {
+
+                if (Enum.TryParse<ShippingMethods>(methodValue, ignoreCase: true, out var method))
+                {
+                    Method = method;
+                }
+            }
+        }
 
         JToken? pricesObj = shippingProviderObject["Prices"];
 
@@ -95,6 +130,7 @@ public class OrderedShippingProvider
     public virtual int Id { get; set; }
     public virtual Guid Key { get; set; }
     public virtual string Title { get; set; }
+    public virtual ShippingMethods Method { get; set; }
     public virtual IPrice Price
     {
         get

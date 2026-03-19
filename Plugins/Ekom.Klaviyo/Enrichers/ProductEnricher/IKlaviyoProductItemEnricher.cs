@@ -1,8 +1,8 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 
 namespace Ekom.Klaviyo.Enrichers.ProductEnricher;
 
-internal interface IKlaviyoProductItemEnricher
+public interface IKlaviyoProductItemEnricher
 {
     ValueTask EnrichAsync(KlaviyoProductItem item, KlaviyoProductEnrichmentContext ctx, CancellationToken ct);
 }

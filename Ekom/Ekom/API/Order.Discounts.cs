@@ -14,11 +14,11 @@ public partial class Order
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
     /// <returns></returns>
-    public async Task<bool> ApplyCouponToOrderAsync(string coupon)
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon, CancellationToken ct = default)
     {
         string storeAlias = _storeSvc.GetStoreFromCache()?.Alias ?? "";
 
-        return await ApplyCouponToOrderAsync(coupon, storeAlias)
+        return await ApplyCouponToOrderAsync(coupon, storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -28,7 +28,7 @@ public partial class Order
     /// <exception cref="DiscountNotFoundException"></exception>
     /// <exception cref="ArgumentException"></exception>
     /// <returns></returns>
-    public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias)
+    public async Task<bool> ApplyCouponToOrderAsync(string coupon, string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(coupon))
         {
@@ -54,7 +54,7 @@ public partial class Order
                     new DiscountOrderSettings
                     {
                         Coupon = coupon,
-                    })
+                    }, ct)
                 .ConfigureAwait(false);
         }
 
@@ -66,26 +66,27 @@ public partial class Order
     /// 
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync()
+    public async Task RemoveCouponFromOrderAsync(CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await RemoveCouponFromOrderAsync(storeAlias).ConfigureAwait(false);
+        await RemoveCouponFromOrderAsync(storeAlias, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="storeAlias"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <exception cref="ArgumentException"></exception>
-    public async Task RemoveCouponFromOrderAsync(string storeAlias)
+    public async Task RemoveCouponFromOrderAsync(string? storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveDiscountFromOrderAsync(storeAlias)
+        await _orderService.RemoveDiscountFromOrderAsync(storeAlias, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -105,11 +106,11 @@ public partial class Order
     }
 
 
-    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null)
+    public async Task SetCouponCodeAsync(string coupon, DiscountOrderSettings? discountOrderSettings = null, CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings).ConfigureAwait(false);
+        await _orderService.SetCouponCodeAsync(coupon, storeAlias, discountOrderSettings, ct: ct).ConfigureAwait(false);
     }
 
     
@@ -168,11 +169,11 @@ public partial class Order
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderLineNotFoundException"></exception>
-    public async Task RemoveCouponFromOrderLineAsync(Guid productKey)
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, CancellationToken ct = default)
     {
-        string storeAlias = _storeSvc.GetStoreFromCache().Alias;
+        var storeAlias = _storeSvc.GetStoreFromCache()?.Alias;
 
-        await RemoveCouponFromOrderLineAsync(productKey, storeAlias)
+        await RemoveCouponFromOrderLineAsync(productKey, storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -181,9 +182,10 @@ public partial class Order
     /// </summary>
     /// <param name="productKey"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderLineNotFoundException"></exception>
-    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string storeAlias)
+    public async Task RemoveCouponFromOrderLineAsync(Guid productKey, string? storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -194,13 +196,13 @@ public partial class Order
             throw new ArgumentException("== Guid.Empty", nameof(productKey));
         }
 
-        await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias)
+        await _orderService.RemoveDiscountFromOrderLineAsync(productKey, storeAlias, ct: ct)
             .ConfigureAwait(false);
     }
 
-    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)
     {
-        await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId)
+        await _orderService.InsertCouponCodeAsync(couponCode, numberAvailable, discountId, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -210,9 +212,9 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
-    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
-        return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
+        return await _orderService.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
             .ConfigureAwait(false);
     }
 }

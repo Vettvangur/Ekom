@@ -16,8 +16,9 @@ partial class OrderService
     /// <returns></returns>
     public async Task<bool> ApplyDiscountToOrderAsync(
         IDiscount discount,
-        string storeAlias = null,
-        DiscountOrderSettings settings = null
+        string? storeAlias = null,
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -25,7 +26,22 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            storeAlias = API.Store.Instance.GetStore()?.Alias;
+        }
+
+        if (string.IsNullOrEmpty(storeAlias))
+        {
+            return false;
+        }
+
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            return false;
+        }
 
         if (orderInfo.Discount?.Key == discount.Key)
         {
@@ -40,7 +56,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -48,7 +64,7 @@ partial class OrderService
             {
                 if (settings.UpdateOrder)
                 {
-                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                    await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                         .ConfigureAwait(false);
                 }
 
@@ -110,26 +126,26 @@ partial class OrderService
     /// <summary>
     /// Does not remove global discounts currently
     /// </summary>
-    public async Task RemoveDiscountFromOrderAsync(string storeAlias, DiscountOrderSettings? settings = null)
+    public async Task RemoveDiscountFromOrderAsync(string storeAlias, CancellationToken ct = default, DiscountOrderSettings? settings = null)
     {
         if (settings == null)
         {
             settings = new DiscountOrderSettings();
         }
 
-        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
             RemoveDiscountFromOrder(orderInfo);
             if (settings.UpdateOrder)
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
             }
         }
@@ -157,7 +173,8 @@ partial class OrderService
         Guid productKey,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -165,7 +182,7 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        var product = Catalog.Instance.GetProduct(productKey, storeAlias);
+        var product = await Catalog.Instance.GetProductAsync(productKey, storeAlias, ct: ct);
 
         if (product == null)
         {
@@ -174,23 +191,24 @@ partial class OrderService
 
         return await ApplyDiscountToOrderLineProductAsync(
             product,
-            discount,
+            discount, 
             storeAlias,
-            settings
+            settings,
+            ct
         ).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Manually set coupon code on order, does not validate coupon or use other discount functionality
     /// </summary>
-    public async Task SetCouponCodeAsync(string couponCode, string storeAlias, DiscountOrderSettings? settings = null)
+    public async Task SetCouponCodeAsync(string couponCode, string? storeAlias, DiscountOrderSettings? settings = null, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
             return;
         }
 
-        var orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
 
         if (orderInfo == null)
         {
@@ -201,7 +219,7 @@ partial class OrderService
         {
             orderInfo.Coupon = couponCode;
 
-            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true).ConfigureAwait(false);
+            await UpdateOrderAndOrderInfoAsync(orderInfo, fireOnOrderUpdatedEvents: settings?.FireOnOrderUpdatedEvent ?? true, ct: ct).ConfigureAwait(false);
         }
     }
 
@@ -216,7 +234,8 @@ partial class OrderService
         IProduct product,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -224,12 +243,17 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            throw new Exception($"Unable to find order for store alias: {storeAlias}");
+        }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -246,7 +270,8 @@ partial class OrderService
                 orderLine,
                 discount,
                 orderInfo,
-                settings
+                settings,
+                ct: ct
             ).ConfigureAwait(false);
         }
         finally
@@ -267,7 +292,8 @@ partial class OrderService
         Guid lineKey,
         IDiscount discount,
         string storeAlias,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (settings == null)
@@ -275,12 +301,17 @@ partial class OrderService
             settings = new DiscountOrderSettings();
         }
 
-        OrderInfo orderInfo = await GetOrderAsync(storeAlias).ConfigureAwait(false);
+        var orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+
+        if (orderInfo == null)
+        {
+            throw new Exception($"Unable to find order for store alias: {storeAlias}");
+        }
 
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -297,7 +328,8 @@ partial class OrderService
                 orderLine,
                 discount,
                 orderInfo,
-                settings
+                settings,
+                ct: ct
             ).ConfigureAwait(false);
         }
         finally
@@ -318,7 +350,8 @@ partial class OrderService
         OrderLine orderLine,
         IDiscount discount,
         OrderInfo orderInfo,
-        DiscountOrderSettings settings = null
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         _logger.LogDebug("Applying discount to orderline");
@@ -342,7 +375,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                             .ConfigureAwait(false);
                     }
 
@@ -364,7 +397,7 @@ partial class OrderService
 
                     if (settings.UpdateOrder)
                     {
-                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                        await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                             .ConfigureAwait(false);
                     }
 
@@ -408,7 +441,8 @@ partial class OrderService
     public async Task RemoveDiscountFromOrderLineAsync(
         Guid productKey,
         string storeAlias,
-        DiscountOrderSettings settings = null)
+        DiscountOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (settings == null)
         {
@@ -420,7 +454,7 @@ partial class OrderService
         SemaphoreSlim semaphore = GetOrderLock(orderInfo);
         if (!settings.IsEventHandler)
         {
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(ct).ConfigureAwait(false);
         }
         try
         {
@@ -437,7 +471,7 @@ partial class OrderService
 
             if (settings.UpdateOrder)
             {
-                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent)
+                await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
                     .ConfigureAwait(false);
             }
         }
@@ -737,7 +771,7 @@ partial class OrderService
         return constraintsOk && matchesInclude && !matchesExclude;
     }
 
-    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId)
+    public async Task InsertCouponCodeAsync(string couponCode, int numberAvailable, Guid discountId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
@@ -755,11 +789,11 @@ partial class OrderService
             CouponKey = Guid.NewGuid(),
             DiscountId = discountId,
             NumberAvailable = numberAvailable,
-            Date = DateTime.Now
-        }).ConfigureAwait(false);
+            Date = DateTime.Now,
+        }, ct: ct).ConfigureAwait(false);
     }
 
-    public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId)
+    public async Task RemoveCouponCodeAsync(string couponCode, Guid discountId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(couponCode))
         {
@@ -771,18 +805,18 @@ partial class OrderService
             throw new ArgumentException("== Guid.Empty", nameof(discountId));
         }
 
-        await _couponRepository.RemoveCouponAsync(discountId, couponCode)
+        await _couponRepository.RemoveCouponAsync(discountId, couponCode, ct)
             .ConfigureAwait(false);
     }
 
-    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize)
+    public async Task<(List<CouponData> Data, int TotalPages)> GetCouponsForDiscountAsync(Guid discountId, string query, int page, int pageSize, CancellationToken ct = default)
     {
         if (discountId == Guid.Empty)
         {
             throw new ArgumentException("== Guid.Empty", nameof(discountId));
         }
 
-        return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize)
+        return await _couponRepository.GetCouponsForDiscountAsync(discountId, query, page, pageSize, ct)
             .ConfigureAwait(false);
     }
 }

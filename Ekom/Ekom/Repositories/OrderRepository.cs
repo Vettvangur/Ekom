@@ -29,33 +29,33 @@ class OrderRepository
         _memoryCache = memoryCache;
     }
 
-    public async Task<OrderData> GetOrderAsync(Guid uniqueId)
+    public async Task<OrderData?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
         OrderData? data = await db.OrderData
             .Where(x => x.UniqueId == uniqueId)
-            .SingleOrDefaultAsync()
+            .SingleOrDefaultAsync(ct)
             .ConfigureAwait(false);
 
         return data;
 
     }
 
-    public async Task InsertOrderAsync(OrderData orderData)
+    public async Task InsertOrderAsync(OrderData orderData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData).ConfigureAwait(false);
+        decimal referenceId = (decimal)await db.InsertWithIdentityAsync(orderData, token: ct).ConfigureAwait(false);
 
         orderData.ReferenceId = (int)referenceId;
     }
 
-    public async Task UpdateOrderAsync(OrderData orderData)
+    public async Task UpdateOrderAsync(OrderData orderData, CancellationToken ct = default)
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        await db.UpdateAsync(orderData).ConfigureAwait(false);
+        await db.UpdateAsync(orderData, token: ct).ConfigureAwait(false);
         //Clear cache after update.
         _memoryCache.Remove(orderData.UniqueId);
     }
@@ -63,6 +63,11 @@ class OrderRepository
 
     public async Task MigrateOrderTableAsync()
     {
+        if (!_databaseFactory.IsSqlServer)
+        {
+            return;
+        }
+
         try
         {
             await using DbContext db = _databaseFactory.GetDatabase();
@@ -210,11 +215,16 @@ class OrderRepository
             affected4 = await db.ExecuteAsync<int>(stockUniqueIdMoreLengthSql);
 
             const string CouponDateSql = @"BEGIN TRANSACTION;
-                        IF NOT EXISTS(
-                            SELECT *
+                        IF EXISTS(
+                            SELECT 1
+                            FROM INFORMATION_SCHEMA.TABLES
+                            WHERE TABLE_NAME = 'EkomCoupon'
+                        )
+                        AND NOT EXISTS(
+                            SELECT 1
                             FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_NAME = 'EkomCoupon' AND COLUMN_NAME = 'Date'
-                            )
+                            WHERE TABLE_NAME = 'EkomCoupon' AND COLUMN_NAME = 'Date'
+                        )
                         BEGIN
                             ALTER TABLE EkomCoupon
                         ADD[Date] DATETIME NOT NULL DEFAULT GETDATE()
@@ -238,6 +248,11 @@ class OrderRepository
 
     public async Task MigrateStockToDecimalAsync()
     {
+        if (!_databaseFactory.IsSqlServer)
+        {
+            return;
+        }
+
         await using DbContext db = _databaseFactory.GetDatabase();
 
         const string sql = @"
@@ -279,6 +294,7 @@ class OrderRepository
     /// <returns></returns>
     public async Task<List<OrderData>> GetStatusOrdersAsync(
         Expression<Func<OrderData, bool>>? filter = null,
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -293,7 +309,7 @@ class OrderRepository
         }
 
         return await query
-            .ToListAsync()
+            .ToListAsync(ct)
             .ConfigureAwait(false);
     }
 }

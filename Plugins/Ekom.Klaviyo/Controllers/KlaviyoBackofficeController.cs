@@ -1,3 +1,4 @@
+using Ekom.Klaviyo.Clients;
 using Ekom.Klaviyo.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,12 +11,12 @@ namespace Ekom.Klaviyo.Controllers;
 [PluginController("Ekom")]
 internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
 {
-    private readonly IKlaviyoClient _klaviyoClient;
+    private readonly IKlaviyoCatalogClient _klaviyoClient;
     private readonly KlaviyoOptions _opt;
     private readonly ILogger<KlaviyoBackofficeController> _logger;
 
     public KlaviyoBackofficeController(
-        IKlaviyoClient klaviyoClient, 
+        IKlaviyoCatalogClient klaviyoClient, 
         IOptions<KlaviyoOptions> opt, 
         ILogger<KlaviyoBackofficeController> logger)
     {
@@ -27,21 +28,21 @@ internal class KlaviyoBackofficeController : UmbracoAuthorizedApiController
     [HttpGet]
     public async Task<IActionResult> BuildProducts(CancellationToken ct)
     {
-        if (!_opt.Enabled || !_opt.ProductEvents.Enabled) { return BadRequest("Klaviyo integration is disabled."); }
+        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.SyncMode == KlaviyoCatalogSyncMode.FeedPull) { return BadRequest("Klaviyo integration is disabled."); }
         
         _logger.LogInformation("Building products for Klaviyo integration.");
 
-        foreach (var storeAlias in _opt.Stores)
+        foreach (var store in _opt.Stores)
         {
-            _logger.LogInformation("Building products for store {StoreAlias}.", storeAlias);
+            _logger.LogInformation("Building products for store {StoreAlias}.", store.Alias);
 
-            var productsResponse = Ekom.API.Catalog.Instance.GetAllProducts(storeAlias);
+            var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(store.Alias,ct: ct);
 
-            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.Host).ToList();
+            var products = productsResponse.Products.ToKlaviyoCatalogItems(true, _opt.SiteBaseUrl).ToList();
 
-            await _klaviyoClient.BulkCreateCatalogItemsAsync(products, ct);
+            await _klaviyoClient.BulkCreateCatalogItemsAsync(products, store.Alias, ct);
 
-            _logger.LogInformation("Completed building products for store {StoreAlias}. Products: {ProductsCount}", storeAlias, products.Count);
+            _logger.LogInformation("Completed building products for store {StoreAlias}. Products: {ProductsCount}", store.Alias, products.Count);
         }
 
         _logger.LogInformation("Completed building products for Klaviyo integration.");

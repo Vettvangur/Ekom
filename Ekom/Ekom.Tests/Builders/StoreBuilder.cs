@@ -29,8 +29,9 @@ public class StoreBuilder
     public StoreBuilder WithCulture(string cultureName)
     {
         var ci = new CultureInfo(cultureName);
-        _mock.SetupGet(s => s.Culture).Returns(ci);
-        _mock.SetupGet(s => s.Cultures).Returns(new List<CultureInfo> { ci });
+        var dto = CultureInfoDto.From(ci);
+        _mock.SetupGet(s => s.Culture).Returns(dto);
+        _mock.SetupGet(s => s.Cultures).Returns(new List<CultureInfoDto> { dto });
         return this;
     }
 

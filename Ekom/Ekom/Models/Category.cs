@@ -14,8 +14,8 @@ namespace Ekom.Models;
 /// </summary>
 public class Category : PerStoreNodeEntity, ICategory
 {
-    private IPerStoreCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreCache<ICategory>>();
-    private IPerStoreCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreCache<IProduct>>();
+    private IPerStoreIndexedCache<ICategory> _categoryCache => Configuration.Resolver.GetService<IPerStoreIndexedCache<ICategory>>();
+    private IPerStoreIndexedCache<IProduct> _productCache => Configuration.Resolver.GetService<IPerStoreIndexedCache<IProduct>>();
     private IProductFilterService _productFilterService => Configuration.Resolver.GetService<IProductFilterService>();
     /// <summary>
     /// Short spaceless descriptive title used to create URLs
@@ -60,18 +60,7 @@ public class Category : PerStoreNodeEntity, ICategory
     /// All direct child categories
     /// </summary>
     public IEnumerable<ICategory> SubCategories
-    {
-        get
-        {
-            IOrderedEnumerable<ICategory> subs = _categoryCache.Cache[Store.Alias]
-                .Where(x => x.Value.ParentId == Id)
-                .Select(x => x.Value)
-                .OrderBy(x => x.SortOrder);
-
-
-            return subs;
-        }
-    }
+        => ((CategoryCache)_categoryCache).GetChildren(Store.Alias, Id);
 
     /// <summary>
     /// All descendant categories, includes grandchild categories
@@ -80,58 +69,104 @@ public class Category : PerStoreNodeEntity, ICategory
     [Newtonsoft.Json.JsonIgnore]
     [XmlIgnore]
     public IEnumerable<ICategory> SubCategoriesRecursive
-    {
-        get
-        {
-            return _categoryCache.Cache[Store.Alias]
-                                .Where(x => x.Value.Level > Level &&
-                                            x.Value.PathArray.Contains(Id.ToString()))
-                                .Select(x => x.Value)
-                                .OrderBy(x => x.SortOrder);
-        }
-    }
+    => ((CategoryCache)_categoryCache).GetDescendants(Store.Alias, Id)
+       .Where(c => c.Level > Level);
 
     public virtual bool VirtualUrl { get; set; }
 
     public virtual bool HasProducts()
     {
-        return _productCache.Cache[Store.Alias]
-                            .Any(x => x.Value.Categories.Any(z => z.Id == Id));
+        var storeAlias = Store.Alias;
+
+        var productCache = _productCache as ProductCache
+            ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+        return productCache.HasAnyInCategory(storeAlias, Id);
+    }
+
+
+    private ProductCache ProductCache =>
+        _productCache as ProductCache
+        ?? throw new InvalidOperationException("Expected _productCache to be ProductCache (category index required).");
+
+    private CategoryCache CategoryCache =>
+        _categoryCache as CategoryCache
+        ?? throw new InvalidOperationException("Expected _categoryCache to be CategoryCache (desc index required).");
+
+    private IEnumerable<IProduct> GetProductsByCategoryIds(string storeAlias, IEnumerable<int> categoryIds)
+    {
+        // One place for the cache + index-based lookup.
+        return ProductCache.GetByAnyCategoryIds(storeAlias, categoryIds);
+    }
+
+    private HashSet<int> GetRecursiveCategoryIds(string storeAlias, CancellationToken ct = default)
+    {
+        // This category + all descendants, using your precomputed descendant index.
+        var ids = new HashSet<int> { Id };
+
+        foreach (var d in CategoryCache.GetDescendants(storeAlias, Id))
+        {
+            ct.ThrowIfCancellationRequested();
+            ids.Add(d.Id);
+        }
+
+        return ids;
     }
 
     /// <summary>
-    /// All direct child products of category. (No descendants)
+    /// All direct child products of category. (No descendants) Sync
     /// </summary>
     public ProductResponse Products(ProductQuery? query = null)
     {
+        var storeAlias = Store.Alias;
 
-        IEnumerable<IProduct> products = _productCache.Cache[Store.Alias]
-                            .Where(x => x.Value.Categories.Any(z => z.Id == Id))
-                            .Select(x => x.Value).AsEnumerable();
+        var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
 
         return new ProductResponse(products, query, _productFilterService, this);
     }
 
+    /// <summary>
+    /// All direct child products of category. (No descendants) Async
+    /// </summary>
+    public Task<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var storeAlias = Store.Alias;
+
+        var products = GetProductsByCategoryIds(storeAlias, new[] { Id });
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
+    }
 
     /// <summary>
-    /// All descendant products of category, this includes child products of sub-categories
+    /// All descendant products of category, includes child products of sub-categories. Sync
     /// </summary>
     public ProductResponse ProductsRecursive(ProductQuery? query = null)
     {
-        List<ICategory> categories = _categoryCache.Cache[Store.Alias]
-            .Where(x => x.Value.Level >= Level &&
-                        x.Value.PathArray.Contains(Id.ToString()))
-            .Select(x => x.Value)
-            .ToList();
+        var storeAlias = Store.Alias;
 
-        var categoryIds = new HashSet<int>(categories.Select(c => c.Id));
+        var categoryIds = GetRecursiveCategoryIds(storeAlias);
 
-        IEnumerable<IProduct> products = _productCache.Cache[Store.Alias]
-            .Where(x => x.Value.Categories != null && x.Value.Categories.Any(cat => categoryIds.Contains(cat.Id)))
-            .Select(x => x.Value)
-            .AsEnumerable();
+        var products = GetProductsByCategoryIds(storeAlias, categoryIds);
 
         return new ProductResponse(products, query, _productFilterService, this);
+    }
+
+    /// <summary>
+    /// All descendant products of category, includes child products of sub-categories. Async
+    /// </summary>
+    public Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var storeAlias = Store.Alias;
+
+        var categoryIds = GetRecursiveCategoryIds(storeAlias, ct);
+
+        var products = GetProductsByCategoryIds(storeAlias, categoryIds);
+
+        return ProductResponse.CreateAsync(products, query, _productFilterService, category: this, ct: ct);
     }
 
     /// <summary>
@@ -146,6 +181,12 @@ public class Category : PerStoreNodeEntity, ICategory
     public IEnumerable<MetafieldGrouped> Filters(bool filterable = true)
     {
         return ProductsRecursive().Products.Filters();
+    }
+
+    public async Task<IEnumerable<MetafieldGrouped>> FiltersAsync(bool filterable = true, CancellationToken ct = default)
+    {
+        var products = await ProductsRecursiveAsync(ct: ct);
+        return products.Products.Filters();
     }
 
     [System.Text.Json.Serialization.JsonIgnore]

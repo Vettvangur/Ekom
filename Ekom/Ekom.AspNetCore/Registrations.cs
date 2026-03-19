@@ -37,18 +37,18 @@ static class Registrations
             );
         });
 
-        services.AddSingleton<Configuration>();
+        services.AddSingleton(sp => new Configuration(config));
         services.AddSingleton<IStartupFilter, EkomAspNetCoreStartupFilter>();
         services.AddSingleton<IAuthorizationHandler, UmbracoUserAuthorizationHandler>();
 
         services.AddSingleton<IStoreDomainCache, StoreDomainCache>();
         services.AddSingleton<IBaseCache<IStore>, StoreCache>();
-        services.AddSingleton<IPerStoreCache<IVariant>, VariantCache>();
-        services.AddSingleton<IPerStoreCache<IVariantGroup>, VariantGroupCache>();
-        services.AddSingleton<IPerStoreCache<ICategory>, CategoryCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IVariant>, VariantCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IVariantGroup>, VariantGroupCache>();
+        services.AddSingleton<IPerStoreIndexedCache<ICategory>, CategoryCache>();
         services.AddSingleton<IPerStoreCache<IProductDiscount>, ProductDiscountCache>();
         services.AddSingleton<DiscountEvents>();
-        services.AddSingleton<IPerStoreCache<IProduct>, ProductCache>();
+        services.AddSingleton<IPerStoreIndexedCache<IProduct>, ProductCache>();
         services.AddSingleton<IBaseCache<IZone>, ZoneCache>();
         services.AddSingleton<IPerStoreCache<Models.IPaymentProvider>, PaymentProviderCache>();
         services.AddSingleton<IPerStoreCache<IShippingProvider>, ShippingProviderCache>();
@@ -96,20 +96,19 @@ static class Registrations
         // This is needed since many of their dependencies are internal classes
         // However the API services are public, leaving their constructor public violates
         // C# visibility restrictions
-        services.AddTransient<Catalog>(f =>
+        services.AddTransient<Catalog>(sp =>
             new Catalog(
-                f.GetService<ILogger<Catalog>>(),
-                f.GetService<Configuration>(),
-                f.GetService<IMetafieldService>(),
-                f.GetService<IPerStoreCache<IProduct>>(),
-                f.GetService<IPerStoreCache<ICategory>>(),
-                f.GetService<IPerStoreCache<IProductDiscount>>(),
-                f.GetService<IPerStoreCache<IVariant>>(),
-                f.GetService<IPerStoreCache<IVariantGroup>>(),
-                f.GetService<IStoreService>(),
-                f.GetService<IHttpContextAccessor>(),
-                f.GetService<IProductFilterService>()
-
+                sp.GetRequiredService<ILogger<Catalog>>(),
+                sp.GetRequiredService<Configuration>(),
+                sp.GetRequiredService<IMetafieldService>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IProduct>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<ICategory>>(),
+                sp.GetRequiredService<IPerStoreCache<IProductDiscount>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IVariant>>(),
+                sp.GetRequiredService<IPerStoreIndexedCache<IVariantGroup>>(),
+                sp.GetRequiredService<IStoreService>(),
+                sp.GetRequiredService<IHttpContextAccessor>(),
+                sp.GetRequiredService<IProductFilterService>()
             )
         );
 
@@ -220,6 +219,25 @@ static class Registrations
                         Window = TimeSpan.FromMinutes(1),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
+                    });
+            });
+
+            options.AddPolicy("order-coupon", context =>
+            {
+                var ip =
+                    context.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetTokenBucketLimiter(
+                    partitionKey: ip,
+                    factory: _ => new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit = 13,
+                        TokensPerPeriod = 10,
+                        ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0,
+                        AutoReplenishment = true
                     });
             });
 

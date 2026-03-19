@@ -24,8 +24,8 @@ class UmbracoEventListeners :
     //INotificationHandler<ContentPublishingNotification>,
     INotificationAsyncHandler<ContentPublishedNotification>,
     INotificationAsyncHandler<ContentUnpublishedNotification>,
-    INotificationHandler<ContentSavingNotification>,
-    INotificationHandler<ContentDeletedNotification>,
+    INotificationAsyncHandler<ContentSavingNotification>,
+    INotificationAsyncHandler<ContentDeletedNotification>,
     INotificationHandler<ContentMovedToRecycleBinNotification>,
     INotificationHandler<ContentMovedNotification>,
     INotificationHandler<DomainSavedNotification>,
@@ -78,8 +78,7 @@ class UmbracoEventListeners :
         _nodeService = nodeService;
         _revalidateService = revalidateService;
     }
-
-    public void Handle(ContentSavingNotification e)
+    public async Task HandleAsync(ContentSavingNotification e, CancellationToken ct)
     {
         foreach (var content in e.SavedEntities)
         {
@@ -94,7 +93,7 @@ class UmbracoEventListeners :
 
                     if (alias == "ekmProduct" || alias == "ekmCategory" || alias == "ekmProductVariantGroup" || alias == "ekmProductVariant" || alias == "ekmProductDiscount" || alias == "ekmOrderDiscount")
                     {
-                        UpdatePropertiesDefaultValues(content, alias, e);
+                        await UpdatePropertiesDefaultValuesAsync(content, alias, e, ct);
                     }
 
                     if (alias == "ekmProduct" || alias == "ekmProductVariant")
@@ -119,11 +118,11 @@ class UmbracoEventListeners :
                                     {
                                         if (!string.IsNullOrEmpty(stockItem.StoreAlias))
                                         {
-                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value ?? 0).Result;
+                                            var updated = await Stock.Instance.SetStockAsync(content.Key, stockItem.StoreAlias, stockItem.Value ?? 0, ct);
                                         }
                                         else
                                         {
-                                            var updated = Stock.Instance.SetStockAsync(content.Key, stockItem.Value ?? 0).Result;
+                                            var updated = await Stock.Instance.SetStockAsync(content.Key, stockItem.Value ?? 0, ct);
                                         }
                                     }
                                 }
@@ -196,6 +195,11 @@ class UmbracoEventListeners :
                 var parentNode = _nodeService.NodeById(node.Id);
 
                 cacheEntry?.AddReplace(new Umbraco10Content(node, parentNode != null ? parentNode.Key : Guid.Empty));
+
+                if (node.ContentType.Alias == "ekmCategory")
+                {
+                    RefreshCacheForRelatedNodes(node.Id);
+                }
             }
 
 
@@ -224,7 +228,7 @@ class UmbracoEventListeners :
         }
     }
 
-    public void Handle(ContentDeletedNotification args)
+    public async Task HandleAsync(ContentDeletedNotification args, CancellationToken cancellationToken)
     {
         foreach (var node in args.DeletedEntities)
         {
@@ -238,7 +242,7 @@ class UmbracoEventListeners :
 
                 if (node.ContentType.Alias == "ekmOrderDiscount")
                 {
-                    _couponRepository.DeleteCouponsByDiscountAsync(node.Key).Wait();
+                    await _couponRepository.DeleteCouponsByDiscountAsync(node.Key, cancellationToken);
                 }
             }
         }
@@ -275,10 +279,11 @@ class UmbracoEventListeners :
         );
     }
 
-    private void UpdatePropertiesDefaultValues(
+    private async Task UpdatePropertiesDefaultValuesAsync(
         IContent content,
         string alias,
-        ContentSavingNotification e)
+        ContentSavingNotification e, 
+        CancellationToken ct)
     {
         if (!content.HasProperty("updateSlug") || !content.GetValue<bool>("updateSlug"))
             return;
@@ -298,9 +303,14 @@ class UmbracoEventListeners :
         var propertyTypes = GetPropertyTypes(propertyType);
 
         var slugItems = new Dictionary<string, object>();
-        var parentCategory = alias == "ekmProduct" ? Catalog.Instance.GetCategory(content.ParentId, global: true, raiseEvent: false) : null;
-        var siblingProducts = parentCategory?.Products().Products
-            .Where(p => p.Id != content.Id).ToList() ?? new List<IProduct>();
+        var parentCategory = alias == "ekmProduct" ? await Catalog.Instance.GetCategoryAsync(content.ParentId, global: true, raiseEvent: false, ct: ct) : null;
+        var siblingProducts =
+            parentCategory == null
+                ? new List<IProduct>()
+                : (await parentCategory.ProductsAsync(ct: ct))
+                    .Products
+                    .Where(p => p.Id != content.Id)
+                    .ToList();
 
         if (alias != "ekmProduct" && alias != "ekmCategory")
         {
@@ -451,6 +461,7 @@ class UmbracoEventListeners :
     public void Handle(LanguageCacheRefresherNotification notification)
     {
         _runtimeCache.Clear("ekmLanguages");
+        _runtimeCache.Clear("ekmDefaultLanguage");
     }
 
     private void RefreshCacheForRelatedNodes(int Id, bool remove = false)

@@ -82,6 +82,40 @@ public class EkomBackofficeApiController : ControllerBase
         => _umbracoService.GetLanguages();
 
     [HttpGet]
+    [Route("Languages/{id:int}")]
+    [UmbracoUserAuthorize]
+    public IEnumerable<object> GetLanguagesByNode([FromRoute] int id)
+    {
+        var stores = LoadStores(id);
+        var supportedCultures = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var store in stores)
+        {
+            foreach (var culture in store.Cultures)
+            {
+                if (!string.IsNullOrWhiteSpace(culture.Name))
+                {
+                    supportedCultures.Add(culture.Name);
+                }
+            }
+        }
+
+        var languages = _umbracoService.GetLanguages();
+
+        if (languages == null)
+        {
+            return Array.Empty<object>();
+        }
+
+        if (supportedCultures.Count == 0)
+        {
+            return languages.ToList();
+        }
+
+        return languages.Where(language => supportedCultures.Contains(language.IsoCode)).ToList();
+    }
+
+    [HttpGet]
     [Route("Stores")]
     [UmbracoUserAuthorize]
     public async Task<IEnumerable<IStore>> GetAllStores()
@@ -320,12 +354,11 @@ public class EkomBackofficeApiController : ControllerBase
     [HttpPost]
     [Route("coupon/{couponCode}/NumberAvailable/{numberAvailable}/discountId/{id:Guid}")]
     [UmbracoUserAuthorize]
-    public async Task<IActionResult> InsertCoupon(string couponCode, int numberAvailable, Guid id)
+    public async Task<IActionResult> InsertCoupon(string couponCode, int numberAvailable, Guid id, CancellationToken ct = default)
     {
         try
         {
-            await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, id);
-
+            await API.Order.Instance.InsertCouponCodeAsync(couponCode, numberAvailable, id, ct: ct);
             return Ok();
         }
         catch (Exception ex) when (!(ex is HttpResponseException))
@@ -368,12 +401,11 @@ public class EkomBackofficeApiController : ControllerBase
     [Route("coupon/discountId/{id:Guid}")]
     [UmbracoUserAuthorize]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
-    public async Task<IActionResult> GetCouponsForDiscount(Guid id, string query = "", int page = 1, int pageSize = 20)
+    public async Task<IActionResult> GetCouponsForDiscount(Guid id, string query = "", int page = 1, int pageSize = 20, CancellationToken ct = default)
     {
         try
         {
-            (List<CouponData> Data, int TotalPages) items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize);
-
+            (List<CouponData> Data, int TotalPages) items = await API.Order.Instance.GetCouponsForDiscountAsync(id, query, page, pageSize, ct);
             return Ok(items);
         }
         catch (Exception ex)

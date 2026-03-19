@@ -1,0 +1,21 @@
+meta {
+  name: Unsubscribe Profile
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/ekom/klaviyo/profile/unsubscribe
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "storeAlias": "Store",
+    "email": "gardar@vettvangur.is",
+    "channel": "Email",
+    "source": "test",
+    "timestampUtc": "2026-02-19T12:00:00Z"
+  }
+}

@@ -10,6 +10,7 @@ public interface IMetafieldService
     IEnumerable<MetafieldGrouped> Filters(IEnumerable<IProduct> products, bool filterable = true);
     IEnumerable<IProduct> FilterProducts(IEnumerable<IProduct> products, ProductQuery query);
     JArray SetMetafield(string json, Dictionary<string, List<MetafieldValues>> values);
+    JArray AppendMetafield(string? json, string metafieldAlias, IEnumerable<MetafieldValues> incomingValues);
     List<Dictionary<string, string>> GetMetaFieldValue(string json, int nodeId, string metafieldAlias);
     string GetMetaFieldValue(IProduct product, string metafieldAlias, string culture = "");
 }

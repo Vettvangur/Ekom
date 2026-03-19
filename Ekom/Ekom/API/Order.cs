@@ -55,14 +55,14 @@ public partial class Order
         _checkoutControllerService = checkoutControllerService;
     }
 
-    public IOrderInfo? GetOrder() => GetOrderAsync().Result;
+    public IOrderInfo? GetOrder() => GetOrderAsync().GetAwaiter().GetResult();
 
     /// <summary>
     /// Get order using cookie data and ekmRequest store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public Task<IOrderInfo?> GetOrderAsync()
+    public Task<IOrderInfo?> GetOrderAsync(CancellationToken ct = default)
     {
         IStore? store = _storeSvc.GetStoreFromCache();
 
@@ -71,24 +71,24 @@ public partial class Order
             return Task.FromResult<IOrderInfo?>(null);
         }
 
-        return GetOrderAsync(store.Alias);
+        return GetOrderAsync(store.Alias, ct);
     }
 
-    public IOrderInfo? GetOrder(string storeAlias) => GetOrderAsync(storeAlias).Result;
+    public IOrderInfo? GetOrder(string storeAlias) => GetOrderAsync(storeAlias).GetAwaiter().GetResult();
 
     /// <summary>
     /// Get order using cookie data and provided store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo?> GetOrderAsync(string? storeAlias)
+    public async Task<IOrderInfo?> GetOrderAsync(string? storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
-            return await GetOrderAsync();
+            return await GetOrderAsync(ct);
         }
 
-        return await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
+        return await _orderService.GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public partial class Order
     /// Do not use for cart or checkout display.
     /// </summary>
     /// <returns></returns>
-    public IOrderInfo? GetOrder(Guid uniqueId) => _orderService.GetOrderAsync(uniqueId).Result;
+    public IOrderInfo? GetOrder(Guid uniqueId) => _orderService.GetOrderAsync(uniqueId).GetAwaiter().GetResult();
 
     /// <summary>
     /// Get order regardless of status using <see cref="Guid"/>.
@@ -105,28 +105,28 @@ public partial class Order
     /// Do not use for cart or checkout display.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo?> GetOrderAsync(Guid uniqueId) => await _orderService.GetOrderAsync(uniqueId);
+    public async Task<IOrderInfo?> GetOrderAsync(Guid uniqueId, CancellationToken ct = default) => await _orderService.GetOrderAsync(uniqueId, ct);
 
     /// <summary>
     /// Get completed order using cookie data and provided store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public IOrderInfo GetCompletedOrder(string storeAlias) => GetCompletedOrderAsync(storeAlias).Result;
+    public IOrderInfo? GetCompletedOrder(string storeAlias) => GetCompletedOrderAsync(storeAlias).GetAwaiter().GetResult();
 
     /// <summary>
     /// Get completed order using cookie data and provided store.
     /// Retrieves from session if possible, otherwise from SQL.
     /// </summary>
     /// <returns></returns>
-    public async Task<IOrderInfo> GetCompletedOrderAsync(string storeAlias)
+    public async Task<IOrderInfo?> GetCompletedOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException($"The value for '{nameof(storeAlias)}' must be specified");
         }
 
-        return await _orderService.GetCompletedOrderAsync(storeAlias)
+        return await _orderService.GetCompletedOrderAsync(storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -138,6 +138,7 @@ public partial class Order
     /// <returns></returns>
     public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerUsernameAsync(
         string customerUsername,
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -150,7 +151,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerUsernameAsync(customerUsername, orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerUsernameAsync(customerUsername, ct, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -161,9 +162,11 @@ public partial class Order
     /// </summary>
     /// <param name="customerId"></param>
     /// <param name="orderStatuses"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerIdAsync(
         int customerId,
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -172,7 +175,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(customerId, orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(customerId, ct, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -182,8 +185,10 @@ public partial class Order
     /// Get all orders for logged in user with the given <see cref="OrderStatus"/>
     /// </summary>
     /// <param name="orderStatuses"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersByCustomerIdAsync(
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -192,7 +197,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersByCustomerIdAsync(ct, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -202,8 +207,10 @@ public partial class Order
     /// Get all orders with the given <see cref="OrderStatus"/>
     /// </summary>
     /// <param name="orderStatuses"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     public async Task<IEnumerable<IOrderInfo>> GetStatusOrdersAsync(
+        CancellationToken ct = default,
         params OrderStatus[] orderStatuses
     )
     {
@@ -212,7 +219,7 @@ public partial class Order
             throw new ArgumentException("At least one OrderStatus must be specified");
         }
 
-        List<OrderInfo> orders = await _orderService.GetStatusOrdersAsync(orderStatuses)
+        List<OrderInfo> orders = await _orderService.GetStatusOrdersAsync(ct, orderStatuses)
             .ConfigureAwait(false);
 
         return orders.Cast<IOrderInfo>();
@@ -224,11 +231,12 @@ public partial class Order
     /// </summary>
     /// <param name="customerId"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, string? storeAlias = null)
+    public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(int customerId, CancellationToken ct = default, string? storeAlias = null)
     {
 
-        return await _orderService.GetCompleteCustomerOrdersAsync(customerId, storeAlias)
+        return await _orderService.GetCompleteCustomerOrdersAsync(customerId, ct, storeAlias)
             .ConfigureAwait(false);
     }
 
@@ -237,10 +245,11 @@ public partial class Order
     /// </summary>
     /// <param name="userName"></param>
     /// <param name="storeAlias"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(string userName, string? storeAlias = null)
+    public async Task<IEnumerable<IOrderInfo>> GetCompleteCustomerOrdersAsync(string userName, CancellationToken ct = default, string? storeAlias = null)
     {
-        return await _orderService.GetCompleteCustomerOrdersAsync(userName, storeAlias)
+        return await _orderService.GetCompleteCustomerOrdersAsync(userName, ct, storeAlias)
             .ConfigureAwait(false);
     }
 
@@ -249,7 +258,7 @@ public partial class Order
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="OrderInfoNotFoundException"></exception>
-    public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings settings = null)
+    public async Task UpdateStatusAsync(string storeAlias, OrderStatus newStatus, ChangeOrderSettings? settings = null, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -259,7 +268,7 @@ public partial class Order
         OrderInfo? orderInfo;
         if (settings?.OrderInfo == null)
         {
-            orderInfo = await _orderService.GetOrderAsync(storeAlias).ConfigureAwait(false);
+            orderInfo = await _orderService.GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
         }
         else
         {
@@ -271,7 +280,7 @@ public partial class Order
             throw new OrderInfoNotFoundException();
         }
 
-        await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings)
+        await _orderService.ChangeOrderStatusAsync(orderInfo.UniqueId, newStatus, null, settings, ct = ct)
             .ConfigureAwait(false);
     }
 
@@ -279,23 +288,23 @@ public partial class Order
     /// 
     /// </summary>
     /// <exception cref="OrderInfoNotFoundException">OrderData not found for given OrderId</exception>
-    public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string userName = null, ChangeOrderSettings settings = null)
+    public async Task UpdateStatusAsync(OrderStatus newStatus, Guid orderId, string? userName = null, ChangeOrderSettings? settings = null, CancellationToken ct = default)
     {
-        await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings)
+        await _orderService.ChangeOrderStatusAsync(orderId, newStatus, userName, settings, ct)
             .ConfigureAwait(false);
     }
 
-    public Task<IOrderInfo> UpdateCurrencyAsync(string currency, Guid orderId, string storeAlias)
+    public Task<IOrderInfo?> UpdateCurrencyAsync(string currency, Guid orderId, string storeAlias, CancellationToken ct = default)
     {
-        return _orderService.ChangeCurrencyAsync(orderId, currency, storeAlias);
+        return _orderService.ChangeCurrencyAsync(orderId, currency, storeAlias, ct);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null)
+    public async Task<IOrderInfo> ReInitializeOrder(string storeAlias, OrderSettings? settings = null, CancellationToken ct = default)
     {
-        return await _orderService.ReInitializeOrderLinesAsync(storeAlias, settings)
+        return await _orderService.ReInitializeOrderLinesAsync(storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -306,6 +315,7 @@ public partial class Order
     /// <param name="quantity">The quantity.</param>
     /// <param name="storeAlias">The store alias.</param>
     /// <param name="settings">Ekom Order Api AddOrderLine optional configuration</param>
+    /// <param name="ct"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException">storeAlias</exception>
     /// <exception cref="OrderLineNegativeException">Can indicate a request to modify lines to negative values f.x. </exception>
@@ -316,7 +326,8 @@ public partial class Order
         Guid productId,
         decimal quantity,
         string storeAlias,
-        AddOrderSettings? settings = null
+        AddOrderSettings? settings = null,
+        CancellationToken ct = default
     )
     {
         if (string.IsNullOrEmpty(storeAlias))
@@ -338,7 +349,8 @@ public partial class Order
             productId,
             quantity,
             storeAlias,
-            settings: settings ?? new AddOrderSettings())
+            settings: settings ?? new AddOrderSettings(),
+            ct)
             .ConfigureAwait(false);
     }
 
@@ -347,14 +359,15 @@ public partial class Order
     /// </summary>
     public async Task<IOrderInfo> UpdateCustomerInformationAsync(
         Dictionary<string, string> form,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (form == null)
         {
             throw new ArgumentNullException(nameof(form));
         }
 
-        return await _orderService.UpdateCustomerInformationAsync(form, settings ?? null)
+        return await _orderService.UpdateCustomerInformationAsync(form, settings ?? null, ct: ct)
             .ConfigureAwait(false);
     }
 
@@ -365,14 +378,15 @@ public partial class Order
         Guid shippingProvider,
         string storeAlias,
         Dictionary<string, string> allData,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, settings)
+        return await _orderService.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -383,14 +397,15 @@ public partial class Order
         Guid paymentProvider,
         string storeAlias,
         Dictionary<string, string> allData,
-        OrderSettings? settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, settings)
+        return await _orderService.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -404,14 +419,15 @@ public partial class Order
     public async Task<IOrderInfo> RemoveOrderLineProductAsync(
         Guid productKey,
         string storeAlias,
-        RemoveOrderSettings settings = null)
+        RemoveOrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.RemoveOrderLineProductAsync(productKey, storeAlias, settings ?? null)
+        return await _orderService.RemoveOrderLineProductAsync(productKey, storeAlias, settings ?? null, ct)
             .ConfigureAwait(false);
     }
 
@@ -421,18 +437,20 @@ public partial class Order
     /// <param name="lineId"></param>
     /// <param name="storeAlias">The store alias.</param>
     /// <param name="settings">Ekom Order Api optional configuration</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     public async Task<IOrderInfo> RemoveOrderLineAsync(
         Guid lineId,
         string storeAlias,
-        OrderSettings settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
         }
 
-        return await _orderService.RemoveOrderLineAsync(lineId, storeAlias, settings)
+        return await _orderService.RemoveOrderLineAsync(lineId, storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 
@@ -443,6 +461,7 @@ public partial class Order
     /// <param name="quantity"></param>
     /// <param name="storeAlias"></param>
     /// <param name="settings"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <exception cref="OrderInfoNotFoundException"></exception>
     /// <exception cref="OrderLineNotFoundException"></exception>
     /// <exception cref="NotEnoughStockException"></exception>
@@ -451,24 +470,25 @@ public partial class Order
         Guid lineId,
         decimal quantity,
         string storeAlias,
-        OrderSettings settings = null)
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
     {
-        return await _orderService.UpdateOrderLineQuantityAsync(lineId, quantity, storeAlias, settings)
+        return await _orderService.UpdateOrderLineQuantityAsync(lineId, quantity, storeAlias, settings, ct)
             .ConfigureAwait(false);
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public async Task CompleteOrderAsync(Guid orderId)
+    public async Task CompleteOrderAsync(Guid orderId, CancellationToken ct = default)
     {
-        await _checkoutService.CompleteAsync(orderId)
+        await _checkoutService.CompleteAsync(orderId, ct)
             .ConfigureAwait(false);
     }
 
-    public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData order = null)
+    public async Task ClearCustomerOrderReferenceAsync(Guid orderId, OrderData? order = null, CancellationToken ct = default)
     {
-        order = order == null ? await _orderRepo.GetOrderAsync(orderId).ConfigureAwait(false) : order;
+        order = order == null ? await _orderRepo.GetOrderAsync(orderId, ct).ConfigureAwait(false) : order;
 
         _orderService.ClearCustomerOrderReference(order);
     }
@@ -479,7 +499,8 @@ public partial class Order
     /// <param name="hangfireJobs">Job IDs to add</param>
     /// <param name="orderInfo">orderInfo</param>
     /// <param name="storeAlias">storeAlias</param>
-    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null)
+    /// <param name="ct">CancellationToken</param>
+    public async Task AddHangfireJobsToOrderAsync(IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, string? storeAlias = null, CancellationToken ct = default)
     {
         if (hangfireJobs == null)
         {
@@ -499,7 +520,7 @@ public partial class Order
         {
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
-        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo)
+        await AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo, ct: ct)
             .ConfigureAwait(false);
     }
     /// <summary>
@@ -508,7 +529,8 @@ public partial class Order
     /// <param name="storeAlias"></param>
     /// <param name="hangfireJobs">Job IDs to add</param>
     /// <param name="orderInfo">orderInfo</param>
-    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo)
+    /// <param name="ct">CancellationToken</param>
+    public async Task AddHangfireJobsToOrderAsync(string storeAlias, IEnumerable<string> hangfireJobs, IOrderInfo orderInfo, CancellationToken ct = default)
     {
         if (hangfireJobs == null)
         {
@@ -523,7 +545,7 @@ public partial class Order
             throw new ArgumentNullException("OrderInfo is null", nameof(orderInfo));
         }
 
-        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo)
+        await _orderService.AddHangfireJobsToOrderAsync(storeAlias, hangfireJobs, orderInfo as OrderInfo, ct)
             .ConfigureAwait(false);
     }
 
@@ -531,14 +553,14 @@ public partial class Order
     /// Remove all hangfire job ids to <see cref="IOrderInfo"/> and db
     /// </summary>
     /// <param name="storeAlias"></param>
-    public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias)
+    public async Task RemoveHangfireJobsFromOrderAsync(string storeAlias, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias)
+        await _orderService.RemoveHangfireJobsToOrderAsync(storeAlias, ct)
             .ConfigureAwait(false);
     }
 
@@ -547,14 +569,14 @@ public partial class Order
     /// <param name="paymentRequest"></param>
     /// <param name="storeAlias"></param>
     /// <param name="orderId"></param>
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, Guid orderId, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", orderId, ct)
             .ConfigureAwait(false);
 
         return res;
@@ -566,8 +588,9 @@ public partial class Order
     /// <param name="paymentRequest"></param>
     /// <param name="storeAlias"></param>
     /// <param name="order"></param>
+    /// <param name="ct"></param>
     /// <returns></returns>
-    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order)
+    public async Task<CheckoutResponse> PayAsync(PaymentRequest paymentRequest, string storeAlias, IOrderInfo order, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(storeAlias))
         {
@@ -579,7 +602,7 @@ public partial class Order
             throw new ArgumentNullException(nameof(order));
         }
 
-        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", order)
+        CheckoutResponse res = await _checkoutControllerService.PayAsync(paymentRequest, "", order, ct)
             .ConfigureAwait(false);
 
         return res;

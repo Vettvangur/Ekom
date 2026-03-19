@@ -32,13 +32,13 @@ public partial class EkomOrderController : ControllerBase
     /// Add product to order, also for updating or setting quantity of orderlines
     /// </summary>
     /// <param name="request">Guid Key of product</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpPost]
     [Route("add")]
     [Consumes("application/json", "application/x-www-form-urlencoded", "multipart/form-data")]
-    [RequestSizeLimit(64_000)]
     [EnableRateLimiting("order-add")]
-    public async Task<IActionResult> AddToOrder([FromBody] OrderRequest request)
+    public async Task<IActionResult> AddToOrder([FromBody] OrderRequest request, CancellationToken ct = default)
     {
         if (request == null) return BadRequest();
 
@@ -46,8 +46,8 @@ public partial class EkomOrderController : ControllerBase
 
         Dictionary<string, string> customData = new(StringComparer.OrdinalIgnoreCase);
 
-        var ct = Request.ContentType ?? "";
-        var isJson = ct.Contains("application/json", StringComparison.OrdinalIgnoreCase);
+        var contentType = Request.ContentType ?? "";
+        var isJson = contentType.Contains("application/json", StringComparison.OrdinalIgnoreCase);
         var isForm = Request.HasFormContentType;
 
         if (!isJson && !isForm)
@@ -72,7 +72,7 @@ public partial class EkomOrderController : ControllerBase
             string body;
             using (var reader = new StreamReader(Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true))
             {
-                body = await reader.ReadToEndAsync();
+                body = await reader.ReadToEndAsync(ct);
             }
             Request.Body.Position = 0;
 
@@ -111,7 +111,7 @@ public partial class EkomOrderController : ControllerBase
                 OrderAction = request.Action ?? OrderAction.AddOrUpdate,
                 VariantKey = request.VariantId,
                 CustomData = customData
-            });
+            }, ct);
 
         return Ok(orderInfo);
 
@@ -134,9 +134,9 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("{orderId}")]
-    public async Task<IActionResult> GetOrder(Guid orderId)
+    public async Task<IActionResult> GetOrder(Guid orderId, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(orderId);
+        var order = await Order.Instance.GetOrderAsync(orderId, ct);
 
         if (order == null)
         {
@@ -153,9 +153,9 @@ public partial class EkomOrderController : ControllerBase
     [HttpGet]
     [Route("storeAlias/{storeAlias?}")]
     [Route("")]
-    public async Task<IActionResult> GetOrder([FromRoute] string? storeAlias = null)
+    public async Task<IActionResult> GetOrder([FromRoute] string? storeAlias = null, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(storeAlias);
+        var order = await Order.Instance.GetOrderAsync(storeAlias, ct);
 
         if (order == null)
         {
@@ -172,15 +172,15 @@ public partial class EkomOrderController : ControllerBase
     [HttpGet]
     [Route("relatedproducts/storeAlias/{storeAlias?}/{count:Int}")]
     [Route("relatedproducts/{count:Int}")]
-    public async Task<IActionResult> GetRelatedProducts([FromRoute] string? storeAlias = null, int count = 4)
+    public async Task<IActionResult> GetRelatedProducts([FromRoute] string? storeAlias = null, int count = 4, CancellationToken ct = default)
     {
-        var order = await Order.Instance.GetOrderAsync(storeAlias);
+        var order = await Order.Instance.GetOrderAsync(storeAlias, ct);
 
         if (order == null)
         {
             return NotFound();
         }
-
+        // todo async
         return Ok(order.RelatedProducts(count));
     }
 
@@ -252,7 +252,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("updatecustomer")]
-    public async Task<IActionResult> UpdateCustomerInformation()
+    public async Task<IActionResult> UpdateCustomerInformation(CancellationToken ct = default)
     {
         Request.EnableBuffering();
 
@@ -270,7 +270,7 @@ public partial class EkomOrderController : ControllerBase
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
             using var reader = new StreamReader(Request.Body);
-            var body = await reader.ReadToEndAsync();
+            var body = await reader.ReadToEndAsync(ct);
 
             if (!string.IsNullOrWhiteSpace(body))
             {
@@ -289,7 +289,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("Unsupported content type. Only application/json or form data is supported.");
         }
 
-        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData);
+        var orderInfo = await Order.Instance.UpdateCustomerInformationAsync(customerData, ct: ct);
         return Ok(orderInfo);
     }
 
@@ -300,16 +300,16 @@ public partial class EkomOrderController : ControllerBase
     [HttpPost]
     [Route("update/shippingprovider/")]
     [Route("updateshippingprovider")]
-    public async Task<IActionResult> UpdateShippingProvider()
+    public async Task<IActionResult> UpdateShippingProvider(CancellationToken ct = default)
     {
         Request.EnableBuffering();
 
-        var (shippingProvider, storeAlias, allData) = await ParseRequestAsync("ShippingProvider");
+        var (shippingProvider, storeAlias, allData) = await ParseRequestAsync("ShippingProvider", ct);
 
         if (shippingProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required ShippingProvider or storeAlias.");
 
-        var orderInfo = await Order.Instance.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData);
+        var orderInfo = await Order.Instance.UpdateShippingInformationAsync(shippingProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);
     }
 
@@ -320,20 +320,19 @@ public partial class EkomOrderController : ControllerBase
     [HttpPost]
     [Route("update/paymentprovider/")]
     [Route("updatepaymentprovider")]
-    public async Task<IActionResult> UpdatePaymentProvider()
+    public async Task<IActionResult> UpdatePaymentProvider(CancellationToken ct = default)
     {
         Request.EnableBuffering();
 
-        var (paymentProvider, storeAlias, allData) = await ParseRequestAsync("PaymentProvider");
-
+        var (paymentProvider, storeAlias, allData) = await ParseRequestAsync("PaymentProvider", ct);
         if (paymentProvider == Guid.Empty || string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing required PaymentProvider or storeAlias.");
 
-        var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData);
+        var orderInfo = await Order.Instance.UpdatePaymentInformationAsync(paymentProvider, storeAlias, allData, ct: ct);
         return Ok(orderInfo);
     }
 
-    private async Task<(Guid providerId, string? storeAlias, Dictionary<string, string> allData)> ParseRequestAsync(string providerKey)
+    private async Task<(Guid providerId, string? storeAlias, Dictionary<string, string> allData)> ParseRequestAsync(string providerKey, CancellationToken ct = default)
     {
         Guid providerId = Guid.Empty;
         string? storeAlias = null;
@@ -341,7 +340,7 @@ public partial class EkomOrderController : ControllerBase
 
         if (Request.HasFormContentType)
         {
-            var form = await Request.ReadFormAsync();
+            var form = await Request.ReadFormAsync(ct);
             var formDict = form.ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
 
             if (formDict.TryGetValue(providerKey, out var formProviderStr) &&
@@ -361,7 +360,7 @@ public partial class EkomOrderController : ControllerBase
         else if (Request.ContentType?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
         {
             using var reader = new StreamReader(Request.Body);
-            var body = await reader.ReadToEndAsync();
+            var body = await reader.ReadToEndAsync(ct);
 
             if (!string.IsNullOrWhiteSpace(body))
             {
@@ -407,10 +406,11 @@ public partial class EkomOrderController : ControllerBase
     /// Remove product from order/cart
     /// </summary>
     /// <param name="model"></param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpPost]
     [Route("removeorderline")]
-    public async Task<IActionResult> RemoveOrderLine([FromBody] OrderlineRequest model)
+    public async Task<IActionResult> RemoveOrderLine([FromBody] OrderlineRequest model, CancellationToken ct = default)
     {
         if (model == null)
         {
@@ -422,7 +422,7 @@ public partial class EkomOrderController : ControllerBase
             return BadRequest("StoreAlias is missing");
         }
 
-        IOrderInfo orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias);
+        IOrderInfo orderInfo = await Order.Instance.RemoveOrderLineAsync(model.lineId, model.storeAlias, ct: ct);
 
         return Ok(orderInfo);
     }
@@ -434,7 +434,7 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("Updateorderlinequantity")]
-    public async Task<IActionResult> UpdateOrderLineQuantity([FromBody] OrderlineRequest model)
+    public async Task<IActionResult> UpdateOrderLineQuantity([FromBody] OrderlineRequest model, CancellationToken ct = default)
     {
         if (model == null)
         {
@@ -447,7 +447,7 @@ public partial class EkomOrderController : ControllerBase
         }
 
 
-        IOrderInfo orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias);
+        IOrderInfo orderInfo = await Order.Instance.UpdateOrderlineQuantityAsync(model.lineId, model.quantity, model.storeAlias, ct: ct);
 
         return Ok(orderInfo);
     }
@@ -456,10 +456,11 @@ public partial class EkomOrderController : ControllerBase
     /// Update currency for current store
     /// </summary>
     /// <param name="currency">Currency value</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns></returns>
     [HttpPost]
     [Route("currency")]
-    public async Task<IActionResult?> ChangeCurrency(string currency)
+    public async Task<IActionResult?> ChangeCurrency(string currency, CancellationToken ct = default)
     {
         IStore? store = API.Store.Instance.GetStore();
 
@@ -468,11 +469,11 @@ public partial class EkomOrderController : ControllerBase
             return NotFound("Store not found.");
         }
 
-        IOrderInfo? orderInfo = await Order.Instance.GetOrderAsync(store.Alias);
+        IOrderInfo? orderInfo = await Order.Instance.GetOrderAsync(store.Alias, ct);
 
         if (orderInfo != null)
         {
-            orderInfo = await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias).ConfigureAwait(false);
+            orderInfo = await Order.Instance.UpdateCurrencyAsync(currency, orderInfo.UniqueId, store.Alias, ct).ConfigureAwait(false);
         }
 
         Response.Cookies.Append(
@@ -502,14 +503,15 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/apply")]
-    public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model)
+    [EnableRateLimiting("order-coupon")]
+    public async Task<IActionResult> ApplyCouponToOrder([FromBody] CouponRequest model, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(model.coupon))
         {
             return BadRequest("Coupon code can not be empty");
         }
 
-        if (await Order.Instance.ApplyCouponToOrderAsync(model.coupon, model.storeAlias))
+        if (await Order.Instance.ApplyCouponToOrderAsync(model.coupon, model.storeAlias, ct))
         {
             return Ok();
         }
@@ -523,9 +525,10 @@ public partial class EkomOrderController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("coupon/remove")]
-    public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias)
+    [EnableRateLimiting("order-coupon")]
+    public async Task<IActionResult> RemoveCouponFromOrder(string storeAlias, CancellationToken ct = default)
     {
-        await Order.Instance.RemoveCouponFromOrderAsync(storeAlias);
+        await Order.Instance.RemoveCouponFromOrderAsync(storeAlias, ct);
 
         return Ok();
     }

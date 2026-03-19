@@ -1,5 +1,5 @@
 using Ekom.Klaviyo.Mappers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -27,30 +27,30 @@ internal class KlaviyoProductController : ControllerBase
 
     [HttpGet("feed")]
     [Produces("application/json")]
-    public IActionResult GetProductFeed([FromQuery] string? storeAlias = null)
+    public async Task<IActionResult> GetProductFeedAsync([FromQuery] string? storeAlias = null, CancellationToken ct = default)
     {
-        if (!_opt.Enabled || !_opt.ProductFeed.Enabled)
+        if (!_opt.Enabled || !_opt.Catalog.Enabled || _opt.Catalog.SyncMode != KlaviyoCatalogSyncMode.FeedPull)
             return BadRequest("Klaviyo integration is disabled.");
 
-        if (!IsAuthorized(Request, _opt.ProductFeed.Username, _opt.ProductFeed.Password))
+        if (!IsAuthorized(Request, _opt.Catalog.Username ?? "", _opt.Catalog.Password ?? ""))
         {
             return Unauthorized();
         }
 
         // Default store if not provided
-        storeAlias ??= _opt.Stores?.FirstOrDefault();
+        storeAlias ??= _opt.Stores?.FirstOrDefault()?.Alias;
 
         if (string.IsNullOrWhiteSpace(storeAlias))
             return BadRequest("Missing storeAlias and no default store is configured.");
 
         var cacheKey = $"klaviyo:feed:v1:{storeAlias}";
 
-        var json = _cache.GetOrCreate(cacheKey, entry =>
+        var json = await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60);
             entry.Priority = CacheItemPriority.High;
 
-            var productsResponse = Ekom.API.Catalog.Instance.GetAllProducts(storeAlias);
+            var productsResponse = await API.Catalog.Instance.GetAllProductsAsync(storeAlias, ct: ct);
             var products = productsResponse?.Products;
 
             var feed = products is null
@@ -67,7 +67,7 @@ internal class KlaviyoProductController : ControllerBase
 
         Response.Headers.CacheControl = "private, max-age=3600";
 
-        if (!string.IsNullOrEmpty(_opt.ProductFeed.Username) || !string.IsNullOrEmpty(_opt.ProductFeed.Password))
+        if (!string.IsNullOrEmpty(_opt.Catalog.Username) || !string.IsNullOrEmpty(_opt.Catalog.Password))
         {
             Response.Headers.Vary = "Authorization";
         }

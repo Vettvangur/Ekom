@@ -1,13 +1,12 @@
 using Ekom.Interfaces;
 using Ekom.Models;
 
-namespace Ekom.Factories
+namespace Ekom.Factories;
+
+class ZoneFactory : IObjectFactory<IZone>
 {
-    class ZoneFactory : IObjectFactory<IZone>
+    public IZone Create(UmbracoContent item)
     {
-        public IZone Create(UmbracoContent item)
-        {
-            return new Zone(item);
-        }
+        return new Zone(item);
     }
 }

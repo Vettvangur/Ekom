@@ -1,4 +1,4 @@
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 
 namespace Ekom.Klaviyo.Enrichers.ProductEnricher;
 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -45,7 +45,7 @@
 
     <ItemGroup>
         <!-- Package icon -->
-        <None Include="..\..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
+        <None Include="..\..\VV_Logo.png" Pack="true" PackagePath="images\" />
     </ItemGroup>
 
     <ItemGroup>

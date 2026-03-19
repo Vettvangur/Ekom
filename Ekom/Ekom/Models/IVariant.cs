@@ -42,6 +42,9 @@ public interface IVariant : IPerStoreNodeEntity
     /// <summary>
     /// Parent product
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IProduct? Product { get; }
     /// <summary>
     /// Parent product Id
@@ -95,6 +98,9 @@ public interface IVariant : IPerStoreNodeEntity
     /// <summary>
     /// Variant group <see cref="IVariant"/> belongs to
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IVariantGroup VariantGroup { get; }
 
     /// <summary>

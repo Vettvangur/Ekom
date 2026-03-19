@@ -10,14 +10,31 @@ public class CurrencyModel
     {
         get
         {
-            return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).CurrencySymbol : string.Empty;
+            return TryGetRegionInfo()?.CurrencySymbol ?? string.Empty;
         }
     }
     public string ISOCurrencySymbol
     {
         get
         {
-            return !string.IsNullOrEmpty(CurrencyValue) ? new RegionInfo(CurrencyValue).ISOCurrencySymbol : string.Empty;
+            return TryGetRegionInfo()?.ISOCurrencySymbol ?? string.Empty;
+        }
+    }
+
+    private RegionInfo? TryGetRegionInfo()
+    {
+        if (string.IsNullOrWhiteSpace(CurrencyValue))
+        {
+            return null;
+        }
+
+        try
+        {
+            return new RegionInfo(CurrencyValue);
+        }
+        catch (ArgumentException)
+        {
+            return null;
         }
     }
 }

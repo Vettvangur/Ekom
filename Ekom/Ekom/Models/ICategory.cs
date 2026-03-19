@@ -12,13 +12,25 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     ProductResponse Products(ProductQuery? query = null);
 
     /// <summary>
+    /// All direct child products of category. (No descendants) Async
+    /// </summary>
+    Task<ProductResponse> ProductsAsync(ProductQuery? query = null, CancellationToken ct = default);
+
+    /// <summary>
     /// All descendant products of category, this includes child products of sub-categories
     /// </summary>
     ProductResponse ProductsRecursive(ProductQuery? query = null);
 
     /// <summary>
+    /// All descendant products of category, this includes child products of sub-categories Async
+    /// </summary>
+    Task<ProductResponse> ProductsRecursiveAsync(ProductQuery? query = null, CancellationToken ct = default);
+    /// <summary>
     /// Our eldest ancestor category
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     ICategory RootCategory { get; }
     /// <summary>
     /// All direct child categories
@@ -27,16 +39,22 @@ public interface ICategory : INodeEntityWithUrl, IPerStoreNodeEntity
     /// <summary>
     /// All descendant categories, includes grandchild categories
     /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<ICategory> SubCategoriesRecursive { get; }
 
     /// <summary>
     /// All parent categories, grandparent categories and so on.
     /// </summary>
     /// <returns></returns>
+    [System.Text.Json.Serialization.JsonIgnore]
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Xml.Serialization.XmlIgnore]
     IEnumerable<ICategory> Ancestors { get; }
 
     IEnumerable<MetafieldGrouped> Filters(bool filterable = true);
-
+    Task<IEnumerable<MetafieldGrouped>> FiltersAsync(bool filterable = true, CancellationToken ct = default);
     bool VirtualUrl { get; }
 
     bool HasProducts();

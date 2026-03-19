@@ -1,4 +1,7 @@
+using Ekom.Algolia;
 using Ekom.Klaviyo;
+using Ekom.Klaviyo.Enrichers.OrderEnricher;
+using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Services;
 using Newtonsoft.Json.Serialization;
 
@@ -45,7 +48,7 @@ public class Startup
                 opts.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
             });
         
-#pragma warning disable IDE0022 // Use expression body for methods
+
         services.AddUmbraco(_env, _config)
             .AddBackOffice()
             .AddWebsite()
@@ -54,7 +57,7 @@ public class Startup
             .AddMembersIdentity()
             //.AddCdnMediaUrlProvider() // (optional) add the CDN Media UrlProvider
             .Build();
-#pragma warning restore IDE0022 // Use expression body for methods
+
 
         //services.AddApplicationInsightsTelemetry(_config["ApplicationInsights:ConnectionString"]);
         
@@ -67,7 +70,11 @@ public class Startup
         });
 
 
+        services.AddSingleton<IKlaviyoPlacedOrderEnricher, CustomPlacedOrderEnriching>();
+        services.AddSingleton<IKlaviyoTrackingEnricher, CustomTrackingEnricher>();
+
         services.AddKlaviyo();
+        services.AddAlgolia();
         //services.AddEkomValitorPay(_config);
     }
 
@@ -96,15 +103,6 @@ public class Startup
             app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
-
-        app.Use(async (context, next) =>
-        {
-            context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-            context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-            context.Response.Headers.Add("X-Frame-Options", "sameorigin");
-            context.Response.Headers.Add("Referrer-Policy", "origin-when-cross-origin, strict-origin-when-cross-origin");
-            await next.Invoke();
-        });
 
         app.UseUmbraco()
             .WithMiddleware(u =>

@@ -1,0 +1,38 @@
+meta {
+  name: Upsert And Subscribe Profile
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/ekom/klaviyo/profile/upsert-and-subscribe
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "storeAlias": "Store",
+    "email": "test2@example.com",
+    "phoneNumber": "+3548661234",
+    "externalId": null,
+    "klaviyoProfileId": null,
+    "fullName": "Jane Doe2",
+    "firstName": null,
+    "lastName": null,
+    "address": "Street 1",
+    "address2": "",
+    "zipCode": "101",
+    "city": "Reykjavik",
+    "country": "IS",
+    "organisation": "",
+    "customProperties": {
+      "note": "test"
+    },
+    "listId": "SXAp9a",
+    "consentEmail": "test2@example.com",
+    "channel": "Email",
+    "source": "test",
+    "timestampUtc": "2026-02-19T12:00:00Z"
+  }
+}

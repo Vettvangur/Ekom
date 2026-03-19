@@ -53,19 +53,22 @@ class EnsureTablesExist : IComponent
     private readonly IKeyValueService keyValueService;
     private readonly ILogger logger;
     private readonly IRuntimeState _runtimeState;
+    private readonly DatabaseService _dbService;
 
     public EnsureTablesExist(
         IScopeProvider scopeProvider,
         IKeyValueService keyValueService,
         ILogger<EnsureTablesExist> logger,
         IMigrationPlanExecutor migrationPlanExecutor,
-        IRuntimeState runtimeState)
+        IRuntimeState runtimeState,
+        DatabaseService dbService)
     {
         this.scopeProvider = scopeProvider;
         this.keyValueService = keyValueService;
         this.logger = logger;
         _migrationPlanExecutor = migrationPlanExecutor;
         _runtimeState = runtimeState;
+        _dbService = dbService;
     }
 
     public void Initialize()
@@ -89,6 +92,10 @@ class EnsureTablesExist : IComponent
 
             // Mark as complete so it never runs again
             keyValueService.SetValue("Umbraco.Core.Upgrader.State+Ekom", "1");
+        }
+        else
+        {
+            _dbService.CreateTables();
         }
 
         logger.LogDebug("Done");

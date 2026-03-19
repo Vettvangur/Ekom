@@ -1,10 +1,10 @@
 using Ekom.Klaviyo.Helpers;
-using Ekom.Klaviyo.Models;
+using Ekom.Klaviyo.Models.Catalog;
 using Ekom.Models;
 
 namespace Ekom.Klaviyo.Mappers;
 
-internal static class ProductMapper
+public static class ProductMapper
 {
     public static KlaviyoProductItem ToKlaviyoCatalogItem(this IProduct product, bool isPublished, string host)
     {

@@ -23,4 +23,19 @@ public class CustomProductFilterService : ProductFilterService
         // Optionally call the base method if you want the default filtering logic
         return base.ApplyFilters(products);
     }
+
+    public override Task<IEnumerable<IProduct>> ApplyFiltersAsync(IEnumerable<IProduct> products, ProductQuery? query = null, ICategory? category = null, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        //var isAdmin = true;
+
+        //if (isAdmin)
+        //{
+        //    return Task.FromResult(products.Where(x => x.SKU != "mini-sketchbooks"));
+        //}
+
+        // Optionally call the base method if you want the default filtering logic
+        return base.ApplyFiltersAsync(products, query, category, ct);
+    }
 }

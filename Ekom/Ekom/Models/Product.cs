@@ -1,12 +1,12 @@
 using Ekom.API;
 using Ekom.Cache;
 using Ekom.Models.Umbraco;
-using Ekom.Payments;
 using Ekom.Services;
 using Ekom.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace Ekom.Models;
@@ -16,13 +16,13 @@ namespace Ekom.Models;
 /// </summary>
 public class Product : PerStoreNodeEntity, IProduct
 {
-    private IPerStoreCache<IVariant> __variantCache;
-    private IPerStoreCache<IVariant> _variantCache =>
-        __variantCache ?? (__variantCache = Configuration.Resolver.GetService<IPerStoreCache<IVariant>>());
+    private IPerStoreIndexedCache<IVariant> __variantCache;
+    private IPerStoreIndexedCache<IVariant> _variantCache =>
+        __variantCache ?? (__variantCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IVariant>>());
 
-    private IPerStoreCache<IVariantGroup> __variantGroupCache;
-    private IPerStoreCache<IVariantGroup> _variantGroupCache =>
-        __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreCache<IVariantGroup>>());
+    private IPerStoreIndexedCache<IVariantGroup> __variantGroupCache;
+    private IPerStoreIndexedCache<IVariantGroup> _variantGroupCache =>
+        __variantGroupCache ?? (__variantGroupCache = Configuration.Resolver.GetService<IPerStoreIndexedCache<IVariantGroup>>());
 
     private readonly ConcurrentDictionary<string, Lazy<object>> _cache = new();
 
@@ -198,8 +198,7 @@ public class Product : PerStoreNodeEntity, IProduct
                     if (primaryVariantGroup == null)
                         return null;
 
-                    // safe access — don't use primaryVariantGroup again in here
-                    var variants = primaryVariantGroup.Variants.ToList(); // force evaluate once
+                    var variants = primaryVariantGroup.Variants.ToList();
 
                     var primaryVariant = variants.FirstOrDefault(v => v.Available)
                                         ?? variants.FirstOrDefault();
@@ -417,17 +416,14 @@ public class Product : PerStoreNodeEntity, IProduct
             var storeAlias = Store.Alias;
             var productId = Id;
 
-            if (_variantGroupCache.Cache.TryGetValue(storeAlias, out var groupDict))
-            {
-                return groupDict.Values
-                    .Where(g => g.ProductId == productId) // ← this line likely triggers the loop
-                    .OrderBy(g => g.SortOrder)
-                    .ToList();
-            }
+            var vg = _variantGroupCache as Ekom.Cache.VariantGroupCache
+                ?? throw new InvalidOperationException("Expected _variantGroupCache to be VariantGroupCache (product index required).");
 
-            return Enumerable.Empty<IVariantGroup>();
+            // materialize once
+            return vg.GetByProductId(storeAlias, productId).ToList();
         }
     }
+
 
     /// <summary>
     /// All variants belonging to product.
@@ -442,25 +438,21 @@ public class Product : PerStoreNodeEntity, IProduct
             var storeAlias = Store.Alias;
             var productId = Id;
 
-            var lazy = _cache.GetOrAdd($"AllVariants_{productId}", _ =>
+            var lazy = _cache.GetOrAdd($"AllVariants_{storeAlias}_{productId}", _ =>
                 new Lazy<object>(() =>
                 {
-                    if (_variantCache.Cache.TryGetValue(storeAlias, out var variantDict))
-                    {
-                        return (from pair in variantDict
-                                let variant = pair.Value
-                                where variant.ProductId == productId
-                                select variant).ToList();
-                    }
+                    var vc = _variantCache as Ekom.Cache.VariantCache
+                        ?? throw new InvalidOperationException("Expected _variantCache to be VariantCache (product index required).");
 
-                    return Enumerable.Empty<IVariant>();
+                    // Materialize once so callers don't re-enumerate
+                    return vc.GetByProductId(storeAlias, productId).ToList();
                 }, LazyThreadSafetyMode.ExecutionAndPublication)
             );
 
             return (IEnumerable<IVariant>)((Lazy<object>)lazy).Value;
         }
-
     }
+
 
 
     /// <summary>
@@ -519,34 +511,63 @@ public class Product : PerStoreNodeEntity, IProduct
 
     private void PopulateCategories()
     {
-        int categoryId = ParentId;
+        // Dedupe by category Id (cheap, stable)
+        var seen = new HashSet<int>();
 
-        string categoryField = Properties.ContainsKey("categories") ?
-                            GetValue("categories") : "";
-
-        ICategory? primaryCategory = Catalog.Instance.GetCategory(categoryId, Store.Alias);
-
-        if (primaryCategory != null)
+        void AddCategory(ICategory? cat)
         {
-            categories.Add(primaryCategory);
+            if (cat == null) return;
+            if (seen.Add(cat.Id))
+                categories.Add(cat);
         }
 
-        if (!string.IsNullOrEmpty(categoryField))
+        // Primary category from ParentId
+        AddCategory(Catalog.Instance.GetCategory(ParentId, Store.Alias));
+
+        // Extra categories from "categories" field
+        if (!Properties.ContainsKey("categories"))
+            return;
+
+        var categoryField = GetValue("categories");
+        if (string.IsNullOrWhiteSpace(categoryField))
+            return;
+
+        ReadOnlySpan<char> span = categoryField.AsSpan();
+        int pos = 0;
+
+        while (pos < span.Length)
         {
-            string[] categoryIds = categoryField.Split(',');
+            // skip separators/whitespace
+            while (pos < span.Length && (span[pos] == ',' || char.IsWhiteSpace(span[pos])))
+                pos++;
 
-            foreach (string catId in categoryIds)
+            if (pos >= span.Length)
+                break;
+
+            int start = pos;
+
+            // read until comma
+            while (pos < span.Length && span[pos] != ',')
+                pos++;
+
+            var token = span.Slice(start, pos - start).Trim();
+
+            if (token.Length == 0)
+                continue;
+
+            // Try int first (fast path)
+            if (int.TryParse(token, out var id))
             {
-                ICategory? categoryItem
-                    = Catalog.Instance.GetCategory(catId, Store.Alias);
-
-                if (categoryItem != null && !categories.Contains(categoryItem))
-                {
-                    categories.Add(categoryItem);
-                }
+                AddCategory(Catalog.Instance.GetCategory(id, Store.Alias));
+            }
+            else
+            {
+                // Fallback: maybe guid/udi/string format used elsewhere
+                AddCategory(Catalog.Instance.GetCategory(token.ToString(), Store.Alias));
             }
         }
     }
+
 
     private void PopulateCategoryAncestors()
     {
@@ -569,78 +590,94 @@ public class Product : PerStoreNodeEntity, IProduct
 
     public IEnumerable<IProduct> RelatedProducts(int count = 4)
     {
-        List<IProduct> relatedProducts = new List<IProduct>();
+        return RelatedProductsAsync(count).GetAwaiter().GetResult();
+    }
 
+    public async Task<IReadOnlyList<IProduct>> RelatedProductsAsync(int count = 4, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        if (count <= 0) return Array.Empty<IProduct>();
+
+        // Prevent duplicates (in case related + category overlap)
+        var seen = new HashSet<Guid>();
+        var result = new List<IProduct>(capacity: count);
+
+        // Always exclude current product
+        seen.Add(Key);
+
+        // 1) Related products field
         if (Properties.HasPropertyValue("relatedProducts"))
         {
-            string val = GetValue("relatedProducts");
-
-            if (!string.IsNullOrEmpty(val))
+            var val = GetValue("relatedProducts");
+            if (!string.IsNullOrWhiteSpace(val))
             {
                 UtilityService.ConvertUdisToGuids(val, out IEnumerable<Guid> guids);
 
-                foreach (Guid id in guids.Where(x => x != Key).Take(count))
+                foreach (var guid in guids)
                 {
-                    IProduct? product = Catalog.Instance.GetProduct(id, Store.Alias);
+                    ct.ThrowIfCancellationRequested();
+                    if (result.Count >= count) break;
+                    if (!seen.Add(guid)) continue;
 
-                    if (product != null && product.Key != Key)
-                    {
-                        relatedProducts.Add(product);
-                    }
+                    // async fetch so async product events can run
+                    var p = await Catalog.Instance.GetProductAsync(guid, Store.Alias, raiseEvent: true, ct: ct);
+                    if (p is null) continue;
+
+                    if (p.Key == Key || p.Id == Id) continue;
+
+                    result.Add(p);
                 }
             }
         }
 
-        if (!relatedProducts.Any() || relatedProducts.Count < 4)
+        // 2) Fill from category (recursive)
+        if (result.Count < count)
         {
-            ICategory? category = Catalog.Instance.GetCategory(ParentId);
+            ct.ThrowIfCancellationRequested();
+
+            // async fetch so async category events can run
+            var category = await Catalog.Instance.GetCategoryAsync(ParentId, Store.Alias, global: false, raiseEvent: true, ct: ct);
 
             if (category != null)
             {
-                relatedProducts.AddRange(category.ProductsRecursive().Products.Where(x => x.Id != Id).Take(count - relatedProducts.Count).ToList());
-            }
+                var needed = count - result.Count;
 
+                // async recursive so ProductResponse pipeline is async-first
+                var pr = await category.ProductsRecursiveAsync(query: null, ct: ct);
+
+                foreach (var p in pr.Products)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (needed == 0) break;
+                    if (p is null) continue;
+
+                    // Skip current + duplicates
+                    if (p.Id == Id) continue;
+                    if (!seen.Add(p.Key)) continue;
+
+                    result.Add(p);
+                    needed--;
+                }
+            }
         }
 
-        return relatedProducts;
+        return result;
     }
 
     private IPrice CreateOriginalPrice()
     {
-        CurrencyModel storeCurrency = Store.Currency;
-        decimal storeVat = Store.Vat;
-        bool storeVatIncluded = Store.VatIncludedInPrice;
+        var storeCurrency = Store.Currency;
 
-        string originalPrice = _priceValue;
+        var vat = Vat;
+        if (vat <= 0) vat = Store.Vat;
 
-        if (string.IsNullOrEmpty(originalPrice))
-        {
-            return new Price(0, storeCurrency, storeVat, storeVatIncluded);
-        }
+        var storeVatIncluded = Store.VatIncludedInPrice;
 
-        if (decimal.TryParse(originalPrice, out decimal _orgPrice))
-        {
-            return new Price(_orgPrice, storeCurrency, storeVat, storeVatIncluded);
-        }
+        var s = _priceValue;
+        if (s.TryGetOriginalPriceValue(Store?.Alias, out var value))
+            return new Price(value, storeCurrency, vat, storeVatIncluded);
 
-        if (originalPrice.IsJson())
-        {
-            try
-            {
-                var orgPrice = JsonConvert.DeserializeObject<List<CurrencyPrice>>(originalPrice);
-                decimal? val = orgPrice?.FirstOrDefault()?.Price;
-
-                if (val.HasValue)
-                {
-                    return new Price(val.Value, storeCurrency, storeVat, storeVatIncluded);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to parse original price JSON for product {Id} value: {originalPrice}", ex);
-            }
-        }
-
-        return new Price(0, storeCurrency, storeVat, storeVatIncluded);
+        return new Price(0, storeCurrency, vat, storeVatIncluded);
     }
+
 }

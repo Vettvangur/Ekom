@@ -344,14 +344,21 @@ class UrlService : IUrlService
                 return match.Url;
         }
 
-        // Match against Umbraco request path
-        if (pubReq?.AbsolutePathDecoded is string absolutePath)
+        // Match against Umbraco request path (recursive parent prefixes)
+        if (pubReq?.AbsolutePathDecoded is string absolutePathRaw)
         {
-            var match = urlsWithContext.FirstOrDefault(x =>
-                x.Culture == culture && x.Url.InvariantContains(absolutePath));
+            var absolutePath = NormalizePath(absolutePathRaw);
 
-            if (match != null)
-                return match.Url;
+            // Prefer the most specific parent prefix first (deepest path wins)
+            foreach (var prefix in BuildParentPrefixes(absolutePath))
+            {
+                var match = urlsWithContext.FirstOrDefault(x =>
+                    x.Culture == culture &&
+                    ContainsPathPrefix(NormalizePath(x.Url), prefix));
+
+                if (match != null)
+                    return match.Url;
+            }
         }
 
         // Fallback: any URL with matching culture
@@ -376,7 +383,59 @@ class UrlService : IUrlService
         return urls.FirstOrDefault();
     }
 
-    public static string CombineUrlParts(params string[] parts)
+
+    private static string NormalizePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return "/";
+
+        path = path.Trim();
+
+        // Remove query/fragment
+        var cut = path.IndexOfAny(['?', '#']);
+        if (cut >= 0) path = path[..cut];
+
+        // Ensure leading slash
+        if (!path.StartsWith("/")) path = "/" + path;
+
+        // Collapse multiple slashes (optional but useful)
+        while (path.Contains("//", StringComparison.Ordinal))
+            path = path.Replace("//", "/", StringComparison.Ordinal);
+
+        // Ensure trailing slash (makes segment matching easier)
+        if (!path.EndsWith("/")) path += "/";
+
+        return path;
+    }
+
+    private static IEnumerable<string> BuildParentPrefixes(string normalizedAbsolutePath)
+    {
+        yield return normalizedAbsolutePath;
+
+        var current = normalizedAbsolutePath.TrimEnd('/'); 
+        while (true)
+        {
+            var lastSlash = current.LastIndexOf('/');
+            if (lastSlash <= 0) break;
+
+            current = current[..lastSlash];
+            yield return current + "/"; 
+        }
+
+        yield return "/";
+    }
+
+    /// <summary>
+    /// True if url contains prefix as a path segment prefix, not just a random substring.
+    /// Both inputs should be normalized with trailing '/'.
+    /// </summary>
+    private static bool ContainsPathPrefix(string urlNormalized, string prefixNormalized)
+    {
+        // simplest: just Contains on normalized strings with trailing '/'
+        return urlNormalized.Contains(prefixNormalized, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string CombineUrlParts(params string[] parts)
     {
         var cleanedParts = parts
             .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/")

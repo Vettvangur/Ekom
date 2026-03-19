@@ -6,89 +6,134 @@ public class Customer
 {
     public string Name
     {
-
         get
         {
-            return (string.IsNullOrEmpty(Properties.GetValue("customerName")) ? (FirstName + " " + LastName) : Properties.GetValue("customerName"))?.Trim();
+            var fullName = Value("customerName");
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+                return fullName.Trim();
+
+            return $"{FirstName} {LastName}".Trim();
         }
     }
+
     public string FirstName
     {
+        get { 
+            var firstName = Value("customerFirstName");
 
-        get
-        {
-            return Properties.GetValue("customerFirstName");
+            if (!string.IsNullOrWhiteSpace(firstName))
+            {
+                return firstName.Trim();
+            }
+
+            // Fallback: derive from Name
+            var fullName = Value("customerName");
+            if (string.IsNullOrWhiteSpace(fullName))
+                return "";
+
+            var parts = fullName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length > 0 ? parts[0] : "";
+
         }
     }
+
     public string LastName
     {
-
         get
         {
-            return Properties.GetValue("customerLastName");
+            var lastName = Value("customerLastName");
+
+            if (!string.IsNullOrWhiteSpace(lastName))
+                return lastName.Trim();
+
+            // Fallback: derive from Name
+            var fullName = Value("customerName");
+            if (string.IsNullOrWhiteSpace(fullName))
+                return "";
+
+            var parts = fullName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            // Single-word name → no last name
+            if (parts.Length < 2)
+                return "";
+
+            // Everything except first word is treated as last name
+            return string.Join(' ', parts.Skip(1));
         }
     }
+
     public string Email
     {
         get
         {
-            return Properties.GetValue("customerEmail");
+            return Value("customerEmail");
         }
     }
     public string Address
     {
         get
         {
-            return Properties.GetValue("customerAddress");
+            return Value("customerAddress");
         }
     }
     public string City
     {
         get
         {
-            return Properties.GetValue("customerCity");
+            return Value("customerCity");
         }
     }
     public string Apartment
     {
         get
         {
-            return Properties.GetValue("customerApartment");
+            return Value("customerApartment");
         }
     }
     public string Country
     {
         get
         {
-            return Properties.GetValue("customerCountry");
+            return Value("customerCountry");
         }
     }
     public string Region
     {
         get
         {
-            return Properties.GetValue("customerRegion");
+            return Value("customerRegion");
+        }
+    }
+    public string State
+    {
+        get
+        {
+            return Value("customerState");
         }
     }
     public string Company
     {
         get
         {
-            return Properties.GetValue("customerCompany");
+            return Value("customerCompany");
         }
     }
     public string ZipCode
     {
         get
         {
-            return Properties.GetValue("customerZipCode");
+            return Value("customerZipCode");
         }
     }
     public string Phone
     {
         get
         {
-            return Properties.GetValue("customerPhone");
+            return Value("customerPhone");
         }
     }
     public int UserId { get; set; }

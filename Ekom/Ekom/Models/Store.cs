@@ -61,7 +61,9 @@ public class Store : NodeEntity, IStore
     }
 
     public virtual string Url { get; }
-    public virtual CultureInfo Culture
+
+
+    public virtual CultureInfoDto Culture
     {
         get
         {
@@ -71,7 +73,7 @@ public class Store : NodeEntity, IStore
 
             if (culture != null)
             {
-                CultureInfo? c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
+                var c = Cultures.FirstOrDefault(x => x.Name == culture.Name);
 
                 if (c != null)
                 {
@@ -79,10 +81,11 @@ public class Store : NodeEntity, IStore
                 }
             }
 
-            return Cultures.FirstOrDefault();
+            return Cultures.FirstOrDefault() ?? new CultureInfoDto() {  Name = "en-US" };
         }
     }
-    public virtual List<CultureInfo> Cultures
+
+    public virtual List<CultureInfoDto> Cultures
     {
         get
         {
@@ -92,14 +95,15 @@ public class Store : NodeEntity, IStore
 
                 ci = ci.TwoLetterISOLanguageName == "is" ? Configuration.IsCultureInfo : ci;
 
-                return new List<CultureInfo>() { ci };
+                return new List<CultureInfoDto>() { CultureInfoDto.From(ci) };
             }
 
             string cultures = Properties["cultures"];
 
-            return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => new CultureInfo(x)).ToList();
+            return cultures.Split(["\r\n", "\n", "\r"], StringSplitOptions.None).Select(x => CultureInfoDto.From(new CultureInfo(x))).ToList();
         }
     }
+
     public virtual CurrencyModel Currency
     {
         get
@@ -107,6 +111,7 @@ public class Store : NodeEntity, IStore
             return GetCurrentCurrency();
         }
     }
+
     public virtual bool UserBasket
     {
         get
@@ -175,7 +180,7 @@ public class Store : NodeEntity, IStore
     private List<CurrencyModel> CreateDefaultCurrencyList(string currency)
     {
         // Use the currency value if available, otherwise default to Culture
-        string currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.ToString();
+        string currencyValue = !string.IsNullOrEmpty(currency) ? currency : Culture.Name;
 
         return new List<CurrencyModel>
         {
@@ -210,8 +215,17 @@ public class Store : NodeEntity, IStore
         {
             string storeRootNodeUdi = item.GetValue("storeRootNode");
 
-            Url = nodeService.GetUrl(storeRootNodeUdi);
-            StoreRootNode = nodeService.NodeById(storeRootNodeUdi);
+            Url = nodeService?.GetUrl(storeRootNodeUdi) ?? "";
+            StoreRootNode = nodeService?.NodeById(storeRootNodeUdi);
+
+            if (StoreRootNode == null)
+            {
+                throw new InvalidOperationException("Store root node could not be found for store: " + Alias + " storeRootNodeUdi: " + storeRootNodeUdi);
+            }
+            if (string.IsNullOrEmpty(Url))
+            {
+                throw new InvalidOperationException("Store root node URL could not be resolved for store: " + Alias + " storeRootNodeUdi: " + storeRootNodeUdi);
+            }
         }
 
         if (storeDomainCache.Cache.Any(x => x.Value.RootContentId == StoreRootNodeId))

@@ -21,13 +21,13 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
-        run: dotnet restore "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj"
+      - name: Restore (force NuGet references)
+        run: dotnet restore "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -p:UseProjectReferences=false
 
-      - name: Build (Release)
-        run: dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore
+      - name: Build (Release, force NuGet references)
+        run: dotnet build "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-restore -p:UseProjectReferences=false
 
-      - name: Pack Ekom.Klaviyo
+      - name: Pack Ekom.Klaviyo (force NuGet references)
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -45,7 +45,12 @@ jobs:
 
           Write-Host "Packing Ekom.Klaviyo with PackageVersion=$version (tag $tag)"
 
-          dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" -c Release --no-build -o artifacts -p:PackageVersion=$version
+          dotnet pack "Plugins/Ekom.Klaviyo/Ekom.Klaviyo.csproj" `
+            -c Release `
+            --no-build `
+            -o artifacts `
+            -p:PackageVersion=$version `
+            -p:UseProjectReferences=false
 
           Get-ChildItem -Path artifacts -Filter "Ekom.Klaviyo*.nupkg" -File | Format-Table Name,Length
 

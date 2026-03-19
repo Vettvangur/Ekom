@@ -31,19 +31,40 @@ public class ProductQuery : ProductQueryBase
             (query.TryGetValue("q", out Microsoft.Extensions.Primitives.StringValues sq) ? sq.FirstOrDefault() : string.Empty);
 
 
-
         Page = Page ??
             (int.TryParse(query["page"], out int page) ? page :
             (int.TryParse(query["p"], out page) ? page : 1));
+
+        if (query.TryGetValue("orderby", out var ob))
+        {
+            var raw = ob.FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                var converter = TypeDescriptor.GetConverter(typeof(OrderBy));
+
+                if (converter.CanConvertFrom(typeof(string)))
+                {
+                    try
+                    {
+                        OrderBy = (OrderBy?)converter.ConvertFromInvariantString(raw);
+                    }
+                    catch
+                    {
+                        // ignore invalid values, keep default
+                    }
+                }
+            }
+        }
     }
 
     private static Dictionary<string, List<string>> ExtractFilters(IQueryCollection query, string prefix)
     {
         return query
-            .Where(x => x.Key.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase) &&
+            .Where(x => x.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
                         x.Value.All(v => !string.IsNullOrEmpty(v)))
             .ToDictionary(
-                x => x.Key.Replace(prefix, "", StringComparison.InvariantCultureIgnoreCase),
+                x => x.Key.Replace(prefix, "", StringComparison.OrdinalIgnoreCase),
                 x => x.Value.ToList());
     }
 

@@ -320,9 +320,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         IterateVariantGroups(new List<ImportVariantGroup> { importVariantGroup }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser);
 
@@ -345,9 +343,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed)).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         IterateVariants(new List<ImportVariant> { importVariant }, umbracoRootContent, allEkomNodes, allUmbracoMedia, syncUser, false);
 
@@ -369,10 +365,7 @@ public class ImportService : IImportService
 
         var allUmbracoMedia = _importMediaService.GetUmbracoMediaFiles(rootUmbracoMediafolder);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var allUmbracoCategories = allEkomNodes.Where(x => x.ContentType.Alias == "ekmCategory").ToList();
 
@@ -401,10 +394,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var variant = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmProductVariant" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importVariant.Identifier);
 
@@ -431,10 +421,7 @@ public class ImportService : IImportService
 
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
 
-        var allEkomNodes = _contentService
-            .GetPagedDescendants(umbracoRootContent.Id, 0, int.MaxValue, out var _, new Query<IContent>(_scopeProvider.SqlContext)
-            .Where(x => !x.Trashed))
-            .Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+        var allEkomNodes = GetAllEkomNodes();
 
         var category = allEkomNodes.FirstOrDefault(x => x.ContentType.Alias == "ekmCategory" && x.GetValue<string>(Configuration.ImportAliasIdentifier) == importCategory.Identifier);
 
@@ -626,7 +613,9 @@ public class ImportService : IImportService
         ArgumentNullException.ThrowIfNull(umbracoRootContent);
         ArgumentNullException.ThrowIfNull(catalogContentType);
 
-        if (importProducts != null || importProducts?.Count > 0)
+        _logger.LogInformation($"Iterating products. Import Count: {(importProducts != null ? importProducts.Count : 0)} Umbraco Product Count: {allUmbracoProducts.Count} Umbraco Categories Count: {allUmbracoCategories.Count} Delete: {delete}");
+
+        if (importProducts != null && importProducts.Count > 0)
         {
 
             if (delete)
@@ -678,53 +667,73 @@ public class ImportService : IImportService
                         continue;
                     }
 
-                    // Check if product moved
-                    if (umbracoCategoriesById.TryGetValue(umbracoProduct.ParentId, out var parentCategory))
+                    // Check if product moved (also handles restore from recycle bin)
+                    if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
                     {
-                        var currentCategoryIdentifier = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
-                        if (importProductsById.TryGetValue(productIdentifier, out var importProduct))
+                        var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
+
+                        if (string.IsNullOrWhiteSpace(newCategoryIdentifier))
+                            continue;
+
+                        var isInRecycleBin = recycleBinNode != null && umbracoProduct.ParentId == recycleBinNode.Id;
+
+                        // Only read current category identifier if parent is actually a category (not recycle bin)
+                        var currentCategoryIdentifier = "";
+                        if (!isInRecycleBin && umbracoCategoriesById.TryGetValue(umbracoProduct.ParentId, out var parentCategory))
                         {
+                            currentCategoryIdentifier = parentCategory.GetValue<string>(Configuration.ImportAliasIdentifier) ?? "";
+                        }
 
-                            if (importProduct.PreserveExistingValues)
+                        // If in recycle bin, always allow "move" (restore). Otherwise only when identifier changed.
+                        var needsMove = isInRecycleBin || newCategoryIdentifier != currentCategoryIdentifier;
+                        if (!needsMove)
+                            continue;
+
+                        if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
+                        {
+                            _logger.LogInformation(
+                                $"Product {(isInRecycleBin ? "restored" : "moved")}. " +
+                                $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                            _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
+
+                            if (isInRecycleBin)
+                                _contentService.SaveAndPublish(umbracoProduct, userId: syncUser);
+                        }
+                        else
+                        {
+                            if (recycleBinNode != null)
                             {
-                                continue;
+                                _logger.LogInformation(
+                                    $"Product deleted and moved to recycle bin. Product moved, category does not exist yet. " +
+                                    $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                    $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                    $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                _contentService.Unpublish(umbracoProduct, userId: syncUser);
+                                _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
+                            }
+                            else
+                            {
+                                _logger.LogInformation(
+                                    $"Product deleted. Product moved, category does not exist yet. " +
+                                    $"Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} " +
+                                    $"ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} " +
+                                    $"New Parent Category Identifier: {newCategoryIdentifier}");
+
+                                _contentService.Delete(umbracoProduct, syncUser);
                             }
 
-                            var newCategoryIdentifier = importProduct.Categories?.FirstOrDefault();
-                            if (!string.IsNullOrEmpty(newCategoryIdentifier) &&
-                                newCategoryIdentifier != currentCategoryIdentifier)
-                            {
-                                if (umbracoCategoriesByIdentifier.TryGetValue(newCategoryIdentifier, out var newCategory))
-                                {
-                                    _logger.LogInformation($"Product moved. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
-
-
-                                    _contentService.Move(umbracoProduct, newCategory.Id, syncUser);
-                                    
-                                }
-                                else
-                                {
-                                    _logger.LogInformation($"Product deleted. Product moved, category does not exist yet. Id: {umbracoProduct.Id} Name: {umbracoProduct.Name} Parent: {umbracoProduct.ParentId} ProductIdentifier: {productIdentifier} Current Parent Category Identifier: {currentCategoryIdentifier} New Parent Category Identifier: {newCategoryIdentifier}");
-
-                  
-                                    if (recycleBinNode != null)
-                                    {
-                                        _contentService.Unpublish(umbracoProduct, userId: syncUser);
-                                        _contentService.Move(umbracoProduct, recycleBinNode.Id, syncUser);
-                                    }
-                                    else
-                                    {
-                                        _contentService.Delete(umbracoProduct, syncUser);
-                                    }
-                                    
-
-                                    productDeleted++;
-                                }
-                            }
+                            productDeleted++;
                         }
                     }
+
                 }
             }
+
+            _logger.LogInformation($"Iterating {importProducts.Count} products");
 
             foreach (var importProduct in importProducts)
             {
@@ -1860,7 +1869,7 @@ public class ImportService : IImportService
                 out var totalRecords,
                 filter);
 
-            var list = batch as IList<IContent> ?? batch.ToList();
+            var list = batch as IList<IContent> ?? batch.Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
             if (list.Count == 0)
                 break;
 

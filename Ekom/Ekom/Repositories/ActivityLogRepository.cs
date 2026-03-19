@@ -35,16 +35,30 @@ class ActivityLogRepository
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(@"SELECT TOP 100 a.[UniqueId]
+        string sql = _databaseFactory.IsSqlite
+            ? @"SELECT a.[UniqueId]
                   ,a.[Key]
                   ,a.[Log]
                   ,a.[UserName]
                   ,a.[DATE],
-	              b.orderNumber as OrderNumber
+ 	              b.orderNumber as OrderNumber
               FROM [EkomOrdersActivityLog] a
               left join EkomOrders b on b.UniqueId = a.[Key]
               WHERE a.[UserName] = @0
-              order by Date desc", userName);
+              order by Date desc
+              LIMIT 100"
+            : @"SELECT TOP 100 a.[UniqueId]
+                  ,a.[Key]
+                  ,a.[Log]
+                  ,a.[UserName]
+                  ,a.[DATE],
+ 	              b.orderNumber as OrderNumber
+              FROM [EkomOrdersActivityLog] a
+              left join EkomOrders b on b.UniqueId = a.[Key]
+              WHERE a.[UserName] = @0
+              order by Date desc";
+
+        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(sql, userName);
 
         return await queryResult
             .GroupBy(x => x.OrderNumber)
@@ -57,17 +71,30 @@ class ActivityLogRepository
     {
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(
-            @"SELECT TOP 100 a.[UniqueId]
+        string sql = _databaseFactory.IsSqlite
+            ? @"SELECT a.[UniqueId]
                         ,a.[Key]
                         ,a.[Log]
                         ,a.[UserName]
                         ,a.[DATE],
-	                    b.orderNumber as OrderNumber
+ 	                    b.orderNumber as OrderNumber
                     FROM [EkomOrdersActivityLog] a
                     left join EkomOrders b on b.UniqueId = a.[Key]
                     WHERE UserName != 'Customer' AND UserName != ''
-                    order by Date desc");
+                    order by Date desc
+                    LIMIT 100"
+            : @"SELECT TOP 100 a.[UniqueId]
+                        ,a.[Key]
+                        ,a.[Log]
+                        ,a.[UserName]
+                        ,a.[DATE],
+ 	                    b.orderNumber as OrderNumber
+                    FROM [EkomOrdersActivityLog] a
+                    left join EkomOrders b on b.UniqueId = a.[Key]
+                    WHERE UserName != 'Customer' AND UserName != ''
+                    order by Date desc";
+
+        IQueryable<OrderActivityLog> queryResult = db.FromSql<OrderActivityLog>(sql);
 
         return await queryResult
             .GroupBy(x => x.OrderNumber)

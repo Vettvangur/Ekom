@@ -40,6 +40,7 @@ class NodeService : INodeService
 
             //var culture = contentType.VariesByCulture() ? cref.UmbracoContext?.Domains?.DefaultCulture : null;
 
+
             var results = rootNode.DescendantsOfType(contentTypeAlias).ToList();
 
             var content = results.Select(x => new Umbraco10Content(x)).ToList();
