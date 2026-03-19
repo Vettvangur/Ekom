@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Persistence.Querying;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
@@ -26,9 +27,9 @@ public class ImportMediaService
     private IMedia? rootMediaFolder;
 
     public ImportMediaService(
-        IMediaService mediaService, 
+        IMediaService mediaService,
         IHttpClientFactory httpClientFactory,
-        IContentTypeBaseServiceProvider contentTypeBaseServiceProvider, 
+        IContentTypeBaseServiceProvider contentTypeBaseServiceProvider,
         MediaFileManager mediaFileManager,
         MediaUrlGeneratorCollection mediaUrlGenerators,
         IShortStringHelper shortStringHelper,
@@ -81,9 +82,33 @@ public class ImportMediaService
 
     public List<IMedia> GetUmbracoMediaFiles(IMedia rootMedia)
     {
-        var mediaFiles = _mediaService.GetPagedDescendants(rootMedia.Id, 0, int.MaxValue, out var _).Where(x => !x.Trashed && x.ContentType.Alias == MediaTypes.Image || x.ContentType.Alias == MediaTypes.File).ToList();
+        if (rootMedia == null)
+            return new List<IMedia>();
 
-        return mediaFiles;
+        const int pageSize = 1000;
+        var results = new List<IMedia>();
+
+        var pageIndex = 0;
+        long total;
+
+        do
+        {
+            var page = _mediaService.GetPagedDescendants(
+                rootMedia.Id,
+                pageIndex,
+                pageSize,
+                out total);
+
+            results.AddRange(page.Where(x =>
+                !x.Trashed &&
+                (x.ContentType.Alias == Constants.Conventions.MediaTypes.Image ||
+                 x.ContentType.Alias == Constants.Conventions.MediaTypes.File)));
+
+            pageIndex++;
+
+        } while (results.Count < total);
+
+        return results;
     }
 
     public IMedia? ImportMediaFromExternalUrl(ImportMediaFromExternalUrl image, string comparer, ImportMediaTypes mediaType, string? identifier, int? syncUser = -1)
