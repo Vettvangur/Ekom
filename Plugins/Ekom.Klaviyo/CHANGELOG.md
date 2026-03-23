@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.65...Ekom.Klaviyo-v0.2.66) (2026-03-23)
+
+
+### Bug Fixes
+
+* new started checkout events and cleared cart event ([#425](https://github.com/Vettvangur/Ekom/issues/425)) ([8efb3ee](https://github.com/Vettvangur/Ekom/commit/8efb3ee396b14084931d63230c63439aaed63085))
+
 ## [0.2.65](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.64...Ekom.Klaviyo-v0.2.65) (2026-03-19)
 
 
