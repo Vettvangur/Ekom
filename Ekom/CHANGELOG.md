@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.93...Ekom-v0.2.94) (2026-03-23)
+
+
+### Bug Fixes
+
+* form-malformed ([#429](https://github.com/Vettvangur/Ekom/issues/429)) ([d8bedeb](https://github.com/Vettvangur/Ekom/commit/d8bedebc7c79f80446963c11294ad163ed7ff832))
+
 ## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.92...Ekom-v0.2.93) (2026-03-23)
 
 
