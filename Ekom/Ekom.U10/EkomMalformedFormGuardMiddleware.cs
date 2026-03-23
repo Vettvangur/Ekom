@@ -31,7 +31,7 @@ internal sealed class EkomMalformedFormGuardMiddleware
             }
             catch (InvalidDataException ex)
             {
-                _logger.LogWarning(
+                _logger.LogDebug(
                     ex,
                     "Rejected malformed form request for {Path}. Method={Method} ContentType={ContentType}",
                     request.Path,

@@ -1,3 +1,4 @@
+using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
 using Ekom.Utilities;
@@ -105,7 +106,13 @@ class EkomMiddleware
 
                 if (!string.IsNullOrEmpty(qsAlias))
                 {
-                    store = _storeService.GetStoreByAlias(qsAlias);
+                    try
+                    {
+                        store = _storeService.GetStoreByAlias(qsAlias);
+                    } catch(StoreNotFoundException ex)
+                    {
+                        _logger.LogDebug(ex, "Store with alias {Alias} not found for request to {Path}", qsAlias, req.Path);
+                    }         
                 } 
             }
             // 2) Only try domain mapping when NOT under /ekom
