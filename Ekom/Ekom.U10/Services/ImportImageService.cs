@@ -87,9 +87,8 @@ public class ImportMediaService
 
         const int pageSize = 1000;
         var results = new List<IMedia>();
-
-        var pageIndex = 0;
         long total;
+        var pageIndex = 0;
 
         do
         {
@@ -97,7 +96,7 @@ public class ImportMediaService
                 rootMedia.Id,
                 pageIndex,
                 pageSize,
-                out total);
+                out total).ToList();
 
             results.AddRange(page.Where(x =>
                 !x.Trashed &&
@@ -105,8 +104,8 @@ public class ImportMediaService
                  x.ContentType.Alias == Constants.Conventions.MediaTypes.File)));
 
             pageIndex++;
-
-        } while (results.Count < total);
+        }
+        while (pageIndex * pageSize < total);
 
         return results;
     }

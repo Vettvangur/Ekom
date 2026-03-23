@@ -34,7 +34,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         var allowedProps = BuildAllowedProperties(product, store);
         var price = ResolvePrice(product, store);
         var locale = store.Locale;
-        var categoryPageIdentifiers = BuildCategoryPageIdentifiers(product, locale);
+        var categoryLevels = BuildCategoryLevels(product, locale);
         var title = GetLocalizedValue(product, "title", product.Title, locale);
 
         var images = product.Images
@@ -82,11 +82,13 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             Stock = store.IncludeStock ? product.Stock : null,
             StoreAlias = store.Alias,
             Locale = store.Locale,
-            CategoryPageIdentifier = categoryPageIdentifiers,
             CreatedAt = ToUnixTimeSeconds(product.CreateDate),
             UpdatedAt = ToUnixTimeSeconds(product.UpdateDate),
             Data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         };
+
+        foreach (var categoryLevel in categoryLevels)
+            record.Data[categoryLevel.Key] = categoryLevel.Value;
 
         foreach (var kvp in allowedProps)
         {
@@ -97,7 +99,7 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
             if (string.IsNullOrWhiteSpace(raw))
                 continue;
 
-            object? converted = raw;
+            object? converted = NormalizePropertyValue(raw);
             var ctx = new AlgoliaProductFieldContext(product, store, alias, baseIndexName);
             converted = ConvertProperty(ctx, converted);
 
@@ -182,9 +184,9 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
         return absoluteUri.ToString();
     }
 
-    private static IReadOnlyList<string> BuildCategoryPageIdentifiers(IProduct product, string? locale)
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildCategoryLevels(IProduct product, string? locale)
     {
-        var identifiers = new List<string>();
+        var categoryLevels = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var category in product.Categories)
         {
@@ -198,13 +200,38 @@ internal sealed class ProductIndexMapper : IAlgoliaProductIndexMapper
                 segments.Add(categoryTitle);
 
             for (var i = 0; i < segments.Count; i++)
-                identifiers.Add(string.Join(" > ", segments.Take(i + 1)));
+            {
+                var key = $"categories.lvl{i}";
+                if (!categoryLevels.TryGetValue(key, out var values))
+                {
+                    values = [];
+                    categoryLevels[key] = values;
+                }
+
+                values.Add(string.Join(" > ", segments.Take(i + 1)));
+            }
         }
 
-        return identifiers
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return categoryLevels.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (IReadOnlyList<string>)kvp.Value
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static object NormalizePropertyValue(string value)
+    {
+        if (bool.TryParse(value, out var booleanValue))
+            return booleanValue;
+
+        return value switch
+        {
+            "0" => false,
+            "1" => true,
+            _ => value
+        };
     }
 
     private static IPrice? ResolvePrice(IProduct product, AlgoliaResolvedStore store)
