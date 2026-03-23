@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.92...Ekom-v0.2.93) (2026-03-23)
+
+
+### Bug Fixes
+
+* guard malformed form requests on /ekom ([#427](https://github.com/Vettvangur/Ekom/issues/427)) ([054e908](https://github.com/Vettvangur/Ekom/commit/054e90802db8ba3ac0efe639ed0e52a1b92a1217))
+
 ## [0.2.92](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.91...Ekom-v0.2.92) (2026-03-19)
 
 
