@@ -33,6 +33,7 @@ class StartupFilter : IStartupFilter
             await next();
         });
 
+        app.UseEkomMalformedFormGuard();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseEkomMiddleware();

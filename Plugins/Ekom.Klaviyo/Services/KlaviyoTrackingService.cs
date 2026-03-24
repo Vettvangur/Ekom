@@ -20,6 +20,7 @@ public interface IKlaviyoTrackingService
     ValueTask TrackViewedProductAsync(KlaviyoViewedProductEvent payload, CancellationToken ct = default);
     ValueTask TrackActiveOnSiteAsync(KlaviyoActiveOnSiteEvent payload, CancellationToken ct = default);
     ValueTask TrackStartedCheckoutAsync(KlaviyoStartedCheckoutEvent payload, CancellationToken ct = default);
+    ValueTask TrackCartEmptiedAsync(KlaviyoCartEmptiedEvent payload, CancellationToken ct = default);
 }
 
 public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
@@ -257,6 +258,25 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         QueueStartedCheckoutProfileUpdate(payload);
     }
 
+    public async ValueTask TrackCartEmptiedAsync(KlaviyoCartEmptiedEvent payload, CancellationToken ct = default)
+    {
+        if (!IsEnabled(_opt.Tracking.StartedCheckout)) return;
+
+        if (_enrichers is not null)
+            await _enrichers.ApplyAsync(KlaviyoTrackingEventType.CartEmptied, payload, payload.StoreAlias, ct);
+
+        if (!ValidatePayload(payload, "Cart Emptied")) return;
+
+        var work = new KlaviyoTrackingWork(
+            Type: KlaviyoTrackingEventType.CartEmptied,
+            EventPayload: payload.ToTrackingEvent(_opt),
+            OccurredAt: payload.OccurredAt,
+            StoreAlias: payload.StoreAlias,
+            EventId: payload.EventId ?? string.Empty);
+
+        await _dispatcher.EnqueueAsync(work, ct);
+    }
+
     private bool IsEnabled(bool eventEnabled)
         => _opt.Enabled && _opt.Tracking.Enabled && eventEnabled;
 
@@ -276,6 +296,9 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
         => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
 
     private bool ValidatePayload(KlaviyoStartedCheckoutEvent payload, string eventName)
+        => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
+
+    private bool ValidatePayload(KlaviyoCartEmptiedEvent payload, string eventName)
         => ValidatePayload(payload.StoreAlias, payload.Customer, eventName);
 
 
