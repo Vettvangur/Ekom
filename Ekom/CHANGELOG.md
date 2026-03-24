@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.95](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.94...Ekom-v0.2.95) (2026-03-24)
+
+
+### Bug Fixes
+
+* ekom manager, search by product sku, chart and performance fixes ([#431](https://github.com/Vettvangur/Ekom/issues/431)) ([ef17d95](https://github.com/Vettvangur/Ekom/commit/ef17d95ca48eca72b6d581f6d82ac469245351c4))
+
 ## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.93...Ekom-v0.2.94) (2026-03-23)
 
 
