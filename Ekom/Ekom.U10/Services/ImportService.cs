@@ -1874,11 +1874,11 @@ public class ImportService : IImportService
                 out var totalRecords,
                 filter);
 
-            var list = batch as IList<IContent> ?? batch.Where(x => !x.GetValue<bool>("ekmDisableSync")).ToList();
+            var list = batch as IList<IContent> ?? batch.ToList();
             if (list.Count == 0)
                 break;
 
-            all.AddRange(list);
+            all.AddRange(list.Where(x => !x.GetValue<bool>("ekmDisableSync")));
 
             if (all.Count >= totalRecords)
                 break;

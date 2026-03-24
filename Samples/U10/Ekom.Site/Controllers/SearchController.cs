@@ -130,6 +130,10 @@ public sealed class SearchController : ControllerBase
         CancellationToken ct)
     {
         var response = await _algoliaSearchService.SearchProductsAsync(request, ct).ConfigureAwait(false);
+
+        var products = // how to access products from the response and do something with them, e.g. log them
+            response.Hits.Select(hit => hit.Title);
+
         return Ok(response);
     }
 

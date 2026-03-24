@@ -3,9 +3,12 @@ using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Tracking;
 using Ekom.Klaviyo.Services;
+using Ekom.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Extensions;
@@ -29,6 +32,7 @@ internal sealed class KlaviyoEkomEvents : IComponent
     {
         CheckoutEvents.CompleteCheckoutAsync += OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync += OnAddedOrderlineAsync;
+        OrderEvents.UpdatedOrderlineAsync += OnUpdatedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync += OnCustomerEmailAddedAsync;
     }
 
@@ -99,22 +103,36 @@ internal sealed class KlaviyoEkomEvents : IComponent
         using var scope = _scopeFactory.CreateScope();
         var trackingService = scope.ServiceProvider.GetRequiredService<IKlaviyoTrackingService>();
 
-        var storeOptions = _opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(orderInfo.StoreInfo.Alias));
+        var eventArgs = CreateStartedCheckoutEvent(orderInfo, useCartFingerprint: false);
 
-        var eventArgs = new KlaviyoStartedCheckoutEvent
+        await trackingService.TrackStartedCheckoutAsync(eventArgs, ct);
+    }
+
+    private async Task OnUpdatedOrderlineAsync(object arg1, UpdatedOrderlineEventArgs args, CancellationToken ct)
+    {
+        if (!_opt.Enabled || !_opt.Tracking.StartedCheckout)
+            return;
+
+        var orderInfo = args.OrderInfo;
+        if (orderInfo == null)
+            return;
+
+        using var scope = _scopeFactory.CreateScope();
+        var trackingService = scope.ServiceProvider.GetRequiredService<IKlaviyoTrackingService>();
+
+        if (orderInfo.OrderLines.Count == 0)
         {
-            OrderId = orderInfo.KlaviyoUniqueId(),
-            OrderNumber = orderInfo.OrderNumber,
-            Customer = orderInfo.ToKlaviyoProfile(_opt), 
-            Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt)).ToList(),
-            CheckoutUrl = storeOptions?.CheckoutUrl,
-            Value = orderInfo.ChargedAmount.Value,
-            ValueFormatted = orderInfo.ChargedAmount.CurrencyString,
-            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
-            EventId= orderInfo.KlaviyoUniqueId(), // Using the same unique ID for the event, as Klaviyo can deduplicate events with the same ID, preventing duplicates if the email is changed multiple times during checkout
-            StoreAlias = orderInfo.StoreInfo.Alias, 
-            OccurredAt = DateTimeOffset.UtcNow
-        };
+            var emptiedEventArgs = CreateCartEmptiedEvent(orderInfo);
+            if (!emptiedEventArgs.Customer.HasIdentifier)
+                return;
+
+            await trackingService.TrackCartEmptiedAsync(emptiedEventArgs, ct);
+            return;
+        }
+
+        var eventArgs = CreateStartedCheckoutEvent(orderInfo, useCartFingerprint: true);
+        if (!eventArgs.Customer.HasIdentifier)
+            return;
 
         await trackingService.TrackStartedCheckoutAsync(eventArgs, ct);
     }
@@ -140,7 +158,84 @@ internal sealed class KlaviyoEkomEvents : IComponent
     {
         CheckoutEvents.CompleteCheckoutAsync -= OnCompleteCheckoutAsync;
         OrderEvents.AddedOrderlineAsync -= OnAddedOrderlineAsync; 
+        OrderEvents.UpdatedOrderlineAsync -= OnUpdatedOrderlineAsync;
         OrderEvents.CustomerEmailAddedAsync -= OnCustomerEmailAddedAsync;
+    }
+
+    private KlaviyoStartedCheckoutEvent CreateStartedCheckoutEvent(IOrderInfo orderInfo, bool useCartFingerprint)
+    {
+        var storeOptions = _opt.Stores.FirstOrDefault(x => x.Alias.InvariantEquals(orderInfo.StoreInfo.Alias));
+
+        return new KlaviyoStartedCheckoutEvent
+        {
+            OrderId = orderInfo.KlaviyoUniqueId(),
+            OrderNumber = orderInfo.OrderNumber,
+            Customer = orderInfo.ToKlaviyoProfile(_opt),
+            Items = orderInfo.OrderLines.Select(ol => ol.ToKlaviyoOrderLine(_opt)).ToList(),
+            CheckoutUrl = storeOptions?.CheckoutUrl,
+            Value = orderInfo.ChargedAmount.Value,
+            ValueFormatted = orderInfo.ChargedAmount.CurrencyString,
+            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
+            EventId = BuildStartedCheckoutEventId(orderInfo, useCartFingerprint),
+            StoreAlias = orderInfo.StoreInfo.Alias,
+            OccurredAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    private static string BuildStartedCheckoutEventId(IOrderInfo orderInfo, bool useCartFingerprint)
+    {
+        if (!useCartFingerprint)
+            return orderInfo.KlaviyoUniqueId();
+
+        return $"{orderInfo.KlaviyoUniqueId()}:{BuildCartFingerprint(orderInfo)}";
+    }
+
+    private KlaviyoCartEmptiedEvent CreateCartEmptiedEvent(IOrderInfo orderInfo)
+    {
+        return new KlaviyoCartEmptiedEvent
+        {
+            OrderId = orderInfo.KlaviyoUniqueId(),
+            OrderNumber = orderInfo.OrderNumber,
+            Customer = orderInfo.ToKlaviyoProfile(_opt),
+            Currency = orderInfo.StoreInfo.Currency.ISOCurrencySymbol,
+            EventId = $"{orderInfo.KlaviyoUniqueId()}:empty",
+            StoreAlias = orderInfo.StoreInfo.Alias,
+            OccurredAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    private static string BuildCartFingerprint(IOrderInfo orderInfo)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append(orderInfo.StoreInfo.Alias)
+            .Append('|')
+            .Append(orderInfo.KlaviyoUniqueId())
+            .Append('|')
+            .Append(orderInfo.ChargedAmount.Value)
+            .Append('|')
+            .Append(orderInfo.StoreInfo.Currency.ISOCurrencySymbol);
+
+        foreach (var line in orderInfo.OrderLines.OrderBy(x => x.Key))
+        {
+            builder.Append('|')
+                .Append(line.Key)
+                .Append('|')
+                .Append(line.ProductKey)
+                .Append('|')
+                .Append(line.Variant?.Key)
+                .Append('|')
+                .Append(line.Product?.SKU)
+                .Append('|')
+                .Append(line.Variant?.SKU)
+                .Append('|')
+                .Append(line.Quantity)
+                .Append('|')
+                .Append(line.Amount.WithVat.Value);
+        }
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 }
 

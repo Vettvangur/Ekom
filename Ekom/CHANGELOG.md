@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.93...Ekom-v0.2.94) (2026-03-23)
+
+
+### Bug Fixes
+
+* form-malformed ([#429](https://github.com/Vettvangur/Ekom/issues/429)) ([d8bedeb](https://github.com/Vettvangur/Ekom/commit/d8bedebc7c79f80446963c11294ad163ed7ff832))
+
+## [0.2.93](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.92...Ekom-v0.2.93) (2026-03-23)
+
+
+### Bug Fixes
+
+* guard malformed form requests on /ekom ([#427](https://github.com/Vettvangur/Ekom/issues/427)) ([054e908](https://github.com/Vettvangur/Ekom/commit/054e90802db8ba3ac0efe639ed0e52a1b92a1217))
+
+## [0.2.92](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.91...Ekom-v0.2.92) (2026-03-19)
+
+
+### Bug Fixes
+
+* algolia category levels added ([#423](https://github.com/Vettvangur/Ekom/issues/423)) ([ec2353b](https://github.com/Vettvangur/Ekom/commit/ec2353be355a632ac6fd599800b71f3dd782389b))
+
+## [0.2.91](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.90...Ekom-v0.2.91) (2026-03-19)
+
+
+### Bug Fixes
+
+* import, infinite loop ([#421](https://github.com/Vettvangur/Ekom/issues/421)) ([3efef6e](https://github.com/Vettvangur/Ekom/commit/3efef6e2767ddcf832e73908bbbf70d35cbe60f9))
+
 ## [0.2.90](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.89...Ekom-v0.2.90) (2026-03-19)
 
 

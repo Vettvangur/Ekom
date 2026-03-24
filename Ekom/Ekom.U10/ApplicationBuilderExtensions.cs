@@ -38,4 +38,9 @@ public static class ApplicationBuilderExtensions
     {
         return builder.UseMiddleware<EkomMiddleware>();
     }
+
+    public static IApplicationBuilder UseEkomMalformedFormGuard(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<EkomMalformedFormGuardMiddleware>();
+    }
 }

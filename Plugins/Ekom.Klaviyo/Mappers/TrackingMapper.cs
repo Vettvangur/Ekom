@@ -176,6 +176,31 @@ internal static class TrackingMapper
         return CreateEventPayload("Started Checkout", e.StoreAlias, e.EventId, e.OccurredAt, e.Customer, properties, opt);
     }
 
+    internal static object ToTrackingEvent(this KlaviyoCartEmptiedEvent e, KlaviyoOptions opt)
+    {
+        var properties = new JsonObject
+        {
+            ["store_alias"] = e.StoreAlias,
+            ["occurred_at"] = e.OccurredAt.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'")
+        };
+
+        if (!string.IsNullOrWhiteSpace(e.OrderId))
+            properties["cart_id"] = e.OrderId;
+
+        if (!string.IsNullOrWhiteSpace(e.OrderNumber))
+            properties["order_number"] = e.OrderNumber;
+
+        if (!string.IsNullOrWhiteSpace(e.Currency))
+            properties["currency"] = e.Currency;
+
+        properties["item_count"] = 0;
+        properties["cart_is_empty"] = true;
+
+        CustomPropertiesMerger.MergeCustomProperties(properties, e.CustomProperties);
+
+        return CreateEventPayload("Cart Emptied", e.StoreAlias, e.EventId, e.OccurredAt, e.Customer, properties, opt);
+    }
+
     private static object CreateEventPayload(
         string metricName,
         string storeAlias,
