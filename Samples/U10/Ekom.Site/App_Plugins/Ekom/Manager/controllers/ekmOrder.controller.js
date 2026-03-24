@@ -1,11 +1,13 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope, $timeout) {
+  function controller($scope, notificationsService, resources, $document, eventsService, state, $timeout) {
+    var managerState = state.getState();
+
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
+    $scope.statusList = managerState.statusList;
 
-    $scope.statusList = $rootScope.sharedData.statusList;
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
     };
@@ -15,227 +17,230 @@
     };
 
     $scope.selectDropdown = function (dropdownId, status) {
-
-      $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
-
+      $scope.visibleDropdowns[dropdownId] = false;
       $scope.labelDropdowns[dropdownId] = status;
 
-      if (dropdownId === 'dropdownOrderStatusList') {
+      if (dropdownId === "dropdownOrderStatusList") {
         $scope.orderChangeStatus = $scope.getStatus(status);
       }
-
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
+      var label = $scope.labelDropdowns[dropdownId] || defaultText;
 
-      var label = $scope.labelDropdowns[dropdownId];
-
-      label = label || defaultText;
-
-      if (dropdownId == 'dropdownPaymentProvider' && $rootScope.sharedData.paymentProvider !== '') {
-        const provider = $scope.filterPaymentProviders.find(obj => obj.key === $rootScope.sharedData.paymentProvider);
-
-        if (provider) {
-
-          const providerName = provider.title;
-
-          return providerName;
-        }
-      }
-
-      if (dropdownId === 'dropdownOrderStatusList') {
+      if (dropdownId === "dropdownOrderStatusList") {
         $scope.orderChangeStatus = $scope.getStatus(label);
-
         return $scope.getStatusLabel(label);
       }
 
       return label;
-
     };
+
     $scope.getStatus = function (value) {
+      var item = $scope.statusList.find(function (status) {
+        return status.value === value || status.enumValue === value;
+      });
 
-      const item = $scope.statusList.find(obj => obj.value === value);
+      return item || null;
+    };
 
-      if (item) {
-        return item;
-      }
-      return null;
-
-    }
     $scope.getStatusLabel = function (value) {
+      var item = $scope.statusList.find(function (status) {
+        return status.value === value || status.enumValue === value;
+      });
 
-      const item = $scope.statusList.find(obj => obj.value === value);
+      return item ? item.label : value;
+    };
 
-      if (item) {
-        return item.label;
-      }
-      return value;
+    $scope.orderChangeStatus = $scope.getStatus(managerState.currentOrderStatus);
 
-    }
-
-    $scope.orderChangeStatus = $scope.getStatus($rootScope.sharedData.orderStatus);
-
-    var changeOrderStatusButton = document.getElementById('changeOrderStatusButton');
+    var changeOrderStatusButton = document.getElementById("changeOrderStatusButton");
 
     if (changeOrderStatusButton) {
-      changeOrderStatusButton.addEventListener('click', function () {
+      changeOrderStatusButton.addEventListener("click", function () {
+        var notify = document.getElementById("notifyOrderStatus");
 
-        var notify = document.getElementById('notifyOrderStatus');
-
-        resources.ChangeOrderStatus('?orderId=' + changeOrderStatusButton.getAttribute('data-orderId') + '&orderStatus=' + $scope.orderChangeStatus.value + '&notify=' + notify.checked)
-          .then(function (result) {
-
+        resources.ChangeOrderStatus({
+          orderId: changeOrderStatusButton.getAttribute("data-orderId"),
+          orderStatus: $scope.orderChangeStatus.value,
+          notify: notify.checked
+        })
+          .then(function () {
             notificationsService.success("Success", "Order status updated.");
-
-            eventsService.emit("order.changed", {
-
-            });
-          }, function errorCallback(data) {
+            eventsService.emit("order.changed", {});
+          }, function () {
             notificationsService.error("Error", "Error updating order status.");
-          })
-
+          });
       });
     }
+
     $scope.isDefaultKey = function (key) {
-      const k = (key || "").toString().toLowerCase();
-      const defaults = new Set([
-        'shippingname',
-        'shippingaddress',
-        'shippingcity',
-        'shippingcountry',
-        'shippingzipcode',
-        'shippingphone',
-        'customeremail',
-        'customername',
-        'customeraddress',
-        'customercity',
-        'customercountry',
-        'customerzipcode',
-        'customerphone'
+      var normalisedKey = (key || "").toString().toLowerCase();
+      var defaults = new Set([
+        "shippingname",
+        "shippingaddress",
+        "shippingcity",
+        "shippingcountry",
+        "shippingzipcode",
+        "shippingphone",
+        "customeremail",
+        "customername",
+        "customeraddress",
+        "customercity",
+        "customercountry",
+        "customerzipcode",
+        "customerphone"
       ]);
-      return defaults.has(k);
+
+      return defaults.has(normalisedKey);
     };
 
     $scope.cleanKey = function (key) {
-      return key.replace(/^customshipping/i, '').replace(/^custompayment/i, '').replace(/^shipping/i, '').replace(/^customer/i, '');
+      return key.replace(/^customshipping/i, "").replace(/^custompayment/i, "").replace(/^shipping/i, "").replace(/^customer/i, "");
     };
 
-    const shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
-
-    $scope.extraShippingProperties = Object.entries(shippingProps)
-      .filter(([key, value]) => {
-        if (!value) return false;
-        const k = (key || "").toLowerCase();
-        return k.startsWith("shipping") && !$scope.isDefaultKey(k);
-      })
-      .map(([key, value]) => [key, htmlDecode(value)]);
-
-    const customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
-
-    $scope.extraCustomerProperties = Object.entries(customerProps)
-      .filter(([key, value]) => {
-        if (!value) return false;
-        const k = (key || "").toLowerCase();
-        return k.startsWith("customer") && !$scope.isDefaultKey(k);
-      })
-      .map(([key, value]) => [key, htmlDecode(value)]);
-
-
-    const customShippingProps =
-      ($scope.model.editModel.order.shippingProvider &&
-        $scope.model.editModel.order.shippingProvider.customData) || {};
-
-    $scope.extraCustomShippingProperties = Object.entries(customShippingProps)
-      .filter(([key, value]) => {
-        if (!value) return false;
-        const k = (key || "").toLowerCase();
-        return k.startsWith("customshipping") && !$scope.isDefaultKey(k);
-      })
-      .map(([key, value]) => [key, htmlDecode(value)]);
-
-    const customPaymentProps =
-      ($scope.model.editModel.order.paymentProvider &&
-        $scope.model.editModel.order.paymentProvider.customData) || {};
-
-    $scope.extraCustomPaymentProperties = Object.entries(customPaymentProps)
-      .filter(([key, value]) => {
-        if (!value) return false;
-        const k = (key || "").toLowerCase();
-        return k.startsWith("custompayment") && !$scope.isDefaultKey(k);
-      })
-      .map(([key, value]) => [key, htmlDecode(value)]);
-
     function htmlDecode(value) {
-      const txt = document.createElement('textarea');
-      txt.innerHTML = value;
-      return txt.value;
+      var textArea = document.createElement("textarea");
+      textArea.innerHTML = value;
+      return textArea.value;
     }
 
-    $scope.$watch('model.editModel.order.customerInformation.customer.properties', function (props) {
-      const customerProps = props || {};
-      $scope.extraCustomerProperties = Object.entries(customerProps)
-        .filter(([key, value]) =>
-          value &&
-          key.toLowerCase().startsWith('customer') &&
-          !$scope.isDefaultKey(key)
-        )
-        .map(([key, value]) => [key, htmlDecode(value)]);
+    var shippingProps = $scope.model.editModel.order.customerInformation.shipping.properties || {};
+
+    $scope.extraShippingProperties = Object.entries(shippingProps)
+      .filter(function (entry) {
+        var key = entry[0];
+        var value = entry[1];
+
+        if (!value) {
+          return false;
+        }
+
+        var normalisedKey = (key || "").toLowerCase();
+        return normalisedKey.startsWith("shipping") && !$scope.isDefaultKey(normalisedKey);
+      })
+      .map(function (entry) {
+        return [entry[0], htmlDecode(entry[1])];
+      });
+
+    var customerProps = $scope.model.editModel.order.customerInformation.customer.properties || {};
+
+    $scope.extraCustomerProperties = Object.entries(customerProps)
+      .filter(function (entry) {
+        var key = entry[0];
+        var value = entry[1];
+
+        if (!value) {
+          return false;
+        }
+
+        var normalisedKey = (key || "").toLowerCase();
+        return normalisedKey.startsWith("customer") && !$scope.isDefaultKey(normalisedKey);
+      })
+      .map(function (entry) {
+        return [entry[0], htmlDecode(entry[1])];
+      });
+
+    var customShippingProps = ($scope.model.editModel.order.shippingProvider && $scope.model.editModel.order.shippingProvider.customData) || {};
+
+    $scope.extraCustomShippingProperties = Object.entries(customShippingProps)
+      .filter(function (entry) {
+        var key = entry[0];
+        var value = entry[1];
+
+        if (!value) {
+          return false;
+        }
+
+        var normalisedKey = (key || "").toLowerCase();
+        return normalisedKey.startsWith("customshipping") && !$scope.isDefaultKey(normalisedKey);
+      })
+      .map(function (entry) {
+        return [entry[0], htmlDecode(entry[1])];
+      });
+
+    var customPaymentProps = ($scope.model.editModel.order.paymentProvider && $scope.model.editModel.order.paymentProvider.customData) || {};
+
+    $scope.extraCustomPaymentProperties = Object.entries(customPaymentProps)
+      .filter(function (entry) {
+        var key = entry[0];
+        var value = entry[1];
+
+        if (!value) {
+          return false;
+        }
+
+        var normalisedKey = (key || "").toLowerCase();
+        return normalisedKey.startsWith("custompayment") && !$scope.isDefaultKey(normalisedKey);
+      })
+      .map(function (entry) {
+        return [entry[0], htmlDecode(entry[1])];
+      });
+
+    $scope.$watch("model.editModel.order.customerInformation.customer.properties", function (props) {
+      var liveCustomerProps = props || {};
+
+      $scope.extraCustomerProperties = Object.entries(liveCustomerProps)
+        .filter(function (entry) {
+          var key = entry[0];
+          var value = entry[1];
+
+          return value && key.toLowerCase().startsWith("customer") && !$scope.isDefaultKey(key);
+        })
+        .map(function (entry) {
+          return [entry[0], htmlDecode(entry[1])];
+        });
     });
 
     $scope.hasShippingInfo = function () {
-      var s = $scope.model.editModel.order.customerInformation.shipping;
-      if (!s) return false;
+      var shipping = $scope.model.editModel.order.customerInformation.shipping;
+
+      if (!shipping) {
+        return false;
+      }
 
       return !!(
-        s.name ||
-        s.email ||
-        s.address ||
-        s.apartment ||
-        s.city ||
-        s.country ||
-        s.zipCode ||
-        s.phone
+        shipping.name ||
+        shipping.email ||
+        shipping.address ||
+        shipping.apartment ||
+        shipping.city ||
+        shipping.country ||
+        shipping.zipCode ||
+        shipping.phone
       );
     };
 
-    var printOrderButton = document.getElementById('printOrder');
+    var printOrderButton = document.getElementById("printOrder");
 
     if (printOrderButton) {
-
-      printOrderButton.addEventListener('click', function () {
-
+      printOrderButton.addEventListener("click", function () {
         var linkEl = angular.element('<link id="overlay-print-style" rel="stylesheet" media="print" href="/app_plugins/ekom/manager/styles/ekmManagerOrderPrint.css">');
         angular.element($document[0].head).append(linkEl);
 
         var cleanup = function () {
           linkEl.remove();
-          window.removeEventListener('afterprint', cleanup);
+          window.removeEventListener("afterprint", cleanup);
         };
 
-        window.addEventListener('afterprint', cleanup);
+        window.addEventListener("afterprint", cleanup);
 
         $timeout(function () {
           window.print();
-
           $timeout(cleanup, 2000);
         }, 50);
-
       });
-
     }
-
-
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Order", [
     "$scope",
     "notificationsService",
     "Ekom.Manager.Resources",
-    "$location",
     "$document",
-    'eventsService',
-    '$rootScope',
-    '$timeout',
+    "eventsService",
+    "Ekom.Manager.State",
+    "$timeout",
     controller
   ]);
 })();
