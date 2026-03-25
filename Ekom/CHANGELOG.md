@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.97](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.96...Ekom-v0.2.97) (2026-03-25)
+
+
+### Bug Fixes
+
+* avoid reloading analytics charts on top products paging ([#436](https://github.com/Vettvangur/Ekom/issues/436)) ([12cc478](https://github.com/Vettvangur/Ekom/commit/12cc478378372c456c41105cdb12c2b4416d0dfe))
+
 ## [0.2.96](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.95...Ekom-v0.2.96) (2026-03-25)
 
 
