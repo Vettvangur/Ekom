@@ -137,6 +137,36 @@
       chartService.render("chartAvarage", "Average Order Value", result.avarageChart.labels, result.avarageChart.points, "rgba(217, 119, 6, 1)");
     }
 
+    function loadCharts() {
+      return resources.Charts(buildChartQuery())
+        .then(function (result) {
+          $timeout(function () {
+            renderAnalyticsCharts(result.data);
+          }, 0, false);
+        }, function () {
+          notificationsService.error("Error", "Error on chart data.");
+        });
+    }
+
+    function loadMostSoldProducts() {
+      $scope.loadingMostSoldProducts = true;
+
+      return resources.MostSoldProducts(buildMostSoldProductsQuery())
+        .then(function (result) {
+          var data = result.data || {};
+
+          $scope.mostsoldproducts = data.products || [];
+          $scope.mostSoldProductsCount = data.count || 0;
+          $scope.mostSoldProductsTotalPages = data.totalPages || 0;
+          $scope.pageMostSoldProducts = data.page || $scope.pageMostSoldProducts;
+        }, function () {
+          notificationsService.error("Error", "Error on most sold products data.");
+        })
+        .finally(function () {
+          $scope.loadingMostSoldProducts = false;
+        });
+    }
+
     $scope.GetData = function () {
       $scope.loading = true;
 
@@ -286,7 +316,7 @@
 
     $scope.setPageMostSoldProducts = function (page) {
       $scope.pageMostSoldProducts = page.toString().replace("...", "");
-      $scope.analytics();
+      loadMostSoldProducts();
     };
 
     $scope.search = function () {
@@ -373,34 +403,8 @@
     };
 
     $scope.analytics = function () {
-      var chartQuery = buildChartQuery();
-      var mostSoldProductsQuery = buildMostSoldProductsQuery();
-
-      resources.Charts(chartQuery)
-        .then(function (result) {
-          $timeout(function () {
-            renderAnalyticsCharts(result.data);
-          }, 0, false);
-        }, function () {
-          notificationsService.error("Error", "Error on chart data.");
-        });
-
-      $scope.loadingMostSoldProducts = true;
-
-      resources.MostSoldProducts(mostSoldProductsQuery)
-        .then(function (result) {
-          var data = result.data || {};
-
-          $scope.mostsoldproducts = data.products || [];
-          $scope.mostSoldProductsCount = data.count || 0;
-          $scope.mostSoldProductsTotalPages = data.totalPages || 0;
-          $scope.pageMostSoldProducts = data.page || $scope.pageMostSoldProducts;
-        }, function () {
-          notificationsService.error("Error", "Error on most sold products data.");
-        })
-        .finally(function () {
-          $scope.loadingMostSoldProducts = false;
-        });
+      loadCharts();
+      loadMostSoldProducts();
     };
 
     $scope.toggleDropdown = function (dropdownId) {
