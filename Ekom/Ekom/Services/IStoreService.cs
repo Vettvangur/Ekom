@@ -2,7 +2,7 @@ using Ekom.Models;
 
 namespace Ekom.Services;
 
-interface IStoreService
+public interface IStoreService
 {
     IEnumerable<IStore> GetAllStores();
     IStore? GetStoreByAlias(string? alias);

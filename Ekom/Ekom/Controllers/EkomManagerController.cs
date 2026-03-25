@@ -16,11 +16,13 @@ namespace Ekom.Controllers;
 public class EkomManagerController : ControllerBase
 {
     readonly ManagerRepository _repo;
+    readonly IManagerAccessService _managerAccessService;
     readonly INodeService _nodeService;
     readonly ILogger<EkomManagerController> _logger;
-    public EkomManagerController(ManagerRepository repo, INodeService nodeService, ILogger<EkomManagerController> logger)
+    public EkomManagerController(ManagerRepository repo, IManagerAccessService managerAccessService, INodeService nodeService, ILogger<EkomManagerController> logger)
     {
         _repo = repo;
+        _managerAccessService = managerAccessService;
         _nodeService = nodeService;
         _logger = logger;
     }
@@ -30,7 +32,7 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<IEnumerable<OrderData>> GetOrdersAsync()
     {
-        return await _repo.GetOrdersAsync();
+        return await _repo.GetOrdersAsync(_managerAccessService.GetAllowedStoreAliases());
     }
 
     [HttpGet]
@@ -38,7 +40,14 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<IActionResult> GetOrderAsync(Guid orderId, CancellationToken ct = default)
     {
-        return Ok(await _repo.GetOrderAsync(orderId, ct));
+        var order = await _repo.GetOrderAsync(orderId, ct);
+
+        if (!CanAccessStore(order.StoreAlias))
+        {
+            return ForbidStore(order.StoreAlias);
+        }
+
+        return Ok(order);
     }
 
     [HttpGet]
@@ -48,6 +57,13 @@ public class EkomManagerController : ControllerBase
     {
         try
         {
+            var orderData = await _repo.GetOrderAsync(orderId, ct);
+
+            if (!CanAccessStore(orderData.StoreAlias))
+            {
+                return ForbidStore(orderData.StoreAlias);
+            }
+
             var order = await _repo.GetOrderInfoAsync(orderId, ct);
             return Ok(order);
         }
@@ -65,6 +81,11 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<IActionResult> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
     {
+        if (!CanAccessStore(store))
+        {
+            return ForbidStore(store);
+        }
+
         return Ok(await _repo.SearchOrdersAsync(start, end, query, store, orderStatus, paymentProvider, page, pageSize));
     }
 
@@ -74,6 +95,11 @@ public class EkomManagerController : ControllerBase
     [ResponseCache(Duration = 60 * 60 * 24)]
     public async Task<IActionResult> GetMostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
     {
+        if (!CanAccessStore(store))
+        {
+            return ForbidStore(store);
+        }
+
         return Ok(await _repo.MostSoldProducts(start, end, store, orderStatus));
     }
 
@@ -90,7 +116,7 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public IActionResult GetStores()
     {
-        return Ok(API.Store.Instance.GetAllStores());
+        return Ok(_managerAccessService.GetAllowedStores());
     }
 
     [HttpPost]
@@ -98,6 +124,13 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<IActionResult> ChangeOrderStatusAsync(Guid orderId, string orderStatus, bool notify)
     {
+        var order = await _repo.GetOrderAsync(orderId);
+
+        if (!CanAccessStore(order.StoreAlias))
+        {
+            return ForbidStore(order.StoreAlias);
+        }
+
         if (Enum.TryParse(orderStatus, out OrderStatus status))
         {
             await Order.Instance.UpdateStatusAsync(status, orderId, null, new ChangeOrderSettings
@@ -119,6 +152,11 @@ public class EkomManagerController : ControllerBase
     [UmbracoUserAuthorize]
     public async Task<IActionResult> GetChartsData(DateTime start, DateTime end, string store, string orderStatus)
     {
+        if (!CanAccessStore(store))
+        {
+            return ForbidStore(store);
+        }
+
         var chartData = new ChartData();
 
         OrderListData orders = await _repo.SearchOrdersAsync(start, end, "", store, orderStatus,"", page: "1", pageSize: "99999");
@@ -170,6 +208,17 @@ public class EkomManagerController : ControllerBase
         chartData.AvarageChart.Labels = labels;
 
         return Ok(chartData);
+    }
+
+    private bool CanAccessStore(string? storeAlias)
+    {
+        return _managerAccessService.CanAccessStore(storeAlias);
+    }
+
+    private IActionResult ForbidStore(string? storeAlias)
+    {
+        _logger.LogWarning("Manager access denied for store {StoreAlias}", storeAlias);
+        return Forbid();
     }
 
     public class ChartData

@@ -27,11 +27,22 @@ public class ManagerRepository
         _databaseFactory = databaseFactory;
     }
 
-    public async Task<IEnumerable<OrderData>> GetOrdersAsync()
+    public async Task<IEnumerable<OrderData>> GetOrdersAsync(IReadOnlyCollection<string> allowedStoreAliases)
     {
+        if (allowedStoreAliases.Count == 0)
+        {
+            return Array.Empty<OrderData>();
+        }
+
         await using DbContext db = _databaseFactory.GetDatabase();
 
-        List<OrderData> data = await db.OrderData.OrderByDescending(x => x.ReferenceId).ToListAsync().ConfigureAwait(false);
+        string[] stores = allowedStoreAliases.ToArray();
+
+        List<OrderData> data = await db.OrderData
+            .Where(x => stores.Contains(x.StoreAlias))
+            .OrderByDescending(x => x.ReferenceId)
+            .ToListAsync()
+            .ConfigureAwait(false);
 
         return data;
     }

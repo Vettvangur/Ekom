@@ -1,5 +1,6 @@
 using Ekom.Services;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 
 namespace Ekom.Umb.Services;
@@ -15,22 +16,34 @@ class SecurityService : ISecurityService
         _userService = userService;
     }
 
-    public IEnumerable<string>? GetUmbracoUserGroups()
+    public IReadOnlyCollection<string> GetUmbracoUserGroups()
+    {
+        return GetCurrentUserGroupAliases();
+    }
+
+    public bool IsCurrentUserAdmin()
+    {
+        return GetCurrentUserGroupAliases().Contains(Constants.Security.AdminGroupAlias, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private IReadOnlyCollection<string> GetCurrentUserGroupAliases()
     {
         var userTicket = _backofficeUserAccessor.BackofficeUser;
 
-        // ToDo: Does claim contain the groups ?
-
-        if (userTicket.IsAuthenticated)
+        if (!userTicket.IsAuthenticated)
         {
-            var u = _userService.GetByUsername(userTicket.GetUserName());
-
-            if (u != null)
-            {
-                return u.Groups.Select(x => x.Alias);
-            }
+            return Array.Empty<string>();
         }
-        
-        return null;
+
+        var user = _userService.GetByUsername(userTicket.GetUserName());
+
+        if (user == null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return user.Groups
+            .Select(x => x.Alias)
+            .ToArray();
     }
 }
