@@ -65,9 +65,9 @@ public class ManagerRepository
         return order;
     }
 
-    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string page, string pageSize)
+    public async Task<OrderListData> SearchOrdersAsync(DateTime start, DateTime end, string query, string store, string orderStatus, string paymentProvider, string productSku, string page, string pageSize)
     {
-        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider);
+        string whereClause = GenerateWhereClause(orderStatus, query, store, paymentProvider, productSku);
 
         var sqlBuilder = new StringBuilder($"SELECT ReferenceId,UniqueId,OrderNumber,OrderStatusCol,CustomerEmail,CustomerName,CustomerId,CustomerUsername,ShippingCountry,TotalAmount,Currency,StoreAlias,CreateDate,UpdateDate,PaidDate FROM EkomOrders {whereClause} ORDER BY ReferenceId desc");
         var sqlTotalBuilder = new StringBuilder($"SELECT COUNT(ReferenceId) as Count, AVG(TotalAmount) as AverageAmount, SUM(TotalAmount) as TotalAmount FROM EkomOrders {whereClause}");
@@ -102,6 +102,7 @@ public class ManagerRepository
             orderStatus,
             store,
             paymentProvider = paymentProviderValue,
+            productSku = string.IsNullOrWhiteSpace(productSku) ? null : productSku.Trim(),
             pageSize = _pageSize,
             offset
         };
@@ -121,7 +122,38 @@ public class ManagerRepository
         return orderListData;
     }
 
-    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider)
+    public async Task<List<ChartAggregateRow>> GetChartAggregatesAsync(DateTime start, DateTime end, string store, string orderStatus)
+    {
+        string whereClause = GenerateWhereClause(orderStatus, string.Empty, store, string.Empty);
+        string bucketDateExpression = _databaseFactory.IsSqlite
+            ? "date(COALESCE(PaidDate, CreateDate))"
+            : "CAST(COALESCE(PaidDate, CreateDate) AS date)";
+
+        string sql = $@"
+SELECT
+    {bucketDateExpression} as BucketDate,
+    SUM(TotalAmount) as Revenue,
+    COUNT(ReferenceId) as Orders,
+    AVG(TotalAmount) as AverageAmount
+FROM EkomOrders
+{whereClause}
+GROUP BY {bucketDateExpression}
+ORDER BY {bucketDateExpression}";
+
+        var param = new
+        {
+            startDate = start.Date,
+            endDate = end.Date.AddDays(1).AddTicks(-1),
+            orderStatus,
+            store
+        };
+
+        await using DbContext db = _databaseFactory.GetDatabase();
+
+        return await db.QueryToListAsync<ChartAggregateRow>(sql, param).ConfigureAwait(false);
+    }
+
+    private string GenerateWhereClause(string orderStatus, string query, string store, string paymentProvider, string productSku = "")
     {
         var whereClause = new StringBuilder();
 
@@ -151,6 +183,18 @@ public class ManagerRepository
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(productSku))
+        {
+            if (_databaseFactory.IsSqlite)
+            {
+                whereClause.Append(" AND EXISTS (SELECT 1 FROM json_each(OrderInfo, '$.OrderLines') AS orderLines WHERE lower(json_extract(orderLines.value, '$.Product.SKU')) = lower(@productSku))");
+            }
+            else
+            {
+                whereClause.Append(" AND EXISTS (SELECT 1 FROM OPENJSON(OrderInfo, '$.OrderLines') WITH (SKU nvarchar(200) '$.Product.SKU') AS orderLines WHERE LOWER(orderLines.SKU) = LOWER(@productSku))");
+            }
+        }
+
         if (!string.IsNullOrEmpty(orderStatus) && orderStatus != "CompletedOrders" && orderStatus != "AllOrders")
         {
             whereClause.Append(" AND OrderStatusCol = @orderStatus");
@@ -170,7 +214,18 @@ public class ManagerRepository
 
     public async Task<List<MostSoldProduct>> MostSoldProducts(DateTime start, DateTime end, string store, string orderStatus)
     {
+        var result = await MostSoldProductsPaged(start, end, store, orderStatus, 1, int.MaxValue).ConfigureAwait(false);
+
+        return result.Products.ToList();
+    }
+
+    public async Task<MostSoldProductListData> MostSoldProductsPaged(DateTime start, DateTime end, string store, string orderStatus, int page, int pageSize)
+    {
         string whereClause = "O.OrderInfo IS NOT NULL AND LTRIM(RTRIM(O.OrderInfo)) <> ''";
+
+        int currentPage = page <= 0 ? 1 : page;
+        int currentPageSize = pageSize <= 0 ? 20 : pageSize;
+        int offset = (currentPage - 1) * currentPageSize;
 
         if (Enum.TryParse(orderStatus, out OrderStatus result) && (result == OrderStatus.ReadyForDispatch || result == OrderStatus.Dispatched))
         {
@@ -197,13 +252,15 @@ public class ManagerRepository
 
         var param = new
         {
-            startDate = start,
-            endDate = end,
+            startDate = start.Date,
+            endDate = end.Date.AddDays(1).AddTicks(-1),
             orderStatus,
-            store
+            store,
+            pageSize = currentPageSize,
+            offset
         };
 
-        var sqlBuilder = _databaseFactory.IsSqlite
+        string baseSql = _databaseFactory.IsSqlite
             ? new StringBuilder(@"SELECT 
                 MAX(json_extract(OL.value, '$.Product.SKU')) as SKU,
                 MAX(json_extract(OL.value, '$.Product.Title')) as Title,
@@ -213,7 +270,7 @@ public class ManagerRepository
                 EkomOrders O
             JOIN 
                 json_each(O.OrderInfo, '$.OrderLines') AS OL
-            WHERE ")
+            WHERE ").ToString()
             : new StringBuilder(@"SELECT 
                 MAX(OL.SKU) as SKU,
                 MAX(OL.Title) as Title,
@@ -229,23 +286,50 @@ public class ManagerRepository
                     Id int '$.Product.Id',
                     Quantity decimal '$.Quantity'
                 ) AS OL
-            WHERE ");
+            WHERE ").ToString();
 
-        // Add the where clause
+        var sqlBuilder = new StringBuilder(baseSql);
+
         sqlBuilder.Append(whereClause);
 
         sqlBuilder.Append(@" 
             GROUP BY
-                OL.Id
+                OL.Id");
+
+        string groupedSql = sqlBuilder.ToString();
+
+        string sqlCount = $"SELECT COUNT(*) as Count FROM ({groupedSql}) products";
+
+        sqlBuilder.Append(@"
             ORDER BY 
                 ProductCount DESC");
 
-        var asd = sqlBuilder.ToString();
+        if (_databaseFactory.IsSqlite)
+        {
+            sqlBuilder.Append(" LIMIT @pageSize OFFSET @offset");
+        }
+        else
+        {
+            sqlBuilder.Append(" OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY");
+        }
 
         await using DbContext db = _databaseFactory.GetDatabase();
-        var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param);
 
-        return products;
+        var products = await db.QueryToListAsync<MostSoldProduct>(sqlBuilder.ToString(), param).ConfigureAwait(false);
+        var totals = db.Execute<MostSoldProductTotals>(sqlCount, param);
+
+        return new MostSoldProductListData
+        {
+            Products = products,
+            Count = totals.Count,
+            Page = currentPage,
+            PageSize = currentPageSize
+        };
+    }
+
+    public class MostSoldProductTotals
+    {
+        public int Count { get; set; }
     }
 
     public object GetStatusList()
