@@ -29,6 +29,7 @@ public static class ApplicationBuilderExtensions
         services.AddTransient<IUrlService, UrlService>();
         services.AddScoped<BackofficeUserAccessor>();
         services.AddScoped<ISecurityService, SecurityService>();
+        services.AddScoped<IManagerAccessService, ManagerAccessService>();
         services.AddScoped<ICatalogSearchService, CatalogSearchService>();
 
         return services;

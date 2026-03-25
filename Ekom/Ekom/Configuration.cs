@@ -213,11 +213,34 @@ public class Configuration
     {
         get
         {
+            var groups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             string? value = _configuration["Ekom:Manager:SectionAccessGroup"];
 
             if (!string.IsNullOrEmpty(value))
             {
-                return value.Split(',');
+                foreach (string group in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    groups.Add(group);
+                }
+            }
+
+            foreach (IConfigurationSection storeSection in _configuration.GetSection("Ekom:Manager:StoreGroupPermissions").GetChildren())
+            {
+                foreach (IConfigurationSection groupSection in storeSection.GetChildren())
+                {
+                    string? group = groupSection.Value;
+
+                    if (!string.IsNullOrWhiteSpace(group))
+                    {
+                        groups.Add(group.Trim());
+                    }
+                }
+            }
+
+            if (groups.Count > 0)
+            {
+                return groups.ToArray();
             }
 
             //Backward compatibility
@@ -226,7 +249,7 @@ public class Configuration
 
             if (!string.IsNullOrEmpty(value))
             {
-                return value.Split(',');
+                return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             }
 
             return [];

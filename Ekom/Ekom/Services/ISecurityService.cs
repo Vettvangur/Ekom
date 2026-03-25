@@ -1,7 +1,9 @@
 namespace Ekom.Services
 {
-    internal interface ISecurityService
+    public interface ISecurityService
     {
-        IEnumerable<string> GetUmbracoUserGroups();
+        IReadOnlyCollection<string> GetUmbracoUserGroups();
+
+        bool IsCurrentUserAdmin();
     }
 }
