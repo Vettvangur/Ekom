@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.96](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.95...Ekom-v0.2.96) (2026-03-25)
+
+
+### Features
+
+* add store group permissions for manager access ([#433](https://github.com/Vettvangur/Ekom/issues/433)) ([3b16b84](https://github.com/Vettvangur/Ekom/commit/3b16b842e37fb8426098a7e49129e712614742da))
+
 ## [0.2.95](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.94...Ekom-v0.2.95) (2026-03-24)
 
 
