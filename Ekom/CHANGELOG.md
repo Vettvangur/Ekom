@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.98](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.97...Ekom-v0.2.98) (2026-03-26)
+
+
+### Features
+
+* add customer information validation events ([#438](https://github.com/Vettvangur/Ekom/issues/438)) ([b55fc52](https://github.com/Vettvangur/Ekom/commit/b55fc52ed99a89012b9610ae7f4add003b658e9c))
+
 ## [0.2.97](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.96...Ekom-v0.2.97) (2026-03-25)
 
 
