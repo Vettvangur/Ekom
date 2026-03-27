@@ -1,5 +1,6 @@
 using Ekom.Klaviyo.Dispatching.Tracking;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
+using Ekom.Klaviyo.Helpers;
 using Ekom.Klaviyo.Mappers;
 using Ekom.Klaviyo.Models.Orders;
 using Ekom.Klaviyo.Models.Profiles;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Umbraco.Extensions;
 
 namespace Ekom.Klaviyo.Services;
 
@@ -83,7 +83,7 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
 
         await Task.Delay(TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
 
-        var listId = ResolveListId(payload.StoreAlias, payload.ListId);
+        var listId = _opt.ResolveSubscriptionListId(payload.StoreAlias, payload.ListId);
 
         var email = payload?.Customer?.Email;
         if (string.IsNullOrWhiteSpace(email))
@@ -134,21 +134,6 @@ public sealed class KlaviyoTrackingService : IKlaviyoTrackingService
                 _logger.LogWarning(ex, "Klaviyo: failed background profile update for started checkout.");
             }
         }, _appLifetime.ApplicationStopping);
-    }
-
-    private string? ResolveListId(string storeAlias, string? listId)
-    {
-        if (!string.IsNullOrWhiteSpace(listId))
-            return listId;
-
-        var storeListId = _opt.Stores
-            .FirstOrDefault(x => x.Alias.InvariantEquals(storeAlias))
-            ?.ListId;
-
-        if (!string.IsNullOrWhiteSpace(storeListId))
-            return storeListId;
-
-        return _opt.Subscriptions.DefaultListId;
     }
 
     public async ValueTask TrackAddedToCartAsync(KlaviyoAddedToCartEvent payload, CancellationToken ct = default)

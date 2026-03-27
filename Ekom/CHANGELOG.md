@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.98...Ekom-v0.2.99) (2026-03-27)
+
+
+### Features
+
+* add payment return callback flow ([#442](https://github.com/Vettvangur/Ekom/issues/442)) ([b41aa3d](https://github.com/Vettvangur/Ekom/commit/b41aa3d3bfb4c2020d4f65e0fc3d2e167f2b5b8f))
+
+## [0.2.98](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.97...Ekom-v0.2.98) (2026-03-26)
+
+
+### Features
+
+* add customer information validation events ([#438](https://github.com/Vettvangur/Ekom/issues/438)) ([b55fc52](https://github.com/Vettvangur/Ekom/commit/b55fc52ed99a89012b9610ae7f4add003b658e9c))
+
+## [0.2.97](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.96...Ekom-v0.2.97) (2026-03-25)
+
+
+### Bug Fixes
+
+* avoid reloading analytics charts on top products paging ([#436](https://github.com/Vettvangur/Ekom/issues/436)) ([12cc478](https://github.com/Vettvangur/Ekom/commit/12cc478378372c456c41105cdb12c2b4416d0dfe))
+
 ## [0.2.96](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.95...Ekom-v0.2.96) (2026-03-25)
 
 

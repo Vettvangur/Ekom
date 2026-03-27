@@ -2,6 +2,7 @@ using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -126,6 +127,90 @@ public class EkomCheckoutApiController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [Route("payment-return")]
+    [AcceptVerbs("GET", "POST")]
+    public async Task<IActionResult> PaymentReturn(CancellationToken ct = default)
+    {
+        Dictionary<string, string?> callbackData = await GetPaymentReturnDataAsync(ct);
+
+        if (!TryGetRequiredGuid(callbackData, "orderId", out Guid orderId))
+        {
+            return BadRequest("Missing required orderId.");
+        }
+
+        var outcome = callbackData.TryGetValue("outcome", out string? outcomeValue)
+            && !string.IsNullOrWhiteSpace(outcomeValue)
+            ? outcomeValue.Trim().ToLowerInvariant()
+            : "error";
+
+        var order = await API.Order.Instance.GetOrderAsync(orderId, ct).ConfigureAwait(false);
+
+        if (order == null)
+        {
+            return NotFound("Order not found.");
+        }
+
+        if (order.PaymentProvider == null)
+        {
+            return BadRequest("Order payment provider not found.");
+        }
+
+        var paymentProvider = API.Providers.Instance.GetPaymentProvider(order.PaymentProvider.Key, order.StoreInfo.Alias);
+
+        if (paymentProvider == null)
+        {
+            return NotFound("Payment provider not found.");
+        }
+
+        API.Order.Instance.EnsureOrderCookie(orderId, order.StoreInfo.Alias);
+
+        string redirectUrlSetting = outcome == "cancel"
+            ? paymentProvider.GetValue("cancelUrl", order.StoreInfo.Alias)
+            : paymentProvider.GetValue("errorUrl", order.StoreInfo.Alias);
+
+        string redirectUrl = Ekom.Utilities.UriHelper.EnsureFullUri(
+            redirectUrlSetting,
+            new Uri(Request.GetEncodedUrl()));
+
+        callbackData["orderId"] = orderId.ToString();
+        callbackData["outcome"] = outcome;
+
+        var redirectQuery = callbackData
+            .Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Value != null)
+            .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+
+        return Redirect(QueryHelpers.AddQueryString(redirectUrl, redirectQuery));
+    }
+
+    private async Task<Dictionary<string, string?>> GetPaymentReturnDataAsync(CancellationToken ct)
+    {
+        var data = Request.Query
+            .ToDictionary(x => x.Key, x => (string?)x.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+        if (!Request.HasFormContentType)
+        {
+            return data;
+        }
+
+        var form = await Request.ReadFormAsync(ct);
+
+        foreach (var item in form)
+        {
+            data[item.Key] = item.Value.ToString();
+        }
+
+        return data;
+    }
+
+    private static bool TryGetRequiredGuid(Dictionary<string, string?> values, string key, out Guid value)
+    {
+        value = Guid.Empty;
+
+        return values.TryGetValue(key, out string? raw)
+            && !string.IsNullOrWhiteSpace(raw)
+            && Guid.TryParse(raw, out value);
     }
 }
 

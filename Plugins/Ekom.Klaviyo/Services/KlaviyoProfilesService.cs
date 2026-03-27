@@ -351,7 +351,10 @@ internal sealed class KlaviyoProfilesService : IKlaviyoProfilesService
         if (_enrichers is not null)
             await _enrichers.ApplyAsync(payload, ct);
 
-        var request = payload.ToBulkSubscribeJobRequest();
+        var request = (payload with
+        {
+            ListId = _opt.ResolveSubscriptionListId(payload.StoreAlias, payload.ListId)
+        }).ToBulkSubscribeJobRequest();
 
         var work = new KlaviyoProfilesWork(
             Type: KlaviyoProfilesEventType.Subscribe,
