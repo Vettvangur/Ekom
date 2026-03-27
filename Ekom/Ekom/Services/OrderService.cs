@@ -1601,6 +1601,18 @@ partial class OrderService
             }
         }
 
+        if (settings.FireEvents)
+        {
+            var customerInformationUpdatingArgs = new CustomerInformationUpdatingEventArgs
+            {
+                OrderInfo = orderInfo,
+                Form = form
+            };
+
+            await OrderEvents.OnCustomerInformationUpdatingAsync(this, customerInformationUpdatingArgs, ct)
+                .ConfigureAwait(false);
+        }
+
         if (shippingProviderKey != null && shippingProviderValue != null)
         {
             if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
@@ -1617,8 +1629,22 @@ partial class OrderService
             }
         }
 
-        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
+        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
             .ConfigureAwait(false);
+
+        if (settings.FireEvents)
+        {
+            var customerInformationUpdatedArgs = new CustomerInformationUpdatedEventArgs
+            {
+                OrderInfo = orderInfo,
+                Form = form
+            };
+
+            await OrderEvents.OnCustomerInformationUpdatedAsync(this, customerInformationUpdatedArgs, ct)
+                .ConfigureAwait(false);
+        }
+
+        return orderInfo;
 
     }
 

@@ -1,279 +1,349 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope,$timeout) {
+  function controller($scope, notificationsService, resources, $location, $document, eventsService, state, chartService, $timeout, $q) {
+    var managerState = state.getState();
+    var unbindDocumentClick = angular.noop;
+
     $scope.loading = true;
     $scope.loadingMostSoldProducts = true;
-    $scope.result = {};
+    $scope.result = {
+      orders: [],
+      totalPages: 0
+    };
     $scope.filterOpen = false;
-
-    var currentDate = new Date(); // get the current date
-    var januaryFirstCurrentYear = new Date(currentDate.getFullYear(), 0, 1); // get January 1st of the current year
-
-    var dateFrom = januaryFirstCurrentYear.toISOString().substring(0, 10);
-    var dateTo = currentDate.toISOString().substring(0, 10);
-
     $scope.orderCount = 0;
     $scope.grandTotal = 0;
     $scope.averageAmount = 0;
     $scope.page = 1;
     $scope.pageMostSoldProducts = 1;
-    $scope.query = "";
-    $scope.statusList = [];
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
-    $scope.orderStatus = 'CompletedOrders';
-    $scope.dateFrom = dateFrom;
-    $scope.dateTo = dateTo;
-    $scope.selectedStore = {};
+    $scope.filters = managerState.filters;
+    $scope.statusList = managerState.statusList;
     $scope.stores = [];
-    $scope.paymentProviders = [];
+    $scope.paymentProviders = managerState.paymentProviders;
     $scope.mostsoldproducts = [];
-    $scope.paymentProvider = '';
-    $scope.orderChangeStatus = '';
-    $scope.sharedData = {};
-    $rootScope.sharedData = {};
+    $scope.mostSoldProductsCount = 0;
+    $scope.mostSoldProductsTotalPages = 0;
+    $scope.location = getLocationFromPath();
 
     eventsService.on("filter.changed", function (_, args) {
-      $scope.paymentProvider = args.paymentProvider;
-      $scope.sharedData.paymentProvider = args.paymentProvider;
-      $rootScope.sharedData.paymentProvider = args.paymentProvider;
+      state.setPaymentProvider(args.paymentProvider);
+      state.setProductSku(args.productSku);
+      $scope.page = 1;
       $scope.GetData();
     });
 
-    eventsService.on("order.changed", function (_, args) {
+    eventsService.on("order.changed", function () {
       $scope.GetData();
     });
 
-    var path = $location.path(); // get the path
-    var pathComponents = path.split('/'); // split the path into components
-    var lastPathComponent = pathComponents[pathComponents.length - 1]; // get the last component
+    function getLocationFromPath() {
+      var path = $location.path();
+      var pathComponents = path.split("/");
+      var lastPathComponent = pathComponents[pathComponents.length - 1];
 
-    lastPathComponent = lastPathComponent == 'ekommanager' ? 'orders' : lastPathComponent;
-
-    $scope.location = lastPathComponent;
-
-    var tabsElement = document.getElementById('ekmNavigationTabs')
-
-    if (lastPathComponent === 'orders' || lastPathComponent === 'analytics') {
-
-      var allTabs = tabsElement.querySelectorAll('uui-tab')
-
-      for (var i = 0; i < allTabs.length; i++) {
-        if (allTabs[i].innerText.trim().toLowerCase() === lastPathComponent.toLowerCase()) {
-
-          allTabs[i].setAttribute('active', '');
-        } else {
-          allTabs[i].removeAttribute('active');
-        }
+      if (lastPathComponent !== "analytics") {
+        return "orders";
       }
+
+      return lastPathComponent;
     }
 
-    $scope.DatePickers = function () {
-      var datePickers = document.getElementsByClassName('ekmManager__datepicker');
+    function syncState() {
+      $scope.statusList = managerState.statusList;
+      $scope.paymentProviders = managerState.paymentProviders;
+    }
 
-      for (var i = 0; i < datePickers.length; i++) {
-        var datePicker = datePickers[i]
+    function closeDropdowns() {
+      angular.forEach($scope.visibleDropdowns, function (_, key) {
+        $scope.visibleDropdowns[key] = false;
+      });
+    }
 
-        datePicker.addEventListener('change', function (e) {
+    function attachDocumentClickHandler() {
+      unbindDocumentClick = function (event) {
+        var isClickInsideDropdown = false;
+        var dropdownElements = $document[0].querySelectorAll(".dropdown-toggle");
 
-          if (e.target.name === 'dateFrom') {
-            $scope.dateFrom = e.target.value;
+        for (var i = 0; i < dropdownElements.length; i++) {
+          if (dropdownElements[i].contains(event.target)) {
+            isClickInsideDropdown = true;
+            break;
           }
-          if (e.target.name === 'dateTo') {
-            $scope.dateTo = e.target.value;
+        }
+
+        if (!isClickInsideDropdown) {
+          $scope.$applyAsync(closeDropdowns);
+        }
+      };
+
+      $document.on("click", unbindDocumentClick);
+    }
+
+    function buildOrdersQuery() {
+      return {
+        start: $scope.filters.dateFrom,
+        end: $scope.filters.dateTo,
+        orderStatus: $scope.filters.orderStatus,
+        page: $scope.page,
+        pageSize: 20,
+        query: $scope.filters.query,
+        store: $scope.filters.store,
+        paymentProvider: $scope.filters.paymentProvider,
+        productSku: $scope.filters.productSku
+      };
+    }
+
+    function buildChartQuery() {
+      return {
+        start: $scope.filters.dateFrom,
+        end: $scope.filters.dateTo,
+        orderStatus: $scope.filters.orderStatus,
+        store: $scope.filters.store
+      };
+    }
+
+    function buildMostSoldProductsQuery() {
+      return {
+        start: $scope.filters.dateFrom,
+        end: $scope.filters.dateTo,
+        orderStatus: $scope.filters.orderStatus,
+        store: $scope.filters.store,
+        page: $scope.pageMostSoldProducts,
+        pageSize: 20
+      };
+    }
+
+    function refreshCurrentView() {
+      if (!$scope.filters.store) {
+        return;
+      }
+
+      if ($scope.location === "analytics") {
+        $scope.analytics();
+        return;
+      }
+
+      $scope.GetPaymentProviders(false).finally(function () {
+        $scope.GetData();
+      });
+    }
+
+    function renderAnalyticsCharts(result) {
+      chartService.render("chartRevenue", "Sales Revenue", result.revenueChart.labels, result.revenueChart.points, "rgba(30, 64, 175, 1)");
+      chartService.render("chartOrders", "Total Orders", result.ordersChart.labels, result.ordersChart.points, "rgba(8, 145, 178, 1)");
+      chartService.render("chartAvarage", "Average Order Value", result.avarageChart.labels, result.avarageChart.points, "rgba(217, 119, 6, 1)");
+    }
+
+    function loadCharts() {
+      return resources.Charts(buildChartQuery())
+        .then(function (result) {
+          $timeout(function () {
+            renderAnalyticsCharts(result.data);
+          }, 0, false);
+        }, function () {
+          notificationsService.error("Error", "Error on chart data.");
+        });
+    }
+
+    function loadMostSoldProducts() {
+      $scope.loadingMostSoldProducts = true;
+
+      return resources.MostSoldProducts(buildMostSoldProductsQuery())
+        .then(function (result) {
+          var data = result.data || {};
+
+          $scope.mostsoldproducts = data.products || [];
+          $scope.mostSoldProductsCount = data.count || 0;
+          $scope.mostSoldProductsTotalPages = data.totalPages || 0;
+          $scope.pageMostSoldProducts = data.page || $scope.pageMostSoldProducts;
+        }, function () {
+          notificationsService.error("Error", "Error on most sold products data.");
+        })
+        .finally(function () {
+          $scope.loadingMostSoldProducts = false;
+        });
+    }
+
+    $scope.GetData = function () {
+      $scope.loading = true;
+
+      return resources.SearchOrders(buildOrdersQuery())
+        .then(function (result) {
+          $scope.result = result.data;
+          $scope.result.orders = $scope.result.orders || [];
+          $scope.orderCount = $scope.result.count;
+          $scope.grandTotal = $scope.result.grandTotal;
+          $scope.averageAmount = $scope.result.averageAmount;
+        }, function () {
+          notificationsService.error("Error", "Error on searching data.");
+        })
+        .finally(function () {
+          $scope.loading = false;
+        });
+    };
+
+    $scope.GetStatusList = function () {
+      return resources.StatusList()
+        .then(function (result) {
+          state.setStatusList(result.data);
+          syncState();
+        }, function () {
+          notificationsService.error("Error", "Error on getting status list.");
+        });
+    };
+
+    $scope.GetStores = function () {
+      return resources.Stores()
+        .then(function (result) {
+          $scope.stores = result.data || [];
+
+          if (!$scope.filters.store && $scope.stores.length) {
+            state.setStore($scope.stores[0].alias);
           }
 
-          if ($scope.location === 'analytics') {
-            $scope.analytics();
-          } else {
-            $scope.GetData();
+          $scope.labelDropdowns.dropdownStores = $scope.filters.store;
+
+          refreshCurrentView();
+        }, function () {
+          notificationsService.error("Error", "Error on getting stores.");
+        });
+    };
+
+    $scope.GetPaymentProviders = function (resetSelection) {
+      if (!$scope.filters.store) {
+        return $q.when();
+      }
+
+      return resources.PaymentProviders($scope.filters.store)
+        .then(function (result) {
+          state.setPaymentProviders(result.data);
+          syncState();
+
+          if (resetSelection) {
+            state.clearPaymentProvider();
+            delete $scope.labelDropdowns.dropdownPaymentProvider;
           }
 
+          if ($scope.filters.paymentProvider) {
+            var selectedProviderStillExists = $scope.paymentProviders.some(function (provider) {
+              return provider.key === $scope.filters.paymentProvider;
+            });
+
+            if (!selectedProviderStillExists) {
+              state.clearPaymentProvider();
+              delete $scope.labelDropdowns.dropdownPaymentProvider;
+            }
+          }
+        }, function () {
+          notificationsService.error("Error", "Error on getting payment providers.");
+        });
+    };
+
+    $scope.navigateTo = function (location) {
+      if ($scope.location === location) {
+        return;
+      }
+
+      $scope.location = location;
+      $location.path("/ekommanager/" + location);
+
+      if (location === "analytics") {
+        $scope.analytics();
+      } else {
+        $scope.GetPaymentProviders(false).finally(function () {
+          $scope.GetData();
         });
       }
     };
 
-    $scope.GetData = function () {
-
-      resources.SearchOrders('?start=' + $scope.dateFrom +
-        '&end=' + $scope.dateTo +
-        '&orderStatus=' + $scope.orderStatus +
-        '&page=' + $scope.page +
-        '&pagesize=20&query=' + $scope.query +
-        '&store=' + $scope.sharedData.store +
-        '&paymentProvider=' + $scope.sharedData.paymentProvider)
-        .then(function (result) {
-
-          $scope.loading = false;
-
-          $scope.result = result.data;
-
-          $scope.orderCount = $scope.result.count;
-          $scope.grandTotal = $scope.result.grandTotal;
-          $scope.averageAmount = $scope.result.averageAmount;
-
-          setTimeout(function () {
-            $scope.DatePickers();
-          }, 50);
-
-        }, function errorCallback(data) {
-          $scope.loading = false;
-          notificationsService.error("Error", "Error on searching data.");
-        })
-    };
-
-    $scope.GetStatusList = function () {
-
-      resources.StatusList()
-        .then(function (result) {
-
-          $scope.statusList = result.data;
-          $rootScope.sharedData.statusList = result.data;
-        }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on getting status list.");
-        })
-    };
-
-    $scope.GetStores = function () {
-
-      resources.Stores()
-        .then(function (result) {
-
-          $scope.stores = result.data;
-
-          $scope.store = $scope.stores[0].alias;
-          $scope.labelDropdowns['dropdownStores'] = $scope.store
-
-          $scope.sharedData.store = $scope.store;
-          $rootScope.sharedData.store = $scope.store;
-
-          if ($scope.location === 'analytics') {
-            $scope.analytics();
-          } else {
-            $scope.GetData();
-            $scope.GetPaymentProviders();
-          }
-
-        }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on getting stores.");
-        })
-    };
-
-    $scope.GetPaymentProviders = function () {
-
-      resources.PaymentProviders($scope.store)
-        .then(function (result) {
-
-          $scope.paymentProviders = result.data;
-          $rootScope.sharedData.paymentProviders = result.data;
-          $scope.sharedData.paymentProviders = $scope.paymentProviders;
-        }, function errorCallback(data) {
-
-          notificationsService.error("Error", "Error on getting payment providers.");
-        })
-    };
-
-    tabsElement.addEventListener('click', function (e) {
-      var target = e.target;
-
-      var text = target.innerText.toLowerCase();
-
-      // Join the path components back together and set the new path
-      $location.path('/ekommanager/' + text);
-    })
-
     $scope.OpenFilter = function () {
-
       $scope.filterOpen = true;
-
       $scope.overlay = {
         title: "Filter",
         view: "/App_Plugins/Ekom/Manager/views/overlays/ekmFilter.html",
         show: true,
-        submit: function (submitModel) {
+        submit: function () {
           $scope.CloseModal();
         },
-        close: function (oldModel) {
+        close: function () {
           $scope.CloseModal();
         }
       };
-
     };
 
     $scope.ViewOrder = function (order) {
-
       resources.OrderInfo(order.uniqueId)
         .then(function (result) {
-
-          var orderInfo = result.data;
-
-          var model = {
-            order: orderInfo,
-            statusList: $scope.statusList
-          };
-
-          console.log(model);
-
-          $rootScope.sharedData.orderStatus = orderInfo.orderStatus;
+          state.setCurrentOrderStatus(result.data.orderStatus);
 
           $scope.overlay = {
             title: "View Order",
             view: "/App_Plugins/Ekom/Manager/views/overlays/ekmOrder.html",
-            editModel: model,
+            editModel: {
+              order: result.data,
+              statusList: $scope.statusList
+            },
             show: true,
-            submit: function (submitModel) {
+            submit: function () {
               $scope.CloseModal();
             },
-            close: function (oldModel) {
+            close: function () {
               $scope.CloseModal();
             }
           };
-
-        }, function errorCallback(data) {
-
+        }, function () {
           notificationsService.error("Error", "Error on getting orderInfo.");
-        })
-
+        });
     };
 
     $scope.CloseModal = function () {
-      $scope.overlay.show = false;
+      if ($scope.overlay) {
+        $scope.overlay.show = false;
+      }
+
       $scope.overlay = null;
       $scope.filterOpen = false;
-      document.body.classList.remove('tabbing-active');
+      document.body.classList.remove("tabbing-active");
     };
 
     $scope.setPage = function (page) {
-      $scope.page = page.toString().replace('...', '');
+      $scope.page = page.toString().replace("...", "");
       $scope.GetData();
     };
 
     $scope.setPageMostSoldProducts = function (page) {
-      $scope.pageMostSoldProducts = page.toString().replace('...', '');
+      $scope.pageMostSoldProducts = page.toString().replace("...", "");
+      loadMostSoldProducts();
     };
 
-    $scope.search = function (query) {
-      $scope.query = query;
+    $scope.search = function () {
+      $scope.page = 1;
       $scope.GetData();
     };
 
-    $scope.mostSoldProductsPaged = function () {
-      var start = ($scope.pageMostSoldProducts - 1) * 20;
-      var end = start + 20;
+    $scope.onDateRangeChanged = function () {
+      $scope.page = 1;
 
-      return $scope.mostsoldproducts.slice(start, end);
+      if ($scope.location === "analytics") {
+        $scope.pageMostSoldProducts = 1;
+        $scope.analytics();
+        return;
+      }
+
+      $scope.GetData();
     };
 
     $scope.pageRange = function () {
       var rangeSize = 5;
       var ret = [];
       var start;
+
       if ($scope.page <= Math.floor(rangeSize / 2)) {
         start = 1;
-      } else if (parseInt($scope.page) + Math.floor(rangeSize / 2) >= $scope.result.totalPages) {
+      } else if (parseInt($scope.page, 10) + Math.floor(rangeSize / 2) >= $scope.result.totalPages) {
         start = Math.max($scope.result.totalPages - rangeSize + 1, 1);
       } else {
         start = $scope.page - Math.floor(rangeSize / 2);
@@ -281,19 +351,18 @@
 
       for (var i = 0; i < rangeSize; i++) {
         var pageNumber = start + i;
+
         if (pageNumber <= $scope.result.totalPages) {
           ret.push(pageNumber);
         }
       }
 
-      // If last page is not already in the list, add it.
-      if (ret[ret.length - 1] < $scope.result.totalPages) {
-        ret.push('...' + $scope.result.totalPages);
+      if (ret.length && ret[ret.length - 1] < $scope.result.totalPages) {
+        ret.push("..." + $scope.result.totalPages);
       }
 
-      // If first page is not already in the list, add it at the beginning.
-      if (ret[0] > 1) {
-        ret.unshift('...' + 1);
+      if (ret.length && ret[0] > 1) {
+        ret.unshift("...1");
       }
 
       return ret;
@@ -303,12 +372,12 @@
       var rangeSize = 5;
       var ret = [];
       var start;
-      var totalPages = Math.floor($scope.mostsoldproducts.length / 20);
+      var totalPages = Math.max($scope.mostSoldProductsTotalPages || 1, 1);
       var page = $scope.pageMostSoldProducts;
 
       if (page <= Math.floor(rangeSize / 2)) {
         start = 1;
-      } else if (parseInt(page) + Math.floor(rangeSize / 2) >= totalPages) {
+      } else if (parseInt(page, 10) + Math.floor(rangeSize / 2) >= totalPages) {
         start = Math.max(totalPages - rangeSize + 1, 1);
       } else {
         start = page - Math.floor(rangeSize / 2);
@@ -316,152 +385,26 @@
 
       for (var i = 0; i < rangeSize; i++) {
         var pageNumber = start + i;
+
         if (pageNumber <= totalPages) {
           ret.push(pageNumber);
         }
       }
 
-      // If last page is not already in the list, add it.
-      if (ret[ret.length - 1] < totalPages) {
-        ret.push('...' + totalPages);
+      if (ret.length && ret[ret.length - 1] < totalPages) {
+        ret.push("..." + totalPages);
       }
 
-      // If first page is not already in the list, add it at the beginning.
-      if (ret[0] > 1) {
-        ret.unshift('...' + 1);
+      if (ret.length && ret[0] > 1) {
+        ret.unshift("...1");
       }
 
       return ret;
     };
 
     $scope.analytics = function () {
-
-      var query = '?start=' + $scope.dateFrom + '&end=' + $scope.dateTo + '&orderStatus=' + $scope.orderStatus + '&store=' + $scope.store;
-
-      resources.Charts(query)
-        .then(function (result) {
-
-
-          $scope.revenueChart = result.data.revenueChart;
-
-          $scope.renderChart('chartRevenue', $scope.revenueChart.labels, $scope.revenueChart.points);
-
-          $scope.ordersChart = result.data.ordersChart;
-
-          $scope.renderChart('chartOrders', $scope.ordersChart.labels, $scope.ordersChart.points);
-
-          $scope.avarageChart = result.data.avarageChart;
-
-          $scope.renderChart('chartAvarage', $scope.avarageChart.labels, $scope.avarageChart.points);
-
-        }, function errorCallback(data) {
-          $scope.loading = false;
-          notificationsService.error("Error", "Error on chart data.");
-        });
-
-      resources.MostSoldProducts(query)
-        .then(function (result) {
-
-          $scope.loadingMostSoldProducts = false;
-
-          $scope.mostsoldproducts = result.data;
-
-        }, function errorCallback(data) {
-          $scope.loadingMostSoldProducts = false;
-          notificationsService.error("Error", "Error on most sold products data.");
-        });
-
-    };
-
-    $scope.renderChart = function (chartId, labels, dataset1, dataset2) {
-
-      var chartConfig = {
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Dataset 1',
-            data: dataset1,
-            lineTension: 0,
-            yAxisID: 'y-axis-1',
-            backgroundColor: 'rgba(255, 255, 255, 0)',
-            borderColor: 'rgba(0, 123, 255, 1)',
-            borderWidth: 1
-          }, {
-            label: 'Dataset 2',
-            data: dataset2,
-            lineTension: 0,
-            yAxisID: 'y-axis-2',
-            backgroundColor: 'rgba(255, 255, 255, 0)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
-          }]
-        },
-        type: 'line',
-        options: {
-          elements: {
-            point: {
-              radius: 4,
-              hitRadius: 2,
-              hoverRadius: 6
-            }
-          },
-          responsive: true,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          tooltips: {
-            callbacks: {
-              label: function (tooltipItem, data) {
-                if (parseInt(tooltipItem.yLabel) >= 1000) {
-                  return tooltipItem.yLabel.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                } else {
-                  return tooltipItem.yLabel;
-                }
-              }
-            }
-          },
-          stacked: false,
-          scales: {
-            xAxes: [{
-              type: 'time',
-              time: {
-                unit: 'month',
-              },
-              ticks: {
-                source: 'auto',
-              }
-            }],
-            yAxes: [{
-              id: 'y-axis-1',
-              type: 'linear',
-              position: 'left',
-              ticks: {
-                beginAtZero: true,
-                callback: function (value, index, values) {
-                  if (parseInt(value) >= 1000) {
-                    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-                  } else {
-                    return value;
-                  }
-                }
-              },
-
-            }, {
-              id: 'y-axis-2',
-              type: 'linear',
-              position: 'right',
-              ticks: {
-                beginAtZero: true
-              }
-            }]
-          }
-        }
-      };
-
-      var ctx = document.getElementById(chartId).getContext('2d');
-
-      var chart = new Chart(ctx, chartConfig);
+      loadCharts();
+      loadMostSoldProducts();
     };
 
     $scope.toggleDropdown = function (dropdownId) {
@@ -472,55 +415,60 @@
       return $scope.visibleDropdowns[dropdownId];
     };
 
-    $scope.selectDropdown = function (dropdownId, status) {
+    $scope.selectDropdown = function (dropdownId, value) {
+      $scope.visibleDropdowns[dropdownId] = false;
+      $scope.labelDropdowns[dropdownId] = value;
 
-      $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
+      if (dropdownId === "dropdownStores") {
+        state.setStore(value);
+        $scope.page = 1;
+        $scope.pageMostSoldProducts = 1;
 
-      $scope.labelDropdowns[dropdownId] = status;
+        if ($scope.location === "analytics") {
+          $scope.analytics();
+          return;
+        }
 
-      if (dropdownId === 'dropdownStores') {
-        $scope.store = status;
-
-        $scope.sharedData.store = $scope.store;
+        $scope.GetPaymentProviders(true).finally(function () {
+          $scope.GetData();
+        });
+        return;
       }
 
-      if (dropdownId === 'dropdownStatusList') {
-        $scope.orderStatus = status;
+      if (dropdownId === "dropdownStatusList") {
+        $scope.filters.orderStatus = value;
       }
 
-      if (dropdownId === 'dropdownPaymentProvider') {
-        $scope.paymentProvider = status;
-
-        $scope.sharedData.store = status;
-
+      if (dropdownId === "dropdownPaymentProvider") {
+        state.setPaymentProvider(value);
       }
 
-      if (dropdownId === 'dropdownOrderStatusList') {
-        $scope.orderChangeStatus = status;
+      if (dropdownId === "dropdownOrderStatusList") {
+        $scope.orderChangeStatus = value;
+        return;
       }
 
-      if ($scope.location === 'analytics') {
+      $scope.page = 1;
+
+      if ($scope.location === "analytics") {
+        $scope.pageMostSoldProducts = 1;
         $scope.analytics();
-      } else if (dropdownId === 'dropdownOrderStatusList') {
-
       } else {
         $scope.GetData();
       }
-
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
+      var label = $scope.labelDropdowns[dropdownId] || defaultText;
 
-      var label = $scope.labelDropdowns[dropdownId];
-
-      label = label || defaultText;
-
-      if (dropdownId === 'dropdownOrderStatusList') {
+      if (dropdownId === "dropdownOrderStatusList") {
         $scope.orderChangeStatus = label;
       }
 
-      if (dropdownId === 'dropdownPaymentProvider') {
-        const provider = $scope.paymentProviders.find(obj => obj.key === label);
+      if (dropdownId === "dropdownPaymentProvider") {
+        var provider = $scope.paymentProviders.find(function (item) {
+          return item.key === label;
+        });
 
         if (provider) {
           return provider.title;
@@ -528,110 +476,89 @@
       }
 
       return label;
-
     };
 
     $scope.getStatusLabel = function (value) {
-
-      const item = $scope.statusList.find(obj => obj.enumValue === value);
-
-      if (item) {
-        return item.label;
-      }
-      return value;
-
-    }
-
-    $scope.onStatusChanged = function (order) {
-
-      var notify = true;
-
-      resources.ChangeOrderStatus('?orderId=' + order.uniqueId + '&orderStatus=' + order.orderStatusCol + '&notify=' + notify)
-        .then(function (result) {
-
-          notificationsService.success("Success", "Order status updated.");
-        }, function errorCallback(data) {
-          notificationsService.error("Error", "Error updating order status.");
+      var item = $scope.statusList.find(function (status) {
+        return status.enumValue === value;
       });
 
+      return item ? item.label : value;
     };
 
-    $document.on('click', function (event) {
-      // Check if the click event target is outside of any dropdown
-      var isClickInsideDropdown = false;
-      var dropdownElements = $document[0].querySelectorAll('.dropdown-toggle');
-
-      for (var i = 0; i < dropdownElements.length; i++) {
-        if (dropdownElements[i].contains(event.target)) {
-          isClickInsideDropdown = true;
-          break;
-        }
-      }
-
-      // Hide all dropdowns if the click is outside
-      if (!isClickInsideDropdown) {
-        $scope.$apply(function () {
-          for (var dropdown in $scope.visibleDropdowns) {
-            $scope.visibleDropdowns[dropdown] = false;
-          }
+    $scope.onStatusChanged = function (order) {
+      resources.ChangeOrderStatus({
+        orderId: order.uniqueId,
+        orderStatus: order.orderStatusCol,
+        notify: true
+      })
+        .then(function () {
+          notificationsService.success("Success", "Order status updated.");
+        }, function () {
+          notificationsService.error("Error", "Error updating order status.");
         });
-      }
-    });
+    };
 
+    $scope.ExportCsv = function (filename) {
+      var orders = $scope.result.orders;
 
-    $scope.ExportCsv = function (filename = 'orders.csv') {
-      const orders = $scope.result.orders;
-      if (!orders || !orders.length) return;
-
-      const keys = Object.keys(orders[0]);
-
-      function esc(v) {
-        if (v == null) return '';
-        if (typeof v === 'object') v = JSON.stringify(v);
-        v = String(v);
-        return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      if (!orders || !orders.length) {
+        return;
       }
 
-      const lines = [];
-      lines.push(keys.join(',')); // header
-      for (let i = 0; i < orders.length; i++) {
-        const r = orders[i];
-        lines.push(keys.map(k => esc(r[k])).join(','));
+      var keys = Object.keys(orders[0]);
+      var lines = [keys.join(",")];
+
+      function escapeValue(value) {
+        var escapedValue = value;
+
+        if (escapedValue == null) {
+          return "";
+        }
+
+        if (typeof escapedValue === "object") {
+          escapedValue = JSON.stringify(escapedValue);
+        }
+
+        escapedValue = String(escapedValue);
+
+        return /[",\r\n]/.test(escapedValue)
+          ? '"' + escapedValue.replace(/"/g, '""') + '"'
+          : escapedValue;
       }
-      const csv = lines.join('\r\n');
 
-      // Create CSV blob
-      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
+      orders.forEach(function (order) {
+        lines.push(keys.map(function (key) {
+          return escapeValue(order[key]);
+        }).join(","));
+      });
 
-      // Trigger click outside Angular digest
-      $timeout(() => {
-        a.click();
-        document.body.removeChild(a);
+      var blob = new Blob(["\uFEFF", lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var anchor = document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = filename || "orders.csv";
+      document.body.appendChild(anchor);
+
+      $timeout(function () {
+        anchor.click();
+        document.body.removeChild(anchor);
         URL.revokeObjectURL(url);
       }, 0, false);
     };
-    angular.element(document).ready(function () {
-      // Init Orders
-      if ($scope.location === 'orders') {
-        $scope.GetStores();
-        $scope.GetStatusList();
-      }
 
-      // Init Analytics
-      if ($scope.location === 'analytics') {
-        setTimeout(function () {
-          $scope.GetStores();
-          $scope.GetStatusList();
-          $scope.DatePickers();
-        }, 250);
-      }
+    $scope.$on("$destroy", function () {
+      chartService.destroyAll();
+      $document.off("click", unbindDocumentClick);
     });
 
+    attachDocumentClickHandler();
+
+    angular.element(document).ready(function () {
+      $scope.GetStatusList();
+      $scope.GetStores();
+    });
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Dashboard", [
@@ -640,9 +567,11 @@
     "Ekom.Manager.Resources",
     "$location",
     "$document",
-    'eventsService',
-    '$rootScope',
-    '$timeout',
+    "eventsService",
+    "Ekom.Manager.State",
+    "Ekom.Manager.ChartService",
+    "$timeout",
+    "$q",
     controller
   ]);
 })();

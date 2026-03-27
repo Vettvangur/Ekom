@@ -1,15 +1,20 @@
 (function () {
   "use strict";
 
-  function controller($scope, notificationsService, resources, $location, $document, eventsService, $rootScope) {
+  function controller($scope, eventsService, state) {
+    var managerState = state.getState();
 
-    var sharedData = $rootScope.sharedData;
-
-    $scope.store = sharedData.store;
-    $scope.filterPaymentProviders = sharedData.paymentProviders;
-
+    $scope.filters = managerState.filters;
+    $scope.filterPaymentProviders = managerState.paymentProviders;
     $scope.visibleDropdowns = {};
     $scope.labelDropdowns = {};
+
+    function emitFilterChange() {
+      eventsService.emit("filter.changed", {
+        paymentProvider: managerState.filters.paymentProvider,
+        productSku: managerState.filters.productSku
+      });
+    }
 
     $scope.toggleDropdown = function (dropdownId) {
       $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
@@ -19,55 +24,42 @@
       return $scope.visibleDropdowns[dropdownId];
     };
 
-    $scope.selectDropdown = function (dropdownId, status) {
+    $scope.selectDropdown = function (dropdownId, value) {
+      $scope.visibleDropdowns[dropdownId] = false;
+      $scope.labelDropdowns[dropdownId] = value;
 
-      $scope.visibleDropdowns[dropdownId] = !$scope.visibleDropdowns[dropdownId];
-
-      $scope.labelDropdowns[dropdownId] = status;
-
-      if (dropdownId === 'dropdownPaymentProvider') {
-
-        $rootScope.sharedData.paymentProvider = status;
-
-        eventsService.emit("filter.changed", {
-          paymentProvider: status
-        });
-
+      if (dropdownId === "dropdownPaymentProvider") {
+        state.setPaymentProvider(value);
+        emitFilterChange();
       }
+    };
 
+    $scope.onProductSkuChanged = function () {
+      state.setProductSku(($scope.filters.productSku || "").trim());
+      emitFilterChange();
     };
 
     $scope.labelDropdown = function (dropdownId, defaultText) {
+      var label = $scope.labelDropdowns[dropdownId] || defaultText;
 
-      var label = $scope.labelDropdowns[dropdownId];
-
-      label = label || defaultText;
-
-      if ($rootScope.sharedData.paymentProvider !== '') {
-        const provider = $scope.filterPaymentProviders.find(obj => obj.key === $rootScope.sharedData.paymentProvider);
+      if (managerState.filters.paymentProvider) {
+        var provider = $scope.filterPaymentProviders.find(function (item) {
+          return item.key === managerState.filters.paymentProvider;
+        });
 
         if (provider) {
-
-          const providerName = provider.title;
-
-          return providerName;
+          return provider.title;
         }
       }
 
       return label;
-
     };
-
   }
 
   angular.module("umbraco").controller("Ekom.Manager.Filter", [
     "$scope",
-    "notificationsService",
-    "Ekom.Manager.Resources",
-    "$location",
-    "$document",
-    'eventsService',
-    '$rootScope',
+    "eventsService",
+    "Ekom.Manager.State",
     controller
   ]);
 })();

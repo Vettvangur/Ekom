@@ -31,6 +31,21 @@ public static class OrderEvents
         => AsyncEventInvoker.InvokeAsync(CustomerEmailAddedAsync, sender, args, ct);
 
     // ----------------------------
+    // Customer information updating/updated
+    // ----------------------------
+
+    public static event Func<object, CustomerInformationUpdatingEventArgs, CancellationToken, Task>? CustomerInformationUpdatingAsync;
+
+    public static Task OnCustomerInformationUpdatingAsync(object sender, CustomerInformationUpdatingEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(CustomerInformationUpdatingAsync, sender, args, ct);
+
+
+    public static event Func<object, CustomerInformationUpdatedEventArgs, CancellationToken, Task>? CustomerInformationUpdatedAsync;
+
+    public static Task OnCustomerInformationUpdatedAsync(object sender, CustomerInformationUpdatedEventArgs args, CancellationToken ct = default)
+        => AsyncEventInvoker.InvokeAsync(CustomerInformationUpdatedAsync, sender, args, ct);
+
+    // ----------------------------
     // Order updating
     // ----------------------------
 
@@ -122,6 +137,18 @@ public sealed class CustomerEmailAddedEventArgs : EventArgs
     public required IOrderInfo OrderInfo { get; set; }
     public string? PreviousCustomerEmail { get; set; }
     public required string NewCustomerEmail { get; set; }
+}
+
+public sealed class CustomerInformationUpdatingEventArgs : EventArgs
+{
+    public required IOrderInfo OrderInfo { get; set; }
+    public required IReadOnlyDictionary<string, string> Form { get; set; }
+}
+
+public sealed class CustomerInformationUpdatedEventArgs : EventArgs
+{
+    public required IOrderInfo OrderInfo { get; set; }
+    public required IReadOnlyDictionary<string, string> Form { get; set; }
 }
 
 public sealed class OrderUpdatingEventArgs : EventArgs

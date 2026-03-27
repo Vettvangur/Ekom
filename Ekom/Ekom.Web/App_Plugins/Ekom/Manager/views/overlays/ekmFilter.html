@@ -23,5 +23,19 @@
 
     </div>
 
+    <div>
+
+      <label for="ekmFilterProductSku" style="display:block;">Product SKU:</label>
+      <input id="ekmFilterProductSku"
+             type="text"
+             class="form-control"
+             no-dirty-check
+             ng-model="filters.productSku"
+             ng-model-options="{ updateOn: 'default blur', debounce: { default: 300, blur: 0 } }"
+             ng-change="onProductSkuChanged()"
+             placeholder="Exact SKU" />
+
+    </div>
+
   </div>
 </article>

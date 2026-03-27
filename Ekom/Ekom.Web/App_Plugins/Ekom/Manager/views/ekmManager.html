@@ -3,21 +3,20 @@
     <div class="flex items-center" style="height:100%;">
       <img src="/App_Plugins/Ekom/Manager/assets/ekomLogo.png" class="ekmManager__logo" alt="Ekom Ecommerce" />
 
-      <uui-tab-group id="ekmNavigationTabs">
-        <uui-tab active label="Orders">Orders</uui-tab>
-        <uui-tab label="Analytics">Analytics</uui-tab>
+      <uui-tab-group>
+        <uui-tab label="Orders" ng-click="navigateTo('orders')" ng-attr-active="{{ location === 'orders' ? '' : undefined }}">Orders</uui-tab>
+        <uui-tab label="Analytics" ng-click="navigateTo('analytics')" ng-attr-active="{{ location === 'analytics' ? '' : undefined }}">Analytics</uui-tab>
       </uui-tab-group>
     </div>
   </div>
+
   <div class="umb-editor-container">
     <div class="umb-pane">
-
       <div ng-if="location == 'orders'">
         <div ng-if="loading">Hang tight! Fetching your order details... This might take a moment.</div>
 
         <div ng-if="!loading">
           <div class="cards">
-
             <div class="card">
               <strong>{{ orderCount }}</strong>
               Orders
@@ -29,20 +28,18 @@
             </div>
 
             <div class="card">
-              <strong> {{ averageAmount }}</strong>
+              <strong>{{ averageAmount }}</strong>
               Average order amount
             </div>
-
           </div>
 
           <div class="umb-sub-header">
             <div class="ekmManager__filters">
-
               <div class="ekmManager__filter">
                 <label>Order Status:</label>
                 <div class="btn-group dropdown-toggle">
                   <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStatusList')">
-                    {{getStatusLabel(labelDropdown('dropdownStatusList','Completed Orders'))}}
+                    {{ getStatusLabel(labelDropdown('dropdownStatusList', 'CompletedOrders')) }}
                     <span class="caret" aria-hidden="true"></span>
                   </div>
                   <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStatusList')">
@@ -53,7 +50,7 @@
                       <button type="button" ng-click="selectDropdown('dropdownStatusList', 'AllOrders')">All Orders</button>
                     </li>
                     <li ng-repeat="status in statusList">
-                      <button type="button" ng-click="selectDropdown('dropdownStatusList',status.enumValue)">{{ status.label }}</button>
+                      <button type="button" ng-click="selectDropdown('dropdownStatusList', status.enumValue)">{{ status.label }}</button>
                     </li>
                   </ul>
                 </div>
@@ -61,31 +58,30 @@
 
               <div class="ekmManager__filter">
                 <label for="dateFrom">Date From:</label>
-                <uui-input type="date" id="dateFrom" value="{{ dateFrom }}" label="Date From" name="dateFrom" class="ekmManager__datepicker"></uui-input>
+                <input id="dateFrom" type="date" class="form-control ekmManager__dateInput" no-dirty-check ng-model="filters.dateFrom" ng-change="onDateRangeChanged()" />
               </div>
 
               <div class="ekmManager__filter">
                 <label for="dateTo">Date To:</label>
-                <uui-input type="date" id="dateTo" value="{{ dateTo }}" label="Date To" name="dateTo" class="ekmManager__datepicker"></uui-input>
+                <input id="dateTo" type="date" class="form-control ekmManager__dateInput" no-dirty-check ng-model="filters.dateTo" ng-change="onDateRangeChanged()" />
               </div>
 
               <div class="ekmManager__filter">
                 <label>Store:</label>
                 <div class="btn-group dropdown-toggle">
                   <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStores')">
-                    {{labelDropdown('dropdownStores','')}}
+                    {{ labelDropdown('dropdownStores', filters.store) }}
                     <span class="caret" aria-hidden="true"></span>
                   </div>
                   <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStores')">
                     <li ng-repeat="store in stores">
-                      <button type="button" ng-click="selectDropdown('dropdownStores',store.alias)">{{ store.title }}</button>
+                      <button type="button" ng-click="selectDropdown('dropdownStores', store.alias)">{{ store.title }}</button>
                     </li>
                   </ul>
                 </div>
               </div>
 
               <div class="ekmManager__search">
-
                 <uui-button pristine="" type="" style="" look="outline" color="default" label="Export" class="ekmManager__filterButton" ng-click="ExportCsv()">
                   Export
                 </uui-button>
@@ -102,11 +98,10 @@
                 <div class="form-search">
                   <div class="inner-addon left-addon">
                     <i class="icon icon-search"></i>
-                    <input type="text" class="form-control" ng-model="query" placeholder="Type to search..." ng-change="search(query)">
+                    <input type="text" class="form-control" no-dirty-check ng-model="filters.query" placeholder="Type to search..." ng-change="search()">
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -127,7 +122,7 @@
                 <div class="umb-table-cell not-fixed">
                   <button class="btn umb-button__button btn-success" ng-click="ViewOrder(order)">View</button>
                 </div>
-                <div class="umb-table-cell" title="{{order.uniqueId}}">{{order.referenceId}}</div>
+                <div class="umb-table-cell" title="{{order.uniqueId}}">{{ order.referenceId }}</div>
                 <div class="umb-table-cell">
                   <div class="mt-2 grid grid-cols-1">
                     <select class="col-start-1 row-start-1 w-full appearance-none rounded-md bg-white py-1.5 pl-3 pr-8 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-600 sm:text-sm/6"
@@ -137,123 +132,120 @@
                     </select>
                   </div>
                 </div>
-                <div class="umb-table-cell">{{order.customerName}}</div>
-                <div class="umb-table-cell">{{order.storeAlias}}</div>
-                <div class="umb-table-cell">{{order.createDate | date : "dd.MM.y HH:mm" }}</div>
-                <div class="umb-table-cell">{{order.formattedTotal }}</div>
+                <div class="umb-table-cell">{{ order.customerName }}</div>
+                <div class="umb-table-cell">{{ order.storeAlias }}</div>
+                <div class="umb-table-cell">{{ order.createDate | date : 'dd.MM.y HH:mm' }}</div>
+                <div class="umb-table-cell">{{ order.formattedTotal }}</div>
               </div>
-              <div ng-if="result.orders.length <= 0">
+
+              <div ng-if="!result.orders.length">
                 <div class="umb-table-cell">No orders found</div>
               </div>
             </div>
           </div>
 
-          <div class="flex justify-center">
+          <div class="flex justify-center" ng-if="result.totalPages > 1">
             <div class="umb-pagination pagination">
               <ul>
                 <li ng-repeat="n in pageRange()" ng-class="{active: n == page}">
-                  <button class="btn-reset" ng-disabled="n == page" ng-click="setPage(n)">{{n}}</button>
+                  <button class="btn-reset" ng-disabled="n == page" ng-click="setPage(n)">{{ n }}</button>
                 </li>
               </ul>
             </div>
           </div>
         </div>
-
       </div>
 
       <div ng-if="location == 'analytics'">
-
         <div class="umb-sub-header">
           <div class="ekmManager__filters">
-
             <div class="ekmManager__filter">
               <label>Order Status:</label>
               <div class="btn-group dropdown-toggle">
                 <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStatusList')">
-                  {{labelDropdown('dropdownStatusList','Completed Orders')}}
+                  {{ getStatusLabel(labelDropdown('dropdownStatusList', 'CompletedOrders')) }}
                   <span class="caret" aria-hidden="true"></span>
                 </div>
                 <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStatusList')">
                   <li>
                     <button type="button" ng-click="selectDropdown('dropdownStatusList', 'CompletedOrders')">Completed Orders</button>
                   </li>
+                  <li>
+                    <button type="button" ng-click="selectDropdown('dropdownStatusList', 'AllOrders')">All Orders</button>
+                  </li>
                   <li ng-repeat="status in statusList">
-                    <button type="button" ng-click="selectDropdown('dropdownStatusList',status.enumValue)">{{ status.label }}</button>
+                    <button type="button" ng-click="selectDropdown('dropdownStatusList', status.enumValue)">{{ status.label }}</button>
                   </li>
                 </ul>
               </div>
             </div>
 
             <div class="ekmManager__filter">
-              <label for="dateFrom">Date From:</label>
-              <uui-input type="date" id="dateFrom" value="{{ dateFrom }}" label="Date From" name="dateFrom" class="ekmManager__datepicker"></uui-input>
+              <label for="analyticsDateFrom">Date From:</label>
+              <input id="analyticsDateFrom" type="date" class="form-control ekmManager__dateInput" no-dirty-check ng-model="filters.dateFrom" ng-change="onDateRangeChanged()" />
             </div>
 
             <div class="ekmManager__filter">
-              <label for="dateTo">Date To:</label>
-              <uui-input type="date" id="dateTo" value="{{ dateTo }}" label="Date To" name="dateTo" class="ekmManager__datepicker"></uui-input>
+              <label for="analyticsDateTo">Date To:</label>
+              <input id="analyticsDateTo" type="date" class="form-control ekmManager__dateInput" no-dirty-check ng-model="filters.dateTo" ng-change="onDateRangeChanged()" />
             </div>
 
             <div class="ekmManager__filter">
               <label>Store:</label>
               <div class="btn-group dropdown-toggle">
                 <div class="btn btn-outline umb-outline" ng-click="toggleDropdown('dropdownStores')">
-                  {{labelDropdown('dropdownStores','')}}
+                  {{ labelDropdown('dropdownStores', filters.store) }}
                   <span class="caret" aria-hidden="true"></span>
                 </div>
                 <ul class="dropdown-menu" ng-show="isDropdownVisible('dropdownStores')">
                   <li ng-repeat="store in stores">
-                    <button type="button" ng-click="selectDropdown('dropdownStores',store.alias)">{{ store.title }}</button>
+                    <button type="button" ng-click="selectDropdown('dropdownStores', store.alias)">{{ store.title }}</button>
                   </li>
                 </ul>
               </div>
             </div>
-
           </div>
         </div>
 
         <div>
           <div class="ekmGrid">
-
             <div class="ekmGrid__column">
-
-              <div class="card">
+              <div class="card ekmChartCard">
                 <h3>Sales Revenue</h3>
-                <canvas id="chartRevenue"></canvas>
+                <div class="ekmChartCard__canvas">
+                  <canvas id="chartRevenue"></canvas>
+                </div>
               </div>
-
             </div>
 
             <div class="ekmGrid__column">
-
-              <div class="card">
+              <div class="card ekmChartCard">
                 <h3>Total Orders</h3>
-                <canvas id="chartOrders"></canvas>
+                <div class="ekmChartCard__canvas">
+                  <canvas id="chartOrders"></canvas>
+                </div>
               </div>
-
             </div>
-
           </div>
 
           <div class="ekmGrid">
-
             <div class="ekmGrid__column">
-
-              <div class="card">
+              <div class="card ekmChartCard">
                 <h3>Average Order Value (AOV)</h3>
-                <canvas id="chartAvarage"></canvas>
+                <div class="ekmChartCard__canvas">
+                  <canvas id="chartAvarage"></canvas>
+                </div>
               </div>
-
             </div>
 
             <div class="ekmGrid__column">
-
               <div class="card">
                 <h3>Most Sold Products</h3>
 
                 <div ng-if="loadingMostSoldProducts">
                   Retrieving top-sellers from our collection... Your patience is appreciated, this could take some time.
                 </div>
+
                 <div ng-if="!loadingMostSoldProducts">
                   <table class="table">
                     <thead>
@@ -265,34 +257,29 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr ng-repeat="product in mostSoldProductsPaged()">
-                        <td>{{product.id}}</td>
-                        <td>{{product.sku}}</td>
-                        <td>{{product.title}}</td>
-                        <td>{{product.productCount}}</td>
+                      <tr ng-repeat="product in mostsoldproducts">
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.sku }}</td>
+                        <td>{{ product.title }}</td>
+                        <td>{{ product.productCount }}</td>
                       </tr>
                     </tbody>
                   </table>
 
-                  <div class="flex justify-center">
+                  <div class="flex justify-center" ng-if="mostSoldProductsTotalPages > 1">
                     <div class="umb-pagination pagination">
                       <ul>
                         <li ng-repeat="n in pageRangeMostSoldProducts()" ng-class="{active: n == pageMostSoldProducts}">
-                          <button class="btn-reset" ng-disabled="n == pageMostSoldProducts" ng-click="setPageMostSoldProducts(n)">{{n}}</button>
+                          <button class="btn-reset" ng-disabled="n == pageMostSoldProducts" ng-click="setPageMostSoldProducts(n)">{{ n }}</button>
                         </li>
                       </ul>
                     </div>
                   </div>
-
                 </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
 
@@ -303,4 +290,3 @@
     </umb-overlay>
   </div>
 </div>
-
