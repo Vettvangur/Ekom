@@ -2096,7 +2096,12 @@ partial class OrderService
             return;
         }
 
-        SetOrderIdCookie(key, orderId);
+        // Only set the cookie when it is currently empty to avoid
+        // unintentionally switching the active order in multi-tab scenarios.
+        if (cookieOrderId == Guid.Empty && orderId != Guid.Empty)
+        {
+            SetOrderIdCookie(key, orderId);
+        }
     }
 
 
