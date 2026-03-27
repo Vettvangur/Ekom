@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.67](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.66...Ekom.Klaviyo-v0.2.67) (2026-03-27)
+
+
+### Bug Fixes
+
+* resolve Klaviyo subscribe list ids ([#440](https://github.com/Vettvangur/Ekom/issues/440)) ([007bda2](https://github.com/Vettvangur/Ekom/commit/007bda28428feb116f854e11752433312d751fa9))
+
 ## [0.2.66](https://github.com/Vettvangur/Ekom/compare/Ekom.Klaviyo-v0.2.65...Ekom.Klaviyo-v0.2.66) (2026-03-23)
 
 
