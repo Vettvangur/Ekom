@@ -8,6 +8,7 @@ using Ekom.Utilities;
 using LinqToDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -660,11 +661,11 @@ public class CheckoutControllerService
                 OrderStatus.WaitingForPayment,
                 order.UniqueId).ConfigureAwait(false);
 
+            Uri paymentReturnErrorUrl = new(BuildPaymentReturnUrl(order.UniqueId, "error"));
+            Uri paymentReturnCancelUrl = new(BuildPaymentReturnUrl(order.UniqueId, "cancel"));
+
             Uri successUrl = PaymentsUriHelper.EnsureFullUri(
                 ekomPP.GetValue("successUrl", storeAlias),
-                _httpCtx.Request);
-            Uri cancelUrl = PaymentsUriHelper.EnsureFullUri(
-                ekomPP.GetValue("cancelUrl", storeAlias),
                 _httpCtx.Request);
             successUrl = PaymentsUriHelper.AddQueryString(
                 successUrl,
@@ -703,8 +704,8 @@ public class CheckoutControllerService
                 CardExpirationYear = paymentRequest.Year.HasValue ? paymentRequest.Year.Value : 0,
                 CardCVV = paymentRequest.CVV,
                 SuccessUrl = successUrl,
-                ErrorUrl = PaymentsUriHelper.EnsureFullUri(errorUrl, _httpCtx.Request),
-                CancelUrl = cancelUrl,
+                ErrorUrl = paymentReturnErrorUrl,
+                CancelUrl = paymentReturnCancelUrl,
                 Currency = currency.ToString(),
                 Orders = orderItems,
                 Language = language,
@@ -737,6 +738,17 @@ public class CheckoutControllerService
                 HttpStatusCode = 230,
             };
         }
+    }
+
+    private string BuildPaymentReturnUrl(Guid orderId, string outcome)
+    {
+        string baseUrl = $"{_httpCtx.Request.Scheme}://{_httpCtx.Request.Host}{_httpCtx.Request.PathBase}/ekom/checkout/payment-return";
+
+        return QueryHelpers.AddQueryString(baseUrl, new Dictionary<string, string?>
+        {
+            ["orderId"] = orderId.ToString(),
+            ["outcome"] = outcome
+        });
     }
 
 #pragma warning restore CA1062 // Validate arguments of public methods

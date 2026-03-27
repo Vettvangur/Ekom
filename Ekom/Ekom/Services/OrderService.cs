@@ -2043,9 +2043,17 @@ partial class OrderService
     {
         var guid = Guid.NewGuid();
 
+        SetOrderIdCookie(key, guid);
+
+        return guid;
+    }
+
+    private void SetOrderIdCookie(string key, Guid orderId)
+    {
+
         _httpCtx.Response.Cookies.Append(
             key,
-            guid.ToString(),
+            orderId.ToString(),
             new CookieOptions
             {
                 Path = "/",
@@ -2055,7 +2063,6 @@ partial class OrderService
                 HttpOnly = false
             });
 
-        return guid;
     }
 
     public void DeleteOrderCookie(IStore store)
@@ -2069,6 +2076,27 @@ partial class OrderService
         {
             _httpCtx.Response.Cookies.Delete(key);
         }
+    }
+
+    public void EnsureOrderCookie(IStore store, Guid orderId)
+    {
+        if (_httpCtx?.Request?.Cookies == null || _httpCtx.Response?.Cookies == null)
+            return;
+
+        if (store.UserBasket)
+        {
+            return;
+        }
+
+        string key = CreateKey(store);
+        Guid cookieOrderId = GetOrderIdFromCookie(key);
+
+        if (cookieOrderId == orderId)
+        {
+            return;
+        }
+
+        SetOrderIdCookie(key, orderId);
     }
 
 
