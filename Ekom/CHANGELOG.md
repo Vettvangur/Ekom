@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.99...Ekom-v0.2.100) (2026-03-30)
+
+
+### Bug Fixes
+
+* allow manager access when no store permissions are configured ([#444](https://github.com/Vettvangur/Ekom/issues/444)) ([edb5fb4](https://github.com/Vettvangur/Ekom/commit/edb5fb484b712b0ce058df15197a54863f18b61b))
+
 ## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.98...Ekom-v0.2.99) (2026-03-27)
 
 
