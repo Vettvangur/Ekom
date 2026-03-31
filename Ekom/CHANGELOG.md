@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.100...Ekom-v0.2.101) (2026-03-31)
+
+
+### Bug Fixes
+
+* avoid manager order status dirty prompts ([#446](https://github.com/Vettvangur/Ekom/issues/446)) ([fc5914c](https://github.com/Vettvangur/Ekom/commit/fc5914cdca75336491cbf15de629610095e0e898))
+
 ## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.99...Ekom-v0.2.100) (2026-03-30)
 
 
