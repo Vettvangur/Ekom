@@ -4,6 +4,7 @@ using Ekom.Events;
 using Ekom.Exceptions;
 using Ekom.Models;
 using Ekom.Repositories;
+using Ekom.Tracking;
 using Ekom.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
@@ -62,6 +63,7 @@ partial class OrderService
     readonly IMemoryCache _memoryCache;
     readonly IMemberService _memberService;
     readonly DiscountCache _discountCache;
+    readonly IOrderTrackingService _orderTrackingService;
     readonly ActivityLogRepository _activityLogRepository;
     readonly OrderRepository _orderRepository;
     readonly CouponRepository _couponRepository;
@@ -84,7 +86,8 @@ partial class OrderService
         IStoreService storeService,
         IMemoryCache memoryCache,
         IMemberService memberService,
-        DiscountCache discountCache)
+        DiscountCache discountCache,
+        IOrderTrackingService orderTrackingService)
     {
         _logger = logger;
 
@@ -94,6 +97,7 @@ partial class OrderService
         _activityLogRepository = activityLogRepository;
         _storeSvc = storeService;
         _discountCache = discountCache;
+        _orderTrackingService = orderTrackingService;
         _memoryCache = memoryCache;
         _memberService = memberService;
 
@@ -113,8 +117,9 @@ partial class OrderService
         IMemoryCache memoryCache,
         IMemberService memberService,
         DiscountCache discountCache,
+        IOrderTrackingService orderTrackingService,
         IHttpContextAccessor httpContextAccessor)
-        : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache)
+        : this(config, orderRepo, couponRepository, activityLogRepository, logger, storeService, memoryCache, memberService, discountCache, orderTrackingService)
     {
 
         try
@@ -729,6 +734,8 @@ partial class OrderService
         {
             orderInfo = await CreateEmptyOrderAsync(store.Alias, ct).ConfigureAwait(false);
         }
+
+        ApplyConsentAndTracking(orderInfo, settings.Consent, settings.Tracking, replaceExisting: settings.Tracking?.HasData() == true || settings.Consent != null);
 
         _logger.LogDebug("ProductId: {ProductId}" +
             " variantId: {VariantId}" +
@@ -1540,6 +1547,12 @@ partial class OrderService
 
         var previousCustomerEmail = orderInfo.CustomerInformation.Customer.Email;
 
+        if (settings.Tracking?.HasData() == true || settings.Consent != null)
+        {
+            _orderTrackingService.ValidateManualReplacement(orderInfo);
+            ApplyConsentAndTracking(orderInfo, settings.Consent, settings.Tracking, replaceExisting: true);
+        }
+
         string? shippingProviderKey = null;
         string? shippingProviderValue = null;
         string? paymentProviderKey = null;
@@ -1646,6 +1659,41 @@ partial class OrderService
 
         return orderInfo;
 
+    }
+
+    public async Task<OrderInfo> UpdateTrackingAsync(
+        string storeAlias,
+        OrderTracking tracking,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        if (tracking == null)
+        {
+            throw new ArgumentNullException(nameof(tracking));
+        }
+
+        settings ??= new OrderSettings();
+
+        OrderInfo? orderInfo;
+        if (settings.OrderInfo == null)
+        {
+            orderInfo = await GetOrderAsync(storeAlias, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            orderInfo = settings.OrderInfo as OrderInfo;
+        }
+
+        if (orderInfo == null)
+        {
+            throw new OrderInfoNotFoundException();
+        }
+
+        _orderTrackingService.ValidateManualReplacement(orderInfo);
+        ApplyConsentAndTracking(orderInfo, settings.Consent, tracking, replaceExisting: true);
+
+        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, ct: ct)
+            .ConfigureAwait(false);
     }
 
     public async Task<OrderInfo> UpdateShippingInformationAsync(
@@ -2040,6 +2088,26 @@ partial class OrderService
         }
 
         return order;
+    }
+
+    private void ApplyConsentAndTracking(OrderInfo orderInfo, OrderConsent? manualConsent, OrderTracking? manualTracking, bool replaceExisting)
+    {
+        OrderConsent? consent = _orderTrackingService.ResolveConsent(manualConsent, orderInfo.StoreInfo.Alias);
+        if (consent != null)
+        {
+            _orderTrackingService.ApplyConsent(orderInfo, consent, replaceExisting);
+        }
+
+        OrderTracking? tracking = manualTracking?.HasData() == true
+            ? manualTracking
+            : (!replaceExisting ? _orderTrackingService.ResolveTracking(null) : null);
+
+        if (tracking?.HasData() != true)
+        {
+            return;
+        }
+
+        _orderTrackingService.ApplyTracking(orderInfo, tracking, replaceExisting);
     }
 
 

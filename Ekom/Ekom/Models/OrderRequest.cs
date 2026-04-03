@@ -7,6 +7,8 @@ public class OrderRequest
     public string StoreAlias { get; set; } = string.Empty;
     public decimal Quantity { get; set; } = 1;
     public OrderAction? Action { get; set; } = OrderAction.AddOrUpdate;
+    public OrderConsent? Consent { get; set; }
+    public OrderTracking? Tracking { get; set; }
 }
 
 public class OrderlineRequest

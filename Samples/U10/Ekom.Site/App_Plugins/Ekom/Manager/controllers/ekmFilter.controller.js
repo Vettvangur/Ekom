@@ -12,7 +12,13 @@
     function emitFilterChange() {
       eventsService.emit("filter.changed", {
         paymentProvider: managerState.filters.paymentProvider,
-        productSku: managerState.filters.productSku
+        productSku: managerState.filters.productSku,
+        trackingSource: managerState.filters.trackingSource,
+        trackingMedium: managerState.filters.trackingMedium,
+        trackingCampaign: managerState.filters.trackingCampaign,
+        trackingTerm: managerState.filters.trackingTerm,
+        trackingContent: managerState.filters.trackingContent,
+        trackingClickId: managerState.filters.trackingClickId
       });
     }
 
@@ -36,6 +42,11 @@
 
     $scope.onProductSkuChanged = function () {
       state.setProductSku(($scope.filters.productSku || "").trim());
+      emitFilterChange();
+    };
+
+    $scope.onTrackingFieldChanged = function (field) {
+      state.setTrackingField(field, ($scope.filters[field] || "").trim());
       emitFilterChange();
     };
 

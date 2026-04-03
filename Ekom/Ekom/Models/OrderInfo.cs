@@ -42,6 +42,8 @@ public class OrderInfo : IOrderInfo
             ShippingProvider = CreateShippingProviderFromJson(orderInfoJObject);
             PaymentProvider = CreatePaymentProviderFromJson(orderInfoJObject);
             CustomerInformation = CreateCustomerInformationFromJson(orderInfoJObject);
+            Consent = CreateConsentFromJson(orderInfoJObject);
+            Tracking = CreateTrackingFromJson(orderInfoJObject);
             Discount = orderInfoJObject[nameof(Discount)]?.ToObject<OrderedDiscount>();
             Coupon = orderInfoJObject[nameof(Coupon)]?.ToObject<string>();
             _hangfireJobs = orderInfoJObject[nameof(HangfireJobs)]?.ToObject<List<string>>();
@@ -117,6 +119,8 @@ public class OrderInfo : IOrderInfo
     }
 
     public CustomerInfo CustomerInformation { get; set; } = new CustomerInfo();
+    public OrderConsent? Consent { get; set; }
+    public OrderTracking? Tracking { get; set; }
 
     /// <inheritdoc />
     public ICalculatedPrice OrderLineTotal
@@ -470,6 +474,38 @@ public class OrderInfo : IOrderInfo
         }
 
         return null;
+    }
+
+    private OrderTracking? CreateTrackingFromJson(JObject orderInfoJObject)
+    {
+        if (orderInfoJObject[nameof(Tracking)] == null)
+        {
+            return null;
+        }
+
+        string trackingJson = orderInfoJObject[nameof(Tracking)]!.ToString();
+        if (string.IsNullOrEmpty(trackingJson))
+        {
+            return null;
+        }
+
+        return JsonConvert.DeserializeObject<OrderTracking>(trackingJson);
+    }
+
+    private OrderConsent? CreateConsentFromJson(JObject orderInfoJObject)
+    {
+        if (orderInfoJObject[nameof(Consent)] == null)
+        {
+            return null;
+        }
+
+        string consentJson = orderInfoJObject[nameof(Consent)]!.ToString();
+        if (string.IsNullOrEmpty(consentJson))
+        {
+            return null;
+        }
+
+        return JsonConvert.DeserializeObject<OrderConsent>(consentJson);
     }
 
     public void UpdateOrderlines(List<OrderLine> orderlines)

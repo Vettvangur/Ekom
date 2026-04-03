@@ -371,6 +371,21 @@ public partial class Order
             .ConfigureAwait(false);
     }
 
+    public async Task<IOrderInfo> UpdateTrackingAsync(
+        string storeAlias,
+        OrderTracking tracking,
+        OrderSettings? settings = null,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(storeAlias))
+        {
+            throw new ArgumentException("Null or empty storeAlias", nameof(storeAlias));
+        }
+
+        return await _orderService.UpdateTrackingAsync(storeAlias, tracking, settings, ct)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>
     /// 
     /// </summary>

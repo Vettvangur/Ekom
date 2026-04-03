@@ -1,5 +1,6 @@
 using Ekom.AspNetCore;
 using Ekom.Services;
+using Ekom.Tracking;
 using Ekom.Umb.Services;
 using EkomCore.Services;
 using Microsoft.AspNetCore.Builder;
@@ -38,6 +39,11 @@ public static class ApplicationBuilderExtensions
     public static IApplicationBuilder UseEkomMiddleware(this IApplicationBuilder builder)
     {
         return builder.UseMiddleware<EkomMiddleware>();
+    }
+
+    public static IApplicationBuilder UseEkomTrackingMiddleware(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<EkomTrackingMiddleware>();
     }
 
     public static IApplicationBuilder UseEkomMalformedFormGuard(this IApplicationBuilder builder)

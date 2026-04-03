@@ -46,6 +46,8 @@ public class OrderSettings
 
     public OrderDynamicRequest OrderDynamicRequest { get; set; }
     public Dictionary<string, string> CustomData { get; set; } = [];
+    public OrderConsent? Consent { get; set; }
+    public OrderTracking? Tracking { get; set; }
 }
 
 /// <summary>

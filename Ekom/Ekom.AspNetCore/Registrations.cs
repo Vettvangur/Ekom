@@ -9,6 +9,7 @@ using Ekom.Models;
 using Ekom.Payments;
 using Ekom.Repositories;
 using Ekom.Services;
+using Ekom.Tracking;
 using Ekom.Utilities;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
@@ -68,6 +69,21 @@ static class Registrations
         services.AddScoped<RevalidateService>();
         services.AddScoped<ControllerRequestHelper>();
         services.AddTransient<CheckoutService>();
+        services.AddSingleton<ITrackingConsentResolver, DefaultTrackingConsentResolver>();
+        services.AddSingleton<ITrackingConsentService, TrackingConsentService>();
+        services.AddSingleton<ITrackingCookieService, TrackingCookieService>();
+        services.AddTransient<IOrderTrackingService, OrderTrackingService>();
+        services.AddTransient<IGa4TrackingService, Ga4TrackingService>();
+        services.AddHttpClient<IMetaTrackingService, MetaTrackingService>(client =>
+        {
+            client.BaseAddress = new Uri("https://graph.facebook.com/v20.0/");
+        });
+        services.AddSingleton<Ga4TrackingDispatcher>();
+        services.AddSingleton<IGa4TrackingDispatcher>(sp => sp.GetRequiredService<Ga4TrackingDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<Ga4TrackingDispatcher>());
+        services.AddSingleton<MetaTrackingDispatcher>();
+        services.AddSingleton<IMetaTrackingDispatcher>(sp => sp.GetRequiredService<MetaTrackingDispatcher>());
+        services.AddHostedService(sp => sp.GetRequiredService<MetaTrackingDispatcher>());
         services.AddTransient<Ekom.Services.IMailService, MailService>();
         services.AddTransient<DatabaseService>();
 
@@ -189,6 +205,7 @@ static class Registrations
         services.AddMemoryCache();
 
         services.Configure<EkomOptions>(config.GetSection("Ekom"));
+        services.Configure<TrackingOptions>(config.GetSection("Ekom:Tracking"));
 
         services.Configure<MvcOptions>(mvcOptions =>
         {

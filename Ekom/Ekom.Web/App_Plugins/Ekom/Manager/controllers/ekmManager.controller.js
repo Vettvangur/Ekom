@@ -28,9 +28,15 @@
     $scope.mostSoldProductsTotalPages = 0;
     $scope.location = getLocationFromPath();
 
-    eventsService.on("filter.changed", function (_, args) {
+      eventsService.on("filter.changed", function (_, args) {
       state.setPaymentProvider(args.paymentProvider);
       state.setProductSku(args.productSku);
+      state.setTrackingField("trackingSource", args.trackingSource);
+      state.setTrackingField("trackingMedium", args.trackingMedium);
+      state.setTrackingField("trackingCampaign", args.trackingCampaign);
+      state.setTrackingField("trackingTerm", args.trackingTerm);
+      state.setTrackingField("trackingContent", args.trackingContent);
+      state.setTrackingField("trackingClickId", args.trackingClickId);
       $scope.page = 1;
       $scope.GetData();
     });
@@ -92,7 +98,13 @@
         query: $scope.filters.query,
         store: $scope.filters.store,
         paymentProvider: $scope.filters.paymentProvider,
-        productSku: $scope.filters.productSku
+        productSku: $scope.filters.productSku,
+        trackingSource: $scope.filters.trackingSource,
+        trackingMedium: $scope.filters.trackingMedium,
+        trackingCampaign: $scope.filters.trackingCampaign,
+        trackingTerm: $scope.filters.trackingTerm,
+        trackingContent: $scope.filters.trackingContent,
+        trackingClickId: $scope.filters.trackingClickId
       };
     }
 

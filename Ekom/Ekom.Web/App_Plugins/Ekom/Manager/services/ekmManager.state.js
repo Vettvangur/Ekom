@@ -13,6 +13,12 @@
         store: "",
         paymentProvider: "",
         productSku: "",
+        trackingSource: "",
+        trackingMedium: "",
+        trackingCampaign: "",
+        trackingTerm: "",
+        trackingContent: "",
+        trackingClickId: "",
         query: ""
       },
       statusList: [],
@@ -32,6 +38,9 @@
       },
       setProductSku: function (productSku) {
         state.filters.productSku = productSku || "";
+      },
+      setTrackingField: function (field, value) {
+        state.filters[field] = value || "";
       },
       clearPaymentProvider: function () {
         state.filters.paymentProvider = "";

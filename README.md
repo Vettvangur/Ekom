@@ -121,6 +121,56 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
 - `Payments` (object): Provider-specific configuration used by payment providers.
 
+### Tracking and consent
+
+Ekom tracking supports order-level `Consent` and `Tracking` data for automatic GA4 and Meta purchase dispatch.
+
+- `Ekom:Tracking:Consent` defines the default consent cookie/header names and fallback values.
+- `Ekom:Tracking:Consent:Stores` lets you override consent handling per store alias.
+- Consent is resolved through a chain of `ITrackingConsentResolver` services.
+- The first resolver that returns a value wins; if none resolve, Ekom falls back to the configured fallback values.
+
+Default consent config example:
+
+```json
+"Tracking": {
+  "Consent": {
+    "FallbackAnalyticsConsent": false,
+    "FallbackMarketingConsent": false,
+    "AnalyticsCookieName": "ekom_consent_analytics",
+    "AnalyticsHeaderName": "X-Ekom-Consent-Analytics",
+    "MarketingCookieName": "ekom_consent_marketing",
+    "MarketingHeaderName": "X-Ekom-Consent-Marketing"
+  }
+}
+```
+
+Store-specific override example:
+
+```json
+"Tracking": {
+  "Consent": {
+    "FallbackAnalyticsConsent": false,
+    "FallbackMarketingConsent": false,
+    "Stores": [
+      {
+        "Alias": "Store",
+        "AnalyticsCookieName": "cookiehub",
+        "MarketingCookieName": "cookiehub"
+      }
+    ]
+  }
+}
+```
+
+To integrate a CMP like CookieHub, register a custom resolver:
+
+```csharp
+services.AddSingleton<ITrackingConsentResolver, CookieHubTrackingConsentResolver>();
+```
+
+The custom resolver can inspect the configured cookie names for a store, read and decode the CookieHub cookie, and return an `OrderConsent` instance for Ekom to store on the order. A working sample is available in `Samples/U10/Ekom.Site/CookieHubTrackingConsentResolver.cs` with notes in `Samples/U10/Ekom.Site/CookieHubConsentResolver.md`.
+
 ### Manager access rules
 
 - A user can open the Ekom manager when they belong to `Manager:SectionAccessGroup` or to any group configured under `Manager:StoreGroupPermissions`.
