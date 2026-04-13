@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Ekom.Algolia.Services;
 
@@ -16,6 +17,7 @@ internal sealed class AlgoliaInsightsClient : IAlgoliaInsightsClient
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 

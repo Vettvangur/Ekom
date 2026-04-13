@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.2.101](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.100...Ekom-v0.2.101) (2026-03-31)
+
+
+### Bug Fixes
+
+* avoid manager order status dirty prompts ([#446](https://github.com/Vettvangur/Ekom/issues/446)) ([fc5914c](https://github.com/Vettvangur/Ekom/commit/fc5914cdca75336491cbf15de629610095e0e898))
+
+## [0.2.100](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.99...Ekom-v0.2.100) (2026-03-30)
+
+
+### Bug Fixes
+
+* allow manager access when no store permissions are configured ([#444](https://github.com/Vettvangur/Ekom/issues/444)) ([edb5fb4](https://github.com/Vettvangur/Ekom/commit/edb5fb484b712b0ce058df15197a54863f18b61b))
+
+## [0.2.99](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.98...Ekom-v0.2.99) (2026-03-27)
+
+
+### Features
+
+* add payment return callback flow ([#442](https://github.com/Vettvangur/Ekom/issues/442)) ([b41aa3d](https://github.com/Vettvangur/Ekom/commit/b41aa3d3bfb4c2020d4f65e0fc3d2e167f2b5b8f))
+
+## [0.2.98](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.97...Ekom-v0.2.98) (2026-03-26)
+
+
+### Features
+
+* add customer information validation events ([#438](https://github.com/Vettvangur/Ekom/issues/438)) ([b55fc52](https://github.com/Vettvangur/Ekom/commit/b55fc52ed99a89012b9610ae7f4add003b658e9c))
+
+## [0.2.97](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.96...Ekom-v0.2.97) (2026-03-25)
+
+
+### Bug Fixes
+
+* avoid reloading analytics charts on top products paging ([#436](https://github.com/Vettvangur/Ekom/issues/436)) ([12cc478](https://github.com/Vettvangur/Ekom/commit/12cc478378372c456c41105cdb12c2b4416d0dfe))
+
+## [0.2.96](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.95...Ekom-v0.2.96) (2026-03-25)
+
+
+### Features
+
+* add store group permissions for manager access ([#433](https://github.com/Vettvangur/Ekom/issues/433)) ([3b16b84](https://github.com/Vettvangur/Ekom/commit/3b16b842e37fb8426098a7e49129e712614742da))
+
+## [0.2.95](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.94...Ekom-v0.2.95) (2026-03-24)
+
+
+### Bug Fixes
+
+* ekom manager, search by product sku, chart and performance fixes ([#431](https://github.com/Vettvangur/Ekom/issues/431)) ([ef17d95](https://github.com/Vettvangur/Ekom/commit/ef17d95ca48eca72b6d581f6d82ac469245351c4))
+
 ## [0.2.94](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.93...Ekom-v0.2.94) (2026-03-23)
 
 

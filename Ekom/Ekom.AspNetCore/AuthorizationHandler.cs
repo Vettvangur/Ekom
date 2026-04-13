@@ -23,10 +23,9 @@ class UmbracoUserAuthorizationHandler : AuthorizationHandler<UmbracoUserAuthoriz
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, UmbracoUserAuthorization requirement)
     {
-        var usrMgmtAuthSvc = _httpContextAccessor.HttpContext?.RequestServices.GetService<ISecurityService>();
-        var userGroups = usrMgmtAuthSvc?.GetUmbracoUserGroups();
+        var managerAccessService = _httpContextAccessor.HttpContext?.RequestServices.GetService<IManagerAccessService>();
 
-        if (userGroups != null)
+        if (managerAccessService?.CanAccessManager() == true)
         {
             context.Succeed(requirement);
         }

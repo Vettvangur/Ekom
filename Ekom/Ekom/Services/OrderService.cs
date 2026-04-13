@@ -1601,6 +1601,18 @@ partial class OrderService
             }
         }
 
+        if (settings.FireEvents)
+        {
+            var customerInformationUpdatingArgs = new CustomerInformationUpdatingEventArgs
+            {
+                OrderInfo = orderInfo,
+                Form = form
+            };
+
+            await OrderEvents.OnCustomerInformationUpdatingAsync(this, customerInformationUpdatingArgs, ct)
+                .ConfigureAwait(false);
+        }
+
         if (shippingProviderKey != null && shippingProviderValue != null)
         {
             if (Guid.TryParse(shippingProviderValue, out Guid _providerKey) && (orderInfo.ShippingProvider?.Key ?? Guid.Empty) != _providerKey)
@@ -1617,8 +1629,22 @@ partial class OrderService
             }
         }
 
-        return await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
+        orderInfo = await UpdateOrderAndOrderInfoAsync(orderInfo, settings.FireOnOrderUpdatedEvent, previousCustomerEmail: previousCustomerEmail, ct: ct)
             .ConfigureAwait(false);
+
+        if (settings.FireEvents)
+        {
+            var customerInformationUpdatedArgs = new CustomerInformationUpdatedEventArgs
+            {
+                OrderInfo = orderInfo,
+                Form = form
+            };
+
+            await OrderEvents.OnCustomerInformationUpdatedAsync(this, customerInformationUpdatedArgs, ct)
+                .ConfigureAwait(false);
+        }
+
+        return orderInfo;
 
     }
 
@@ -2043,9 +2069,17 @@ partial class OrderService
     {
         var guid = Guid.NewGuid();
 
+        SetOrderIdCookie(key, guid);
+
+        return guid;
+    }
+
+    private void SetOrderIdCookie(string key, Guid orderId)
+    {
+
         _httpCtx.Response.Cookies.Append(
             key,
-            guid.ToString(),
+            orderId.ToString(),
             new CookieOptions
             {
                 Path = "/",
@@ -2055,7 +2089,6 @@ partial class OrderService
                 HttpOnly = false
             });
 
-        return guid;
     }
 
     public void DeleteOrderCookie(IStore store)
@@ -2068,6 +2101,32 @@ partial class OrderService
         if (_httpCtx.Request.Cookies.ContainsKey(key))
         {
             _httpCtx.Response.Cookies.Delete(key);
+        }
+    }
+
+    public void EnsureOrderCookie(IStore store, Guid orderId)
+    {
+        if (_httpCtx?.Request?.Cookies == null || _httpCtx.Response?.Cookies == null)
+            return;
+
+        if (store.UserBasket)
+        {
+            return;
+        }
+
+        string key = CreateKey(store);
+        Guid cookieOrderId = GetOrderIdFromCookie(key);
+
+        if (cookieOrderId == orderId)
+        {
+            return;
+        }
+
+        // Only set the cookie when it is currently empty to avoid
+        // unintentionally switching the active order in multi-tab scenarios.
+        if (cookieOrderId == Guid.Empty && orderId != Guid.Empty)
+        {
+            SetOrderIdCookie(key, orderId);
         }
     }
 

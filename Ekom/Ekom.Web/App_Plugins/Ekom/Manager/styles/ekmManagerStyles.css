@@ -79,6 +79,10 @@
     margin-bottom: 0;
 }
 
+.ekmManager .ekmManager__dateInput {
+    min-width: 170px;
+}
+
 .ekmGrid {
     display: grid;
     grid-template-columns: 2fr 2fr;
@@ -88,6 +92,15 @@
 
 .ekmOrder__header {
   margin-bottom: 20px;
+}
+
+.ekmChartCard {
+    text-align: left;
+}
+
+.ekmChartCard__canvas {
+    height: 320px;
+    position: relative;
 }
 
 .ekmSplit {

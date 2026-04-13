@@ -626,6 +626,19 @@ public partial class Order
         }
     }
 
+    public void EnsureOrderCookie(Guid orderId, string? storeAlias = null)
+    {
+        IStore? store =
+            !string.IsNullOrEmpty(storeAlias) ?
+            _storeSvc.GetStoreByAlias(storeAlias) :
+            _storeSvc.GetStoreFromCache();
+
+        if (store != null)
+        {
+            _orderService.EnsureOrderCookie(store, orderId);
+        }
+    }
+
     /// <summary>
     /// Determine if an <see cref="OrderStatus"/> is considered by Ekom as final.
     /// Ekom also uses this logic to control cart reset.

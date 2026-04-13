@@ -1,65 +1,72 @@
-angular.module('umbraco.resources').factory('Ekom.Manager.Resources',
-  function ($q, $http) {
-    return {
+angular.module("umbraco.resources").factory("Ekom.Manager.Resources", [
+  "$http",
+  function ($http) {
+    var backofficeBaseUrl = Umbraco.Sys.ServerVariables.ekom.managerEndpoint;
+    var baseUrl = "/ekom/";
 
-      backofficeBaseUrl: Umbraco.Sys.ServerVariables.ekom.managerEndpoint,
-      apiUrl: Umbraco.Sys.ServerVariables.ekom.apiEndpoint,
-      baseUrl: '/ekom/',
-      SearchOrders: function (querystring) {
-        var url = this.backofficeBaseUrl + 'SearchOrders' + querystring;
-        return $http({
-          method: 'GET',
-          url: url
-        });
+    function buildQueryString(query) {
+      if (!query) {
+        return "";
+      }
+
+      if (angular.isString(query)) {
+        return query.charAt(0) === "?" ? query : "?" + query;
+      }
+
+      var parts = [];
+
+      angular.forEach(query, function (value, key) {
+        var queryValue = value;
+
+        if (queryValue === undefined || queryValue === null) {
+          queryValue = "";
+        }
+
+        parts.push(encodeURIComponent(key) + "=" + encodeURIComponent(queryValue));
+      });
+
+      return parts.length ? "?" + parts.join("&") : "";
+    }
+
+    function get(url, query) {
+      return $http({
+        method: "GET",
+        url: url + buildQueryString(query)
+      });
+    }
+
+    function post(url, query) {
+      return $http({
+        method: "POST",
+        url: url + buildQueryString(query)
+      });
+    }
+
+    return {
+      SearchOrders: function (query) {
+        return get(backofficeBaseUrl + "SearchOrders", query);
       },
       StatusList: function () {
-        var url = this.backofficeBaseUrl + 'StatusList';
-        return $http({
-          method: 'GET',
-          url: url
-        });
+        return get(backofficeBaseUrl + "StatusList");
       },
       Stores: function () {
-        var url = this.backofficeBaseUrl + 'Stores';
-        return $http({
-          method: 'GET',
-          url: url
-        });
+        return get(backofficeBaseUrl + "Stores");
       },
       OrderInfo: function (orderId) {
-        var url = this.backofficeBaseUrl + 'OrderInfo/' + orderId;
-        return $http({
-          method: 'GET',
-          url: url
-        });
+        return get(backofficeBaseUrl + "OrderInfo/" + orderId);
       },
-      Charts: function (querystring) {
-        var url = this.backofficeBaseUrl + 'Charts' + querystring;
-        return $http({
-          method: 'GET',
-          url: url
-        });
+      Charts: function (query) {
+        return get(backofficeBaseUrl + "Charts", query);
       },
-      MostSoldProducts: function (querystring) {
-        var url = this.backofficeBaseUrl + 'MostSoldProducts' + querystring;
-        return $http({
-          method: 'GET',
-          url: url
-        });
+      MostSoldProducts: function (query) {
+        return get(backofficeBaseUrl + "MostSoldProducts", query);
       },
-      ChangeOrderStatus: function (querystring) {
-        var url = this.backofficeBaseUrl + 'ChangeOrderStatus' + querystring;
-        return $http({
-          method: 'POST',
-          url: url
-        });
+      ChangeOrderStatus: function (query) {
+        return post(backofficeBaseUrl + "ChangeOrderStatus", query);
       },
       PaymentProviders: function (storeAlias) {
-        var url = this.baseUrl + 'provider/paymentsproviders/' + storeAlias;
-        return $http({
-          method: 'GET',
-          url: url
-        });
-      },
+        return get(baseUrl + "provider/paymentsproviders/" + storeAlias);
+      }
     };
-  });
+  }
+]);

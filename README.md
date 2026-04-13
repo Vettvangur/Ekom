@@ -115,11 +115,37 @@ All Ekom settings live under the `Ekom` section in `appsettings.json`.
 - `GlobalCatalog` (bool, default `false`): If product not found in current store, search other stores.
 - `EmailNotifications` (string, optional): Override Umbraco email for `MailService` notifications.
 - `CustomerData` (bool, default `false`): Store checkout customer data in `ekmCustomerData` table.
-- `Manager:SectionAccessGroup` (CSV string): Allowed backoffice groups for the Ekom section.
+- `Manager:SectionAccessGroup` (CSV string): Backoffice groups that can access the manager section.
 - `Manager:StoreGroupPermissions` (object): Store alias to allowed group list mapping.
 - `SectionAccessRules` (CSV string, legacy): Backwards-compatible alias for `Manager:SectionAccessGroup`.
 - `Headless:ReValidateApis` (list): Items with `Store`, `Url`, `Secret` for headless revalidation.
 - `Payments` (object): Provider-specific configuration used by payment providers.
+
+### Manager access rules
+
+- A user can open the Ekom manager when they belong to `Manager:SectionAccessGroup` or to any group configured under `Manager:StoreGroupPermissions`.
+- Store access is still checked per store. A user only sees and can query stores where one of their groups matches that store's configured group list.
+- Stores missing from `Manager:StoreGroupPermissions` are denied.
+- Umbraco administrators bypass these restrictions and can access all stores.
+
+Example:
+
+```json
+"Manager": {
+  "SectionAccessGroup": "ekom",
+  "StoreGroupPermissions": {
+    "Store": ["StoreGroup"],
+    "Store2": ["Store2Group"]
+  }
+}
+```
+
+With this setup:
+
+- members of `ekom` can access the manager section
+- members of `StoreGroup` can access the manager and work only with `Store`
+- members of `Store2Group` can access the manager and work only with `Store2`
+- users without a matching group cannot access the related store
 
 ## Plugins
 - https://github.com/Vettvangur/Ekom/tree/Ekom/Plugins/Ekom.Klaviyo

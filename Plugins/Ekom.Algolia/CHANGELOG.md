@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [0.2.10](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.9...Ekom.Algolia-v0.2.10) (2026-03-27)
+
+
+### Features
+
+* add payment return callback flow ([#442](https://github.com/Vettvangur/Ekom/issues/442)) ([b41aa3d](https://github.com/Vettvangur/Ekom/commit/b41aa3d3bfb4c2020d4f65e0fc3d2e167f2b5b8f))
+
 ## [0.2.9](https://github.com/Vettvangur/Ekom/compare/Ekom.Algolia-v0.2.8...Ekom.Algolia-v0.2.9) (2026-03-19)
 
 
