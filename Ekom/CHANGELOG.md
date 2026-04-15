@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.104](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.103...Ekom-v0.2.104) (2026-04-15)
+
+
+### Bug Fixes
+
+* added enum for remove order discount ([#456](https://github.com/Vettvangur/Ekom/issues/456)) ([d766e51](https://github.com/Vettvangur/Ekom/commit/d766e517551b361fa4e78bf7ad99da80af533794))
+
 ## [0.2.103](https://github.com/Vettvangur/Ekom/compare/Ekom-v0.2.102...Ekom-v0.2.103) (2026-04-15)
 
 
