@@ -70,6 +70,10 @@ namespace Ekom.Utilities
 
                     defaultClassName = "order__changeCurrency-form";
                     break;
+                case FormType.RemoveCouponFromOrder:
+
+                    defaultClassName = "order__removeCouponFromOrder-form";
+                    break;
             }
 
             className = className ?? defaultClassName;
