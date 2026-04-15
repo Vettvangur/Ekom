@@ -69,6 +69,7 @@ static class Registrations
         services.AddScoped<RevalidateService>();
         services.AddScoped<ControllerRequestHelper>();
         services.AddTransient<CheckoutService>();
+        services.AddSingleton<ITrackingConsentResolver, CookieHubTrackingConsentResolver>();
         services.AddSingleton<ITrackingConsentResolver, DefaultTrackingConsentResolver>();
         services.AddSingleton<ITrackingConsentService, TrackingConsentService>();
         services.AddSingleton<ITrackingCookieService, TrackingCookieService>();

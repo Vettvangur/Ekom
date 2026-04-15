@@ -1,29 +1,20 @@
 # CookieHub Consent Resolver
 
-This sample shows how to plug CookieHub into Ekom's consent resolver chain without changing Ekom core config shape.
+This sample shows how to configure Ekom's built-in CookieHub consent resolver without changing Ekom core config shape.
 
 ## What It Does
 
-- Registers a custom `ITrackingConsentResolver`
 - Reads the `cookiehub` cookie
 - URL-decodes and parses the JSON payload
 - Maps CookieHub categories to Ekom order consent:
   - `categories.analytics` -> `OrderConsent.Analytics`
   - `categories.marketing` -> `OrderConsent.Marketing`
 
-## Sample Registration
+## Built-In Registration
 
-Register the resolver in `Startup.cs`:
+The resolver is registered by Ekom automatically. No per-site `Startup.cs` registration is required.
 
-```csharp
-services.AddSingleton<ITrackingConsentResolver, CookieHubTrackingConsentResolver>();
-```
-
-## Sample Resolver
-
-The sample implementation lives in `Samples/U10/Ekom.Site/CookieHubTrackingConsentResolver.cs`.
-
-Core contract:
+Implementation:
 
 ```csharp
 public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
@@ -37,7 +28,7 @@ public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
 }
 ```
 
-Lower `Order` values run first in the resolver chain.
+The built-in implementation lives in `Ekom/Ekom/Tracking/Resolvers/CookieHubTrackingConsentResolver.cs` and runs before the default cookie/header resolver.
 
 ## Sample Appsettings
 
@@ -59,7 +50,7 @@ Use normal Ekom consent config, but point the relevant store to the CookieHub co
 }
 ```
 
-This keeps the default config model intact while letting the custom resolver interpret `cookiehub` specially for that store.
+This keeps the default config model intact while letting the built-in resolver interpret `cookiehub` specially for that store.
 
 ## CookieHub Payload Shape
 

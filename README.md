@@ -129,6 +129,7 @@ Ekom tracking supports order-level `Consent` and `Tracking` data for automatic G
 - `Ekom:Tracking:Consent:Stores` lets you override consent handling per store alias.
 - Consent is resolved through a chain of `ITrackingConsentResolver` services.
 - The first resolver that returns a value wins; if none resolve, Ekom falls back to the configured fallback values.
+- CookieHub consent resolution is built in. Set the relevant consent cookie name(s) to `cookiehub` for any store that uses CookieHub.
 
 Default consent config example:
 
@@ -163,13 +164,7 @@ Store-specific override example:
 }
 ```
 
-To integrate a CMP like CookieHub, register a custom resolver:
-
-```csharp
-services.AddSingleton<ITrackingConsentResolver, CookieHubTrackingConsentResolver>();
-```
-
-The custom resolver can inspect the configured cookie names for a store, read and decode the CookieHub cookie, and return an `OrderConsent` instance for Ekom to store on the order. A working sample is available in `Samples/U10/Ekom.Site/CookieHubTrackingConsentResolver.cs` with notes in `Samples/U10/Ekom.Site/CookieHubConsentResolver.md`.
+When a store points `AnalyticsCookieName` and/or `MarketingCookieName` to `cookiehub`, Ekom automatically reads the CookieHub cookie, decodes its JSON payload, and maps CookieHub categories to `OrderConsent`. Additional notes and config examples are available in `Samples/U10/Ekom.Site/CookieHubConsentResolver.md`.
 
 ### Manager access rules
 

@@ -3,7 +3,6 @@ using Ekom.Klaviyo;
 using Ekom.Klaviyo.Enrichers.OrderEnricher;
 using Ekom.Klaviyo.Enrichers.TrackingEnricher;
 using Ekom.Services;
-using Ekom.Tracking;
 using Newtonsoft.Json.Serialization;
 
 namespace Ekom.Site;
@@ -73,7 +72,6 @@ public class Startup
 
         services.AddSingleton<IKlaviyoPlacedOrderEnricher, CustomPlacedOrderEnriching>();
         services.AddSingleton<IKlaviyoTrackingEnricher, CustomTrackingEnricher>();
-        services.AddSingleton<ITrackingConsentResolver, CookieHubTrackingConsentResolver>();
 
         services.AddKlaviyo();
         services.AddAlgolia();

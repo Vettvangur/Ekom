@@ -1,9 +1,8 @@
 using Ekom.Models;
-using Ekom.Tracking;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 
-namespace Ekom.Site;
+namespace Ekom.Tracking;
 
 public sealed class CookieHubTrackingConsentResolver : ITrackingConsentResolver
 {
