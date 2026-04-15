@@ -86,7 +86,7 @@ public partial class Order
             throw new ArgumentException("string.IsNullOrEmpty", nameof(storeAlias));
         }
 
-        await _orderService.RemoveDiscountFromOrderAsync(storeAlias, ct: ct)
+        await _orderService.RemoveCouponFromOrderAsync(storeAlias, ct: ct)
             .ConfigureAwait(false);
     }
 
